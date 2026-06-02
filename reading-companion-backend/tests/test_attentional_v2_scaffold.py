@@ -18,7 +18,7 @@ from src.attentional_v2.prompts import (
     DIGEST_CURRENT_FOCUS_TEMPLATE,
     DIGEST_OUTPUT_CONTRACT_FRAGMENT_REGISTRY,
     DIGEST_OUTPUT_CONTRACT_TEMPLATE,
-    DIGEST_READING_STATE_TEMPLATE,
+    DIGEST_READING_MEMORY_TEMPLATE,
     DIGEST_READER_ROLE_AND_INSTRUCTION_FRAGMENT_REGISTRY,
     DIGEST_READER_ROLE_AND_INSTRUCTION_TEMPLATE,
     DIGEST_PROMPT_VERSION,
@@ -35,7 +35,7 @@ from src.attentional_v2.prompts import (
     render_digest_current_focus_xml,
     render_digest_output_contract_xml,
     render_digest_prompt_xml,
-    render_digest_reading_state_xml,
+    render_digest_reading_memory_xml,
     render_digest_reader_role_and_instruction_xml,
     render_digest_xml_prompt_example,
 )
@@ -312,7 +312,7 @@ def test_prompt_assembly_spec_validation_rejects_empty_or_duplicate_contract_par
 def test_digest_xml_prompt_example_renders_escaped_blocks() -> None:
     rendered = render_digest_xml_prompt_example(
         book_info='{"title": "Demo & Book"}',
-        reading_state='{"recent_reading_memory": []}',
+        reading_memory='{"recent_reading_memory": []}',
         current_focus='{"reading_object": "Alpha < Beta"}',
         output_contract='{"return": "json"}',
     )
@@ -320,7 +320,8 @@ def test_digest_xml_prompt_example_renders_escaped_blocks() -> None:
     assert "<ReaderRole>" in rendered
     assert "<Instruction>" in rendered
     assert "<BookInfo>" in rendered
-    assert "<ReadingState>" in rendered
+    assert "<ReadingMemory>" in rendered
+    assert "<ReadingState>" not in rendered
     assert "<CurrentFocus>" in rendered
     assert "<OutputContract>" in rendered
     assert "&amp;" in rendered
@@ -368,13 +369,13 @@ def test_full_digest_prompt_xml_assembly_renders_all_live_blocks() -> None:
         "ReaderRole",
         "Instruction",
         "BookInfo",
-        "ReadingState",
+        "ReadingMemory",
         "CurrentFocus",
         "OutputContract",
     )
     assert result.used_slot_names == (
         "book_identity",
-        "recent_memory",
+        "reading_memory",
         "reading_path",
         "reading_position",
         "reading_intent",
@@ -383,7 +384,8 @@ def test_full_digest_prompt_xml_assembly_renders_all_live_blocks() -> None:
     assert "<ReaderRole>" in result.rendered_text
     assert "<Instruction>" in result.rendered_text
     assert "<BookInfo>" in result.rendered_text
-    assert "<ReadingState>" in result.rendered_text
+    assert "<ReadingMemory>" in result.rendered_text
+    assert "<ReadingState>" not in result.rendered_text
     assert "<CurrentFocus>" in result.rendered_text
     assert "<OutputContract>" in result.rendered_text
     assert "Alpha &lt;source&gt; &amp; line." in result.rendered_text
@@ -453,7 +455,7 @@ def test_digest_reader_role_and_instruction_xml_renders_target_structure() -> No
     assert rendered.index("<Understanding>") < rendered.index("<Response>")
     assert rendered.index("<Response>") < rendered.index("<Annotation>")
     assert "Let BookInfo orient you" in rendered
-    assert "Let ReadingState hold what the reading has already carried forward" in rendered
+    assert "Let ReadingMemory hold prior understanding" in rendered
     assert "Let CurrentFocus / ReadingObject be the source text" in rendered
     assert "Use OutputContract only for the required JSON shape" in rendered
 
@@ -590,8 +592,8 @@ def test_digest_current_focus_template_declares_target_children() -> None:
     ]
 
 
-def test_digest_reading_state_xml_projects_recent_memory_as_text_array_only() -> None:
-    rendered = render_digest_reading_state_xml(
+def test_digest_reading_memory_xml_projects_recent_memory_as_text_array_only() -> None:
+    rendered = render_digest_reading_memory_xml(
         recent_reading_memory={
             "active_entries": [
                 {
@@ -620,9 +622,9 @@ def test_digest_reading_state_xml_projects_recent_memory_as_text_array_only() ->
         }
     )
 
-    assert "<ReadingState>" in rendered
     assert "<ReadingMemory>" in rendered
-    assert "<RecentMemory>" in rendered
+    assert "<ReadingState>" not in rendered
+    assert "<RecentMemory>" not in rendered
     assert "作者说明 A &amp; B &lt; C。" in rendered
     assert "第二个阅读单元把作者的证据边界说清楚。" in rendered
     assert "recent:c1:u0001:m1" not in rendered
@@ -641,14 +643,109 @@ def test_digest_reading_state_xml_projects_recent_memory_as_text_array_only() ->
     assert "Structural frame:" not in ATTENTIONAL_V2_PROMPTS.digest_prompt
 
 
-def test_digest_reading_state_template_declares_recent_memory_subset() -> None:
-    root = DIGEST_READING_STATE_TEMPLATE[0]
+def test_digest_reading_memory_template_declares_top_level_memory() -> None:
+    root = DIGEST_READING_MEMORY_TEMPLATE[0]
 
-    assert root.element_name == "ReadingState"
-    assert [child.element_name for child in root.children] == ["ReadingMemory"]
-    reading_memory = root.children[0]
-    assert [child.element_name for child in reading_memory.children] == ["RecentMemory"]
-    assert reading_memory.children[0].value_slot == "recent_memory"
+    assert root.element_name == "ReadingMemory"
+    assert root.value_slot == "reading_memory"
+    assert root.children == ()
+
+
+def test_runner_builds_unified_reading_memory_from_hot_and_retrieved_understanding() -> None:
+    recent_memory = {
+        "entries": [
+            {
+                "entry_id": "recent:c1:u0005:m1",
+                "source_unit_span_id": "src:c1:p10@0-p10@20",
+                "memory_text": "Hot current-chapter understanding.",
+                "status": "active",
+                "created_at_unit_index": 5,
+            }
+        ]
+    }
+    retrieval = {
+        "selected_units": [
+            {
+                "unit_id": "u000003",
+                "unit_index": 3,
+                "matched_recalls": ["r1"],
+                "entry": {
+                    "unit_id": "u000003",
+                    "unit_index": 3,
+                    "source_span_id": "src:c1:p3@0-p3@10",
+                    "digest": {
+                        "understanding": {"kind": "other", "content": "Retrieved prior understanding."},
+                        "response": "Prior response should not be rendered.",
+                        "annotations": [{"source_quote": "Prior quote", "content": "Prior note"}],
+                    },
+                },
+            },
+            {
+                "unit_id": "duplicate-hot",
+                "unit_index": 4,
+                "entry": {
+                    "unit_id": "duplicate-hot",
+                    "unit_index": 4,
+                    "source_span_id": "src:c1:p10@0-p10@20",
+                    "digest": {
+                        "understanding": {"kind": "other", "content": "Duplicate should be suppressed."},
+                    },
+                },
+            },
+        ]
+    }
+
+    result = runner_module._build_digest_reading_memory(
+        recent_reading_memory=recent_memory,
+        chapter_id=1,
+        unit_memory_retrieval=retrieval,
+    )
+
+    assert result["hot_line_count"] == 1
+    assert result["retrieved_line_count"] == 1
+    assert result["lines"] == [
+        "P10 U5: Hot current-chapter understanding.",
+        "P3 U3: Retrieved prior understanding.",
+    ]
+    assert "Prior response" not in "\n".join(result["lines"])
+    assert any(item["reason"] == "dedupe_hot_memory" for item in result["suppressed"])
+
+
+def test_runner_treats_recalls_without_tool_call_as_contract_violation(tmp_path: Path) -> None:
+    output_dir = tmp_path / "output" / "demo-book"
+    result = runner_module._retrieve_unit_memory_for_prepared_source_unit(
+        output_dir=output_dir,
+        book_id="book-demo",
+        prepared_source_unit={
+            "memory_recalls": [
+                {
+                    "recall_id": "r1",
+                    "recall_text": "earlier station farewell",
+                    "basis": "selected_source_unit",
+                }
+            ],
+            "ingest_trace": [
+                {
+                    "tool_loop_status": "tool_call_contract_violation",
+                    "memory_recalls": [
+                        {
+                            "recall_id": "r1",
+                            "recall_text": "earlier station farewell",
+                            "basis": "selected_source_unit",
+                        }
+                    ],
+                }
+            ],
+        },
+        recent_reading_memory={"entries": []},
+        memory_retrieval_config={"mode": "hybrid"},
+    )
+
+    assert result["selected_units"] == []
+    assert result["query_source"] == "tool_call_contract_violation"
+    trace = json.loads(unit_memory_retrieval_trace_file(output_dir).read_text(encoding="utf-8").strip())
+    assert trace["query_source"] == "tool_call_contract_violation"
+    assert trace["candidate_counts"] == {"recall_count": 1}
 
 
 def test_digest_output_contract_xml_renders_target_contract() -> None:
@@ -756,13 +853,13 @@ def test_attentional_v2_prompt_registry_projects_current_bundle() -> None:
     ingest = ATTENTIONAL_V2_PROMPT_REGISTRY.get("attentional_v2.ingest")
     chapter = ATTENTIONAL_V2_PROMPT_REGISTRY.get("attentional_v2.chapter_consolidation")
 
-    assert ATTENTIONAL_V2_PROMPTSET_VERSION == "attentional_v2-phase6-v48"
+    assert ATTENTIONAL_V2_PROMPTSET_VERSION == "attentional_v2-phase6-v49"
     assert ATTENTIONAL_V2_PROMPTS.promptset_version == ATTENTIONAL_V2_PROMPTSET_VERSION
     assert digest.version == DIGEST_PROMPT_VERSION == "attentional_v2.digest.v3"
     assert ATTENTIONAL_V2_PROMPTS.digest_version == digest.version
     assert ATTENTIONAL_V2_PROMPTS.digest_system == digest.system_prompt
     assert ATTENTIONAL_V2_PROMPTS.digest_prompt == digest.user_prompt_template
-    assert ingest.version == INGEST_PROMPT_VERSION == "attentional_v2.ingest.v2"
+    assert ingest.version == INGEST_PROMPT_VERSION == "attentional_v2.ingest.v3"
     assert ATTENTIONAL_V2_PROMPTS.ingest_version == ingest.version
     assert ATTENTIONAL_V2_PROMPTS.ingest_system == ingest.system_prompt
     assert ATTENTIONAL_V2_PROMPTS.chapter_consolidation_prompt == chapter.user_prompt_template

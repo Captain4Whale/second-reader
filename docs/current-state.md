@@ -7,7 +7,7 @@ Update when: the current objective, active tasks, blockers, active jobs, open de
 
 This file is authoritative for durable current status. Do not keep unique active-state information only in `docs/agent-handoff.md`.
 
-Last verified: `2026-06-02T19:34:07+08:00`
+Last verified: `2026-06-02T20:47:25+08:00`
 
 ## Current Objective
 - Product goal and mechanism direction are being reset before further implementation.
@@ -30,13 +30,13 @@ Last verified: `2026-06-02T19:34:07+08:00`
     - `DEC-108` renames the concrete current-unit LLM call from `Read` / `read_unit` to `Digest` and makes the XML Digest prompt the only live path
     - `DEC-109` removes the old concept/thread structured long-memory stores from current live schemas, runtime artifacts, checkpoints, prompt projections, settlement, audits, tests, and stable-doc current surfaces
     - `DEC-110` lands the Unit Memory ledger + hybrid retrieval bottom framework as the current long-distance memory substrate for `attentional_v2`
-    - current `llm_calls.ingest(...)` is the forward-only XML LLM boundary call: exact `end_anchor_text`, `boundary_type`, `reason`, and optional single `memory_query`
+    - current `llm_calls.ingest(...)` is the forward-only XML LLM boundary call: exact `end_anchor_text`, `boundary_type`, `reason`, and bounded `memory_recalls[]`
     - current LLM-call code now lives in `reading-companion-backend/src/attentional_v2/llm_calls.py`; the old ambiguous active module name is removed
     - runtime next-unit preparation lives outside `Ingest` as `prepare_next_source_unit_for_read`: it prepares source preview/context, calls `Ingest`, performs anchor resolution/retry/fallback boundary governance, and hands the accepted source unit to `Digest`
-    - `Ingest` uses `ReaderRole`, `Instruction`, `BookInfo`, `CurrentView`, empty `RetrievalSurface`, and `OutputContract`; it may request one Unit Memory query, while actual retrieval execution remains Reading Runner runtime work
+    - `Ingest` uses `ReaderRole`, `Instruction`, `BookInfo`, `CurrentView`, empty `RetrievalSurface`, and `OutputContract`; it may express up to three prior-reading recalls, while actual retrieval execution and prompt-facing memory selection remain Reading Runner runtime work
     - Digest semantic refactor is implemented: model-facing `understanding / response / annotations` are three peer outputs, with one holistic `understanding` object per unit mapped into `recent_reading_memory`
-    - Unit Memory bottom framework is implemented: settlement writes one unit-centered ledger entry per accepted source unit, derives source / understanding / response / annotation retrieval documents, indexes them with SQLite FTS5, optionally indexes dense vectors through sqlite-vec + local Ollama, and writes retrieval traces between `Ingest` and `Digest`
-    - retrieved Unit Memory is not yet injected into Digest XML context; Digest still receives existing Recent Reading Memory only
+    - Unit Memory recall/retrieval/context framework is implemented: settlement writes one unit-centered ledger entry per accepted source unit, derives source / understanding / response / annotation retrieval documents, indexes them with SQLite FTS5, optionally indexes dense vectors through sqlite-vec + local Ollama, lets Ingest trigger bounded prior-reading recalls through `retrieve_unit_memory`, and writes retrieval/selection traces between `Ingest` and `Digest`
+    - Digest now receives one top-level `ReadingMemory` block assembled by runtime from hot current-chapter Understanding plus selected long-distance Unit Memory Understanding; raw prior source, prior Response, and prior Annotation remain retrieval/audit surfaces only
     - current `Digest` has no path-redirection output contract and the Runner/audit path emits no Detour or source-backread runtime artifacts for new runs
     - current `local_continuity` contains only forward-reading continuity; old Detour-era checkpoint/artifact shapes are not a compatibility target
   - stop declaration:
@@ -51,8 +51,8 @@ Last verified: `2026-06-02T19:34:07+08:00`
     - use `docs/implementation/new-reading-mechanism/ingest-context-and-navigate-mapping.md` as the implementation reference for the landed first-slice `Ingest` XML context
     - use `docs/implementation/new-reading-mechanism/digest-understanding-response-annotation-design.md` as the implemented reference for the Digest prompt/output semantic refactor
     - use `docs/implementation/new-reading-mechanism/unit-memory-hybrid-retrieval-design.md` as the implemented reference for the Unit Memory storage/index/retrieval trace bottom framework
-    - use `docs/implementation/new-reading-mechanism/ingest-recall-and-digest-memory-context-design.md` as the current draft for the next slice: bounded multi-recall Ingest output, Anthropic-style `retrieve_unit_memory` tool loop, multi-recall retrieval aggregation, and Digest retrieved-memory context packaging
-    - next implementation work should replace the single model-facing `memory_query` with bounded `memory_recalls[]`, let Ingest call the runtime-owned Unit Memory retrieval tool, and then render direct recent Understanding plus selected retrieved Understanding into one top-level Digest `ReadingMemory` text block, including a `5K` hot current-chapter memory budget, `10K` long-distance retrieved memory budget, `tiktoken_o200k_base_v1` token estimates, position ordering, dedupe against direct recent memory, and calibration review criteria
+    - use `docs/implementation/new-reading-mechanism/ingest-recall-and-digest-memory-context-design.md` as the implemented reference for bounded multi-recall Ingest output, Anthropic-style `retrieve_unit_memory` tool loop, multi-recall retrieval aggregation, and Digest `ReadingMemory` packaging
+    - next implementation work should review/calibrate recall quality, retrieval fanout, neighbor exclusion, ReadingMemory budget behavior, and Digest downstream usefulness before changing the memory surface again
     - do not run eval, update evidence catalog, or claim product quality from the Detour hard-purge slice
 - Historical concrete-node XML prompt / Recent Reading Memory full active diagnostic machine run has completed; post-run report is preserved for reference.
   - purpose:
@@ -625,7 +625,7 @@ Last verified: `2026-06-02T19:34:07+08:00`
   - `Phase C.2` and `Phase C.3` are now historical state-territory experiments, superseded by `DEC-109`:
     - those slices experimented with bounded content-typed long-memory digests and direct structured long-memory runtime stores
     - current live code no longer exposes those retired concept/thread structured stores in schema, prompt packets, runtime artifacts, checkpoints, settlement, audit, or tests
-    - current long-memory direction is a content-neutral unit-memory baseline; the ledger/index/retrieval trace framework is now implemented by `DEC-110`, while Digest retrieved-memory context packaging remains deferred
+    - current long-memory direction is a content-neutral Unit Memory baseline; ledger/index/retrieval trace, bounded Ingest recalls, runtime-owned retrieval selection, and Digest `ReadingMemory` packaging are now implemented under `DEC-110` follow-through
     - old supplemental retrieval helpers from that branch were removed from the current code surface by `DEC-105`; current `Ingest` retrieval uses a separate Unit Memory query path rather than those helpers
     - the then-current concrete reading node introduced explicit memory-update operations, then called `implicit_uptake`, before the current Digest contract narrowed live memory output back to Recent Reading Memory
     - checkpoint/resume temporarily accepted both old and new state territory during the cutover, while newly written checkpoints already used only the new primary keys

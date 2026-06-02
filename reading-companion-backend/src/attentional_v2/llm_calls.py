@@ -4,10 +4,17 @@ from __future__ import annotations
 
 import json
 import re
+from collections.abc import Callable, Mapping
 from datetime import datetime, timezone
 from pathlib import Path
 from src.iterator_reader.language import language_name
-from src.iterator_reader.llm_utils import LLMTraceContext, ReaderLLMError, invoke_json, llm_invocation_scope
+from src.iterator_reader.llm_utils import (
+    LLMTraceContext,
+    ReaderLLMError,
+    invoke_json,
+    invoke_json_with_tool_loop,
+    llm_invocation_scope,
+)
 
 from .prompts import (
     ATTENTIONAL_V2_PROMPTS,
@@ -37,7 +44,7 @@ from .schemas import (
     UnitizeDecision,
 )
 from .storage import prompt_manifest_file, save_json
-from .unit_memory import normalize_unit_memory_query
+from .unit_memory import normalize_unit_memory_recalls
 
 
 _REACTION_TYPES: set[ReactionType] = {
@@ -55,6 +62,32 @@ _UNITIZE_BOUNDARY_TYPES: set[UnitizeBoundaryType] = {
     "cross_paragraph_continuation",
     "section_end",
     "budget_cap",
+}
+_INGEST_UNIT_MEMORY_TOOL = {
+    "name": "retrieve_unit_memory",
+    "description": "Retrieve prior Unit Memory status for recalls raised by the selected source unit.",
+    "input_schema": {
+        "type": "object",
+        "properties": {
+            "end_anchor_text": {"type": "string"},
+            "boundary_type": {"type": "string"},
+            "reason": {"type": "string"},
+            "memory_recalls": {
+                "type": "array",
+                "items": {
+                    "type": "object",
+                    "properties": {
+                        "recall_id": {"type": "string"},
+                        "recall_text": {"type": "string"},
+                        "basis": {"type": "string"},
+                    },
+                    "required": ["recall_id", "recall_text"],
+                },
+                "maxItems": 3,
+            },
+        },
+        "required": ["end_anchor_text", "boundary_type", "memory_recalls"],
+    },
 }
 _STATE_OPERATION_TYPES = {
     "append",
@@ -713,15 +746,14 @@ def _normalize_ingest_boundary_result(
             "reason": "ingest_empty_source_anchor",
             "end_anchor_text": "",
             "boundary_type": "paragraph_end",
+            "memory_recalls": [],
         }
     result: IngestBoundaryResult = {
         "reason": _clean_text(value.get("reason")),
         "end_anchor_text": _clean_text(value.get("end_anchor_text")),
         "boundary_type": _normalize_unitize_boundary_type(value.get("boundary_type")),
+        "memory_recalls": normalize_unit_memory_recalls(value.get("memory_recalls")),
     }
-    memory_query = normalize_unit_memory_query(value.get("memory_query"))
-    if memory_query:
-        result["memory_query"] = memory_query
     return result
 
 
@@ -732,6 +764,7 @@ def ingest(
     output_dir: Path | None = None,
     book_title: str = "",
     author: str = "",
+    unit_memory_tool_handler: Callable[[Mapping[str, object]], Mapping[str, object]] | None = None,
 ) -> IngestBoundaryResult:
     """Run the Ingest LLM boundary call."""
 
@@ -760,17 +793,57 @@ def ingest(
         },
     )
 
+    def _invoke_with_tools(prompt_text: str) -> IngestBoundaryResult:
+        if unit_memory_tool_handler is None:
+            payload = invoke_json(prompts.ingest_system, prompt_text, default={})
+            return _normalize_ingest_boundary_result(payload)
+
+        def _handle_tool(tool_name: str, args: Mapping[str, object], tool_call_id: str) -> Mapping[str, object]:
+            if tool_name != "retrieve_unit_memory":
+                return {
+                    "status": "error",
+                    "degradation_reason": f"unsupported_tool:{tool_name}",
+                    "tool_call_id": tool_call_id,
+                }
+            return dict(unit_memory_tool_handler(args))
+
+        tool_loop = invoke_json_with_tool_loop(
+            prompts.ingest_system,
+            prompt_text,
+            default={},
+            tools=[_INGEST_UNIT_MEMORY_TOOL],
+            tool_handler=_handle_tool,
+            max_tool_calls=1,
+        )
+        result = _normalize_ingest_boundary_result(tool_loop.payload)
+        result["tool_loop_status"] = str(tool_loop.status)
+        if tool_loop.tool_results:
+            first_result = tool_loop.tool_results[0].get("result")
+            if isinstance(first_result, Mapping):
+                result["tool_result_summary"] = dict(first_result)
+        return result
+
     try:
         with llm_invocation_scope(trace_context=LLMTraceContext(stage="phase4", node="ingest")):
-            payload = invoke_json(prompts.ingest_system, user_prompt, default={})
-        return _normalize_ingest_boundary_result(
-            payload,
-        )
+            result = _invoke_with_tools(user_prompt)
+            if unit_memory_tool_handler is not None and result.get("memory_recalls") and result.get("tool_loop_status") == "final_without_tool":
+                repair_prompt = (
+                    f"{user_prompt}\n\n"
+                    "<RuntimeRepair>\n"
+                    "Your previous Ingest result included memory_recalls but did not call retrieve_unit_memory. "
+                    "When memory_recalls is non-empty, you must call retrieve_unit_memory before returning final JSON.\n"
+                    "</RuntimeRepair>"
+                )
+                result = _invoke_with_tools(repair_prompt)
+                if result.get("memory_recalls") and result.get("tool_loop_status") == "final_without_tool":
+                    result["tool_loop_status"] = "tool_call_contract_violation"
+            return result
     except ReaderLLMError:
         return {
             "reason": "ingest_llm_error",
             "end_anchor_text": "",
             "boundary_type": "paragraph_end",
+            "memory_recalls": [],
         }
 
 
@@ -831,6 +904,7 @@ def digest(
     output_language: str,
     current_unit_source: dict[str, object] | None = None,
     current_unit_sentences: list[dict[str, object]] | None = None,
+    reading_memory_lines: list[str] | None = None,
     output_dir: Path | None = None,
     book_title: str = "",
     author: str = "",
@@ -860,6 +934,7 @@ def digest(
         recent_reading_memory=prompt_packet.get("recent_reading_memory")
         if isinstance(prompt_packet.get("recent_reading_memory"), dict)
         else None,
+        reading_memory_lines=reading_memory_lines,
         current_unit_source=source_unit,
         current_unit_sentences=sentence_unit,
     )

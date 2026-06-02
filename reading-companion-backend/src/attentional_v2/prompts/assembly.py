@@ -225,7 +225,7 @@ DIGEST_XML_EXAMPLE_TEMPLATE = (
         prompt_fragment_ref="attentional_v2.digest.instruction.example.v1",
     ),
     PromptTemplateNode(element_name="BookInfo", value_slot="book_info"),
-    PromptTemplateNode(element_name="ReadingState", value_slot="reading_state"),
+    PromptTemplateNode(element_name="ReadingMemory", value_slot="reading_memory"),
     PromptTemplateNode(element_name="CurrentFocus", value_slot="current_focus"),
     PromptTemplateNode(element_name="OutputContract", value_slot="output_contract"),
 )
@@ -234,7 +234,7 @@ DIGEST_XML_EXAMPLE_TEMPLATE = (
 def render_digest_xml_prompt_example(
     *,
     book_info: str,
-    reading_state: str,
+    reading_memory: str,
     current_focus: str,
     output_contract: str,
     registry: PromptFragmentRegistry = DIGEST_XML_EXAMPLE_FRAGMENT_REGISTRY,
@@ -246,7 +246,7 @@ def render_digest_xml_prompt_example(
         registry=registry,
         slot_values={
             "book_info": book_info,
-            "reading_state": reading_state,
+            "reading_memory": reading_memory,
             "current_focus": current_focus,
             "output_contract": output_contract,
         },

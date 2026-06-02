@@ -11,6 +11,7 @@ from src.reading_runtime.llm_gateway import (
     current_llm_scope,
     eval_trace_context,
     invoke_json as _invoke_json,
+    invoke_json_with_tool_loop as _invoke_json_with_tool_loop,
     invoke_text as _invoke_text,
     llm_invocation_scope,
     parse_json_payload,
@@ -23,6 +24,12 @@ def invoke_json(system_prompt: str, user_prompt: str, default: Any, *, profile_i
     """Invoke the shared backend LLM gateway and parse a JSON payload."""
 
     return _invoke_json(system_prompt, user_prompt, default, profile_id=profile_id)
+
+
+def invoke_json_with_tool_loop(*args: Any, **kwargs: Any) -> Any:
+    """Invoke the shared backend LLM gateway with one bounded tool loop."""
+
+    return _invoke_json_with_tool_loop(*args, **kwargs)
 
 
 def invoke_text(system_prompt: str, user_prompt: str, default: str = "", *, profile_id: str | None = None) -> str:
@@ -38,6 +45,7 @@ __all__ = [
     "current_llm_scope",
     "eval_trace_context",
     "invoke_json",
+    "invoke_json_with_tool_loop",
     "invoke_text",
     "llm_invocation_scope",
     "parse_json_payload",

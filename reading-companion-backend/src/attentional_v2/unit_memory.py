@@ -19,7 +19,9 @@ from .schemas import (
     MemoryRetrievalMode,
     UnitMemoryEntry,
     UnitMemoryQuery,
+    UnitMemoryRecall,
 )
+from .memory_tokens import token_estimate_payload
 from .storage import (
     append_jsonl,
     load_json,
@@ -32,6 +34,7 @@ from .storage import (
 
 UNIT_MEMORY_ENTRY_SCHEMA_VERSION = "unit_memory_entry.v1"
 UNIT_MEMORY_QUERY_VERSION = "unit_memory_query.v1"
+UNIT_MEMORY_RECALL_QUERY_VERSION = "unit_memory_recall_query.v1"
 UNIT_MEMORY_RETRIEVAL_CONFIG_SCHEMA_VERSION = "unit_memory_retrieval_config.v1"
 UNIT_MEMORY_QUERY_INSTRUCTION_VERSION = "unit_memory_query_instruction.v1"
 DEFAULT_MEMORY_RETRIEVAL_MODE: MemoryRetrievalMode = "hybrid"
@@ -47,11 +50,11 @@ DEFAULT_RETRIEVAL_CONFIG: dict[str, object] = {
     "embedding_dimension": 1024,
     "vector_metric": "cosine",
     "query_instruction_version": UNIT_MEMORY_QUERY_INSTRUCTION_VERSION,
-    "lexical_top_k": 80,
-    "dense_top_k": 80,
+    "lexical_top_k": 40,
+    "dense_top_k": 40,
     "rrf_k": 60,
     "max_units_after_aggregation": 20,
-    "max_units_to_digest_context": 6,
+    "max_units_to_digest_context": 40,
     "max_docs_per_unit_for_scoring": 5,
     "recent_neighbor_exclusion_unit_count": 20,
     "min_retrievable_prior_units": 20,
@@ -185,6 +188,50 @@ def normalize_unit_memory_query(value: object) -> UnitMemoryQuery:
     return _memory_query_from_value(value)
 
 
+def normalize_unit_memory_recalls(value: object, *, limit: int = 3) -> list[UnitMemoryRecall]:
+    """Normalize bounded Ingest prior-reading recalls."""
+
+    if not isinstance(value, list):
+        return []
+    recalls: list[UnitMemoryRecall] = []
+    seen_texts: set[str] = set()
+    for item in value:
+        if len(recalls) >= max(0, int(limit)):
+            break
+        if not isinstance(item, Mapping):
+            continue
+        recall_text = _normalized_query_text(item.get("recall_text"))
+        if not recall_text:
+            continue
+        dedupe_key = recall_text.lower()
+        if dedupe_key in seen_texts:
+            continue
+        seen_texts.add(dedupe_key)
+        recall_id = _clean_text(item.get("recall_id")) or f"r{len(recalls) + 1}"
+        recalls.append(
+            {
+                "recall_id": recall_id[:24],
+                "recall_text": recall_text[:800],
+                "basis": _clean_text(item.get("basis")) or "selected_source_unit",
+            }
+        )
+    return recalls
+
+
+def query_from_recall(recall: Mapping[str, object]) -> UnitMemoryQuery:
+    """Convert one reader-facing recall into a runtime retrieval query."""
+
+    recall_text = _normalized_query_text(recall.get("recall_text"))
+    if not recall_text:
+        return {}
+    return {
+        "query_version": UNIT_MEMORY_RECALL_QUERY_VERSION,
+        "query_text": recall_text,
+        "basis": _clean_text(recall.get("basis")) or "selected_source_unit",
+        "recall_id": _clean_text(recall.get("recall_id")),
+    }
+
+
 def fallback_query_from_source_unit(source_unit: Mapping[str, object] | None, *, limit: int = 1200) -> UnitMemoryQuery:
     """Build a runtime fallback retrieval query from accepted source text."""
 
@@ -259,8 +306,9 @@ def _understanding_from_digest_result(digest_result: Mapping[str, object]) -> di
         return {
             "kind": _clean_text(payload.get("kind")) or "other",
             "content": content,
+            "token_estimate": token_estimate_payload(content),
         }
-    return {"kind": "other", "content": ""}
+    return {"kind": "other", "content": "", "token_estimate": token_estimate_payload("")}
 
 
 def build_unit_memory_entry(
@@ -408,6 +456,9 @@ def build_fts5_match_query(query_text: object) -> tuple[str, str]:
         candidate = _normalized_query_text(part)
         candidate_values = [candidate]
         if re.search(r"\s", candidate):
+            compact_candidate = _normalized_query_text(re.sub(r"\s+", "", candidate))
+            if compact_candidate:
+                candidate_values.append(compact_candidate)
             candidate_values.extend(_normalized_query_text(item) for item in re.split(r"\s+", candidate))
         for candidate_value in candidate_values:
             if len(candidate_value) < 3:
@@ -935,6 +986,7 @@ class UnitMemoryIndex:
                 score += 0.15 * sum(scores[2:5])
             surfaces = {str(item.get("surface", "")) for item in docs if item.get("surface")}
             channels = {str(item.get("channel", "")) for item in docs if item.get("channel")}
+            recall_ids = {str(item.get("recall_id", "")) for item in docs if item.get("recall_id")}
             score += 0.03 * min(max(0, len(surfaces) - 1), 3)
             if {"lexical", "dense"} <= channels:
                 score += 0.03
@@ -946,11 +998,13 @@ class UnitMemoryIndex:
                     "score": score,
                     "surfaces": sorted(surfaces),
                     "channels": sorted(channels),
+                    "matched_recalls": sorted(recall_ids),
                     "best_docs": [
                         {
                             "retrieval_doc_id": item.get("retrieval_doc_id"),
                             "surface": item.get("surface"),
                             "channel": item.get("channel"),
+                            "recall_id": item.get("recall_id"),
                             "rank": item.get("rank"),
                             "score": item.get("score"),
                         }
@@ -961,6 +1015,186 @@ class UnitMemoryIndex:
             )
         units.sort(key=lambda item: (-float(item.get("score", 0.0)), int(item.get("unit_index", 0) or 0)))
         return units[: max(1, _coerce_int(self.config.get("max_units_after_aggregation"), 20))]
+
+    def retrieve_for_recalls(
+        self,
+        *,
+        book_id: str,
+        recalls: list[Mapping[str, object]],
+        query_source: str,
+        current_unit_index: int,
+        excluded_source_unit_span_ids: set[str] | None = None,
+    ) -> dict[str, object]:
+        """Retrieve prior Unit Memory candidates for multiple Ingest recalls."""
+
+        started_at = time.monotonic()
+        self.ensure_schema()
+        mode, mode_warnings = normalize_memory_retrieval_mode(self.config.get("mode"))
+        excluded_source_unit_span_ids = set(excluded_source_unit_span_ids or set())
+        normalized_recalls = normalize_unit_memory_recalls(list(recalls))
+        trace: dict[str, object] = {
+            "recorded_at": _timestamp(),
+            "event_type": "unit_memory_retrieval",
+            "book_id": _clean_text(book_id),
+            "recalls": [dict(item) for item in normalized_recalls],
+            "query_source": query_source,
+            "mode": mode,
+            "effective_mode": mode,
+            "config_warnings": mode_warnings,
+            "latency_ms": 0,
+            "candidate_counts": {},
+            "per_recall": [],
+            "degradation_reason": "",
+            "selected_units": [],
+            "suppressed_units": [],
+        }
+        if not normalized_recalls:
+            trace["degradation_reason"] = "no_recall"
+            trace["latency_ms"] = int((time.monotonic() - started_at) * 1000)
+            record_unit_memory_retrieval_trace(self.output_dir, trace)
+            return {
+                "recalls": [],
+                "query_source": query_source,
+                "mode": mode,
+                "effective_mode": mode,
+                "selected_units": [],
+                "trace": trace,
+            }
+
+        recent_window = max(0, _coerce_int(self.config.get("recent_neighbor_exclusion_unit_count"), 20))
+        max_unit_index = int(current_unit_index) - recent_window
+        if max_unit_index < 1:
+            trace["degradation_reason"] = "not_enough_prior_units_after_recent_exclusion"
+            trace["latency_ms"] = int((time.monotonic() - started_at) * 1000)
+            record_unit_memory_retrieval_trace(self.output_dir, trace)
+            return {
+                "recalls": [dict(item) for item in normalized_recalls],
+                "query_source": query_source,
+                "mode": mode,
+                "effective_mode": mode,
+                "selected_units": [],
+                "trace": trace,
+            }
+
+        all_candidates: list[dict[str, object]] = []
+        total_lexical = 0
+        total_dense = 0
+        degradation_reasons: list[str] = []
+        effective_mode = mode
+        with self._connect() as connection:
+            prior_count = int(
+                connection.execute(
+                    "SELECT COUNT(*) AS count FROM unit_memory_entries WHERE book_id = ? AND unit_index <= ?",
+                    (book_id, max_unit_index),
+                ).fetchone()["count"]
+            )
+            min_prior = max(0, _coerce_int(self.config.get("min_retrievable_prior_units"), 20))
+            if prior_count < min_prior:
+                trace["degradation_reason"] = "below_min_retrievable_prior_units"
+                trace["candidate_counts"] = {"prior_units": prior_count}
+                trace["latency_ms"] = int((time.monotonic() - started_at) * 1000)
+                record_unit_memory_retrieval_trace(self.output_dir, trace)
+                return {
+                    "recalls": [dict(item) for item in normalized_recalls],
+                    "query_source": query_source,
+                    "mode": mode,
+                    "effective_mode": mode,
+                    "selected_units": [],
+                    "trace": trace,
+                }
+
+            for recall in normalized_recalls:
+                query = query_from_recall(recall)
+                query_text = _normalized_query_text(query.get("query_text"))
+                recall_id = _clean_text(recall.get("recall_id"))
+                per_recall: dict[str, object] = {
+                    "recall_id": recall_id,
+                    "recall_text": _clean_text(recall.get("recall_text")),
+                    "query": dict(query),
+                    "lexical_docs": 0,
+                    "dense_docs": 0,
+                    "degradation_reason": "",
+                }
+                if not query_text:
+                    per_recall["degradation_reason"] = "empty_query"
+                    trace.setdefault("per_recall", []).append(per_recall)  # type: ignore[union-attr]
+                    continue
+                fts_query, fts_skip = build_fts5_match_query(query_text)
+                lexical_candidates: list[dict[str, object]] = []
+                if fts_query:
+                    try:
+                        lexical_candidates = self._lexical_candidates(
+                            connection,
+                            book_id=book_id,
+                            fts_query=fts_query,
+                            max_unit_index=max_unit_index,
+                            excluded_source_unit_span_ids=excluded_source_unit_span_ids,
+                        )
+                    except sqlite3.Error as exc:
+                        per_recall["fts_error"] = f"fts_query_failed:{type(exc).__name__}"
+                else:
+                    per_recall["fts_skipped_reason"] = fts_skip
+                for candidate in lexical_candidates:
+                    candidate["recall_id"] = recall_id
+
+                dense_candidates: list[dict[str, object]] = []
+                dense_degradation = ""
+                if mode == "hybrid":
+                    dense_candidates, dense_degradation = self._dense_candidates(
+                        connection,
+                        book_id=book_id,
+                        query_text=query_text,
+                        max_unit_index=max_unit_index,
+                        excluded_source_unit_span_ids=excluded_source_unit_span_ids,
+                    )
+                    for candidate in dense_candidates:
+                        candidate["recall_id"] = recall_id
+                    if dense_degradation:
+                        effective_mode = "text_only"
+                        degradation_reasons.append(f"{recall_id}:{dense_degradation}")
+                        per_recall["degradation_reason"] = dense_degradation
+
+                per_recall["lexical_docs"] = len(lexical_candidates)
+                per_recall["dense_docs"] = len(dense_candidates)
+                total_lexical += len(lexical_candidates)
+                total_dense += len(dense_candidates)
+                all_candidates.extend([*lexical_candidates, *dense_candidates])
+                trace.setdefault("per_recall", []).append(per_recall)  # type: ignore[union-attr]
+
+        selected_units = self._aggregate_units(all_candidates)
+        selected_units = selected_units[: max(1, _coerce_int(self.config.get("max_units_to_digest_context"), 40))]
+        compact_selected = [
+            {
+                "unit_id": item.get("unit_id"),
+                "unit_index": item.get("unit_index"),
+                "score": item.get("score"),
+                "matched_recalls": item.get("matched_recalls"),
+                "surfaces": item.get("surfaces"),
+                "channels": item.get("channels"),
+                "best_docs": item.get("best_docs"),
+            }
+            for item in selected_units
+        ]
+        trace["effective_mode"] = effective_mode
+        trace["degradation_reason"] = ";".join(degradation_reasons)
+        trace["candidate_counts"] = {
+            "recall_count": len(normalized_recalls),
+            "lexical_docs": total_lexical,
+            "dense_docs": total_dense,
+            "candidate_units": len({str(item.get("unit_id")) for item in all_candidates if item.get("unit_id")}),
+        }
+        trace["selected_units"] = compact_selected
+        trace["latency_ms"] = int((time.monotonic() - started_at) * 1000)
+        record_unit_memory_retrieval_trace(self.output_dir, trace)
+        return {
+            "recalls": [dict(item) for item in normalized_recalls],
+            "query_source": query_source,
+            "mode": mode,
+            "effective_mode": effective_mode,
+            "degradation_reason": trace["degradation_reason"],
+            "selected_units": selected_units,
+            "trace": trace,
+        }
 
     def retrieve(
         self,

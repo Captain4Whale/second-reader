@@ -38,7 +38,8 @@ After reading, express what this unit gives you in three connected ways: what yo
     PromptFragment(
         fragment_id="digest.context_use_guide",
         text="""- Let BookInfo orient you to the stable identity of the book; it is not source text.
-- Let ReadingState hold what the reading has already carried forward. Use it for continuity, but do not let it override the current source unit.
+- Let ReadingMemory hold prior understanding that the reading has already carried forward. Use it for continuity, contrast, callback, and unresolved pressure when it genuinely clarifies the current source unit.
+- Do not treat ReadingMemory as current source text, prior reader response to imitate, or a reason to force a connection.
 - Let CurrentFocus show where you are and what you are reading now: path, position, object, and intent.
 - Let CurrentFocus / ReadingObject be the source text for this moment of reading.
 - Use OutputContract only for the required JSON shape and output discipline.""",
@@ -250,7 +251,7 @@ def render_digest_book_info_xml(
 
 
 def _recent_memory_texts_for_digest(recent_reading_memory: Mapping[str, object] | None) -> list[str]:
-    """Project Recent Reading Memory to the clean text list Digest needs."""
+    """Project Recent Reading Memory to fallback ReadingMemory lines."""
 
     if not isinstance(recent_reading_memory, Mapping):
         return []
@@ -267,38 +268,28 @@ def _recent_memory_texts_for_digest(recent_reading_memory: Mapping[str, object] 
     return memory_texts
 
 
-DIGEST_READING_STATE_TEMPLATE = (
+DIGEST_READING_MEMORY_TEMPLATE = (
     PromptTemplateNode(
-        element_name="ReadingState",
-        children=(
-            PromptTemplateNode(
-                element_name="ReadingMemory",
-                children=(
-                    PromptTemplateNode(element_name="RecentMemory", value_slot="recent_memory"),
-                ),
-            ),
-        ),
+        element_name="ReadingMemory",
+        value_slot="reading_memory",
     ),
 )
 
 
-def render_digest_reading_state_xml(
+def render_digest_reading_memory_xml(
     *,
     recent_reading_memory: Mapping[str, object] | None = None,
+    reading_memory_lines: list[str] | None = None,
 ) -> str:
-    """Render ReadingState XML for Digest.
-
-    The implemented target subset only includes RecentMemory. DurableMemory
-    remains a pending design / assembly slice.
-    """
+    """Render the top-level ReadingMemory XML for Digest."""
 
     return render_prompt_template_xml(
-        DIGEST_READING_STATE_TEMPLATE,
+        DIGEST_READING_MEMORY_TEMPLATE,
         registry=PromptFragmentRegistry([]),
         slot_values={
-            "recent_memory": _json_prompt_value(
-                _recent_memory_texts_for_digest(recent_reading_memory)
-            ),
+            "reading_memory": "\n".join(reading_memory_lines)
+            if reading_memory_lines is not None
+            else "\n".join(_recent_memory_texts_for_digest(recent_reading_memory)),
         },
     )
 
@@ -584,7 +575,7 @@ def _digest_prompt_assembly_template(
     return (
         *DIGEST_READER_ROLE_AND_INSTRUCTION_TEMPLATE,
         *DIGEST_BOOK_INFO_TEMPLATE,
-        *DIGEST_READING_STATE_TEMPLATE,
+        *DIGEST_READING_MEMORY_TEMPLATE,
         *_read_current_focus_template(
             _reading_object_node(
                 current_unit_source=current_unit_source,
@@ -627,7 +618,7 @@ def build_digest_prompt_assembly_spec(
         fragment_registry=_digest_prompt_fragment_registry(),
         required_slots=(
             "book_identity",
-            "recent_memory",
+            "reading_memory",
             "reading_path",
             "reading_position",
             "reading_intent",
@@ -644,6 +635,7 @@ def render_digest_prompt_xml(
     chapter_title: str,
     output_language_name: str,
     recent_reading_memory: Mapping[str, object] | None = None,
+    reading_memory_lines: list[str] | None = None,
     current_unit_source: dict[str, object] | None = None,
     current_unit_sentences: list[dict[str, object]] | None = None,
 ) -> PromptAssemblyResult:
@@ -661,9 +653,9 @@ def render_digest_prompt_xml(
                     "author": author,
                 }
             ),
-            "recent_memory": _json_prompt_value(
-                _recent_memory_texts_for_digest(recent_reading_memory)
-            ),
+            "reading_memory": "\n".join(reading_memory_lines)
+            if reading_memory_lines is not None
+            else "\n".join(_recent_memory_texts_for_digest(recent_reading_memory)),
             "reading_path": _json_prompt_object({"mode": "mainline"}),
             "reading_position": _json_prompt_object(
                 _compact_prompt_object(
@@ -694,7 +686,7 @@ DIGEST_PROMPT = PromptDefinition(
     user_prompt_template="<DigestPrompt assembled by render_digest_prompt_xml>",
     required_inputs=(
         "book_identity",
-        "recent_memory",
+        "reading_memory",
         "reading_path",
         "reading_position",
         "reading_intent",

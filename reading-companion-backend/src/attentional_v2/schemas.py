@@ -104,6 +104,7 @@ class RecentReadingMemoryEntry(TypedDict, total=False):
     source_unit_span_id: str
     kind: str
     memory_text: str
+    token_estimate: dict[str, object]
     status: str
     created_at_unit_index: int
     archived_by_consolidation_id: str | None
@@ -360,7 +361,9 @@ class IngestBoundaryResult(TypedDict, total=False):
     reason: str
     end_anchor_text: str
     boundary_type: UnitizeBoundaryType
-    memory_query: "UnitMemoryQuery"
+    memory_recalls: list["UnitMemoryRecall"]
+    tool_loop_status: str
+    tool_result_summary: dict[str, object]
 
 
 class IngestTraceEntry(TypedDict, total=False):
@@ -368,7 +371,9 @@ class IngestTraceEntry(TypedDict, total=False):
 
     reason: str
     end_anchor_text: str
-    memory_query: "UnitMemoryQuery"
+    memory_recalls: list["UnitMemoryRecall"]
+    tool_loop_status: str
+    tool_result_summary: dict[str, object]
     source_span_id: str
     resolution: dict[str, object]
     error: str
@@ -382,6 +387,15 @@ class UnitMemoryQuery(TypedDict, total=False):
 
     query_version: str
     query_text: str
+    basis: str
+    recall_id: str
+
+
+class UnitMemoryRecall(TypedDict, total=False):
+    """One Ingest-authored prior-reading recall intention."""
+
+    recall_id: str
+    recall_text: str
     basis: str
 
 
@@ -400,11 +414,13 @@ class UnitMemoryRetrievalResult(TypedDict, total=False):
     """Trace-oriented result from one Unit Memory retrieval attempt."""
 
     query: UnitMemoryQuery
+    recalls: list[UnitMemoryRecall]
     query_source: str
     mode: MemoryRetrievalMode
     effective_mode: MemoryRetrievalMode
     degradation_reason: str
     selected_units: list[dict[str, object]]
+    reading_memory_lines: list[dict[str, object]]
     trace: dict[str, object]
 
 
@@ -418,7 +434,7 @@ class PreparedSourceUnit(TypedDict, total=False):
     preview: dict[str, object]
     unitize_decision: UnitizeDecision
     ingest_trace: list[IngestTraceEntry]
-    memory_query: UnitMemoryQuery
+    memory_recalls: list[UnitMemoryRecall]
     unit_memory_retrieval: UnitMemoryRetrievalResult
 
 

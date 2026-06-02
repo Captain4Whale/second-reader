@@ -21,6 +21,7 @@ dependencies = [
     "pymupdf>=1.23",
     "mobi>=0.3",
     "sqlite-vec>=0.1.6",
+    "tiktoken>=0.7.0",
 ]
 
 [project.optional-dependencies]

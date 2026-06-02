@@ -15,9 +15,9 @@ from .reader_role import READER_ROLE_FRAGMENT
 from .types import PromptDefinition
 
 
-INGEST_PROMPT_VERSION = "attentional_v2.ingest.v2"
-INGEST_XML_PROMPT_ASSEMBLY_SPEC_ID = "attentional_v2.ingest.xml.v2"
-INGEST_XML_PROMPTSET_VERSION = "attentional_v2-phase6-v48"
+INGEST_PROMPT_VERSION = "attentional_v2.ingest.v3"
+INGEST_XML_PROMPT_ASSEMBLY_SPEC_ID = "attentional_v2.ingest.xml.v3"
+INGEST_XML_PROMPTSET_VERSION = "attentional_v2-phase6-v49"
 INGEST_TRANSPORT_SYSTEM_PROMPT = "Follow the structured Ingest prompt in the user message. Return JSON only."
 
 
@@ -27,7 +27,11 @@ INGEST_CURRENT_STEP_FRAGMENT = PromptFragment(
 
 This step happens before Digest. You are not yet reading the selected unit for interpretation or reader-facing output. You are previewing the bounded forward source area from the current reading cursor in order to prepare Digest.
 
-Your work in this call is to select the next forward source unit that you should read carefully in the Digest step, then describe the one retrieval query that would help recall earlier completed units related to this selected unit.""",
+Your work in this call is to select the next forward source unit that you should read carefully in the Digest step.
+
+After selecting it, briefly name any earlier reading that this unit makes you want to remember before Digest reads it closely.
+
+When those recalls exist, use the available Unit Memory retrieval tool so runtime can prepare prior-reading support before you return the final Ingest JSON.""",
 )
 
 
@@ -35,8 +39,8 @@ INGEST_CONTEXT_USE_GUIDE_FRAGMENT = PromptFragment(
     fragment_id="ingest.context_use_guide",
     text="""- the visible source preview is primary
 - book identity is orientation, not source text
-- `RetrievalSurface` is intentionally empty in the current design slice
-- memory support here means writing a query request only; runtime performs retrieval after the boundary is accepted""",
+- `RetrievalSurface` is intentionally empty here
+- prior-reading recall here means describing what should be remembered; runtime performs retrieval only through the provided tool""",
 )
 
 
@@ -75,15 +79,21 @@ End anchor and continuation:
 )
 
 
-INGEST_REQUEST_MEMORY_SUPPORT_FRAGMENT = PromptFragment(
-    fragment_id="ingest.request_memory_support",
-    text="""After choosing the forward source unit, write at most one memory retrieval query for that selected unit.
+INGEST_RECALL_PRIOR_READING_FRAGMENT = PromptFragment(
+    fragment_id="ingest.recall_prior_reading",
+    text="""After choosing the next source unit, notice whether this unit naturally calls back to anything already read.
 
-The query should be based on the selected unit's source meaning, names, claims, scene, contrast, image, or local question. It should help retrieve earlier completed reading units that may make this unit easier to read continuously.
+A recall is not a search string and not a summary task. It is a concise description of something from earlier reading that would help you read the selected unit continuously now.
 
-Do not ask multiple questions. Do not request a tool. Do not reference unavailable memory ids or stores. If the selected unit has no meaningful recall need, return an empty `query_text`.
+Write recalls only when the selected unit gives you a real reason to remember earlier reading: a returning person, place, object, concept, question, image, scene, argument, contrast, relationship, or unresolved pressure.
 
-The query should be useful for both lexical and semantic retrieval: concise enough to search, but concrete enough to preserve the selected unit's source footing.""",
+Each recall should name the concrete source footing in the selected unit and the kind of earlier reading it asks to remember.
+
+Do not list every name or noun. Do not split mechanically by entity. Create separate recalls only when the selected unit contains distinct recall needs.
+
+Return zero to three recalls. If nothing in the selected unit asks for earlier memory, return an empty list.
+
+If you write one or more recalls, call the Unit Memory retrieval tool with those recalls so runtime can retrieve, select, and prepare the prior understanding that may support Digest.""",
 )
 
 
@@ -93,9 +103,9 @@ INGEST_EXECUTION_LIMITS_FRAGMENT = PromptFragment(
 
 Do not read or interpret the selected unit as the final reading. Do not write reading impressions, notes, highlights, surfaced reactions, summaries, or memory updates.
 
-Do not perform runtime work. Do not resolve anchors, retry or choose fallback boundaries, advance the cursor, settle state, or execute memory retrieval.
+Do not perform runtime work. Do not resolve anchors, retry or choose fallback boundaries, advance the cursor, settle state, or execute memory retrieval yourself.
 
-Do not use external web search or request tools.
+Do not use external web search. Use only the provided Unit Memory retrieval tool when recalls are non-empty.
 
 Return only the JSON described by OutputContract. Do not include markdown, commentary, hidden reasoning, or fields that are not requested.""",
 )
@@ -110,7 +120,7 @@ Fields:
 - `end_anchor_text`: exact visible source quote at the end of the chosen unit
 - `boundary_type`: boundary classification for why the unit ends there
 - `reason`: brief internal reason for the boundary choice
-- `memory_query`: optional retrieval request for earlier completed Unit Memory entries related to the selected unit""",
+- `memory_recalls`: zero to three prior-reading recalls raised by the selected unit""",
 )
 
 
@@ -124,11 +134,13 @@ Return JSON only:
   "end_anchor_text": "...",
   "boundary_type": "paragraph_end",
   "reason": "...",
-  "memory_query": {
-    "query_version": "unit_memory_query.v1",
-    "query_text": "...",
-    "basis": "selected_source_unit"
-  }
+  "memory_recalls": [
+    {
+      "recall_id": "r1",
+      "recall_text": "...",
+      "basis": "selected_source_unit"
+    }
+  ]
 }""",
 )
 
@@ -139,7 +151,7 @@ INGEST_PROMPT_FRAGMENT_REGISTRY = PromptFragmentRegistry(
         INGEST_CURRENT_STEP_FRAGMENT,
         INGEST_CONTEXT_USE_GUIDE_FRAGMENT,
         INGEST_SELECT_NEXT_UNIT_FRAGMENT,
-        INGEST_REQUEST_MEMORY_SUPPORT_FRAGMENT,
+        INGEST_RECALL_PRIOR_READING_FRAGMENT,
         INGEST_EXECUTION_LIMITS_FRAGMENT,
         INGEST_OUTPUT_FIELDS_FRAGMENT,
         INGEST_RETURN_FORMAT_FRAGMENT,
@@ -168,8 +180,8 @@ INGEST_READER_ROLE_AND_INSTRUCTION_TEMPLATE = (
                 prompt_fragment_ref="ingest.select_next_unit",
             ),
             PromptTemplateNode(
-                element_name="RequestMemorySupport",
-                prompt_fragment_ref="ingest.request_memory_support",
+                element_name="RecallPriorReading",
+                prompt_fragment_ref="ingest.recall_prior_reading",
             ),
             PromptTemplateNode(
                 element_name="ExecutionLimits",
@@ -306,7 +318,7 @@ def build_ingest_prompt_assembly_spec(
             "current_view_position",
             "current_view_content",
         ),
-        output_contract="ingest_boundary_memory_query_json_v1",
+        output_contract="ingest_boundary_memory_recalls_json_v1",
     )
 
 
@@ -339,9 +351,9 @@ INGEST_PROMPT = PromptDefinition(
     version=INGEST_PROMPT_VERSION,
     owner_node="ingest",
     status="active",
-    purpose="Select the next forward source unit and request Unit Memory retrieval support.",
+    purpose="Select the next forward source unit and express prior-reading recalls for Unit Memory retrieval.",
     system_prompt=INGEST_TRANSPORT_SYSTEM_PROMPT,
     user_prompt_template="<IngestPrompt assembled by render_ingest_prompt_xml>",
     required_inputs=("book_identity", "current_view_position", "current_view_content"),
-    output_contract="ingest_boundary_memory_query_json_v1",
+    output_contract="ingest_boundary_memory_recalls_json_v1",
 )

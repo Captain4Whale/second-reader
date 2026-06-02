@@ -176,7 +176,8 @@ def test_digest_projects_compact_packet_and_returns_f1_surface_contract(tmp_path
 
     assert "<ReaderRole>" in captured["prompt"]
     assert "<Instruction>" in captured["prompt"]
-    assert "<ReadingState>" in captured["prompt"]
+    assert "<ReadingMemory>" in captured["prompt"]
+    assert "<ReadingState>" not in captured["prompt"]
     assert "The previous unit" not in captured["prompt"]
     assert "Alpha sentence." not in captured["prompt"]
     assert "\"active_tensions\"" not in captured["prompt"]

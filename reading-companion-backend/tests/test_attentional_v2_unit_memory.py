@@ -129,6 +129,37 @@ def test_text_only_unit_memory_index_writes_and_retrieves_prior_units(tmp_path):
         assert connection.execute("SELECT COUNT(*) FROM retrieval_docs").fetchone()[0] >= 4
 
 
+def test_multi_recall_retrieval_aggregates_by_unit_and_records_matches(tmp_path):
+    config = {
+        "mode": "text_only",
+        "min_retrievable_prior_units": 0,
+        "recent_neighbor_exclusion_unit_count": 0,
+        "max_units_to_digest_context": 4,
+    }
+    index = UnitMemoryIndex(tmp_path, config=config)
+    index.write_entry(_entry("u000001", 1, "火车站台上的告别", "站台告别建立了旅程的起点。"), index_vectors=False)
+    index.write_entry(_entry("u000002", 2, "海边的静默", "海边静默改变了人物之间的距离。"), index_vectors=False)
+
+    result = index.retrieve_for_recalls(
+        book_id="book-demo",
+        recalls=[
+            {"recall_id": "r1", "recall_text": "火车站台 告别", "basis": "selected_source_unit"},
+            {"recall_id": "r2", "recall_text": "海边 静默", "basis": "selected_source_unit"},
+        ],
+        query_source="tool_retrieve_unit_memory",
+        current_unit_index=3,
+    )
+
+    selected_ids = {item["unit_id"] for item in result["selected_units"]}
+    assert {"u000001", "u000002"} <= selected_ids
+    assert any("r1" in item.get("matched_recalls", []) for item in result["selected_units"])
+    trace_lines = unit_memory_retrieval_trace_file(tmp_path).read_text(encoding="utf-8").strip().splitlines()
+    trace = json.loads(trace_lines[-1])
+    assert trace["candidate_counts"]["recall_count"] == 2
+    assert len(trace["per_recall"]) == 2
+    assert trace["selected_units"][0]["matched_recalls"]
+
+
 def test_hybrid_mode_degrades_when_vector_adapter_is_unavailable(tmp_path):
     config = {
         "mode": "hybrid",

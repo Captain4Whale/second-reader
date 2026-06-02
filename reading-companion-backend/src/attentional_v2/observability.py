@@ -388,7 +388,9 @@ def record_read(
     ingest_trace_fields = {
         "reason",
         "end_anchor_text",
-        "memory_query",
+        "memory_recalls",
+        "tool_loop_status",
+        "tool_result_summary",
         "source_span_id",
         "resolution",
         "error",

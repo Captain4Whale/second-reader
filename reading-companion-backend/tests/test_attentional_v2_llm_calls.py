@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import json
 from pathlib import Path
+from types import SimpleNamespace
 
 from src.attentional_v2 import llm_calls as llm_calls_module
 from src.attentional_v2 import runner as runner_module
@@ -117,11 +118,13 @@ def test_ingest_writes_manifest_and_uses_xml_anchor_contract(tmp_path: Path, mon
             "end_anchor_text": "Beta.",
             "boundary_type": "cross_paragraph_continuation",
             "reason": "The line clearly keeps running.",
-            "memory_query": {
-                "query_version": "unit_memory_query.v1",
-                "query_text": "Beta continuation",
-                "basis": "selected_source_unit",
-            },
+            "memory_recalls": [
+                {
+                    "recall_id": "r1",
+                    "recall_text": "Beta continuation",
+                    "basis": "selected_source_unit",
+                }
+            ],
             "continuation" + "_pressure": True,
         }
 
@@ -163,14 +166,14 @@ def test_ingest_writes_manifest_and_uses_xml_anchor_contract(tmp_path: Path, mon
     assert "selection" + "_mode" not in decision
     assert "continuation" + "_pressure" not in decision
     assert decision["end_anchor_text"] == "Beta."
-    assert decision["memory_query"]["query_text"] == "Beta continuation"
+    assert decision["memory_recalls"][0]["recall_text"] == "Beta continuation"
     assert captured["system_prompt"] == "Follow the structured Ingest prompt in the user message. Return JSON only."
     assert "<ReaderRole>" in captured["prompt"]
     assert "<Instruction>" in captured["prompt"]
     assert "<CurrentStep>" in captured["prompt"]
     assert "<ContextUseGuide>" in captured["prompt"]
     assert "<SelectNextUnit>" in captured["prompt"]
-    assert "<RequestMemorySupport>" in captured["prompt"]
+    assert "<RecallPriorReading>" in captured["prompt"]
     assert "<ExecutionLimits>" in captured["prompt"]
     assert "<BookInfo>" in captured["prompt"]
     assert "<BookIdentity>" in captured["prompt"]
@@ -183,8 +186,9 @@ def test_ingest_writes_manifest_and_uses_xml_anchor_contract(tmp_path: Path, mon
     assert "<ReturnFormat>" in captured["prompt"]
     assert "You are in the Ingest step of a sequential deep-reading loop." in captured["prompt"]
     assert "Select one forward source unit from the current reading cursor." in captured["prompt"]
-    assert "write at most one memory retrieval query" in captured["prompt"]
-    assert '"memory_query"' in captured["prompt"]
+    assert "notice whether this unit naturally calls back" in captured["prompt"]
+    assert '"memory_recalls"' in captured["prompt"]
+    assert '"memory_query"' not in captured["prompt"]
     assert "Do not resolve anchors, retry or choose fallback boundaries" in captured["prompt"]
     assert "Navigation context" not in captured["prompt"]
     assert "ReadingState" not in captured["prompt"]
@@ -201,9 +205,93 @@ def test_ingest_writes_manifest_and_uses_xml_anchor_contract(tmp_path: Path, mon
     assert "purely non-lexical residue" in captured["prompt"]
     assert "Mainline preview" not in captured["prompt"]
     assert manifest["node_name"] == "ingest"
-    assert manifest["prompt_version"] == "attentional_v2.ingest.v2"
-    assert manifest["prompt_assembly"]["output_contract"] == "ingest_boundary_memory_query_json_v1"
+    assert manifest["prompt_version"] == "attentional_v2.ingest.v3"
+    assert manifest["prompt_assembly"]["output_contract"] == "ingest_boundary_memory_recalls_json_v1"
     assert manifest["prompt_assembly"]["owner_node"] == "ingest"
+
+
+def test_ingest_tool_loop_returns_recalls_and_runtime_status(tmp_path: Path, monkeypatch):
+    captured: dict[str, object] = {}
+
+    def fake_tool_loop(system_prompt, prompt, default, *, tools, tool_handler, max_tool_calls):
+        captured["system_prompt"] = system_prompt
+        captured["prompt"] = prompt
+        captured["tools"] = tools
+        tool_result = tool_handler(
+            "retrieve_unit_memory",
+            {
+                "end_anchor_text": "Beta.",
+                "boundary_type": "paragraph_end",
+                "memory_recalls": [
+                    {"recall_id": "r1", "recall_text": "the earlier beta setup", "basis": "selected_source_unit"}
+                ],
+            },
+            "tool-1",
+        )
+        captured["tool_result"] = tool_result
+        return SimpleNamespace(
+            payload={
+                "end_anchor_text": "Beta.",
+                "boundary_type": "paragraph_end",
+                "reason": "Beta closes the local move.",
+                "memory_recalls": [
+                    {"recall_id": "r1", "recall_text": "the earlier beta setup", "basis": "selected_source_unit"}
+                ],
+            },
+            status="tool_called",
+            tool_results=[{"result": tool_result}],
+        )
+
+    monkeypatch.setattr(llm_calls_module, "invoke_json_with_tool_loop", fake_tool_loop)
+
+    result = ingest(
+        current_view_position={"current_chapter_id": 1, "current_cursor": {"paragraph_index": 1, "char_offset": 0}},
+        current_view_content={"paragraph_slices": [{"paragraph_index": 1, "text": "Beta."}]},
+        output_dir=tmp_path,
+        unit_memory_tool_handler=lambda _args: {
+            "status": "ok",
+            "effective_mode": "text_only",
+            "retrieval_summary": {"recall_count": 1, "candidate_unit_count": 2, "selected_unit_count": 1},
+            "degradation_reason": "",
+        },
+    )
+
+    assert result["memory_recalls"][0]["recall_text"] == "the earlier beta setup"
+    assert result["tool_loop_status"] == "tool_called"
+    assert result["tool_result_summary"]["status"] == "ok"
+    assert captured["tools"][0]["name"] == "retrieve_unit_memory"
+    assert "memory_query" not in json.dumps(captured["tools"], ensure_ascii=False)
+
+
+def test_ingest_marks_recalls_without_tool_as_contract_violation(tmp_path: Path, monkeypatch):
+    calls = {"count": 0}
+
+    def fake_tool_loop(*_args, **_kwargs):
+        calls["count"] += 1
+        return SimpleNamespace(
+            payload={
+                "end_anchor_text": "Beta.",
+                "boundary_type": "paragraph_end",
+                "reason": "Beta closes the local move.",
+                "memory_recalls": [
+                    {"recall_id": "r1", "recall_text": "the earlier beta setup", "basis": "selected_source_unit"}
+                ],
+            },
+            status="final_without_tool",
+            tool_results=[],
+        )
+
+    monkeypatch.setattr(llm_calls_module, "invoke_json_with_tool_loop", fake_tool_loop)
+
+    result = ingest(
+        current_view_position={"current_chapter_id": 1, "current_cursor": {"paragraph_index": 1, "char_offset": 0}},
+        current_view_content={"paragraph_slices": [{"paragraph_index": 1, "text": "Beta."}]},
+        output_dir=tmp_path,
+        unit_memory_tool_handler=lambda _args: {"status": "ok"},
+    )
+
+    assert calls["count"] == 2
+    assert result["tool_loop_status"] == "tool_call_contract_violation"
 
 
 def test_ingest_can_trim_leading_boundary_residue(tmp_path: Path, monkeypatch):
@@ -412,7 +500,8 @@ def test_digest_uses_live_xml_prompt_and_filters_surface_reactions(tmp_path: Pat
     assert "<ReaderRole>" in captured["prompt"]
     assert "<Instruction>" in captured["prompt"]
     assert "<BookInfo>" in captured["prompt"]
-    assert "<ReadingState>" in captured["prompt"]
+    assert "<ReadingMemory>" in captured["prompt"]
+    assert "<ReadingState>" not in captured["prompt"]
     assert "<CurrentFocus>" in captured["prompt"]
     assert "<OutputContract>" in captured["prompt"]
     assert "The previous unit established the author's witness boundary." in captured["prompt"]
@@ -466,7 +555,7 @@ def test_digest_uses_live_xml_prompt_and_filters_surface_reactions(tmp_path: Pat
         "ReaderRole",
         "Instruction",
         "BookInfo",
-        "ReadingState",
+        "ReadingMemory",
         "CurrentFocus",
         "OutputContract",
     ]

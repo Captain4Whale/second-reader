@@ -18,7 +18,7 @@ Use `docs/backend-reading-mechanism.md` for shared platform boundaries. Use `doc
 - `DEC-104` retires live Detour / source-backread from `attentional_v2`.
 - `DEC-105` hard-purges the retired Detour / source-backread / source-skill compatibility interfaces from current code, prompts, schemas, audits, and tests. Old artifacts and reports are historical only, not a supported live compatibility target.
 - `DEC-107` replaces the old `Navigate` LLM-call identity with `Ingest`.
-- `DEC-110` lands the Unit Memory ledger + hybrid retrieval bottom framework. Ingest can now emit one retrieval query, Reading Runner executes retrieval and writes trace, and Digest context injection remains deferred.
+- `DEC-110` lands the Unit Memory ledger + hybrid retrieval bottom framework. The follow-through recall/tool slice now lets Ingest emit bounded prior-reading recalls, lets Reading Runner execute runtime-owned Unit Memory retrieval/selection, and renders selected Understanding lines into Digest `ReadingMemory`.
 - Stable live behavior remains defined here and should be updated only when implementation lands.
 
 ## Mechanism-Internal Reading Runner Boundary
@@ -127,8 +127,8 @@ Use `docs/backend-reading-mechanism.md` for shared platform boundaries. Use `doc
   - `Working State` was the historical name for this hot layer; later runs used `Active Attention`, then ActiveTension semantics. Those names now describe deprecated artifacts rather than the forward architecture.
   - `recent_reading_memory` is now the current first-half near-term memory layer: Digest can append compact semantic memory from each unit so later read cycles do not behave as if earlier units vanished.
   - The implementation currently covers Digest-time formation, append-only persistence, prompt projection, checkpoint / resume carriage, settlement audit visibility, and evaluation snapshot inclusion.
-  - Long-distance Unit Memory now has a live bottom framework: settlement writes one ledger entry per accepted source unit, derives retrieval documents from source / understanding / response / annotation surfaces, builds FTS5 lexical retrieval, attempts optional sqlite-vec vector indexing in `hybrid` mode, and records retrieval traces between `Ingest` and `Digest`.
-  - Retrieved Unit Memory is not yet injected into Digest XML context; Digest still receives existing Recent Reading Memory until the next context-packaging slice.
+  - Long-distance Unit Memory now has a live recall/retrieval/context framework: settlement writes one ledger entry per accepted source unit, derives retrieval documents from source / understanding / response / annotation surfaces, builds FTS5 lexical retrieval, attempts optional sqlite-vec vector indexing in `hybrid` mode, records retrieval traces between `Ingest` and `Digest`, and renders runtime-selected Understanding lines into Digest `ReadingMemory`.
+  - Digest prompt-facing memory is now one top-level `ReadingMemory` text block assembled from hot current-chapter Understanding plus selected long-distance Unit Memory Understanding; raw prior source text, prior Response, and prior Annotation remain retrieval/audit surfaces rather than prompt-visible memory.
   - The next long-memory direction should be content-neutral unit-level memory, not content-typed concept/thread schemas; visible reactions belong in `reaction_records`.
   - Do not expand ActiveTension to cover these needs. Keep its existing fields (`tension_from`, `tension_focus`, `working_interpretation`, `source_refs`, `development_source_refs`, terminal reasons / coordinates, `status`, and legacy inputs) only as deprecated data until cleanup.
   - `question_from`, `driving_question`, `working_answer`, `answer_source_refs`, `answer_boundary`, and `statement` are old artifact inputs only.
@@ -145,8 +145,8 @@ Use `docs/backend-reading-mechanism.md` for shared platform boundaries. Use `doc
   - The current Ingest contract is a pure LLM boundary call: **Choose the Boundary of the Next Unit That Should Be Read**.
   - Reading Runner owns runtime next-unit preparation through `prepare_next_source_unit_for_read` and consumes one `PreparedSourceUnit`.
   - The runtime operation prepares source preview/context, calls `Ingest`, resolves or retries the returned anchor, applies fallback boundary governance when needed, and produces the accepted forward source unit for `Digest`.
-  - The current prompt and schema expose boundary fields for that forward source unit plus one optional Unit Memory query: exact `end_anchor_text`, `boundary_type`, `reason`, and `memory_query`.
-  - Reading Runner executes Unit Memory retrieval after accepting the source unit and before calling `Digest`. In this slice the result is trace-only and is not rendered into Digest prompt context.
+  - The current prompt and schema expose boundary fields for that forward source unit plus bounded Unit Memory recall intentions: exact `end_anchor_text`, `boundary_type`, `reason`, and `memory_recalls[]`.
+  - When Ingest returns non-empty recalls, the LLM call must use the mechanism-private `retrieve_unit_memory` tool loop; Reading Runner executes Unit Memory retrieval/selection after boundary acceptance and before calling `Digest`.
 - Phase D of the post-eval structural rework is now landed as preserved intermediate continuity / recall / resume evidence.
   - that branch added a budget-bounded multi-step supplemental loop around the old concrete reading node.
   - Runtime state and full checkpoints now persist a lightweight `continuation capsule` with explicit `rehydration entrypoints`.
@@ -156,7 +156,7 @@ Use `docs/backend-reading-mechanism.md` for shared platform boundaries. Use `doc
 ## Naming Note
 - `Phase 3`, `Phase 4`, `Phase 5`, and `Phase 6` in this document refer to historical implementation-stage groupings, not to a user-facing or mechanism-intrinsic sequence of named runtime phases.
 - The current LLM capability name in stable docs is `Ingest`.
-  - It means: make the LLM boundary judgment for the next unit that should be read, and optionally describe one Unit Memory retrieval query for that accepted unit.
+  - It means: make the LLM boundary judgment for the next unit that should be read, and optionally describe bounded prior-reading recalls for that accepted unit.
   - It is one Ingest XML prompt, not the full runtime source-unit preparation operation and not a Python semantic dispatch between separate live prompt families.
   - Forward source-unit selection is still the primary live behavior for this prompt; retrieval execution is runtime work owned by Reading Runner.
   - Historical non-mainline jump reading is removed from the current code and prompt surface after `DEC-105`.
@@ -170,10 +170,10 @@ Use `docs/backend-reading-mechanism.md` for shared platform boundaries. Use `doc
   - `Ingest`
     - receives that already-prepared adaptive source preview in XML context
     - returns boundary fields, including an exact `end_anchor_text` rather than sentence ids or raw numeric offsets
-    - may also return one `memory_query` for Unit Memory retrieval support
+    - may also return up to three `memory_recalls[]` items for Unit Memory retrieval support
   - `Reading Runner` boundary governance resolves the returned anchor, retries once when the anchor is unresolved, falls back to a deterministic cursor boundary when needed, and produces the accepted `PreparedSourceUnit`
-  - `Reading Runner` executes Unit Memory retrieval for the accepted unit and records `unit_memory_retrieval_trace.jsonl`
-  - mandatory `Digest` call with bounded carry-forward context
+  - `Reading Runner` executes Unit Memory retrieval for the accepted unit when recalls are present, selects prompt-facing Understanding memory, and records `unit_memory_retrieval_trace.jsonl`
+  - mandatory `Digest` call with bounded `ReadingMemory`
   - `Digest` directly surfaces zero-to-many reading-time reactions and emits bounded Recent Reading Memory
   - `Reading Runner` invokes `Digest` on the accepted source unit, applies converted memory uptake, persists reactions, writes audit, records the accepted unit span, and advances the cursor
   - `Digest` has no current path-redirection output contract; new read-audit rows do not emit retired path-redirection evidence
@@ -245,18 +245,18 @@ Use `docs/backend-reading-mechanism.md` for shared platform boundaries. Use `doc
   - deterministically resolve `end_anchor_text` against the preview and map it to an end-exclusive `end_cursor`
     - if the anchor cannot be resolved, retry Ingest once with the failed resolution as source evidence
     - if retry still fails, fall back conservatively to the current paragraph end or preview boundary and record the resolution status
-  - build a small `carry-forward context` from persisted state
+  - retrieve/select prior Understanding when Ingest supplied recalls, then build a bounded prompt-facing `ReadingMemory` block from hot current-chapter Understanding plus selected long-distance Unit Memory Understanding
   - formally digest the accepted source unit through `Digest`
   - let `Digest` produce three model-facing reading outputs for that exact unit: `understanding`, `response`, and `annotations`
   - runtime maps those outputs into internal `memory_uptake_ops`, `reading_impression`, and `surfaced_reactions` for existing settlement/audit surfaces
   - `Reading Runner` post-Digest settlement closes the exact source unit, appends it to the Unit Span Ledger, and advances the cursor to `end_cursor`
 - Current capture/resume writes only the current forward continuity schema; old non-mainline checkpoint/artifact shapes are not a compatibility target after `DEC-105`.
-- `Ingest` memory retrieval is now a Unit Memory query path and is separate from the retired source-skill loop.
+- `Ingest` memory retrieval is now a Unit Memory recall/tool path and is separate from the retired source-skill loop.
 - `Ingest` is now the sole current selector of the next coverage unit.
   - Boundary choice is prompt-led and semantic.
   - Runtime guardrails only keep the unit from running away.
   - In the mainline case, it receives `BookInfo`, `CurrentView`, an empty `RetrievalSurface`, and `OutputContract`; it does not receive carried reading-state digests.
-  - Its output may include one `memory_query`; runtime retrieval happens after boundary acceptance.
+  - Its output may include up to three `memory_recalls[]`; runtime retrieval/selection happens after boundary acceptance and prompt-facing memory is rendered into Digest `ReadingMemory`.
   - The current mainline preview window is paragraph-offset and adaptive:
     - always starts at the exact current cursor
     - includes at least the current paragraph remainder
@@ -436,7 +436,7 @@ Use `docs/backend-reading-mechanism.md` for shared platform boundaries. Use `doc
   - The reader role fragment is `reader.role`, owned by `attentional_v2/prompts/reader_role.py`.
   - Ingest reuses the same reader role and supplies its own `Instruction` fragment.
   - Ingest XML context uses top-level `ReaderRole`, `Instruction`, `BookInfo`, `CurrentView`, an empty self-closing `RetrievalSurface`, and `OutputContract`.
-  - The current Ingest output contract is flat JSON with `end_anchor_text`, `boundary_type`, `reason`, and optional `memory_query`.
+  - The current Ingest output contract is flat JSON with `end_anchor_text`, `boundary_type`, `reason`, and bounded `memory_recalls[]`.
   - Digest XML renders `ReaderRole` and `Instruction` as separate top-level blocks; all fixed non-role Digest directions live under `Instruction`, while runtime context/data blocks remain separate.
   - Digest `Instruction` uses direct child blocks `CurrentStep`, `ContextUseGuide`, `Understanding`, `Response`, `Annotation`, `SourceGrounding`, and `ResponseDiscipline`.
   - The current Digest output contract is flat JSON with `understanding`, `response`, and `annotations`.
@@ -445,9 +445,9 @@ Use `docs/backend-reading-mechanism.md` for shared platform boundaries. Use `doc
   - `selective carry`
   - `not carry`
 - Persisted state is therefore not the same thing as prompt-visible state.
-  - Current `Ingest` carries only the source frontier needed to choose the next unit and form a retrieval query.
+  - Current `Ingest` carries only the source frontier needed to choose the next unit and name any prior-reading recalls that the selected unit naturally asks for.
   - Ingest does not receive recent memory, active attention, retired structured-memory digests, or old navigation context.
-  - Unit Memory retrieval is separate from the retired source-skill or backread path: Ingest asks for one query, Reading Runner executes retrieval, and Digest context packaging remains deferred.
+  - Unit Memory retrieval is separate from the retired source-skill or backread path: Ingest expresses zero to three recalls, the `retrieve_unit_memory` tool loop triggers runtime retrieval, Reading Runner selects prompt-facing prior Understanding lines, and Digest receives them through top-level `ReadingMemory`.
 - `Digest` should carry:
   - `always carry`
     - `current_unit`
@@ -514,7 +514,8 @@ Use `docs/backend-reading-mechanism.md` for shared platform boundaries. Use `doc
     - each entry preserves the accepted source unit plus the model-facing `understanding`, `response`, and `annotations`
     - retrieval documents are derived from source, understanding, response, and annotation surfaces
     - FTS5 text retrieval is always available when SQLite supports FTS5; sqlite-vec + local Ollama embedding is optional and degrades to text-only behavior
-    - retrieved Unit Memory is not yet prompt-visible to Digest in this slice
+    - all retrieval documents may participate in FTS retrieval; only `unit_understanding` participates in dense vector retrieval in the current policy
+    - prompt-visible Digest memory is Understanding-only and rendered through one `ReadingMemory` block
   - `artifacts / history`
     - `reaction_records`
     - `read_audit`
@@ -534,9 +535,10 @@ Use `docs/backend-reading-mechanism.md` for shared platform boundaries. Use `doc
 - Ownership is now:
   - `Ingest`
     - owns the LLM boundary judgment for forward next-unit selection
-    - owns the LLM-side Unit Memory retrieval request by emitting at most one `memory_query`
+    - owns the LLM-side Unit Memory recall intention by emitting zero to three `memory_recalls[]`
+    - must call the `retrieve_unit_memory` tool when it emits one or more valid recalls
   - `Reading Runner`
-    - owns `local_continuity`, cursor advancement, anchor resolution, retry/fallback, Unit Memory retrieval execution, trace writing, and settlement
+    - owns `local_continuity`, cursor advancement, anchor resolution, retry/fallback, Unit Memory retrieval execution, trace writing, prompt-facing `ReadingMemory` selection/budgeting, and settlement
   - `Digest`
     - owns model-facing `understanding`, `response`, and `annotations`
     - must write `understanding` as compressed, context-resolvable, source-established content for continued reading; it should orient through the prompt-visible reading context, but still record what the current unit itself newly establishes, develops, specifies, contrasts, changes, or makes available
@@ -622,9 +624,9 @@ Use `docs/backend-reading-mechanism.md` for shared platform boundaries. Use `doc
     - `retrieval_docs`, FTS5 rows, vector rows, and query-embedding cache are derived retrieval/index state
     - sqlite-vec and local Ollama embedding are optional; when unavailable, retrieval degrades to text-only behavior
   - `_mechanisms/attentional_v2/runtime/unit_memory_retrieval_trace.jsonl`
-    - trace-only record of retrieval attempts between `Ingest` and `Digest`
-    - records effective query source, retrieval mode, channel availability/degradation, candidate counts, exclusions, latency, and selected unit ids
-    - this trace does not mean retrieved memory is already prompt-visible to Digest
+    - trace record of retrieval attempts and ReadingMemory selection between `Ingest` and `Digest`
+    - records recall count, per-recall candidate counts, effective retrieval mode, channel availability/degradation, selected/suppressed units, latency, and prompt-facing memory token accounting
+    - tool results exposed to Ingest stay status/count-only; retrieved Understanding text and selected ids remain runtime-owned
   - `_mechanisms/attentional_v2/runtime/unit_span_ledger.jsonl`
     - canonical runtime fact for accepted mainline source units
     - records `unit_id`, sequence index, start/end source cursors, preview cursors, char/paragraph counts, end anchor text, and resolution status
@@ -678,7 +680,7 @@ Use `docs/backend-reading-mechanism.md` for shared platform boundaries. Use `doc
   - `ingest`
     - current forward-only source boundary selector
     - outputs the accepted boundary fields for one unit from the bounded preview without skill use
-    - may also output one Unit Memory retrieval query for runtime retrieval after boundary acceptance
+    - may also output bounded Unit Memory recalls that trigger the mechanism-private `retrieve_unit_memory` tool loop
   - `digest`
   - `reflective_promotion`
   - `reconsolidation`

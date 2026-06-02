@@ -1,6 +1,6 @@
 # Ingest Recall And Digest Memory Context Design
 
-Purpose: design the next Unit Memory slice after the bottom hybrid retrieval framework: how Ingest expresses prior-reading recalls, how the Ingest LLM call invokes retrieval through tools, and how runtime-selected Unit Memory should later enter Digest context.
+Purpose: define the implemented Unit Memory recall/context slice after the bottom hybrid retrieval framework: how Ingest expresses prior-reading recalls, how the Ingest LLM call invokes retrieval through tools, and how runtime-selected Unit Memory enters Digest context.
 Use when: designing or implementing bounded multi-recall Ingest output, the `retrieve_unit_memory` tool loop, retrieval aggregation across recalls, runtime-owned memory selection, or Digest retrieved-memory XML context.
 Not for: the already-landed Unit Memory ledger / FTS5 / sqlite-vec bottom framework, evaluation claims, or evidence-catalog updates.
 Update when: Ingest recall wording, tool schema, recall output schema, retrieval aggregation, memory-selection ownership, retrieved-memory brief shape, or Digest context rules change.
@@ -8,18 +8,14 @@ Update when: Ingest recall wording, tool schema, recall output schema, retrieval
 ## Status
 
 - Date: `2026-06-02`
-- Status: design draft for the next implementation slice.
-- Current live baseline:
+- Status: implemented in the current `attentional_v2` live path.
+- Implemented live baseline:
   - `DEC-110` implemented the Unit Memory ledger, FTS5 text retrieval, optional sqlite-vec vector retrieval, retrieval mode config, and trace.
-  - Current live Ingest still emits at most one `memory_query`.
-  - Current retrieval result is trace-only and is not injected into Digest XML.
-- Proposed next change:
-  - Replace model-facing `memory_query` with bounded `memory_recalls[]`.
-  - Let the Ingest LLM call invoke Unit Memory retrieval through an Anthropic-style tool loop.
-  - Keep actual retrieval execution, score fusion, source-unit resolution, and artifact writing in Reading Runner/runtime code.
-  - Let runtime own retrieval result selection, dedupe, budget trimming, and Digest `ReadingMemory` rendering.
-  - Do not let Ingest see, choose, or return retrieved memory brief ids; Ingest only expresses recall intentions.
-  - Add Digest `ReadingMemory` context only after recall, runtime selection, and unified memory rendering are implemented deliberately.
+  - Ingest now emits bounded `memory_recalls[]` instead of model-facing `memory_query`.
+  - The Ingest LLM call can invoke Unit Memory retrieval through an Anthropic-style `retrieve_unit_memory` tool loop.
+  - Reading Runner/runtime keeps actual retrieval execution, score fusion, source-unit resolution, artifact writing, result selection, dedupe, budget trimming, and Digest `ReadingMemory` rendering.
+  - Ingest does not see, choose, or return retrieved memory brief ids; Ingest only expresses recall intentions and receives compact status/count tool results.
+  - Digest now receives one top-level `ReadingMemory` block assembled from hot current-chapter Understanding plus runtime-selected long-distance Unit Memory Understanding.
 - Tool capability note:
   - On `2026-06-02`, a minimal live probe against the configured `MiniMax-M2.7` Anthropic-compatible endpoint succeeded with `tool_use -> tool_result -> final answer`.
   - The probe verifies basic provider support for Anthropic-style tools, not the Reading Companion retrieval tool implementation.
@@ -83,7 +79,7 @@ It also keeps retrieval outside the Ingest LLM call. That was useful for the bot
 
 ### Target Instruction Block
 
-Replace the current `RequestMemorySupport` instruction with a reader-facing recall block.
+Replace the previous `RequestMemorySupport` instruction with a reader-facing recall block.
 
 Recommended XML child under `Instruction`:
 
@@ -108,7 +104,7 @@ Do not list every name or noun. Do not split mechanically by entity. Create sepa
 
 Return zero to three recalls. If nothing in the selected unit asks for earlier memory, return an empty list.
 
-If you write one or more recalls, call the Unit Memory retrieval tool with those recalls so runtime can retrieve, select, and prepare the prior understanding that may later support Digest.
+If you write one or more recalls, call the Unit Memory retrieval tool with those recalls so runtime can retrieve, select, and prepare the prior understanding that may support Digest.
 ```
 
 ### Current Step Adjustment
@@ -602,7 +598,7 @@ Recommended estimator:
 - fallback when `tiktoken` is unavailable: use a conservative CJK / Latin heuristic only as a degraded runtime path, and record the degradation
 - default retention assumption: keep `tiktoken_o200k_base_v1` as the long-running estimator unless implementation or provider-usage review shows a concrete mismatch
 - if observed MiniMax input-token usage diverges materially from the estimate, report it as an implementation finding and adjust the multiplier or tokenizer strategy deliberately
-- implementation note: `tiktoken` is not currently a backend dependency; the code slice that implements `ReadingMemory` budget control should add it explicitly rather than relying on an incidental environment package
+- implementation note: `tiktoken` is now an explicit backend dependency for ReadingMemory budget control rather than an incidental environment package
 
 When Digest produces an Understanding, runtime should estimate and store the token cost of `understanding.content` with the Unit Memory / recent-memory entry:
 
@@ -741,9 +737,9 @@ Suppress:
 - `tiktoken_o200k_base_v1` remains the default estimator unless implementation evidence shows a real mismatch; such mismatch should be reported and handled deliberately.
 - Retrieval-effectiveness review is part of the implementation slice. The implementer should design targeted tests / review cases that check recall quality, retrieval coverage, noise suppression, budget behavior, and downstream Digest usefulness.
 
-## Current Recommendation
+## Implemented Recommendation
 
-Move the next implementation from single model-facing `memory_query` to bounded model-facing `memory_recalls[]` plus a mechanism-private `retrieve_unit_memory` tool loop.
+The implemented slice moves the live path from single model-facing `memory_query` to bounded model-facing `memory_recalls[]` plus a mechanism-private `retrieve_unit_memory` tool loop.
 
 Prompt Ingest as a reader noticing what the selected unit asks it to remember, not as a query generator. Allow zero to three recalls. When recalls exist, Ingest calls `retrieve_unit_memory`; runtime resolves the selected boundary, maps each recall to internal retrieval queries, retrieves per recall, fuses across recall/channel lists, aggregates by Unit Memory Entry, dedupes against direct recent memory, selects the prior Understanding entries under budget, and returns only a compact retrieval-status summary to Ingest.
 

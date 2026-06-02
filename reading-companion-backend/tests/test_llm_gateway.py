@@ -32,6 +32,7 @@ from src.reading_runtime.llm_gateway import (
     get_llm_profile_stable_concurrency,
     get_llm_provider_stable_concurrency,
     invoke_json,
+    invoke_json_with_tool_loop,
     llm_invocation_scope,
     parse_json_payload,
     runtime_trace_context,
@@ -50,6 +51,12 @@ from src.reading_runtime.llm_registry import (
 @dataclass
 class _FakeResponse:
     content: str
+
+
+@dataclass
+class _FakeToolResponse:
+    content: Any
+    tool_calls: list[dict[str, Any]]
 
 
 class _RecordingAdapter:
@@ -86,6 +93,50 @@ class _RecordingAdapter:
             raise RuntimeError("timed out")
         payload = self.response_content.replace("__API_KEY__", api_key)
         return _FakeResponse(payload)
+
+
+class _ToolLoopRecordingAdapter:
+    def __init__(self) -> None:
+        self.calls: list[dict[str, Any]] = []
+
+    def invoke(
+        self,
+        messages: list[Any],
+        *,
+        provider: Any,
+        profile: Any,
+        api_key: str,
+        timeout_seconds: int,
+        tools: list[dict[str, Any]] | None = None,
+        tool_choice: str | dict[str, Any] | None = None,
+    ) -> Any:
+        self.calls.append(
+            {
+                "message_types": [type(message).__name__ for message in messages],
+                "tools": tools,
+                "tool_choice": tool_choice,
+            }
+        )
+        if len(self.calls) == 1:
+            return _FakeToolResponse(
+                content="",
+                tool_calls=[
+                    {
+                        "id": "tool-1",
+                        "name": "retrieve_unit_memory",
+                        "args": {
+                            "memory_recalls": [
+                                {
+                                    "recall_id": "r1",
+                                    "recall_text": "earlier station farewell",
+                                    "basis": "selected_source_unit",
+                                }
+                            ]
+                        },
+                    }
+                ],
+            )
+        return _FakeResponse('{"ok": true, "memory_recalls": [{"recall_id": "r1"}]}')
 
 
 class _SleepingRecordingAdapter(_RecordingAdapter):
@@ -702,6 +753,60 @@ def test_same_target_pooled_credentials_failover_uses_credential_ids(
     assert [call["api_key"] for call in adapter.calls] == ["bad-key", "good-key"]
     assert standard_rows[-1]["fallback"]["key_slots_tried"] == ["primary", "secondary"]
     assert standard_rows[-1]["key_slot_id"] == "secondary"
+
+
+def test_invoke_json_with_tool_loop_appends_tool_result(monkeypatch: pytest.MonkeyPatch):
+    _set_targets_and_bindings(
+        monkeypatch,
+        targets={
+            "targets": [
+                {
+                    "target_id": "minimax_runtime",
+                    "contract": "anthropic",
+                    "base_url": "https://api.minimaxi.com/anthropic",
+                    "model": "MiniMax-M2.7",
+                    "credentials": [{"credential_id": "primary", "api_key": "runtime-key"}],
+                }
+            ]
+        },
+        bindings=_required_bindings("minimax_runtime"),
+    )
+    adapter = _ToolLoopRecordingAdapter()
+    monkeypatch.setitem(CONTRACT_ADAPTERS, "anthropic", adapter)
+    handler_calls: list[dict[str, Any]] = []
+
+    def handler(name: str, args: dict[str, Any], tool_call_id: str) -> dict[str, Any]:
+        handler_calls.append({"name": name, "args": args, "tool_call_id": tool_call_id})
+        return {"status": "ok", "candidate_unit_count": 3}
+
+    result = invoke_json_with_tool_loop(
+        "system",
+        "user",
+        {},
+        tools=[{"name": "retrieve_unit_memory", "description": "Retrieve prior unit memory."}],
+        tool_handler=handler,
+    )
+
+    assert result.status == "tool_called"
+    assert result.payload == {"ok": True, "memory_recalls": [{"recall_id": "r1"}]}
+    assert handler_calls == [
+        {
+            "name": "retrieve_unit_memory",
+            "args": {
+                "memory_recalls": [
+                    {
+                        "recall_id": "r1",
+                        "recall_text": "earlier station farewell",
+                        "basis": "selected_source_unit",
+                    }
+                ]
+            },
+            "tool_call_id": "tool-1",
+        }
+    ]
+    assert adapter.calls[0]["tools"][0]["name"] == "retrieve_unit_memory"
+    assert adapter.calls[0]["tool_choice"] == "auto"
+    assert "ToolMessage" in adapter.calls[1]["message_types"]
 
 
 def test_mixed_target_bindings_support_different_contracts_and_models(monkeypatch: pytest.MonkeyPatch):
@@ -1601,7 +1706,7 @@ def test_attentional_node_uses_shared_runtime_trace(tmp_path: Path, monkeypatch:
             ],
         },
     )
-    adapter = _RecordingAdapter(response_content='{"reading_impression": "Focused on the hinge.", "surfaced_reactions": []}')
+    adapter = _RecordingAdapter(response_content='{"understanding": {"kind": "other", "content": ""}, "response": "Focused on the hinge.", "annotations": []}')
     monkeypatch.setitem(CONTRACT_ADAPTERS, "anthropic", adapter)
 
     output_dir = tmp_path / "output" / "attn-demo"

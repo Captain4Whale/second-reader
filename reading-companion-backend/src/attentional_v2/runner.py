@@ -3,9 +3,10 @@
 from __future__ import annotations
 
 import shutil
+import re
 from datetime import datetime, timezone
 from pathlib import Path
-from typing import Callable
+from typing import Callable, Mapping
 
 from src.reading_core import BookDocument
 from src.reading_core.storage import book_document_file, save_book_document
@@ -101,6 +102,7 @@ from .state_ops import (
 )
 from .state_migration import normalize_active_tension_state
 from .state_projection import build_carry_forward_context
+from .memory_tokens import estimate_tokens, token_estimate_payload, tokens_from_estimate
 from .storage import (
     chapter_result_compatibility_file,
     checkpoints_dir,
@@ -133,7 +135,7 @@ from .survey import write_book_survey_artifacts
 from .unit_memory import (
     UnitMemoryIndex,
     build_unit_memory_entry,
-    effective_query_for_accepted_unit,
+    normalize_unit_memory_recalls,
     record_unit_memory_retrieval_trace,
     resolve_memory_retrieval_config,
 )
@@ -1057,8 +1059,16 @@ def _ingest_trace_entry(
     entry: IngestTraceEntry = {
         "reason": _clean_text(boundary_result.get("reason")),
         "end_anchor_text": _clean_text(boundary_result.get("end_anchor_text")),
-        "memory_query": dict(boundary_result.get("memory_query", {}))
-        if isinstance(boundary_result.get("memory_query"), dict)
+        "memory_recalls": [
+            dict(item)
+            for item in boundary_result.get("memory_recalls", [])
+            if isinstance(item, dict)
+        ]
+        if isinstance(boundary_result.get("memory_recalls"), list)
+        else [],
+        "tool_loop_status": _clean_text(boundary_result.get("tool_loop_status")),
+        "tool_result_summary": dict(boundary_result.get("tool_result_summary", {}))
+        if isinstance(boundary_result.get("tool_result_summary"), dict)
         else {},
         "source_span_id": _clean_text(boundary_result.get("source_span_id")),
         "resolution": dict(boundary_result.get("resolution", {})) if isinstance(boundary_result.get("resolution"), dict) else {},
@@ -1081,7 +1091,9 @@ def _compact_ingest_trace(ingest_trace: object) -> list[dict[str, object]]:
         for key in (
             "reason",
             "end_anchor_text",
-            "memory_query",
+            "memory_recalls",
+            "tool_loop_status",
+            "tool_result_summary",
             "source_span_id",
             "resolution",
             "error",
@@ -1115,6 +1127,178 @@ def _active_recent_memory_source_span_ids(recent_reading_memory: RecentReadingMe
     return span_ids
 
 
+def _source_span_position(source_span_id: str) -> tuple[int, int]:
+    """Return paragraph/start position from a compact source span id."""
+
+    match = re.search(r":p(\d+)@", str(source_span_id or ""))
+    paragraph_index = int(match.group(1)) if match else 0
+    chapter_match = re.search(r"src:c(\d+):", str(source_span_id or ""))
+    chapter_id = int(chapter_match.group(1)) if chapter_match else 0
+    return chapter_id, paragraph_index
+
+
+def _reading_memory_prefix(*, source_span_id: str, unit_index: int, include_chapter: bool = False) -> str:
+    chapter_id, paragraph_index = _source_span_position(source_span_id)
+    if include_chapter and chapter_id:
+        return f"C{chapter_id} P{paragraph_index} U{unit_index}: "
+    return f"P{paragraph_index} U{unit_index}: "
+
+
+def _line_token_count(prefix: str, text: str, stored_estimate: object) -> int:
+    stored_tokens = tokens_from_estimate(stored_estimate)
+    return stored_tokens + estimate_tokens(prefix) if stored_tokens else estimate_tokens(f"{prefix}{text}")
+
+
+def _reading_memory_line(*, prefix: str, text: str, token_estimate: object, origin: str, unit_id: str = "", source_span_id: str = "", unit_index: int = 0) -> dict[str, object]:
+    return {
+        "text": f"{prefix}{text}",
+        "memory_text": text,
+        "prefix": prefix.strip(),
+        "origin": origin,
+        "unit_id": unit_id,
+        "source_span_id": source_span_id,
+        "unit_index": unit_index,
+        "estimated_tokens": _line_token_count(prefix, text, token_estimate),
+    }
+
+
+def _hot_reading_memory_lines(
+    recent_reading_memory: RecentReadingMemoryState,
+    *,
+    chapter_id: int,
+    budget_tokens: int = 5000,
+) -> tuple[list[dict[str, object]], set[str], list[dict[str, object]]]:
+    """Return current-chapter recent Understanding lines under budget."""
+
+    lines: list[dict[str, object]] = []
+    suppressed: list[dict[str, object]] = []
+    used_tokens = 0
+    entries = [
+        dict(item)
+        for item in recent_reading_memory.get("entries", [])
+        if isinstance(item, dict) and _clean_text(item.get("status")) == "active"
+    ]
+    entries.sort(key=lambda item: int(item.get("created_at_unit_index", 0) or 0), reverse=True)
+    for entry in entries:
+        source_span_id = _clean_text(entry.get("source_unit_span_id"))
+        entry_chapter_id, _paragraph = _source_span_position(source_span_id)
+        if entry_chapter_id and entry_chapter_id != int(chapter_id):
+            continue
+        memory_text = _clean_text(entry.get("memory_text"))
+        if not memory_text:
+            continue
+        unit_index = int(entry.get("created_at_unit_index", 0) or 0)
+        prefix = _reading_memory_prefix(source_span_id=source_span_id, unit_index=unit_index)
+        line = _reading_memory_line(
+            prefix=prefix,
+            text=memory_text,
+            token_estimate=entry.get("token_estimate"),
+            origin="hot",
+            unit_id=_clean_text(entry.get("entry_id")),
+            source_span_id=source_span_id,
+            unit_index=unit_index,
+        )
+        line_tokens = int(line.get("estimated_tokens", 0) or 0)
+        if used_tokens + line_tokens > budget_tokens:
+            suppressed.append({"source_span_id": source_span_id, "reason": "hot_budget_exceeded"})
+            continue
+        lines.append(line)
+        used_tokens += line_tokens
+    return lines, {str(item.get("source_span_id")) for item in lines if item.get("source_span_id")}, suppressed
+
+
+def _retrieved_reading_memory_lines(
+    unit_memory_retrieval: dict[str, object] | None,
+    *,
+    excluded_source_span_ids: set[str],
+    budget_tokens: int = 10000,
+) -> tuple[list[dict[str, object]], list[dict[str, object]]]:
+    """Return runtime-selected long-distance Understanding lines under budget."""
+
+    if not isinstance(unit_memory_retrieval, dict):
+        return [], []
+    lines: list[dict[str, object]] = []
+    suppressed: list[dict[str, object]] = []
+    used_tokens = 0
+    selected_units = unit_memory_retrieval.get("selected_units", [])
+    if not isinstance(selected_units, list):
+        return [], []
+    for item in selected_units:
+        if not isinstance(item, dict):
+            continue
+        entry = item.get("entry")
+        if not isinstance(entry, dict):
+            continue
+        source_span_id = _clean_text(entry.get("source_span_id"))
+        unit_id = _clean_text(entry.get("unit_id"))
+        if source_span_id in excluded_source_span_ids:
+            suppressed.append({"unit_id": unit_id, "source_span_id": source_span_id, "reason": "dedupe_hot_memory"})
+            continue
+        digest = entry.get("digest")
+        digest = dict(digest) if isinstance(digest, dict) else {}
+        understanding = digest.get("understanding")
+        if not isinstance(understanding, dict):
+            continue
+        memory_text = _clean_text(understanding.get("content"))
+        if not memory_text:
+            continue
+        unit_index = int(entry.get("unit_index", item.get("unit_index", 0)) or 0)
+        prefix = _reading_memory_prefix(source_span_id=source_span_id, unit_index=unit_index)
+        line = _reading_memory_line(
+            prefix=prefix,
+            text=memory_text,
+            token_estimate=understanding.get("token_estimate") or token_estimate_payload(memory_text),
+            origin="retrieved",
+            unit_id=unit_id,
+            source_span_id=source_span_id,
+            unit_index=unit_index,
+        )
+        line["matched_recalls"] = list(item.get("matched_recalls", [])) if isinstance(item.get("matched_recalls"), list) else []
+        line_tokens = int(line.get("estimated_tokens", 0) or 0)
+        if used_tokens + line_tokens > budget_tokens:
+            suppressed.append({"unit_id": unit_id, "source_span_id": source_span_id, "reason": "retrieved_budget_exceeded"})
+            continue
+        lines.append(line)
+        excluded_source_span_ids.add(source_span_id)
+        used_tokens += line_tokens
+    return lines, suppressed
+
+
+def _build_digest_reading_memory(
+    *,
+    recent_reading_memory: RecentReadingMemoryState,
+    chapter_id: int,
+    unit_memory_retrieval: dict[str, object] | None,
+) -> dict[str, object]:
+    """Build unified prompt-facing ReadingMemory lines for Digest."""
+
+    hot_lines, hot_span_ids, hot_suppressed = _hot_reading_memory_lines(
+        recent_reading_memory,
+        chapter_id=chapter_id,
+    )
+    retrieved_lines, retrieved_suppressed = _retrieved_reading_memory_lines(
+        unit_memory_retrieval,
+        excluded_source_span_ids=set(hot_span_ids),
+    )
+    all_lines = [*hot_lines, *retrieved_lines]
+    all_lines.sort(key=lambda item: int(item.get("unit_index", 0) or 0), reverse=True)
+    total_tokens = sum(int(item.get("estimated_tokens", 0) or 0) for item in all_lines)
+    return {
+        "lines": [str(item.get("text", "")) for item in all_lines if _clean_text(item.get("text"))],
+        "line_records": all_lines,
+        "estimated_tokens": total_tokens,
+        "hot_line_count": len(hot_lines),
+        "retrieved_line_count": len(retrieved_lines),
+        "suppressed": [*hot_suppressed, *retrieved_suppressed],
+        "budget": {
+            "hot_tokens": 5000,
+            "retrieved_tokens": 10000,
+            "total_tokens": 15000,
+            "estimator": "tiktoken_o200k_base_v1",
+        },
+    }
+
+
 def _retrieve_unit_memory_for_prepared_source_unit(
     *,
     output_dir: Path,
@@ -1125,45 +1309,57 @@ def _retrieve_unit_memory_for_prepared_source_unit(
 ) -> dict[str, object]:
     """Run Unit Memory retrieval between Ingest boundary acceptance and Digest."""
 
-    selected_source_unit = (
-        dict(prepared_source_unit.get("selected_source_unit", {}))
-        if isinstance(prepared_source_unit.get("selected_source_unit"), dict)
-        else {}
-    )
-    unitize_decision = (
-        dict(prepared_source_unit.get("unitize_decision", {}))
-        if isinstance(prepared_source_unit.get("unitize_decision"), dict)
-        else {}
-    )
-    resolution = dict(unitize_decision.get("resolution", {})) if isinstance(unitize_decision.get("resolution"), dict) else {}
-    ingest_trace = prepared_source_unit.get("ingest_trace", [])
-    boundary_was_retried = isinstance(ingest_trace, list) and len(ingest_trace) > 1
-    effective_query, query_source = effective_query_for_accepted_unit(
-        ingest_query=prepared_source_unit.get("memory_query") if isinstance(prepared_source_unit.get("memory_query"), dict) else None,
-        source_unit=selected_source_unit,
-        boundary_was_retried=boundary_was_retried,
-        boundary_resolution_status=_clean_text(resolution.get("status")),
-    )
-    if not effective_query:
+    existing = prepared_source_unit.get("unit_memory_retrieval")
+    if isinstance(existing, dict) and existing.get("trace"):
+        return dict(existing)
+
+    recalls = normalize_unit_memory_recalls(prepared_source_unit.get("memory_recalls"))
+    ingest_trace = prepared_source_unit.get("ingest_trace")
+    selected_trace = ingest_trace[-1] if isinstance(ingest_trace, list) and ingest_trace else {}
+    if (
+        recalls
+        and isinstance(selected_trace, dict)
+        and _clean_text(selected_trace.get("tool_loop_status")) == "tool_call_contract_violation"
+    ):
         trace = {
             "recorded_at": _timestamp(),
             "event_type": "unit_memory_retrieval",
             "book_id": book_id,
-            "query": {},
-            "query_source": query_source,
+            "recalls": [dict(item) for item in recalls],
+            "query_source": "tool_call_contract_violation",
             "mode": _clean_text(memory_retrieval_config.get("mode")) or "hybrid",
             "effective_mode": _clean_text(memory_retrieval_config.get("mode")) or "hybrid",
-            "degradation_reason": "empty_query",
+            "degradation_reason": "tool_call_contract_violation",
+            "candidate_counts": {"recall_count": len(recalls)},
+            "selected_units": [],
+        }
+        record_unit_memory_retrieval_trace(output_dir, trace)
+        return {
+            "recalls": [dict(item) for item in recalls],
+            "query_source": "tool_call_contract_violation",
+            "selected_units": [],
+            "trace": trace,
+        }
+    if not recalls:
+        trace = {
+            "recorded_at": _timestamp(),
+            "event_type": "unit_memory_retrieval",
+            "book_id": book_id,
+            "recalls": [],
+            "query_source": "skip_empty_recalls",
+            "mode": _clean_text(memory_retrieval_config.get("mode")) or "hybrid",
+            "effective_mode": _clean_text(memory_retrieval_config.get("mode")) or "hybrid",
+            "degradation_reason": "no_recall",
             "candidate_counts": {},
             "selected_units": [],
         }
         record_unit_memory_retrieval_trace(output_dir, trace)
-        return {"query": {}, "query_source": query_source, "selected_units": [], "trace": trace}
+        return {"recalls": [], "query_source": "skip_empty_recalls", "selected_units": [], "trace": trace}
     try:
-        return UnitMemoryIndex(output_dir, config=memory_retrieval_config).retrieve(
+        return UnitMemoryIndex(output_dir, config=memory_retrieval_config).retrieve_for_recalls(
             book_id=book_id,
-            query=effective_query,
-            query_source=query_source,
+            recalls=recalls,
+            query_source="ingest_recalls",
             current_unit_index=next_unit_sequence_index(output_dir),
             excluded_source_unit_span_ids=_active_recent_memory_source_span_ids(recent_reading_memory),
         )
@@ -1172,8 +1368,8 @@ def _retrieve_unit_memory_for_prepared_source_unit(
             "recorded_at": _timestamp(),
             "event_type": "unit_memory_retrieval",
             "book_id": book_id,
-            "query": dict(effective_query),
-            "query_source": query_source,
+            "recalls": [dict(item) for item in recalls],
+            "query_source": "ingest_recalls",
             "mode": _clean_text(memory_retrieval_config.get("mode")) or "hybrid",
             "effective_mode": "text_only",
             "degradation_reason": f"retrieval_failed:{type(exc).__name__}",
@@ -1181,7 +1377,7 @@ def _retrieve_unit_memory_for_prepared_source_unit(
             "selected_units": [],
         }
         record_unit_memory_retrieval_trace(output_dir, trace)
-        return {"query": dict(effective_query), "query_source": query_source, "selected_units": [], "trace": trace}
+        return {"recalls": [dict(item) for item in recalls], "query_source": "ingest_recalls", "selected_units": [], "trace": trace}
 
 
 def _resolve_ingest_boundary(
@@ -1292,6 +1488,8 @@ def prepare_next_source_unit_for_read(
     output_dir: Path | None,
     book_title: str,
     author: str,
+    book_id: str = "",
+    memory_retrieval_config: dict[str, object] | None = None,
 ) -> PreparedSourceUnit:
     """Prepare the next forward source unit that should be read."""
 
@@ -1314,12 +1512,105 @@ def prepare_next_source_unit_for_read(
         if isinstance(preparation.get("current_view_content"), dict)
         else {}
     )
+    tool_retrieval_results: list[dict[str, object]] = []
+
+    def _unit_memory_tool_handler(args: Mapping[str, object]) -> Mapping[str, object]:
+        recalls = normalize_unit_memory_recalls(args.get("memory_recalls"))
+        if not recalls:
+            return {
+                "status": "no_recall",
+                "effective_mode": _clean_text((memory_retrieval_config or {}).get("mode")) or "hybrid",
+                "retrieval_summary": {"recall_count": 0, "candidate_unit_count": 0, "selected_unit_count": 0},
+                "degradation_reason": "",
+            }
+        resolution_for_tool = resolve_end_anchor_text(
+            preview=preview,
+            end_anchor_text=_clean_text(args.get("end_anchor_text")),
+        )
+        if _clean_text(resolution_for_tool.get("status")) != "matched":
+            trace = {
+                "recorded_at": _timestamp(),
+                "event_type": "unit_memory_retrieval",
+                "book_id": book_id,
+                "recalls": [dict(item) for item in recalls],
+                "query_source": "tool_boundary_unresolved",
+                "mode": _clean_text((memory_retrieval_config or {}).get("mode")) or "hybrid",
+                "effective_mode": _clean_text((memory_retrieval_config or {}).get("mode")) or "hybrid",
+                "degradation_reason": "boundary_unresolved",
+                "boundary_resolution": dict(resolution_for_tool),
+                "candidate_counts": {},
+                "selected_units": [],
+            }
+            if output_dir is not None:
+                record_unit_memory_retrieval_trace(output_dir, trace)
+            result = {"recalls": [dict(item) for item in recalls], "selected_units": [], "trace": trace}
+            tool_retrieval_results.append(result)
+            return {
+                "status": "boundary_unresolved",
+                "effective_mode": trace["effective_mode"],
+                "boundary_resolution": dict(resolution_for_tool),
+                "retrieval_summary": {"recall_count": len(recalls), "candidate_unit_count": 0, "selected_unit_count": 0},
+                "degradation_reason": "boundary_unresolved",
+            }
+        if output_dir is None or not book_id:
+            return {
+                "status": "degraded",
+                "effective_mode": _clean_text((memory_retrieval_config or {}).get("mode")) or "hybrid",
+                "boundary_resolution": dict(resolution_for_tool),
+                "retrieval_summary": {"recall_count": len(recalls), "candidate_unit_count": 0, "selected_unit_count": 0},
+                "degradation_reason": "missing_runtime_retrieval_context",
+            }
+        try:
+            retrieval_result = UnitMemoryIndex(output_dir, config=memory_retrieval_config or {}).retrieve_for_recalls(
+                book_id=book_id,
+                recalls=recalls,
+                query_source="tool_retrieve_unit_memory",
+                current_unit_index=next_unit_sequence_index(output_dir),
+                excluded_source_unit_span_ids=_active_recent_memory_source_span_ids(recent_reading_memory or {}),
+            )
+        except Exception as exc:  # pragma: no cover - defensive tool guard
+            trace = {
+                "recorded_at": _timestamp(),
+                "event_type": "unit_memory_retrieval",
+                "book_id": book_id,
+                "recalls": [dict(item) for item in recalls],
+                "query_source": "tool_retrieve_unit_memory",
+                "mode": _clean_text((memory_retrieval_config or {}).get("mode")) or "hybrid",
+                "effective_mode": "text_only",
+                "degradation_reason": f"retrieval_failed:{type(exc).__name__}",
+                "boundary_resolution": dict(resolution_for_tool),
+                "candidate_counts": {},
+                "selected_units": [],
+            }
+            record_unit_memory_retrieval_trace(output_dir, trace)
+            retrieval_result = {"recalls": [dict(item) for item in recalls], "selected_units": [], "trace": trace}
+        retrieval_result = dict(retrieval_result)
+        retrieval_result["boundary_resolution"] = dict(resolution_for_tool)
+        tool_retrieval_results.append(retrieval_result)
+        trace = dict(retrieval_result.get("trace", {})) if isinstance(retrieval_result.get("trace"), dict) else {}
+        candidate_counts = trace.get("candidate_counts") if isinstance(trace.get("candidate_counts"), dict) else {}
+        selected_units = retrieval_result.get("selected_units", [])
+        selected_count = len(selected_units) if isinstance(selected_units, list) else 0
+        degradation_reason = _clean_text(retrieval_result.get("degradation_reason") or trace.get("degradation_reason"))
+        return {
+            "status": "ok" if selected_count else "no_match",
+            "effective_mode": _clean_text(retrieval_result.get("effective_mode")) or _clean_text((memory_retrieval_config or {}).get("mode")) or "hybrid",
+            "boundary_resolution": dict(resolution_for_tool),
+            "retrieval_summary": {
+                "recall_count": len(recalls),
+                "candidate_unit_count": int(candidate_counts.get("candidate_units", 0) or 0),
+                "selected_unit_count": selected_count,
+            },
+            "degradation_reason": degradation_reason,
+        }
+
     boundary_result = _call_ingest(
         current_view_position=current_view_position,
         current_view_content=current_view_content,
         output_dir=output_dir,
         book_title=book_title,
         author=author,
+        unit_memory_tool_handler=_unit_memory_tool_handler,
     )
     resolution = resolve_end_anchor_text(
         preview=preview,
@@ -1344,6 +1635,7 @@ def prepare_next_source_unit_for_read(
             output_dir=output_dir,
             book_title=book_title,
             author=author,
+            unit_memory_tool_handler=_unit_memory_tool_handler,
         )
     selected_source_unit, unitize_decision, ingest_trace = _accept_ingest_boundary(
         chapter=current_chapter,
@@ -1357,9 +1649,10 @@ def prepare_next_source_unit_for_read(
         dict(unitize_decision.get("source_span", {})) if isinstance(unitize_decision.get("source_span"), dict) else {},
     )
     selected_boundary = retry_boundary_result if retry_boundary_result is not None else boundary_result
-    memory_query = (
-        dict(selected_boundary.get("memory_query", {}))
-        if isinstance(selected_boundary.get("memory_query"), dict)
+    memory_recalls = normalize_unit_memory_recalls(selected_boundary.get("memory_recalls"))
+    unit_memory_retrieval = (
+        dict(tool_retrieval_results[-1])
+        if tool_retrieval_results and _clean_text(selected_boundary.get("tool_loop_status")) == "tool_called"
         else {}
     )
     return {
@@ -1370,7 +1663,8 @@ def prepare_next_source_unit_for_read(
         "preview": dict(preview),
         "unitize_decision": unitize_decision,  # type: ignore[typeddict-item]
         "ingest_trace": ingest_trace,
-        "memory_query": memory_query,
+        "memory_recalls": memory_recalls,
+        "unit_memory_retrieval": unit_memory_retrieval,
     }
 
 
@@ -1637,6 +1931,7 @@ def _run_digest_for_source_unit(
     chapter_id: int,
     chapter_ref: str,
     ingest_trace: list[dict[str, object]] | None = None,
+    reading_memory_lines: list[str] | None = None,
 ) -> tuple[DigestResult, list[dict[str, str]]]:
     """Run Digest for the accepted source unit and persist the read-cycle audit."""
 
@@ -1661,6 +1956,7 @@ def _run_digest_for_source_unit(
         digest_result = _call_digest(
             current_unit_source=current_unit_source,
             current_unit_sentences=chosen_unit_sentences,
+            reading_memory_lines=reading_memory_lines,
             carry_forward_context=carry_forward_context,
             output_language=output_language,
             output_dir=output_dir,
@@ -1858,6 +2154,27 @@ def _settle_next_unit(
         memory_retrieval_config=memory_retrieval_config,
     )
     prepared_source_unit["unit_memory_retrieval"] = unit_memory_retrieval  # type: ignore[typeddict-item]
+    reading_memory = _build_digest_reading_memory(
+        recent_reading_memory=recent_reading_memory,
+        chapter_id=chapter_id,
+        unit_memory_retrieval=unit_memory_retrieval,
+    )
+    unit_memory_retrieval["reading_memory_lines"] = list(reading_memory.get("line_records", []))  # type: ignore[index]
+    record_unit_memory_retrieval_trace(
+        output_dir,
+        {
+            "recorded_at": _timestamp(),
+            "event_type": "unit_memory_reading_memory_selection",
+            "book_id": provisioned.output_dir.name,
+            "source_span_id": source_id if has_selected_source_unit else "",
+            "line_count": len(reading_memory.get("lines", [])) if isinstance(reading_memory.get("lines"), list) else 0,
+            "hot_line_count": int(reading_memory.get("hot_line_count", 0) or 0),
+            "retrieved_line_count": int(reading_memory.get("retrieved_line_count", 0) or 0),
+            "estimated_tokens": int(reading_memory.get("estimated_tokens", 0) or 0),
+            "budget": dict(reading_memory.get("budget", {})) if isinstance(reading_memory.get("budget"), dict) else {},
+            "suppressed": list(reading_memory.get("suppressed", [])) if isinstance(reading_memory.get("suppressed"), list) else [],
+        },
+    )
 
     digest_result, digest_fallbacks = _run_digest_for_source_unit(
         chapter=chapter,
@@ -1878,6 +2195,7 @@ def _settle_next_unit(
         chapter_id=chapter_id,
         chapter_ref=chapter_ref,
         ingest_trace=_compact_ingest_trace(prepared_source_unit.get("ingest_trace")),
+        reading_memory_lines=list(reading_memory.get("lines", [])) if isinstance(reading_memory.get("lines"), list) else [],
     )
     for fallback in digest_fallbacks:
         if not isinstance(fallback, dict):
@@ -2320,6 +2638,8 @@ def run_reading_runner(request: ReadRequest, mechanism: MechanismInfo) -> ReadRe
                     output_dir=output_dir,
                     book_title=provisioned.title,
                     author=provisioned.author,
+                    book_id=provisioned.output_dir.name,
+                    memory_retrieval_config=memory_retrieval_config,
                 )
                 settled_unit = _settle_next_unit(
                     prepared_source_unit=prepared_source_unit,

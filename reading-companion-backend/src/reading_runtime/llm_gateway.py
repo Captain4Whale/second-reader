@@ -19,7 +19,7 @@ from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any, Callable, Mapping, Protocol
 
-from langchain_core.messages import HumanMessage, SystemMessage
+from langchain_core.messages import HumanMessage, SystemMessage, ToolMessage
 
 from src.config import (
     get_backend_runtime_root,
@@ -85,8 +85,20 @@ class LLMContractAdapter(Protocol):
         profile: LLMProfileConfig,
         api_key: str,
         timeout_seconds: int,
+        tools: list[Mapping[str, Any]] | None = None,
+        tool_choice: str | Mapping[str, Any] | None = None,
     ) -> Any:
         """Invoke the provider client and return a LangChain-style response."""
+
+
+@dataclass(frozen=True)
+class LLMToolLoopResult:
+    """JSON result plus compact metadata from a bounded tool loop."""
+
+    payload: Any
+    status: str
+    tool_calls: list[dict[str, Any]] = field(default_factory=list)
+    tool_results: list[dict[str, Any]] = field(default_factory=list)
 
 
 @dataclass(frozen=True)
@@ -691,6 +703,8 @@ class AnthropicContractAdapter:
         profile: LLMProfileConfig,
         api_key: str,
         timeout_seconds: int,
+        tools: list[Mapping[str, Any]] | None = None,
+        tool_choice: str | Mapping[str, Any] | None = None,
     ) -> Any:
         try:
             module = importlib.import_module("langchain_anthropic")
@@ -705,6 +719,12 @@ class AnthropicContractAdapter:
             timeout=timeout_seconds,
             max_retries=0,
         )
+        if tools:
+            if not hasattr(client, "bind_tools"):
+                raise LLMRegistryError("Anthropic contract client does not support tool binding.")
+            if tool_choice is not None:
+                return client.bind_tools(list(tools), tool_choice=tool_choice).invoke(messages)
+            return client.bind_tools(list(tools)).invoke(messages)
         return client.invoke(messages)
 
 
@@ -719,6 +739,8 @@ class OpenAICompatibleContractAdapter:
         profile: LLMProfileConfig,
         api_key: str,
         timeout_seconds: int,
+        tools: list[Mapping[str, Any]] | None = None,
+        tool_choice: str | Mapping[str, Any] | None = None,
     ) -> Any:
         try:
             module = importlib.import_module("langchain_openai")
@@ -733,6 +755,12 @@ class OpenAICompatibleContractAdapter:
             timeout=timeout_seconds,
             max_retries=0,
         )
+        if tools:
+            if not hasattr(client, "bind_tools"):
+                raise LLMRegistryError("OpenAI-compatible contract client does not support tool binding.")
+            if tool_choice is not None:
+                return client.bind_tools(list(tools), tool_choice=tool_choice).invoke(messages)
+            return client.bind_tools(list(tools)).invoke(messages)
         return client.invoke(messages)
 
 
@@ -747,6 +775,8 @@ class GoogleGenAIContractAdapter:
         profile: LLMProfileConfig,
         api_key: str,
         timeout_seconds: int,
+        tools: list[Mapping[str, Any]] | None = None,
+        tool_choice: str | Mapping[str, Any] | None = None,
     ) -> Any:
         try:
             module = importlib.import_module("langchain_google_genai")
@@ -759,6 +789,12 @@ class GoogleGenAIContractAdapter:
             max_output_tokens=profile.max_output_tokens,
             timeout=timeout_seconds,
         )
+        if tools:
+            if not hasattr(client, "bind_tools"):
+                raise LLMRegistryError("Google GenAI contract client does not support tool binding.")
+            if tool_choice is not None:
+                return client.bind_tools(list(tools), tool_choice=tool_choice).invoke(messages)
+            return client.bind_tools(list(tools)).invoke(messages)
         return client.invoke(messages)
 
 
@@ -1736,6 +1772,9 @@ def _invoke_response(
     *,
     explicit_profile_id: str | None = None,
     expect_json: bool = False,
+    messages_override: list[Any] | None = None,
+    tools: list[Mapping[str, Any]] | None = None,
+    tool_choice: str | Mapping[str, Any] | None = None,
 ) -> Any:
     scope = current_llm_scope()
     trace_context = scope.trace_context if scope else None
@@ -1744,7 +1783,7 @@ def _invoke_response(
     if not providers:
         raise ReaderLLMError("No providers resolved for LLM invocation.", problem_code="network_blocked")
 
-    messages = [
+    messages = list(messages_override) if messages_override is not None else [
         SystemMessage(content=system_prompt),
         HumanMessage(content=user_prompt),
     ]
@@ -1891,13 +1930,16 @@ def _invoke_response(
                     profile_gate.acquire()
                     profile_gate_wait_ms = int(round((time.perf_counter() - profile_gate_wait_started) * 1000))
                     try:
-                        response = adapter.invoke(
-                            messages,
-                            provider=provider,
-                            profile=attempt_profile,
-                            api_key=key_slot["api_key"],
-                            timeout_seconds=profile.timeout_seconds,
-                        )
+                        invoke_kwargs: dict[str, Any] = {
+                            "provider": provider,
+                            "profile": attempt_profile,
+                            "api_key": key_slot["api_key"],
+                            "timeout_seconds": profile.timeout_seconds,
+                        }
+                        if tools is not None or tool_choice is not None:
+                            invoke_kwargs["tools"] = tools
+                            invoke_kwargs["tool_choice"] = tool_choice
+                        response = adapter.invoke(messages, **invoke_kwargs)
                     finally:
                         profile_gate.release()
                         provider_controller.release()
@@ -2059,6 +2101,115 @@ def _invoke_response(
     raise ReaderLLMError(str(last_error or "LLM invocation failed."), problem_code=final_problem_code or "network_blocked")
 
 
+def _extract_tool_calls(response: Any) -> list[dict[str, Any]]:
+    """Normalize LangChain/Anthropic-style tool calls from one response."""
+
+    calls: list[dict[str, Any]] = []
+    response_tool_calls = getattr(response, "tool_calls", None)
+    if isinstance(response_tool_calls, list):
+        for index, item in enumerate(response_tool_calls, start=1):
+            if not isinstance(item, Mapping):
+                continue
+            name = _clean_text(item.get("name"))
+            args = item.get("args") if isinstance(item.get("args"), Mapping) else item.get("input")
+            calls.append(
+                {
+                    "id": _clean_text(item.get("id")) or f"tool_call_{index}",
+                    "name": name,
+                    "args": dict(args) if isinstance(args, Mapping) else {},
+                }
+            )
+    content = getattr(response, "content", None)
+    if isinstance(content, list):
+        for index, item in enumerate(content, start=1):
+            if not isinstance(item, Mapping) or item.get("type") != "tool_use":
+                continue
+            calls.append(
+                {
+                    "id": _clean_text(item.get("id")) or f"tool_call_{index}",
+                    "name": _clean_text(item.get("name")),
+                    "args": dict(item.get("input")) if isinstance(item.get("input"), Mapping) else {},
+                }
+            )
+    deduped: list[dict[str, Any]] = []
+    seen: set[tuple[str, str]] = set()
+    for call in calls:
+        key = (_clean_text(call.get("id")), _clean_text(call.get("name")))
+        if key in seen:
+            continue
+        seen.add(key)
+        if call.get("name"):
+            deduped.append(call)
+    return deduped
+
+
+def invoke_json_with_tool_loop(
+    system_prompt: str,
+    user_prompt: str,
+    default: Any,
+    *,
+    tools: list[Mapping[str, Any]],
+    tool_handler: Callable[[str, Mapping[str, Any], str], Mapping[str, Any]],
+    profile_id: str | None = None,
+    max_tool_calls: int = 1,
+) -> LLMToolLoopResult:
+    """Invoke JSON with one bounded provider tool round."""
+
+    first_response = _invoke_response(
+        system_prompt,
+        user_prompt,
+        explicit_profile_id=profile_id,
+        expect_json=False,
+        tools=tools,
+        tool_choice="auto",
+    )
+    tool_calls = _extract_tool_calls(first_response)
+    if not tool_calls:
+        return LLMToolLoopResult(
+            payload=parse_json_payload(response_text(first_response), default),
+            status="final_without_tool",
+            tool_calls=[],
+            tool_results=[],
+        )
+
+    bounded_calls = tool_calls[: max(0, int(max_tool_calls))]
+    tool_results: list[dict[str, Any]] = []
+    messages: list[Any] = [
+        SystemMessage(content=system_prompt),
+        HumanMessage(content=user_prompt),
+        first_response,
+    ]
+    for call in bounded_calls:
+        result = dict(tool_handler(str(call.get("name") or ""), dict(call.get("args") or {}), str(call.get("id") or "")))
+        tool_results.append(
+            {
+                "id": str(call.get("id") or ""),
+                "name": str(call.get("name") or ""),
+                "result": result,
+            }
+        )
+        messages.append(
+            ToolMessage(
+                content=json.dumps(result, ensure_ascii=False),
+                tool_call_id=str(call.get("id") or ""),
+            )
+        )
+
+    final_response = _invoke_response(
+        system_prompt,
+        user_prompt,
+        explicit_profile_id=profile_id,
+        expect_json=True,
+        messages_override=messages,
+    )
+    return LLMToolLoopResult(
+        payload=parse_json_payload(response_text(final_response), default),
+        status="tool_called",
+        tool_calls=bounded_calls,
+        tool_results=tool_results,
+    )
+
+
 def invoke_json(system_prompt: str, user_prompt: str, default: Any, *, profile_id: str | None = None) -> Any:
     """Invoke the configured LLM and parse a JSON payload."""
 
@@ -2080,6 +2231,7 @@ __all__ = [
     "LLMContractAdapter",
     "LLMInvocationOverrides",
     "LLMTraceContext",
+    "LLMToolLoopResult",
     "ReaderLLMError",
     "clear_llm_gateway_runtime_state",
     "current_llm_scope",
@@ -2087,6 +2239,7 @@ __all__ = [
     "get_llm_profile_stable_concurrency",
     "get_llm_provider_stable_concurrency",
     "invoke_json",
+    "invoke_json_with_tool_loop",
     "invoke_text",
     "llm_invocation_scope",
     "parse_json_payload",

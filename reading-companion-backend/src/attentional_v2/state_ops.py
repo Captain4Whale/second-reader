@@ -29,6 +29,7 @@ from .schemas import (
     ActiveAttention,
     StateOperation,
 )
+from .memory_tokens import token_estimate_payload
 from .source_spans import dedupe_source_refs
 from .state_migration import normalize_active_tension_state
 
@@ -371,6 +372,7 @@ def apply_recent_reading_memory_operations(
             "source_unit_span_id": str(source_unit_span_id or "").strip(),
             "kind": _compact_text(payload.get("kind")) or "other",
             "memory_text": memory_text,
+            "token_estimate": token_estimate_payload(memory_text),
             "status": "active",
             "created_at_unit_index": unit_index,
             "archived_by_consolidation_id": None,

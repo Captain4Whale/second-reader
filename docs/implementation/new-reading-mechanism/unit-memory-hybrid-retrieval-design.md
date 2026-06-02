@@ -8,7 +8,7 @@ Update when: Unit Memory entry shape, indexed fields, retrieval ranking, query g
 ## Status
 
 - Date: `2026-06-02`
-- Status: bottom retrieval framework implemented; Digest retrieved-memory context packaging deferred.
+- Status: bottom retrieval framework implemented; bounded recall/tool loop and Digest `ReadingMemory` packaging implemented in the follow-through slice.
 - Evaluation status: no eval run, no evidence-catalog update.
 - Current basis:
   - `DEC-103` pauses the old Second Reader Memory / Planning track as the default implementation authority.
@@ -17,8 +17,8 @@ Update when: Unit Memory entry shape, indexed fields, retrieval ranking, query g
   - `DEC-109` removes content-typed concept/thread long-memory stores from the current live surface.
   - `DEC-110` makes Unit Memory ledger + hybrid retrieval the current long-distance memory substrate for `attentional_v2`.
   - Digest now emits model-facing `understanding`, `response`, and `annotations`, with the single `understanding` object stored internally through the existing `recent_reading_memory` path.
-- Follow-up design:
-  - `docs/implementation/new-reading-mechanism/ingest-recall-and-digest-memory-context-design.md` is the current draft for replacing the single model-facing `memory_query` with bounded `memory_recalls[]`, adding the Anthropic-style `retrieve_unit_memory` tool loop, and designing Digest retrieved-memory context packaging.
+- Follow-up implementation reference:
+  - `docs/implementation/new-reading-mechanism/ingest-recall-and-digest-memory-context-design.md` records the implemented slice that replaces the single model-facing `memory_query` with bounded `memory_recalls[]`, adds the Anthropic-style `retrieve_unit_memory` tool loop, aggregates multi-recall retrieval, and renders Digest `ReadingMemory`.
 
 ## Design Claim
 
@@ -42,21 +42,22 @@ This document anchors the implemented bottom retrieval framework:
 - sqlite-vec dense index
 - embedding policy
 - hybrid retrieval, fusion, aggregation, and rebuild boundaries
-- Ingest single-query output and runtime fallback query behavior
+- Ingest bounded recall output and runtime fallback query behavior
 - retrieval-mode configuration and trace ownership
 
-The following concerns are intentionally deferred from this implementation slice:
+The original bottom-framework slice deferred prompt packaging, but the follow-through slice now implements:
 
-- how retrieved Understanding briefs are rendered into `Digest` XML context
-- how `Digest` should use retrieved memory alongside recent-neighbor memory
+- bounded `memory_recalls[]` in the same Ingest call that chooses the forward unit boundary
+- a mechanism-private `retrieve_unit_memory` tool loop
+- runtime-owned multi-recall retrieval aggregation, selected-Understanding rendering, and Digest `ReadingMemory` context
 
-One boundary is decided now: query generation should not require a separate LLM call. `Ingest` should emit at most one V1 retrieval query for the selected unit in the same LLM call that chooses the forward unit boundary. If that query is missing, empty, or no longer matches the accepted source unit after runtime fallback, the runner may derive a fallback query from the accepted source unit text.
+One boundary remains: query/recall generation should not require a separate LLM call. `Ingest` expresses prior-reading recalls inside the same LLM call that chooses the forward unit boundary. If recall data is malformed or boundary fallback changes the accepted source unit, runtime may derive a fallback query from the accepted source unit text, but an intentional `memory_recalls: []` skips long-distance retrieval for that cycle.
 
-Another boundary is decided now: reading must be able to choose its memory retrieval mode before starting a book / read session. The user or operator should be able to run long-distance memory as text-only lexical retrieval, or as hybrid lexical + vector retrieval. This mode controls read-time retrieval behavior, not the Unit Memory ledger shape. The V1 default is `hybrid`.
+Another boundary remains: reading must be able to choose its memory retrieval mode before starting a book / read session. The user or operator should be able to run long-distance memory as text-only lexical retrieval, or as hybrid lexical + vector retrieval. This mode controls read-time retrieval behavior, not the Unit Memory ledger shape. The V1 default is `hybrid`.
 
 ## Implemented Slice
 
-The first implementation lands the storage, indexing, read-time retrieval, and trace layer without rendering runtime-selected retrieved memory into `Digest`.
+The first implementation landed the storage, indexing, read-time retrieval, and trace layer. The follow-through slice now connects that layer to Ingest recalls and Digest `ReadingMemory`.
 
 Implemented now:
 
@@ -71,14 +72,15 @@ Implemented now:
   - default mode is `hybrid`
   - supported explicit modes are `hybrid` and `text_only`
 - `unit_memory_retrieval_trace.jsonl`
-  - records Ingest query or fallback query, channel availability, degradation, candidate counts, exclusions, latency, and selected units
-- `Ingest` output now includes optional `memory_query`
-  - one query maximum
+  - records Ingest recalls or fallback query source, per-recall candidate counts, channel availability, degradation, selected/suppressed units, latency, and ReadingMemory token accounting
+- `Ingest` output now includes bounded `memory_recalls[]`
+  - zero to three recalls
   - generated in the same LLM call as boundary selection
   - no separate query-generation LLM call
+  - when recalls are non-empty, the Ingest call must use the `retrieve_unit_memory` tool loop
 - Reading Runner now executes retrieval after accepting the source unit and before `Digest`
-  - retrieved units are trace-only in this slice
-  - `Digest` still receives current XML context plus existing Recent Reading Memory, not retrieved Unit Memory briefs
+  - runtime selects Understanding memory, dedupes against hot current-chapter memory, and renders top-level Digest `ReadingMemory`
+  - tool results exposed back to Ingest are status/count summaries only, never retrieved Understanding text or selected memory ids
 - settlement writes one Unit Memory Entry per accepted source unit after `Digest` output has been accepted
   - source, understanding, response, and annotation retrieval documents are derived from the entry
   - valid documents are always FTS-indexed
@@ -707,35 +709,40 @@ Retrieval should score sub-documents first, then aggregate by `unit_id`. Digest 
 
 ## Retrieval Outline
 
-### Query Generation
+### Recall Generation And Runtime Queries
 
 `Ingest` selects the next forward source unit first.
 
-Retrieval-query generation remains part of the `Ingest` step. Do not introduce a separate query-generation LLM call by default.
+Prior-reading recall generation remains part of the `Ingest` step. Do not introduce a separate query-generation LLM call by default.
 
-The query should be about the selected unit, not about a broad chapter topic.
+The recall should be about the selected unit, not about a broad chapter topic.
 
-V1 query contract:
+Current Ingest recall contract:
 
 ```json
 {
-  "query_version": "unit_memory_query.v1",
-  "query_text": "...",
-  "basis": "selected_source_unit"
+  "memory_recalls": [
+    {
+      "recall_id": "r1",
+      "recall_text": "...",
+      "basis": "selected_source_unit"
+    }
+  ]
 }
 ```
 
 Rules:
 
-- Ingest emits zero or one retrieval query.
-- `query_text` should be a concise natural-language retrieval query for continuity support, based on the source text Ingest selected for the next unit.
-- `query_text` is not a question-answer prompt for Digest and should not ask for a full summary.
+- Ingest emits zero to three recalls.
+- `recall_text` should be a concise reader-facing description of earlier reading that the selected unit naturally asks the Reader to remember.
+- `recall_text` is not a question-answer prompt for Digest and should not ask for a full summary.
 - `basis` is `selected_source_unit` in v1.
-- If `query_text` is empty, missing, or unusable after boundary fallback, runtime may derive a fallback query from the accepted source unit text.
+- If recalls are empty intentionally, runtime skips long-distance Unit Memory retrieval for that cycle.
+- If recall data is missing/malformed or boundary fallback changes the accepted unit, runtime may derive a fallback query from the accepted source unit text.
 - Fallback query text should be a clipped, whitespace-normalized source-unit excerpt, capped at roughly `1200` characters.
-- Retrieval trace should record whether the query came from `ingest_output` or `runtime_source_text_fallback`.
+- Retrieval trace should record whether retrieval came from `tool_retrieve_unit_memory`, `ingest_recall`, `retry_ingest_recall`, or `runtime_source_text_fallback`.
 
-Do not add multiple queries, annotation-triggered queries, or query planning objects in V1. If later review shows one query is too narrow, extend this contract deliberately rather than reintroducing an unbounded tool loop.
+Do not add unbounded query planning objects in V1. Multiple recalls are allowed, but they are capped and reader-shaped rather than a general search-plan interface.
 
 ### FTS5 Query Builder
 
@@ -803,10 +810,11 @@ Retrieval belongs between `Ingest` and `Digest` in runtime orchestration:
 ```text
 Ingest LLM
   -> selected source unit
-  -> optional V1 retrieval query
+  -> optional bounded prior-reading recalls
+  -> retrieve_unit_memory tool call when recalls are non-empty
 
 Runtime
-  -> UnitMemoryIndex.retrieve(...)
+  -> UnitMemoryIndex.retrieve_for_recalls(...)
   -> mode-aware retrieval, optional RRF, unit aggregation
   -> merged ReadingMemory text rendering
 
@@ -824,7 +832,7 @@ High-frequency retrieval is acceptable only if it is bounded. Retrieval is an en
 V1 read-time defaults:
 
 - `memory_retrieval_mode = hybrid`
-- `max_retrieval_queries_per_unit = 1`
+- `max_recalls_per_ingest = 3`
 - `min_retrievable_prior_units = 20`
 - `recent_neighbor_exclusion_unit_count = 20`
 - `retrieval_total_timeout_ms = 800`
@@ -862,8 +870,8 @@ V1 degradation policy:
 
 Audit should keep the engineering trace separate from prompt context. A retrieval trace should record:
 
-- query text / query version
-- query source: `ingest_output` or `runtime_source_text_fallback`
+- recalls and per-recall internal query metadata
+- query source: `tool_retrieve_unit_memory`, `ingest_recall`, `retry_ingest_recall`, or `runtime_source_text_fallback`
 - selected memory retrieval mode
 - retrieval config version
 - latency breakdown
@@ -906,15 +914,11 @@ Rendering rules:
 - no prior Annotation text
 - retrieval reason, matched recall id, matched surface, source, score, and suppression reason stay in audit / trace
 
-Digest context packaging is not part of the current bottom-framework slice.
+Digest context packaging is now implemented as the live Digest prompt path. Remaining work is calibration, not initial packaging:
 
-Deferred design work:
-
-- live XML cutover from current `ReadingState / RecentMemory` to top-level `ReadingMemory`
 - maximum ReadingMemory line count and token budget calibration after the initial `5K hot / 10K retrieved / 15K total` estimate
 - whether MiniMax's official tokenizer should replace `tiktoken` after latency and calibration review
-- how to merge direct recent memory with long-distance retrieved memory without exposing the source distinction to Digest
-- how to keep retrieved memory broad enough for continuity without turning it into hidden backread
+- how broad selected retrieved memory should be before it starts to distract from the current source unit
 
 ### Retrieval Review Criteria
 
@@ -979,11 +983,10 @@ Remaining implementation hardening:
 
 ## What We Still Need To Design
 
-- Context packaging:
-  - live Digest XML cutover to top-level `ReadingMemory`
-  - `ReadingMemory` line budget
-  - Understanding-only rendering rules
-  - how direct recent Understanding and selected retrieved Understanding merge into one position-sorted memory block
+- Context calibration:
+  - maximum useful `ReadingMemory` line count under the fixed token budgets
+  - whether the first `5K / 10K / 15K` budget split should be adjusted after real read traces
+  - whether Digest needs any reader-safe locator beyond `P{paragraph} U{unit}`
 - Retrieval calibration:
   - whether retrieval review requires a second `unicode61` / `porter unicode61` lexical channel
   - calibration of the initial V1 fanout, RRF, surface / channel weight, aggregation, and MMR defaults
@@ -992,9 +995,9 @@ Remaining implementation hardening:
   - whether switching from `text_only` to `hybrid` should trigger vector-index catch-up immediately or leave it pending
   - explicit operator command for vector catch-up / rebuild
 - Recent-neighbor policy:
-  - how many recent units are always carried in Digest context
-  - which units are excluded from long-distance retrieval
-  - how to avoid duplicate context once retrieved Understandings enter `ReadingMemory`
+  - whether the current current-chapter hot-memory policy should be tightened by unit count as well as token budget
+  - whether the default long-distance neighbor exclusion window should stay at `20` units after real trace review
+  - how often retrieved Understandings duplicate hot memory despite source-span dedupe
 - Evaluation / review criteria:
   - concrete review examples
   - labeling rubric and pass / fail thresholds
@@ -1013,7 +1016,7 @@ Create retrieval documents from all four memory surfaces. Every valid retrieval 
 
 This keeps retrieval broad while making the semantic memory spine explicit. Source, response, and annotation documents may recall Entries through lexical evidence, but `understanding` has the highest authority and is the only dense-vector surface.
 
-Use the initial conservative retrieval parameters in this document: top `80` lexical docs across all FTS surfaces, top `80` dense docs from `unit_understanding`, `rrf_k = 60`, modest surface / channel weights, unit aggregation led by the best matching retrieval document, and MMR disabled unless review shows repeated near-duplicate briefs.
+Use the initial conservative retrieval parameters in this document: per-recall top `40` lexical docs across all FTS surfaces, per-recall top `40` dense docs from `unit_understanding`, `rrf_k = 60`, modest surface / channel weights, unit aggregation led by the best matching retrieval document, and MMR disabled unless review shows repeated near-duplicate briefs.
 
 Before reading a book / starting a read session, choose `memory_retrieval_mode`: default `hybrid` for FTS5 plus query embedding and sqlite-vec, or `text_only` for FTS5-only low-latency memory retrieval. Treat `UnitMemoryLedger` as the only durable fact source for long-distance memory. Keep FTS5 and sqlite-vec as rebuildable indexes. Execute retrieval in runtime after `Ingest` and before `Digest`, enforce the performance budget, degrade gracefully when retrieval/index channels fail, and use retrieval review records to calibrate parameters before broad evaluation.
 
