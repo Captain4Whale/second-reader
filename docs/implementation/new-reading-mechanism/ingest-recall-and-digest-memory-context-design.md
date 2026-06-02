@@ -593,6 +593,62 @@ Field guidance:
   - keep recent-vs-retrieved origin, matched recall ids, matched surfaces, scores, and suppression reasons in runtime trace / audit
   - do not expose them in `ReadingMemory` unless a later review proves the Reader needs a small visible locator
 
+### Budget And Token Estimation
+
+V1 `ReadingMemory` should use two internal budget pools before rendering one prompt-facing block:
+
+- hot chapter memory: up to `5,000` estimated tokens
+  - source: already-read Understanding entries from the current chapter
+  - no retrieval needed
+  - trim nearest-prior first when the current chapter exceeds budget
+- long-distance retrieved memory: up to `10,000` estimated tokens
+  - source: selected retrieved Understanding entries from prior non-neighbor units
+  - selected by Ingest/tool result and runtime dedupe
+  - trim to maximize distinct relevant prior units rather than expanding a few entries
+- total prompt-facing `ReadingMemory`: up to `15,000` estimated tokens
+  - Digest does not see the hot/retrieved distinction
+  - runtime keeps the distinction for budget accounting, trace, and review
+
+Use `tiktoken` as the first budget estimator instead of a character-count multiplier.
+
+Recommended estimator:
+
+- estimator id: `tiktoken_o200k_base_v1`
+- encoding: `o200k_base`
+- fallback encoding: `cl100k_base` only if the installed `tiktoken` package does not expose `o200k_base`
+- safety multiplier: start with `1.10` because `tiktoken` is not the MiniMax tokenizer
+- fallback when `tiktoken` is unavailable: use a conservative CJK / Latin heuristic only as a degraded runtime path, and record the degradation
+- implementation note: `tiktoken` is not currently a backend dependency; the code slice that implements `ReadingMemory` budget control should add it explicitly rather than relying on an incidental environment package
+
+When Digest produces an Understanding, runtime should estimate and store the token cost of `understanding.content` with the Unit Memory / recent-memory entry:
+
+```json
+{
+  "understanding": {
+    "kind": "claim_or_argument",
+    "content": "...",
+    "token_estimate": {
+      "estimator": "tiktoken_o200k_base_v1",
+      "tokens": 86,
+      "raw_tokens": 78,
+      "safety_multiplier": 1.1
+    }
+  }
+}
+```
+
+When rendering `ReadingMemory`, runtime should add the position-prefix cost for each line:
+
+```text
+line_estimated_tokens =
+  stored_understanding_token_estimate
+  + estimate_tokens("P42 U18: ")
+```
+
+If a stored entry lacks token metadata, estimate it lazily during rendering and record the estimator version in trace. Do not split one Understanding line mid-sentence to fit the budget; omit the whole line once adding it would exceed the relevant pool budget.
+
+Provider usage should calibrate the estimator over time. After each Digest call, compare prompt-side estimates with provider-reported input token usage when available. If `tiktoken` consistently underestimates MiniMax input tokens, raise the safety multiplier before switching estimator strategy. MiniMax's official tokenizer can replace or calibrate `tiktoken` later, but V1 chooses `tiktoken` for speed and implementation simplicity.
+
 ### Document-To-ReadingMemory Policy
 
 All retrieval documents may participate in recall, ranking, fusion, and Entry selection, but Digest `ReadingMemory` is Understanding-only.
@@ -699,6 +755,7 @@ Suppress:
 - Should `memory_recalls[]` include a separate `source_cues[]` field, or is `recall_text` enough?
 - Should runtime retry once when recalls exist but the model returns final JSON without calling `retrieve_unit_memory`, or should it proceed degraded?
 - How should `ReadingMemory` line budget change for fiction vs argument-heavy nonfiction?
+- Should `tiktoken_o200k_base_v1` remain the default estimator after MiniMax usage calibration, or should V2 switch to MiniMax's official tokenizer despite slower speed?
 - Should Ingest select brief ids, or should runtime treat the highest-ranked tool briefs as selected unless Ingest rejects them?
 - Should `retrieve_unit_memory` be forced with `tool_choice` when recalls are present, or should the model be allowed to decide under `auto`?
 - What is the review rubric for a good recall: coverage of relevant prior units, absence of noisy recall, or downstream Digest usefulness?

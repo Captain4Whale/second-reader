@@ -532,6 +532,10 @@ The stored unit should preserve enough information to support retrieval and late
   - paragraph slices with paragraph index, role, and local char offsets when available
 - Digest outputs:
   - `understanding`
+  - `understanding_token_estimate`
+    - first estimator: `tiktoken_o200k_base_v1`
+    - store both raw `tiktoken` count and safety-multiplied budget count when available
+    - used for fast `ReadingMemory` budget assembly without re-counting every retrieved entry
   - `response`
   - `annotations[]`
 - audit / lifecycle metadata:
@@ -892,6 +896,9 @@ Rendering rules:
 - one line per selected prior unit
 - simple position prefix, such as `P42 U18`, with a compact chapter prefix only when needed for disambiguation
 - one relevant Understanding per selected prior unit
+- line budget uses stored Understanding token estimates plus the estimated token cost of the position prefix
+- first estimator is `tiktoken_o200k_base_v1` with `o200k_base`, `cl100k_base` fallback, and an initial `1.10` safety multiplier because the target MiniMax tokenizer differs from `tiktoken`
+- hot current-chapter memory has an internal `5,000` estimated-token pool; selected long-distance retrieved memory has an internal `10,000` estimated-token pool; the merged prompt-facing `ReadingMemory` block has an effective `15,000` estimated-token ceiling
 - no per-entry XML tags such as `MemoryBrief` or `Understanding`
 - no recent-vs-retrieved labels in the prompt
 - no prior source excerpt
@@ -904,7 +911,8 @@ Digest context packaging is not part of the current bottom-framework slice.
 Deferred design work:
 
 - live XML cutover from current `ReadingState / RecentMemory` to top-level `ReadingMemory`
-- maximum ReadingMemory line count and token budget
+- maximum ReadingMemory line count and token budget calibration after the initial `5K hot / 10K retrieved / 15K total` estimate
+- whether MiniMax's official tokenizer should replace `tiktoken` after latency and calibration review
 - how to merge direct recent memory with long-distance retrieved memory without exposing the source distinction to Digest
 - how to keep retrieved memory broad enough for continuity without turning it into hidden backread
 
