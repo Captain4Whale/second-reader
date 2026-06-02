@@ -56,7 +56,7 @@ Another boundary is decided now: reading must be able to choose its memory retri
 
 ## Implemented Slice
 
-The first implementation lands the storage, indexing, read-time retrieval, and trace layer without injecting retrieved briefs into `Digest`.
+The first implementation lands the storage, indexing, read-time retrieval, and trace layer without rendering runtime-selected retrieved memory into `Digest`.
 
 Implemented now:
 
