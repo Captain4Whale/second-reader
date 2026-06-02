@@ -247,7 +247,9 @@ First implementation defaults:
 - allow at most one `retrieve_unit_memory` call per Ingest attempt
 - do not allow arbitrary tool names
 - if `memory_recalls` is empty, do not call the tool
-- if `memory_recalls` is non-empty and the model finalizes without a tool call, runtime should record `tool_not_called` and either retry once or proceed without retrieved long-distance memory, depending on implementation risk
+- if `memory_recalls` is non-empty, force the `retrieve_unit_memory` tool path for that Ingest attempt
+- if the model writes one or more recalls but finalizes without a tool call, treat it as a contract bug, not a normal degraded mode
+- runtime should repair this by enforcing tool choice, retrying the Ingest/tool turn, or failing the attempt with a clear traceable error; it should not silently continue as if retrieval were optional
 - if the tool returns `boundary_unresolved`, runtime should use the existing boundary retry path rather than letting the model perform unbounded repair inside the tool loop
 - if the tool returns `degraded` or `error`, Ingest may still return a final boundary result; runtime records the degraded retrieval state in trace / audit rather than asking Ingest to report memory support
 
@@ -401,6 +403,8 @@ An empty `memory_recalls` list is meaningful.
 
 If Ingest returns `memory_recalls: []`, it should not call `retrieve_unit_memory`. Runtime should skip long-distance Unit Memory retrieval for that cycle rather than manufacturing a fallback query.
 
+If Ingest returns one or more valid recalls, retrieval is mandatory for that attempt. The intended contract is simple: recall need means retrieve; no recall need means do not retrieve.
+
 Fallback should be used only when:
 
 - the recall field is missing or malformed
@@ -435,7 +439,7 @@ Trace should distinguish:
 - `retry_ingest_recall`
 - `tool_retrieve_unit_memory`
 - `tool_boundary_unresolved`
-- `tool_not_called`
+- `tool_call_contract_violation`
 - `runtime_source_text_fallback`
 - `skip_empty_recalls`
 - `skip_unusable_fallback`
@@ -513,7 +517,7 @@ These numbers should be treated as calibration defaults, not product-quality cla
 - ReadingMemory line count and estimated token usage
 - final retrieval mode / effective mode
 - latency breakdown
-- tool-loop status such as `ok`, `no_recall`, `no_match`, `boundary_unresolved`, `degraded`, `tool_not_called`, or `error`
+- tool-loop status such as `ok`, `no_recall`, `no_match`, `boundary_unresolved`, `degraded`, `tool_call_contract_violation`, or `error`
 
 ## Digest ReadingMemory Context
 
@@ -582,6 +586,7 @@ V1 `ReadingMemory` should use two internal budget pools before rendering one pro
   - source: selected retrieved Understanding entries from prior non-neighbor units
   - selected by runtime after retrieval ranking, dedupe, neighbor exclusion, and budget checks
   - trim to maximize distinct relevant prior units rather than expanding a few entries
+  - do not vary this budget by recall count, genre, or apparent question type in V1
 - total prompt-facing `ReadingMemory`: up to `15,000` estimated tokens
   - Digest does not see the hot/retrieved distinction
   - runtime keeps the distinction for budget accounting, trace, and review
@@ -595,6 +600,8 @@ Recommended estimator:
 - fallback encoding: `cl100k_base` only if the installed `tiktoken` package does not expose `o200k_base`
 - safety multiplier: start with `1.10` because `tiktoken` is not the MiniMax tokenizer
 - fallback when `tiktoken` is unavailable: use a conservative CJK / Latin heuristic only as a degraded runtime path, and record the degradation
+- default retention assumption: keep `tiktoken_o200k_base_v1` as the long-running estimator unless implementation or provider-usage review shows a concrete mismatch
+- if observed MiniMax input-token usage diverges materially from the estimate, report it as an implementation finding and adjust the multiplier or tokenizer strategy deliberately
 - implementation note: `tiktoken` is not currently a backend dependency; the code slice that implements `ReadingMemory` budget control should add it explicitly rather than relying on an incidental environment package
 
 When Digest produces an Understanding, runtime should estimate and store the token cost of `understanding.content` with the Unit Memory / recent-memory entry:
@@ -726,13 +733,13 @@ Suppress:
 - Entries with only weak response / annotation matches and no credible source or understanding support
 - repeated brief content that says the same thing as another selected brief with weaker coverage value
 
-## Open Questions
+## Resolved Implementation Decisions
 
-- Should runtime retry once when recalls exist but the model returns final JSON without calling `retrieve_unit_memory`, or should it proceed degraded?
-- How should `ReadingMemory` line budget change for fiction vs argument-heavy nonfiction?
-- Should `tiktoken_o200k_base_v1` remain the default estimator after MiniMax usage calibration, or should V2 switch to MiniMax's official tokenizer despite slower speed?
-- Should `retrieve_unit_memory` be forced with `tool_choice` when recalls are present, or should the model be allowed to decide under `auto`?
-- What is the review rubric for a good recall: coverage of relevant prior units, absence of noisy recall, or downstream Digest usefulness?
+- Tool use is conditional but deterministic: if there are valid recalls, retrieval is required; if there are no recalls, retrieval is skipped.
+- A model response that includes recalls but does not call `retrieve_unit_memory` is a contract bug to fix through tool-choice enforcement, retry, or explicit failure, not a designed runtime mode.
+- ReadingMemory budgets are fixed in V1: `5,000` estimated tokens for hot current-chapter memory, `10,000` for long-distance retrieved memory, and `15,000` total prompt-facing memory.
+- `tiktoken_o200k_base_v1` remains the default estimator unless implementation evidence shows a real mismatch; such mismatch should be reported and handled deliberately.
+- Retrieval-effectiveness review is part of the implementation slice. The implementer should design targeted tests / review cases that check recall quality, retrieval coverage, noise suppression, budget behavior, and downstream Digest usefulness.
 
 ## Current Recommendation
 
@@ -741,3 +748,5 @@ Move the next implementation from single model-facing `memory_query` to bounded 
 Prompt Ingest as a reader noticing what the selected unit asks it to remember, not as a query generator. Allow zero to three recalls. When recalls exist, Ingest calls `retrieve_unit_memory`; runtime resolves the selected boundary, maps each recall to internal retrieval queries, retrieves per recall, fuses across recall/channel lists, aggregates by Unit Memory Entry, dedupes against direct recent memory, selects the prior Understanding entries under budget, and returns only a compact retrieval-status summary to Ingest.
 
 Ingest should not see compact Understanding briefs or return memory-selection fields. For Digest, introduce a top-level `ReadingMemory` block, not `ReadingState`, `RecentMemory`, or `RetrievedUnitMemory`. Runtime should merge direct recent Understanding and runtime-selected retrieved Understanding into simple position-sorted text lines. Raw prior Unit source text, Response, and Annotation remain retrieval surfaces / audit material and should not be replayed into Digest context.
+
+The implementation should enforce the recall/tool boundary rather than treating it as a soft model preference: `memory_recalls[]` is the Reader's recall intention, and runtime retrieval is the required operational consequence of that intention.
