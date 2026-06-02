@@ -7,7 +7,7 @@ Update when: Unit Memory entry shape, indexed fields, retrieval ranking, query g
 
 ## Status
 
-- Date: `2026-06-01`
+- Date: `2026-06-02`
 - Status: bottom retrieval framework implemented; Digest retrieved-memory context packaging deferred.
 - Evaluation status: no eval run, no evidence-catalog update.
 - Current basis:
@@ -47,7 +47,7 @@ This document anchors the implemented bottom retrieval framework:
 
 The following concerns are intentionally deferred from this implementation slice:
 
-- how retrieved memory cards are rendered into `Digest` XML context
+- how retrieved Understanding briefs are rendered into `Digest` XML context
 - how `Digest` should use retrieved memory alongside recent-neighbor memory
 
 One boundary is decided now: query generation should not require a separate LLM call. `Ingest` should emit at most one V1 retrieval query for the selected unit in the same LLM call that chooses the forward unit boundary. If that query is missing, empty, or no longer matches the accepted source unit after runtime fallback, the runner may derive a fallback query from the accepted source unit text.
@@ -56,7 +56,7 @@ Another boundary is decided now: reading must be able to choose its memory retri
 
 ## Implemented Slice
 
-The first implementation lands the storage, indexing, read-time retrieval, and trace layer without injecting retrieved cards into `Digest`.
+The first implementation lands the storage, indexing, read-time retrieval, and trace layer without injecting retrieved briefs into `Digest`.
 
 Implemented now:
 
@@ -78,11 +78,11 @@ Implemented now:
   - no separate query-generation LLM call
 - Reading Runner now executes retrieval after accepting the source unit and before `Digest`
   - retrieved units are trace-only in this slice
-  - `Digest` still receives current XML context plus existing Recent Reading Memory, not retrieved Unit Memory cards
+  - `Digest` still receives current XML context plus existing Recent Reading Memory, not retrieved Unit Memory briefs
 - settlement writes one Unit Memory Entry per accepted source unit after `Digest` output has been accepted
   - source, understanding, response, and annotation retrieval documents are derived from the entry
   - valid documents are always FTS-indexed
-  - vector indexing is attempted in `hybrid` mode and may remain pending when sqlite-vec or Ollama is unavailable
+  - vector indexing is attempted only for `unit_understanding` documents in `hybrid` mode and may remain pending when sqlite-vec or Ollama is unavailable
 
 The backend entry points accept `memory_retrieval_mode`, but the frontend does not expose a new UI control in this slice.
 
@@ -201,7 +201,7 @@ Then maintain:
   - lives in the same SQLite file because it is retrieval-runtime cache state, not Unit Memory truth
   - use SHA-256 over normalized query text for `query_hash`
 
-In v1, index participation is simple: every valid retrieval document is FTS-indexed and vector-index eligible. In `hybrid` mode, vector rows should be present or pending; in `text_only` mode, vector rows may be absent until catch-up is requested. Surface semantics should be expressed through channel weights and unit aggregation, not by excluding a surface from one index.
+In v1, index participation is intentionally asymmetric: every valid retrieval document is FTS-indexed, while only `unit_understanding` is vector-index eligible. In `hybrid` mode, Understanding vector rows should be present or pending; in `text_only` mode, vector rows may be absent until catch-up is requested. Surface semantics should be expressed through channel weights and unit aggregation, with Understanding carrying dense semantic recall.
 
 The exact SQL may change during implementation, but the ownership boundary should not: `unit_memory_entries` is the source of truth, while FTS and vector tables are rebuildable indexes.
 
@@ -349,12 +349,12 @@ Initial surface / channel weights:
 
 | surface | lexical weight | dense weight | purpose |
 | --- | ---: | ---: | --- |
-| `unit_source` | `1.25` | `0.75` | emphasize exact wording, names, quote callbacks, and source recurrence |
+| `unit_source` | `1.25` | none | emphasize exact wording, names, quote callbacks, and source recurrence |
 | `unit_understanding` | `0.85` | `1.35` | emphasize semantic continuity and what the unit established |
-| `unit_annotation` | `1.10` | `1.10` | let exact quote and note meaning support each other |
-| `unit_response` | `0.45` | `0.65` | keep readerly aftertaste as a weak support signal |
+| `unit_annotation` | `1.10` | none | let exact quote and note wording act as an auxiliary lexical signal |
+| `unit_response` | `0.45` | none | keep readerly aftertaste as a weak lexical support signal |
 
-These weights are deliberately modest. They should express surface posture without overpowering rank evidence.
+These weights are deliberately modest. They should express surface posture without overpowering rank evidence. Dense weights apply only to vector-eligible `unit_understanding` documents.
 
 Why not weighted sum first:
 
@@ -390,7 +390,9 @@ Initial aggregation defaults:
 - `recent_neighbor_exclusion_unit_count = 20`
 - also exclude any source unit ids already carried directly in the Digest recent-memory context
 - `max_units_after_aggregation = 20`
-- `max_units_to_digest_context = 4` to `6`, with the exact value chosen by Digest context budget
+- `max_units_to_digest_context` should be recalibrated by the later Digest memory-budget slice
+  - do not inherit the old `4` to `6` detailed-memory cap now that Digest context is Understanding-only
+  - Understanding-only briefs should optimize for broader relevant Entry coverage under the final budget
 
 Unit-level score should consider:
 
@@ -414,9 +416,9 @@ Initial default:
 - `mmr_candidate_units = 20`
 - `mmr_output_units = 6`
 - apply only after selecting a larger candidate pool, not as a replacement for RRF
-- compare units by dense embedding of their best matching retrieval doc or by a compact unit-card embedding
+- compare units by dense embedding of their Understanding document or by a compact Understanding-brief embedding
 
-MMR should prevent redundant retrieval cards, not force diversity when the top results are genuinely connected.
+MMR should prevent redundant retrieval briefs, not force diversity when the top results are genuinely connected.
 
 ### Adapter Boundary
 
@@ -426,7 +428,7 @@ The rest of the reader should ask for semantic operations:
 
 - write one Unit Memory Entry
 - index retrieval documents for that entry
-- embed retrieval documents
+- embed vector-eligible Understanding documents
 - retrieve prior unit candidates for a query
 - rebuild all indexes from the ledger
 
@@ -547,7 +549,7 @@ The unit entry may contain `understanding.kind` because Digest already emits tha
 
 Storage is unit-centered, but retrieval should index multiple field-specific surfaces.
 
-This avoids flattening source, understanding, response, and annotations into one undifferentiated blob while still allowing all valid retrieval documents to participate in both lexical and semantic recall. The surface sections below describe weighting posture, not exclusive index membership.
+This avoids flattening source, understanding, response, and annotations into one undifferentiated blob while keeping `understanding` as the primary long-distance memory surface. In V1, all valid retrieval documents participate in lexical recall, but only `unit_understanding` participates in dense vector recall.
 
 ### Source Surface
 
@@ -560,12 +562,11 @@ Index:
 Use:
 
 - BM25 / full-text matching for names, terms, repeated phrases, images, quotes, and exact wording
-- semantic embedding for source-near paraphrase recall
 
 Default channel posture:
 
 - high lexical weight
-- medium semantic weight
+- no dense vector weight in V1
 
 Do not assume an accepted source unit is larger than a paragraph or aligned to paragraph boundaries. Current reading units are paragraph-offset source spans and may start or end inside a paragraph, so the source retrieval docs should follow the accepted unit's recorded paragraph slices.
 
@@ -602,8 +603,8 @@ Use:
 
 Default channel posture:
 
-- medium-high lexical weight
-- medium-high semantic weight
+- medium-low to medium lexical weight
+- no dense vector weight in V1
 
 Each annotation should produce one retrieval document. Its retrieval text should combine the exact source quote and the annotation content, for example `source_quote + "\n" + content`, because the quote gives source footing while the note content gives readerly meaning. Do not split quote and note into separate v1 documents.
 
@@ -619,10 +620,10 @@ Use:
 
 Default channel posture:
 
-- low-to-medium semantic weight
 - low lexical weight
+- no dense vector weight in V1
 
-Response is useful, but it should not dominate source-grounded retrieval. It is a support signal, not the primary memory truth.
+Response is useful as a lexical support signal, but it should not dominate source-grounded retrieval or later Digest context. It is a support signal, not the primary memory truth.
 
 ## Retrieval Documents
 
@@ -641,23 +642,23 @@ A single Unit Memory Entry can produce multiple retrieval documents:
 
 ### V1 Index Participation
 
-Every valid retrieval document is eligible for both retrieval indexes:
+Every valid retrieval document is eligible for lexical retrieval. Dense retrieval is Understanding-only in V1:
 
 - FTS5 indexes `retrieval_docs.text` for lexical / BM25 candidate ranks.
-- sqlite-vec embeds the same `retrieval_docs.text` for dense candidate ranks.
+- sqlite-vec embeds only `unit_understanding` documents for dense candidate ranks.
 
-Do not decide index membership by surface in v1. A source slice can still benefit from dense semantic recall; an Understanding can still benefit from lexical names or terms; an Annotation naturally combines exact quote and reader meaning; a Response may occasionally help semantic continuity.
+This is an intentional performance and context-discipline choice. Source, response, and annotation text can still help recall through FTS5, but they are not treated as dense semantic memory. Understanding is the only surface expected to carry the durable semantic memory that future reading should recall.
 
 Surface differences should instead be expressed through channel weights and later unit aggregation:
 
 | surface | lexical channel | dense channel | role |
 | --- | --- | --- | --- |
-| `unit_source` | high | medium | exact wording, names, quotes, source-near semantic recall |
+| `unit_source` | high | none | exact wording, names, quotes, source-near lexical recall |
 | `unit_understanding` | medium | high | primary semantic memory of what the unit established |
-| `unit_annotation` | medium-high | medium-high | visible-note continuity with both quote and note meaning |
-| `unit_response` | low | low-to-medium | support signal for readerly aftertaste / pressure |
+| `unit_annotation` | medium-low to medium | none | auxiliary recall through marked quote / note wording |
+| `unit_response` | low | none | auxiliary recall through readerly aftertaste / pressure wording |
 
-The implementation may store these as a `weight_profile` value on `retrieval_docs` and resolve concrete numeric weights in retrieval config. Empty or invalid material should not create a retrieval document at all. Once a retrieval document exists, it should always be FTS-indexed; vector indexing is expected for `hybrid` mode and may be pending / absent while a book is being read in `text_only` mode.
+The implementation may store these as a `weight_profile` value on `retrieval_docs` and resolve concrete numeric weights in retrieval config. Empty or invalid material should not create a retrieval document at all. Once a retrieval document exists, it should always be FTS-indexed. Vector indexing is expected only for `unit_understanding` in `hybrid` mode and may be pending / absent while a book is being read in `text_only` mode.
 
 ### V1 Document Granularity
 
@@ -668,7 +669,7 @@ Use surface-specific document granularity:
   - retrieval doc id pattern: `unit:{id}#source:slice:{index}`
   - text: the recorded slice text
   - metadata: `paragraph_index`, `start_char`, `end_char`, `text_role`, `source_span_id`
-  - purpose: exact phrase, name, quote-like callback, repeated wording, and source-near semantic recall
+  - purpose: exact phrase, name, quote-like callback, and repeated wording recall
 - `unit_understanding`
   - one retrieval document per Unit Memory Entry
   - retrieval doc id pattern: `unit:{id}#understanding`
@@ -680,13 +681,13 @@ Use surface-specific document granularity:
   - retrieval doc id pattern: `unit:{id}#annotation:{index}`
   - text: `source_quote + "\n" + content`
   - metadata: annotation index, `source_quote`, resolved source ref if available
-  - purpose: recall visible notes and exact lines that were previously marked
+  - purpose: auxiliary lexical recall of visible notes and exact lines that were previously marked
 - `unit_response`
   - zero or one retrieval document per Unit Memory Entry
   - retrieval doc id pattern: `unit:{id}#response`
   - text: `digest.response`
   - omit this document when response is empty
-  - purpose: low-weight support for readerly aftertaste, question, pressure, and companion-like continuity
+  - purpose: low-weight lexical support for readerly aftertaste, question, pressure, and companion-like continuity
 
 Do not create these documents in v1:
 
@@ -696,9 +697,9 @@ Do not create these documents in v1:
 - no separate source-quote-only and annotation-note-only documents
 - no default `unit_all_text` blob that flattens source, understanding, response, and annotations together
 
-If later retrieval review shows that an additional whole-unit semantic surface is needed, add it as a low-weight `unit_card` surface. Do not add it as a default v1 document, because `unit_understanding` already carries the primary whole-unit semantic memory.
+If later retrieval review shows that an additional whole-unit semantic surface is needed, add it as a low-weight `unit_brief` surface. Do not add it as a default v1 document, because `unit_understanding` already carries the primary whole-unit semantic memory.
 
-Retrieval should score sub-documents first, then aggregate by `unit_id`. Digest should receive retrieved units or compact unit memory cards, not a loose pile of disconnected snippets.
+Retrieval should score sub-documents first, then aggregate by `unit_id`. Digest should receive compact Understanding briefs, not a loose pile of disconnected snippets or rich multi-field bundles.
 
 ## Retrieval Outline
 
@@ -757,7 +758,7 @@ This builder is intentionally conservative. It avoids exposing raw model text di
 Use retrieval according to the selected `memory_retrieval_mode`:
 
 - all modes use a lexical candidate set from SQLite FTS5 BM25 over all valid retrieval documents
-- `hybrid` mode also uses a semantic candidate set from sqlite-vec dense vector KNN over the same valid retrieval documents
+- `hybrid` mode also uses a semantic candidate set from sqlite-vec dense vector KNN over `unit_understanding` documents only
 - optional metadata filters:
   - same book
   - only prior units
@@ -775,13 +776,13 @@ V1 recent-neighbor exclusion:
 
 ### Ranking And Aggregation
 
-Rank sub-document hits first, then aggregate to unit-level memory cards.
+Rank sub-document hits first, then aggregate to unit-level memory briefs.
 
 Ranking should consider:
 
 - retrieval rank from FTS5 BM25
 - retrieval rank from sqlite-vec vector search
-- surface / channel weights from the retrieval document's weight profile
+- surface / channel weights from the retrieval document's weight profile, with dense channel available only for `unit_understanding`
 - distance from current unit
 - exact source phrase match bonus
 - diversity across units and surfaces
@@ -808,7 +809,7 @@ Runtime
 Digest LLM
   -> current source unit
   -> recent-neighbor memory
-  -> retrieved long-distance memory cards
+  -> retrieved long-distance Understanding briefs
 ```
 
 `Digest` should not know about SQLite, FTS5, sqlite-vec, embedding providers, RRF, raw scores, or retrieval rows. It should only see reader-usable prior-reading support.
@@ -875,13 +876,14 @@ The prompt-facing `RetrievedMemory` block should omit raw scores and internal id
 
 Digest should not receive raw index rows.
 
-It should receive compact retrieved memory cards, likely grouped by prior unit:
+It should receive compact retrieved Understanding briefs, grouped by prior unit:
 
-- source locator
-- short source excerpt or exact matching quote when useful
-- relevant understanding
-- relevant annotation content when applicable
-- optional response only when it materially helps continuity
+- source locator / unit metadata only when useful for traceability
+- one relevant Understanding per selected prior unit
+- optional matched recall metadata if the later prompt design wants it
+- no prior source excerpt
+- no prior Response text
+- no prior Annotation text
 - retrieval reason / matched surface for audit, not necessarily visible in prompt text
 
 Digest context packaging is not part of the current bottom-framework slice.
@@ -889,9 +891,9 @@ Digest context packaging is not part of the current bottom-framework slice.
 Deferred design work:
 
 - XML shape for `RetrievedMemory`
-- maximum card count and token budget
+- maximum Understanding-brief count and token budget
 - how to mark near-neighbor direct memory versus long-distance retrieved memory
-- how much exact source text can be shown without turning retrieval into hidden backread
+- how to keep retrieved memory broad enough for continuity without turning it into hidden backread
 
 ### Retrieval Review Criteria
 
@@ -899,21 +901,21 @@ V1 should use a human-reviewable retrieval trace before broad automated scoring.
 
 - current source unit
 - Ingest retrieval query or runtime fallback query
-- top retrieved unit cards
+- top retrieved unit briefs
 - matched surfaces and retrieval reasons
-- whether the cards were sent to Digest
+- whether the briefs were sent to Digest
 
 Review dimensions:
 
 - relevance: the retrieved unit is genuinely related to the current unit
 - continuity helpfulness: the memory helps the current reading remain continuous without forcing a callback
-- source grounding: the match can point back to source, Understanding, Annotation, or Response evidence
+- source grounding: the match can point back to source, Understanding, Annotation, or Response evidence in trace, while Digest receives Understanding only
 - non-redundancy: the result is not merely repeating recent-neighbor memory already carried directly
 - non-dominance: the retrieved memory supports the current source unit without becoming the main object of reading
-- coverage: important prior dependencies are not missing from the top cards
-- noise: unrelated top cards are rare enough not to pollute Digest context
+- coverage: important prior dependencies are not missing from the top briefs
+- noise: unrelated top briefs are rare enough not to pollute Digest context
 
-Use review findings to calibrate fanout, surface / channel weights, recent-neighbor exclusion, retrieved-card budget, MMR, and whether V2 needs a second lexical channel.
+Use review findings to calibrate fanout, surface / channel weights, recent-neighbor exclusion, retrieved-brief budget, MMR, and whether V2 needs a second lexical channel.
 
 ### Persistence And Refresh
 
@@ -924,7 +926,7 @@ V1 write lifecycle:
 - write the Unit Memory Entry during settlement after a `Digest` result has been accepted
 - derive retrieval documents from that entry
 - update the FTS5 index for those retrieval documents
-- in `hybrid` mode, request embeddings and update the sqlite-vec index within the write-side budget
+- in `hybrid` mode, request embeddings for `unit_understanding` documents and update the sqlite-vec index within the write-side budget
 - in `text_only` mode, vector embeddings may remain absent / pending unless a background rebuild is explicitly requested
 - if embedding or vector insertion fails, keep the Unit Memory Entry and lexical index usable, and mark vector indexing pending / failed for retry
 
@@ -933,7 +935,7 @@ The read cycle should not be blocked by rebuildable index maintenance. Ledger wr
 Write-side vector maintenance defaults:
 
 - `vector_index_write_budget_ms = 1000`
-- if the budget is exceeded, leave remaining vector rows as `pending`
+- if the budget is exceeded, leave remaining Understanding vector rows as `pending`
 - pending vector rows should not prevent FTS retrieval, text-only mode, or resume
 - hybrid retrieval should use available vector rows only and record vector coverage in the retrieval trace
 
@@ -945,11 +947,11 @@ Implementation should record enough index metadata to make rebuilds safe:
 - weight profile version
 - promptset / Digest output contract version that produced the source entry
 
-The first implementation should include a rebuild path that can recreate retrieval documents, FTS5, and vector rows from the ledger.
+The first implementation should include a rebuild path that can recreate retrieval documents, FTS5, and Understanding-only vector rows from the ledger.
 
 Remaining implementation hardening:
 
-- explicit rebuild / catch-up command for derived retrieval documents, FTS5 rows, and vector rows
+- explicit rebuild / catch-up command for derived retrieval documents, FTS5 rows, and Understanding vector rows
 - tokenizer review results and whether V2 needs a dual lexical channel
 - embedding model version pinning and local Ollama health checks beyond graceful degradation
 - index rebuild checksums and prompt-version compatibility
@@ -958,9 +960,9 @@ Remaining implementation hardening:
 
 - Context packaging:
   - XML block shape for Digest
-  - retrieved-card budget
-  - source quote / understanding / response / annotation rendering rules
-  - how retrieved Unit Memory cards should sit beside existing Recent Reading Memory
+  - retrieved-brief budget
+  - Understanding-only rendering rules
+  - how retrieved Unit Memory briefs should sit beside existing Recent Reading Memory
 - Retrieval calibration:
   - whether retrieval review requires a second `unicode61` / `porter unicode61` lexical channel
   - calibration of the initial V1 fanout, RRF, surface / channel weight, aggregation, and MMR defaults
@@ -971,7 +973,7 @@ Remaining implementation hardening:
 - Recent-neighbor policy:
   - how many recent units are always carried in Digest context
   - which units are excluded from long-distance retrieval
-  - how to avoid duplicate context once retrieved cards enter the Digest prompt
+  - how to avoid duplicate context once retrieved briefs enter the Digest prompt
 - Evaluation / review criteria:
   - concrete review examples
   - labeling rubric and pass / fail thresholds
@@ -981,16 +983,16 @@ Remaining implementation hardening:
 
 Use one append-only Unit Memory Entry per completed read unit.
 
-Create retrieval documents from all four memory surfaces. Every valid retrieval document should be FTS-indexed and vector-index eligible:
+Create retrieval documents from all four memory surfaces. Every valid retrieval document should be FTS-indexed, but only Understanding should be vector-index eligible in V1:
 
 - accepted source unit
 - `understanding`
 - `response`
 - `annotations[]`
 
-But do not score them as equal signals. Use field-specific retrieval documents, weight profiles, and unit-level aggregation.
+This keeps retrieval broad while making the semantic memory spine explicit. Source, response, and annotation documents may recall Entries through lexical evidence, but `understanding` has the highest authority and is the only dense-vector surface.
 
-Use the initial conservative retrieval parameters in this document: top `80` lexical docs, top `80` dense docs, `rrf_k = 60`, modest surface / channel weights, unit aggregation led by the best matching retrieval document, and MMR disabled unless review shows repeated near-duplicate cards.
+Use the initial conservative retrieval parameters in this document: top `80` lexical docs across all FTS surfaces, top `80` dense docs from `unit_understanding`, `rrf_k = 60`, modest surface / channel weights, unit aggregation led by the best matching retrieval document, and MMR disabled unless review shows repeated near-duplicate briefs.
 
 Before reading a book / starting a read session, choose `memory_retrieval_mode`: default `hybrid` for FTS5 plus query embedding and sqlite-vec, or `text_only` for FTS5-only low-latency memory retrieval. Treat `UnitMemoryLedger` as the only durable fact source for long-distance memory. Keep FTS5 and sqlite-vec as rebuildable indexes. Execute retrieval in runtime after `Ingest` and before `Digest`, enforce the performance budget, degrade gracefully when retrieval/index channels fail, and use retrieval review records to calibrate parameters before broad evaluation.
 

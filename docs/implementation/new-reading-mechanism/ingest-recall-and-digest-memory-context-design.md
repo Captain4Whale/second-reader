@@ -3,7 +3,7 @@
 Purpose: design the next Unit Memory slice after the bottom hybrid retrieval framework: how Ingest expresses prior-reading recalls, how the Ingest LLM call invokes retrieval through tools, and how retrieved Unit Memory should later enter Digest context.
 Use when: designing or implementing bounded multi-recall Ingest output, the `retrieve_unit_memory` tool loop, retrieval aggregation across recalls, or Digest retrieved-memory XML context.
 Not for: the already-landed Unit Memory ledger / FTS5 / sqlite-vec bottom framework, evaluation claims, or evidence-catalog updates.
-Update when: Ingest recall wording, tool schema, recall output schema, retrieval aggregation, retrieved-memory card shape, or Digest context rules change.
+Update when: Ingest recall wording, tool schema, recall output schema, retrieval aggregation, retrieved-memory brief shape, or Digest context rules change.
 
 ## Status
 
@@ -17,8 +17,8 @@ Update when: Ingest recall wording, tool schema, recall output schema, retrieval
   - Replace model-facing `memory_query` with bounded `memory_recalls[]`.
   - Let the Ingest LLM call invoke Unit Memory retrieval through an Anthropic-style tool loop.
   - Keep actual retrieval execution, score fusion, source-unit resolution, and artifact writing in Reading Runner/runtime code.
-  - Let Ingest see compact retrieval results and select/confirm memory support for Digest without copying retrieved card content into final JSON.
-  - Add Digest retrieved-memory context only after recall, tool result packaging, and card selection are implemented deliberately.
+  - Let Ingest see compact retrieval results and select/confirm memory support for Digest without copying retrieved brief content into final JSON.
+  - Add Digest retrieved-memory context only after recall, tool result packaging, and brief selection are implemented deliberately.
 - Tool capability note:
   - On `2026-06-02`, a minimal live probe against the configured `MiniMax-M2.7` Anthropic-compatible endpoint succeeded with `tool_use -> tool_result -> final answer`.
   - The probe verifies basic provider support for Anthropic-style tools, not the Reading Companion retrieval tool implementation.
@@ -107,7 +107,7 @@ Do not list every name or noun. Do not split mechanically by entity. Create sepa
 
 Return zero to three recalls. If nothing in the selected unit asks for earlier memory, return an empty list.
 
-If you write one or more recalls, call the Unit Memory retrieval tool with those recalls. Use the tool result only to decide which retrieved prior-unit cards should support Digest.
+If you write one or more recalls, call the Unit Memory retrieval tool with those recalls. Use the tool result only to decide which retrieved prior-unit briefs should support Digest.
 ```
 
 ### Current Step Adjustment
@@ -121,7 +121,7 @@ Your work in this call is to select the next forward source unit that you should
 
 After selecting it, briefly name any earlier reading that this unit makes you want to remember before Digest reads it closely.
 
-When those recalls exist, use the available Unit Memory retrieval tool to bring back compact prior-reading cards before you return the final Ingest JSON.
+When those recalls exist, use the available Unit Memory retrieval tool to bring back compact prior-reading briefs before you return the final Ingest JSON.
 ```
 
 ### Context Use Guide Adjustment
@@ -150,9 +150,9 @@ The LLM decides whether the selected unit calls for prior-reading recall. Runtim
 - applying retrieval mode fallback and degradation handling
 - fusing and aggregating results
 - writing retrieval traces
-- packaging compact prior-unit cards
+- packaging compact prior-unit briefs
 
-The model sees the compact tool result and chooses which cards are useful enough to carry toward Digest. It must not receive raw retrieval internals or mutate stored memory.
+The model sees the compact tool result and chooses which briefs are useful enough to carry toward Digest. It must not receive raw retrieval internals or mutate stored memory.
 
 ### Call Sequence
 
@@ -163,9 +163,9 @@ Initial Ingest XML prompt
   -> model selects a provisional forward boundary and writes 0-3 recalls
   -> if recalls are empty, model returns final JSON without tool use
   -> if recalls are non-empty, model calls retrieve_unit_memory
-  -> runtime resolves the boundary, executes Unit Memory retrieval, and returns compact cards
-  -> model returns final Ingest JSON with boundary fields, recalls, and selected card ids
-  -> Reading Runner accepts/governs the boundary and assembles Digest context from runtime-owned cards
+  -> runtime resolves the boundary, executes Unit Memory retrieval, and returns compact briefs
+  -> model returns final Ingest JSON with boundary fields, recalls, and selected brief ids
+  -> Reading Runner accepts/governs the boundary and assembles Digest context from runtime-owned briefs
 ```
 
 This keeps one Ingest LLM call conceptually, even if the transport contains multiple Anthropic Messages turns.
@@ -181,7 +181,7 @@ retrieve_unit_memory
 Tool description:
 
 ```text
-Retrieve compact prior Unit Memory cards that may help the Reader read the selected source unit continuously.
+Retrieve compact prior Unit Memory briefs that may help the Reader read the selected source unit continuously.
 ```
 
 ### Tool Input
@@ -217,22 +217,15 @@ The tool result should be compact and Digest-oriented:
     "status": "matched",
     "source_span_id": "..."
   },
-  "cards": [
+  "memory_briefs": [
     {
-      "card_id": "umc_...",
+      "brief_id": "umb_...",
       "unit_id": "...",
       "unit_index": 12,
       "chapter_ref": "chapter-1",
       "matched_recalls": ["r1"],
-      "prior_source_excerpt": "...",
-      "prior_understanding": "...",
-      "prior_response": "...",
-      "prior_annotations": [
-        {
-          "quote": "...",
-          "note": "..."
-        }
-      ]
+      "matched_surfaces": ["unit_understanding", "unit_source"],
+      "understanding": "..."
     }
   ],
   "degradation_reason": ""
@@ -241,14 +234,14 @@ The tool result should be compact and Digest-oriented:
 
 Allowed statuses:
 
-- `ok`: retrieval ran and returned one or more cards
+- `ok`: retrieval ran and returned one or more briefs
 - `no_recall`: no recalls were supplied
-- `no_match`: retrieval ran but no usable prior-unit card remained after filters
+- `no_match`: retrieval ran but no usable prior-unit brief remained after filters
 - `boundary_unresolved`: runtime could not resolve `end_anchor_text` against the current preview
 - `degraded`: retrieval ran with fallback or partial capability, such as lexical-only under `hybrid`
 - `error`: runtime tool execution failed in a recoverable way
 
-The tool result should not expose raw scores, RRF internals, embedding distances, SQL, FTS snippets with markup, or full previous unit text.
+The tool result should not expose raw scores, RRF internals, embedding distances, SQL, FTS snippets with markup, full previous unit text, prior responses, or prior annotation text. It may expose matched surface names for auditability and selection, but the only prior-reading content it should return is Understanding.
 
 ### Tool Choice And Limits
 
@@ -257,7 +250,7 @@ First implementation defaults:
 - allow at most one `retrieve_unit_memory` call per Ingest attempt
 - do not allow arbitrary tool names
 - if `memory_recalls` is empty, do not call the tool
-- if `memory_recalls` is non-empty and the model finalizes without a tool call, runtime should record `tool_not_called` and either retry once or proceed without retrieved cards, depending on implementation risk
+- if `memory_recalls` is non-empty and the model finalizes without a tool call, runtime should record `tool_not_called` and either retry once or proceed without retrieved briefs, depending on implementation risk
 - if the tool returns `boundary_unresolved`, runtime should use the existing boundary retry path rather than letting the model perform unbounded repair inside the tool loop
 - if the tool returns `degraded` or `error`, Ingest may still return a final boundary result with `memory_support.status` reflecting the degraded state
 
@@ -290,7 +283,7 @@ With:
   ],
   "memory_support": {
     "status": "used",
-    "selected_card_ids": ["umc_..."],
+    "selected_brief_ids": ["umb_..."],
     "note": "..."
   }
 }
@@ -312,13 +305,13 @@ Full final output:
   ],
   "memory_support": {
     "status": "used",
-    "selected_card_ids": ["umc_..."],
+    "selected_brief_ids": ["umb_..."],
     "note": "retrieved prior relationship context is relevant"
   }
 }
 ```
 
-The final Ingest JSON should not copy full retrieved card content. Runtime owns the cards and passes them to Digest context after boundary governance.
+The final Ingest JSON should not copy full retrieved brief content. Runtime owns the briefs and passes them to Digest context after boundary governance.
 
 ### Empty Recall Output
 
@@ -332,7 +325,7 @@ When nothing in the selected unit calls for earlier reading:
   "memory_recalls": [],
   "memory_support": {
     "status": "no_recall",
-    "selected_card_ids": [],
+    "selected_brief_ids": [],
     "note": ""
   }
 }
@@ -353,18 +346,18 @@ When nothing in the selected unit calls for earlier reading:
 - `basis`
   - `selected_source_unit` for the first version
 - `memory_support.status`
-  - `used`: tool returned cards and Ingest selected at least one
+  - `used`: tool returned briefs and Ingest selected at least one
   - `no_recall`: Ingest found no recall need and did not call the tool
-  - `no_match`: tool ran but no useful cards remained
+  - `no_match`: tool ran but no useful briefs remained
   - `degraded`: tool ran with degraded retrieval capability
   - `tool_not_called`: recalls existed but no tool call completed
   - `error`: retrieval tool failed in a recoverable way
-- `memory_support.selected_card_ids`
-  - card ids from the tool result that runtime may package into Digest context
+- `memory_support.selected_brief_ids`
+  - brief ids from the tool result that runtime may package into Digest context
   - empty when no retrieved support should be carried
 - `memory_support.note`
-  - short internal reason for selected cards or degraded/no-match status
-  - must not include full card text
+  - short internal reason for selected briefs or degraded/no-match status
+  - must not include full brief text
 
 ### Good Recall Examples
 
@@ -449,7 +442,7 @@ If the tool receives an unresolvable boundary:
 - return `boundary_unresolved` with compact resolution evidence
 - let Reading Runner use the existing retry path rather than letting the model perform an unbounded repair loop inside tools
 
-If the boundary returned by the final Ingest result cannot be resolved and runtime retries Ingest, use recalls and tool cards from the accepted retry result only.
+If the boundary returned by the final Ingest result cannot be resolved and runtime retries Ingest, use recalls and tool briefs from the accepted retry result only.
 
 If runtime deterministic fallback changes the accepted source unit after Ingest, discard model recalls and either:
 
@@ -498,8 +491,8 @@ memory_recalls[]
   -> RRF over (recall_id, channel) lists
   -> unit-level aggregation
   -> recent-neighbor exclusion and dedupe
-  -> compact retrieved-memory cards for the tool result
-  -> Ingest-selected card ids
+  -> compact retrieved-memory briefs for the tool result
+  -> Ingest-selected brief ids
   -> runtime-packaged Digest context
 ```
 
@@ -516,7 +509,7 @@ Initial recommendation:
 - `max_recalls_per_ingest = 3`
 - per recall lexical top-k: lower than current single-query top-k, for example `40`
 - per recall dense top-k: lower than current single-query top-k, for example `40`
-- aggregate final retrieved units: keep current small tool-result cap, for example `max 6` cards
+- aggregate final retrieved units: keep current bounded tool-result cap, calibrated for broad Understanding coverage
 - allow Ingest to select fewer than the tool cap, including none
 - skip vector work entirely in `text_only` mode
 - cache query embeddings per recall text
@@ -539,8 +532,8 @@ These numbers should be treated as calibration defaults, not product-quality cla
   - degradation reason
 - aggregated selected units
 - which recalls matched each selected unit
-- cards returned to Ingest
-- card ids selected by Ingest for Digest
+- briefs returned to Ingest
+- brief ids selected by Ingest for Digest
 - final retrieval mode / effective mode
 - latency breakdown
 - tool-loop status such as `ok`, `no_recall`, `no_match`, `boundary_unresolved`, `degraded`, `tool_not_called`, or `error`
@@ -566,67 +559,53 @@ Rationale:
 - It is prior reading state, not a new task.
 - Digest's task remains Understanding / Response / Annotation.
 - Retrieved memory should help continuity without becoming the object of reading.
-- Runtime assembles this context from cards returned by `retrieve_unit_memory` and selected/confirmed by Ingest, not from free-form text in the final Ingest JSON.
+- Runtime assembles this context from briefs returned by `retrieve_unit_memory` and selected/confirmed by Ingest, not from free-form text in the final Ingest JSON.
 
-### Candidate Card Shape
+### Candidate Memory Shape
 
-Each retrieved prior unit should become one compact card.
+Each retrieved prior unit should become one compact memory brief.
 
 Candidate XML shape:
 
 ```xml
-<MemoryCard unit_id="..." unit_index="..." chapter_ref="..." matched_recalls="r1 r2">
-  <WhyRemembered>...</WhyRemembered>
-  <PriorUnderstanding>...</PriorUnderstanding>
-  <PriorResponse>...</PriorResponse>
-  <PriorAnnotations>
-    <Annotation>
-      <Excerpt>...</Excerpt>
-      <Note>...</Note>
-    </Annotation>
-  </PriorAnnotations>
-</MemoryCard>
+<MemoryBrief unit_id="..." unit_index="..." chapter_ref="..." matched_recalls="r1 r2">
+  <Understanding>...</Understanding>
+</MemoryBrief>
 ```
 
 Field guidance:
 
-- `WhyRemembered`
-  - concise reason derived from the matched Ingest recalls
-  - tells Digest why this prior unit was brought back without exposing retrieval scores
-- `PriorUnderstanding`
+- `Understanding`
   - the main compact memory from that earlier unit
-  - usually the highest-value field for Digest continuity
+  - the only prior-unit content that enters Digest retrieved-memory context
   - include by default when non-empty
-- `PriorResponse`
-  - include when non-empty, but keep compact and omit/trim if it repeats `PriorUnderstanding`
-- `PriorAnnotations`
-  - include only annotations whose own retrieval document contributed to this selected Entry
-  - each included annotation carries its bound `Excerpt` plus `Note`
-  - default cap: 0-2 annotations per card
 - `matched_recalls`
-  - shows why the card was retrieved without exposing scores
-  - can be included if we want Digest to see the recall reason; otherwise it can remain audit-only while still being stored in trace
+  - optional metadata that names which Ingest recalls selected this brief
+  - can remain audit-only if we decide Digest should receive pure understanding text with minimal metadata
 
 ### Document-To-Card Policy
 
-All retrieval documents may participate in recall, ranking, fusion, and Entry selection, but they do not all become Digest context.
+All retrieval documents may participate in recall, ranking, fusion, and Entry selection, but Digest context is Understanding-only.
 
 - `unit_source`
-  - participates in lexical and vector retrieval
+  - participates in lexical / FTS retrieval
   - helps the system find relevant Entries
-  - does not enter Digest memory cards as prior source text
+  - does not enter Digest memory briefs as prior source text
+  - is not embedded for dense vector retrieval in V1
 - `unit_understanding`
-  - participates in retrieval
+  - participates in lexical / FTS retrieval
+  - is the only surface embedded for dense vector retrieval in V1
   - enters Digest by default for selected Entries when non-empty
 - `unit_response`
-  - participates in retrieval
-  - enters Digest for selected Entries when non-empty, with compact clipping and duplication control
+  - participates in lexical / FTS retrieval with lower weight
+  - does not enter Digest retrieved-memory context
+  - remains a useful retrieval auxiliary because it may contain questions, aftertaste, or pressure words that help find the right Entry
 - `unit_annotation`
-  - participates in retrieval
-  - enters Digest only when that specific annotation document contributed to the selected Entry
-  - carries its bound excerpt and note together
+  - participates in lexical / FTS retrieval with lower or medium weight
+  - does not enter Digest retrieved-memory context
+  - remains a useful retrieval auxiliary because its quote and note can help recall a marked earlier Entry
 
-Do not add a separate annotation-specific threshold. Annotation inclusion follows the same retrieval/fusion/Entry-selection process as every other retrieval document; the special rule is only that an annotation is shown if its own document contributed to the selected Entry.
+Do not add a separate annotation-specific threshold. Annotation documents follow the same lexical retrieval / fusion / Entry-selection process as every other retrieval document; the special rule is now simpler: annotation content helps select an Entry, but it is not shown to Digest.
 
 ### What Not To Include
 
@@ -634,18 +613,20 @@ Do not expose raw retrieval scores, RRF internals, embedding distances, FTS snip
 
 Do not dump every matched document. Digest should receive compact prior-reading support, not a retrieval audit.
 
-Do not include the raw source text of the previous Unit as a card field. Source text is useful for finding memories, but Digest continuity should be carried by the remembered understanding, response, and selected prior annotations rather than by replaying old source units.
+Do not include the raw source text of the previous Unit as a brief field. Source text is useful for finding memories, but Digest continuity should be carried by the remembered Understanding rather than by replaying old source units.
 
-Do not let Ingest rewrite card content into Digest context. Ingest may select card ids; runtime supplies the canonical card text.
+Do not include prior `Response` or prior `Annotation` text in Digest retrieved-memory context. They are reader-output traces and retrieval auxiliaries; they may be too subjective, may duplicate Understanding, and may bias later reading.
+
+Do not let Ingest rewrite brief content into Digest context. Ingest may select brief ids; runtime supplies the canonical brief text.
 
 ### Digest Instruction Adjustment
 
 Digest's `ContextUseGuide` should explain retrieved memory softly but clearly:
 
 ```text
-Let RetrievedUnitMemory help you remember earlier reading when it genuinely clarifies the current source unit.
+Let RetrievedUnitMemory help you remember earlier understanding when it genuinely clarifies the current source unit.
 
-Do not treat retrieved memory as the current source text. The current unit remains primary.
+Do not treat retrieved memory as the current source text or as a prior reader response to imitate. The current unit remains primary.
 
 Use retrieved memory for continuity, contrast, callback, and unresolved pressure, but do not force a connection when the current unit does not support it.
 ```
@@ -655,7 +636,7 @@ Use retrieved memory for continuity, contrast, callback, and unresolved pressure
 Recent Reading Memory remains the near-neighbor continuity layer.
 
 Retrieved Unit Memory is for farther or non-neighbor recall. Runtime should dedupe against directly carried Recent Reading Memory so Digest does not receive the same prior unit twice.
-If Ingest selects a card whose unit is later suppressed by dedupe, runtime should record the suppression in trace and omit the card from Digest.
+If Ingest selects a brief whose unit is later suppressed by dedupe, runtime should record the suppression in trace and omit the brief from Digest.
 
 Recommended ordering inside Digest context:
 
@@ -667,27 +648,27 @@ The current unit remains the object of reading regardless of context ordering.
 
 ## Retrieval Result Packaging
 
-### Unit-Level Cards, Not Doc-Level Cards
+### Unit-Level Briefs, Not Doc-Level Bundles
 
-The tool result and Digest should use unit-level memory cards.
+The tool result and Digest should use unit-level memory briefs.
 
-Retrieval docs are internal matching surfaces. If source, understanding, response, and annotation documents from the same prior unit all match, Digest should see one prior unit card with selected fields, not four separate cards.
+Retrieval docs are internal matching surfaces. If source, understanding, response, and annotation documents from the same prior unit all match, Digest should see one prior unit brief containing that unit's Understanding, not four separate doc blocks and not a richer multi-field bundle.
 
 The selection goal is to maximize useful continuity under a small context budget:
 
 - cover as much relevant reading span as possible
-- include more distinct Entries rather than replaying long source excerpts
-- avoid repeating the same remembered content across cards
-- prefer compact memory products over raw source text
+- include more distinct Entries rather than enriching a few Entries
+- avoid repeating the same remembered content across briefs
+- prefer compact Understanding briefs over raw source text or subjective prior responses
 
 ### Selection Within A Unit
 
 For each selected unit:
 
-- always include `PriorUnderstanding` when non-empty
-- include `PriorResponse` when non-empty, unless it duplicates the understanding too closely or must be clipped out for budget
-- include annotations only when their own annotation documents contributed to the selected Entry
+- include only its non-empty Understanding
+- use response/source/annotation matches to help select the Entry, not to add more content to the brief
 - do not include raw prior unit source text, even when `unit_source` helped retrieve the Entry
+- do not include prior Response or Annotation text, even when those surfaces helped retrieve the Entry
 
 ### Dedupe And Suppression
 
@@ -696,17 +677,17 @@ Suppress:
 - current unit
 - recent-neighbor units already carried by Recent Reading Memory
 - duplicate units across recalls
-- cards with only weak response matches and no source/understanding support
-- cards not selected by Ingest unless runtime is in an explicit diagnostic override mode
-- repeated card content that says the same thing as another selected card with weaker coverage value
+- Entries with only weak response / annotation matches and no credible source or understanding support
+- briefs not selected by Ingest unless runtime is in an explicit diagnostic override mode
+- repeated brief content that says the same thing as another selected brief with weaker coverage value
 
 ## Open Questions
 
 - Should `memory_recalls[]` include a separate `source_cues[]` field, or is `recall_text` enough?
 - Should runtime retry once when recalls exist but the model returns final JSON without calling `retrieve_unit_memory`, or should it proceed degraded?
 - Should Digest see `matched_recalls`, or should that remain audit-only while Ingest alone sees them?
-- How should card budget change for fiction vs argument-heavy nonfiction?
-- Should Ingest select card ids, or should runtime treat the highest-ranked tool cards as selected unless Ingest rejects them?
+- How should brief budget change for fiction vs argument-heavy nonfiction?
+- Should Ingest select brief ids, or should runtime treat the highest-ranked tool briefs as selected unless Ingest rejects them?
 - Should `retrieve_unit_memory` be forced with `tool_choice` when recalls are present, or should the model be allowed to decide under `auto`?
 - What is the review rubric for a good recall: coverage of relevant prior units, absence of noisy recall, or downstream Digest usefulness?
 
@@ -714,6 +695,6 @@ Suppress:
 
 Move the next implementation from single model-facing `memory_query` to bounded model-facing `memory_recalls[]` plus a mechanism-private `retrieve_unit_memory` tool loop.
 
-Prompt Ingest as a reader noticing what the selected unit asks it to remember, not as a query generator. Allow zero to three recalls. When recalls exist, Ingest calls `retrieve_unit_memory`; runtime resolves the selected boundary, maps each recall to internal retrieval queries, retrieves per recall, fuses across recall/channel lists, aggregates by Unit Memory Entry, dedupes against recent memory, and returns compact unit-level cards.
+Prompt Ingest as a reader noticing what the selected unit asks it to remember, not as a query generator. Allow zero to three recalls. When recalls exist, Ingest calls `retrieve_unit_memory`; runtime resolves the selected boundary, maps each recall to internal retrieval queries, retrieves per recall, fuses across recall/channel lists, aggregates by Unit Memory Entry, dedupes against recent memory, and returns compact unit-level Understanding briefs.
 
-Ingest should see the compact cards and return selected card ids in `memory_support`, not copy retrieved text into final JSON. For Digest, introduce `RetrievedUnitMemory` under `ReadingState`, not under `Instruction`. Runtime should package selected canonical prior-unit cards from `Understanding`, compact `Response`, and contributing `Annotations`; raw prior Unit source text remains an internal retrieval surface and should not be replayed into Digest context.
+Ingest should see compact Understanding briefs and return selected brief ids in `memory_support`, not copy retrieved text into final JSON. For Digest, introduce `RetrievedUnitMemory` under `ReadingState`, not under `Instruction`. Runtime should package selected canonical prior-unit Understanding briefs only; raw prior Unit source text, Response, and Annotation remain retrieval surfaces / audit material and should not be replayed into Digest context.
