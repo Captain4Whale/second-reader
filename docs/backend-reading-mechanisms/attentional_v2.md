@@ -128,7 +128,7 @@ Use `docs/backend-reading-mechanism.md` for shared platform boundaries. Use `doc
   - `recent_reading_memory` is now the current first-half near-term memory layer: Digest can append compact semantic memory from each unit so later read cycles do not behave as if earlier units vanished.
   - The implementation currently covers Digest-time formation, append-only persistence, prompt projection, checkpoint / resume carriage, settlement audit visibility, and evaluation snapshot inclusion.
   - Long-distance Unit Memory now has a live bottom framework: settlement writes one ledger entry per accepted source unit, derives retrieval documents from source / understanding / response / annotation surfaces, builds FTS5 lexical retrieval, attempts optional sqlite-vec vector indexing in `hybrid` mode, and records retrieval traces between `Ingest` and `Digest`.
-  - Retrieved Unit Memory cards are not yet injected into Digest XML context; Digest still receives existing Recent Reading Memory until the next context-packaging slice.
+  - Retrieved Unit Memory is not yet injected into Digest XML context; Digest still receives existing Recent Reading Memory until the next context-packaging slice.
   - The next long-memory direction should be content-neutral unit-level memory, not content-typed concept/thread schemas; visible reactions belong in `reaction_records`.
   - Do not expand ActiveTension to cover these needs. Keep its existing fields (`tension_from`, `tension_focus`, `working_interpretation`, `source_refs`, `development_source_refs`, terminal reasons / coordinates, `status`, and legacy inputs) only as deprecated data until cleanup.
   - `question_from`, `driving_question`, `working_answer`, `answer_source_refs`, `answer_boundary`, and `statement` are old artifact inputs only.
@@ -514,7 +514,7 @@ Use `docs/backend-reading-mechanism.md` for shared platform boundaries. Use `doc
     - each entry preserves the accepted source unit plus the model-facing `understanding`, `response`, and `annotations`
     - retrieval documents are derived from source, understanding, response, and annotation surfaces
     - FTS5 text retrieval is always available when SQLite supports FTS5; sqlite-vec + local Ollama embedding is optional and degrades to text-only behavior
-    - retrieved cards are not yet prompt-visible to Digest in this slice
+    - retrieved Unit Memory is not yet prompt-visible to Digest in this slice
   - `artifacts / history`
     - `reaction_records`
     - `read_audit`

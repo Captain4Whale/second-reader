@@ -18,7 +18,7 @@ Update when: Ingest recall wording, tool schema, recall output schema, retrieval
   - Let the Ingest LLM call invoke Unit Memory retrieval through an Anthropic-style tool loop.
   - Keep actual retrieval execution, score fusion, source-unit resolution, and artifact writing in Reading Runner/runtime code.
   - Let Ingest see compact retrieval results and select/confirm memory support for Digest without copying retrieved brief content into final JSON.
-  - Add Digest retrieved-memory context only after recall, tool result packaging, and brief selection are implemented deliberately.
+  - Add Digest `ReadingMemory` context only after recall, tool result packaging, brief selection, and unified memory rendering are implemented deliberately.
 - Tool capability note:
   - On `2026-06-02`, a minimal live probe against the configured `MiniMax-M2.7` Anthropic-compatible endpoint succeeded with `tool_use -> tool_result -> final answer`.
   - The probe verifies basic provider support for Anthropic-style tools, not the Reading Companion retrieval tool implementation.
@@ -165,7 +165,7 @@ Initial Ingest XML prompt
   -> if recalls are non-empty, model calls retrieve_unit_memory
   -> runtime resolves the boundary, executes Unit Memory retrieval, and returns compact briefs
   -> model returns final Ingest JSON with boundary fields, recalls, and selected brief ids
-  -> Reading Runner accepts/governs the boundary and assembles Digest context from runtime-owned briefs
+  -> Reading Runner accepts/governs the boundary and assembles Digest ReadingMemory from runtime-owned prior Understanding entries
 ```
 
 This keeps one Ingest LLM call conceptually, even if the transport contains multiple Anthropic Messages turns.
@@ -493,7 +493,7 @@ memory_recalls[]
   -> recent-neighbor exclusion and dedupe
   -> compact retrieved-memory briefs for the tool result
   -> Ingest-selected brief ids
-  -> runtime-packaged Digest context
+  -> runtime-rendered Digest ReadingMemory text
 ```
 
 ### Why Multi-Recall Instead Of One Query
@@ -538,71 +538,81 @@ These numbers should be treated as calibration defaults, not product-quality cla
 - latency breakdown
 - tool-loop status such as `ok`, `no_recall`, `no_match`, `boundary_unresolved`, `degraded`, `tool_not_called`, or `error`
 
-## Digest Retrieved-Memory Context
+## Digest ReadingMemory Context
 
 ### Placement
 
-Retrieved Unit Memory should enter Digest as context, not as instruction.
+Retrieved Unit Memory should enter Digest as reading memory, not as instruction and not as a separate long-memory structure.
 
 Recommended placement:
 
 ```xml
-<ReadingState>
-  ...
-  <RecentReadingMemory>...</RecentReadingMemory>
-  <RetrievedUnitMemory>...</RetrievedUnitMemory>
-</ReadingState>
+<ReadingMemory>
+P42 U18: The earlier unit established ...
+P41 U17: The preceding unit clarified ...
+P12 U04: Much earlier, the book framed ...
+</ReadingMemory>
 ```
 
 Rationale:
 
-- It is prior reading state, not a new task.
+- The prompt-facing substance of both direct recent memory and retrieved long-distance memory is the same: prior Understanding.
+- A separate `ReadingState` wrapper is unnecessary while the only prompt-facing state is `ReadingMemory`.
+- A separate `RecentMemory` / `RetrievedUnitMemory` split exposes retrieval machinery that Digest does not need.
+- `ContextUseGuide` can explain `ReadingMemory` as prior understanding carried into the present read.
 - Digest's task remains Understanding / Response / Annotation.
-- Retrieved memory should help continuity without becoming the object of reading.
-- Runtime assembles this context from briefs returned by `retrieve_unit_memory` and selected/confirmed by Ingest, not from free-form text in the final Ingest JSON.
+- Reading memory should help continuity without becoming the object of reading.
+- Runtime assembles this context from direct recent memory plus briefs returned by `retrieve_unit_memory` and selected/confirmed by Ingest, not from free-form text in the final Ingest JSON.
 
-### Candidate Memory Shape
+### Prompt-Facing Memory Shape
 
-Each retrieved prior unit should become one compact memory brief.
+Each prompt-facing memory item should become one compact text line inside `ReadingMemory`.
 
-Candidate XML shape:
+Do not wrap every memory item in its own XML tag. The extra tags cost tokens and make the model attend to bookkeeping rather than to the carried understanding.
 
-```xml
-<MemoryBrief unit_id="..." unit_index="..." chapter_ref="..." matched_recalls="r1 r2">
-  <Understanding>...</Understanding>
-</MemoryBrief>
+Candidate text shape:
+
+```text
+P42 U18: ...
+P41 U17: ...
+P12 U04: ...
 ```
 
 Field guidance:
 
-- `Understanding`
-  - the main compact memory from that earlier unit
-  - the only prior-unit content that enters Digest retrieved-memory context
-  - include by default when non-empty
-- `matched_recalls`
-  - optional metadata that names which Ingest recalls selected this brief
-  - can remain audit-only if we decide Digest should receive pure understanding text with minimal metadata
+- position prefix
+  - use the shortest readable locator that lets the Reader sense reading order
+  - V1 default: `P{paragraph_index} U{unit_index}` when paragraph position is available
+  - include a compact chapter prefix only when needed for disambiguation, for example `C2 P42 U18`
+  - never expose internal `source_span_id`, retrieval doc ids, SQL row ids, or embedding ids in prompt-facing memory
+- memory text
+  - use the canonical prior `understanding.content`
+  - keep it as prose, not JSON
+  - omit empty Understanding entries
+- source / retrieval metadata
+  - keep recent-vs-retrieved origin, matched recall ids, matched surfaces, scores, and suppression reasons in runtime trace / audit
+  - do not expose them in `ReadingMemory` unless a later review proves the Reader needs a small visible locator
 
-### Document-To-Card Policy
+### Document-To-ReadingMemory Policy
 
-All retrieval documents may participate in recall, ranking, fusion, and Entry selection, but Digest context is Understanding-only.
+All retrieval documents may participate in recall, ranking, fusion, and Entry selection, but Digest `ReadingMemory` is Understanding-only.
 
 - `unit_source`
   - participates in lexical / FTS retrieval
   - helps the system find relevant Entries
-  - does not enter Digest memory briefs as prior source text
+  - does not enter `ReadingMemory` as prior source text
   - is not embedded for dense vector retrieval in V1
 - `unit_understanding`
   - participates in lexical / FTS retrieval
   - is the only surface embedded for dense vector retrieval in V1
-  - enters Digest by default for selected Entries when non-empty
+  - enters `ReadingMemory` by default for selected Entries when non-empty
 - `unit_response`
   - participates in lexical / FTS retrieval with lower weight
-  - does not enter Digest retrieved-memory context
+  - does not enter `ReadingMemory`
   - remains a useful retrieval auxiliary because it may contain questions, aftertaste, or pressure words that help find the right Entry
 - `unit_annotation`
   - participates in lexical / FTS retrieval with lower or medium weight
-  - does not enter Digest retrieved-memory context
+  - does not enter `ReadingMemory`
   - remains a useful retrieval auxiliary because its quote and note can help recall a marked earlier Entry
 
 Do not add a separate annotation-specific threshold. Annotation documents follow the same lexical retrieval / fusion / Entry-selection process as every other retrieval document; the special rule is now simpler: annotation content helps select an Entry, but it is not shown to Digest.
@@ -613,36 +623,39 @@ Do not expose raw retrieval scores, RRF internals, embedding distances, FTS snip
 
 Do not dump every matched document. Digest should receive compact prior-reading support, not a retrieval audit.
 
-Do not include the raw source text of the previous Unit as a brief field. Source text is useful for finding memories, but Digest continuity should be carried by the remembered Understanding rather than by replaying old source units.
+Do not include the raw source text of the previous Unit as a memory line. Source text is useful for finding memories, but Digest continuity should be carried by the remembered Understanding rather than by replaying old source units.
 
-Do not include prior `Response` or prior `Annotation` text in Digest retrieved-memory context. They are reader-output traces and retrieval auxiliaries; they may be too subjective, may duplicate Understanding, and may bias later reading.
+Do not include prior `Response` or prior `Annotation` text in `ReadingMemory`. They are reader-output traces and retrieval auxiliaries; they may be too subjective, may duplicate Understanding, and may bias later reading.
 
-Do not let Ingest rewrite brief content into Digest context. Ingest may select brief ids; runtime supplies the canonical brief text.
+Do not let Ingest rewrite memory text into Digest context. Ingest may select brief ids; runtime supplies the canonical Understanding text and renders the final `ReadingMemory`.
 
 ### Digest Instruction Adjustment
 
-Digest's `ContextUseGuide` should explain retrieved memory softly but clearly:
+Digest's `ContextUseGuide` should explain `ReadingMemory` softly but clearly:
 
 ```text
-Let RetrievedUnitMemory help you remember earlier understanding when it genuinely clarifies the current source unit.
+Let ReadingMemory hold prior understanding that the reading has already carried forward.
 
-Do not treat retrieved memory as the current source text or as a prior reader response to imitate. The current unit remains primary.
+Use it for continuity, contrast, callback, and unresolved pressure when it genuinely clarifies the current source unit.
 
-Use retrieved memory for continuity, contrast, callback, and unresolved pressure, but do not force a connection when the current unit does not support it.
+Do not treat ReadingMemory as current source text, prior reader response to imitate, or a reason to force a connection. The current unit remains primary.
 ```
 
-### Relationship To Recent Reading Memory
+### Relationship To Direct Recent Memory
 
-Recent Reading Memory remains the near-neighbor continuity layer.
+Direct recent memory remains the near-neighbor continuity layer internally.
 
-Retrieved Unit Memory is for farther or non-neighbor recall. Runtime should dedupe against directly carried Recent Reading Memory so Digest does not receive the same prior unit twice.
-If Ingest selects a brief whose unit is later suppressed by dedupe, runtime should record the suppression in trace and omit the brief from Digest.
+Retrieved Unit Memory is for farther or non-neighbor recall internally. Prompt-facing Digest should not see this source distinction. Runtime should merge both sources into one ordered `ReadingMemory` block and dedupe so Digest does not receive the same prior unit twice.
 
-Recommended ordering inside Digest context:
+If Ingest selects a brief whose unit is later suppressed by dedupe, runtime should record the suppression in trace and omit that Understanding line from `ReadingMemory`.
 
-1. Recent Reading Memory
-2. Retrieved Unit Memory
-3. Current Focus / Current Unit
+Recommended ordering:
+
+1. Merge direct recent Understanding entries and selected retrieved Understanding entries.
+2. Dedupe by unit id / source span id before rendering.
+3. Sort prompt-facing lines by reading position, nearest prior first.
+4. Use retrieval score for selection, not for final prompt order.
+5. Put `ReadingMemory` before `CurrentFocus` in the Digest prompt so the current unit still appears after the carried memory and remains the immediate object of reading.
 
 The current unit remains the object of reading regardless of context ordering.
 
@@ -650,9 +663,9 @@ The current unit remains the object of reading regardless of context ordering.
 
 ### Unit-Level Briefs, Not Doc-Level Bundles
 
-The tool result and Digest should use unit-level memory briefs.
+The tool result should use unit-level memory briefs. Digest should receive the selected briefs rendered as simple `ReadingMemory` text lines.
 
-Retrieval docs are internal matching surfaces. If source, understanding, response, and annotation documents from the same prior unit all match, Digest should see one prior unit brief containing that unit's Understanding, not four separate doc blocks and not a richer multi-field bundle.
+Retrieval docs are internal matching surfaces. If source, understanding, response, and annotation documents from the same prior unit all match, the tool result should expose one prior unit brief and Digest should see one `ReadingMemory` line containing that unit's Understanding, not four separate doc blocks and not a richer multi-field bundle.
 
 The selection goal is to maximize useful continuity under a small context budget:
 
@@ -666,7 +679,7 @@ The selection goal is to maximize useful continuity under a small context budget
 For each selected unit:
 
 - include only its non-empty Understanding
-- use response/source/annotation matches to help select the Entry, not to add more content to the brief
+- use response/source/annotation matches to help select the Entry, not to add more content to the `ReadingMemory` line
 - do not include raw prior unit source text, even when `unit_source` helped retrieve the Entry
 - do not include prior Response or Annotation text, even when those surfaces helped retrieve the Entry
 
@@ -675,7 +688,7 @@ For each selected unit:
 Suppress:
 
 - current unit
-- recent-neighbor units already carried by Recent Reading Memory
+- recent-neighbor units already carried by direct recent memory
 - duplicate units across recalls
 - Entries with only weak response / annotation matches and no credible source or understanding support
 - briefs not selected by Ingest unless runtime is in an explicit diagnostic override mode
@@ -685,8 +698,7 @@ Suppress:
 
 - Should `memory_recalls[]` include a separate `source_cues[]` field, or is `recall_text` enough?
 - Should runtime retry once when recalls exist but the model returns final JSON without calling `retrieve_unit_memory`, or should it proceed degraded?
-- Should Digest see `matched_recalls`, or should that remain audit-only while Ingest alone sees them?
-- How should brief budget change for fiction vs argument-heavy nonfiction?
+- How should `ReadingMemory` line budget change for fiction vs argument-heavy nonfiction?
 - Should Ingest select brief ids, or should runtime treat the highest-ranked tool briefs as selected unless Ingest rejects them?
 - Should `retrieve_unit_memory` be forced with `tool_choice` when recalls are present, or should the model be allowed to decide under `auto`?
 - What is the review rubric for a good recall: coverage of relevant prior units, absence of noisy recall, or downstream Digest usefulness?
@@ -695,6 +707,6 @@ Suppress:
 
 Move the next implementation from single model-facing `memory_query` to bounded model-facing `memory_recalls[]` plus a mechanism-private `retrieve_unit_memory` tool loop.
 
-Prompt Ingest as a reader noticing what the selected unit asks it to remember, not as a query generator. Allow zero to three recalls. When recalls exist, Ingest calls `retrieve_unit_memory`; runtime resolves the selected boundary, maps each recall to internal retrieval queries, retrieves per recall, fuses across recall/channel lists, aggregates by Unit Memory Entry, dedupes against recent memory, and returns compact unit-level Understanding briefs.
+Prompt Ingest as a reader noticing what the selected unit asks it to remember, not as a query generator. Allow zero to three recalls. When recalls exist, Ingest calls `retrieve_unit_memory`; runtime resolves the selected boundary, maps each recall to internal retrieval queries, retrieves per recall, fuses across recall/channel lists, aggregates by Unit Memory Entry, dedupes against direct recent memory, and returns compact unit-level Understanding briefs.
 
-Ingest should see compact Understanding briefs and return selected brief ids in `memory_support`, not copy retrieved text into final JSON. For Digest, introduce `RetrievedUnitMemory` under `ReadingState`, not under `Instruction`. Runtime should package selected canonical prior-unit Understanding briefs only; raw prior Unit source text, Response, and Annotation remain retrieval surfaces / audit material and should not be replayed into Digest context.
+Ingest should see compact Understanding briefs and return selected brief ids in `memory_support`, not copy retrieved text into final JSON. For Digest, introduce a top-level `ReadingMemory` block, not `ReadingState`, `RecentMemory`, or `RetrievedUnitMemory`. Runtime should merge direct recent Understanding and selected retrieved Understanding into simple position-sorted text lines. Raw prior Unit source text, Response, and Annotation remain retrieval surfaces / audit material and should not be replayed into Digest context.

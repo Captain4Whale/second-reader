@@ -804,12 +804,11 @@ Ingest LLM
 Runtime
   -> UnitMemoryIndex.retrieve(...)
   -> mode-aware retrieval, optional RRF, unit aggregation
-  -> RetrievedMemory XML packaging
+  -> merged ReadingMemory text rendering
 
 Digest LLM
   -> current source unit
-  -> recent-neighbor memory
-  -> retrieved long-distance Understanding briefs
+  -> top-level ReadingMemory with direct recent and selected retrieved Understanding lines
 ```
 
 `Digest` should not know about SQLite, FTS5, sqlite-vec, embedding providers, RRF, raw scores, or retrieval rows. It should only see reader-usable prior-reading support.
@@ -870,29 +869,43 @@ Audit should keep the engineering trace separate from prompt context. A retrieva
 - selected unit ids
 - degradation reason, when present
 
-The prompt-facing `RetrievedMemory` block should omit raw scores and internal ids unless a later prompt design explicitly needs a reader-safe locator.
+The prompt-facing `ReadingMemory` block should omit raw scores and internal ids unless a later prompt design explicitly needs a reader-safe locator.
 
 ### Digest Context Packaging
 
 Digest should not receive raw index rows.
 
-It should receive compact retrieved Understanding briefs, grouped by prior unit:
+It should receive one top-level `ReadingMemory` block containing compact prior Understanding lines. Direct recent memory and selected retrieved long-distance memory should be merged before rendering because both are the same prompt-facing substance: prior Understanding.
 
-- source locator / unit metadata only when useful for traceability
+Prompt-facing shape:
+
+```xml
+<ReadingMemory>
+P42 U18: ...
+P41 U17: ...
+P12 U04: ...
+</ReadingMemory>
+```
+
+Rendering rules:
+
+- one line per selected prior unit
+- simple position prefix, such as `P42 U18`, with a compact chapter prefix only when needed for disambiguation
 - one relevant Understanding per selected prior unit
-- optional matched recall metadata if the later prompt design wants it
+- no per-entry XML tags such as `MemoryBrief` or `Understanding`
+- no recent-vs-retrieved labels in the prompt
 - no prior source excerpt
 - no prior Response text
 - no prior Annotation text
-- retrieval reason / matched surface for audit, not necessarily visible in prompt text
+- retrieval reason, matched recall id, matched surface, source, score, and suppression reason stay in audit / trace
 
 Digest context packaging is not part of the current bottom-framework slice.
 
 Deferred design work:
 
-- XML shape for `RetrievedMemory`
-- maximum Understanding-brief count and token budget
-- how to mark near-neighbor direct memory versus long-distance retrieved memory
+- live XML cutover from current `ReadingState / RecentMemory` to top-level `ReadingMemory`
+- maximum ReadingMemory line count and token budget
+- how to merge direct recent memory with long-distance retrieved memory without exposing the source distinction to Digest
 - how to keep retrieved memory broad enough for continuity without turning it into hidden backread
 
 ### Retrieval Review Criteria
@@ -903,7 +916,7 @@ V1 should use a human-reviewable retrieval trace before broad automated scoring.
 - Ingest retrieval query or runtime fallback query
 - top retrieved unit briefs
 - matched surfaces and retrieval reasons
-- whether the briefs were sent to Digest
+- whether the selected Understandings were rendered into `ReadingMemory`
 
 Review dimensions:
 
@@ -913,9 +926,9 @@ Review dimensions:
 - non-redundancy: the result is not merely repeating recent-neighbor memory already carried directly
 - non-dominance: the retrieved memory supports the current source unit without becoming the main object of reading
 - coverage: important prior dependencies are not missing from the top briefs
-- noise: unrelated top briefs are rare enough not to pollute Digest context
+- noise: unrelated top briefs are rare enough not to pollute `ReadingMemory`
 
-Use review findings to calibrate fanout, surface / channel weights, recent-neighbor exclusion, retrieved-brief budget, MMR, and whether V2 needs a second lexical channel.
+Use review findings to calibrate fanout, surface / channel weights, recent-neighbor exclusion, `ReadingMemory` budget, MMR, and whether V2 needs a second lexical channel.
 
 ### Persistence And Refresh
 
@@ -959,10 +972,10 @@ Remaining implementation hardening:
 ## What We Still Need To Design
 
 - Context packaging:
-  - XML block shape for Digest
-  - retrieved-brief budget
+  - live Digest XML cutover to top-level `ReadingMemory`
+  - `ReadingMemory` line budget
   - Understanding-only rendering rules
-  - how retrieved Unit Memory briefs should sit beside existing Recent Reading Memory
+  - how direct recent Understanding and selected retrieved Understanding merge into one position-sorted memory block
 - Retrieval calibration:
   - whether retrieval review requires a second `unicode61` / `porter unicode61` lexical channel
   - calibration of the initial V1 fanout, RRF, surface / channel weight, aggregation, and MMR defaults
@@ -973,7 +986,7 @@ Remaining implementation hardening:
 - Recent-neighbor policy:
   - how many recent units are always carried in Digest context
   - which units are excluded from long-distance retrieval
-  - how to avoid duplicate context once retrieved briefs enter the Digest prompt
+  - how to avoid duplicate context once retrieved Understandings enter `ReadingMemory`
 - Evaluation / review criteria:
   - concrete review examples
   - labeling rubric and pass / fail thresholds
