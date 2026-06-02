@@ -7,7 +7,7 @@ Update when: the current objective, active tasks, blockers, active jobs, open de
 
 This file is authoritative for durable current status. Do not keep unique active-state information only in `docs/agent-handoff.md`.
 
-Last verified: `2026-06-02T22:27:59+08:00`
+Last verified: `2026-06-03T01:09:51+08:00`
 
 ## Current Objective
 - The `Ingest -> Digest -> Reading Runner settlement` mechanism reframe is implemented; current work is fact alignment, smoke/diagnostic review, and calibration before any formal evaluation promotion.
@@ -46,16 +46,21 @@ Last verified: `2026-06-02T22:27:59+08:00`
   - reusable learnings:
     - eval health gates, run ledger discipline, source-coordinate governance, artifact-grounded reports, and prompt assembly primitives may still be reused selectively
     - the previous memory ontology attempts are evidence that complex internal memory stores can easily overgrow the product goal
+  - current conformance status:
+    - structural conformance smoke/fix pass completed under `docs/implementation/new-reading-mechanism/ingest-digest-unit-memory-conformance-goal.md`
+    - the current implementation now structurally verifies the live path `Ingest recalls -> runtime Unit Memory retrieval/selection -> Digest ReadingMemory -> Digest output mapping -> settlement -> Unit Memory writeback`
+    - report: `docs/implementation/new-reading-mechanism/codex/reports/Ingest-Digest-UnitMemory-Conformance-Smoke-Post-run-Report v0.md`
+    - no formal eval was run and no evidence catalog entry was created
   - next step:
-    - keep current docs and task facts aligned to the implemented `Ingest -> Digest -> Unit Memory -> ReadingMemory` path before further testing
+    - review/calibrate recall quality, retrieval fanout, neighbor exclusion, ReadingMemory budget behavior, and Digest downstream usefulness before changing the memory surface again
+    - add a small diagnostic or harness mode comparison only after the structural conformance report is accepted
     - use `docs/implementation/new-reading-mechanism/ingest-context-and-navigate-mapping.md` as the implementation reference for the landed first-slice `Ingest` XML context
     - use `docs/implementation/new-reading-mechanism/digest-understanding-response-annotation-design.md` as the implemented reference for the Digest prompt/output semantic refactor
     - use `docs/implementation/new-reading-mechanism/unit-memory-hybrid-retrieval-design.md` as the implemented reference for the Unit Memory storage/index/retrieval trace bottom framework
     - use `docs/implementation/new-reading-mechanism/ingest-recall-and-digest-memory-context-design.md` as the implemented reference for bounded multi-recall Ingest output, Anthropic-style `retrieve_unit_memory` tool loop, multi-recall retrieval aggregation, and Digest `ReadingMemory` packaging
-    - use `docs/implementation/new-reading-mechanism/ingest-digest-unit-memory-conformance-goal.md` as the executable Goal-mode contract for end-to-end structural conformance testing; it treats the mechanism design docs as a locked baseline and forbids changing them during the test/fix pass
-    - next implementation work should review/calibrate recall quality, retrieval fanout, neighbor exclusion, ReadingMemory budget behavior, and Digest downstream usefulness before changing the memory surface again
+    - use `docs/implementation/new-reading-mechanism/ingest-digest-unit-memory-conformance-goal.md` as the completed structural conformance contract; it treated the mechanism design docs as a locked baseline and permitted fixing implementation/tests/stable docs only
     - the no-judge hybrid smoke `attentional_v2_unit_memory_hybrid_smoke_nawaer_20260602` completed as a diagnostic only; it should not be treated as formal evidence or evidence-catalog material
-    - do not run formal eval, update evidence catalog, or claim product quality until the current docs/eval-harness facts are aligned and a reviewed diagnostic plan is approved
+    - do not run formal eval, update evidence catalog, or claim product quality until a reviewed diagnostic plan is approved
 - Historical concrete-node XML prompt / Recent Reading Memory full active diagnostic machine run has completed; post-run report is preserved for reference.
   - purpose:
     - validate the old opt-in XML prompt assembly path after Recent Reading Memory formation work

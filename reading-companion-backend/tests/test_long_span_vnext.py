@@ -1079,6 +1079,73 @@ def test_run_long_span_vnext_can_run_attentional_v2_only(tmp_path: Path, monkeyp
     assert {row["mechanism_key"] for row in rows} == {"attentional_v2"}
 
 
+def test_run_long_span_vnext_marks_no_judge_sources_as_disabled(tmp_path: Path, monkeypatch) -> None:
+    run_root = tmp_path / "run"
+    dataset_dir = tmp_path / "dataset"
+    window = _window()
+    _write_dataset(dataset_dir, [window], {window.segment_id: "Alpha. Beta."})
+    output_dir = run_root / "outputs" / window.segment_id / "attentional_v2"
+    (output_dir / "public").mkdir(parents=True, exist_ok=True)
+    (output_dir / "public" / "book_document.json").write_text(json.dumps(_book_document()), encoding="utf-8")
+    memory_quality_probe_export_file(output_dir).parent.mkdir(parents=True, exist_ok=True)
+    memory_quality_probe_export_file(output_dir).write_text(
+        json.dumps(
+            {
+                "snapshots": [
+                    {
+                        "probe_index": 1,
+                        "threshold_ratio": 0.2,
+                        "capture_sentence_id": "c1-s2",
+                    }
+                ]
+            }
+        ),
+        encoding="utf-8",
+    )
+
+    monkeypatch.setattr(runner, "_resolve_dataset_dir", lambda manifest_path: dataset_dir)
+    monkeypatch.setattr(runner, "_load_windows", lambda dataset_dir: [window])
+    monkeypatch.setattr(
+        runner,
+        "ensure_window_output_with_retries",
+        lambda **kwargs: {
+            "status": "completed",
+            "mechanism_key": "attentional_v2",
+            "mechanism_label": "Attentional V2 Ingest/Digest",
+            "output_dir": str(output_dir),
+            "normalized_eval_bundle": {
+                "reactions": [
+                    {
+                        "reaction_id": "attentional_v2-r1",
+                        "type": "highlight",
+                        "section_ref": "1.1",
+                        "anchor_quote": "Anchor",
+                        "content": "Reaction content",
+                    }
+                ],
+                "memory_summaries": [],
+            },
+            "run_mode": "fresh",
+        },
+    )
+    monkeypatch.setattr(runner, "write_llm_usage_summary", lambda *args, **kwargs: None)
+
+    aggregate = runner.run_long_span_vnext(
+        run_root=run_root,
+        manifest_path=tmp_path / "unused.json",
+        judge_mode="none",
+        mechanism_keys=("attentional_v2",),
+    )
+
+    assert aggregate["memory_quality_source"] == "judge_disabled"
+    assert aggregate["reaction_audit_source"] == "judge_disabled"
+    assert aggregate["memory_quality"]["windows"][0]["average_overall_memory_quality_score"] == 1.0
+    report = (run_root / "summary" / "report.md").read_text(encoding="utf-8")
+    assert "Memory Quality judging was disabled" in report
+    assert "Reaction-audit judging was disabled" in report
+    assert "fresh_judge" not in json.dumps(aggregate)
+
+
 def test_run_long_span_vnext_memory_quality_rejudge_reuses_source_run(tmp_path: Path, monkeypatch) -> None:
     run_root = tmp_path / "rejudge_run"
     source_root = tmp_path / "source_run"

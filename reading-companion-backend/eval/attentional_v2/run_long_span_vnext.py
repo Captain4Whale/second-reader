@@ -1604,6 +1604,13 @@ def _render_report(
     ]
     if aggregate.get("memory_quality_source") == "copied_from_results_source_run":
         lines.extend(["Memory Quality judgments are copied unchanged from the corrected source run.", ""])
+    elif aggregate.get("memory_quality_source") == "judge_disabled":
+        lines.extend(
+            [
+                "Memory Quality judging was disabled for this run; scores are placeholder structural rows and must not be interpreted as reading-quality evidence.",
+                "",
+            ]
+        )
     for window_summary in memory_quality.get("windows", []):
         lines.extend(
             [
@@ -1661,6 +1668,13 @@ def _render_report(
     )
     if aggregate.get("reaction_audit_source") == "copied_from_memory_quality_source_run":
         lines.extend(["Reaction-audit results are copied unchanged from the source run for this Memory Quality rejudge.", ""])
+    elif aggregate.get("reaction_audit_source") == "judge_disabled":
+        lines.extend(
+            [
+                "Reaction-audit judging was disabled for this run; callback and false-integration labels are placeholder structural rows.",
+                "",
+            ]
+        )
 
     lines.extend(["## Spontaneous Callback", ""])
     for mechanism_key in mechanism_keys:
@@ -2087,8 +2101,16 @@ def run_long_span_vnext(
         "mechanism_keys": list(mechanism_keys),
         "memory_quality": _aggregate_memory_quality(memory_quality_results),
         "reaction_audit": _aggregate_reaction_audit(reaction_window_summaries),
-        "memory_quality_source": "copied_from_results_source_run" if copied_memory_quality_results else "fresh_judge",
-        "reaction_audit_source": "copied_from_memory_quality_source_run" if copied_reaction_audit else "fresh_judge",
+        "memory_quality_source": (
+            "copied_from_results_source_run"
+            if copied_memory_quality_results
+            else ("judge_disabled" if judge_mode == "none" else "fresh_judge")
+        ),
+        "reaction_audit_source": (
+            "copied_from_memory_quality_source_run"
+            if copied_reaction_audit
+            else ("judge_disabled" if judge_mode == "none" else "fresh_judge")
+        ),
         "memory_quality_results_source_run_root": str(memory_quality_results_source_run_root) if memory_quality_results_source_run_root else "",
         "output_modes": {
             f"{segment_id}:{mechanism_key}": payload.get("run_mode")

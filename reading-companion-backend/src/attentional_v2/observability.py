@@ -356,6 +356,12 @@ def record_read(
     )
     memory_uptake_ops = _memory_uptake_ops(digest_result)
     memory_uptake_admission_events = _memory_uptake_admission_events(digest_result)
+    compact_digest_result = {
+        "reading_impression": _clean_text(digest_result.get("reading_impression")),
+        "surfaced_reactions": surfaced_reactions,
+        "memory_uptake_ops": memory_uptake_ops,
+        "memory_uptake_admission_events": memory_uptake_admission_events,
+    }
     row = {
         "chapter_id": chapter_id,
         "chapter_ref": chapter_ref,
@@ -378,6 +384,7 @@ def record_read(
         "reading_impression": _clean_text(digest_result.get("reading_impression")),
         "surfaced_reaction_count": len(surfaced_reactions),
         "surfaced_reactions": surfaced_reactions,
+        "digest_result": compact_digest_result,
         "memory_uptake_ops": memory_uptake_ops,
         "memory_uptake_op_count": len(memory_uptake_ops),
         "memory_uptake_ops_by_target_store": _memory_uptake_ops_by_target_store(memory_uptake_ops),

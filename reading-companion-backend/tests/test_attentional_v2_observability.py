@@ -146,6 +146,8 @@ def test_record_read_writes_memory_uptake_op_contracts(tmp_path: Path) -> None:
 
     audit_line = json.loads(read_audit_file(output_dir).read_text(encoding="utf-8").strip())
 
+    assert audit_line["digest_result"]["reading_impression"] == "A hinge appears."
+    assert audit_line["digest_result"]["memory_uptake_ops"][0]["target_store"] == "active_attention"
     assert audit_line["memory_uptake_ops"][0]["target_store"] == "active_attention"
     assert audit_line["memory_uptake_op_count"] == 1
     assert audit_line["memory_uptake_ops_by_target_store"] == {"active_attention": 1}
@@ -220,6 +222,12 @@ def test_record_read_writes_compact_ingest_trace(tmp_path: Path) -> None:
 
     audit_line = json.loads(read_audit_file(output_dir).read_text(encoding="utf-8").strip())
 
+    assert audit_line["digest_result"] == {
+        "reading_impression": "A mainline unit lands.",
+        "surfaced_reactions": [],
+        "memory_uptake_ops": [],
+        "memory_uptake_admission_events": [],
+    }
     assert audit_line["memory_uptake_ops"] == []
     assert audit_line["memory_uptake_op_count"] == 0
     assert audit_line["memory_uptake_ops_by_target_store"] == {}

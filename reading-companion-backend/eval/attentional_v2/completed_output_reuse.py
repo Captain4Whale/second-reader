@@ -34,7 +34,7 @@ def rebuild_normalized_bundle_from_completed_output(
 
     if mechanism_key == "attentional_v2":
         bundle = build_attentional_v2_normalized_eval_bundle(source_output_dir)
-        mechanism_label = "Attentional V2 scaffold (Phase 1-8)"
+        mechanism_label = "Attentional V2 Ingest/Digest"
     elif mechanism_key == "iterator_v1":
         structure = load_structure(existing_structure_file(source_output_dir))
         bundle = build_iterator_v1_normalized_eval_bundle(
