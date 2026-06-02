@@ -12,7 +12,7 @@ Update when: Unit Memory entry shape, indexed fields, retrieval ranking, query g
 - Evaluation status: no eval run, no evidence-catalog update.
 - Current basis:
   - `DEC-103` pauses the old Second Reader Memory / Planning track as the default implementation authority.
-  - `DEC-107` makes `Ingest` the forward boundary LLM call and reserves memory-support retrieval for later design.
+  - `DEC-107` makes `Ingest` the forward boundary LLM call; `DEC-110` follow-through now connects that call to bounded Unit Memory recalls and runtime-selected Digest `ReadingMemory`.
   - `DEC-108` makes `Digest` the concrete per-unit interpretation LLM call.
   - `DEC-109` removes content-typed concept/thread long-memory stores from the current live surface.
   - `DEC-110` makes Unit Memory ledger + hybrid retrieval the current long-distance memory substrate for `attentional_v2`.

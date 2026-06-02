@@ -1,7 +1,7 @@
 # Digest Understanding / Response / Annotation Design
 
-Purpose: define the proposed Digest action semantics and prompt/output contract shift from memory-shaped output to reading-action-shaped output.
-Use when: implementing or reviewing the next Digest prompt refactor after `DEC-108` and `DEC-109`.
+Purpose: define the implemented Digest action semantics and prompt/output contract shift from memory-shaped output to reading-action-shaped output.
+Use when: reviewing the Digest `Understanding / Response / Annotation` prompt contract after `DEC-108` and `DEC-109`.
 Not for: stable runtime authority, evaluation claims, or evidence-catalog updates.
 Update when: Digest action names, output fields, XML prompt structure, or runtime mapping from Digest output to stored memory changes.
 
@@ -10,6 +10,10 @@ Update when: Digest action names, output fields, XML prompt structure, or runtim
 - Date: `2026-06-01`
 - Status: implemented in live Digest prompt / LLM output normalization.
 - Evaluation status: no eval run, no evidence-catalog update.
+- Supersession note:
+  - This document remains the authority for Digest's three peer model-facing outputs: `understanding`, `response`, and `annotations`.
+  - Its early `ReadingState` context examples were superseded by `docs/implementation/new-reading-mechanism/ingest-recall-and-digest-memory-context-design.md`.
+  - The current live Digest prompt uses top-level `ReadingMemory`, not `ReadingState`, `RecentMemory`, or `RetrievedUnitMemory`.
 - Current basis:
   - `DEC-108` makes `Digest` the concrete per-unit interpretation LLM call.
   - `DEC-109` removes content-typed structured long-memory stores from the current live surface.
@@ -70,7 +74,7 @@ Storage can remain unchanged in the first implementation slice:
 
 ## Pre-Implementation Prompt Structure
 
-The top-level user prompt shape remains:
+Before this implementation, the top-level user prompt shape was:
 
 ```xml
 <ReaderRole>...</ReaderRole>
@@ -118,6 +122,21 @@ Before this implementation, runtime converted:
 - `recent_reading_memory[]` -> `memory_uptake_ops[]` targeting `recent_reading_memory`
 - `reading_impression` -> internal `DigestResult.reading_impression`
 - `surfaced_reactions[]` -> internal `DigestResult.surfaced_reactions`
+
+## Current Live Prompt Structure
+
+The current live Digest prompt shape is:
+
+```xml
+<ReaderRole>...</ReaderRole>
+<Instruction>...</Instruction>
+<BookInfo>...</BookInfo>
+<ReadingMemory>...</ReadingMemory>
+<CurrentFocus>...</CurrentFocus>
+<OutputContract>...</OutputContract>
+```
+
+Current prompt-facing memory is one `ReadingMemory` text block. Runtime merges hot current-chapter Understanding from `recent_reading_memory` with selected long-distance Unit Memory Understanding lines before rendering it. Digest does not receive separate `ReadingState`, `RecentMemory`, `RetrievedUnitMemory`, raw prior source text, prior Response, or prior Annotation blocks.
 
 ## Old Prompt Text Moved Or Rewritten
 
@@ -237,13 +256,14 @@ After reading, express what this unit gives you in three connected ways: what yo
 
 ```text
 - Let BookInfo orient you to the stable identity of the book; it is not source text.
-- Let ReadingState hold what the reading has already carried forward. Use it for continuity, but do not let it override the current source unit.
+- Let ReadingMemory hold prior understanding that the reading has already carried forward. Use it for continuity, contrast, callback, and unresolved pressure when it genuinely clarifies the current source unit.
+- Do not treat ReadingMemory as current source text, prior reader response to imitate, or a reason to force a connection.
 - Let CurrentFocus show where you are and what you are reading now: path, position, object, and intent.
 - Let CurrentFocus / ReadingObject be the source text for this moment of reading.
 - Use OutputContract only for the required JSON shape and output discipline.
 ```
 
-This can mostly reuse the current `digest.context_use_guide`.
+This is the current `digest.context_use_guide` posture after the `ReadingMemory` follow-through slice.
 
 ### Understanding
 

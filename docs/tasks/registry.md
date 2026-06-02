@@ -7,7 +7,7 @@ Update when: task status, priority, blockers, decision refs, job refs, evidence 
 
 This document is the human-readable companion to `docs/tasks/registry.json`.
 
-Last updated: `2026-06-02T20:47:25+08:00`
+Last updated: `2026-06-02T22:05:24+08:00`
 
 ## Status Values
 - `active`
@@ -20,12 +20,12 @@ Last updated: `2026-06-02T20:47:25+08:00`
 
 ## Active
 
-### `TASK-SECOND-READER-INGEST-DIGEST-REFRAME-AUDIT-20260530` — Start the narrowed note/highlight product-goal reframe with a read-only feasibility audit
+### `TASK-SECOND-READER-INGEST-DIGEST-REFRAME-AUDIT-20260530` — Maintain the implemented Ingest/Digest and Unit Memory mechanism track
 - Status: `active`
 - Lane: `mechanism_runtime`
 - Priority: `high`
 - Detail: `docs/current-state.md`
-- Next: continue the narrowed product-goal reframe from the forward-only `Ingest` baseline. `DEC-104` retired live Detour / source-backread from `attentional_v2`, `DEC-105` hard-purged the retired compatibility interfaces, `DEC-106` split LLM calls from runner preparation/governance, `DEC-107` replaces the old `Navigate` LLM identity with `llm_calls.ingest(...)`, `DEC-108` renames the concrete per-unit interpretation LLM call to `llm_calls.digest(...)` with XML prompt assembly as the live path, `DEC-109` removes the retired concept/thread structured stores from current live memory surfaces, and `DEC-110` lands the Unit Memory ledger + hybrid retrieval bottom framework. Runtime source-unit preparation still lives in `prepare_next_source_unit_for_read`; active LLM calls live under `llm_calls.py`. Current live `Ingest` returns boundary fields plus bounded `memory_recalls[]`; when recalls are present, the `retrieve_unit_memory` tool loop lets Reading Runner execute Unit Memory retrieval/selection before calling `Digest`. `Digest` now receives one top-level `ReadingMemory` block assembled from hot current-chapter Understanding plus selected long-distance Unit Memory Understanding, with `5K` hot, `10K` retrieved, and `15K` total prompt-facing estimated-token budgets using `tiktoken_o200k_base_v1`. Use `docs/implementation/new-reading-mechanism/ingest-context-and-navigate-mapping.md` as the implementation reference for the landed first-slice `Ingest` XML context. `docs/implementation/new-reading-mechanism/digest-understanding-response-annotation-design.md` is implemented as the Digest semantic refactor: model-facing `understanding / response / annotations` are three peer Instruction actions, with one holistic `understanding` object per unit mapped to stored Recent Reading Memory by runtime. Use `docs/implementation/new-reading-mechanism/unit-memory-hybrid-retrieval-design.md` as the implemented reference for Unit Memory storage/indexing, retrieval mode, FTS5/sqlite-vec retrieval, and retrieval trace. Use `docs/implementation/new-reading-mechanism/ingest-recall-and-digest-memory-context-design.md` as the implemented reference for bounded recalls, tool-loop enforcement, multi-recall aggregation, runtime-owned memory selection, and Digest `ReadingMemory` rendering. Do not launch eval, update evidence catalog, or continue `C设计10` consolidation / the old concrete-node XML migration / `C设计12` prompt assembly migration unless explicitly re-adopted.
+- Next: keep the implemented `Ingest -> Digest -> Reading Runner settlement` mechanism facts aligned before further testing. Current live `Ingest` returns boundary fields plus bounded `memory_recalls[]`; when recalls are present, the `retrieve_unit_memory` tool loop lets Reading Runner execute Unit Memory retrieval/selection before calling `Digest`. `Digest` receives top-level `ReadingMemory` assembled from hot current-chapter Understanding plus selected long-distance Unit Memory Understanding, with `5K` hot, `10K` retrieved, and `15K` total prompt-facing estimated-token budgets using `tiktoken_o200k_base_v1`. Unit Memory is the current content-neutral long-distance memory substrate under `DEC-110`; retired Detour/source-backread/source-skill and concept/thread structured-memory interfaces are historical only. Use `docs/implementation/new-reading-mechanism/ingest-context-and-navigate-mapping.md` only as the first-slice Ingest boundary/context mapping; use `docs/implementation/new-reading-mechanism/ingest-recall-and-digest-memory-context-design.md` as the current recall/tool-loop/ReadingMemory authority. The no-judge hybrid smoke `attentional_v2_unit_memory_hybrid_smoke_nawaer_20260602` completed as diagnostic-only material; do not promote it as evidence. Do not launch formal eval, update evidence catalog, or revive paused `C设计10` consolidation / old concrete-node XML migration / `C设计12` prompt assembly work unless explicitly re-adopted.
 - Jobs: none
 - Evidence:
   - `DEC-103`
@@ -116,7 +116,7 @@ Last updated: `2026-06-02T20:47:25+08:00`
     - memory/reaction/probe-facing source evidence now uses inline `SourceRef` values (`source_span_id`, `source_span`, `quote`, `role`)
     - `anchor_bank.json` is no longer a canonical runtime artifact or checkpoint key for new runs; old anchor-bank runtimes must be rerun
     - chapter-end `active_attention` carry-forward now preserves inline `source_refs[]` by deterministic `item_id` merge after cooling; `chapter_consolidation` still decides what carries forward, but omission of `source_refs` no longer erases existing evidence coordinates
-    - active verification job `bgjob_attentional_v2_source_ref_nawaer_active_attention_fix_20260506` is running `attentional_v2_source_ref_nawaer_active_attention_fix_20260506` as a V2-only no-judge `nawaer` smoke; if it passes, run focused `huochu` before any all-window rerun
+    - historical verification job `bgjob_attentional_v2_source_ref_nawaer_active_attention_fix_20260506` completed as a no-judge `nawaer` smoke; its old automatic check still expected now-retired structured stores such as `thread_trace`, so it is not a current blocker or next-step driver after `DEC-109` / `DEC-110`
   - `Phase F3` is now landed:
     - persisted visible reactions now enter the system only through `Digest.surfaced_reactions[]`
     - current forward reading uses one surfaced-native reaction-record builder; old non-mainline read artifacts are historical only
@@ -347,7 +347,7 @@ Last updated: `2026-06-02T20:47:25+08:00`
     - settlement-audit diagnostic run `attentional_v2_settlement_audit_nawaer_diagnostic_20260505` completed for `nawaer_baodian_private_zh__segment_1` with `judge-mode none`
     - diagnostic finding: the old concrete reading node did emit memory ops and Runner settlement materialized them, but durable-store field-shape alignment needed repair; the active path now normalizes unit-local source quotes into inline `source_refs[]` before settlement
     - follow-up SourceRef smoke `attentional_v2_source_ref_nawaer_smoke_20260506` exposed a narrower chapter-end issue: `active_attention` source refs could be lost when `chapter_consolidation` returned carry-forward items without refs
-    - active verification job `bgjob_attentional_v2_source_ref_nawaer_active_attention_fix_20260506` checks the deterministic carry-forward SourceRef preservation fix on `nawaer`; if it passes, run focused `huochu` before running all five windows again
+    - historical verification job `bgjob_attentional_v2_source_ref_nawaer_active_attention_fix_20260506` completed; because its check contract referenced now-retired structured stores, treat it as historical SourceRef diagnostic context rather than an active current job
   - current probe plan:
     - `reading-companion-backend/eval/manifests/probes/memory_quality_semantic_probe_plan_20260504.json`
     - selection method: `semantic_boundary_with_distance_reference`
@@ -387,16 +387,18 @@ Last updated: `2026-06-02T20:47:25+08:00`
         - `Spontaneous Callback`: `attentional_v2` has `152` grounded callbacks and `84` weak callbacks over `1282` visible reactions; `iterator_v1` has `51` grounded callbacks and `13` weak callbacks over `375` visible reactions
         - `False Visible Integration`: `attentional_v2` has `2`; `iterator_v1` has `0`
         - judge unavailable count: `0` for both mechanisms
-      - evidence status:
-        - `quality_audit`
-      - rejudge posture:
-        - no books were reread
-        - Memory Quality judgments were copied from the scale-fixed April 25 run
-        - reaction audit was freshly judged from April 23 completed reading outputs with native V2 surfaced fields visible
-      - no active Long Span vNext background job remains for this run
-    - next likely phase-2 line:
-      - `iterator_v1` normalized probe export for cross-mechanism `Memory Quality`
-      - broader formal benchmark promotion
+	    - evidence status:
+	      - `quality_audit`
+	    - rejudge posture:
+	      - no books were reread
+	      - Memory Quality judgments were copied from the scale-fixed April 25 run
+	      - reaction audit was freshly judged from April 23 completed reading outputs with native V2 surfaced fields visible
+	    - no active Long Span vNext background job remains for this run
+	    - post-`DEC-110` evaluation boundary:
+	      - before any new formal long-span rerun is treated as current evidence, update or verify the eval harness/report contract so Memory Quality can see Unit Memory and Digest `ReadingMemory`, not only the older active-attention / recent-memory / reflective-frame stores
+	    - next likely phase-2 line:
+	      - `iterator_v1` normalized probe export for cross-mechanism `Memory Quality`
+	      - broader formal benchmark promotion
 - Jobs:
   - no active Long Span vNext jobs remain for the completed Phase-1 diagnostic run
 

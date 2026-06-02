@@ -34,10 +34,8 @@ Use `docs/backend-reading-mechanism.md` for shared platform boundaries. Use `doc
 - It is wired end to end through the shared runtime, CLI `--mechanism attentional_v2`, and the existing async analysis job lifecycle.
 - Omitting `--mechanism` now means `attentional_v2`.
 - The current routed frontend still consumes compatibility-first chapter and marks outputs, but those product surfaces now run on `attentional_v2` by default.
-- It now has a live Phase 1-8.5 implementation under the shared runtime boundary.
-  - These phase labels are implementation-history labels from the rollout plan, not the canonical runtime-flow vocabulary for how the mechanism reads.
-  - They still appear in code and docs because some landed module families kept their rollout-era names.
-  - When describing live reading behavior, prefer the runtime loop and LLM-call names below over the `Phase N` shorthand.
+- It has a live implementation under the shared runtime boundary; rollout phase labels are implementation-history labels, not canonical runtime-flow vocabulary.
+  - Some landed helper families still carry rollout-era names, but current behavior should be described through `Ingest`, `Digest`, Reading Runner settlement, and Unit Memory rather than `Phase N` shorthand.
   - The landed implementation includes:
   - shared chapter / paragraph substrate, with parse-time sentence records retained as compatibility and historical evidence handles rather than the mainline reading lattice
   - shared canonical parse/provisioning and shared manifest/run-state shells
@@ -65,7 +63,7 @@ Use `docs/backend-reading-mechanism.md` for shared platform boundaries. Use `doc
 - Phase B of the post-eval structural rework is now also landed.
   - the concrete per-unit LLM call is now `Digest`, which owns the current-unit interpretation packet on the live path.
   - Each formal unit Digest call receives a small `carry-forward context` built from persisted state.
-  - old supplemental context helpers from that branch were removed from the current code surface by `DEC-105`; future `Ingest` retrieval is a separate design task.
+  - old supplemental context helpers from that branch were removed from the current code surface by `DEC-105`; current `Ingest` retrieval is the separate Unit Memory recall/tool path described below.
   - private `read_audit` records capture context use.
   - that slice temporarily retained a `raw_reaction` compatibility shell, which was later removed from the live path by `Phase F3`.
 - Phase E1 through E3 are now preserved as a landed intermediate compatibility-first baseline.
@@ -345,10 +343,10 @@ Use `docs/backend-reading-mechanism.md` for shared platform boundaries. Use `doc
   - `Digest` is now the only steady-state per-unit interpretation call
   - surfaced reactions now come from that same Digest call rather than from a follow-on wording node
   - ordinary forward progression is deterministic Reading Runner settlement rather than a route action
-- Under the approved next shape:
-  - `Ingest` owns forward next-unit selection and reserves memory-support retrieval for later design
+- Under the approved current shape:
+  - `Ingest` owns forward next-unit selection and the LLM-side prior-reading recall intention through bounded `memory_recalls[]`
   - `Digest` owns model-facing `understanding`, `response`, and `annotations`
-  - `Reading Runner` owns post-Digest settlement and cursor advance
+  - `Reading Runner` owns anchor governance, Unit Memory retrieval/selection, Digest `ReadingMemory` rendering, post-Digest settlement, and cursor advance
   - `slow cycle` owns chapter-end consolidation and promotion
 
 ## Frozen Next-Shape Contract
@@ -448,28 +446,21 @@ Use `docs/backend-reading-mechanism.md` for shared platform boundaries. Use `doc
   - Current `Ingest` carries only the source frontier needed to choose the next unit and name any prior-reading recalls that the selected unit naturally asks for.
   - Ingest does not receive recent memory, active attention, retired structured-memory digests, or old navigation context.
   - Unit Memory retrieval is separate from the retired source-skill or backread path: Ingest expresses zero to three recalls, the `retrieve_unit_memory` tool loop triggers runtime retrieval, Reading Runner selects prompt-facing prior Understanding lines, and Digest receives them through top-level `ReadingMemory`.
-- `Digest` should carry:
-  - `always carry`
-    - `current_unit`
-    - a compact `local_continuity` summary
-    - deprecated open items from `active_attention` while the store remains in the runtime before removal
-      - `active_attention` is no longer the target near-term memory design; do not expand it as the primary short-term memory layer
-      - prompt-visible fields, where still carried for compatibility, are only `item_id`, `tension_from`, `tension_focus`, and `working_interpretation`
-      - source refs, development source refs, linked keys, statuses, and projection markers remain in runtime/audit/report artifacts rather than the Digest prompt
-      - if the open-tension set grows too large, the projection should warn rather than silently omit items
-    - compact `reflective_digest`
-  - `selective carry`
-    - specific source-ref detail
-    - sparse supporting refs
-  - `not carry`
-    - full `refs`
-    - full `reaction_records`
-    - full `read_audit`
-    - full source-reference history
+- `Digest` prompt-visible carry is now intentionally narrow:
+  - top-level `ReadingMemory`
+    - hot current-chapter Understanding lines from `recent_reading_memory`
+    - runtime-selected long-distance Unit Memory Understanding lines
+    - simple position-prefixed text lines under the fixed `5K hot / 10K retrieved / 15K total` estimated-token budget
+  - `CurrentFocus`
+    - the accepted source unit as the immediate object of careful reading
+    - reading path / position / intent metadata needed to orient that unit
+  - `BookInfo` and `OutputContract`
+- `Digest` does not receive retired structured-memory digests, `active_attention`, `reflective_digest`, raw prior source text, prior Response, prior Annotation, full refs, reaction history, read-audit history, or old navigation context on the current live prompt path.
+- Deprecated stores such as `active_attention` may still exist in runtime, settlement, slow-cycle, or audit artifacts while cleanup remains pending; their existence is not a prompt-carry rule for Digest.
 - `slow cycle` may carry a broader chapter slice because it is the dedicated chapter-end maintenance pass.
 - Default carried context must stay small and stable.
-  - long-distance memory, once reintroduced, should travel as compact retrieval results rather than full stores
-  - source-grounded earlier text should be injected only through bounded selective carry
+  - long-distance memory now travels as compact runtime-selected Understanding lines rather than full stores
+  - source-grounded earlier text should not be injected into Digest unless a later design explicitly approves a bounded reader-safe locator
 - Mainline unitization preview is intentionally source-local and deterministic.
   - It previews from the exact paragraph-offset cursor, not from a precomputed sentence index.
   - It always includes the current paragraph remainder and may append a small number of following paragraphs when the remainder is too short to support a natural unit decision.
@@ -495,17 +486,17 @@ Use `docs/backend-reading-mechanism.md` for shared platform boundaries. Use `doc
     - do not add new capabilities, metrics, or report contracts that make `active_attention` the primary short-term memory layer again
     - native runtime truth remains `active_attention.active_items[]` while the current code path still writes it
     - existing item labels and fields (`attention_tags[]`, `tension_from`, `tension_focus`, `working_interpretation`, `source_refs`, `development_source_refs`, terminal reasons / coordinates, and `status`) are deprecated shape, not a forward design target
-    - empty, `active`, `cooling`, and `open` are treated as prompt-eligible open statuses while the deprecated projection still exists; `answered`, `resolved`, and `closed` are lineage/history and are not carried into the Digest prompt
+    - empty, `active`, `cooling`, and `open` may remain meaningful to legacy runtime or slow-cycle maintenance while this deprecated store exists; `answered`, `resolved`, and `closed` are lineage/history and are not carried into the Digest prompt
     - near-term continuity is now owned by `recent_reading_memory`; do not use new ActiveTension design work to cover per-unit semantic memory
-    - long-lived tensions, arcs, watchpoints, and unresolved thematic/narrative pulls should be handled by the future unit-memory retrieval design, not kept alive in a separate ActiveTension layer
+    - long-lived tensions, arcs, watchpoints, and unresolved thematic/narrative pulls should be handled through current/future Unit Memory retrieval design, not kept alive in a separate ActiveTension layer
   - `recent_reading_memory`
     - owns near-term semantic memory of just-read units
     - Digest returns one LLM-facing `understanding` object; runtime converts it into at most one `memory_uptake_ops[]` entry with `target_store="recent_reading_memory"` and `op="append"`
     - the LLM provides only `kind` and `content`; runtime stores `content` as `memory_text`, and Recent Memory append operations do not use an operation-level `reason`
     - the runner owns `entry_id`, `source_unit_span_id`, `created_at_unit_index`, `status`, and `archived_by_consolidation_id`
     - entries are grounded by the accepted read unit span as a whole; the first implementation does not require fine-grained `source_refs` or quote matching
-    - before a future memory-ledger design lands, this store is append-only: Digest does not update, merge, resolve, close, link, or route recent entries into typed long-memory destinations
-    - `status="active"` entries are carried into the next Digest prompt; future consolidation will mark processed entries as `archived`, and archived entries are retained for audit but not prompt-carried
+    - this store remains append-only: Digest does not update, merge, resolve, close, link, or route recent entries into typed long-memory destinations
+    - `status="active"` entries feed hot current-chapter `ReadingMemory` lines; future archival/consolidation may mark processed entries as `archived`, and archived entries are retained for audit but not prompt-carried
   - `reflective_frames`
     - chapter-level reflective summaries remain a slow-cycle artifact
   - `unit_memory`
@@ -546,14 +537,7 @@ Use `docs/backend-reading-mechanism.md` for shared platform boundaries. Use `doc
     - `understanding` should be written as natural reading understanding, not as a default `<label>: <explanation>` heading pattern; colons are appropriate only when the source itself names a term, stage, framework, or quoted source term
     - `understanding` should not copy the source passage, predict future importance, guess typed long-memory targets, create nested memory points, recap prior context for its own sake, or turn a concrete source unit into unsupported essay-like analysis or forced abstract naming
     - author stance, evidence boundaries, writing method, intended reader, and explicit scope limits count as meaningful source-established content rather than empty structure
-    - owns deprecated active-tension lifecycle intent while `active_attention` remains in the runtime:
-      - `create` / `append` creates a new open ActiveTension when prompt-visible context leaves readerly charge that has not yet been fully digested
-      - `update` / `reactivate` advances, corrects, reverses, weakens, or rekindles the `working_interpretation` or what the reader is currently tracking
-      - `resolve` marks an inquiry answered enough that it no longer needs to be carried as open; the payload must explain with `answered_reason` why cited evidence directly satisfies the forward pull, not merely a precondition, setup, clue, partial explanation, or reframing
-      - `close` marks an inquiry no longer driving the reading, without implying it was fully answered; the payload must explain this with `closed_reason`
-      - `drop` removes a mistaken or obsolete inquiry
-      - durable answers should wait for the future unit-memory design; do not use an active-attention `promote` path
-      - future cleanup should remove this compatibility path after `recent_reading_memory` formation is validated and consolidation / archival behavior is designed
+    - does not own ActiveTension lifecycle intent on the current prompt path; any remaining `active_attention` operations are deprecated runtime/slow-cycle compatibility territory pending removal
   - `slow cycle`
     - owns chapter-end cooling, promotion, reconsolidation, and `reflective_frames`
   - `Reading Runner`
@@ -565,7 +549,7 @@ Use `docs/backend-reading-mechanism.md` for shared platform boundaries. Use `doc
 - Non-mainline jump-reading interfaces are removed from the current live surface after `DEC-105`.
   - Old Detour/source-backread vocabulary remains only in historical docs, old reports, and old output trees.
   - New live runs do not use non-mainline jump reading, path-redirection read output, or source-backread skills.
-  - Future prior-context support should be introduced through a new Ingest retrieval design rather than by reviving live path steering.
+  - Prior-context support now uses the Unit Memory recall/tool path rather than live path steering.
 - Sentence intake no longer runs a parallel heuristic trigger layer.
   - Protection against missing a crucial single sentence now comes from bounded preview construction plus semantic unitization, not from a separate `zoom_now` gate.
 - Historical bridge-resolution helpers may still appear in old reports or archives.

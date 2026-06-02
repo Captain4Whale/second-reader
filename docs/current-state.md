@@ -7,20 +7,20 @@ Update when: the current objective, active tasks, blockers, active jobs, open de
 
 This file is authoritative for durable current status. Do not keep unique active-state information only in `docs/agent-handoff.md`.
 
-Last verified: `2026-06-02T20:47:25+08:00`
+Last verified: `2026-06-02T22:05:24+08:00`
 
 ## Current Objective
-- Product goal and mechanism direction are being reset before further implementation.
+- The `Ingest -> Digest -> Reading Runner settlement` mechanism reframe is implemented; current work is fact alignment, smoke/diagnostic review, and calibration before any formal evaluation promotion.
   - decision ref:
     - `DEC-103`
   - new product target:
     - understand the currently read text and present valuable notes / highlights beside the source text
     - prioritize viewpoint supplement, avoiding missed important content, and a sense of reading companionship
     - treat note type / value rating / highlight presentation as product-facing outputs, not as secondary artifacts of an internal memory ontology
-  - proposed workflow direction:
-    - replace the old path-selection framing of `navigate -> read` with a narrower `ingest -> digest` design exploration
-    - `ingest` should determine the next reading unit and use runtime-owned retrieval tools where needed
-    - `digest` should understand the target text and produce reader-facing reactions / notes / highlights
+  - landed workflow direction:
+    - replace the old path-selection framing of `navigate -> read` with `Ingest -> Digest`
+    - `Ingest` determines the next reading unit and may express bounded prior-reading recall intentions; runtime owns retrieval execution and selection
+    - `Digest` understands the target text and produces reader-facing `understanding / response / annotations`
     - prefer retrieving relevant prior memory/source objects over live "回读" path steering
   - live cleanup landed:
     - `DEC-104` retires live Detour / source-backread behavior from `attentional_v2`
@@ -47,13 +47,14 @@ Last verified: `2026-06-02T20:47:25+08:00`
     - eval health gates, run ledger discipline, source-coordinate governance, artifact-grounded reports, and prompt assembly primitives may still be reused selectively
     - the previous memory ontology attempts are evidence that complex internal memory stores can easily overgrow the product goal
   - next step:
-    - continue with the new product-goal reframe from the now-forward-only `Ingest` baseline
+    - keep current docs and task facts aligned to the implemented `Ingest -> Digest -> Unit Memory -> ReadingMemory` path before further testing
     - use `docs/implementation/new-reading-mechanism/ingest-context-and-navigate-mapping.md` as the implementation reference for the landed first-slice `Ingest` XML context
     - use `docs/implementation/new-reading-mechanism/digest-understanding-response-annotation-design.md` as the implemented reference for the Digest prompt/output semantic refactor
     - use `docs/implementation/new-reading-mechanism/unit-memory-hybrid-retrieval-design.md` as the implemented reference for the Unit Memory storage/index/retrieval trace bottom framework
     - use `docs/implementation/new-reading-mechanism/ingest-recall-and-digest-memory-context-design.md` as the implemented reference for bounded multi-recall Ingest output, Anthropic-style `retrieve_unit_memory` tool loop, multi-recall retrieval aggregation, and Digest `ReadingMemory` packaging
     - next implementation work should review/calibrate recall quality, retrieval fanout, neighbor exclusion, ReadingMemory budget behavior, and Digest downstream usefulness before changing the memory surface again
-    - do not run eval, update evidence catalog, or claim product quality from the Detour hard-purge slice
+    - the no-judge hybrid smoke `attentional_v2_unit_memory_hybrid_smoke_nawaer_20260602` completed as a diagnostic only; it should not be treated as formal evidence or evidence-catalog material
+    - do not run formal eval, update evidence catalog, or claim product quality until the current docs/eval-harness facts are aligned and a reviewed diagnostic plan is approved
 - Historical concrete-node XML prompt / Recent Reading Memory full active diagnostic machine run has completed; post-run report is preserved for reference.
   - purpose:
     - validate the old opt-in XML prompt assembly path after Recent Reading Memory formation work
@@ -364,7 +365,7 @@ Last verified: `2026-06-02T20:47:25+08:00`
             - final `active_attention` dropping from `11` post-unit-settlement items to `4` runtime items is explained by chapter-end consolidation / cross-chapter carry-forward, not by per-unit settlement loss
             - follow-up SourceRef smoke run `attentional_v2_source_ref_nawaer_smoke_20260506` proved the Digest -> settlement -> memory/reaction/probe SourceRef chain, but exposed that `active_attention` source refs could be erased at chapter-end carry-forward
             - the current repair preserves carried `active_attention` source refs by deterministic `item_id` merge after cooling; `chapter_consolidation` still chooses what carries forward, but an omitted `source_refs` field no longer erases existing evidence coordinates
-          - active verification job:
+          - historical verification job:
             - job id:
               - `bgjob_attentional_v2_source_ref_nawaer_active_attention_fix_20260506`
             - run id:
@@ -373,8 +374,10 @@ Last verified: `2026-06-02T20:47:25+08:00`
               - V2-only `nawaer_baodian_private_zh__segment_1`, `judge-mode none`
             - check:
               - verify no `anchor_bank.json`, non-empty read/settlement/ledger rows, non-zero `memory_uptake_ops`, final memory / reaction source refs, and probe `source_ref_digest` without `anchor_bank_digest`
+            - current status:
+              - process exit was `0`, but the old automatic check still expected now-retired structured stores such as `thread_trace`; do not treat this job as an active current blocker or next-step driver after `DEC-109` / `DEC-110`
           - next implementation target:
-            - if the active `nawaer` SourceRef repair smoke passes, run focused `huochu` before spending a full all-window rerun
+            - SourceRef diagnostic material is historical; current testing should focus on Unit Memory recall quality, retrieval selection, ReadingMemory budgeting, and Digest downstream usefulness
         - current probe plan:
           - `reading-companion-backend/eval/manifests/probes/memory_quality_semantic_probe_plan_20260504.json`
           - selection method: `semantic_boundary_with_distance_reference`

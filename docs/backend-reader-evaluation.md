@@ -291,16 +291,21 @@ The old Memory / Planning / Evaluation implementation guidance chain at `docs/im
     - old hard-ratio probe reports remain historical evidence and are not rewritten
   - Memory Quality probe snapshots should score complete probe-time memory state:
     - `scoring_memory_state.recent_reading_memory` for current near-term per-unit semantic memory
+    - `scoring_memory_state.unit_memory` or an equivalent Unit Memory review projection for current long-distance per-unit Understanding memory
+    - prompt-facing `ReadingMemory` trace/projection evidence for what Digest actually received at the probe boundary when long-distance recall was attempted
     - `scoring_memory_state.active_attention` as deprecated ActiveTension evidence while the cleanup path remains incomplete
     - `scoring_memory_state.reflective_frames`
-    - retired concept/thread structured long-memory stores are no longer current snapshot fields after `DEC-109`; future long-memory evaluation should follow the deferred content-neutral Unit Memory design
+    - retired concept/thread structured long-memory stores are no longer current snapshot fields after `DEC-109`; current long-memory evaluation should follow the content-neutral Unit Memory design established by `DEC-110`
     - digest fields remain auxiliary projection / compatibility evidence, not the primary scoring surface for new runs
     - `reaction_records`, local buffer, continuity glue, and read-audit streams are not Memory Quality stores; reaction-level behavior remains covered by Selective Legibility, Spontaneous Callback, and False Visible Integration
     - old digest-only Memory Quality runs should be labeled with `memory_snapshot_basis=legacy_digest_snapshot`, while new full-state runs should record `memory_snapshot_basis=full_probe_time_memory_state`
     - old `gate_state`, `pressure_snapshot`, and working-pressure artifacts are not current evidence fields
     - Active Attention / ActiveTension is now deprecated as a primary memory layer. Existing artifacts may still contain `active_attention` items with `tension_from`, `tension_focus`, `working_interpretation`, source evidence, and terminal `answered_reason` / `closed_reason`; reports may interpret those fields for historical or diagnostic review, but should label the store as deprecated evidence rather than the target near-term memory design.
-    - Future near-term-memory evaluation should foreground `recent_reading_memory`, which is now implemented for Digest-time formation and prompt carriage. Long-lived tensions, narrative arcs, watchpoints, and recurring unresolved pulls should wait for the deferred content-neutral Unit Memory retrieval design rather than extending ActiveTension.
+    - Near-term-memory evaluation should foreground `recent_reading_memory`; long-distance continuity evaluation should foreground Unit Memory retrieval, selected Understanding lines, and whether the resulting `ReadingMemory` helped or polluted Digest.
     - Active Attention source coordinates in existing artifacts are program-resolved from model-cited exact `source_quote` / `development_source_quote`; reports should distinguish exact/normalized/ordered-fragment matches from `fallback_unit_span` grounding caveats. If an item is grounded in title/framing/prior memory rather than a current-source phrase, reports should say so instead of treating unit coordinates as precise source evidence.
+  - Formal post-`DEC-110` long-span evaluation must not reuse the old Memory Quality evidence surface unchanged.
+    - The current eval runner/report text still needs a harness update before formal promotion if it only exposes `active_attention`, `recent_reading_memory`, and `reflective_frames`.
+    - A no-judge smoke may inspect Unit Memory artifacts manually, but it should not be promoted as Memory Quality evidence until the runner exposes Unit Memory / `ReadingMemory` evidence in the judge-facing payload and report.
   - New probe evidence generated after the Digest naturalization, SourceRef, Recent Reading Memory formation, and `DEC-109` structured-store removal cutovers should use `reading_impression` for read-audit / probe-facing local interpretation, and `memory_uptake_ops` for the bounded memory-update operations that feed current recent-memory and deprecated active-attention layers.
     - Older reports that show `unit_delta` or `implicit_uptake_ops` are historical artifacts from the pre-cutover contract, not current field names.
   - Memory Quality evidence reports have a fixed writing contract:
@@ -389,7 +394,7 @@ The old Memory / Planning / Evaluation implementation guidance chain at `docs/im
   - the runner reads only the minimum required fresh outputs:
     - `attentional_v2` for V2 probe snapshots
     - `iterator_v1` only for windows whose prior normalized outputs do not match the current active window fingerprint
-  - after the run finishes, review whether phase 2 is needed before any new formal long-span rerun is treated as current evidence
+  - before any new formal post-`DEC-110` long-span rerun is treated as current evidence, update or verify the harness/report contract so Memory Quality can see Unit Memory and Digest `ReadingMemory`, not only the older active-attention / recent-memory / reflective-frame stores
 - Historical broad freezes should remain readable, but they should not keep acting as the active benchmark pointer once a deliberate replacement has been recorded.
 
 ## Bounded Dataset-Platform Strategy Rule

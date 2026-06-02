@@ -53,8 +53,9 @@ Use `docs/api-contract.md` for exact fields and routes. Use this file to underst
   - Debug-only diagnostics stream for `attentional_v2`.
   - Controller-facing forensics, candidate traces, and other deep debug events belong here instead of the shared runtime history.
 - `_mechanisms/attentional_v2/runtime/active_attention.json`
-  - Current hot-attention source for `attentional_v2`.
-  - The live contract is `active_attention.active_items[]`; each item may carry lightweight `attention_tags[]`.
+  - Deprecated hot-attention artifact for `attentional_v2`; it may still exist in runtime trees while cleanup remains pending, but it is no longer the target near-term memory design.
+  - The remaining runtime shape is `active_attention.active_items[]`; each item may carry lightweight `attention_tags[]`.
+  - Current Digest prompt-facing continuity is owned by `ReadingMemory` assembled from `recent_reading_memory` plus selected Unit Memory Understanding, not by active-attention projection.
   - The old `working_state` name and fixed question/tension/hypothesis/motif digest lists are historical, not current aggregation truth.
   - Historical `local_hypothesis` / `live_hypotheses` labels should be read only as old provenance vocabulary. Current aggregation should treat hypothesis-like hot material as tagged active-attention items, not as a separate state layer.
   - `gate_state`, `pressure_snapshot`, and old working-pressure files may appear in historical output trees but must not be treated as current aggregation truth.

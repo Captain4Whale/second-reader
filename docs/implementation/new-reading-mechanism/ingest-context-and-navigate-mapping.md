@@ -1,7 +1,7 @@
 # Ingest Context And Navigate Mapping
 
 Purpose: capture the first design mapping from the old forward-only `Navigate` prompt to the first implemented `Ingest` LLM call.
-Use when: designing the next `Ingest -> Digest` prompt/context split, checking the landed first-slice Ingest XML context, or deciding how future memory retrieval should attach to Ingest.
+Use when: checking the landed first-slice Ingest XML context or understanding how the old boundary-selection prompt was mapped into `Ingest`.
 Not for: stable mechanism authority, broad runtime behavior, or evidence-catalog claims.
 Update when: the Ingest role, XML context shape, retrieval-request contract, or mapping from old Navigate fields changes.
 
@@ -11,6 +11,10 @@ Update when: the Ingest role, XML context shape, retrieval-request contract, or 
 - Status: implemented first-slice reference.
 - Code status: implemented after `DEC-107`.
 - Evaluation status: no eval run, no evidence-catalog update.
+- Supersession note:
+  - This document is the first-slice boundary-selection mapping.
+  - Its memory-retrieval placeholders and "deferred until the memory design lands" language are historical for that slice.
+  - The current retrieval/context authority is `docs/implementation/new-reading-mechanism/ingest-recall-and-digest-memory-context-design.md`, where `Ingest` emits bounded `memory_recalls[]`, calls `retrieve_unit_memory`, and Reading Runner renders Digest `ReadingMemory`.
 - Current basis:
   - `DEC-103` pauses the old Second Reader Memory / Planning implementation track as the default direction.
   - `DEC-104` retires live Detour / source-backread.
@@ -28,7 +32,7 @@ The main change is not the boundary-selection content. The change is the node id
 - old name: `Navigate`
 - new name: `Ingest`
 - old role: choose the next readable unit
-- new role: choose the next readable unit; memory-support retrieval is an intended future extension after the memory design lands
+- new role: choose the next readable unit; in the current follow-through slice, also express bounded prior-reading recall intentions through `memory_recalls[]`
 - old structure: flat prompt sections with JSON blocks
 - new structure: XML prompt assembly aligned with the current Digest prompt framework
 - old context block: `navigation_context`
@@ -65,11 +69,11 @@ Top-level rule:
 <ReaderRole>...</ReaderRole>
 
 <Instruction>
-  <CurrentStep>...</CurrentStep>
-  <ContextUseGuide>...</ContextUseGuide>
-  <SelectNextUnit>...</SelectNextUnit>
-  <RequestMemorySupport>...</RequestMemorySupport>
-  <ExecutionLimits>...</ExecutionLimits>
+	  <CurrentStep>...</CurrentStep>
+	  <ContextUseGuide>...</ContextUseGuide>
+	  <SelectNextUnit>...</SelectNextUnit>
+	  <RecallPriorReading>...</RecallPriorReading>
+	  <ExecutionLimits>...</ExecutionLimits>
 </Instruction>
 
 <BookInfo>
@@ -112,7 +116,7 @@ Recommended child blocks:
 - `CurrentStep`
 - `ContextUseGuide`
 - `SelectNextUnit`
-- `RequestMemorySupport`
+- `RecallPriorReading`
 - `ExecutionLimits`
 
 The child blocks should correspond to distinct model responsibilities, not to every policy paragraph. This keeps `Instruction` readable while avoiding duplicated task/policy pairs.
@@ -121,7 +125,7 @@ Merge rule:
 
 - `CurrentStep` absorbs the old `StepPosition` and `TaskOverview`.
 - `SelectNextUnit` absorbs the old `NextUnitSelection` and `BoundarySelection`.
-- `RequestMemorySupport` is a placeholder for the future memory-support task.
+- `RecallPriorReading` is the current follow-through memory-support task: it asks what prior reading the selected unit naturally calls back to, without showing retrieved memory to Ingest.
 - `ExecutionLimits` absorbs the old `ResponsibilityBoundary` and `ResponseDiscipline`.
 
 Target assembly shape:
@@ -130,11 +134,11 @@ Target assembly shape:
 <ReaderRole prompt_fragment_ref="reader.role" />
 
 <Instruction>
-  <CurrentStep prompt_fragment_ref="ingest.current_step" />
-  <ContextUseGuide prompt_fragment_ref="ingest.context_use_guide" />
-  <SelectNextUnit prompt_fragment_ref="ingest.select_next_unit" />
-  <RequestMemorySupport prompt_fragment_ref="ingest.request_memory_support" />
-  <ExecutionLimits prompt_fragment_ref="ingest.execution_limits" />
+	  <CurrentStep prompt_fragment_ref="ingest.current_step" />
+	  <ContextUseGuide prompt_fragment_ref="ingest.context_use_guide" />
+	  <SelectNextUnit prompt_fragment_ref="ingest.select_next_unit" />
+	  <RecallPriorReading prompt_fragment_ref="ingest.recall_prior_reading" />
+	  <ExecutionLimits prompt_fragment_ref="ingest.execution_limits" />
 </Instruction>
 ```
 
@@ -146,13 +150,14 @@ Recommended `Instruction` child meanings:
 
 `CurrentStep` says the model is in the `Ingest` step of a sequential deep-reading loop. This step happens before `Digest`: the model is previewing the next forward source area, not yet producing the final reading of that unit.
 
-Current target output:
+First-slice target output:
 
 - selected next source unit boundary
 
-Intended future output, deferred until the new memory design lands:
+Current follow-through output, specified in `ingest-recall-and-digest-memory-context-design.md`:
 
-- prior-reading memory retrieval requests for that selected unit
+- zero to three prior-reading `memory_recalls[]` for that selected unit
+- a required `retrieve_unit_memory` tool call when non-empty recalls are emitted
 
 Proposed `ingest.current_step` fragment:
 
@@ -163,7 +168,7 @@ This step happens before Digest. You are not yet reading the selected unit for i
 
 Your work in this call is to select the next forward source unit that you should read carefully in the Digest step.
 
-Memory-retrieval support is an intended future Ingest responsibility, but its concrete request behavior is deferred until the memory design lands.
+First-slice note: memory-retrieval support was deferred in this mapping document. The current live prompt adds a `RecallPriorReading` instruction and bounded `memory_recalls[]` contract from the follow-through design.
 ```
 
 #### ContextUseGuide
@@ -217,13 +222,13 @@ End anchor and continuation:
 - If the move is still unfinished at the available boundary, choose the best honest end point you have. Do not pretend the local move is complete.
 ```
 
-#### RequestMemorySupport
+#### RecallPriorReading
 
-`RequestMemorySupport` is reserved for the future instruction that will tell Ingest how to ask what prior reading memory is needed in order to read the selected unit continuously in the Digest step.
+`RecallPriorReading` tells Ingest how to notice the prior reading that the selected source unit naturally asks to remember before Digest reads it carefully.
 
-Current status: placeholder only.
+Current status: implemented in the follow-through recall/context slice.
 
-The detailed recall-query policy should not be specified until the new memory design defines the available memory stores, indexes, retrieval purposes, request budget, and runtime tool behavior.
+The detailed recall/tool policy lives in `docs/implementation/new-reading-mechanism/ingest-recall-and-digest-memory-context-design.md`: Ingest may emit zero to three `memory_recalls[]`, must call `retrieve_unit_memory` when non-empty recalls are emitted, and receives only status/count tool results while runtime owns retrieval selection and Digest `ReadingMemory` rendering.
 
 #### ExecutionLimits
 
@@ -302,13 +307,13 @@ Paragraph indexes and text roles may be attributes. The source text itself remai
 
 ### RetrievalSurface
 
-This is an intentionally empty placeholder in the current design slice.
+This was an intentionally empty placeholder in the first design slice.
 
-Do not define concrete retrieval subblocks or query behavior here yet. The new memory design will decide what can be searched, what index surface exists, how retrieval requests are shaped, and what support Digest should receive.
+The current live Ingest XML still keeps `<RetrievalSurface />` empty because retrieved memory is not shown to Ingest. Concrete recall behavior now lives in the follow-through design: Ingest expresses `memory_recalls[]`, calls `retrieve_unit_memory`, and runtime renders selected Understanding lines into Digest `ReadingMemory`.
 
 ### OutputContract
 
-Maps from the old Navigate return JSON. The eventual memory-retrieval output is deferred until the new memory design lands.
+Maps from the old Navigate return JSON. This section records the first-slice boundary-only output; the current follow-through output adds bounded `memory_recalls[]`.
 
 #### OutputFields
 
@@ -330,7 +335,8 @@ Return JSON only:
 {
   "end_anchor_text": "...",
   "boundary_type": "paragraph_end",
-  "reason": "..."
+  "reason": "...",
+  "memory_recalls": []
 }
 ```
 
@@ -349,21 +355,21 @@ The output preserves the current Navigate boundary semantics for:
 | Current Navigate prompt surface | Target Ingest XML surface | Notes |
 | --- | --- | --- |
 | `You are Navigate...` | `ReaderRole` plus `Instruction / CurrentStep` | Replace the old node-specific role with the reader role fragment `reader.role`; put the Ingest step position in `CurrentStep`. |
-| `Your single job is to choose...` | `Instruction / CurrentStep` | Replace with the current Ingest step framing: select the next source unit; memory support remains deferred. |
+| `Your single job is to choose...` | `Instruction / CurrentStep` | Replace with the current Ingest step framing: select the next source unit; memory support is now handled by `RecallPriorReading` / `memory_recalls[]` in the follow-through design. |
 | Next-unit task framing | `Instruction / SelectNextUnit` | Name the task and keep the detailed boundary policy together here. |
 | Boundary-selection rules | `Instruction / SelectNextUnit` | Reuse almost directly. This is where the already-approved next-unit selection prompt content belongs. |
-| no old equivalent | `Instruction / RequestMemorySupport` | Placeholder only until the memory design defines retrieval behavior. |
+| no old equivalent | `Instruction / RecallPriorReading` | Follow-through design: ask what prior reading should be remembered for the selected unit; runtime maps recalls to retrieval. |
 | `Structural frame` | `BookInfo / BookIdentity` and `CurrentView / Position` | Keep stable book identity in `BookInfo`; move `chapter_title` to `CurrentView / Position`; do not carry an output-language block in first-slice Ingest. |
 | `Reading position` | `CurrentView / Position` | Keep current cursor and retry feedback here. |
 | `Mainline preview` | `CurrentView / Content` | Prefer paragraph XML nodes over one JSON blob. |
 | `Mainline cursor` | `CurrentView / Position` | Keep only cursor facts needed to understand where the preview starts; do not revive mode/decision fields. |
 | `Navigation context` | not carried as a first-slice state block | Do not inject recent-memory or continuity summaries into Ingest by default. |
-| `Policy snapshot` | `Instruction / SelectNextUnit` policy | Retrieval policy is deferred until the new memory design lands. |
+| `Policy snapshot` | `Instruction / SelectNextUnit` policy | Unit-selection policy stays here; retrieval behavior lives in `RecallPriorReading` and runtime Unit Memory selection. |
 | `Output language contract` | omitted | Ingest has no reader-facing natural-language output in this slice; `end_anchor_text` is copied source text and `reason` is internal. |
 | `end_anchor_text` | `end_anchor_text` | Same semantics: exact quote from preview tail. |
 | `boundary_type` | `boundary_type` | Same boundary vocabulary unless later simplified. |
 | `reason` | `reason` | Keep short explanation; useful for trace/audit. |
-| no old equivalent | deferred memory retrieval request contract | New Ingest responsibility, but not specified in this slice. |
+| no old equivalent | `memory_recalls[]` | New Ingest responsibility specified in the follow-through design. |
 
 ## Boundary-Selection Content To Reuse
 
@@ -395,16 +401,16 @@ The following current Navigate rules should carry forward almost directly:
 The following current Navigate prompt material should move or be adjusted:
 
 - `You are Navigate...` should not carry forward as text. The product-level identity comes from top-level `<ReaderRole>` / `reader.role`; the step framing comes from `Instruction / CurrentStep`.
-- `Your single job is to choose...` should be replaced by the Ingest instruction charter, while keeping the concrete memory-retrieval request contract deferred.
+- `Your single job is to choose...` should be replaced by the Ingest instruction charter; current retrieval support is expressed through `RecallPriorReading` rather than the boundary-selection rules.
 - `Use navigation context only as secondary support...` should not carry forward in the first Ingest slice, because the current target context has no carried reading-state block.
-- `Do not request tools or external web search` should not be copied unchanged. It should become:
+- `Do not request tools or external web search` should not be copied unchanged. Current live behavior allows only the mechanism-private Unit Memory retrieval tool, never external web search:
 
 ```text
-Do not request external web search. Memory retrieval request behavior is deferred until the memory design lands.
+Do not request external web search. If you write one or more prior-reading recalls, use the available Unit Memory retrieval tool so runtime can prepare support for Digest.
 ```
 
 - `Return JSON only` belongs in `Instruction / ExecutionLimits` and the concrete `OutputContract`.
-- The old flat return JSON example belongs in `OutputContract` as the first-slice Ingest return shape. The memory retrieval field is not specified in this slice.
+- The old flat return JSON example belongs in `OutputContract` as the first-slice Ingest return shape. The current follow-through return shape adds `memory_recalls[]`.
 
 ## Runtime Boundary
 
@@ -413,9 +419,9 @@ The LLM-call/runtime split from `DEC-106` should remain.
 In the target shape:
 
 1. Reading Runner builds the Ingest prompt packet.
-2. Ingest LLM returns the flat boundary JSON; memory retrieval requests are deferred until the memory design lands.
-3. Reading Runner resolves `end_anchor_text`, retries/falls back if needed, and accepts the source unit.
-4. Runtime/tooling will later execute memory retrieval requests once the memory design defines the retrieval surface and request contract.
+2. Ingest LLM returns the flat boundary JSON plus bounded `memory_recalls[]`.
+3. If recalls are non-empty, Ingest must call the mechanism-private `retrieve_unit_memory` tool; the tool result returns status/count metadata only.
+4. Reading Runner resolves `end_anchor_text`, retries/falls back if needed, accepts the source unit, executes/records runtime Unit Memory retrieval, and selects prompt-facing Understanding memory.
 5. Reading Runner assembles the Digest packet with:
    - accepted source unit
    - retrieved supporting memory later, once retrieval is designed
