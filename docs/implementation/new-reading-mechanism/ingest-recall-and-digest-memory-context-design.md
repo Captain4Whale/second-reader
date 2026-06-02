@@ -405,6 +405,12 @@ explain what this paragraph means
 
 The model-facing shape is `memory_recalls[]`.
 
+For Ingest, each item is a prior-reading recall intention: what the selected unit makes the Reader want to remember before Digest reads carefully.
+
+For runtime, each item becomes a retrieval query. Runtime should use `recall_text` directly as the query text after normal cleaning / clipping.
+
+Do not add a separate `source_cues[]` field in V1. `recall_text` should already combine the selected-unit footing with the kind of earlier reading needed. Splitting out `source_cues[]` would duplicate `recall_text` and push Ingest back toward field-filling search behavior.
+
 During `retrieve_unit_memory` execution, runtime maps each recall to an internal retrieval query:
 
 ```json
@@ -752,7 +758,6 @@ Suppress:
 
 ## Open Questions
 
-- Should `memory_recalls[]` include a separate `source_cues[]` field, or is `recall_text` enough?
 - Should runtime retry once when recalls exist but the model returns final JSON without calling `retrieve_unit_memory`, or should it proceed degraded?
 - How should `ReadingMemory` line budget change for fiction vs argument-heavy nonfiction?
 - Should `tiktoken_o200k_base_v1` remain the default estimator after MiniMax usage calibration, or should V2 switch to MiniMax's official tokenizer despite slower speed?
