@@ -378,7 +378,7 @@ Use `docs/backend-reading-mechanism.md` for shared platform boundaries. Use `doc
       - this is bounded plurality, not pressure to spray annotations everywhere; the default density still stays low unless the unit honestly contains multiple independently valuable spans
     - the native annotation shape does not carry a `type`
     - `content` must stay reader-facing and natural-language.
-      - it may callback to earlier material, but it must not expose system handles such as sentence ids, `ref_ids`, anchor ids, thread ids, concept ids, or reaction ids
+      - it may refer back to earlier material, but it must not expose system handles such as sentence ids, `ref_ids`, anchor ids, thread ids, concept ids, or reaction ids
       - `prior_link.ref_ids` remain internal structured linkage for the runtime and audits, not wording that should leak into visible text
       - if visible wording briefly quotes earlier material, it should do so sparingly with a short fragment rather than pasting a whole earlier sentence back into the annotation
 - Internal `DigestResult` still exposes `reading_impression`, `surfaced_reactions`, and normalized `memory_uptake_ops` so existing settlement, reaction persistence, and read-audit surfaces remain stable.
@@ -555,7 +555,7 @@ Use `docs/backend-reading-mechanism.md` for shared platform boundaries. Use `doc
 - Historical bridge-resolution helpers may still appear in old reports or archives.
   - they are not part of the current live route layer
   - the current live Runner no longer invokes the old Anchor Bank relation-writing Bridge path
-  - current callback honesty is handled by surfaced reaction linkage, inline source refs, and evaluation/audit evidence rather than by a post-read route action
+  - current prior-memory reference honesty is handled by surfaced reaction linkage, inline source refs, Unit Memory / ReadingMemory evidence, and evaluation/audit evidence rather than by a post-read route action
 
 ## Removed Non-Mainline Path Interfaces
 - `DEC-104` retired Detour search and source-backread from the live path.
@@ -734,8 +734,8 @@ Use `docs/backend-reading-mechanism.md` for shared platform boundaries. Use `doc
   - Does the mechanism form strong coverage-unit interpretations instead of producing sentence-by-sentence sparks or vague paragraph blur?
 - `forward_settlement_integrity`
   - After each read, does the Reading Runner settle the exact chosen unit, apply memory updates, persist visible reactions, and advance the cursor without inventing a second route taxonomy?
-- `callback_grounding_honesty`
-  - When the mechanism links backward through surfaced reactions or retrieved memory, are those links source-grounded and interpretively justified rather than merely suggestive?
+- `prior_memory_grounding_honesty`
+  - When the mechanism refers back through surfaced reactions or Digest `ReadingMemory`, are those references source-grounded and interpretively justified rather than merely suggestive or overclaimed?
 - `reaction_selectivity_and_anchor_fidelity`
   - When the mechanism emits visible thoughts, are they selective, worthwhile, and honestly anchored to the text?
 - `reconsolidation_integrity`
@@ -759,10 +759,10 @@ Use `docs/backend-reading-mechanism.md` for shared platform boundaries. Use `doc
   - deepen standard/debug node-level traces now that the live parse/read path exists
   - keep debug mode optional rather than making deep diagnostics the baseline requirement for normal evaluation runs
 - Current evaluation note:
-  - the completed `excerpt surface v1.1` formal judged run is the main product-readiness evidence bundle for this default cutover
-  - the cleaned `attentional_v2_accumulation_benchmark_v1_judged_rerun_20260407` lane is now the durable long-span evidence bundle
-- Current narrow-repair drift note:
-  - the bounded local-anchor / callback-bridge repair loop has already landed two focused code rounds in the working tree and both targeted test slices are green
+  - post-Ingest/Digest Long Span diagnostics should evaluate `Ingest -> Unit Memory retrieval -> Digest ReadingMemory -> settlement` mechanism conformance, Memory Quality with Unit Memory / ReadingMemory evidence, and prior-memory continuity / safety.
+  - older excerpt-surface, accumulation, and callback-bridge runs remain historical evidence for the pre-Unit-Memory mechanism route; they are not the current active evaluation surface.
+- Historical narrow-repair drift note:
+  - the bounded local-anchor / callback-bridge repair loop had landed two focused code rounds in the older repair track and both targeted test slices were green
   - however, the second repair-round smoke exposed a new late-tail failure:
     - `xidaduo_private_zh__chapter_15` drifted into a `91`-sentence open meaning-unit span by `c15-s248` even after pressure had cooled
   - the same smoke also showed that explicit callback-cue routing alone still did not produce a concrete earlier-target bridge in `nawaer_baodian_private_zh__chapter_22`

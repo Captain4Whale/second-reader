@@ -7,7 +7,7 @@ Update when: the current objective, active tasks, blockers, active jobs, open de
 
 This file is authoritative for durable current status. Do not keep unique active-state information only in `docs/agent-handoff.md`.
 
-Last verified: `2026-06-03T12:23:03+08:00`
+Last verified: `2026-06-03T12:45:03+08:00`
 
 ## Current Objective
 - The `Ingest -> Digest -> Reading Runner settlement` mechanism reframe is implemented; current work is fact alignment, smoke/diagnostic review, and calibration before any formal evaluation promotion.
@@ -61,7 +61,7 @@ Last verified: `2026-06-03T12:23:03+08:00`
     - run ledger: `reading-companion-backend/docs/evaluation/run_ledger.md`
     - outputs: `summary/aggregate.json`, `summary/report.md`, `summary/llm_usage.json`, `summary/memory_quality_results.jsonl`, `summary/reaction_audit_results.jsonl`, and `summary/reaction_window_summaries.jsonl`
     - strict LLM health: all five `attentional_v2` output dirs checked `ok`
-    - initial metric snapshot: fresh Memory Quality average `3.83` across `25` probes; fresh reaction audit found `0` false visible integrations across all five windows
+    - initial metric snapshot: fresh Memory Quality average `3.83` across `25` probes; fresh prior-memory safety audit found `0` prior-memory overclaims across all five windows
     - catalog status: `not_cataloged`; do not update evidence catalog until reviewed
   - next step:
     - inspect summary files, Ingest recall samples, Unit Memory retrieval traces, Digest `ReadingMemory` prompts, and settlement artifacts
@@ -212,7 +212,7 @@ Last verified: `2026-06-03T12:23:03+08:00`
     - Lane A covered the active `20260422` user-level selective package: `5` segments, `202` note cases, `attentional_v2` only
     - Lane A report-level totals: `exact_match_count=28`, `focused_hit_count=42`, `incidental_cover_count=8`, `miss_count=124`, `note_recall=0.3465`, `unlocatable_reaction_count=3`
     - Lane B covered the active semantic-probe manifest: `5` windows, `25` Memory Quality probes, `attentional_v2` only
-    - Lane B report-level totals: average Memory Quality score `3.42`, grounded callbacks `126`, weak callbacks `60`, false visible integrations `2`
+    - Lane B historical-label report totals: average Memory Quality score `3.42`, grounded callbacks `126`, weak callbacks `60`, false visible integrations `2`
     - Lane B sources: `memory_quality_source=fresh_judge`, `reaction_audit_source=fresh_judge`
     - total LLM usage: `1332` requests, `1332` successes, `0` errors, `47` retries
   - next step:
@@ -342,8 +342,8 @@ Last verified: `2026-06-03T12:23:03+08:00`
     - Eval-1 Retry1 full active evaluation results are pending human review; they are not yet cataloged evidence, formal benchmark authority, or product-quality proof
 - Shift Long Span from the discontinued `target-centered accumulation v2` method to the new active design direction:
   - `Memory Quality`
-  - `Spontaneous Callback`
-  - `False Visible Integration`
+  - `Mechanism Conformance`
+  - `Prior Memory Continuity / Safety`
   - stable authority:
     - `docs/backend-reader-evaluation.md`
     - `reading-companion-backend/docs/evaluation/long_span/README.md`
@@ -402,13 +402,15 @@ Last verified: `2026-06-03T12:23:03+08:00`
         - export path:
           - `reading-companion-backend/src/attentional_v2/benchmark_probes.py`
           - `reading-companion-backend/src/attentional_v2/storage.py`
-      - reaction audit:
+      - prior-memory safety audit:
         - complete-window visible reaction classification for:
-          - `Spontaneous Callback`
-          - `False Visible Integration`
+          - grounded prior-memory use
+          - weak prior-memory reference
+          - prior-memory overclaim guardrail
+        - this audit does not reward prior-reference frequency
         - Phase-1 comparison scope:
           - `Memory Quality`: `attentional_v2` only
-          - reaction audit: `attentional_v2` vs `iterator_v1`
+          - prior-memory safety audit: `attentional_v2` vs `iterator_v1`
     - first real Phase-1 diagnostic run has completed and was rejudged for Memory Quality scale calibration:
       - source run id:
         - `attentional_v2_long_span_vnext_phase1_20260423`
@@ -435,8 +437,8 @@ Last verified: `2026-06-03T12:23:03+08:00`
         - the April 25 score still came from the historical hard-ratio probe era; the next Memory Quality run must use the semantic probe manifest
         - scoring contract: `scale_v2_1_low_5_high`
         - next Memory Quality judgments will use `scale_v3_structural_signal_aware`, which keeps the holistic state-quality rubric but requires judge attention to salient source-given structures such as stage models, classifications, definitions, roadmaps, and named distinctions
-        - `Spontaneous Callback`: `attentional_v2` has `152` grounded callbacks and `84` weak callbacks over `1282` visible reactions; `iterator_v1` has `51` grounded callbacks and `13` weak callbacks over `375` visible reactions
-        - `False Visible Integration`: `attentional_v2` has `2`; `iterator_v1` has `0`
+        - historical April 25 prior-label result: `attentional_v2` had `152` grounded callbacks and `84` weak callbacks over `1282` visible reactions; `iterator_v1` had `51` grounded callbacks and `13` weak callbacks over `375` visible reactions
+        - historical April 25 overclaim/FVI result: `attentional_v2` had `2`; `iterator_v1` had `0`
         - judge unavailable count: `0` for both mechanisms
       - rejudge posture:
         - no books were reread
@@ -1551,7 +1553,7 @@ Last verified: `2026-06-03T12:23:03+08:00`
     - express each heavy lane's budget explicitly at launch time rather than relying on the full global ceiling
     - use the short capacity probe as the current software-ceiling check:
       - `llm_capacity_probe_personal_20260405` reached `max_inflight = 8` and `average_rpm = 87.428` with no provider/profile/quota waiting
-- The current callback slice is accepted for frozen-slice comparison cadence.
+- The historical callback slice is accepted for frozen-slice comparison cadence, not as the current active Long Span evaluation surface.
 - Do not open new general builder or automation waves ahead of the remaining decisive mechanism-eval lane.
 - Benchmark expansion remains a later requirement before any default-cutover decision, not a blocker for the current decisive lane.
 - A new isolated human-notes-guided dataset line is now landed as a support lane rather than as a benchmark-pointer replacement:

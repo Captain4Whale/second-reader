@@ -25,7 +25,7 @@ Last updated: `2026-06-03T12:23:03+08:00`
 - Lane: `mechanism_runtime`
 - Priority: `high`
 - Detail: `docs/current-state.md`
-- Next: five-window Long Span vNext judged diagnostic completed for the current `Ingest -> Digest -> Reading Runner settlement` mechanism and is `review_pending` in the run ledger. Current live `Ingest` returns boundary fields plus bounded `memory_recalls[]`; when recalls are present, the `retrieve_unit_memory` tool loop lets Reading Runner execute Unit Memory retrieval/selection before calling `Digest`. `Digest` receives top-level `ReadingMemory` assembled from hot current-chapter Understanding plus selected long-distance Unit Memory Understanding, with `5K` hot, `10K` retrieved, and `15K` total prompt-facing estimated-token budgets using `tiktoken_o200k_base_v1`. Unit Memory is the current content-neutral long-distance memory substrate under `DEC-110`; retired Detour/source-backread/source-skill and concept/thread structured-memory interfaces are historical only. Run: `attentional_v2_ingest_digest_unit_memory_full_diagnostic_20260603_parallel5`; job: `bgjob_ingest_digest_unit_memory_full_diagnostic_20260603_parallel5`; run dir: `reading-companion-backend/eval/runs/attentional_v2/attentional_v2_ingest_digest_unit_memory_full_diagnostic_20260603_parallel5`. Strict LLM health passed for all five outputs; fresh Memory Quality average is `3.83` across `25` probes; fresh reaction audit found `0` false visible integrations. Next inspect summary files, Ingest recall samples, Unit Memory retrieval traces, Digest `ReadingMemory` prompts, and settlement artifacts; produce a diagnostic interpretation before any evidence promotion. Do not update evidence catalog or claim product quality until reviewed.
+- Next: five-window Long Span vNext judged diagnostic completed for the current `Ingest -> Digest -> Reading Runner settlement` mechanism and is `review_pending` in the run ledger. Current live `Ingest` returns boundary fields plus bounded `memory_recalls[]`; when recalls are present, the `retrieve_unit_memory` tool loop lets Reading Runner execute Unit Memory retrieval/selection before calling `Digest`. `Digest` receives top-level `ReadingMemory` assembled from hot current-chapter Understanding plus selected long-distance Unit Memory Understanding, with `5K` hot, `10K` retrieved, and `15K` total prompt-facing estimated-token budgets using `tiktoken_o200k_base_v1`. Unit Memory is the current content-neutral long-distance memory substrate under `DEC-110`; retired Detour/source-backread/source-skill and concept/thread structured-memory interfaces are historical only. Run: `attentional_v2_ingest_digest_unit_memory_full_diagnostic_20260603_parallel5`; job: `bgjob_ingest_digest_unit_memory_full_diagnostic_20260603_parallel5`; run dir: `reading-companion-backend/eval/runs/attentional_v2/attentional_v2_ingest_digest_unit_memory_full_diagnostic_20260603_parallel5`. Strict LLM health passed for all five outputs; fresh Memory Quality average is `3.83` across `25` probes; fresh prior-memory safety audit found `0` prior-memory overclaims. Next inspect summary files, Ingest recall samples, Unit Memory retrieval traces, Digest `ReadingMemory` prompts, and settlement artifacts; produce a diagnostic interpretation before any evidence promotion. Do not update evidence catalog or claim product quality until reviewed.
 - Jobs:
   - `bgjob_ingest_digest_unit_memory_full_diagnostic_20260603_parallel5`
 - Evidence:
@@ -326,14 +326,14 @@ Last updated: `2026-06-03T12:23:03+08:00`
     - the project no longer treats this route as the active Long Span methodology
     - current active Long Span design authority has moved to:
       - `Memory Quality`
-      - `Spontaneous Callback`
-      - `False Visible Integration`
+      - `Mechanism Conformance`
+      - `Prior Memory Continuity / Safety`
 - Jobs:
   - `bgjob_accumulation_benchmark_v2_active_formal_20260419` (`completed`)
   - `bgjob_accumulation_v2_rejudge_contract_fix_20260422` (`completed`)
   - `bgjob_job_registry_auto_recovery_watchdog_longspan_rejudge_20260422` (`completed / stopped`)
 
-### `TASK-LONG-SPAN-MEMORY-DIRECTION-V1` — Design the new Long Span benchmark around memory quality and callback audit
+### `TASK-LONG-SPAN-MEMORY-DIRECTION-V1` — Design the new Long Span benchmark around memory quality and prior-memory safety
 - Status: `active`
 - Lane: `dataset_platform`
 - Priority: `high`
@@ -356,10 +356,11 @@ Last updated: `2026-06-03T12:23:03+08:00`
     - selection method: `semantic_boundary_with_distance_reference`
     - no gold-sentence requirement
     - no hard dependency on human notes
-  - landed reaction-audit implementation:
-    - `Spontaneous Callback`
-    - `False Visible Integration`
-    - complete-window visible reaction audit over reused normalized outputs
+  - landed prior-memory safety audit implementation:
+    - grounded prior-memory use
+    - weak prior-memory reference
+    - prior-memory overclaim guardrail
+    - complete-window visible reaction audit over reused normalized outputs; this is not a reward for prior-reference frequency
   - phase-1 scope:
     - `Memory Quality`: `attentional_v2` only
     - reaction audit: `attentional_v2` vs `iterator_v1`
@@ -387,8 +388,8 @@ Last updated: `2026-06-03T12:23:03+08:00`
         - probe count: `25`
         - the April 25 Memory Quality result belongs to the historical hard-ratio probe era; future runs use the semantic probe manifest
         - next Memory Quality judgments will use `scale_v3_structural_signal_aware`, adding structural-signal-aware scoring for salient source-given stage models, classifications, definitions, roadmaps, and named distinctions
-        - `Spontaneous Callback`: `attentional_v2` has `152` grounded callbacks and `84` weak callbacks over `1282` visible reactions; `iterator_v1` has `51` grounded callbacks and `13` weak callbacks over `375` visible reactions
-        - `False Visible Integration`: `attentional_v2` has `2`; `iterator_v1` has `0`
+        - historical April 25 prior-label results: `attentional_v2` had `152` grounded callbacks and `84` weak callbacks over `1282` visible reactions; `iterator_v1` had `51` grounded callbacks and `13` weak callbacks over `375` visible reactions
+        - historical April 25 overclaim/FVI results: `attentional_v2` had `2`; `iterator_v1` had `0`
         - judge unavailable count: `0` for both mechanisms
 	    - evidence status:
 	      - `quality_audit`
@@ -398,7 +399,7 @@ Last updated: `2026-06-03T12:23:03+08:00`
 	      - reaction audit was freshly judged from April 23 completed reading outputs with native V2 surfaced fields visible
 	    - no active Long Span vNext background job remains for this run
 	    - post-`DEC-110` evaluation boundary:
-	      - before any new formal long-span rerun is treated as current evidence, update or verify the eval harness/report contract so Memory Quality can see Unit Memory and Digest `ReadingMemory`, not only the older active-attention / recent-memory / reflective-frame stores
+	      - before any new formal long-span rerun is promoted, verify that Memory Quality rows use Unit Memory and Digest `ReadingMemory` evidence, or explicitly mark incomplete probe evidence
 	    - next likely phase-2 line:
 	      - `iterator_v1` normalized probe export for cross-mechanism `Memory Quality`
 	      - broader formal benchmark promotion

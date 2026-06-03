@@ -45,7 +45,12 @@ DEFAULT_USER_INTENT = (
     "Read as a thoughtful co-reader, maintain meaningful memory continuity, and surface visible reactions when earlier material naturally comes back into view."
 )
 MECHANISM_KEYS = ("attentional_v2", "iterator_v1")
-REACTION_LABELS = ("local_only", "grounded_callback", "weak_callback", "false_visible_integration")
+PRIOR_MEMORY_AUDIT_LABELS = (
+    "local_only",
+    "grounded_prior_memory_use",
+    "weak_prior_memory_reference",
+    "prior_memory_overclaim",
+)
 REACTION_AUDIT_BATCH_SIZE = 40
 REACTION_AUDIT_MISSING_RETRY_BATCH_SIZE = 8
 REACTION_AUDIT_MISSING_RETRY_ROUNDS = 2
@@ -55,9 +60,10 @@ JUDGE_SCHEMA_RETRY_INSTRUCTION = (
     "Do not wrap it in markdown fences or nest it under another key."
 )
 MEMORY_QUALITY_JUDGE_CONTRACT = "scale_v3_structural_signal_aware"
-MEMORY_SNAPSHOT_BASIS_FULL_STATE = "full_probe_time_memory_state"
+MEMORY_SNAPSHOT_BASIS_UNIT_MEMORY_READING_MEMORY = "unit_memory_reading_memory_state"
+MEMORY_SNAPSHOT_BASIS_INCOMPLETE_PROBE_STATE = "incomplete_probe_time_memory_state"
 MEMORY_SNAPSHOT_BASIS_LEGACY_DIGEST = "legacy_digest_snapshot"
-REACTION_AUDIT_JUDGE_CONTRACT = "visible_reaction_audit_v2_native_evidence"
+REACTION_AUDIT_JUDGE_CONTRACT = "prior_memory_continuity_safety_audit_v1"
 MEMORY_QUALITY_DIMENSION_KEYS = (
     "salience_score",
     "mainline_fidelity_score",
@@ -119,11 +125,13 @@ def _output_dir_for(run_root: Path, segment_id: str, mechanism_key: str) -> Path
 
 def _memory_snapshot_for_quality_judge(snapshot: dict[str, Any]) -> tuple[dict[str, Any], str]:
     scoring_memory_state = snapshot.get("scoring_memory_state")
-    if isinstance(scoring_memory_state, dict) and all(
-        isinstance(scoring_memory_state.get(key), dict)
-        for key in ("active_attention", "recent_reading_memory", "reflective_frames")
-    ):
-        return dict(scoring_memory_state), MEMORY_SNAPSHOT_BASIS_FULL_STATE
+    if isinstance(scoring_memory_state, dict):
+        if all(
+            isinstance(scoring_memory_state.get(key), dict)
+            for key in ("recent_reading_memory", "unit_memory", "reading_memory")
+        ):
+            return dict(scoring_memory_state), MEMORY_SNAPSHOT_BASIS_UNIT_MEMORY_READING_MEMORY
+        return dict(scoring_memory_state), MEMORY_SNAPSHOT_BASIS_INCOMPLETE_PROBE_STATE
     return dict(snapshot), MEMORY_SNAPSHOT_BASIS_LEGACY_DIGEST
 
 
@@ -952,24 +960,29 @@ def judge_memory_quality_probe(
 
     system_prompt = f"""You are judging long-span memory quality for a continuous-reading agent.
 
-Focus on what the complete probe-time memory state actually retains at this probe point.
+Focus on what the probe-time memory state actually retains and what Digest actually received as ReadingMemory at this probe point.
 The source slice shows what has already been read; it is context, not substitute memory.
-Do not reward the memory state for information that exists only in the source slice.
-For new runs, probe_payload.memory_snapshot is the complete probe-time memory state,
-including active_attention, recent_reading_memory, and reflective_frames.
-If probe_payload.memory_snapshot_basis is legacy_digest_snapshot, the payload is old digest-only
-evidence; judge it as legacy evidence and do not assume it is a complete memory store.
+Do not reward memory for information that exists only in the source slice.
+
+For current post-DEC-110 runs, probe_payload.memory_snapshot should expose:
+- recent_reading_memory: hot current-chapter Understanding memory
+- unit_memory: Unit Memory retrieval evidence, including recalls and selected prior units when retrieval ran
+- reading_memory: the prompt-facing ReadingMemory lines that Digest actually received
+
+If probe_payload.memory_snapshot_basis is {MEMORY_SNAPSHOT_BASIS_INCOMPLETE_PROBE_STATE}, the payload is incomplete for current formal Memory Quality.
+You may still judge it diagnostically, but mention that Unit Memory or ReadingMemory evidence is missing.
+If probe_payload.memory_snapshot_basis is legacy_digest_snapshot, the payload is old digest-only evidence; judge it as legacy evidence and do not assume it is a complete current memory surface.
 
 Pay special attention to source-given structural signals. If the source-so-far explicitly introduces
 an organizing structure such as a stage model, classification, core definition, roadmap, or named distinction,
-check whether the memory state retains it in some meaningful form. Exact wording and fixed
-field placement are not required. If a salient source-given structure is missing from the memory state,
+check whether recent memory, Unit Memory, or ReadingMemory retains it in some meaningful form. Exact wording and fixed
+field placement are not required. If a salient source-given structure is missing from the current memory surfaces,
 that should usually affect salience_score and organization_score, and sometimes mainline_fidelity_score.
 
 Some probe payloads include probe_review_focus. Treat it as a human-authored structural signal to
 inspect carefully, not as an exact-match gold answer. The focus should sharpen your audit of the
-memory state, but the final judgment must still be holistic and based on what the memory state actually
-retains.
+memory state, but the final judgment must still be holistic and based on what the memory surfaces actually
+retain or pass into Digest.
 
 Use this 1-5 scale for every score. Higher is better.
 - 1 = poor / absent: mostly empty, trivial, badly drifted, or not useful as reading memory.
@@ -979,10 +992,10 @@ Use this 1-5 scale for every score. Higher is better.
 - 5 = excellent: compactly retains the central material so far with high fidelity and usable organization.
 
 Judge these dimensions:
-- salience_score: whether retained items are important and worth remembering.
+- salience_score: whether retained or selected Understanding memory is important and worth carrying forward.
 - mainline_fidelity_score: whether the retained picture stays close to the book's main line so far.
-- organization_score: whether memory is organized into usable concepts/threads instead of scattered fragments.
-- fidelity_score: whether retained items are accurate rather than drifted, distorted, or over-abstracted.
+- organization_score: whether memory is usable as hot memory, retrieved Unit Memory, or prompt-facing ReadingMemory rather than scattered or duplicated fragments.
+- fidelity_score: whether retained or selected items are accurate rather than drifted, distorted, or over-abstracted.
 
 Do not copy numbers from the output schema as defaults. Choose scores from the rubric.
 The system will derive overall_memory_quality_score from the four dimension scores.
@@ -1169,7 +1182,7 @@ def _normalize_reaction_labels(
             continue
         reaction_id = _clean_text(item.get("reaction_id"))
         label = _clean_text(item.get("label"))
-        if reaction_id and label in REACTION_LABELS:
+        if reaction_id and label in PRIOR_MEMORY_AUDIT_LABELS:
             by_id[reaction_id] = {
                 "reaction_id": reaction_id,
                 "label": label,
@@ -1198,9 +1211,9 @@ def _invoke_reaction_audit_batch(
         f"Mechanism key: {mechanism_key}\n"
         f"Batch: {batch_index}\n"
         f"Retry stage: {retry_stage}\n\n"
-        f"Earlier visible reactions for callback context (compact, not to classify):\n{json.dumps(_compact_reaction_context(earlier_items), ensure_ascii=False, indent=2)}\n\n"
+        f"Earlier visible reactions for prior-memory context (compact, not to classify):\n{json.dumps(_compact_reaction_context(earlier_items), ensure_ascii=False, indent=2)}\n\n"
         f"Current visible reactions to classify:\n{json.dumps(batch_items, ensure_ascii=False, indent=2)}\n\n"
-        'Return JSON: {"results":[{"reaction_id":"...","label":"local_only|grounded_callback|weak_callback|false_visible_integration","reason":"1-2 sentences."}]}'
+        'Return JSON: {"results":[{"reaction_id":"...","label":"local_only|grounded_prior_memory_use|weak_prior_memory_reference|prior_memory_overclaim","reason":"1-2 sentences."}]}'
     )
     payload: object = {}
     for user_prompt in (base_user_prompt, base_user_prompt + JUDGE_SCHEMA_RETRY_INSTRUCTION):
@@ -1257,15 +1270,16 @@ def audit_window_reactions(
     system_prompt = """You are auditing visible reactions from one completed reading window.
 
 Classify each reaction using the ordered visible reactions from this same window as the primary evidence surface.
-Later reactions may callback to earlier visible material in the same list.
-Native surfaced evidence (`prior_link`, `outside_link`, `search_intent`) is support for interpreting intent, not a substitute for user-visible callback wording.
-Compatibility labels such as `type=retrospect` are projection vocabulary only; never treat a compat label alone as proof of Spontaneous Callback.
+The current mechanism does not reward prior-reference frequency. This audit only checks whether visible use of prior memory is grounded and whether it pollutes the reading.
+Later reactions may refer to earlier visible material in the same list.
+Native surfaced evidence (`prior_link`, `outside_link`, `search_intent`) is support for interpreting intent, not a substitute for user-visible prior-memory wording.
+Compatibility labels such as `type=retrospect` are projection vocabulary only; never treat a compat label alone as proof of prior-memory use.
 
 Labels:
 - local_only: no meaningful earlier-material linkage attempt
-- grounded_callback: clearly and correctly links back to earlier visible material
-- weak_callback: callback-like but vague, partial, or under-supported
-- false_visible_integration: overclaimed, misremembered, theme-only, or hard-linked without real grounding
+- grounded_prior_memory_use: clearly and correctly uses or links to earlier visible material
+- weak_prior_memory_reference: prior-memory-like but vague, partial, or under-supported
+- prior_memory_overclaim: overclaimed, misremembered, theme-only, or hard-linked without real grounding
 
 Return JSON only."""
     all_labels_by_id: dict[str, dict[str, Any]] = {}
@@ -1387,7 +1401,11 @@ def _reaction_summary_rows(
         )
 
     total_visible_reactions = len(rows)
-    callback_attempt_count = counts["grounded_callback"] + counts["weak_callback"] + counts["false_visible_integration"]
+    prior_memory_reference_count = (
+        counts["grounded_prior_memory_use"]
+        + counts["weak_prior_memory_reference"]
+        + counts["prior_memory_overclaim"]
+    )
     summary = {
         "segment_id": window.segment_id,
         "source_id": window.source_id,
@@ -1395,20 +1413,20 @@ def _reaction_summary_rows(
         "mechanism_key": mechanism_key,
         "mechanism_label": mechanism_label,
         "total_visible_reactions": total_visible_reactions,
-        "callback_attempt_count": callback_attempt_count,
-        "grounded_callback_count": counts["grounded_callback"],
-        "weak_callback_count": counts["weak_callback"],
-        "false_visible_integration_count": counts["false_visible_integration"],
+        "prior_memory_reference_count": prior_memory_reference_count,
+        "grounded_prior_memory_use_count": counts["grounded_prior_memory_use"],
+        "weak_prior_memory_reference_count": counts["weak_prior_memory_reference"],
+        "prior_memory_overclaim_count": counts["prior_memory_overclaim"],
         "local_only_count": counts["local_only"],
         "native_prior_link_count": native_counts["prior_link"],
         "native_outside_link_count": native_counts["outside_link"],
         "native_search_intent_count": native_counts["search_intent"],
         "judge_unavailable_count": native_counts["judge_unavailable"],
-        "callback_attempt_rate": callback_attempt_count / total_visible_reactions if total_visible_reactions else 0.0,
-        "grounded_callback_rate": counts["grounded_callback"] / total_visible_reactions if total_visible_reactions else 0.0,
-        "false_visible_integration_rate": counts["false_visible_integration"] / total_visible_reactions if total_visible_reactions else 0.0,
-        "false_rate_among_callback_attempts": counts["false_visible_integration"] / callback_attempt_count if callback_attempt_count else 0.0,
-        "representative_grounded_callbacks": [
+        "prior_memory_reference_rate": prior_memory_reference_count / total_visible_reactions if total_visible_reactions else 0.0,
+        "grounded_prior_memory_use_rate": counts["grounded_prior_memory_use"] / total_visible_reactions if total_visible_reactions else 0.0,
+        "prior_memory_overclaim_rate": counts["prior_memory_overclaim"] / total_visible_reactions if total_visible_reactions else 0.0,
+        "overclaim_rate_among_prior_memory_references": counts["prior_memory_overclaim"] / prior_memory_reference_count if prior_memory_reference_count else 0.0,
+        "representative_grounded_prior_memory_uses": [
             {
                 "reaction_id": row["reaction_id"],
                 "anchor_quote": row["anchor_quote"],
@@ -1416,9 +1434,9 @@ def _reaction_summary_rows(
                 "reason": row["reason"],
             }
             for row in rows
-            if row["label"] == "grounded_callback"
+            if row["label"] == "grounded_prior_memory_use"
         ][:3],
-        "representative_weak_callbacks": [
+        "representative_weak_prior_memory_references": [
             {
                 "reaction_id": row["reaction_id"],
                 "anchor_quote": row["anchor_quote"],
@@ -1426,9 +1444,9 @@ def _reaction_summary_rows(
                 "reason": row["reason"],
             }
             for row in rows
-            if row["label"] == "weak_callback"
+            if row["label"] == "weak_prior_memory_reference"
         ][:3],
-        "representative_false_visible_integrations": [
+        "representative_prior_memory_overclaims": [
             {
                 "reaction_id": row["reaction_id"],
                 "anchor_quote": row["anchor_quote"],
@@ -1436,7 +1454,7 @@ def _reaction_summary_rows(
                 "reason": row["reason"],
             }
             for row in rows
-            if row["label"] == "false_visible_integration"
+            if row["label"] == "prior_memory_overclaim"
         ][:3],
     }
     return rows, summary
@@ -1489,10 +1507,10 @@ def _aggregate_reaction_audit(window_summaries: list[dict[str, Any]]) -> dict[st
     mechanisms: dict[str, Any] = {}
     for mechanism_key, rows in by_mechanism.items():
         total_visible_reactions = sum(int(row["total_visible_reactions"]) for row in rows)
-        callback_attempt_count = sum(int(row["callback_attempt_count"]) for row in rows)
-        grounded_callback_count = sum(int(row["grounded_callback_count"]) for row in rows)
-        weak_callback_count = sum(int(row["weak_callback_count"]) for row in rows)
-        false_visible_integration_count = sum(int(row["false_visible_integration_count"]) for row in rows)
+        prior_memory_reference_count = sum(int(row["prior_memory_reference_count"]) for row in rows)
+        grounded_prior_memory_use_count = sum(int(row["grounded_prior_memory_use_count"]) for row in rows)
+        weak_prior_memory_reference_count = sum(int(row["weak_prior_memory_reference_count"]) for row in rows)
+        prior_memory_overclaim_count = sum(int(row["prior_memory_overclaim_count"]) for row in rows)
         local_only_count = sum(int(row["local_only_count"]) for row in rows)
         native_prior_link_count = sum(int(row.get("native_prior_link_count", 0) or 0) for row in rows)
         native_outside_link_count = sum(int(row.get("native_outside_link_count", 0) or 0) for row in rows)
@@ -1503,19 +1521,21 @@ def _aggregate_reaction_audit(window_summaries: list[dict[str, Any]]) -> dict[st
             "mechanism_label": rows[0]["mechanism_label"],
             "window_count": len(rows),
             "total_visible_reactions": total_visible_reactions,
-            "callback_attempt_count": callback_attempt_count,
-            "grounded_callback_count": grounded_callback_count,
-            "weak_callback_count": weak_callback_count,
-            "false_visible_integration_count": false_visible_integration_count,
+            "prior_memory_reference_count": prior_memory_reference_count,
+            "grounded_prior_memory_use_count": grounded_prior_memory_use_count,
+            "weak_prior_memory_reference_count": weak_prior_memory_reference_count,
+            "prior_memory_overclaim_count": prior_memory_overclaim_count,
             "local_only_count": local_only_count,
             "native_prior_link_count": native_prior_link_count,
             "native_outside_link_count": native_outside_link_count,
             "native_search_intent_count": native_search_intent_count,
             "judge_unavailable_count": judge_unavailable_count,
-            "callback_attempt_rate": callback_attempt_count / total_visible_reactions if total_visible_reactions else 0.0,
-            "grounded_callback_rate": grounded_callback_count / total_visible_reactions if total_visible_reactions else 0.0,
-            "false_visible_integration_rate": false_visible_integration_count / total_visible_reactions if total_visible_reactions else 0.0,
-            "false_rate_among_callback_attempts": false_visible_integration_count / callback_attempt_count if callback_attempt_count else 0.0,
+            "prior_memory_reference_rate": prior_memory_reference_count / total_visible_reactions if total_visible_reactions else 0.0,
+            "grounded_prior_memory_use_rate": grounded_prior_memory_use_count / total_visible_reactions if total_visible_reactions else 0.0,
+            "prior_memory_overclaim_rate": prior_memory_overclaim_count / total_visible_reactions if total_visible_reactions else 0.0,
+            "overclaim_rate_among_prior_memory_references": (
+                prior_memory_overclaim_count / prior_memory_reference_count if prior_memory_reference_count else 0.0
+            ),
         }
     return {
         "mechanisms": mechanisms,
@@ -1594,7 +1614,7 @@ def _render_report(
         f"- Probe selection: `{aggregate.get('probe_selection_method') or PROBE_SELECTION_METHOD}`; probe targets are semantic boundaries with distance only as a distribution reference, not hard ratio checkpoints.",
         "- Scoring scale: `1 = poor / absent`, `3 = adequate / useful`, `5 = excellent`; higher is better.",
         "- Overall memory quality is derived from salience, mainline fidelity, organization, and fidelity scores.",
-        "- Scoring evidence: new runs judge the complete probe-time memory stores (`active_attention`, `recent_reading_memory`, `reflective_frames`). Legacy digest-only probe snapshots are explicitly marked when reused.",
+        "- Scoring evidence: current runs judge hot `recent_reading_memory`, Unit Memory retrieval evidence, and prompt-facing `ReadingMemory`. Legacy or incomplete snapshots are explicitly marked when reused.",
         f"- Memory snapshot basis counts: `{json.dumps(memory_quality.get('memory_snapshot_basis_counts', {}), ensure_ascii=False, sort_keys=True)}`",
         "- Structural-signal supplement: when source-so-far explicitly introduces a stage model, classification, core definition, roadmap, or named distinction, the judge checks whether the memory state retains it; probe-specific review focus is an audit aid, not an exact-match gold answer.",
         f"- Overall average memory quality score: `{memory_quality.get('average_overall_memory_quality_score', 0.0):.3f}`",
@@ -1656,13 +1676,14 @@ def _render_report(
 
     lines.extend(
         [
-            "## Reaction Audit Method",
+            "## Prior Memory Continuity / Safety Audit Method",
             "",
             f"- Judge contract: `{REACTION_AUDIT_JUDGE_CONTRACT}`",
-            "- `Spontaneous Callback` counts visible reactions that naturally connect current reading to earlier material.",
-            "- `False Visible Integration` counts callback-like reactions that overclaim, misremember, or force a weak thematic link.",
+            "- This is a secondary safety audit, not a reward for prior-reference frequency.",
+            "- It checks whether visible prior-memory references in Digest annotations are grounded, weak, or overclaimed.",
+            "- `prior_memory_overclaim` counts visible reactions that overclaim, misremember, or force a weak thematic link to prior material.",
             "- V2 native surfaced evidence (`prior_link`, `outside_link`, `search_intent`) is exported and shown as support, but visible reaction text remains the primary evidence.",
-            "- Compatibility labels such as `retrospect` are projection vocabulary, not native callback truth.",
+            "- Compatibility labels such as `retrospect` are projection vocabulary, not native prior-memory truth.",
             "",
         ]
     )
@@ -1671,12 +1692,12 @@ def _render_report(
     elif aggregate.get("reaction_audit_source") == "judge_disabled":
         lines.extend(
             [
-                "Reaction-audit judging was disabled for this run; callback and false-integration labels are placeholder structural rows.",
+                "Reaction-audit judging was disabled for this run; prior-memory safety labels are placeholder structural rows.",
                 "",
             ]
         )
 
-    lines.extend(["## Spontaneous Callback", ""])
+    lines.extend(["## Grounded Prior Memory Use", ""])
     for mechanism_key in mechanism_keys:
         mechanism_summary = dict((reaction_audit.get("mechanisms") or {}).get(mechanism_key) or {})
         if not mechanism_summary:
@@ -1685,9 +1706,9 @@ def _render_report(
             [
                 f"### {mechanism_summary['mechanism_label']} (`{mechanism_key}`)",
                 f"- Total visible reactions: `{mechanism_summary['total_visible_reactions']}`",
-                f"- Callback attempts: `{mechanism_summary['callback_attempt_count']}` (`{mechanism_summary['callback_attempt_rate']:.3f}`)",
-                f"- Grounded callbacks: `{mechanism_summary['grounded_callback_count']}` (`{mechanism_summary['grounded_callback_rate']:.3f}`)",
-                f"- Weak callbacks: `{mechanism_summary['weak_callback_count']}`",
+                f"- Prior-memory references: `{mechanism_summary['prior_memory_reference_count']}` (`{mechanism_summary['prior_memory_reference_rate']:.3f}`)",
+                f"- Grounded prior-memory uses: `{mechanism_summary['grounded_prior_memory_use_count']}` (`{mechanism_summary['grounded_prior_memory_use_rate']:.3f}`)",
+                f"- Weak prior-memory references: `{mechanism_summary['weak_prior_memory_reference_count']}`",
                 f"- Judge-unavailable labels: `{mechanism_summary.get('judge_unavailable_count', 0)}`",
                 f"- Native surfaced evidence counts: prior_link `{mechanism_summary.get('native_prior_link_count', 0)}`, outside_link `{mechanism_summary.get('native_outside_link_count', 0)}`, search_intent `{mechanism_summary.get('native_search_intent_count', 0)}`",
                 "",
@@ -1696,24 +1717,24 @@ def _render_report(
         grounded_examples = _representative_examples(
             reaction_window_summaries,
             mechanism_key=mechanism_key,
-            key="representative_grounded_callbacks",
+            key="representative_grounded_prior_memory_uses",
         )
         weak_examples = _representative_examples(
             reaction_window_summaries,
             mechanism_key=mechanism_key,
-            key="representative_weak_callbacks",
+            key="representative_weak_prior_memory_references",
             limit=3,
         )
         if grounded_examples:
-            lines.append("Representative grounded callbacks:")
+            lines.append("Representative grounded prior-memory uses:")
             _append_examples(lines, grounded_examples)
             lines.append("")
         if weak_examples:
-            lines.append("Representative weak callbacks:")
+            lines.append("Representative weak prior-memory references:")
             _append_examples(lines, weak_examples)
             lines.append("")
 
-    lines.extend(["## False Visible Integration", ""])
+    lines.extend(["## Prior Memory Overclaim Guardrail", ""])
     for mechanism_key in mechanism_keys:
         mechanism_summary = dict((reaction_audit.get("mechanisms") or {}).get(mechanism_key) or {})
         if not mechanism_summary:
@@ -1721,53 +1742,53 @@ def _render_report(
         lines.extend(
             [
                 f"### {mechanism_summary['mechanism_label']} (`{mechanism_key}`)",
-                f"- False visible integrations: `{mechanism_summary['false_visible_integration_count']}` (`{mechanism_summary['false_visible_integration_rate']:.3f}` of all visible reactions)",
-                f"- False rate among callback attempts: `{mechanism_summary['false_rate_among_callback_attempts']:.3f}`",
+                f"- Prior-memory overclaims: `{mechanism_summary['prior_memory_overclaim_count']}` (`{mechanism_summary['prior_memory_overclaim_rate']:.3f}` of all visible reactions)",
+                f"- Overclaim rate among prior-memory references: `{mechanism_summary['overclaim_rate_among_prior_memory_references']:.3f}`",
                 "",
             ]
         )
         false_examples = _representative_examples(
             reaction_window_summaries,
             mechanism_key=mechanism_key,
-            key="representative_false_visible_integrations",
+            key="representative_prior_memory_overclaims",
         )
         if false_examples:
-            lines.append("Representative false visible integrations:")
+            lines.append("Representative prior-memory overclaims:")
             _append_examples(lines, false_examples)
             lines.append("")
 
-    lines.extend(["## Per-window Reaction Audit", ""])
+    lines.extend(["## Per-window Prior Memory Safety Audit", ""])
     for summary in reaction_window_summaries:
         lines.extend(
             [
                 f"### {summary['book_title']} / {summary['mechanism_key']}",
                 f"- Total visible reactions: `{summary['total_visible_reactions']}`",
-                f"- Grounded callbacks: `{summary['grounded_callback_count']}`",
-                f"- Weak callbacks: `{summary['weak_callback_count']}`",
-                f"- False visible integrations: `{summary['false_visible_integration_count']}`",
+                f"- Grounded prior-memory uses: `{summary['grounded_prior_memory_use_count']}`",
+                f"- Weak prior-memory references: `{summary['weak_prior_memory_reference_count']}`",
+                f"- Prior-memory overclaims: `{summary['prior_memory_overclaim_count']}`",
                 f"- Judge-unavailable labels: `{summary.get('judge_unavailable_count', 0)}`",
                 f"- Native surfaced evidence: prior_link `{summary.get('native_prior_link_count', 0)}`, outside_link `{summary.get('native_outside_link_count', 0)}`, search_intent `{summary.get('native_search_intent_count', 0)}`",
             ]
         )
-        if summary["representative_grounded_callbacks"]:
-            lines.append("- Representative grounded callbacks:")
-            for example in summary["representative_grounded_callbacks"]:
+        if summary["representative_grounded_prior_memory_uses"]:
+            lines.append("- Representative grounded prior-memory uses:")
+            for example in summary["representative_grounded_prior_memory_uses"]:
                 lines.append(
                     f"  - `{example['reaction_id']}`: “{example['anchor_quote']}” -> {example['content']} ({example['reason']})"
                 )
-        if summary.get("representative_weak_callbacks"):
-            lines.append("- Representative weak callbacks:")
-            for example in summary["representative_weak_callbacks"]:
+        if summary.get("representative_weak_prior_memory_references"):
+            lines.append("- Representative weak prior-memory references:")
+            for example in summary["representative_weak_prior_memory_references"]:
                 lines.append(
                     f"  - `{example['reaction_id']}`: “{example['anchor_quote']}” -> {example['content']} ({example['reason']})"
                 )
-        if summary["representative_false_visible_integrations"]:
-            lines.append("- Representative false visible integrations:")
-            for example in summary["representative_false_visible_integrations"]:
+        if summary["representative_prior_memory_overclaims"]:
+            lines.append("- Representative prior-memory overclaims:")
+            for example in summary["representative_prior_memory_overclaims"]:
                 lines.append(
                     f"  - `{example['reaction_id']}`: “{example['anchor_quote']}” -> {example['content']} ({example['reason']})"
                 )
-        if not summary["representative_grounded_callbacks"] and not summary["representative_false_visible_integrations"]:
+        if not summary["representative_grounded_prior_memory_uses"] and not summary["representative_prior_memory_overclaims"]:
             lines.append("- This window stayed mostly local.")
         lines.append("")
     return "\n".join(lines).rstrip() + "\n"
@@ -2097,7 +2118,7 @@ def run_long_span_vnext(
         "probe_selection_method": _clean_text(memory_quality_probe_plan.get("selection_method")),
         "memory_quality_judge_contract": MEMORY_QUALITY_JUDGE_CONTRACT,
         "reaction_audit_judge_contract": REACTION_AUDIT_JUDGE_CONTRACT,
-        "metric_slugs": ["memory_quality", "spontaneous_callback", "false_visible_integration"],
+        "metric_slugs": ["memory_quality", "prior_memory_continuity_safety", "prior_memory_overclaim_guardrail"],
         "mechanism_keys": list(mechanism_keys),
         "memory_quality": _aggregate_memory_quality(memory_quality_results),
         "reaction_audit": _aggregate_reaction_audit(reaction_window_summaries),

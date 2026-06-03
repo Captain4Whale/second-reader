@@ -260,16 +260,72 @@ def _recent_reading_orientation(
     }
 
 
+def _unit_memory_probe_projection(unit_memory_retrieval: Mapping[str, object] | None) -> dict[str, object]:
+    """Build a compact Unit Memory evidence projection for benchmark judges."""
+
+    if not isinstance(unit_memory_retrieval, Mapping):
+        return {"recalls": [], "selected_units": [], "query_source": ""}
+    selected_units = [
+        dict(item)
+        for item in unit_memory_retrieval.get("selected_units", [])
+        if isinstance(item, Mapping)
+    ]
+    return {
+        "query_source": _clean_text(unit_memory_retrieval.get("query_source")),
+        "recalls": [
+            dict(item)
+            for item in unit_memory_retrieval.get("recalls", [])
+            if isinstance(item, Mapping)
+        ],
+        "selected_units": selected_units,
+        "selected_unit_count": len(selected_units),
+    }
+
+
+def _reading_memory_probe_projection(reading_memory: Mapping[str, object] | None) -> dict[str, object]:
+    """Build a compact prompt-facing ReadingMemory projection for benchmark judges."""
+
+    if not isinstance(reading_memory, Mapping):
+        return {"lines": [], "line_records": [], "estimated_tokens": 0}
+    lines = [
+        _clean_text(item)
+        for item in reading_memory.get("lines", [])
+        if _clean_text(item)
+    ]
+    line_records = [
+        dict(item)
+        for item in reading_memory.get("line_records", [])
+        if isinstance(item, Mapping)
+    ]
+    return {
+        "lines": lines,
+        "line_records": line_records,
+        "hot_line_count": _int(reading_memory.get("hot_line_count")),
+        "retrieved_line_count": _int(reading_memory.get("retrieved_line_count")),
+        "estimated_tokens": _int(reading_memory.get("estimated_tokens")),
+        "budget": dict(reading_memory.get("budget", {})) if isinstance(reading_memory.get("budget"), Mapping) else {},
+        "suppressed": [
+            dict(item)
+            for item in reading_memory.get("suppressed", [])
+            if isinstance(item, Mapping)
+        ],
+    }
+
+
 def _full_scoring_memory_state(
     *,
     active_attention: ActiveAttention,
     recent_reading_memory: RecentReadingMemoryState | None = None,
     reflective_frames: ReflectiveFramesState,
+    unit_memory: Mapping[str, object] | None = None,
+    reading_memory: Mapping[str, object] | None = None,
 ) -> dict[str, object]:
     return {
         "active_attention": deepcopy(active_attention) if isinstance(active_attention, Mapping) else {},
         "recent_reading_memory": deepcopy(recent_reading_memory) if isinstance(recent_reading_memory, Mapping) else {"entries": []},
         "reflective_frames": deepcopy(reflective_frames) if isinstance(reflective_frames, Mapping) else {},
+        "unit_memory": deepcopy(unit_memory) if isinstance(unit_memory, Mapping) else {},
+        "reading_memory": deepcopy(reading_memory) if isinstance(reading_memory, Mapping) else {},
     }
 
 
@@ -288,6 +344,8 @@ def _build_probe_snapshot(
     recent_reading_memory: RecentReadingMemoryState | None = None,
     reflective_frames: ReflectiveFramesState,
     reaction_records: ReactionRecordsState,
+    unit_memory_retrieval: Mapping[str, object] | None = None,
+    reading_memory: Mapping[str, object] | None = None,
 ) -> dict[str, object]:
     """Build one normalized probe snapshot from the current persisted mechanism state."""
 
@@ -381,6 +439,8 @@ def _build_probe_snapshot(
             active_attention=active_attention,
             recent_reading_memory=recent_reading_memory,
             reflective_frames=reflective_frames,
+            unit_memory=_unit_memory_probe_projection(unit_memory_retrieval),
+            reading_memory=_reading_memory_probe_projection(reading_memory),
         ),
         "projection_digest": projection_digest,
         "continuity_context": continuity_context,
@@ -407,6 +467,8 @@ def persist_due_memory_quality_probe_snapshots(
     reaction_records: ReactionRecordsState,
     actual_source_span: dict[str, object] | None = None,
     actual_source_span_id: str = "",
+    unit_memory_retrieval: Mapping[str, object] | None = None,
+    reading_memory: Mapping[str, object] | None = None,
 ) -> list[dict[str, object]]:
     """Persist any probe snapshots whose threshold is crossed by this completed read step."""
 
@@ -481,6 +543,8 @@ def persist_due_memory_quality_probe_snapshots(
             recent_reading_memory=recent_reading_memory,
             reflective_frames=reflective_frames,
             reaction_records=reaction_records,
+            unit_memory_retrieval=unit_memory_retrieval,
+            reading_memory=reading_memory,
         )
         payload.setdefault("snapshots", []).append(snapshot)
         existing_indexes.add(probe_index)

@@ -503,6 +503,8 @@ def maybe_capture_memory_quality_probe(
     reaction_records: ReactionRecordsState,
     actual_source_span: dict[str, object] | None = None,
     actual_source_span_id: str = "",
+    unit_memory_retrieval: Mapping[str, object] | None = None,
+    reading_memory: Mapping[str, object] | None = None,
 ) -> list[dict[str, object]]:
     """Capture benchmark probe snapshots through the runtime observability boundary."""
 
@@ -522,6 +524,8 @@ def maybe_capture_memory_quality_probe(
         reaction_records=reaction_records,
         actual_source_span=actual_source_span,
         actual_source_span_id=actual_source_span_id,
+        unit_memory_retrieval=unit_memory_retrieval,
+        reading_memory=reading_memory,
     )
 
 

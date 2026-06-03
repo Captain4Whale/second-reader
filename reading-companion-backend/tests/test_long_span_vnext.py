@@ -492,11 +492,11 @@ def test_memory_quality_judge_prompt_defines_score_scale(tmp_path: Path, monkeyp
             "probe_index": 1,
             "read_so_far_source_text": "Alpha.",
             "memory_snapshot": {
-                "active_attention": {"active_items": [{"item_id": "alpha"}]},
                 "recent_reading_memory": {"entries": []},
-                "reflective_frames": {"chapter_understandings": []},
+                "unit_memory": {"selected_units": []},
+                "reading_memory": {"lines": []},
             },
-            "memory_snapshot_basis": runner.MEMORY_SNAPSHOT_BASIS_FULL_STATE,
+            "memory_snapshot_basis": runner.MEMORY_SNAPSHOT_BASIS_UNIT_MEMORY_READING_MEMORY,
             "probe_review_focus": {
                 "focus_id": "demo_structural_signal",
                 "title": "Demo structure",
@@ -507,8 +507,9 @@ def test_memory_quality_judge_prompt_defines_score_scale(tmp_path: Path, monkeyp
     )
 
     assert "Higher is better" in captured["system_prompt"]
-    assert "complete probe-time memory state" in captured["system_prompt"]
-    assert "active_attention, recent_reading_memory, and reflective_frames" in captured["system_prompt"]
+    assert "Unit Memory retrieval evidence" in captured["system_prompt"]
+    assert "prompt-facing ReadingMemory" in captured["system_prompt"]
+    assert "incomplete for current formal Memory Quality" in captured["system_prompt"]
     assert "legacy_digest_snapshot" in captured["system_prompt"]
     assert "1 = poor / absent" in captured["system_prompt"]
     assert "3 = adequate / useful" in captured["system_prompt"]
@@ -519,7 +520,7 @@ def test_memory_quality_judge_prompt_defines_score_scale(tmp_path: Path, monkeyp
     assert "not as an exact-match gold answer" in captured["system_prompt"]
     assert "Do not copy numbers from the output schema as defaults" in captured["system_prompt"]
     assert "probe_review_focus" in captured["user_prompt"]
-    assert runner.MEMORY_SNAPSHOT_BASIS_FULL_STATE in captured["user_prompt"]
+    assert runner.MEMORY_SNAPSHOT_BASIS_UNIT_MEMORY_READING_MEMORY in captured["user_prompt"]
     assert runner.MEMORY_QUALITY_JUDGE_CONTRACT in captured["user_prompt"]
     assert judgment["judge_provided_overall_memory_quality_score"] == 1
     assert judgment["overall_memory_quality_score"] == 3.5
@@ -651,7 +652,26 @@ def test_normalize_memory_quality_judgment_clamps_and_derives_overall() -> None:
     assert judgment["memory_quality_judge_contract"] == runner.MEMORY_QUALITY_JUDGE_CONTRACT
 
 
-def test_memory_quality_judge_prefers_full_probe_time_memory_state() -> None:
+def test_memory_quality_judge_prefers_unit_memory_reading_memory_state() -> None:
+    memory_snapshot, basis = runner._memory_snapshot_for_quality_judge(
+        {
+            "scoring_memory_state": {
+                "recent_reading_memory": {"entries": [{"entry_id": "recent:c1:u0001:m1"}]},
+                "unit_memory": {"selected_units": [{"unit_id": "unit:c1:u0001"}]},
+                "reading_memory": {"lines": ["P1 U1: Alpha"]},
+            },
+            "active_attention_digest": {"active_items": [{"item_id": "digest-only"}]},
+        }
+    )
+
+    assert basis == runner.MEMORY_SNAPSHOT_BASIS_UNIT_MEMORY_READING_MEMORY
+    assert memory_snapshot["recent_reading_memory"]["entries"][0]["entry_id"] == "recent:c1:u0001:m1"
+    assert memory_snapshot["unit_memory"]["selected_units"][0]["unit_id"] == "unit:c1:u0001"
+    assert memory_snapshot["reading_memory"]["lines"] == ["P1 U1: Alpha"]
+    assert "active_attention_digest" not in memory_snapshot
+
+
+def test_memory_quality_judge_marks_missing_unit_memory_evidence_as_incomplete() -> None:
     memory_snapshot, basis = runner._memory_snapshot_for_quality_judge(
         {
             "scoring_memory_state": {
@@ -659,14 +679,11 @@ def test_memory_quality_judge_prefers_full_probe_time_memory_state() -> None:
                 "recent_reading_memory": {"entries": [{"entry_id": "recent:c1:u0001:m1"}]},
                 "reflective_frames": {"chapter_understandings": [{"frame_id": "full-frame"}]},
             },
-            "active_attention_digest": {"active_items": [{"item_id": "digest-only"}]},
         }
     )
 
-    assert basis == runner.MEMORY_SNAPSHOT_BASIS_FULL_STATE
-    assert memory_snapshot["active_attention"]["active_items"][0]["item_id"] == "full-active"
+    assert basis == runner.MEMORY_SNAPSHOT_BASIS_INCOMPLETE_PROBE_STATE
     assert memory_snapshot["recent_reading_memory"]["entries"][0]["entry_id"] == "recent:c1:u0001:m1"
-    assert "active_attention_digest" not in memory_snapshot
 
 
 def test_memory_quality_judge_marks_digest_only_snapshot_as_legacy() -> None:
@@ -891,6 +908,8 @@ def test_run_long_span_vnext_writes_separated_memory_and_reaction_outputs(tmp_pa
                             "active_attention": {"active_items": [{"item_id": "full-active"}]},
                             "recent_reading_memory": {"entries": [{"entry_id": "recent:c1:u0001:m1"}]},
                             "reflective_frames": {"chapter_understandings": [{"frame_id": "full-frame"}]},
+                            "unit_memory": {"selected_units": [{"unit_id": "unit:c1:u0001"}]},
+                            "reading_memory": {"lines": ["P1 U1: Alpha"]},
                         },
                     }
                 ]
@@ -948,7 +967,7 @@ def test_run_long_span_vnext_writes_separated_memory_and_reaction_outputs(tmp_pa
         lambda **kwargs: [
             {
                 "reaction_id": f"{kwargs['mechanism_key']}-r1",
-                "label": "grounded_callback" if kwargs["mechanism_key"] == "attentional_v2" else "local_only",
+                "label": "grounded_prior_memory_use" if kwargs["mechanism_key"] == "attentional_v2" else "local_only",
                 "reason": "classified in test",
             }
         ],
@@ -971,9 +990,9 @@ def test_run_long_span_vnext_writes_separated_memory_and_reaction_outputs(tmp_pa
     assert "Probe selection" in report
     assert "semantic boundaries" in report
     assert "Structural-signal supplement" in report
-    assert "## Reaction Audit Method" in report
-    assert "## Spontaneous Callback" in report
-    assert "## False Visible Integration" in report
+    assert "## Prior Memory Continuity / Safety Audit Method" in report
+    assert "## Grounded Prior Memory Use" in report
+    assert "## Prior Memory Overclaim Guardrail" in report
     memory_rows = [
         json.loads(line)
         for line in (run_root / "summary" / "memory_quality_results.jsonl").read_text(encoding="utf-8").splitlines()
@@ -981,18 +1000,18 @@ def test_run_long_span_vnext_writes_separated_memory_and_reaction_outputs(tmp_pa
     ]
     assert memory_rows[0]["target_source_span_id"] == "src:c1:p1@7-p1@12"
     assert memory_rows[0]["distribution_reference_label"] == "near 20%"
-    assert memory_rows[0]["memory_snapshot_basis"] == runner.MEMORY_SNAPSHOT_BASIS_FULL_STATE
+    assert memory_rows[0]["memory_snapshot_basis"] == runner.MEMORY_SNAPSHOT_BASIS_UNIT_MEMORY_READING_MEMORY
     assert memory_rows[0]["capture_source_cursor"] == {
         "chapter_id": 1,
         "chapter_ref": "Chapter 1",
         "paragraph_index": 1,
         "char_offset": 12,
     }
-    assert aggregate["memory_quality"]["memory_snapshot_basis_counts"] == {runner.MEMORY_SNAPSHOT_BASIS_FULL_STATE: 1}
-    assert captured_probe_payloads[0]["memory_snapshot_basis"] == runner.MEMORY_SNAPSHOT_BASIS_FULL_STATE
+    assert aggregate["memory_quality"]["memory_snapshot_basis_counts"] == {runner.MEMORY_SNAPSHOT_BASIS_UNIT_MEMORY_READING_MEMORY: 1}
+    assert captured_probe_payloads[0]["memory_snapshot_basis"] == runner.MEMORY_SNAPSHOT_BASIS_UNIT_MEMORY_READING_MEMORY
     assert captured_probe_payloads[0]["memory_snapshot"]["active_attention"]["active_items"][0]["item_id"] == "full-active"
     assert "active_attention_digest" not in captured_probe_payloads[0]["memory_snapshot"]
-    assert "Memory snapshot basis: `full_probe_time_memory_state`" in report
+    assert "Memory snapshot basis: `unit_memory_reading_memory_state`" in report
     rows = [
         json.loads(line)
         for line in (run_root / "summary" / "reaction_audit_results.jsonl").read_text(encoding="utf-8").splitlines()
@@ -1211,17 +1230,17 @@ def test_run_long_span_vnext_memory_quality_rejudge_reuses_source_run(tmp_path: 
                 "mechanism_key": "attentional_v2",
                 "mechanism_label": "attentional_v2",
                 "total_visible_reactions": 1,
-                "callback_attempt_count": 0,
-                "grounded_callback_count": 0,
-                "weak_callback_count": 0,
-                "false_visible_integration_count": 0,
+                "prior_memory_reference_count": 0,
+                "grounded_prior_memory_use_count": 0,
+                "weak_prior_memory_reference_count": 0,
+                "prior_memory_overclaim_count": 0,
                 "local_only_count": 1,
-                "callback_attempt_rate": 0.0,
-                "grounded_callback_rate": 0.0,
-                "false_visible_integration_rate": 0.0,
-                "false_rate_among_callback_attempts": 0.0,
-                "representative_grounded_callbacks": [],
-                "representative_false_visible_integrations": [],
+                "prior_memory_reference_rate": 0.0,
+                "grounded_prior_memory_use_rate": 0.0,
+                "prior_memory_overclaim_rate": 0.0,
+                "overclaim_rate_among_prior_memory_references": 0.0,
+                "representative_grounded_prior_memory_uses": [],
+                "representative_prior_memory_overclaims": [],
             }
         )
         + "\n",
@@ -1380,7 +1399,7 @@ def test_run_long_span_vnext_can_copy_memory_quality_and_rerun_reaction_audit(tm
         return [
             {
                 "reaction_id": kwargs["normalized_bundle"]["reactions"][0]["reaction_id"],
-                "label": "grounded_callback",
+                "label": "grounded_prior_memory_use",
                 "reason": "native evidence visible text was re-audited",
             }
         ]
@@ -1410,8 +1429,8 @@ def test_run_long_span_vnext_can_copy_memory_quality_and_rerun_reaction_audit(tm
     assert v2_row["prior_link"] == {"ref_ids": ["anchor:alpha"]}
     report = (run_root / "summary" / "report.md").read_text(encoding="utf-8")
     assert "Memory Quality judgments are copied unchanged" in report
-    assert "## Spontaneous Callback" in report
-    assert "## False Visible Integration" in report
+    assert "## Grounded Prior Memory Use" in report
+    assert "## Prior Memory Overclaim Guardrail" in report
 
 
 def test_reaction_audit_batches_large_windows_with_prior_context(tmp_path: Path, monkeypatch) -> None:
@@ -1459,7 +1478,7 @@ def test_reaction_audit_batches_large_windows_with_prior_context(tmp_path: Path,
     assert len(labels) == runner.REACTION_AUDIT_BATCH_SIZE + 1
     assert len(prompts) == 2
     assert '"reaction_id": "r1"' in prompts[1]
-    assert "Earlier visible reactions for callback context" in prompts[1]
+    assert "Earlier visible reactions for prior-memory context" in prompts[1]
 
 
 def test_reaction_audit_retries_missing_labels_in_small_batches(tmp_path: Path, monkeypatch) -> None:

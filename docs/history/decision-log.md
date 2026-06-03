@@ -3190,3 +3190,29 @@ This new direction is design frozen but not yet implemented as a formal benchmar
 - `reading-companion-backend/tests/test_attentional_v2_llm_calls.py`
 - `reading-companion-backend/tests/test_attentional_v2_scaffold.py`
 - `reading-companion-backend/tests/test_library_api.py`
+
+## Entry 108
+**ID**: DEC-111
+**Status**: active
+
+**Decision / Inflection**: Reframe the current Long Span evaluation surface away from backread/callback success metrics and toward Unit Memory conformance plus prior-memory safety.
+
+**Period**: June 3, 2026, after the `Ingest -> Unit Memory retrieval/selection -> Digest ReadingMemory -> settlement` mechanism was implemented and the first five-window judged diagnostic completed.
+
+**Decision**: Current active Long Span evaluation no longer treats Detour, backread, source-backread, callback action count, or visible prior-reference frequency as success metrics. Memory Quality must be judged against current Unit Memory and Digest `ReadingMemory` evidence, not only older hot-state or digest-only snapshots. The former callback/FVI reaction audit remains only as a secondary safety audit under prior-memory continuity terminology: grounded prior-memory use, weak prior-memory reference, and prior-memory overclaim. Prior-memory overclaim remains an important guardrail, but the number of prior-memory references is not a product-quality score.
+
+**Boundary**: This does not rewrite historical reports, historical benchmark manifests, or old callback-bridge case datasets. Old labels may remain in archived outputs and historical tasks when clearly marked as historical. Current stable docs, active Long Span runner output, and active eval inventory should use the post-`DEC-110` evaluation surface.
+
+**Why this path won**: The current mechanism no longer performs live回看 or Detour path steering, so evaluating callback or backread behavior as a positive capability would reward an obsolete design. The live product question is now whether Ingest expresses useful recall intent, runtime retrieves and selects relevant Unit Memory, Digest receives concise ReadingMemory, and the final visible reading remains grounded rather than polluted by prior memory.
+
+**Primary evidence**:
+- `docs/backend-reader-evaluation.md`
+- `docs/current-state.md`
+- `docs/tasks/registry.md`
+- `reading-companion-backend/docs/evaluation/long_span/README.md`
+- `reading-companion-backend/eval/attentional_v2/run_long_span_vnext.py`
+- `reading-companion-backend/src/attentional_v2/benchmark_probes.py`
+- `reading-companion-backend/src/attentional_v2/observability.py`
+- `reading-companion-backend/src/attentional_v2/runner.py`
+- `reading-companion-backend/eval/manifests/attentional_v2_minimal_eval_inventory_v1.json`
+- `reading-companion-backend/tests/test_long_span_vnext.py`

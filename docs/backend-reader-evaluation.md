@@ -56,9 +56,9 @@ The old Memory / Planning / Evaluation implementation guidance chain at `docs/im
 - When reproducibility is the question, isolate the layer that is being measured.
   - same-packet adjudication reproducibility should be measured on frozen packet inputs, for example by rerunning `auto_review_packet.py --probe-only` on an archived packet
   - same-input case-audit reproducibility should persist stable prompt inputs/fingerprints per case so later comparisons can distinguish audit-model variance from builder/input drift
-  - if callback-style case validity depends on structured builder identity such as `target_profile_id`, `selection_role`, or carried `prior_context_text`, those fields should be part of the audit prompt payload rather than left as operator-only metadata
-  - callback audit contracts should also say explicitly when an inline antecedent is an intentional self-containment choice rather than an automatic defect
-    - otherwise same-input callback cases can wobble between `keep` and `drop` just because the audit model alternates between "traceable inline bridge" and "malformed callback" readings
+  - if prior-link or cross-span case validity depends on structured builder identity such as `target_profile_id`, `selection_role`, or carried `prior_context_text`, those fields should be part of the audit prompt payload rather than left as operator-only metadata
+  - prior-link audit contracts should also say explicitly when an inline antecedent is an intentional self-containment choice rather than an automatic defect
+    - otherwise same-input prior-link cases can wobble between `keep` and `drop` just because the audit model alternates between "traceable inline bridge" and "malformed prior-link" readings
   - builder-emitted excerpt, anchor, and selection-reason text should normalize invisible Unicode formatting and non-breaking whitespace before the audit layer sees it
     - otherwise a text-corruption defect can masquerade as audit-model drift even when the real issue is upstream excerpt rendering
   - if a real case-audit comparison shows `audit_input_drift = 0` while primary decisions, scores, or problem types still move materially, treat the next repair as audit-stage reproducibility hardening rather than as builder/input debugging
@@ -113,14 +113,17 @@ The old Memory / Planning / Evaluation implementation guidance chain at `docs/im
 - the discontinued `reader_character.coherent_accumulation` target-centered surface is preserved only as invalidated / historical long-span evidence:
   - it asked whether one prepared long-range thread became visibly reconstructed at one target point
   - keep its runs, manifests, and audit docs readable, but do not treat that line as the current active long-span methodology
-- the current active long-span direction is now a design-frozen three-metric line:
+- the current active long-span direction is now a post-`DEC-110` diagnostic line:
   - `Memory Quality`
     - judge probe-point memory/state snapshots holistically during continuous reading
+    - current formal evidence must include Unit Memory retrieval evidence and prompt-facing `ReadingMemory`, not only older hot-state stores
     - current probe targets are semantic-boundary selections from a versioned manifest; distance labels are only distribution-reference metadata, not fixed ratio checkpoints
-  - `Spontaneous Callback`
-    - audit complete-window visible reactions for natural recalls or links to prior material
-  - `False Visible Integration`
-    - audit callback-like reactions for overclaim, hard-linking, theme-only similarity, or memory drift
+  - `Mechanism Conformance`
+    - verify the actual loop produces the required structure: `Ingest` boundary and bounded recalls, runtime Unit Memory retrieval/selection, Digest top-level `ReadingMemory`, Digest `understanding / response / annotations`, and settlement/writeback artifacts
+  - `Prior Memory Continuity / Safety`
+    - audit visible Digest reactions only when they visibly use prior material
+    - do not reward the count of prior-memory references
+    - preserve `prior_memory_overclaim` as a guardrail against overclaim, weak grounding, theme-only similarity, or memory drift
 - this new long-span direction is active at the methodology layer and now has a Phase-1 runner:
   - the first Phase-1 diagnostic run is complete, but it is not yet promoted to formal long-span benchmark authority
   - the current corrected Memory Quality read of that diagnostic run is:
@@ -128,7 +131,7 @@ The old Memory / Planning / Evaluation implementation guidance chain at `docs/im
   - the current reaction-evidence-fixed read of that diagnostic run is:
     - `attentional_v2_long_span_vnext_phase1_reaction_evidence_fix_rejudge_20260425`
     - this run copies corrected Memory Quality judgments and freshly rejudges complete-window reactions with native V2 surfaced fields visible
-    - headline reaction-audit counts:
+    - historical headline reaction-audit counts, under the old callback/FVI labels:
       - `attentional_v2`: `152` grounded callbacks, `84` weak callbacks, `2` false visible integrations over `1282` visible reactions
       - `iterator_v1`: `51` grounded callbacks, `13` weak callbacks, `0` false visible integrations over `375` visible reactions
       - judge unavailable count: `0` for both mechanisms
@@ -138,13 +141,13 @@ The old Memory / Planning / Evaluation implementation guidance chain at `docs/im
     - selection method: `semantic_boundary_with_distance_reference`
     - hard `20% / 40% / 60% / 80% / end` ratio probes are retired for new runs
     - report headings should identify the semantic boundary and source coordinate first; `near 20%`-style labels are secondary distribution references
-- `reader_value.insight_and_clarification` remains an orthogonal output-value axis, but it is not part of the first release of the new long-span `Memory Quality / Spontaneous Callback / False Visible Integration` direction.
+- `reader_value.insight_and_clarification` remains an orthogonal output-value axis, but it is not part of the current long-span `Memory Quality / Mechanism Conformance / Prior Memory Safety` direction.
 - `excerpt surface` is now a historical chapter-scoped local-text surface name used by older formal runs.
 - the current active local benchmark meaning is `user-level selective`.
   - `local-only` and `state/eval_local_datasets/` are storage/distribution terms only
   - source-origin labels such as `public`, `private`, `manual download`, or `agent-downloaded` remain provenance only
 - there is currently no active formal long-span benchmark pointer.
-  - the active long-span authority now lives in the frozen design direction for `Memory Quality`, `Spontaneous Callback`, and `False Visible Integration`
+  - the active long-span authority now lives in the post-`DEC-110` design direction for `Memory Quality`, mechanism conformance, and prior-memory safety
   - the older bounded probe surface and the later target-centered surface both remain preserved evidence rather than the active method definition
 - Stable evaluation practice should therefore avoid forcing excerpt and long-span datasets to share the same books or chapters when that coupling weakens fit or runtime efficiency.
 
@@ -231,17 +234,18 @@ The old Memory / Planning / Evaluation implementation guidance chain at `docs/im
 - The current active long-span direction is:
   - `Memory Quality`
     - use probe points inside one continuous reading window
-    - judge the current memory/state snapshot as a whole
+    - judge current memory surfaces as a whole, with current formal evidence centered on hot `recent_reading_memory`, Unit Memory retrieval evidence, and prompt-facing `ReadingMemory`
     - ask what the reader has retained, whether those retained items are important, whether they belong to the book's mainline, whether they are organized clearly, and whether they remain faithful rather than drifting
     - do not require prespecified gold sentences
     - do not require human notes as hard-contract input
-  - `Spontaneous Callback`
-    - audit all visible reactions produced over the full reading window
-    - judge which reactions naturally recall or connect to prior material
-    - do not require a hard contract tying those callback judgments directly back to state snapshots; that relationship belongs to later analysis
-  - `False Visible Integration`
-    - audit callback-like reactions for weak grounding, overclaim, hard-linking, theme-only similarity, or memory drift
-- These three long-span goals are complementary, but they remain contract-level distinct:
+  - `Mechanism Conformance`
+    - verify the designed loop actually occurs: `Ingest` selects a forward source unit and may emit bounded recalls; runtime retrieves/selects Unit Memory; `Digest` receives top-level `ReadingMemory`; `Digest` emits `understanding / response / annotations`; settlement writes Recent Memory, Unit Memory, traces, and audits
+    - do not judge subjective output beauty in this conformance axis
+  - `Prior Memory Continuity / Safety`
+    - audit visible Digest reactions for grounded prior-memory use only when the reaction visibly refers to earlier material
+    - keep `prior_memory_overclaim` as the negative guardrail for weak grounding, overclaim, hard-linking, theme-only similarity, or memory drift
+    - do not treat prior-memory reference count as a success metric
+- These long-span goals are complementary, but they remain contract-level distinct:
   - one metric can be strong while another is weak
   - later analysis may compare them, but the benchmark contract should not collapse them into one forced score prematurely
 - The phase-1 implementation posture is now landed:
@@ -252,7 +256,7 @@ The old Memory / Planning / Evaluation implementation guidance chain at `docs/im
     - current snapshots use explicit semantic `probe_targets` from `memory_quality_semantic_probe_plan_20260504.json`; missing targets fail fast instead of falling back to ratio probes
     - current semantic probe manifests may still name `target_sentence_id` / sentence ordinals as eval locator metadata, even after the paragraph-offset cursor cutover; they are not the current `attentional_v2` mainline reading coordinate
     - future Long Span reports should pair any sentence id with the available paragraph-char locator, source span, or `SourceRef` evidence so reviewers do not mistake `cN-sM` orientation handles for canonical source coordinates
-  - add full-window reaction audit for `Spontaneous Callback` and `False Visible Integration`
+  - add full-window reaction audit for `Prior Memory Continuity / Safety`
     - phase-1 comparison scope is `attentional_v2` vs `iterator_v1`
     - unchanged `iterator_v1` windows may reuse prior completed normalized reading outputs because reaction audit only consumes visible reactions
     - reuse must be refused when `segment_id / start_sentence_id / end_sentence_id / source_chapter_ids / source_text_sha256` do not match the active window
@@ -261,7 +265,7 @@ The old Memory / Planning / Evaluation implementation guidance chain at `docs/im
     - landed benchmark-only V2 probe export:
       - `reading-companion-backend/src/attentional_v2/benchmark_probes.py`
       - runtime capture is invoked through the `attentional_v2` observability layer, so `benchmark_probes.py` remains the Memory Quality export implementation while Reading Runner does not own probe manifest or snapshot-persistence details
-      - Memory Quality probe export schema v2 records source-native target/capture coordinates (`target_source_cursor`, `target_source_span`, `capture_source_cursor`, `capture_source_span`) and treats sentence ids as orientation metadata / legacy fallback
+      - Memory Quality probe export schema v3 records source-native target/capture coordinates (`target_source_cursor`, `target_source_span`, `capture_source_cursor`, `capture_source_span`), current `unit_memory` and `reading_memory` projections, and treats sentence ids as orientation metadata / legacy fallback
       - `unit_span_ledger.jsonl`, `read_audit.jsonl`, and `settlement_audit.jsonl` are runtime evidence used to diagnose whether a run covered and settled source spans correctly; they are not new benchmark targets or score inputs by themselves
       - new `attentional_v2` probe/context snapshots consume inline `source_refs[]` from memory and reaction state; `anchor_bank_digest` is historical and should not be used for new Memory Quality evidence
 - The first Phase-1 diagnostic run has been corrected in two steps:
@@ -297,15 +301,15 @@ The old Memory / Planning / Evaluation implementation guidance chain at `docs/im
     - `scoring_memory_state.reflective_frames`
     - retired concept/thread structured long-memory stores are no longer current snapshot fields after `DEC-109`; current long-memory evaluation should follow the content-neutral Unit Memory design established by `DEC-110`
     - digest fields remain auxiliary projection / compatibility evidence, not the primary scoring surface for new runs
-    - `reaction_records`, local buffer, continuity glue, and read-audit streams are not Memory Quality stores; reaction-level behavior remains covered by Selective Legibility, Spontaneous Callback, and False Visible Integration
-    - old digest-only Memory Quality runs should be labeled with `memory_snapshot_basis=legacy_digest_snapshot`, while new full-state runs should record `memory_snapshot_basis=full_probe_time_memory_state`
+    - `reaction_records`, local buffer, continuity glue, and read-audit streams are not Memory Quality stores; reaction-level behavior remains covered by Selective Legibility and Prior Memory Safety
+    - old digest-only Memory Quality runs should be labeled with `memory_snapshot_basis=legacy_digest_snapshot`; incomplete current-state snapshots without Unit Memory / ReadingMemory evidence should record `memory_snapshot_basis=incomplete_probe_time_memory_state`; current formal snapshots should record `memory_snapshot_basis=unit_memory_reading_memory_state`
     - old `gate_state`, `pressure_snapshot`, and working-pressure artifacts are not current evidence fields
     - Active Attention / ActiveTension is now deprecated as a primary memory layer. Existing artifacts may still contain `active_attention` items with `tension_from`, `tension_focus`, `working_interpretation`, source evidence, and terminal `answered_reason` / `closed_reason`; reports may interpret those fields for historical or diagnostic review, but should label the store as deprecated evidence rather than the target near-term memory design.
     - Near-term-memory evaluation should foreground `recent_reading_memory`; long-distance continuity evaluation should foreground Unit Memory retrieval, selected Understanding lines, and whether the resulting `ReadingMemory` helped or polluted Digest.
     - Active Attention source coordinates in existing artifacts are program-resolved from model-cited exact `source_quote` / `development_source_quote`; reports should distinguish exact/normalized/ordered-fragment matches from `fallback_unit_span` grounding caveats. If an item is grounded in title/framing/prior memory rather than a current-source phrase, reports should say so instead of treating unit coordinates as precise source evidence.
   - Formal post-`DEC-110` long-span evaluation must not reuse the old Memory Quality evidence surface unchanged.
-    - The current eval runner/report text still needs a harness update before formal promotion if it only exposes `active_attention`, `recent_reading_memory`, and `reflective_frames`.
-    - A no-judge smoke may inspect Unit Memory artifacts manually, but it should not be promoted as Memory Quality evidence until the runner exposes Unit Memory / `ReadingMemory` evidence in the judge-facing payload and report.
+    - Current eval runner/report text and probe snapshots now expose Unit Memory / `ReadingMemory` evidence in the judge-facing payload and report.
+    - A no-judge smoke may inspect Unit Memory artifacts manually, but it should not be promoted as Memory Quality evidence until the relevant Unit Memory / `ReadingMemory` evidence is present and reviewed.
   - New probe evidence generated after the Digest naturalization, SourceRef, Recent Reading Memory formation, and `DEC-109` structured-store removal cutovers should use `reading_impression` for read-audit / probe-facing local interpretation, and `memory_uptake_ops` for the bounded memory-update operations that feed current recent-memory and deprecated active-attention layers.
     - Older reports that show `unit_delta` or `implicit_uptake_ops` are historical artifacts from the pre-cutover contract, not current field names.
   - Memory Quality evidence reports have a fixed writing contract:
@@ -321,27 +325,27 @@ The old Memory / Planning / Evaluation implementation guidance chain at `docs/im
   - the formal benchmark target
     - for example the formal `target_span`, prepared long-range thread, and expected integration
   - direct scored evidence
-    - target-local reactions, target-proximal callback actions, and short-horizon followups that actually bear on the target-centered question
+    - target-local reactions, target-proximal prior-memory references, and short-horizon followups that actually bear on the target-centered question
   - supporting evidence
     - nearby material that helps explain the judgment but is not itself the decisive target-point evidence
   - negative evidence
-    - the missing integration, absent callback evidence, distorted relation, or other failure condition that materially shaped the judgment
+    - the missing integration, absent prior-memory evidence, distorted relation, or other failure condition that materially shaped the judgment
 - Reports must not present supporting evidence as though it were the formal hit.
   - nearby echoes or same-window support may still matter
   - they must be labeled as supporting evidence rather than written as successful target-point integration
-- Long-span reports must distinguish target-visible evidence from pre-target observed callbacks.
-  - a pre-target callback can show that the reader touched earlier material somewhere in the run
+- Long-span reports must distinguish target-visible evidence from pre-target observed prior-memory references.
+  - a pre-target prior-memory reference can show that the reader touched earlier material somewhere in the run
   - it cannot by itself prove coherent accumulation at the target point
   - if it is shown in an audit appendix, label it as audit-only unless a later target-near reaction visibly uses it
 - `expected_integration` should be used as an orientation for high-scoring semantic recall, not as a brittle checklist.
   - a mechanism can receive credit for a differently worded but correct target-near link to upstream refs
   - it should not receive credit for the case author's integration text when no mechanism output made the connection visible
 - Reports must not let summary counts stand in for interpretation.
-  - callback counts, nearby evidence counts, or similar totals are evidence summaries only
+  - prior-memory reference counts, nearby evidence counts, or similar totals are evidence summaries only
   - they do not by themselves prove that the mechanism built the required thread at the target point
   - when counts are cited, the report should also say whether the target-point integration itself is strong, partial, distorted, or absent
 - Reports should show the decisive evidence before leaning on it in explanation.
-  - if the prose says a result turned on one target-zone reaction, one explicit callback, or one short-horizon downstream effect, that evidence should already be quoted or linked in the evidence section
+  - if the prose says a result turned on one target-zone reaction, one explicit prior-memory reference, or one short-horizon downstream effect, that evidence should already be quoted or linked in the evidence section
   - do not force the reader to infer which hidden reaction the later explanation is pointing at
 - Reports should include negative evidence symmetrically.
   - when the target zone fails to reconstruct the prepared thread, record that absence directly
@@ -350,7 +354,7 @@ The old Memory / Planning / Evaluation implementation guidance chain at `docs/im
   - a reaction may still be globally useful for actor orientation, scene understanding, or general reading value
   - if it does not serve the case's actual `expected_integration`, it should not be written as the decisive positive evidence for that case
 - Raw evidence should not enter the report without provenance checks.
-  - verify the `case_id`, `window_id`, target or callback refs, source span provenance, and quoted excerpt before treating a raw artifact as report-ready evidence
+  - verify the `case_id`, `window_id`, target or prior-memory refs, source span provenance, and quoted excerpt before treating a raw artifact as report-ready evidence
   - if provenance is uncertain or mismatched, record the uncertainty instead of upgrading it into interpretation
 - The stable report shape should stay layered:
   - the main interpretation report should carry the minimum sufficient evidence chain that lets a reader understand the judgment in one pass
@@ -380,21 +384,21 @@ The old Memory / Planning / Evaluation implementation guidance chain at `docs/im
   - interpret it as historical evidence produced by the older bounded `EARLY / MID / LATE` / pairwise-probe method
 - The bounded long-span v1 run and the later target-centered v2 reruns remain readable as historical / diagnostic evidence.
 - There is currently no active formal long-span benchmark pointer after the route change away from target-centered visible integration.
-- The current active long-span design pointer now belongs to the design-frozen three-metric direction in this file:
+- The current active long-span design pointer now belongs to the post-`DEC-110` direction in this file:
   - `Memory Quality`
-  - `Spontaneous Callback`
-  - `False Visible Integration`
+  - `Mechanism Conformance`
+  - `Prior Memory Continuity / Safety`
 - The current long-span implementation workflow is:
   - Phase 1 has landed:
     - probe-based state-snapshot contract for `Memory Quality`
-    - complete-window reaction-audit contract for `Spontaneous Callback`
-    - negative callback-quality contract for `False Visible Integration`
+    - structural mechanism-conformance contract for the `Ingest -> retrieval -> Digest ReadingMemory -> settlement` loop
+    - complete-window reaction-audit safety contract for prior-memory grounding and overclaim
   - the first real vNext evaluation has completed and was rejudged for Memory Quality scale calibration:
     - `attentional_v2_long_span_vnext_phase1_memory_quality_scale_fix_rejudge_20260425`
   - the runner reads only the minimum required fresh outputs:
     - `attentional_v2` for V2 probe snapshots
     - `iterator_v1` only for windows whose prior normalized outputs do not match the current active window fingerprint
-  - before any new formal post-`DEC-110` long-span rerun is treated as current evidence, update or verify the harness/report contract so Memory Quality can see Unit Memory and Digest `ReadingMemory`, not only the older active-attention / recent-memory / reflective-frame stores
+  - before any new formal post-`DEC-110` long-span rerun is promoted, verify that Memory Quality rows use `unit_memory_reading_memory_state` or explicitly mark incomplete evidence
 - Historical broad freezes should remain readable, but they should not keep acting as the active benchmark pointer once a deliberate replacement has been recorded.
 
 ## Bounded Dataset-Platform Strategy Rule
@@ -879,7 +883,7 @@ The old Memory / Planning / Evaluation implementation guidance chain at `docs/im
 - Typical concerns include:
   - thread continuity
   - memory carry-over
-  - callback quality
+  - prior-memory continuity quality
   - chapter or book-level arc quality
 
 ### Runtime Viability

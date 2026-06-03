@@ -21,20 +21,22 @@ This directory now has three layers:
 
 The current active Long Span direction is no longer `target-centered accumulation v2`.
 
-The active direction is now a design-frozen three-metric line:
+The active direction is now a post-`DEC-110` diagnostic line:
 
 - `Memory Quality`
   - sample semantic probe points inside one continuous reading window
-  - judge the current memory/state snapshot holistically
+  - judge current memory surfaces holistically, with formal current evidence centered on hot `recent_reading_memory`, Unit Memory retrieval evidence, and Digest prompt-facing `ReadingMemory`
   - do not predeclare gold sentences or hard-bind human notes into the contract
   - do check whether salient source-given structures, such as stage models, classifications, core definitions, roadmaps, or named distinctions, are retained in the snapshot when they matter
   - optional `probe_review_focus` notes may mark known high-risk structural signals for a probe; they are audit aids, not exact-match gold answers
   - current probe placement is driven by a versioned semantic manifest, not hard `20% / 40% / 60% / 80% / end` ratios
-- `Spontaneous Callback`
-  - audit all visible reactions in a completed reading window
-  - count and interpret reactions that naturally recall or connect prior material
-- `False Visible Integration`
-  - audit callback-like reactions for overclaim, hard-linking, vague theme-only similarity, or memory drift
+- `Mechanism Conformance`
+  - verify that `Ingest -> Unit Memory retrieval/selection -> Digest ReadingMemory -> settlement` produced the required structure and artifacts
+  - do not use this axis to judge subjective annotation or understanding quality
+- `Prior Memory Continuity / Safety`
+  - audit visible Digest reactions only when they visibly use prior material
+  - do not reward prior-memory reference count
+  - keep `prior_memory_overclaim` as the negative guardrail for overclaim, hard-linking, vague theme-only similarity, or memory drift
 
 Current implementation posture:
 
@@ -53,7 +55,7 @@ Current implementation posture:
       - [probe manifest README](../../../eval/manifests/probes/README.md)
     - phase-1 scope:
       - `Memory Quality`: `attentional_v2` only
-      - reaction audit: `attentional_v2` vs `iterator_v1`
+      - prior-memory safety audit: `attentional_v2` vs `iterator_v1`
     - output sourcing:
       - `attentional_v2` is freshly read or same-run resumed so `Memory Quality` probe snapshots exist
       - `Memory Quality` probe export requires explicit semantic `probe_targets`; missing targets fail fast instead of falling back to ratio probes
@@ -76,8 +78,8 @@ Current implementation posture:
     - `search_intent`
     - `compat_family`
   - headline diagnostic reading:
-    - `attentional_v2`: `152` grounded spontaneous callbacks, `84` weak callbacks, `2` false visible integrations over `1282` visible reactions
-    - `iterator_v1`: `51` grounded callbacks, `13` weak callbacks, `0` false visible integrations over `375` visible reactions
+    - historical April 25 labels: `attentional_v2` had `152` grounded callbacks, `84` weak callbacks, `2` false visible integrations over `1282` visible reactions
+    - historical April 25 labels: `iterator_v1` had `51` grounded callbacks, `13` weak callbacks, `0` false visible integrations over `375` visible reactions
     - judge unavailable count: `0` for both mechanisms
   - the prior scale-fix rejudge remains useful for Memory Quality but its reaction-audit section copied the April 23 evidence surface and is superseded for reaction interpretation
   - future Memory Quality judgments use the structural-signal-aware contract:
@@ -87,6 +89,7 @@ Current implementation posture:
   - future Memory Quality evidence reports use the fixed report-writing contract:
     - [memory_quality_report_contract.md](./memory_quality_report_contract.md)
     - new reports no longer include `Recent Routes` / `route_action` evidence blocks, because forward progression is now runner settlement rather than a route-action taxonomy
+    - post-`DEC-110` reports should use `unit_memory_reading_memory_state` when Unit Memory / ReadingMemory evidence is present, and should mark incomplete probe evidence explicitly when it is not
 
 ## Historical Durable Evidence
 
@@ -123,8 +126,9 @@ Why it was discontinued:
 - current priority is no longer “did the mechanism visibly reconstruct the prepared thread at one target point?”
 - current priority is:
   - did the reader form high-quality memory under continuous reading?
-  - did it naturally callback prior material?
-  - were those callbacks grounded rather than forced?
+  - did `Ingest` express bounded prior-reading recall intent when earlier reading may matter?
+  - did the runtime retrieve and select Unit Memory evidence traceably?
+  - did `Digest` receive and use prior Understanding through `ReadingMemory` without overclaiming?
 
 That means the April 22 rejudge is preserved as the last corrected diagnostic for the discontinued target-centered route, not as the authority for the current Long Span direction.
 
@@ -169,7 +173,7 @@ Discontinued route evidence:
 
 | Report title | Run ID | Surface | Compared mechanisms | Status | One-line conclusion | Evidence |
 | --- | --- | --- | --- | --- | --- | --- |
-| Discontinued target-centered accumulation v2 contract-fix rejudge | `attentional_v2_accumulation_benchmark_v2_frozen_rejudge_contract_fix_20260422` | `target-centered accumulation v2` | `attentional_v2` vs `iterator_v1` | `invalidated diagnostic` | `This run repaired the old target-visible evidence contract, but the underlying product question was later retired in favor of Memory Quality / Spontaneous Callback / False Visible Integration.` | [aggregate](../../../eval/runs/attentional_v2/attentional_v2_accumulation_benchmark_v2_frozen_rejudge_contract_fix_20260422/summary/aggregate.json) · [report](../../../eval/runs/attentional_v2/attentional_v2_accumulation_benchmark_v2_frozen_rejudge_contract_fix_20260422/summary/report.md) · [audit](../../../eval/runs/attentional_v2/attentional_v2_accumulation_benchmark_v2_frozen_rejudge_contract_fix_20260422/analysis/longspan_rejudge_audit_20260422/README.md) |
+| Discontinued target-centered accumulation v2 contract-fix rejudge | `attentional_v2_accumulation_benchmark_v2_frozen_rejudge_contract_fix_20260422` | `target-centered accumulation v2` | `attentional_v2` vs `iterator_v1` | `invalidated diagnostic` | `This run repaired the old target-visible evidence contract, but the underlying product question was later retired in favor of Memory Quality and prior-memory continuity/safety.` | [aggregate](../../../eval/runs/attentional_v2/attentional_v2_accumulation_benchmark_v2_frozen_rejudge_contract_fix_20260422/summary/aggregate.json) · [report](../../../eval/runs/attentional_v2/attentional_v2_accumulation_benchmark_v2_frozen_rejudge_contract_fix_20260422/summary/report.md) · [audit](../../../eval/runs/attentional_v2/attentional_v2_accumulation_benchmark_v2_frozen_rejudge_contract_fix_20260422/analysis/longspan_rejudge_audit_20260422/README.md) |
 | Discontinued target-centered accumulation v2 first formal rerun | `attentional_v2_accumulation_benchmark_v2_frozen_active_rerun_20260419` | `target-centered accumulation v2` | `attentional_v2` vs `iterator_v1` | `invalidated diagnostic` | `Preserved to diagnose the old judge-contract flaw; no longer used as current Long Span mechanism evidence.` | [aggregate](../../../eval/runs/attentional_v2/attentional_v2_accumulation_benchmark_v2_frozen_active_rerun_20260419/summary/aggregate.json) · [report](../../../eval/runs/attentional_v2/attentional_v2_accumulation_benchmark_v2_frozen_active_rerun_20260419/summary/report.md) |
 | Long-Span 正式 judged eval 详细解读 | `attentional_v2_accumulation_benchmark_v1_judged_rerun_20260407` | `bounded long-span accumulation comparison` | `attentional_v2` vs `iterator_v1` | `historical durable evidence` | `iterator_v1` wins the current durable bounded long-span surface overall; attentional_v2 is cleaner on some single-chapter main-thread probes but still trails on retrospective long-span closure.` | [aggregate](../../../eval/runs/attentional_v2/attentional_v2_accumulation_benchmark_v1_judged_rerun_20260407/summary/aggregate.json) · [report](../../../eval/runs/attentional_v2/attentional_v2_accumulation_benchmark_v1_judged_rerun_20260407/summary/report.md) · [interpretation](./attentional_v2_accumulation_benchmark_v1_judged_rerun_20260407_interpretation.md) |
 | Long-Span 正式 judged eval 后续反思与机制重设计备忘 | `attentional_v2_accumulation_benchmark_v1_judged_rerun_20260407` | `post-eval mechanism reflection` | `attentional_v2` vs `iterator_v1` | `ongoing` | `The first completed probe-level reflection already suggests that attentional_v2 should replace heuristic semantic triggering with one Reading Agent organized around the two actions navigate and read, while realigning span visibility with span-closing authority.` | [interpretation](./attentional_v2_accumulation_benchmark_v1_judged_rerun_20260407_interpretation.md) · [reaction appendix](./attentional_v2_accumulation_benchmark_v1_judged_rerun_20260407_score_impact_reaction_appendix.md) · [follow-up memo](./attentional_v2_accumulation_benchmark_v1_judged_rerun_20260407_followup_reflection_and_decisions.md) |

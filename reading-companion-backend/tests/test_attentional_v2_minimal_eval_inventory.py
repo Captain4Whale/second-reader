@@ -13,7 +13,7 @@ SMOKE_SCRIPT_PATH = REPO_ROOT / "reading-companion-backend/scripts/validate_mini
 
 REQUIRED_LANES = {
     "lane_a_local_user_level_selective_legibility",
-    "lane_b_long_span_mq_callback_fvi",
+    "lane_b_long_span_unit_memory_safety",
 }
 REQUIRED_EVIDENCE_SURFACES = {
     "read_audit",
@@ -26,7 +26,7 @@ REQUIRED_EVIDENCE_SURFACES = {
 }
 REQUIRED_GUARDS = {
     "retrieval_availability_is_not_utilization_success",
-    "visible_reaction_presence_is_not_callback_correctness",
+    "visible_reaction_presence_is_not_prior_memory_grounding",
     "source_ref_count_is_not_fidelity_score",
     "trace_existence_is_not_planning_quality",
     "slow_cycle_audit_existence_is_not_slow_cycle_quality",
@@ -104,14 +104,14 @@ def test_lane_a_distinguishes_active_dataset_from_formal_evidence_dataset() -> N
 
 def test_lane_b_remains_diagnostic_not_formal_authority() -> None:
     manifest = _load_manifest()
-    lane_b = next(lane for lane in manifest["active_lanes"] if lane["id"] == "lane_b_long_span_mq_callback_fvi")
+    lane_b = next(lane for lane in manifest["active_lanes"] if lane["id"] == "lane_b_long_span_unit_memory_safety")
 
     assert lane_b["status"] == "diagnostic_phase_1"
     assert lane_b["formal_authority"] is False
     assert set(lane_b["dimensions"]) == {
         "memory_quality",
-        "spontaneous_callback",
-        "false_visible_integration",
+        "prior_memory_continuity_safety",
+        "prior_memory_overclaim_guardrail",
     }
     assert lane_b["current_diagnostic_evidence"]["run_id"] == (
         "attentional_v2_long_span_vnext_phase1_reaction_evidence_fix_rejudge_20260425"

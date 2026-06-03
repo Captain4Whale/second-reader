@@ -21,7 +21,7 @@ EXPECTED_MANIFEST = {
 }
 REQUIRED_LANES = {
     "lane_a_local_user_level_selective_legibility",
-    "lane_b_long_span_mq_callback_fvi",
+    "lane_b_long_span_unit_memory_safety",
 }
 REQUIRED_EVIDENCE_SURFACES = {
     "read_audit",
@@ -38,7 +38,7 @@ REQUIRED_DIAGNOSTICS = {
 }
 REQUIRED_GUARDS = {
     "retrieval_availability_is_not_utilization_success",
-    "visible_reaction_presence_is_not_callback_correctness",
+    "visible_reaction_presence_is_not_prior_memory_grounding",
     "source_ref_count_is_not_fidelity_score",
     "trace_existence_is_not_planning_quality",
     "slow_cycle_audit_existence_is_not_slow_cycle_quality",

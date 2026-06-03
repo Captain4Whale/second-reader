@@ -2436,6 +2436,8 @@ def _settle_next_unit(
         reaction_records=reaction_records,
         actual_source_span=source_span if has_selected_source_unit else {},
         actual_source_span_id=source_id if has_selected_source_unit else "",
+        unit_memory_retrieval=unit_memory_retrieval,
+        reading_memory=reading_memory,
     )
     active_refs = {
         "reaction_id": _clean_text(emitted_reactions[-1].get("reaction_id")) if emitted_reactions else "",

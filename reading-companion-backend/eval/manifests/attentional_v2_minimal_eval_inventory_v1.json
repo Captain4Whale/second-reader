@@ -85,16 +85,16 @@
       ]
     },
     {
-      "id": "lane_b_long_span_mq_callback_fvi",
-      "label": "Lane B: Long Span MQ / Callback / FVI",
+      "id": "lane_b_long_span_unit_memory_safety",
+      "label": "Lane B: Long Span Unit Memory / Prior Memory Safety",
       "status": "diagnostic_phase_1",
       "formal_authority": false,
       "dimensions": [
         "memory_quality",
-        "spontaneous_callback",
-        "false_visible_integration"
+        "prior_memory_continuity_safety",
+        "prior_memory_overclaim_guardrail"
       ],
-      "metric_summary": "Diagnostic long-span direction covering Memory Quality, Spontaneous Callback, and False Visible Integration.",
+      "metric_summary": "Diagnostic long-span direction covering Unit Memory / ReadingMemory evidence quality plus prior-memory continuity and overclaim safety.",
       "current_diagnostic_evidence": {
         "run_id": "attentional_v2_long_span_vnext_phase1_reaction_evidence_fix_rejudge_20260425",
         "status": "phase_1_diagnostic_evidence_not_formal_authority",
@@ -185,7 +185,7 @@
       "available_after_slice": "Slice 1 through Slice 5",
       "maps_to": [
         "lane_a_local_user_level_selective_legibility",
-        "lane_b_long_span_mq_callback_fvi"
+        "lane_b_long_span_unit_memory_safety"
       ],
       "evidence_role": "per-read mechanism-private audit substrate"
     },
@@ -195,7 +195,7 @@
       "available_after_slice": "Slice 1",
       "maps_to": [
         "lane_a_local_user_level_selective_legibility",
-        "lane_b_long_span_mq_callback_fvi"
+        "lane_b_long_span_unit_memory_safety"
       ],
       "evidence_role": "read-to-state settlement deltas and memory uptake operation outcomes"
     },
@@ -204,17 +204,17 @@
       "artifact_or_field": "read_audit.ingest_trace",
       "available_after_slice": "Slice 5A and Slice 5B",
       "maps_to": [
-        "lane_b_long_span_mq_callback_fvi",
+        "lane_b_long_span_unit_memory_safety",
         "planning_trace_quality"
       ],
-      "evidence_role": "navigation trace availability for diagnostic review, not planning quality score"
+      "evidence_role": "Ingest trace availability for diagnostic review, not recall or boundary quality score"
     },
     {
       "id": "slow_cycle_audit",
       "artifact_or_field": "_mechanisms/attentional_v2/runtime/slow_cycle_audit.jsonl",
       "available_after_slice": "Slice 6A plus carried SourceRef evidence precision patch",
       "maps_to": [
-        "lane_b_long_span_mq_callback_fvi",
+        "lane_b_long_span_unit_memory_safety",
         "slow_cycle_safety"
       ],
       "evidence_role": "candidate-vs-settled slow-cycle boundary substrate, not slow-cycle quality score"
@@ -225,7 +225,7 @@
       "available_after_slice": "Slice 1 through Slice 6",
       "maps_to": [
         "lane_a_local_user_level_selective_legibility",
-        "lane_b_long_span_mq_callback_fvi"
+        "lane_b_long_span_unit_memory_safety"
       ],
       "evidence_role": "source evidence availability and binding diagnostics, not fidelity score by count"
     },
@@ -234,7 +234,7 @@
       "artifact_or_field": "projection_role, support_status, lineage_only, current_support, visible_trace_support",
       "available_after_slice": "Slice 3A",
       "maps_to": [
-        "lane_b_long_span_mq_callback_fvi"
+        "lane_b_long_span_unit_memory_safety"
       ],
       "evidence_role": "prompt-facing support/boundary metadata for diagnostic review"
     },
@@ -244,7 +244,7 @@
       "available_after_slice": "Slice 1, Slice 2A, and Slice 2B",
       "maps_to": [
         "lane_a_local_user_level_selective_legibility",
-        "lane_b_long_span_mq_callback_fvi"
+        "lane_b_long_span_unit_memory_safety"
       ],
       "evidence_role": "normalization admission and observed outcome metadata, not product quality proof"
     }
@@ -275,7 +275,7 @@
   ],
   "interpretation_guards": {
     "retrieval_availability_is_not_utilization_success": true,
-    "visible_reaction_presence_is_not_callback_correctness": true,
+    "visible_reaction_presence_is_not_prior_memory_grounding": true,
     "source_ref_count_is_not_fidelity_score": true,
     "trace_existence_is_not_planning_quality": true,
     "slow_cycle_audit_existence_is_not_slow_cycle_quality": true,
