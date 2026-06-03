@@ -7,7 +7,7 @@ Update when: task status, priority, blockers, decision refs, job refs, evidence 
 
 This document is the human-readable companion to `docs/tasks/registry.json`.
 
-Last updated: `2026-06-03T01:09:51+08:00`
+Last updated: `2026-06-03T08:03:39+08:00`
 
 ## Status Values
 - `active`
@@ -25,8 +25,9 @@ Last updated: `2026-06-03T01:09:51+08:00`
 - Lane: `mechanism_runtime`
 - Priority: `high`
 - Detail: `docs/current-state.md`
-- Next: structural conformance smoke/fix pass is complete for the implemented `Ingest -> Digest -> Reading Runner settlement` mechanism. Current live `Ingest` returns boundary fields plus bounded `memory_recalls[]`; when recalls are present, the `retrieve_unit_memory` tool loop lets Reading Runner execute Unit Memory retrieval/selection before calling `Digest`. `Digest` receives top-level `ReadingMemory` assembled from hot current-chapter Understanding plus selected long-distance Unit Memory Understanding, with `5K` hot, `10K` retrieved, and `15K` total prompt-facing estimated-token budgets using `tiktoken_o200k_base_v1`. Unit Memory is the current content-neutral long-distance memory substrate under `DEC-110`; retired Detour/source-backread/source-skill and concept/thread structured-memory interfaces are historical only. Conformance report: `docs/implementation/new-reading-mechanism/codex/reports/Ingest-Digest-UnitMemory-Conformance-Smoke-Post-run-Report v0.md`. Next work should review/calibrate recall quality, retrieval fanout, neighbor exclusion, ReadingMemory budget behavior, and Digest downstream usefulness before changing the memory surface again. Do not launch formal eval, update evidence catalog, or revive paused `C设计10` consolidation / old concrete-node XML migration / `C设计12` prompt assembly work unless explicitly re-adopted.
-- Jobs: none
+- Next: five-window Long Span vNext judged diagnostic is running for the current `Ingest -> Digest -> Reading Runner settlement` mechanism. Current live `Ingest` returns boundary fields plus bounded `memory_recalls[]`; when recalls are present, the `retrieve_unit_memory` tool loop lets Reading Runner execute Unit Memory retrieval/selection before calling `Digest`. `Digest` receives top-level `ReadingMemory` assembled from hot current-chapter Understanding plus selected long-distance Unit Memory Understanding, with `5K` hot, `10K` retrieved, and `15K` total prompt-facing estimated-token budgets using `tiktoken_o200k_base_v1`. Unit Memory is the current content-neutral long-distance memory substrate under `DEC-110`; retired Detour/source-backread/source-skill and concept/thread structured-memory interfaces are historical only. Active run: `attentional_v2_ingest_digest_unit_memory_full_diagnostic_20260603_parallel5`; job: `bgjob_ingest_digest_unit_memory_full_diagnostic_20260603_parallel5`; run dir: `reading-companion-backend/eval/runs/attentional_v2/attentional_v2_ingest_digest_unit_memory_full_diagnostic_20260603_parallel5`. On completion, run strict LLM health over all five outputs, inspect summary files, Ingest recall samples, Unit Memory retrieval traces, Digest `ReadingMemory` prompts, and settlement artifacts; update run ledger to `review_pending` before interpretation. Do not update evidence catalog or claim product quality until reviewed.
+- Jobs:
+  - `bgjob_ingest_digest_unit_memory_full_diagnostic_20260603_parallel5`
 - Evidence:
   - `DEC-103`
   - `DEC-104`

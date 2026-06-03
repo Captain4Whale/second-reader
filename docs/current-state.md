@@ -7,7 +7,7 @@ Update when: the current objective, active tasks, blockers, active jobs, open de
 
 This file is authoritative for durable current status. Do not keep unique active-state information only in `docs/agent-handoff.md`.
 
-Last verified: `2026-06-03T01:09:51+08:00`
+Last verified: `2026-06-03T08:03:39+08:00`
 
 ## Current Objective
 - The `Ingest -> Digest -> Reading Runner settlement` mechanism reframe is implemented; current work is fact alignment, smoke/diagnostic review, and calibration before any formal evaluation promotion.
@@ -51,16 +51,26 @@ Last verified: `2026-06-03T01:09:51+08:00`
     - the current implementation now structurally verifies the live path `Ingest recalls -> runtime Unit Memory retrieval/selection -> Digest ReadingMemory -> Digest output mapping -> settlement -> Unit Memory writeback`
     - report: `docs/implementation/new-reading-mechanism/codex/reports/Ingest-Digest-UnitMemory-Conformance-Smoke-Post-run-Report v0.md`
     - no formal eval was run and no evidence catalog entry was created
+  - active diagnostic evaluation:
+    - run id: `attentional_v2_ingest_digest_unit_memory_full_diagnostic_20260603_parallel5`
+    - job id: `bgjob_ingest_digest_unit_memory_full_diagnostic_20260603_parallel5`
+    - status: running as of `2026-06-03T08:03:39+08:00`
+    - lane: five-window Long Span vNext judged diagnostic, `attentional_v2` only, `workers=5`, `judge_mode=llm`
+    - purpose: evaluate the current `Ingest recalls -> Unit Memory retrieval/selection -> Digest ReadingMemory -> settlement` path after structural conformance passed
+    - run dir: `reading-companion-backend/eval/runs/attentional_v2/attentional_v2_ingest_digest_unit_memory_full_diagnostic_20260603_parallel5`
+    - run ledger: `reading-companion-backend/docs/evaluation/run_ledger.md`
+    - catalog status: `not_cataloged`; do not update evidence catalog until reviewed
   - next step:
-    - review/calibrate recall quality, retrieval fanout, neighbor exclusion, ReadingMemory budget behavior, and Digest downstream usefulness before changing the memory surface again
-    - add a small diagnostic or harness mode comparison only after the structural conformance report is accepted
+    - monitor `bgjob_ingest_digest_unit_memory_full_diagnostic_20260603_parallel5`; on completion, run strict LLM health over all five outputs, inspect summary files, Ingest recall samples, Unit Memory retrieval traces, Digest `ReadingMemory` prompts, and settlement artifacts
+    - if the job succeeds, update the run ledger to `review_pending` and produce a diagnostic interpretation before any evidence promotion
+    - if the job fails, triage by LLM health, Ingest tool loop, Unit Memory retrieval/index, Digest prompt/context, and settlement writeback
     - use `docs/implementation/new-reading-mechanism/ingest-context-and-navigate-mapping.md` as the implementation reference for the landed first-slice `Ingest` XML context
     - use `docs/implementation/new-reading-mechanism/digest-understanding-response-annotation-design.md` as the implemented reference for the Digest prompt/output semantic refactor
     - use `docs/implementation/new-reading-mechanism/unit-memory-hybrid-retrieval-design.md` as the implemented reference for the Unit Memory storage/index/retrieval trace bottom framework
     - use `docs/implementation/new-reading-mechanism/ingest-recall-and-digest-memory-context-design.md` as the implemented reference for bounded multi-recall Ingest output, Anthropic-style `retrieve_unit_memory` tool loop, multi-recall retrieval aggregation, and Digest `ReadingMemory` packaging
     - use `docs/implementation/new-reading-mechanism/ingest-digest-unit-memory-conformance-goal.md` as the completed structural conformance contract; it treated the mechanism design docs as a locked baseline and permitted fixing implementation/tests/stable docs only
     - the no-judge hybrid smoke `attentional_v2_unit_memory_hybrid_smoke_nawaer_20260602` completed as a diagnostic only; it should not be treated as formal evidence or evidence-catalog material
-    - do not run formal eval, update evidence catalog, or claim product quality until a reviewed diagnostic plan is approved
+    - do not update evidence catalog or claim product quality until this diagnostic has been reviewed
 - Historical concrete-node XML prompt / Recent Reading Memory full active diagnostic machine run has completed; post-run report is preserved for reference.
   - purpose:
     - validate the old opt-in XML prompt assembly path after Recent Reading Memory formation work

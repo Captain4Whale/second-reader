@@ -1,6 +1,6 @@
 {
   "schema_version": 1,
-  "updated_at": "2026-05-26T23:02:11.897895Z",
+  "updated_at": "2026-06-03T00:02:52.485308Z",
   "entries": [
     {
       "run_id": "attentional_v2_excerpt_surface_v1_1_judged_20260406",
@@ -2314,6 +2314,33 @@
       "local_missing_allowed": [],
       "metadata": {},
       "updated_at": "2026-05-26T13:45:53.869132Z"
+    },
+    {
+      "run_id": "attentional_v2_ingest_digest_unit_memory_full_diagnostic_20260603_parallel5",
+      "date": "2026-06-03",
+      "surface": "ingest_digest_unit_memory_full_diagnostic",
+      "lane": "lane_b_long_span_vnext_judged_diagnostic",
+      "status": "running",
+      "mechanisms": [
+        "attentional_v2"
+      ],
+      "dataset_or_manifest": [
+        "reading-companion-backend/state/eval_local_datasets/user_level_benchmarks/attentional_v2_user_level_selective_v1_repaired_20260422/manifest.json"
+      ],
+      "run_dir": "reading-companion-backend/eval/runs/attentional_v2/attentional_v2_ingest_digest_unit_memory_full_diagnostic_20260603_parallel5",
+      "summary_paths": {},
+      "job_ids": [
+        "bgjob_ingest_digest_unit_memory_full_diagnostic_20260603_parallel5"
+      ],
+      "report_paths": [],
+      "catalog_status": "not_cataloged",
+      "notes": "Started five-window parallel judged diagnostic for current Ingest/Digest/Unit Memory path. Diagnostic only; no evidence catalog update.",
+      "parent_run_id": "",
+      "child_run_ids": [],
+      "synthetic": false,
+      "local_missing_allowed": [],
+      "metadata": {},
+      "updated_at": "2026-06-03T00:02:52.484846Z"
     }
   ]
 }
