@@ -18,9 +18,9 @@ from .reader_role import READER_ROLE_FRAGMENT
 from .types import PromptDefinition
 
 
-DIGEST_PROMPT_VERSION = "attentional_v2.digest.v3"
-DIGEST_XML_PROMPT_ASSEMBLY_SPEC_ID = "attentional_v2.digest.xml.v3"
-DIGEST_XML_PROMPTSET_VERSION = "attentional_v2-phase6-v47"
+DIGEST_PROMPT_VERSION = "attentional_v2.digest.v4"
+DIGEST_XML_PROMPT_ASSEMBLY_SPEC_ID = "attentional_v2.digest.xml.v4"
+DIGEST_XML_PROMPTSET_VERSION = "attentional_v2-phase6-v49"
 DIGEST_XML_TRANSPORT_SYSTEM_PROMPT = "Follow the structured Digest prompt in the user message. Return JSON only."
 
 
@@ -33,7 +33,7 @@ DIGEST_ROLE_AND_INSTRUCTION_FRAGMENTS = (
 
 Stay with this unit as the present moment of reading. Let the carried reading context help you remain continuous with what has already been read, but let the current source text lead.
 
-After reading, express what this unit gives you in three connected ways: what you understand from the text, how you respond to it as a reader, and which exact lines, if any, are worth annotating.""",
+After reading, express the result in three connected ways: what you understand from the text, how you respond to it as a reader, and which exact lines, if any, are worth annotating.""",
     ),
     PromptFragment(
         fragment_id="digest.context_use_guide",
@@ -46,29 +46,20 @@ After reading, express what this unit gives you in three connected ways: what yo
     ),
     PromptFragment(
         fragment_id="digest.understanding_policy",
-        text="""Begin by staying with what this unit is saying. Let it settle before turning it into reaction, summary, or commentary.
+        text="""# Read
+Read the current source text and state what you understand from it.
 
-Understanding is the source-faithful grasp of what this unit gives to the ongoing reading: what it establishes, changes, clarifies, contrasts, withholds, frames, or makes newly available.
+# Key information
+Keep the important content: who appears, what happens, what someone thinks or claims, what is defined or distinguished, and what relationship, condition, consequence, scene, image, tone, method, or evidence boundary becomes clear.
 
-Write it as the understanding you would carry forward from having read this unit, not as a memory-maintenance task and not as a visible margin note.
+# Writing stance
+Let the grammatical subject normally be a person, event, concept, claim, relationship, scene, method, or condition from the text, rather than the source container itself.
 
-Let the source lead. Notice who or what appears, what happened, what the author claims, what distinction, stage, example, condition, consequence, method, evidence boundary, reader-orientation, image, scene, or tonal shift is introduced.
+# Concision
+Keep it source-faithful and concise. Preserve key information, but do not copy the whole source or turn the understanding into a reaction, evaluation, or annotation. The understanding should be shorter than the source text and normally no more than a few compact sentences.
 
-Add interpretation only when it is needed to preserve source-established meaning. Do not start from your theory of the passage.
-
-Compress meaning, not wording. Do not copy the whole passage. Do not predict whether something will matter later. Do not import outside knowledge.
-
-Use the carried reading context to understand this unit as part of the unfolding book, but keep Understanding centered on what this unit itself brings. Do not turn it into a recap of prior context.
-
-Write Understanding so the reading can continue coherently even if the exact source text of this unit is not shown again soon.
-
-Be context-resolvable, not standalone exhaustive. Avoid bare pronouns or vague references unless the referent is explicit in the same Understanding.
-
-Write one holistic Understanding for this unit. The unit may contain several source-established meanings, but integrate them into one coherent Understanding instead of splitting them into multiple entries.
-
-Do not split Understanding by sentence, paragraph, theme, future use, or separate memory point. Digest may produce multiple Annotations, but it produces only one Understanding for the unit.
-
-If the unit is empty or purely structural, Understanding may be empty. If the unit is author-facing or method-facing, treat it as meaningful when it declares witness position, evidence boundary, writing method, intended reader, or what the book will / will not explain.""",
+# Empty-content exception
+If the source text is only a divider, empty heading, or other non-content structure, `content` may be empty; otherwise give a substantive understanding.""",
     ),
     PromptFragment(
         fragment_id="digest.response_policy",
@@ -469,7 +460,7 @@ Top-level fields:
 
 DIGEST_UNDERSTANDING_CONTRACT_FRAGMENT = PromptFragment(
     fragment_id="digest.understanding_contract",
-    text="""`understanding` contains one holistic source-faithful grasp of the current source unit.
+    text="""`understanding` contains one content-level understanding from the current source text.
 Shape:
 {
   "understanding": {
@@ -477,7 +468,7 @@ Shape:
     "content": "..."
   }
 }
-Use `content` for the understanding itself. It may integrate several source-established meanings, but it must remain one object for the unit. Do not include operation-level reasons, store names, durable-memory routing, hidden state, or source coordinates.""",
+Use `content` for the understanding itself. It may contain one sentence or several compact paragraphs when needed, but `understanding` must remain a single object rather than a list of separate understanding items. Do not include operation-level reasons, store names, durable-memory routing, hidden state, or source coordinates.""",
 )
 
 

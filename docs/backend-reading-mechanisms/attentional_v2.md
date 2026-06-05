@@ -532,7 +532,8 @@ Use `docs/backend-reading-mechanism.md` for shared platform boundaries. Use `doc
     - owns `local_continuity`, cursor advancement, anchor resolution, retry/fallback, Unit Memory retrieval execution, trace writing, prompt-facing `ReadingMemory` selection/budgeting, and settlement
   - `Digest`
     - owns model-facing `understanding`, `response`, and `annotations`
-    - must write `understanding` as compressed, context-resolvable, source-established content for continued reading; it should orient through the prompt-visible reading context, but still record what the current unit itself newly establishes, develops, specifies, contrasts, changes, or makes available
+    - must write `understanding` as concise, source-faithful content-level understanding from the current source text: what is said or shown, who appears, what happens, what someone thinks or claims, what is defined or distinguished, or what relationship, condition, consequence, scene, image, tone, method, or evidence boundary becomes clear
+    - should normally let the grammatical subject be a person, event, concept, claim, relationship, scene, method, or condition from the source text rather than the source container itself
     - should not emit or rely on an operation-level `reason` for `understanding`; runtime stores each entry's `content` as the retained `memory_text`
     - `understanding` should be written as natural reading understanding, not as a default `<label>: <explanation>` heading pattern; colons are appropriate only when the source itself names a term, stage, framework, or quoted source term
     - `understanding` should not copy the source passage, predict future importance, guess typed long-memory targets, create nested memory points, recap prior context for its own sake, or turn a concrete source unit into unsupported essay-like analysis or forced abstract naming

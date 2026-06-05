@@ -21,9 +21,9 @@ Update when: Digest action names, output fields, XML prompt structure, or runtim
 
 ## Implementation Status
 
-- Implemented prompt version: `attentional_v2.digest.v3`
-- Implemented XML assembly spec: `attentional_v2.digest.xml.v3`
-- Implemented promptset: `attentional_v2-phase6-v47`
+- Implemented prompt version: `attentional_v2.digest.v4`
+- Implemented XML assembly spec: `attentional_v2.digest.xml.v4`
+- Implemented promptset: `attentional_v2-phase6-v49`
 - Implemented output contract: `digest_understanding_response_annotation_json_v2`
 - Runtime mapping:
   - `understanding.content` -> zero or one internal `memory_uptake_ops[].payload.memory_text` targeting `recent_reading_memory`
@@ -35,7 +35,7 @@ Update when: Digest action names, output fields, XML prompt structure, or runtim
 
 Digest should be described as one coherent reading action with three peer outputs:
 
-- `Understanding`: read the source unit in; capture what the original text says, establishes, changes, or makes available for continued reading.
+- `Understanding`: read the source text in; state what is understood from the text itself in concise, source-faithful content-level prose.
 - `Response`: read the source unit out; express the reader's integrated feeling, thought, pressure, question, or aftertaste after understanding it.
 - `Annotation`: produce visible margin-note-style output anchored to exact source text.
 
@@ -249,7 +249,7 @@ You are now reading the next source unit in an ongoing deep reading of this book
 
 Stay with this unit as the present moment of reading. Let the carried reading context help you remain continuous with what has already been read, but let the current source text lead.
 
-After reading, express what this unit gives you in three connected ways: what you understand from the text, how you respond to it as a reader, and which exact lines, if any, are worth annotating.
+After reading, express the result in three connected ways: what you understand from the text, how you respond to it as a reader, and which exact lines, if any, are worth annotating.
 ```
 
 ### ContextUseGuide
@@ -268,37 +268,27 @@ This is the current `digest.context_use_guide` posture after the `ReadingMemory`
 ### Understanding
 
 ```text
-Begin by staying with what this unit is saying. Let it settle before turning it into reaction, summary, or commentary.
+# Read
+Read the current source text and state what you understand from it.
 
-Understanding is the source-faithful grasp of what this unit gives to the ongoing reading: what it establishes, changes, clarifies, contrasts, withholds, frames, or makes newly available.
+# Key information
+Keep the important content: who appears, what happens, what someone thinks or claims, what is defined or distinguished, and what relationship, condition, consequence, scene, image, tone, method, or evidence boundary becomes clear.
 
-Write it as the understanding you would carry forward from having read this unit, not as a memory-maintenance task and not as a visible margin note.
+# Writing stance
+Let the grammatical subject normally be a person, event, concept, claim, relationship, scene, method, or condition from the text, rather than the source container itself.
 
-Let the source lead. Notice who or what appears, what happened, what the author claims, what distinction, stage, example, condition, consequence, method, evidence boundary, reader-orientation, image, scene, or tonal shift is introduced.
+# Concision
+Keep it source-faithful and concise. Preserve key information, but do not copy the whole source or turn the understanding into a reaction, evaluation, or annotation. The understanding should be shorter than the source text and normally no more than a few compact sentences.
 
-Add interpretation only when it is needed to preserve source-established meaning. Do not start from your theory of the passage.
-
-Compress meaning, not wording. Do not copy the whole passage. Do not predict whether something will matter later. Do not import outside knowledge.
-
-Use the carried reading context to understand this unit as part of the unfolding book, but keep Understanding centered on what this unit itself brings. Do not turn it into a recap of prior context.
-
-Write Understanding so the reading can continue coherently even if the exact source text of this unit is not shown again soon.
-
-Be context-resolvable, not standalone exhaustive. Avoid bare pronouns or vague references unless the referent is explicit in the same Understanding.
-
-Write one holistic Understanding for this unit. The unit may contain several source-established meanings, but integrate them into one coherent Understanding instead of splitting them into multiple entries.
-
-Do not split Understanding by sentence, paragraph, theme, future use, or separate memory point. Digest may produce multiple Annotations, but it produces only one Understanding for the unit.
-
-If the unit is empty or purely structural, Understanding may be empty. If the unit is author-facing or method-facing, treat it as meaningful when it declares witness position, evidence boundary, writing method, intended reader, or what the book will / will not explain.
+# Empty-content exception
+If the source text is only a divider, empty heading, or other non-content structure, `content` may be empty; otherwise give a substantive understanding.
 ```
 
-Mapping from old prompt:
+Implementation notes:
 
-- Reuses the source-established-content rules from `digest.recent_reading_memory_policy`.
-- Removes "First maintain Recent Reading Memory."
-- Replaces "write one Recent Reading Memory entry for your future self" with "write Understanding for the current unit itself."
-- Removes concept/thread context language.
+- This wording intentionally avoids asking the model to describe what the unit "does" in the reading, because that led to commentary-like `本单元/This unit` outputs.
+- The grammatical-subject guidance steers the model toward content from the text: people, events, concepts, claims, relationships, scenes, methods, or conditions.
+- The single-object rule for `understanding` lives in `OutputContract`, not in the reader-facing `Understanding` instruction.
 
 ### Response
 
@@ -458,4 +448,4 @@ This keeps runtime state stable while making the LLM call semantically cleaner.
 - Should `annotations` remain 0-2 by default?
   - Default recommendation: yes. The current density rule is working conceptually and should not be loosened in this semantic refactor.
 - Should `understanding` be a list or one object/string?
-  - Default recommendation: list, because some units establish two naturally separable meanings; keep prompt pressure toward one entry in most cases.
+  - Resolved implementation: one object. `understanding.content` may contain one sentence or several compact paragraphs when needed, but the model-facing field is not a list.

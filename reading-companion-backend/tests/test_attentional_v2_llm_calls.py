@@ -536,8 +536,15 @@ def test_digest_uses_live_xml_prompt_and_filters_surface_reactions(tmp_path: Pat
     assert "Alpha hinge." in captured["prompt"]
     assert "Structural frame:" not in captured["prompt"]
     assert "<Understanding>" in captured["prompt"]
-    assert "Write one holistic Understanding for this unit." in captured["prompt"]
-    assert "Do not split Understanding by sentence, paragraph, theme, future use, or separate memory point." in captured["prompt"]
+    assert "# Read" in captured["prompt"]
+    assert "Read the current source text and state what you understand from it." in captured["prompt"]
+    assert "# Key information" in captured["prompt"]
+    assert "# Writing stance" in captured["prompt"]
+    assert "rather than the source container itself" in captured["prompt"]
+    assert "# Empty-content exception" in captured["prompt"]
+    assert "what this unit gives to the ongoing reading" not in captured["prompt"]
+    assert "Write one holistic Understanding for this unit." not in captured["prompt"]
+    assert "Do not split Understanding by sentence, paragraph, theme, future use, or separate memory point." not in captured["prompt"]
     assert "Split into multiple entries" not in captured["prompt"]
     assert "<Response>" in captured["prompt"]
     assert "<Annotation>" in captured["prompt"]
@@ -575,8 +582,8 @@ def test_digest_uses_live_xml_prompt_and_filters_surface_reactions(tmp_path: Pat
     }
     assert op["target_key"] != "legacy-ignored"
     assert manifest["node_name"] == "digest"
-    assert manifest["prompt_version"] == "attentional_v2.digest.v3"
-    assert manifest["prompt_assembly"]["spec_id"] == "attentional_v2.digest.xml.v3"
+    assert manifest["prompt_version"] == "attentional_v2.digest.v4"
+    assert manifest["prompt_assembly"]["spec_id"] == "attentional_v2.digest.xml.v4"
     assert manifest["prompt_assembly"]["output_contract"] == "digest_understanding_response_annotation_json_v2"
     assert "mode" not in manifest["prompt_assembly"]
     assert manifest["prompt_assembly"]["rendered_blocks"] == [
