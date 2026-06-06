@@ -538,9 +538,16 @@ def test_digest_uses_live_xml_prompt_and_filters_surface_reactions(tmp_path: Pat
     assert "<Understanding>" in captured["prompt"]
     assert "# Read" in captured["prompt"]
     assert "Read the current source text and state what you understand from it." in captured["prompt"]
-    assert "# Key information" in captured["prompt"]
+    assert "# Keep key information" in captured["prompt"]
+    assert "Keep the minimum content needed to understand what this source text has added." in captured["prompt"]
+    assert "For narrative or scene text" in captured["prompt"]
+    assert "For claim, concept, or argument text" in captured["prompt"]
+    assert "For list, taxonomy, or step text" in captured["prompt"]
     assert "# Writing stance" in captured["prompt"]
     assert "rather than the source container itself" in captured["prompt"]
+    assert "# Examples" in captured["prompt"]
+    assert "## Example 4 - Understanding" in captured["prompt"]
+    assert "People have developed several ways to deal with dependence on others." in captured["prompt"]
     assert "# Empty-content exception" in captured["prompt"]
     assert "what this unit gives to the ongoing reading" not in captured["prompt"]
     assert "Write one holistic Understanding for this unit." not in captured["prompt"]
@@ -582,8 +589,8 @@ def test_digest_uses_live_xml_prompt_and_filters_surface_reactions(tmp_path: Pat
     }
     assert op["target_key"] != "legacy-ignored"
     assert manifest["node_name"] == "digest"
-    assert manifest["prompt_version"] == "attentional_v2.digest.v4"
-    assert manifest["prompt_assembly"]["spec_id"] == "attentional_v2.digest.xml.v4"
+    assert manifest["prompt_version"] == "attentional_v2.digest.v5"
+    assert manifest["prompt_assembly"]["spec_id"] == "attentional_v2.digest.xml.v5"
     assert manifest["prompt_assembly"]["output_contract"] == "digest_understanding_response_annotation_json_v2"
     assert "mode" not in manifest["prompt_assembly"]
     assert manifest["prompt_assembly"]["rendered_blocks"] == [

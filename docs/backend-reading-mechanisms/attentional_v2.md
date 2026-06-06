@@ -437,6 +437,7 @@ Use `docs/backend-reading-mechanism.md` for shared platform boundaries. Use `doc
   - The current Ingest output contract is flat JSON with `end_anchor_text`, `boundary_type`, `reason`, and bounded `memory_recalls[]`.
   - Digest XML renders `ReaderRole` and `Instruction` as separate top-level blocks; all fixed non-role Digest directions live under `Instruction`, while runtime context/data blocks remain separate.
   - Digest `Instruction` uses direct child blocks `CurrentStep`, `ContextUseGuide`, `Understanding`, `Response`, `Annotation`, `SourceGrounding`, and `ResponseDiscipline`.
+  - Digest `Understanding` prompt version `attentional_v2.digest.v5` uses content-level reading rules, text-type compression guidance, grammatical-subject guidance, and five approved real-unit examples to keep stored Understanding memory from becoming source-container commentary or source copying.
   - The current Digest output contract is flat JSON with `understanding`, `response`, and `annotations`.
 - The stable carry taxonomy is now:
   - `always carry`

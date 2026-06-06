@@ -14,7 +14,7 @@ from .survey_chapter_zone import SURVEY_CHAPTER_ZONE_PROMPT, SURVEY_CHAPTER_ZONE
 from .types import AttentionalV2PromptSet, PromptDefinition, PromptRegistry, build_legacy_prompt_set
 
 
-ATTENTIONAL_V2_PROMPTSET_VERSION = "attentional_v2-phase6-v49"
+ATTENTIONAL_V2_PROMPTSET_VERSION = "attentional_v2-phase6-v50"
 
 
 ATTENTIONAL_V2_PROMPT_REGISTRY = PromptRegistry(

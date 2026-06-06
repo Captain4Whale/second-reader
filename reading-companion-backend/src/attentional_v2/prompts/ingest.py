@@ -17,7 +17,7 @@ from .types import PromptDefinition
 
 INGEST_PROMPT_VERSION = "attentional_v2.ingest.v3"
 INGEST_XML_PROMPT_ASSEMBLY_SPEC_ID = "attentional_v2.ingest.xml.v3"
-INGEST_XML_PROMPTSET_VERSION = "attentional_v2-phase6-v49"
+INGEST_XML_PROMPTSET_VERSION = "attentional_v2-phase6-v50"
 INGEST_TRANSPORT_SYSTEM_PROMPT = "Follow the structured Ingest prompt in the user message. Return JSON only."
 
 

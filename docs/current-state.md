@@ -7,7 +7,7 @@ Update when: the current objective, active tasks, blockers, active jobs, open de
 
 This file is authoritative for durable current status. Do not keep unique active-state information only in `docs/agent-handoff.md`.
 
-Last verified: `2026-06-05T07:58:29+08:00`
+Last verified: `2026-06-06T10:05:40+08:00`
 
 ## Current Objective
 - The `Ingest -> Digest -> Reading Runner settlement` mechanism reframe is implemented; current work is fact alignment, smoke/diagnostic review, and calibration before any formal evaluation promotion.
@@ -35,7 +35,7 @@ Last verified: `2026-06-05T07:58:29+08:00`
     - runtime next-unit preparation lives outside `Ingest` as `prepare_next_source_unit_for_read`: it prepares source preview/context, calls `Ingest`, performs anchor resolution/retry/fallback boundary governance, and hands the accepted source unit to `Digest`
     - `Ingest` uses `ReaderRole`, `Instruction`, `BookInfo`, `CurrentView`, empty `RetrievalSurface`, and `OutputContract`; it may express up to three prior-reading recalls, while actual retrieval execution and prompt-facing memory selection remain Reading Runner runtime work
     - Digest semantic refactor is implemented: model-facing `understanding / response / annotations` are three peer outputs, with one holistic `understanding` object per unit mapped into `recent_reading_memory`
-    - Digest Understanding prompt `attentional_v2.digest.v4` now frames `understanding` as concise content-level understanding from the current source text, with light section headings and grammatical-subject guidance to avoid unit/commentary-shaped memory text
+    - Digest Understanding prompt `attentional_v2.digest.v5` now frames `understanding` as concise content-level understanding from the current source text, with light section headings, text-type compression guidance, grammatical-subject guidance, and five approved real-unit examples to avoid unit/commentary-shaped or source-copying memory text
     - Unit Memory recall/retrieval/context framework is implemented: settlement writes one unit-centered ledger entry per accepted source unit, derives source / understanding / response / annotation retrieval documents, indexes them with SQLite FTS5, optionally indexes dense vectors through sqlite-vec + local Ollama, lets Ingest trigger bounded prior-reading recalls through `retrieve_unit_memory`, and writes retrieval/selection traces between `Ingest` and `Digest`
     - Digest now receives one top-level `ReadingMemory` block assembled by runtime from hot current-chapter Understanding plus selected long-distance Unit Memory Understanding; raw prior source, prior Response, and prior Annotation remain retrieval/audit surfaces only
     - current `Digest` has no path-redirection output contract and the Runner/audit path emits no Detour or source-backread runtime artifacts for new runs
