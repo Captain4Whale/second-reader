@@ -7,7 +7,7 @@ Update when: the current objective, active tasks, blockers, active jobs, open de
 
 This file is authoritative for durable current status. Do not keep unique active-state information only in `docs/agent-handoff.md`.
 
-Last verified: `2026-06-06T15:56:51+08:00`
+Last verified: `2026-06-06T16:30:01+08:00`
 
 ## Current Objective
 - The `Ingest -> Digest -> Reading Runner settlement` mechanism reframe is implemented; current work is fact alignment, smoke/diagnostic review, and calibration before any formal evaluation promotion.
@@ -89,10 +89,20 @@ Last verified: `2026-06-06T15:56:51+08:00`
       - health packet: `reading-companion-backend/eval/runs/attentional_v2/attentional_v2_unit_memory_text_only_smoke_value_20260606/analysis/unit_memory_retrieval_health/summary.json`
       - retrieval outcome before the new fix: `50` Unit Memory entries and `228` retrieval docs existed, but `selected_unit_count=0`, `renderable_selected_unit_count=0`, and `retrieved_line_total=0`
       - root cause found after the smoke: Runner passed the whole active Recent Reading Memory store as retrieval exclusions, which excluded nearly all prior units; this has been removed in code, but a post-fix smoke has not yet rerun
+    - post-R9 `text_only` diagnostic smoke:
+      - run id: `attentional_v2_unit_memory_text_only_smoke_xidaduo_post_r9_20260606`
+      - job id: `bgjob_unit_memory_text_only_smoke_xidaduo_post_r9_20260606`
+      - segment: `xidaduo_private_zh__segment_1`
+      - result: intentionally stopped after collecting retrieval-success evidence; no summary aggregate/report/usage files were generated
+      - health packet: `reading-companion-backend/eval/runs/attentional_v2/attentional_v2_unit_memory_text_only_smoke_xidaduo_post_r9_20260606/analysis/unit_memory_retrieval_health/summary.json`
+      - review packet: `reading-companion-backend/eval/runs/attentional_v2/attentional_v2_unit_memory_text_only_smoke_xidaduo_post_r9_20260606/analysis/unit_memory_retrieval_review/README.md`
+      - retrieval outcome: health status `ok`; `57` Unit Memory entries, `353` retrieval docs, `67` retrieval rows, `57` selection rows, `selected_unit_count=71`, `renderable_selected_unit_count=29`, `retrieved_line_total=45`, and `non_renderable_selected_unit_count=0`
+      - interpretation: the `text_only` Unit Memory path now proves selected prior Understanding can become prompt-visible long-distance `ReadingMemory`; `selected_but_not_rendered_count=26` was explained by `dedupe_hot_memory`
   - next step:
-    - rerun a no-judge post-repair smoke in `text_only` mode after the whole-Recent-Memory exclusion fix to prove prompt-visible `retrieved_line_count > 0` with renderable selected Unit Memory Understanding in real artifacts
+    - treat the non-hybrid retrieval path as mechanically repaired after the post-R9 smoke; inspect the review packet for relevance/pollution before changing recall prompt wording
+    - improve observability if needed so future selection traces can identify the exact selected Unit Memory ids that survive hot-memory dedupe into rendered retrieved lines
     - treat hybrid dense retrieval as blocked unless sqlite-vec, Ollama reachability, the configured Qwen embedding model, query embedding cache, vector rows, dense candidates, and RRF fusion are all validated
-    - do not run formal evaluation, update evidence catalog, or claim product quality until a no-judge smoke proves prompt-visible retrieved Understanding memory
+    - do not run formal evaluation, update evidence catalog, or claim product quality from the intentionally stopped diagnostic smoke; first review retrieved-memory relevance/pollution and decide whether to validate the environment-blocked hybrid dense path
     - use `docs/implementation/new-reading-mechanism/ingest-context-and-navigate-mapping.md` as the implementation reference for the landed first-slice `Ingest` XML context
     - use `docs/implementation/new-reading-mechanism/digest-understanding-response-annotation-design.md` as the implemented reference for the Digest prompt/output semantic refactor
     - use `docs/implementation/new-reading-mechanism/unit-memory-hybrid-retrieval-design.md` as the implemented reference for the Unit Memory storage/index/retrieval trace bottom framework

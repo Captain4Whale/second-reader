@@ -32,11 +32,13 @@ Completed or partially landed repair evidence:
 - Text-only retrieval has deterministic coverage for Chinese recall-meta wording, English concept recall, multi-recall aggregation, and empty-Understanding suppression.
 - Runtime boundary / horizon governance has deterministic coverage: a tool-stage `boundary_unresolved` trace no longer prevents runtime retrieval after the source unit has been accepted, and horizon gates record counts rather than only labels.
 - A first post-repair no-judge `text_only` smoke on `value_of_others_private_en__segment_1` completed the reading loop but failed the registered wrapper's strict LLM-health gate before summary generation. Its run-local retrieval health packet still showed no prompt-visible retrieved memory and exposed a new root cause: the Runner was passing the whole active Recent Reading Memory store as retrieval exclusions, which excluded all prior units by the end of the run. That exclusion bug has been removed in code and still needs a fresh smoke.
+- A post-R9 `text_only` diagnostic smoke on `xidaduo_private_zh__segment_1` was intentionally stopped after collecting retrieval-success evidence. Its run-local health packet is `ok`: `57` Unit Memory entries, `353` retrieval docs, `67` retrieval rows, `57` selection rows, `selected_unit_count=71`, `renderable_selected_unit_count=29`, `retrieved_line_total=45`, and `non_renderable_selected_unit_count=0`. This proves the non-hybrid retrieval path can select prior Understanding and render long-distance retrieved lines into Digest `ReadingMemory`.
 
 Current unresolved target:
 
-- No no-judge live smoke after the whole-Recent-Memory exclusion fix has yet proven prompt-visible long-distance retrieved Understanding lines in Digest `ReadingMemory`.
-- The goal remains active until at least one repair smoke demonstrates `retrieved_line_count > 0` with renderable selected Unit Memory Understanding.
+- The `text_only` path has passed a live diagnostic proof for prompt-visible long-distance retrieved Understanding lines in Digest `ReadingMemory`.
+- Hybrid dense retrieval remains environment-blocked because local Ollama / Qwen embedding service is unavailable; the goal should not claim hybrid success until dense candidates and RRF fusion are validated.
+- The latest smoke was intentionally stopped before full summary generation, so it is diagnostic repair evidence, not formal evaluation evidence.
 
 Current run-local health packet:
 
@@ -181,7 +183,7 @@ Each phase must leave behind a concrete pass/fail result.
 | Phase 4 | `passed_deterministic` | Runtime retrieval can continue after boundary acceptance even if the earlier tool-stage trace was `boundary_unresolved`; horizon gates now record current unit, recent exclusion, max retrievable unit, prior count, and minimum prior count. | Validate the gate counts in fresh smoke artifacts. |
 | Phase 5 | `passed_deterministic` | A selected non-empty Understanding from the real Unit Memory index renders into Digest `ReadingMemory`, and prior Response / Annotation / raw source stay out of prompt-facing memory. | Validate prompt-visible retrieved lines in a no-judge smoke. |
 | Phase 6 | `not_started` | None. | Calibrate Ingest recall prompt only after retrieval/search/rendering is mechanically functional. |
-| Phase 7 | `attempted_failed_pre_r9_fix` | A `text_only` smoke can complete the read loop, and the health packet can explain no-retrieval artifacts. | Re-run after the whole-Recent-Memory exclusion fix and produce a human-readable review packet with selected retrieved Understanding examples. |
+| Phase 7 | `passed_text_only_diagnostic_partial` | A post-R9 `text_only` smoke proved prompt-visible retrieved Understanding lines with health status `ok`, and produced a human-readable review packet. | Review retrieved-memory relevance/pollution; hybrid dense validation remains environment-blocked. |
 
 ### External Environment Handling
 
@@ -240,19 +242,15 @@ When Goal mode finishes or reaches a real blocker, it must produce:
 
 Continue from the smallest independent checks rather than jumping directly to a formal evaluation:
 
-1. Re-run a small no-judge post-repair smoke in `text_only` mode after the whole-Recent-Memory exclusion fix.
-2. Inspect the post-repair health packet for:
-   - prompt-visible `retrieved_line_count > 0`
-   - `renderable_selected_unit_count > 0`
-   - retrieval-layer suppression reasons when candidates are not renderable
-   - horizon counts for skipped retrieval rows
-3. Produce a small human-readable review packet with current source unit, recalls, selected Understanding lines, and Digest `ReadingMemory` snippets.
-4. Attempt Phase 2 only when environment can support it:
+1. Review the post-R9 `text_only` retrieval review packet for relevance and memory pollution:
+   - `reading-companion-backend/eval/runs/attentional_v2/attentional_v2_unit_memory_text_only_smoke_xidaduo_post_r9_20260606/analysis/unit_memory_retrieval_review/README.md`
+2. Improve observability if needed so future traces identify the exact selected Unit Memory ids that survive hot-memory dedupe into rendered retrieved lines.
+3. Attempt Phase 2 only when environment can support it:
    - sqlite-vec load works
    - Ollama is reachable
    - configured Qwen embedding model is available
    - query embedding cache and vector rows become nonzero
-5. Calibrate Ingest recall wording only after the post-repair smoke proves search / selection / rendering mechanics.
+4. Calibrate Ingest recall wording only after the retrieved-memory examples are reviewed for relevance and pollution.
 
 Do not tune Ingest recall wording until search, selection, renderability, and trace mechanics have been proven with deterministic cases. Otherwise prompt changes may hide mechanical retrieval failures.
 
@@ -667,19 +665,28 @@ Acceptance:
 
 ### Phase 7. End-To-End Diagnostic Validation
 
-Status: `attempted_failed_pre_r9_fix`
+Status: `passed_text_only_diagnostic_partial`
 
 Current evidence:
 
-- Run id: `attentional_v2_unit_memory_text_only_smoke_value_20260606`
-- Job id: `bgjob_unit_memory_text_only_smoke_value_20260606`
-- Segment: `value_of_others_private_en__segment_1`
-- Mode: `text_only`
-- The underlying read loop completed and wrote runtime artifacts, including `run_state.json` with `stage=completed`.
-- The registered wrapper exited `1` because strict LLM-health validation reported `llm_fallback_events_present`, so summary files were not generated.
-- The run-local retrieval health packet remained `needs_repair`: `50` Unit Memory entries, `228` retrieval docs, `63` retrieval rows, `50` selection rows, but `selected_unit_count=0`, `renderable_selected_unit_count=0`, and `retrieved_line_total=0`.
-- The smoke exposed R9: all active Recent Reading Memory source spans were passed into retrieval exclusions, preventing otherwise matching prior units from becoming candidates.
-- The R9 code repair has landed, but no post-R9 smoke has run yet.
+- Pre-R9 failed smoke:
+  - run id: `attentional_v2_unit_memory_text_only_smoke_value_20260606`
+  - job id: `bgjob_unit_memory_text_only_smoke_value_20260606`
+  - segment: `value_of_others_private_en__segment_1`
+  - mode: `text_only`
+  - underlying read loop completed, but wrapper exited `1` because strict LLM-health validation reported `llm_fallback_events_present`
+  - health packet remained `needs_repair`: `50` Unit Memory entries, `228` retrieval docs, `63` retrieval rows, `50` selection rows, `selected_unit_count=0`, `renderable_selected_unit_count=0`, `retrieved_line_total=0`
+  - exposed R9: all active Recent Reading Memory source spans were passed into retrieval exclusions
+- Post-R9 passing diagnostic:
+  - run id: `attentional_v2_unit_memory_text_only_smoke_xidaduo_post_r9_20260606`
+  - job id: `bgjob_unit_memory_text_only_smoke_xidaduo_post_r9_20260606`
+  - segment: `xidaduo_private_zh__segment_1`
+  - mode: `text_only`
+  - intentionally stopped after retrieval-success evidence was collected; summary aggregate/report/usage files are absent
+  - health packet: `reading-companion-backend/eval/runs/attentional_v2/attentional_v2_unit_memory_text_only_smoke_xidaduo_post_r9_20260606/analysis/unit_memory_retrieval_health/summary.json`
+  - review packet: `reading-companion-backend/eval/runs/attentional_v2/attentional_v2_unit_memory_text_only_smoke_xidaduo_post_r9_20260606/analysis/unit_memory_retrieval_review/README.md`
+  - health status `ok`: `57` Unit Memory entries, `353` retrieval docs, `67` retrieval rows, `57` selection rows, `selected_unit_count=71`, `renderable_selected_unit_count=29`, `retrieved_line_total=45`, `non_renderable_selected_unit_count=0`
+  - `selected_but_not_rendered_count=26` is explained by `dedupe_hot_memory`
 
 Goal:
 

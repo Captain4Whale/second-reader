@@ -1,6 +1,6 @@
 {
   "schema_version": 1,
-  "updated_at": "2026-06-06T07:59:02.211210Z",
+  "updated_at": "2026-06-06T08:31:45.578223Z",
   "entries": [
     {
       "run_id": "attentional_v2_excerpt_surface_v1_1_judged_20260406",
@@ -2375,6 +2375,34 @@
       "local_missing_allowed": [],
       "metadata": {},
       "updated_at": "2026-06-06T07:59:02.210762Z"
+    },
+    {
+      "run_id": "attentional_v2_unit_memory_text_only_smoke_xidaduo_post_r9_20260606",
+      "date": "2026-06-06",
+      "surface": "unit_memory_retrieval_repair_smoke",
+      "lane": "mechanism_eval_smoke",
+      "status": "abandoned",
+      "mechanisms": [
+        "attentional_v2"
+      ],
+      "dataset_or_manifest": [],
+      "run_dir": "reading-companion-backend/eval/runs/attentional_v2/attentional_v2_unit_memory_text_only_smoke_xidaduo_post_r9_20260606",
+      "summary_paths": {},
+      "job_ids": [
+        "bgjob_unit_memory_text_only_smoke_xidaduo_post_r9_20260606"
+      ],
+      "report_paths": [
+        "reading-companion-backend/eval/runs/attentional_v2/attentional_v2_unit_memory_text_only_smoke_xidaduo_post_r9_20260606/analysis/unit_memory_retrieval_health/README.md",
+        "reading-companion-backend/eval/runs/attentional_v2/attentional_v2_unit_memory_text_only_smoke_xidaduo_post_r9_20260606/analysis/unit_memory_retrieval_review/README.md"
+      ],
+      "catalog_status": "not_cataloged",
+      "notes": "Post-R9 no-judge text_only Unit Memory retrieval smoke on xidaduo was intentionally stopped after diagnostic success evidence was collected. Health packet is ok with 57 entries, 353 retrieval docs, selected_unit_count=71, renderable_selected_unit_count=29, and retrieved_line_total=45. No summary aggregate/report/usage files were generated; diagnostic only, no evidence catalog update.",
+      "parent_run_id": "",
+      "child_run_ids": [],
+      "synthetic": false,
+      "local_missing_allowed": [],
+      "metadata": {},
+      "updated_at": "2026-06-06T08:31:45.577768Z"
     }
   ]
 }
