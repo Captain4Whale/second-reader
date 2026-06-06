@@ -35,6 +35,170 @@ Ingest memory_recalls[]
 
 The goal is not to guarantee that every unit retrieves memory. The goal is that when prior memory is relevant and available, the retrieval path can find it, select it, render it into Digest, and leave enough trace evidence to explain the outcome.
 
+## Goal Execution Contract
+
+This section is the executable contract for running this repair track in Codex Goal mode. Treat the design baseline documents as locked unless the user explicitly asks to redesign the mechanism. Goal-mode work should fix implementation, tests, prompts, traces, health reports, and stable fact docs so the current design actually works.
+
+### Completion Definition
+
+The goal is complete only when all of these are true:
+
+1. A no-judge live smoke proves that at least one Digest prompt receives prompt-visible long-distance retrieved Understanding memory.
+2. The smoke artifact health report shows:
+   - `retrieved_line_count > 0`
+   - `renderable_selected_unit_count > 0`
+   - `selected_but_not_rendered_count = 0`, or every nonzero case has a specific suppression reason
+   - at least one selected retrieved Unit Memory entry has non-empty Understanding
+3. The retrieval trace can explain the path for each recall:
+   - skipped intentionally
+   - gated by horizon
+   - searched with lexical / dense / hybrid channels
+   - produced candidates
+   - selected or suppressed with reason
+   - rendered or not rendered with reason
+4. Settlement still writes the newly digested unit into Recent Reading Memory and Unit Memory.
+5. Digest `ReadingMemory` remains Understanding-only:
+   - no raw prior source text
+   - no prior Response
+   - no prior Annotation
+6. A small human-readable review packet lists the retrieved Understanding lines, the current source units that received them, and the reason those memories were selected.
+7. No formal judged eval, evidence-catalog update, Detour/backread revival, or concept/thread memory revival is used to satisfy the goal.
+
+If the mechanism can retrieve and render relevant prior Understanding in `text_only` mode but the local environment cannot support sqlite-vec / Ollama after reasonable repair attempts, the goal may not be marked fully complete. It should instead be reported as:
+
+```text
+text_only retrieval path passed; hybrid vector path blocked by environment.
+```
+
+Goal mode should then continue through all non-hybrid phases before stopping, and the final report must include the exact hybrid blocker.
+
+### Allowed Changes
+
+Goal-mode repair may change:
+
+- Unit Memory index and retrieval implementation
+- sqlite-vec adapter, vector-table creation, vector catch-up, and embedding-cache code
+- Ollama embedding adapter health checks and timeout/degradation handling
+- FTS5 query builder, lexical query normalization, and lexical candidate thresholds
+- RRF / aggregation / scoring / selection / dedupe logic
+- retrieval horizon gates and recent-neighbor exclusion policy
+- boundary-governance integration when retrieval should run from the runtime-accepted source unit
+- Digest `ReadingMemory` renderer and budget/suppression trace
+- retrieval trace shape and health-report scripts
+- deterministic tests and no-judge smoke harnesses
+- Ingest recall prompt wording, but only after retrieval/search/rendering is proven mechanically functional
+- stable facts docs required by the changed behavior
+
+### Disallowed Changes
+
+Goal-mode repair must not:
+
+- restore Detour, source-backread, source-skill, `look_back`, or old source-skill loops
+- restore concept registry, thread trace, or content-typed long-memory stores
+- inject raw prior source text into Digest as a workaround
+- place prior Response or prior Annotation into Digest `ReadingMemory`
+- expose retrieved memory content or selected memory ids back to Ingest through tool results
+- make Ingest choose final memory entries
+- count hot recent memory as long-distance retrieval success
+- update the evidence catalog
+- run a formal judged evaluation unless the user explicitly asks for it after no-judge retrieval smoke passes
+
+### Known-Answer Fixtures
+
+Before relying on live reading behavior, Goal mode should create or reuse deterministic known-answer fixtures. These fixtures should be tiny and local to tests or scratch health checks; they are not product data.
+
+Minimum fixture set:
+
+1. Chinese lexical exact / near-exact recall
+   - prior Unit Memory Understanding contains a distinctive Chinese phrase or named concept
+   - recall text should retrieve that prior unit through FTS
+2. Chinese paraphrase recall
+   - recall text does not share exact wording with the prior Understanding
+   - dense retrieval should retrieve the prior unit in hybrid mode
+3. English concept recall
+   - prior Understanding contains an English claim or definition
+   - text-only and hybrid channels should both produce candidates when appropriate
+4. Multi-recall aggregation
+   - two recalls retrieve overlapping candidate units
+   - aggregation dedupes by unit and preserves recall-match metadata
+5. Non-renderable candidate defense
+   - a retrieval doc matches a unit with empty Understanding
+   - final selection suppresses it with `candidate_not_renderable_empty_understanding`
+6. Hot-neighbor exclusion
+   - a recent unit matches strongly
+   - it is excluded or deduped from long-distance retrieved lines because it already belongs to hot memory
+7. Boundary fallback
+   - the raw boundary attempt is unresolved but runtime accepts a source unit
+   - retrieval still runs from the accepted source unit / accepted recalls instead of stopping at `boundary_unresolved`
+
+The fixture pass should verify known expected unit ids, not only nonzero candidate counts.
+
+### Phase Exit Gates
+
+Each phase must leave behind a concrete pass/fail result.
+
+- Phase 0 exits only when the health packet reproduces the five-window diagnostic facts from artifacts.
+- Phase 1 exits only when every selected-but-not-rendered candidate has a machine-readable reason.
+- Phase 2 exits only when hybrid can show indexed vectors, query embeddings, dense candidates, and RRF fusion on a known-answer case, or the environment blocker is explicitly recorded.
+- Phase 3 exits only when text-only known-answer probes retrieve expected prior units.
+- Phase 4 exits only when horizon and boundary gates are counted and explainable, and boundary fallback can still run retrieval when an accepted source unit exists.
+- Phase 5 exits only when a selected non-empty Understanding can be rendered into Digest `ReadingMemory`.
+- Phase 6 exits only when recall prompt calibration is tested after the retrieval path is already mechanically functional.
+- Phase 7 exits only when a no-judge smoke shows prompt-visible retrieved Understanding lines and a review packet confirms they are relevant enough for continued reading.
+
+### External Environment Handling
+
+Hybrid depends on local sqlite-vec and Ollama. Goal mode should handle those as repairable environment dependencies, not as silent degradations.
+
+Required behavior:
+
+- If sqlite-vec is missing, attempt to install/load it through the backend environment or document the exact unsupported state.
+- If Ollama is unavailable, check whether the service is reachable and whether the configured Qwen embedding model is installed.
+- If embedding fails, record model name, endpoint, timeout, and error category without printing secrets.
+- If hybrid is blocked, continue repairing and validating text-only, selection, rendering, and trace behavior.
+- Do not report hybrid success unless dense candidates actually contribute to at least one known-answer retrieval or smoke retrieval.
+
+### Automatic Repair Loop
+
+Use this loop for each phase:
+
+1. Add or identify the smallest test / health check that exposes the current failure.
+2. Run it and record the failure layer:
+   - ledger/index
+   - lexical query
+   - vector/embedding
+   - fusion/aggregation
+   - horizon gate
+   - boundary gate
+   - selection/renderability
+   - budget/rendering
+   - Ingest recall prompt
+3. Implement the smallest fitting fix.
+4. Re-run the targeted checks.
+5. Update this document's phase status if the phase passes or a new blocker is discovered.
+6. Update stable docs only when behavior or operator expectations changed.
+7. Commit the completed slice after checks, following workspace rules.
+
+Goal mode should not stop merely because one layer is blocked if later independent layers can still be validated. For example, a hybrid vector blocker should not prevent text-only fixture tests, selection/rendering fixes, trace improvements, or no-judge text-only smoke from being completed.
+
+### Required Final Deliverables
+
+When Goal mode finishes or reaches a real blocker, it must produce:
+
+- changed-code summary
+- changed-doc summary
+- tests and checks run
+- retrieval health report path
+- known-answer fixture result summary
+- no-judge smoke run id / path, if run
+- hot vs retrieved ReadingMemory summary
+- selected retrieved Understanding examples
+- unresolved blockers, grouped by:
+  - environment
+  - implementation
+  - prompt
+  - evaluation/review
+
 ## Current Failure Summary
 
 The five-window diagnostic proved that the retrieval surface is structurally present but not mechanism-effective.
