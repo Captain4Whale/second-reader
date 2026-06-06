@@ -89,6 +89,67 @@ Ingest memory_recalls[]
 
 The goal is not to guarantee that every unit retrieves memory. The goal is that when prior memory is relevant and available, the retrieval path can find it, select it, render it into Digest, and leave enough trace evidence to explain the outcome.
 
+## Current Stage Scope
+
+This stage is about proving and repairing the mechanism path, not optimizing subjective reading quality. The next work should stay inside these boundaries.
+
+### In Scope
+
+- Prove the live `hybrid` path with current local infrastructure:
+  - real Qwen query embeddings
+  - `unit_understanding` vector rows
+  - dense candidates
+  - RRF / aggregation contribution
+  - no silent fallback to text-only when hybrid dependencies are available
+- Validate the Unit Memory write/index chain:
+  - settlement writes Unit Memory entries
+  - retrieval docs are derived for source, Understanding, Response, and Annotation surfaces
+  - only `unit_understanding` is dense-vector indexed
+  - query embeddings are cached and traceable
+- Validate the retrieval chain:
+  - Ingest emits bounded `memory_recalls[]`
+  - runtime executes multi-recall retrieval
+  - FTS, dense, RRF, and unit aggregation traces are inspectable
+  - at least one known-answer scenario retrieves the expected prior Understanding
+- Validate selection and suppression:
+  - empty Understanding candidates cannot enter Digest `ReadingMemory`
+  - auxiliary-source matches cannot bypass the Understanding-backed selection gate
+  - prompt-visible hot-memory exclusion does not eliminate all long-distance candidates
+  - weak candidates can be suppressed instead of filling the budget
+- Validate Digest `ReadingMemory` rendering:
+  - selected renderable long-distance Understanding lines appear in the top-level Digest `ReadingMemory`
+  - the post-R16 selected-but-not-rendered / `hot_budget_exceeded` behavior is either fixed or explained with precise trace evidence
+  - Digest memory remains Understanding-only, with no raw prior source, prior Response, or prior Annotation
+- Validate trace and health reporting:
+  - degradation reasons are explicit when hybrid falls back or fails
+  - health packets explain recall, retrieval, dense, selection, rendering, suppression, and settlement outcomes
+
+### Out Of Scope
+
+- Subjective quality tuning for `understanding`, `response`, or `annotations`, unless a prompt/contract failure prevents required output.
+- Formal judged evaluation, run-ledger promotion, or evidence-catalog update.
+- New memory-store architecture, new retrieval data model, or redesign of the locked Unit Memory documents.
+- Revival of retired Detour, source-backread, source-skill, concept registry, or thread trace mechanisms.
+- Relevance polishing for isolated examples after the mechanism path is demonstrably working.
+- Infinite prompt/threshold tuning. Fix mechanism breakages, systemic mis-selection, silent degradation, selected-but-not-rendered failures, and trace gaps; record weaker subjective observations as follow-up review findings.
+
+### Completion Standard For This Stage
+
+This stage can stop when deterministic fixtures plus one no-judge live hybrid smoke show the complete observable path:
+
+```text
+Digest settlement
+-> Unit Memory writeback and indexing
+-> Ingest recall
+-> FTS + dense retrieval
+-> RRF / unit aggregation
+-> runtime-owned selection and suppression
+-> top-level Digest ReadingMemory with long-distance Understanding lines
+-> next settlement writeback
+```
+
+The smoke does not need to prove that every unit recalls memory, and it does not need to prove subjective improvement in reading quality. It does need to prove that the designed mechanism is alive, traceable, and capable of retrieving and rendering relevant prior Understanding when such memory exists.
+
 ## Goal Execution Contract
 
 This section is the executable contract for running this repair track in Codex Goal mode. Treat the design baseline documents as locked unless the user explicitly asks to redesign the mechanism. Goal-mode work should fix implementation, tests, prompts, traces, health reports, and stable fact docs so the current design actually works.
@@ -98,7 +159,7 @@ This section is the executable contract for running this repair track in Codex G
 Use this objective if the work is launched through Codex Goal mode:
 
 ```text
-Make the current attentional_v2 Unit Memory retrieval path conform to the locked design: Ingest expresses bounded prior-reading recalls, runtime retrieves/selects prior Unit Memory Understanding, Digest receives prompt-visible ReadingMemory, and settlement writes the new Unit Memory entry. Diagnose and repair implementation, prompt calibration, trace, health-report, and test gaps until the mechanism can demonstrate the path with deterministic fixtures plus a no-judge live smoke. Do not redesign the mechanism, do not update the evidence catalog, and do not revive retired Detour/backread or concept/thread stores.
+Make the current attentional_v2 Unit Memory retrieval path conform to the locked design: Ingest expresses bounded prior-reading recalls, runtime retrieves/selects prior Unit Memory Understanding, Digest receives prompt-visible ReadingMemory, and settlement writes the new Unit Memory entry. Diagnose and repair implementation, prompt-contract, retrieval, selection, rendering, trace, health-report, and test gaps until the mechanism can demonstrate write/index/retrieve/select/render/settle with deterministic fixtures plus a no-judge live hybrid smoke. Do not redesign the mechanism, do not optimize subjective Digest quality, do not tune indefinitely for isolated relevance examples, do not update the evidence catalog, and do not revive retired Detour/backread or concept/thread stores.
 ```
 
 ### Goal-Mode Launch Packet
@@ -943,7 +1004,7 @@ Acceptance:
 
 ### Phase 2. Hybrid Vector Path Repair
 
-Status: `partially_validated_fake_embedder_deferred_environment`
+Status: `environment_ready_live_smoke_pending`
 
 Current evidence:
 
@@ -952,6 +1013,7 @@ Current evidence:
 - The sqlite-vec adapter now enables SQLite extension loading before calling `sqlite_vec.load(...)`; vec0 table creation with `distance_metric=cosine` is locally verified.
 - Deterministic fake-embedder coverage verifies the code path that writes `unit_understanding` vector rows, caches query embeddings, runs sqlite-vec KNN, filters distant dense candidates with `dense_max_distance`, and selects a dense-channel result.
 - Current machine now has the Ollama App CLI on PATH, `127.0.0.1:11434` serves embeddings, and the configured `qwen3-embedding:0.6b` model returns `1024`-dimension vectors.
+- `reading-companion-backend/scripts/check_unit_memory_hybrid_readiness.py` is the repeatable readiness gate; current local status is `ok`.
 
 Goal:
 
