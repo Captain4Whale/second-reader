@@ -67,11 +67,11 @@ DEFAULT_RETRIEVAL_CONFIG: dict[str, object] = {
     "recent_neighbor_exclusion_unit_count": 20,
     "min_retrievable_prior_units": 20,
     "retrieval_total_timeout_ms": 800,
-    "query_embedding_timeout_ms": 500,
+    "query_embedding_timeout_ms": 3000,
     "fts_timeout_ms": 100,
     "vector_timeout_ms": 250,
     "aggregation_timeout_ms": 50,
-    "vector_index_write_budget_ms": 1000,
+    "vector_index_write_budget_ms": 3000,
 }
 
 SURFACE_CHANNEL_WEIGHTS: dict[str, dict[str, float]] = {
@@ -958,7 +958,7 @@ class UnitMemoryIndex:
             deadline = time.monotonic() + max(0.05, budget_ms / 1000)
             embedder = OllamaEmbedder(
                 model_id=str(self.config.get("ollama_model_id", "qwen3-embedding:0.6b") or "qwen3-embedding:0.6b"),
-                timeout_ms=min(500, max(50, budget_ms)),
+                timeout_ms=max(200, min(5000, budget_ms)),
             )
             indexed = 0
             last_error = None

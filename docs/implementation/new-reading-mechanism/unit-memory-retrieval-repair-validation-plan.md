@@ -48,12 +48,14 @@ Completed or partially landed repair evidence:
 - R13 selection-quality gating is now validated in `text_only` diagnostics with a boundary caveat: after aggregation and renderability checks, candidates must show strong enough `unit_understanding` evidence or stricter auxiliary-surface evidence before final selection. Weak candidates are suppressed with `candidate_below_selection_quality_threshold`; tests cover both "strong candidate survives while weak filler is suppressed" and "all candidates weak means no long-distance selection"; the post-R13 smoke rendered retrieved Understanding while suppressing weak candidates. Review of that smoke also exposed a separate boundary bug: an ASCII-quote anchor failed against Chinese curved quotes and fallback accepted a one-character closing-quote unit. That bug is tracked as R14 and now has live smoke evidence for quote-normalized matching.
 - A mature post-R15 `text_only` smoke on `xidaduo_private_zh__segment_1` was intentionally stopped after long-distance retrieval evidence. Its run-local health packet is `ok`: `43` Unit Memory entries, `261` retrieval docs, `46` retrieval rows, `44` selection rows, `selected_unit_count=5`, `retrieved_line_total=5`, `rendered_retrieved_unique_unit_count=3`, and `selected_but_not_rendered_count=0`. Review found that selected memories could still be broad because auxiliary-surface matches with weak Understanding evidence were allowed through. This is tracked as R16 / Phase 6H.
 - R16 auxiliary-backed Understanding gating is now validated in `text_only` diagnostics. Auxiliary surfaces still participate in FTS/search and aggregation, but an auxiliary-backed candidate must also have enough `unit_understanding` score/rank before it can enter Digest `ReadingMemory`. Deterministic tests cover both suppression of a weak auxiliary match and preservation of an auxiliary match with Understanding backing. The post-R16 smoke rendered `2` retrieved Understanding lines from `2` unique units while suppressing `33` weak candidates with `candidate_below_selection_quality_threshold`.
+- The post-R16 selected-but-not-rendered finding has been reclassified as a health-report accounting issue, not a live ReadingMemory rendering failure. The stopped smoke had `3` retrieval-selected units in the final retrieval row with no following `unit_memory_reading_memory_selection` row because execution was intentionally terminated after retrieval evidence. The health script now reports those units as `pending_selection_selected_units` instead of `selected_but_not_rendered`.
 - Ingest prompt `attentional_v2.ingest.v6` / promptset `attentional_v2-phase6-v56` tightened recall contract after that smoke exposed language/basis drift: model-side recall text should use the current source text's primary language, preserve source-form names/terms when available, and keep `basis` exactly `selected_source_unit`.
 - A pre-contract Ingest-v6 `text_only` smoke on `xidaduo_private_zh__segment_1` confirmed that prompt wording alone was insufficient: a Chinese source unit produced an English recall with `basis = selected_source_unit`. The run was intentionally stopped and recorded as diagnostic-only.
 - The Ingest structured-output contract now validates recall language against the current source text, and the `retrieve_unit_memory` action-tool preflight runs the same validator before retrieval execution. If the model emits a cross-language recall or other contract-violating recall payload, the tool returns `contract_violation` metadata so the forced final-output path can repair the result instead of silently retrieving on a bad recall.
 - A post-contract Ingest-v6 `text_only` smoke on `xidaduo_private_zh__segment_1` was intentionally stopped after an early sample. The run-local recall-language review saw zero language violations in reviewed unique recalls and only `selected_source_unit` model-side basis values. Its retrieval health remained `needs_repair` because the run stopped before the long-distance retrieval horizon matured; it is not a replacement for the earlier prompt-visible retrieval smokes.
+- A post-timeout-fix live `hybrid` smoke on `xidaduo_private_zh__segment_1` was intentionally stopped after enough dense retrieval and Digest ReadingMemory evidence was collected. Its run-local health packet is `ok`: `47` Unit Memory entries, `313` retrieval docs, `47` `unit_understanding` vector rows, `2` real Qwen query embedding cache rows, `21` dense docs, `21` lexical docs, `11` selected units, `8` renderable selected units, `11` retrieved ReadingMemory lines, `8` unique rendered retrieved units, `selected_but_not_rendered_count=0`, and `pending_selection_selected_unit_count=0`. This validates the live hybrid path for the current repair target without running a formal evaluation or updating the evidence catalog.
 
-Current unresolved target:
+Current target status:
 
 - The `text_only` path has passed a live diagnostic proof for prompt-visible long-distance retrieved Understanding lines in Digest `ReadingMemory`.
 - Understanding-prioritized lexical ranking still retrieves and renders prior Understanding in live artifacts; the remaining text-only issue is relevance calibration, not mechanical renderability.
@@ -63,15 +65,61 @@ Current unresolved target:
 - The current non-hybrid selection-quality target is now validated in a no-judge `text_only` diagnostic: R13 suppressed weak broad candidates with explicit score/rank/surface-quality reasons while still rendering prompt-visible retrieved Understanding.
 - The post-R14 diagnostic validated the quote-normalized live path: the run observed `4` `normalized_exact_text` matches and did not reproduce the old `src:c1:p125@63-p125@64` fallback; the Buddha recognition scene landed as a full source unit. The same run exposed R15: if a successful exact anchor stops immediately before a closing quote, the quote can become a one-character remainder unit. R15 now has deterministic and live `text_only` smoke coverage: the post-R15 smoke observed `9` trailing-closing-punctuation extensions and `tiny_unit_count=0` through the prior p116 failure region.
 - Mature post-R15 retrieval evidence is now collected. It validated prompt-visible retrieval after the boundary fixes, but showed broad auxiliary-backed selections. R16 narrows this by requiring auxiliary-selected candidates to have Understanding backing; the post-R16 smoke validated this gate while preserving nonzero prompt-visible retrieved memory.
-- The next non-hybrid target is ReadingMemory budget/rendering discipline: the post-R16 smoke selected `5` renderable units, but only `2` retrieved lines rendered, with `selected_but_not_rendered_count=3` and health-level suppression dominated by `hot_budget_exceeded`.
-- The narrow Ingest v6 language/basis contract is validated by deterministic tests and an observed early live sample. After ReadingMemory budget/rendering discipline is stable, continue relevance calibration only if reviewed recalls / rendered memories remain too broad; otherwise the main unresolved target is live hybrid dense validation.
-- Hybrid dense retrieval is environment-ready but not yet live-smoke validated; the goal should not claim live hybrid success until real Qwen embeddings, dense candidates, and RRF fusion are visible in current retrieval artifacts.
+- The post-R16 ReadingMemory rendering concern is now resolved as a diagnostic-accounting issue: the stopped smoke ended after a retrieval row selected `3` units but before a corresponding selection/rendering row could exist. Current health logic reports this as `pending_selection_selected_unit_count`, not `selected_but_not_rendered_count`. There is no active non-hybrid rendering bug from that sample.
+- The narrow Ingest v6 language/basis contract is validated by deterministic tests and an observed early live sample. Continue relevance calibration only if later reviewed mature samples show a systemic broad-recall or broad-selection pattern after hybrid mechanics are validated; do not treat isolated weak relevance examples as a blocker for mechanism-conformance completion.
+- Hybrid dense retrieval is now validated by live no-judge diagnostic artifacts for the current repair target: real Qwen query embeddings, indexed `unit_understanding` vector rows, dense candidates, lexical candidates, runtime selection, prompt-visible retrieved Understanding, and downstream settlement/writeback were all observed in the post-timeout-fix smoke.
+- The first live hybrid smoke exposed a code-owned timeout/config issue rather than a missing-service environment blocker: `qwen3-embedding:0.6b` was available, but the previous `500ms` query/vector embedding timeout could time out the first local Ollama embedding call and silently degrade retrieval to text-only. The timeout/vector-budget fix plus the post-timeout-fix live smoke now validate the dense path.
 - The latest smoke was intentionally stopped before full summary generation, so it is diagnostic repair evidence, not formal evaluation evidence.
 
 Current run-local health packet:
 
 - JSON: `reading-companion-backend/eval/runs/attentional_v2/attentional_v2_ingest_digest_unit_memory_full_diagnostic_20260603_parallel5/analysis/unit_memory_retrieval_health/summary.json`
 - Markdown: `reading-companion-backend/eval/runs/attentional_v2/attentional_v2_ingest_digest_unit_memory_full_diagnostic_20260603_parallel5/analysis/unit_memory_retrieval_health/README.md`
+- Latest live hybrid health JSON: `reading-companion-backend/eval/runs/attentional_v2/attentional_v2_unit_memory_hybrid_smoke_xidaduo_phase2_r1_20260606/analysis/unit_memory_retrieval_health/summary.json`
+- Latest live hybrid review: `reading-companion-backend/eval/runs/attentional_v2/attentional_v2_unit_memory_hybrid_smoke_xidaduo_phase2_r1_20260606/analysis/unit_memory_retrieval_review/README.md`
+
+## Current Narrow Objective
+
+Status: `validated_live_hybrid_diagnostic`
+
+This Goal-mode target focuses on making the current retrieval mechanism truly usable, not on broad quality optimization. The immediate objective was:
+
+```text
+Validate and repair live hybrid Unit Memory retrieval until current artifacts show real Qwen query embeddings, indexed unit_understanding vectors, dense candidates, RRF / aggregation contribution, runtime-selected prior Understanding, prompt-visible Digest ReadingMemory retrieved lines, and settlement writeback after that Digest call.
+```
+
+This objective is considered satisfied when the executor can show all of the following in deterministic tests plus one no-judge live hybrid smoke:
+
+- `memory_retrieval_config.mode = hybrid`
+- sqlite-vec is loaded and vector rows exist for `unit_understanding`
+- query embedding cache rows are created from real `qwen3-embedding:0.6b` calls
+- retrieval trace rows show dense candidates or an explicit dense contribution path
+- effective search does not silently degrade to `text_only` when the environment is available
+- runtime selection chooses at least one prior Unit Memory entry with non-empty Understanding
+- Digest prompt-facing `ReadingMemory` contains at least one long-distance retrieved Understanding line, distinct from hot current-chapter memory
+- the next Digest settlement writes a new Unit Memory entry and derived retrieval docs
+- the health report distinguishes rendered retrieved lines, selected-but-not-rendered lines, pending-selection-after-stop lines, hot-memory lines, and suppression reasons
+
+Goal-mode execution should not spend time on these items unless they directly block the objective above:
+
+- polishing subjective `Understanding`, `Response`, or `Annotation` quality
+- optimizing isolated relevance examples after the mechanism path works
+- changing the locked Unit Memory storage/index/retrieval design
+- redesigning Ingest recall into another LLM call or making Ingest choose final memories
+- putting prior source text, prior Response, or prior Annotation into Digest `ReadingMemory`
+- running formal judged eval or updating the evidence catalog
+
+If live hybrid fails again, the executor should first decide whether the failure is:
+
+- `environment`: Ollama / model / sqlite-vec unavailable despite readiness checks
+- `embedding_timeout`: service available but query/vector timeout or budget too low
+- `indexing`: Unit Memory entries exist but `unit_understanding` vector rows are missing or pending forever
+- `retrieval`: vector rows and query embeddings exist but dense candidates are zero or filtered away
+- `fusion_selection`: candidates exist but RRF / aggregation / selection never chooses renderable prior Understanding
+- `rendering`: selected renderable prior Understanding does not enter Digest `ReadingMemory`
+- `settlement`: Digest runs but new Unit Memory writeback/indexing fails
+
+Only the specific failing layer should be repaired. Other already validated layers should not be reopened without new evidence.
 
 ## Goal
 
@@ -118,7 +166,7 @@ This stage is about proving and repairing the mechanism path, not optimizing sub
   - weak candidates can be suppressed instead of filling the budget
 - Validate Digest `ReadingMemory` rendering:
   - selected renderable long-distance Understanding lines appear in the top-level Digest `ReadingMemory`
-  - the post-R16 selected-but-not-rendered / `hot_budget_exceeded` behavior is either fixed or explained with precise trace evidence
+  - selected-but-not-rendered findings are separated from pending-selection-after-stop findings and each true rendering miss has precise trace evidence
   - Digest memory remains Understanding-only, with no raw prior source, prior Response, or prior Annotation
 - Validate trace and health reporting:
   - degradation reasons are explicit when hybrid falls back or fails
@@ -288,11 +336,12 @@ Disallowed document updates inside the goal:
 
 The goal is complete only when all of these are true:
 
-1. A no-judge live smoke proves that at least one Digest prompt receives prompt-visible long-distance retrieved Understanding memory.
+1. A no-judge live hybrid smoke proves that at least one Digest prompt receives prompt-visible long-distance retrieved Understanding memory.
 2. The smoke artifact health report shows:
    - `retrieved_line_total > 0` or an equivalent reviewed retrieved-line metric
    - `renderable_selected_unit_count > 0`
    - every selected-but-not-rendered case has a specific suppression / dedupe / budget reason
+   - every retrieval-selected unit without a following selection/rendering row is counted separately as pending because the smoke stopped before the next stage, not as a rendering failure
    - at least one selected retrieved Unit Memory entry has non-empty Understanding
    - rendered retrieved unit ids are machine-readable in the selection trace or health packet
 3. The retrieval trace can explain the path for each recall:
@@ -307,8 +356,13 @@ The goal is complete only when all of these are true:
    - no raw prior source text
    - no prior Response
    - no prior Annotation
-6. A small human-readable review packet lists the retrieved Understanding lines, the current source units that received them, and the reason those memories were selected.
-7. No formal judged eval, evidence-catalog update, Detour/backread revival, or concept/thread memory revival is used to satisfy the goal.
+6. The hybrid path itself is visible:
+   - `unit_understanding` vector rows exist
+   - real Qwen query embedding cache rows exist
+   - dense candidate counts or dense contribution are nonzero in at least one mature retrieval
+   - any degradation reason is local to a specific recall or stage, not a blanket silent fallback
+7. A small human-readable review packet lists the retrieved Understanding lines, the current source units that received them, and the reason those memories were selected.
+8. No formal judged eval, evidence-catalog update, Detour/backread revival, or concept/thread memory revival is used to satisfy the goal.
 
 If the mechanism can retrieve and render relevant prior Understanding in `text_only` mode but the local environment cannot support sqlite-vec / Ollama after reasonable repair attempts, the goal may not be marked fully complete. It should instead be reported as:
 
@@ -363,12 +417,14 @@ Use this matrix to keep automatic repair work on the intended path. The design b
 | No Unit Memory entries or retrieval docs are written after Digest settlement | ledger / settlement | fix writeback, entry derivation, artifact paths, trace creation | deterministic writeback test plus run-local sqlite row counts | continue until settlement writes new entry or a repo/runtime blocker prevents writing |
 | Retrieval trace exists but candidate counts are zero for obvious known-answer recall | FTS query / lexical index / vector adapter | fix tokenizer/query builder, FTS table wiring, vector degradation handling | known-answer fixture retrieves expected unit id; trace shows channel counts | continue through text-only even if hybrid is environment-blocked |
 | Selected units exist but Digest receives no retrieved lines | renderability / ReadingMemory packaging | fix empty-Understanding suppression, hot-memory dedupe reason, token-budget rendering, trace fields | selection trace has render/suppress reasons and Digest prompt manifest contains retrieved Understanding lines | continue until every selected-but-not-rendered case has a machine-readable reason |
+| Retrieval row selects units but the smoke stops before a matching ReadingMemory selection row exists | health report / smoke interpretation | count those units as `pending_selection_selected_units`; do not label them selected-but-not-rendered | health packet separates pending-after-stop from true render failure | continue with a longer or better-timed smoke only if the next proof requires render-stage evidence |
 | One recall renders a large broad pack of loosely related prior memories | selection / budget discipline | add per-recall cap, score threshold, rank-gap threshold, or selected-set policy; preserve Understanding-only memory | deterministic cap/threshold fixture plus no-judge smoke review of rendered unit ids | continue; this is implementation calibration, not design failure |
 | Hot-memory exclusion removes the strongest nearby matches and selection fills long-distance slots with weak broad candidates | selection quality gate | add minimum score/rank/surface-evidence gates, auxiliary-only thresholds, or explicit no-fill behavior; preserve runtime-owned selection | deterministic weak-filler fixture plus post-smoke review showing weak candidates suppressed with reasons | continue; do not rewrite Ingest recall prompt until selection can decline low-quality candidates |
 | Ingest returns an anchor with straight quotes while source text uses curved quotes, causing deterministic fallback to accept a tiny structural unit | boundary anchor resolution | add quote-normalized exact matching that maps back to true source offsets; keep semantic/paraphrase matching disallowed | resolver fixture with ASCII anchor over curved-quote source; post-R14 smoke should show normalized matches and no old p125 fallback | continue; this is runtime boundary governance, not Ingest recall redesign |
 | Ingest returns an anchor that ends before an immediately adjacent closing quote, leaving the quote as a one-character remainder unit | boundary anchor resolution | extend exact and quote-normalized matches over trailing closing punctuation before accepting the cursor | resolver fixture plus real-source replay for the p116 quote remainder; later smoke should avoid quote-only remainder units | continue; this is runtime boundary governance, not Ingest recall redesign |
 | Ingest emits broad generic recalls where no specific memory is needed | Ingest recall prompt | tune `RecallPriorReading` wording after retrieval mechanics are proven | no-judge smoke review showing fewer generic recalls without disabling useful recalls | continue after selection/rendering mechanics are already validated |
 | Hybrid mode degrades to text-only because Ollama or Qwen embedding is unavailable | environment / vector adapter | repair adapter if code-owned; otherwise record service/model blocker and keep text-only validation moving | sqlite-vec import/load check, deterministic fake-embedder dense-path test, Ollama reachability/model check, trace degradation reason | do not stop other phases; report `deferred_environment` for live hybrid only |
+| Hybrid mode degrades to text-only even though sqlite-vec, Ollama, and Qwen are available | embedding timeout / vector budget / dense adapter | raise or tune embedding timeout and vector write budget, repair query cache or vector catch-up, and re-run readiness plus live dense probe | controlled live Qwen probe shows vector rows, query cache rows, dense candidates, and `effective_mode = hybrid`; no-judge smoke confirms this in reading artifacts | continue; this is code-owned unless readiness fails again |
 | Retrieved memory is visible but subjectively weak or not very helpful | review / prompt calibration | create review packet; tune only if pattern is mechanical or prompt-contract related | examples with source unit, recall, rendered memory, and suspected layer | do not mark goal complete on subjective quality alone, but do not block mechanical validation if chain works |
 
 ### Current Selection-Discipline Slice
@@ -489,7 +545,7 @@ Each phase must leave behind a concrete pass/fail result.
 | --- | --- | --- | --- |
 | Phase 0 | `passed_initial` | The health packet reproduces the five-window failure and separates hot memory, retrieved memory, selected candidates, renderability, vector availability, and degradation facts. | Keep the packet updated as later trace fields change. |
 | Phase 1 | `passed_deterministic` | Selected-but-not-rendered candidates are no longer invisible; retrieval-layer suppressed candidates are counted by reason; empty/missing Understanding is suppressed before selection. | Run a fresh post-repair smoke to prove the trace behavior in real artifacts. |
-| Phase 2 | `environment_ready_live_smoke_pending` | sqlite-vec can be imported and loaded locally after the adapter fix; deterministic fake-embedder coverage proves vector rows, query embedding cache, dense candidates, dense distance filtering, and dense-channel selection work in code. `scripts/check_unit_memory_hybrid_readiness.py` now verifies readiness repeatably; latest local probe is `ok` with Ollama App + `qwen3-embedding:0.6b` and `1024`-dimension embeddings. | Run a live hybrid retrieval smoke before claiming real Qwen query embeddings, live dense candidates, and live RRF fusion are validated. |
+| Phase 2 | `validated_live_hybrid_diagnostic` | sqlite-vec can be imported and loaded locally after the adapter fix; deterministic fake-embedder coverage proves vector rows, query embedding cache, dense candidates, dense distance filtering, and dense-channel selection work in code. `scripts/check_unit_memory_hybrid_readiness.py` now verifies readiness repeatably; latest local probe is `ok` with Ollama App + `qwen3-embedding:0.6b` and `1024`-dimension embeddings. The first live hybrid smoke exposed an embedding-timeout degradation, and the raised-timeout path now has a live no-judge smoke with `unit_understanding` vector rows, real Qwen query cache rows, dense candidates, lexical candidates, and `effective_mode=hybrid`. | No active Phase 2 repair remains; keep the health/review packet as diagnostic evidence and do not treat it as formal evaluation evidence. |
 | Phase 3 | `passed_deterministic_text_only` | Text-only FTS retrieves known Chinese and English prior Understanding; multi-recall aggregation preserves recall-match metadata; empty-Understanding candidates are suppressed. | Validate with a post-repair no-judge smoke; dense paraphrase remains Phase 2-dependent. |
 | Phase 4 | `passed_deterministic` | Runtime retrieval can continue after boundary acceptance even if the earlier tool-stage trace was `boundary_unresolved`; horizon gates now record current unit, recent exclusion, max retrievable unit, prior count, and minimum prior count. | Validate the gate counts in fresh smoke artifacts. |
 | Phase 5 | `passed_deterministic` | A selected non-empty Understanding from the real Unit Memory index renders into Digest `ReadingMemory`, and prior Response / Annotation / raw source stay out of prompt-facing memory. | Validate prompt-visible retrieved lines in a no-judge smoke. |
@@ -500,8 +556,8 @@ Each phase must leave behind a concrete pass/fail result.
 | Phase 6E | `validated_text_only_diagnostic_with_boundary_caveat` | Post-hot-exclusion review proved R12 mechanics but found low-score / weak broad long-distance fills after hot candidates were excluded. R13 adds a content-neutral quality gate: strong `unit_understanding` evidence can pass, auxiliary evidence is not enough unless it clears stricter quality constraints, and weak candidates are suppressed with `candidate_below_selection_quality_threshold`. The post-R13 text-only smoke rendered retrieved Understanding while suppressing weak candidates; one later selected event was contaminated by the R14 quote-anchor fallback bug. | Superseded for auxiliary-backed selection by Phase 6H; live hybrid dense validation remains pending. |
 | Phase 6F | `validated_text_only_diagnostic_with_followup_boundary_issue` | Post-R13 review exposed a quote-equivalence boundary bug: straight-quote anchors did not match curved-quote source text and could fall back to a one-character structural unit. The resolver now supports quote-normalized exact matching while mapping back to true source offsets. The post-R14 smoke observed `4` live `normalized_exact_text` matches and did not reproduce the old `src:c1:p125@63-p125@64` fallback. | R14 itself is live-smoked; continue only because the same smoke found R15 trailing-quote remainder. |
 | Phase 6G | `validated_text_only_diagnostic` | The post-R14 smoke found a different quote-only unit, `src:c1:p116@41-p116@42`, caused by a successful exact anchor ending before an immediately adjacent closing quote. The resolver now extends exact and quote-normalized matches over trailing closing punctuation. Deterministic fixture, real-source replay, and post-R15 smoke pass: `9` live extensions, `tiny_unit_count=0`, and p116 resolved as full unit `src:c1:p115@0-p116@42`. | Mature post-R15 retrieval sampling is now handled by Phase 6H; live hybrid dense validation remains pending. |
-| Phase 6H | `validated_text_only_diagnostic` | The mature post-R15 smoke proved retrieval after R14/R15 boundary fixes but showed broad auxiliary-backed selections. R16 requires auxiliary-backed candidates to have enough `unit_understanding` score/rank before prompt-facing selection. Deterministic tests cover weak auxiliary suppression and backed auxiliary acceptance; the post-R16 smoke rendered `2` retrieved Understanding lines while suppressing `33` weak candidates with `candidate_below_selection_quality_threshold`. | Inspect selected-but-not-rendered / hot-budget behavior next; live hybrid dense validation remains pending. |
-| Phase 7 | `passed_post_r16_text_only_diagnostic_with_budget_followup` | Post-R9/R11 and post-R16 `text_only` smokes prove prompt-visible retrieved Understanding lines; rendered retrieved unit ids appear in live traces; auxiliary-surface-only selection is now narrowed by Understanding backing. | Next repair target is ReadingMemory budget/rendering discipline because post-R16 selected `5` renderable units but rendered only `2`; hybrid dense validation remains pending. |
+| Phase 6H | `validated_text_only_diagnostic` | The mature post-R15 smoke proved retrieval after R14/R15 boundary fixes but showed broad auxiliary-backed selections. R16 requires auxiliary-backed candidates to have enough `unit_understanding` score/rank before prompt-facing selection. Deterministic tests cover weak auxiliary suppression and backed auxiliary acceptance; the post-R16 smoke rendered `2` retrieved Understanding lines while suppressing `33` weak candidates with `candidate_below_selection_quality_threshold`. The apparent selected-but-not-rendered count was later reclassified as pending selection after an intentional stop. | Live hybrid dense validation remains pending. |
+| Phase 7 | `validated_live_hybrid_diagnostic` | Post-R9/R11 and post-R16 `text_only` smokes prove prompt-visible retrieved Understanding lines; rendered retrieved unit ids appear in live traces; auxiliary-surface-only selection is now narrowed by Understanding backing. The apparent post-R16 selected-but-not-rendered issue was a stopped-smoke accounting artifact. The post-timeout-fix live `hybrid` smoke rendered `11` retrieved Understanding lines from `8` unique units with `selected_but_not_rendered_count=0`. | No active mechanism-conformance repair remains; next step is human review of relevance/usefulness or a separately authorized formal evaluation. |
 
 ### External Environment Handling
 
@@ -559,35 +615,29 @@ When Goal mode finishes or reaches a real blocker, it must produce:
 
 ## Next Repair Queue
 
-Continue from the smallest independent checks rather than jumping directly to a formal evaluation:
+No active mechanism-conformance repair remains in this track after the post-timeout-fix live `hybrid` smoke. Continue only if the user chooses one of these follow-up directions:
 
-1. Review post-R16 selected-but-not-rendered behavior:
-   - R12 mechanics are validated in `text_only`
-   - post-hot-exclusion review found that the selection layer can backfill freed long-distance slots with low-score or broad weak candidates after prompt-visible hot memories are correctly excluded
-   - R13 deterministic tests now cover strong Understanding evidence, weak filler suppression, and no-fill behavior when all candidates are weak
-   - post-R13 text-only diagnostic evidence shows weak candidates suppressed with machine-readable reasons while useful retrieved Understanding still renders
-   - post-R14 text-only diagnostic evidence validated the quote-normalized live path but exposed R15 trailing-quote remainder
-   - post-R15 text-only mature diagnostic proved selected long-distance retrieval after boundary fixes, but broad auxiliary-backed candidates remained possible
-   - R16 now requires auxiliary-backed candidates to have Understanding backing and is validated in deterministic tests plus a post-R16 text-only smoke
-   - next action is to inspect why post-R16 selected `5` renderable units but only rendered `2` retrieved lines, with `selected_but_not_rendered_count=3` and `hot_budget_exceeded` dominating memory-line suppression
-2. Continue relevance calibration only after rendering discipline is stable:
-   - inspect rendered retrieved unit ids and suppression reasons after R16 is active
-   - if selected/rendered memories remain broad, calibrate recall specificity or selection thresholds
-   - if selected memory stays zero, inspect retrieval horizon / quality gate thresholds
+1. Human review of retrieved-memory usefulness:
+   - inspect `analysis/unit_memory_retrieval_review/README.md` for the live hybrid smoke
+   - decide whether the retrieved Understanding lines help Digest continuity or feel broad/polluting
+   - if a systemic relevance problem appears, classify it by recall wording, dense/lexical weighting, RRF/aggregation, or selection threshold before editing code
+2. Keep text-only relevance calibration as follow-up only:
+   - R12 through R16 mechanics are validated in `text_only`
+   - the post-R16 selected-but-not-rendered concern was a stopped-smoke accounting artifact, not an active rendering bug
+   - inspect rendered retrieved unit ids and suppression reasons only if hybrid smoke evidence shows a new systemic relevance or selection problem
+   - do not tune Ingest recall wording for isolated broad examples while the mechanism path itself is already working
 3. Validate Ingest v6 recall language/basis tightening only if needed:
    - post-selection-cap smoke proved volume control works and retrieved memory remains prompt-visible
    - the same smoke exposed Chinese-source recalls written in English and model-side `basis` drift
    - Ingest v6 plus structured-output validation and action-tool preflight now require recall text in the current source text's primary language and model-side `basis = selected_source_unit`
    - a post-contract early stopped smoke observed zero reviewed language violations and no basis drift; rerun only if later artifacts show drift again or if a combined contract-plus-mature-retrieval sample is needed
    - preserve the policy that Digest `ReadingMemory` contains Understanding only
-4. Attempt Phase 2 only when environment can support it:
-   - sqlite-vec load works
-   - Ollama is reachable
-   - configured Qwen embedding model is available
-   - query embedding cache and vector rows become nonzero
-5. If recall-specificity tuning lands, rerun a small no-judge `text_only` smoke and compare rendered retrieved unit ids against the post-hot-exclusion / post-R13 review packets.
+4. Consider a formal or broader diagnostic evaluation only after human review:
+   - do not promote the stopped smoke into evidence catalog
+   - do not use it as subjective product-quality proof
+   - use it only as mechanism-conformance evidence for write/index/retrieve/select/render/settle
 
-Do not tune Ingest recall wording until search, selection, renderability, and trace mechanics have been proven with deterministic cases. Otherwise prompt changes may hide mechanical retrieval failures.
+Do not tune Ingest recall wording again unless a reviewed mature sample shows a repeatable recall-owned issue. Otherwise prompt changes may hide or blur an already-working retrieval mechanism.
 
 ## Current Failure Summary
 
@@ -1004,7 +1054,7 @@ Acceptance:
 
 ### Phase 2. Hybrid Vector Path Repair
 
-Status: `environment_ready_live_smoke_pending`
+Status: `validated_live_hybrid_diagnostic`
 
 Current evidence:
 
@@ -1014,6 +1064,10 @@ Current evidence:
 - Deterministic fake-embedder coverage verifies the code path that writes `unit_understanding` vector rows, caches query embeddings, runs sqlite-vec KNN, filters distant dense candidates with `dense_max_distance`, and selects a dense-channel result.
 - Current machine now has the Ollama App CLI on PATH, `127.0.0.1:11434` serves embeddings, and the configured `qwen3-embedding:0.6b` model returns `1024`-dimension vectors.
 - `reading-companion-backend/scripts/check_unit_memory_hybrid_readiness.py` is the repeatable readiness gate; current local status is `ok`.
+- A first live hybrid smoke degraded to `text_only` because query embedding timed out under the previous `500ms` timeout even though Ollama/Qwen was available.
+- The current default query embedding timeout and vector write budget have been raised, and vector catch-up now uses a budget-derived timeout instead of a hard `500ms` cap.
+- A controlled live Qwen probe now proves the fixed code path can write `unit_understanding` vector rows and retrieve with real query embedding cache rows, dense candidates, and `effective_mode = hybrid`.
+- A post-timeout-fix live `hybrid` smoke now validates the full reading-artifact path: `47` `unit_understanding` vector rows, `2` real Qwen query cache rows, `21` dense docs, `21` lexical docs, `11` selected units, `11` prompt-visible retrieved lines, `8` unique rendered retrieved units, and no selected-but-not-rendered or pending-selection failures.
 
 Goal:
 
@@ -1030,13 +1084,14 @@ Work:
 
 Acceptance:
 
-- a controlled hybrid smoke shows:
+- `validated`: a controlled hybrid probe shows:
   - sqlite-vec table present
   - `unit_understanding` vector rows indexed
   - query embedding cache nonzero after retrieval
   - at least one dense candidate returned for a known prior-memory query
   - effective search channel is not only text-only
-- deterministic fake-embedder coverage can prove the adapter and sqlite-vec code path, but it does not satisfy live hybrid acceptance; now that the local Ollama/Qwen service is available, a live hybrid retrieval smoke must show dense contribution
+- `validated`: a no-judge reading smoke shows dense contribution, runtime selection, prompt-visible retrieved Understanding, and settlement/writeback in current reading artifacts
+- `validated`: the health report records `selected_but_not_rendered_count=0` and `pending_selection_selected_unit_count=0`
 
 ### Phase 3. Text-Only Retrieval Repair
 

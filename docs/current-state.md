@@ -7,7 +7,7 @@ Update when: the current objective, active tasks, blockers, active jobs, open de
 
 This file is authoritative for durable current status. Do not keep unique active-state information only in `docs/agent-handoff.md`.
 
-Last verified: `2026-06-06T22:37:07+08:00`
+Last verified: `2026-06-07T07:54:18+08:00`
 
 ## Current Objective
 - The `Ingest -> Digest -> Reading Runner settlement` mechanism reframe is implemented; current work is fact alignment, smoke/diagnostic review, and calibration before any formal evaluation promotion.
@@ -167,7 +167,7 @@ Last verified: `2026-06-06T22:37:07+08:00`
       - R15 boundary repair: the same post-R14 smoke exposed a new quote-only remainder unit, `src:c1:p116@41-p116@42`, caused when an exact anchor ended before an immediately adjacent closing quote. `resolve_end_anchor_text(...)` now extends exact and quote-normalized matches over trailing closing punctuation. Deterministic coverage, real-source replay, and the post-R15 smoke pass: `9` live trailing-closer extensions, `tiny_unit_count=0`, and the prior p116 failure region resolved as full unit `src:c1:p115@0-p116@42`.
       - mature post-R15 retrieval review: `attentional_v2_unit_memory_text_only_smoke_xidaduo_post_r15_mature_20260606` was intentionally stopped after long-distance retrieval evidence. Health status `ok`: `43` entries, `261` retrieval docs, `selected_unit_count=5`, `retrieved_line_total=5`, `rendered_retrieved_unique_unit_count=3`, and `selected_but_not_rendered_count=0`. Review found the remaining selected-memory relevance weakness: auxiliary-surface matches could still admit broad memories when the Understanding itself was weak.
       - R16 auxiliary-backed Understanding gate: Unit Memory selection now lets auxiliary surfaces participate in FTS/search and aggregation, but an auxiliary-backed candidate must also have enough `unit_understanding` score/rank before it can enter Digest `ReadingMemory`. Deterministic tests cover suppression of weak auxiliary matches and acceptance of auxiliary matches with Understanding backing.
-      - post-R16 `text_only` diagnostic smoke: `attentional_v2_unit_memory_text_only_smoke_xidaduo_post_r16_aux_backing_20260606` was intentionally stopped after R16 evidence. Health status `ok`: `57` entries, `381` retrieval docs, `selected_unit_count=5`, `renderable_selected_unit_count=5`, `retrieved_line_total=2`, `rendered_retrieved_unique_unit_count=2`, `candidate_below_selection_quality_threshold=33`, and `selected_but_not_rendered_count=3`. Interpretation: R16 suppresses weak auxiliary candidates while preserving prompt-visible Understanding-backed retrieval; the next repair target is downstream ReadingMemory budget/rendering discipline because selected renderable units can still be dropped later by hot-memory budget pressure.
+      - post-R16 `text_only` diagnostic smoke: `attentional_v2_unit_memory_text_only_smoke_xidaduo_post_r16_aux_backing_20260606` was intentionally stopped after R16 evidence. Health status `ok`: `57` entries, `381` retrieval docs, `selected_unit_count=5`, `renderable_selected_unit_count=5`, `retrieved_line_total=2`, `rendered_retrieved_unique_unit_count=2`, and `candidate_below_selection_quality_threshold=33`. Interpretation: R16 suppresses weak auxiliary candidates while preserving prompt-visible Understanding-backed retrieval. The earlier `selected_but_not_rendered_count=3` reading has been reclassified as stopped-smoke pending selection: the final retrieval row selected units, but the run was terminated before a matching `unit_memory_reading_memory_selection` row could exist.
     - current recall-language contract repair:
       - status: `validated_observed_live_contract_sample`
       - code behavior: `submit_ingest_result` validation now receives the current source text and rejects model-side `memory_recalls[].recall_text` that clearly does not use the current source text's primary language; `retrieve_unit_memory` action-tool preflight applies the same validation before retrieval execution and returns `contract_violation` metadata for the forced final-output repair path
@@ -190,12 +190,20 @@ Last verified: `2026-06-06T22:37:07+08:00`
       - sqlite-vec result: `import_ok = true`, `load_ok = true`, `vec0_table_ok = true`, `version = 0.1.9`
       - Ollama result: App runtime installed via `ollama-app`, `reachable = true`, `model_available = true` for `qwen3-embedding:0.6b`, embedding probe `dimension = 1024`
       - operator note: the Homebrew formula package was removed because it lacked `llama-server` on this machine; the App distribution is now the working local runtime
-      - interpretation: Phase 2 live hybrid is no longer environment-blocked; it still needs a live retrieval smoke before claiming dense retrieval success
+      - interpretation: Phase 2 live hybrid is no longer environment-blocked; the first live hybrid smoke exposed an embedding-timeout degradation, and the timeout/vector-budget fix has now been validated by a post-timeout-fix no-judge live hybrid smoke
+    - live hybrid validation smoke:
+      - run id: `attentional_v2_unit_memory_hybrid_smoke_xidaduo_phase2_r1_20260606`
+      - job id: `bgjob_unit_memory_hybrid_smoke_xidaduo_phase2_r1_20260606`
+      - result: intentionally stopped after enough mechanism evidence; no summary aggregate/report/usage files were generated
+      - health packet: `reading-companion-backend/eval/runs/attentional_v2/attentional_v2_unit_memory_hybrid_smoke_xidaduo_phase2_r1_20260606/analysis/unit_memory_retrieval_health/summary.json`
+      - review packet: `reading-companion-backend/eval/runs/attentional_v2/attentional_v2_unit_memory_hybrid_smoke_xidaduo_phase2_r1_20260606/analysis/unit_memory_retrieval_review/README.md`
+      - outcome: health status `ok`; `47` Unit Memory entries, `313` retrieval docs, `47` `unit_understanding` vector rows, `2` real Qwen query embedding cache rows, `21` dense docs, `21` lexical docs, `11` selected units, `11` retrieved ReadingMemory lines, `8` unique rendered retrieved units, `selected_but_not_rendered_count=0`, and `pending_selection_selected_unit_count=0`
+      - interpretation: current Unit Memory retrieval now has live no-judge diagnostic proof of `Ingest recall -> hybrid retrieval -> runtime selection -> prompt-visible Digest ReadingMemory -> settlement/writeback`; this is mechanism-conformance evidence, not formal product-quality evidence
   - next step:
-    - inspect post-R16 selected-but-not-rendered / hot-budget behavior before further relevance calibration; mature post-R15 retrieval evidence has already been collected and motivated R16
+    - treat post-R16 selected-but-not-rendered / hot-budget as resolved diagnostic-accounting context unless a later mature smoke shows a true selection-to-rendering failure
+    - inspect the live hybrid retrieval review packet if the next question is usefulness/relevance of retrieved memories
     - do not rerun solely for the Ingest v6 language/basis contract unless later live artifacts show drift again; the current observed sample is sufficient for this narrow contract, while long-distance retrieval maturity was intentionally not revalidated in that early stopped run
-    - run a small live hybrid retrieval smoke next to verify real query embedding cache rows, real vector rows, dense candidates, and RRF contribution; sqlite-vec and Ollama/Qwen readiness are no longer the blocker
-    - do not run formal evaluation, update evidence catalog, or claim product quality from the intentionally stopped diagnostic smokes; treat live hybrid dense validation as pending until the smoke shows actual dense retrieval contribution
+    - do not run formal evaluation, update evidence catalog, or claim product quality from the intentionally stopped diagnostic smokes; first decide whether to do human review of retrieved-memory usefulness or launch a separately authorized formal evaluation
     - use `docs/implementation/new-reading-mechanism/ingest-context-and-navigate-mapping.md` as the implementation reference for the landed first-slice `Ingest` XML context
     - use `docs/implementation/new-reading-mechanism/digest-understanding-response-annotation-design.md` as the implemented reference for the Digest prompt/output semantic refactor
     - use `docs/implementation/new-reading-mechanism/unit-memory-hybrid-retrieval-design.md` as the implemented reference for the Unit Memory storage/index/retrieval trace bottom framework

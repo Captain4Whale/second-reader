@@ -1,6 +1,6 @@
 {
   "schema_version": 1,
-  "updated_at": "2026-06-06T14:08:58.890293Z",
+  "updated_at": "2026-06-06T23:51:56.697580Z",
   "entries": [
     {
       "run_id": "attentional_v2_excerpt_surface_v1_1_judged_20260406",
@@ -2348,6 +2348,59 @@
       "local_missing_allowed": [],
       "metadata": {},
       "updated_at": "2026-06-03T04:23:24.840694Z"
+    },
+    {
+      "run_id": "attentional_v2_unit_memory_hybrid_smoke_xidaduo_phase2_20260606",
+      "date": "2026-06-06",
+      "surface": "unit_memory_retrieval_repair_smoke",
+      "lane": "mechanism_eval_smoke",
+      "status": "abandoned",
+      "mechanisms": [
+        "attentional_v2"
+      ],
+      "dataset_or_manifest": [],
+      "run_dir": "reading-companion-backend/eval/runs/attentional_v2/attentional_v2_unit_memory_hybrid_smoke_xidaduo_phase2_20260606",
+      "summary_paths": {},
+      "job_ids": [
+        "bgjob_unit_memory_hybrid_smoke_xidaduo_phase2_20260606"
+      ],
+      "report_paths": [],
+      "catalog_status": "not_cataloged",
+      "notes": "Diagnostic-only no-judge hybrid Unit Memory smoke on xidaduo intentionally stopped after exposing embedding-timeout degradation: sqlite-vec/Ollama/Qwen were available, but the previous 500ms query/vector timeout caused query embedding unavailable and effective text_only fallback. This motivated the timeout/vector-budget repair. No summary files, formal evidence, or evidence catalog update.",
+      "parent_run_id": "",
+      "child_run_ids": [],
+      "synthetic": false,
+      "local_missing_allowed": [],
+      "metadata": {},
+      "updated_at": "2026-06-06T23:51:56.647423Z"
+    },
+    {
+      "run_id": "attentional_v2_unit_memory_hybrid_smoke_xidaduo_phase2_r1_20260606",
+      "date": "2026-06-06",
+      "surface": "unit_memory_retrieval_repair_smoke",
+      "lane": "mechanism_eval_smoke",
+      "status": "abandoned",
+      "mechanisms": [
+        "attentional_v2"
+      ],
+      "dataset_or_manifest": [],
+      "run_dir": "reading-companion-backend/eval/runs/attentional_v2/attentional_v2_unit_memory_hybrid_smoke_xidaduo_phase2_r1_20260606",
+      "summary_paths": {},
+      "job_ids": [
+        "bgjob_unit_memory_hybrid_smoke_xidaduo_phase2_r1_20260606"
+      ],
+      "report_paths": [
+        "reading-companion-backend/eval/runs/attentional_v2/attentional_v2_unit_memory_hybrid_smoke_xidaduo_phase2_r1_20260606/analysis/unit_memory_retrieval_health/README.md",
+        "reading-companion-backend/eval/runs/attentional_v2/attentional_v2_unit_memory_hybrid_smoke_xidaduo_phase2_r1_20260606/analysis/unit_memory_retrieval_review/README.md"
+      ],
+      "catalog_status": "not_cataloged",
+      "notes": "Diagnostic-only no-judge hybrid Unit Memory smoke on xidaduo intentionally stopped after enough live hybrid evidence was collected. Health status ok: 47 entries, 313 retrieval docs, unit_understanding vector_rows=47, query_embedding_cache_rows=2, dense_docs=21, lexical_docs=21, selected_unit_count=11, retrieved_line_total=11, rendered_retrieved_unique_unit_count=8, selected_but_not_rendered_count=0, pending_selection_selected_unit_count=0. This validates live Qwen dense retrieval plus prompt-visible Digest ReadingMemory; no summary files, formal evidence, or evidence catalog update.",
+      "parent_run_id": "",
+      "child_run_ids": [],
+      "synthetic": false,
+      "local_missing_allowed": [],
+      "metadata": {},
+      "updated_at": "2026-06-06T23:51:56.696883Z"
     },
     {
       "run_id": "attentional_v2_unit_memory_text_only_smoke_value_20260606",

@@ -71,6 +71,48 @@ def _count_selected_units(rows: list[dict[str, Any]]) -> tuple[int, set[str]]:
     return count, unit_ids
 
 
+def _selected_units_by_retrieval_span(rows: list[dict[str, Any]]) -> dict[str, set[str]]:
+    by_span: dict[str, set[str]] = {}
+    for row in rows:
+        span_id = str(row.get("accepted_source_span_id") or row.get("source_span_id") or "").strip()
+        if not span_id:
+            continue
+        selected = row.get("selected_units")
+        if not isinstance(selected, list):
+            continue
+        for item in selected:
+            if not isinstance(item, dict):
+                continue
+            unit_id = str(item.get("unit_id") or "").strip()
+            if unit_id:
+                by_span.setdefault(span_id, set()).add(unit_id)
+    return by_span
+
+
+def _rendered_retrieved_units_by_selection_span(rows: list[dict[str, Any]]) -> dict[str, set[str]]:
+    by_span: dict[str, set[str]] = {}
+    for row in rows:
+        span_id = str(row.get("source_span_id") or "").strip()
+        if not span_id:
+            continue
+        rendered_ids = by_span.setdefault(span_id, set())
+        rendered_units = row.get("rendered_retrieved_units")
+        if isinstance(rendered_units, list):
+            for item in rendered_units:
+                if not isinstance(item, dict):
+                    continue
+                unit_id = str(item.get("unit_id") or "").strip()
+                if unit_id:
+                    rendered_ids.add(unit_id)
+        rendered_unit_ids = row.get("rendered_retrieved_unit_ids")
+        if isinstance(rendered_unit_ids, list):
+            for item in rendered_unit_ids:
+                unit_id = str(item or "").strip()
+                if unit_id:
+                    rendered_ids.add(unit_id)
+    return by_span
+
+
 def _understanding_content_from_entry(entry_json: object) -> str:
     if isinstance(entry_json, str):
         try:
@@ -90,6 +132,25 @@ def _understanding_content_from_entry(entry_json: object) -> str:
     return ""
 
 
+def _load_sqlite_vec(connection: sqlite3.Connection) -> bool:
+    try:
+        import sqlite_vec  # type: ignore[import-not-found]
+
+        if hasattr(connection, "enable_load_extension"):
+            connection.enable_load_extension(True)
+        sqlite_vec.load(connection)
+        if hasattr(connection, "enable_load_extension"):
+            connection.enable_load_extension(False)
+        return True
+    except Exception:
+        try:
+            if hasattr(connection, "enable_load_extension"):
+                connection.enable_load_extension(False)
+        except Exception:
+            pass
+        return False
+
+
 def _sqlite_inventory(runtime_dir: Path, selected_unit_ids: set[str]) -> dict[str, Any]:
     db_path = runtime_dir / "unit_memory.sqlite"
     if not db_path.exists():
@@ -107,6 +168,7 @@ def _sqlite_inventory(runtime_dir: Path, selected_unit_ids: set[str]) -> dict[st
         }
     with sqlite3.connect(db_path) as connection:
         connection.row_factory = sqlite3.Row
+        sqlite_vec_loaded = _load_sqlite_vec(connection)
         entries = int(connection.execute("SELECT COUNT(*) FROM unit_memory_entries").fetchone()[0])
         retrieval_docs = int(connection.execute("SELECT COUNT(*) FROM retrieval_docs").fetchone()[0])
         docs_by_surface = {
@@ -136,9 +198,12 @@ def _sqlite_inventory(runtime_dir: Path, selected_unit_ids: set[str]) -> dict[st
             is not None
         )
         if sqlite_vec_table_present:
-            try:
-                vector_rows = int(connection.execute("SELECT COUNT(*) FROM retrieval_doc_vectors").fetchone()[0])
-            except sqlite3.Error:
+            if sqlite_vec_loaded:
+                try:
+                    vector_rows = int(connection.execute("SELECT COUNT(*) FROM retrieval_doc_vectors").fetchone()[0])
+                except sqlite3.Error:
+                    vector_rows = 0
+            else:
                 vector_rows = 0
         else:
             vector_rows = 0
@@ -215,6 +280,8 @@ def summarize_output(output_dir: Path) -> dict[str, Any]:
     retrieval_rows = [row for row in trace_rows if row.get("event_type") == "unit_memory_retrieval"]
     selection_rows = [row for row in trace_rows if row.get("event_type") == "unit_memory_reading_memory_selection"]
     selected_total, selected_unit_ids = _count_selected_units(retrieval_rows)
+    selected_by_span = _selected_units_by_retrieval_span(retrieval_rows)
+    rendered_by_span = _rendered_retrieved_units_by_selection_span(selection_rows)
     inventory = _sqlite_inventory(runtime_dir, selected_unit_ids)
     candidate_counts = Counter()
     per_recall_counts = Counter()
@@ -297,7 +364,18 @@ def summarize_output(output_dir: Path) -> dict[str, Any]:
                 unit_id = str(item or "").strip()
                 if unit_id:
                     rendered_retrieved_unit_ids.add(unit_id)
-    selected_but_not_rendered_count = max(0, selected_total - retrieved_line_total)
+    selected_but_not_rendered_count = 0
+    pending_selection_selected_unit_count = 0
+    selected_but_not_rendered_ids: set[str] = set()
+    pending_selection_selected_unit_ids: set[str] = set()
+    for span_id, selected_ids in selected_by_span.items():
+        if span_id not in rendered_by_span:
+            pending_selection_selected_unit_count += len(selected_ids)
+            pending_selection_selected_unit_ids.update(selected_ids)
+            continue
+        unrendered_ids = selected_ids - rendered_by_span.get(span_id, set())
+        selected_but_not_rendered_count += len(unrendered_ids)
+        selected_but_not_rendered_ids.update(unrendered_ids)
     status = "ok"
     warnings: list[str] = []
     if retrieval_rows and retrieved_line_total == 0:
@@ -348,6 +426,9 @@ def summarize_output(output_dir: Path) -> dict[str, Any]:
             "rendered_retrieved_unique_unit_count": len(rendered_retrieved_unit_ids),
             "rendered_retrieved_unit_ids": sorted(rendered_retrieved_unit_ids)[:50],
             "selected_but_not_rendered_count": selected_but_not_rendered_count,
+            "selected_but_not_rendered_unit_ids": sorted(selected_but_not_rendered_ids)[:50],
+            "pending_selection_selected_unit_count": pending_selection_selected_unit_count,
+            "pending_selection_selected_unit_ids": sorted(pending_selection_selected_unit_ids)[:50],
             "suppressed_reasons": _counter_dict(suppressed_reasons),
         },
     }
@@ -368,6 +449,9 @@ def summarize_paths(paths: list[Path]) -> dict[str, Any]:
         "renderable_selected_unit_count": sum(int(item["sqlite"]["selected_renderable_unit_count"]) for item in outputs),
         "non_renderable_selected_unit_count": sum(int(item["sqlite"]["selected_non_renderable_unit_count"]) for item in outputs),
         "selected_but_not_rendered_count": sum(int(item["reading_memory"]["selected_but_not_rendered_count"]) for item in outputs),
+        "pending_selection_selected_unit_count": sum(
+            int(item["reading_memory"].get("pending_selection_selected_unit_count", 0)) for item in outputs
+        ),
         "excluded_source_unit_span_total": sum(int(item["trace"]["excluded_source_unit_span_total"]) for item in outputs),
         "retrieval_rows_with_excluded_source_unit_spans": sum(
             int(item["trace"]["retrieval_rows_with_excluded_source_unit_spans"]) for item in outputs
@@ -420,6 +504,7 @@ def render_markdown(summary: dict[str, Any]) -> str:
         "renderable_selected_unit_count",
         "non_renderable_selected_unit_count",
         "selected_but_not_rendered_count",
+        "pending_selection_selected_unit_count",
         "excluded_source_unit_span_total",
         "retrieval_rows_with_excluded_source_unit_spans",
         "max_excluded_source_unit_span_count",
@@ -459,6 +544,7 @@ def render_markdown(summary: dict[str, Any]) -> str:
         )
         lines.append(f"- hot / retrieved lines: `{reading_memory.get('hot_line_total', 0)} / {reading_memory.get('retrieved_line_total', 0)}`")
         lines.append(f"- rendered retrieved unique units: `{reading_memory.get('rendered_retrieved_unique_unit_count', 0)}`")
+        lines.append(f"- pending selected units without selection row: `{reading_memory.get('pending_selection_selected_unit_count', 0)}`")
         lines.append("")
     return "\n".join(lines) + "\n"
 

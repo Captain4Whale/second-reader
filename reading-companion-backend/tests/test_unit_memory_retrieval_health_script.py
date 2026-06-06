@@ -111,7 +111,10 @@ def test_health_script_reports_rendered_retrieved_unit_ids(tmp_path: Path) -> No
     output_dir = tmp_path / "outputs" / "demo_segment" / "attentional_v2"
     config = resolve_memory_retrieval_config(output_dir, {"memory_retrieval_mode": "text_only"})
     _write_entry(output_dir, "u000001", 1, "火车站台上的告别", "站台告别建立了旅程起点。")
-    UnitMemoryIndex(output_dir, config=config).retrieve_for_recalls(
+    UnitMemoryIndex(
+        output_dir,
+        config={**config, "min_retrievable_prior_units": 0, "recent_neighbor_exclusion_unit_count": 0},
+    ).retrieve_for_recalls(
         book_id="book-demo",
         recalls=[{"recall_id": "r1", "recall_text": "火车站台 告别", "basis": "selected_source_unit"}],
         query_source="tool_retrieve_unit_memory",
@@ -149,6 +152,74 @@ def test_health_script_reports_rendered_retrieved_unit_ids(tmp_path: Path) -> No
     output = summary["outputs"][0]
     assert output["trace"]["excluded_source_unit_span_total"] == 1
     assert output["reading_memory"]["rendered_retrieved_unit_ids"] == ["u000001"]
+    assert output["reading_memory"]["selected_but_not_rendered_count"] == 0
+    assert output["reading_memory"]["pending_selection_selected_unit_count"] == 0
+
+
+def test_health_script_does_not_treat_pending_retrieval_as_render_failure(tmp_path: Path) -> None:
+    output_dir = tmp_path / "outputs" / "demo_segment" / "attentional_v2"
+    config = resolve_memory_retrieval_config(output_dir, {"memory_retrieval_mode": "text_only"})
+    _write_entry(output_dir, "u000001", 1, "火车站台上的告别", "站台告别建立了旅程起点。")
+    UnitMemoryIndex(
+        output_dir,
+        config={**config, "min_retrievable_prior_units": 0, "recent_neighbor_exclusion_unit_count": 0},
+    ).retrieve_for_recalls(
+        book_id="book-demo",
+        recalls=[{"recall_id": "r1", "recall_text": "火车站台 告别", "basis": "selected_source_unit"}],
+        query_source="tool_retrieve_unit_memory",
+        current_unit_index=2,
+        accepted_source_span_id="src:c1:p2@0-p2@16",
+    )
+
+    summary = health_script.summarize_paths([tmp_path])
+
+    assert summary["total"]["selected_unit_count"] == 1
+    assert summary["total"]["pending_selection_selected_unit_count"] == 1
+    assert summary["total"]["selected_but_not_rendered_count"] == 0
+    output = summary["outputs"][0]
+    assert output["reading_memory"]["pending_selection_selected_unit_ids"] == ["u000001"]
+    assert output["reading_memory"]["selected_but_not_rendered_unit_ids"] == []
+
+
+def test_health_script_reports_selected_units_with_selection_row_but_no_render(tmp_path: Path) -> None:
+    output_dir = tmp_path / "outputs" / "demo_segment" / "attentional_v2"
+    config = resolve_memory_retrieval_config(output_dir, {"memory_retrieval_mode": "text_only"})
+    _write_entry(output_dir, "u000001", 1, "火车站台上的告别", "站台告别建立了旅程起点。")
+    UnitMemoryIndex(
+        output_dir,
+        config={**config, "min_retrievable_prior_units": 0, "recent_neighbor_exclusion_unit_count": 0},
+    ).retrieve_for_recalls(
+        book_id="book-demo",
+        recalls=[{"recall_id": "r1", "recall_text": "火车站台 告别", "basis": "selected_source_unit"}],
+        query_source="tool_retrieve_unit_memory",
+        current_unit_index=2,
+        accepted_source_span_id="src:c1:p2@0-p2@16",
+    )
+    unit_memory_retrieval_trace_file(output_dir).write_text(
+        unit_memory_retrieval_trace_file(output_dir).read_text(encoding="utf-8")
+        + json.dumps(
+            {
+                "event_type": "unit_memory_reading_memory_selection",
+                "source_span_id": "src:c1:p2@0-p2@16",
+                "line_count": 0,
+                "hot_line_count": 0,
+                "retrieved_line_count": 0,
+                "rendered_retrieved_units": [],
+                "rendered_retrieved_unit_ids": [],
+                "suppressed": [{"unit_id": "u000001", "reason": "retrieved_budget_exceeded"}],
+            }
+        )
+        + "\n",
+        encoding="utf-8",
+    )
+
+    summary = health_script.summarize_paths([tmp_path])
+
+    assert summary["total"]["selected_unit_count"] == 1
+    assert summary["total"]["pending_selection_selected_unit_count"] == 0
+    assert summary["total"]["selected_but_not_rendered_count"] == 1
+    output = summary["outputs"][0]
+    assert output["reading_memory"]["selected_but_not_rendered_unit_ids"] == ["u000001"]
 
 
 def test_health_script_discovers_output_dir_from_nested_runtime_path(tmp_path: Path) -> None:
