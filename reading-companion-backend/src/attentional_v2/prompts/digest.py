@@ -18,9 +18,9 @@ from .reader_role import READER_ROLE_FRAGMENT
 from .types import PromptDefinition
 
 
-DIGEST_PROMPT_VERSION = "attentional_v2.digest.v8"
-DIGEST_XML_PROMPT_ASSEMBLY_SPEC_ID = "attentional_v2.digest.xml.v8"
-DIGEST_XML_PROMPTSET_VERSION = "attentional_v2-phase6-v53"
+DIGEST_PROMPT_VERSION = "attentional_v2.digest.v9"
+DIGEST_XML_PROMPT_ASSEMBLY_SPEC_ID = "attentional_v2.digest.xml.v9"
+DIGEST_XML_PROMPTSET_VERSION = "attentional_v2-phase6-v54"
 DIGEST_XML_TRANSPORT_SYSTEM_PROMPT = "Follow the structured Digest prompt in the user message. Use the required submit_digest_result tool as the final output channel."
 
 
@@ -83,7 +83,7 @@ Pronouns are acceptable after the referent is clear inside the same Understandin
 Compress meaning, not wording. Be brief, but do not drop the main event, claim, condition, or relationship change. Do not copy the whole source or turn the understanding into a reaction, evaluation, or annotation. The understanding should be shorter than the source text and normally no more than a few compact sentences.
 
 # Empty-content exception
-If the source text is only a divider, empty heading, or other non-content structure, `content` may be empty; otherwise give a substantive understanding.
+If the source text is only a divider, empty heading, or other non-content structure, `understanding` may be empty; otherwise give a substantive understanding.
 
 # Examples
 ## Subject continuity examples
@@ -550,10 +550,7 @@ DIGEST_RETURN_FORMAT_FRAGMENT = PromptFragment(
     text="""Submit this shape through the required final output tool.
 Top-level fields:
 {
-  "understanding": {
-    "kind": "event_or_situation|claim_or_argument|definition_or_distinction|causal_or_structural_link|character_or_relationship|emotional_or_tonal_shift|image_or_scene|local_pattern_or_thread|fact|author_or_method_frame|other",
-    "content": "..."
-  },
+  "understanding": "...",
   "response": "...",
   "annotations": [
     {
@@ -573,12 +570,9 @@ DIGEST_UNDERSTANDING_CONTRACT_FRAGMENT = PromptFragment(
     text="""`understanding` contains one content-level understanding from the current source text.
 Shape:
 {
-  "understanding": {
-    "kind": "event_or_situation|claim_or_argument|definition_or_distinction|causal_or_structural_link|character_or_relationship|emotional_or_tonal_shift|image_or_scene|local_pattern_or_thread|fact|author_or_method_frame|other",
-    "content": "..."
-  }
+  "understanding": "..."
 }
-Use `content` for the understanding itself. It may contain one sentence or several compact paragraphs when needed, but `understanding` must remain a single object rather than a list of separate understanding items. `content` is stored as ReadingMemory / Unit Memory and may be read later without the source unit. It must be self-contained enough for later reading: establish new subjects, continue known subjects from ReadingMemory when supported, and preserve genuine ambiguity rather than guessing. Pronouns may appear only when their referent is explicit inside the same `content`. Do not include operation-level reasons, store names, durable-memory routing, hidden state, or source coordinates.""",
+Use `understanding` for the understanding itself. It may contain one sentence or several compact paragraphs when needed, but it must remain one string rather than a list or object of separate understanding items. `understanding` is stored as ReadingMemory / Unit Memory and may be read later without the source unit. It must be self-contained enough for later reading: establish new subjects, continue known subjects from ReadingMemory when supported, and preserve genuine ambiguity rather than guessing. Pronouns may appear only when their referent is explicit inside the same `understanding`. Do not include operation-level reasons, store names, durable-memory routing, hidden state, source coordinates, or content-type labels.""",
 )
 
 
@@ -725,7 +719,7 @@ def build_digest_prompt_assembly_spec(
             "reading_intent",
             "language_contract",
         ),
-        output_contract="digest_understanding_response_annotation_json_v2",
+        output_contract="digest_understanding_response_annotation_json_v3",
     )
 
 
@@ -793,5 +787,5 @@ DIGEST_PROMPT = PromptDefinition(
         "reading_intent",
         "language_contract",
     ),
-    output_contract="digest_understanding_response_annotation_json_v2",
+    output_contract="digest_understanding_response_annotation_json_v3",
 )

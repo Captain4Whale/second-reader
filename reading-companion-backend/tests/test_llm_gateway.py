@@ -869,7 +869,7 @@ def test_invoke_structured_output_tool_forces_submit_tool(monkeypatch: pytest.Mo
                         "id": "submit-1",
                         "name": "submit_digest_result",
                         "args": {
-                            "understanding": {"kind": "fact", "content": "Alpha happens."},
+                            "understanding": "Alpha happens.",
                             "response": "A brief response.",
                             "annotations": [],
                         },
@@ -892,7 +892,7 @@ def test_invoke_structured_output_tool_forces_submit_tool(monkeypatch: pytest.Mo
     )
 
     assert result.status == "final_output_tool_called"
-    assert result.payload["understanding"]["content"] == "Alpha happens."
+    assert result.payload["understanding"] == "Alpha happens."
     assert adapter.calls[0]["tool_choice"] == {"type": "tool", "name": "submit_digest_result"}
     assert adapter.calls[0]["tools"][0]["name"] == "submit_digest_result"
 
@@ -912,7 +912,7 @@ def test_invoke_structured_output_tool_repairs_invalid_payload(monkeypatch: pyte
                         "id": "submit-2",
                         "name": "submit_digest_result",
                         "args": {
-                            "understanding": {"kind": "fact", "content": "Alpha happens."},
+                            "understanding": "Alpha happens.",
                             "response": "A brief response.",
                             "annotations": [],
                         },
@@ -961,7 +961,7 @@ def test_invoke_structured_output_tool_repairs_tool_contract_errors(
                         "id": "submit-2",
                         "name": "submit_digest_result",
                         "args": {
-                            "understanding": {"kind": "fact", "content": "Alpha happens."},
+                            "understanding": "Alpha happens.",
                             "response": "A brief response.",
                             "annotations": [],
                         },
@@ -1978,10 +1978,7 @@ def test_attentional_node_uses_shared_runtime_trace(tmp_path: Path, monkeypatch:
                     "id": "submit-1",
                     "name": "submit_digest_result",
                     "args": {
-                        "understanding": {
-                            "kind": "other",
-                            "content": "The alpha hinge line becomes the current unit's focus.",
-                        },
+                        "understanding": "The alpha hinge line becomes the current unit's focus.",
                         "response": "Focused on the hinge.",
                         "annotations": [],
                     },

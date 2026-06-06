@@ -7,7 +7,7 @@ Update when: the current objective, active tasks, blockers, active jobs, open de
 
 This file is authoritative for durable current status. Do not keep unique active-state information only in `docs/agent-handoff.md`.
 
-Last verified: `2026-06-06T12:30:59+08:00`
+Last verified: `2026-06-06T13:58:01+08:00`
 
 ## Current Objective
 - The `Ingest -> Digest -> Reading Runner settlement` mechanism reframe is implemented; current work is fact alignment, smoke/diagnostic review, and calibration before any formal evaluation promotion.
@@ -32,14 +32,15 @@ Last verified: `2026-06-06T12:30:59+08:00`
     - `DEC-110` lands the Unit Memory ledger + hybrid retrieval bottom framework as the current long-distance memory substrate for `attentional_v2`
     - `DEC-112` records that subject continuity should be carried through Digest Understanding and `ReadingMemory`, not through raw-source backfill or Ingest-side reference-resolution fields
     - `DEC-113` migrates current `attentional_v2` structured LLM outputs from text JSON parsing to forced final-output tool use, with public `llm_contract` problem reporting for output-contract failures
+    - `DEC-114` removes the inherited content-classification field from current Digest / Recent Reading Memory / Unit Memory live surfaces
     - current `llm_calls.ingest(...)` is the forward-only XML LLM boundary call: exact `end_anchor_text`, `boundary_type`, `reason`, and bounded `memory_recalls[]`
     - current LLM-call code now lives in `reading-companion-backend/src/attentional_v2/llm_calls.py`; the old ambiguous active module name is removed
     - current `attentional_v2` LLM calls submit structured results through mechanism-private final-output tools such as `submit_ingest_result` and `submit_digest_result`; `retrieve_unit_memory` remains the only live action tool, and final-output tools are result channels rather than business actions
     - runtime next-unit preparation lives outside `Ingest` as `prepare_next_source_unit_for_read`: it prepares source preview/context, calls `Ingest`, performs anchor resolution/retry/fallback boundary governance, and hands the accepted source unit to `Digest`
     - `Ingest` uses `ReaderRole`, `Instruction`, `BookInfo`, `CurrentView`, empty `RetrievalSurface`, and `OutputContract`; it may express up to three prior-reading recalls, while actual retrieval execution and prompt-facing memory selection remain Reading Runner runtime work
-    - Digest semantic refactor is implemented: model-facing `understanding / response / annotations` are three peer outputs, with one holistic `understanding` object per unit mapped into `recent_reading_memory`
-    - Digest Understanding prompt `attentional_v2.digest.v8` now frames `understanding` as concise source-established content from the current source text, with light section headings, text-type compression guidance, grammatical-subject guidance, source-established-content calibration, subject-continuity rules, and approved examples to avoid unit/commentary-shaped, passage-effect, source-copying, or floating-pronoun memory text; the active promptset is `attentional_v2-phase6-v53`
-    - subject-continuity / standalone Understanding follow-up is implemented in Digest prompt `attentional_v2.digest.v8`: prior Understanding in `ReadingMemory` carries narrator / speaker / actor / concept continuity; Digest establishes new subjects, continues known subjects when supported, or explicitly preserves meaningful ambiguity without adding raw prior-source backfill, Ingest reference-resolution fields, or a durable referent store
+    - Digest semantic refactor is implemented: model-facing `understanding / response / annotations` are three peer outputs, with one holistic `understanding` string per unit mapped into `recent_reading_memory`
+    - Digest Understanding prompt `attentional_v2.digest.v9` now frames `understanding` as concise source-established content from the current source text, with light section headings, text-type compression guidance, grammatical-subject guidance, source-established-content calibration, subject-continuity rules, and approved examples to avoid unit/commentary-shaped, passage-effect, source-copying, floating-pronoun memory text, or content-type classification; the active promptset is `attentional_v2-phase6-v54`
+    - subject-continuity / standalone Understanding follow-up remains implemented in Digest prompt `attentional_v2.digest.v9`: prior Understanding in `ReadingMemory` carries narrator / speaker / actor / concept continuity; Digest establishes new subjects, continues known subjects when supported, or explicitly preserves meaningful ambiguity without adding raw prior-source backfill, Ingest reference-resolution fields, or a durable referent store
     - Unit Memory recall/retrieval/context framework is implemented: settlement writes one unit-centered ledger entry per accepted source unit, derives source / understanding / response / annotation retrieval documents, indexes them with SQLite FTS5, optionally indexes dense vectors through sqlite-vec + local Ollama, lets Ingest trigger bounded prior-reading recalls through `retrieve_unit_memory`, and writes retrieval/selection traces between `Ingest` and `Digest`
     - Digest now receives one top-level `ReadingMemory` block assembled by runtime from hot current-chapter Understanding plus selected long-distance Unit Memory Understanding; raw prior source, prior Response, and prior Annotation remain retrieval/audit surfaces only
     - current `Digest` has no path-redirection output contract and the Runner/audit path emits no Detour or source-backread runtime artifacts for new runs
@@ -117,8 +118,8 @@ Last verified: `2026-06-06T12:30:59+08:00`
     - `recent_reading_memory` is now a runtime store for near-term semantic memory of just-read units
     - the historical concrete-node prompt series permitted compact context-resolvable Recent Reading Memory entries per unit
     - that prompt series tightened source-grounding, continuity balance, no operation-level reason, natural-memory prose, and author/evidence-boundary handling
-    - current Digest converts the LLM-facing `understanding` object into zero or one runtime `memory_uptake_ops[]` entry with `target_store="recent_reading_memory"` and `op="append"`
-    - the LLM supplies only `kind` and `content`; runner/state code stores `content` as `memory_text` and owns `entry_id`, `source_unit_span_id`, `created_at_unit_index`, `status`, and `archived_by_consolidation_id`
+    - current Digest converts the LLM-facing `understanding` string into zero or one runtime `memory_uptake_ops[]` entry with `target_store="recent_reading_memory"` and `op="append"`
+    - the LLM supplies only the understanding text; runner/state code stores it as `memory_text` and owns `entry_id`, `source_unit_span_id`, `created_at_unit_index`, `status`, and `archived_by_consolidation_id`
     - only `active` entries are projected into subsequent Digest prompt packets
     - runtime persistence, checkpoint/resume carriage, settlement audit deltas, and Memory Quality full-state snapshots now include `recent_reading_memory`
   - explicit exclusions:

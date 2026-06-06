@@ -233,7 +233,6 @@ def _build_recent_reading_memory_digest(
         active_entries.append(
             {
                 "entry_id": entry_id,
-                "kind": clean_text(entry.get("kind")) or "other",
                 "memory_text": memory_text,
                 "source_unit_span_id": clean_text(entry.get("source_unit_span_id")),
                 "created_at_unit_index": int(entry.get("created_at_unit_index", 0) or 0),

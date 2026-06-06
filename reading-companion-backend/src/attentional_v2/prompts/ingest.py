@@ -17,7 +17,7 @@ from .types import PromptDefinition
 
 INGEST_PROMPT_VERSION = "attentional_v2.ingest.v4"
 INGEST_XML_PROMPT_ASSEMBLY_SPEC_ID = "attentional_v2.ingest.xml.v4"
-INGEST_XML_PROMPTSET_VERSION = "attentional_v2-phase6-v53"
+INGEST_XML_PROMPTSET_VERSION = "attentional_v2-phase6-v54"
 INGEST_TRANSPORT_SYSTEM_PROMPT = "Follow the structured Ingest prompt in the user message. Use the required submit_ingest_result tool as the final output channel."
 
 

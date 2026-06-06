@@ -474,7 +474,7 @@ It should store the accepted unit and the Digest outputs as one logical record:
 {
   "unit_id": "unit:c1:u0007",
   "book_id": "book:...",
-  "schema_version": "unit_memory_entry.v1",
+  "schema_version": "unit_memory_entry.v2",
   "mechanism_version": "attentional_v2",
   "created_at": "2026-06-01T00:00:00Z",
   "chapter_id": 1,
@@ -488,8 +488,13 @@ It should store the accepted unit and the Digest outputs as one logical record:
   },
   "digest": {
     "understanding": {
-      "kind": "claim_or_argument",
-      "content": "..."
+      "content": "...",
+      "token_estimate": {
+        "estimator": "tiktoken_o200k_base_v1",
+        "tokens": 86,
+        "raw_tokens": 78,
+        "safety_multiplier": 1.1
+      }
     },
     "response": "...",
     "annotations": [
@@ -549,7 +554,7 @@ The stored unit should preserve enough information to support retrieval and late
 
 Do not reintroduce content-typed long-memory stores here.
 
-The unit entry may contain `understanding.kind` because Digest already emits that lightweight kind for local readability, but retrieval should not depend on a fixed concept/thread/progression ontology. The primary retrieval object is still the unit and its reading outputs.
+Digest Understanding is content-neutral in the current live contract: it stores text and token estimate only, with no `kind` classifier. Retrieval should depend on the unit, the accepted source, and the reading outputs rather than a fixed concept/thread/progression ontology.
 
 ## Index Surfaces
 
@@ -581,7 +586,6 @@ Do not assume an accepted source unit is larger than a paragraph or aligned to p
 Index:
 
 - `understanding.content`
-- optionally include `understanding.kind` as a low-weight facet, not a hard filter
 
 Use:
 
@@ -680,7 +684,7 @@ Use surface-specific document granularity:
   - one retrieval document per Unit Memory Entry
   - retrieval doc id pattern: `unit:{id}#understanding`
   - text: `digest.understanding.content`
-  - metadata: `understanding.kind`, `source_span_id`
+  - metadata: `source_span_id`
   - purpose: primary semantic recall of what the unit established for continued reading
 - `unit_annotation`
   - one retrieval document per annotation

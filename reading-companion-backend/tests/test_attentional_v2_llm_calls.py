@@ -462,10 +462,7 @@ def test_digest_uses_live_xml_prompt_and_filters_surface_reactions(tmp_path: Pat
                     "content": "This one should be dropped.",
                 }
             ],
-            "understanding": {
-                "kind": "claim_or_argument",
-                "content": "The current unit flips the frame around Alpha hinge.",
-            },
+            "understanding": "The current unit flips the frame around Alpha hinge.",
             "reading_impression": "legacy ignored",
             "surfaced_reactions": [
                 {
@@ -552,7 +549,7 @@ def test_digest_uses_live_xml_prompt_and_filters_surface_reactions(tmp_path: Pat
     assert "Split into multiple entries" not in captured["prompt"]
     assert "<Response>" in captured["prompt"]
     assert "<Annotation>" in captured["prompt"]
-    assert '"understanding": {' in captured["prompt"]
+    assert '"understanding": "..."' in captured["prompt"]
     assert '"response": "..."' in captured["prompt"]
     assert '"annotations": [' in captured["prompt"]
     assert '"reading_impression": "..."' not in captured["prompt"]
@@ -581,14 +578,13 @@ def test_digest_uses_live_xml_prompt_and_filters_surface_reactions(tmp_path: Pat
     op = result["memory_uptake_ops"][0]
     assert op["target_store"] == "recent_reading_memory"
     assert op["payload"] == {
-        "kind": "claim_or_argument",
         "memory_text": "The current unit flips the frame around Alpha hinge.",
     }
     assert op["target_key"] != "legacy-ignored"
     assert manifest["node_name"] == "digest"
-    assert manifest["prompt_version"] == "attentional_v2.digest.v8"
-    assert manifest["prompt_assembly"]["spec_id"] == "attentional_v2.digest.xml.v8"
-    assert manifest["prompt_assembly"]["output_contract"] == "digest_understanding_response_annotation_json_v2"
+    assert manifest["prompt_version"] == "attentional_v2.digest.v9"
+    assert manifest["prompt_assembly"]["spec_id"] == "attentional_v2.digest.xml.v9"
+    assert manifest["prompt_assembly"]["output_contract"] == "digest_understanding_response_annotation_json_v3"
     assert "mode" not in manifest["prompt_assembly"]
     assert manifest["prompt_assembly"]["rendered_blocks"] == [
         "ReaderRole",
@@ -610,12 +606,11 @@ def test_digest_rejects_legacy_understanding_list_payload(tmp_path: Path, monkey
         }
         payload["understanding"] = [
             {
-                "kind": "claim_or_argument",
                 "content": "Legacy list item should not become current memory.",
             }
         ]
         errors = validator(payload)
-        assert "understanding must be an object" in errors
+        assert "understanding must be a string" in errors
         raise llm_calls_module.ReaderLLMError(
             "structured output contract failed",
             problem_code="llm_contract",
@@ -756,7 +751,6 @@ def test_recent_reading_memory_normalization_uses_unit_level_provenance_only():
                 "target_store": "recent_reading_memory",
                 "target_key": "model-ignored",
                 "payload": {
-                    "kind": "event_or_situation",
                     "memory_text": "The current unit establishes the prisoners' initial adaptation pressure.",
                     "source_quote": "The current unit",
                     "source_refs": [{"source_span_id": "model:wrong"}],
@@ -777,7 +771,6 @@ def test_recent_reading_memory_normalization_uses_unit_level_provenance_only():
 
     payload = normalized_ops[0]["payload"]
     assert payload == {
-        "kind": "event_or_situation",
         "memory_text": "The current unit establishes the prisoners' initial adaptation pressure.",
     }
 
@@ -792,7 +785,6 @@ def test_recent_reading_memory_operation_normalization_drops_op_reason():
                 "target_store": "recent_reading_memory",
                 "reason": "The model should not be asked to justify creating this memory.",
                 "payload": {
-                    "kind": "event_or_situation",
                     "memory_text": "The current unit establishes the prisoners' initial adaptation pressure.",
                 },
             }
@@ -804,7 +796,6 @@ def test_recent_reading_memory_operation_normalization_drops_op_reason():
     assert normalized_ops[0]["target_store"] == "recent_reading_memory"
     assert "reason" not in normalized_ops[0]
     assert normalized_ops[0]["payload"] == {
-        "kind": "event_or_situation",
         "memory_text": "The current unit establishes the prisoners' initial adaptation pressure.",
     }
     assert admission_events[0]["admission_status"] == "accepted"

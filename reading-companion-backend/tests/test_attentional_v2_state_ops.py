@@ -134,7 +134,6 @@ def test_apply_recent_reading_memory_operations_appends_unit_level_entries_only(
                 "target_store": "recent_reading_memory",
                 "reason": "This should not be persisted as part of the memory entry.",
                 "payload": {
-                    "kind": "event_or_situation",
                     "memory_text": "The prisoners begin adapting to camp shock through a staged psychological response.",
                     "source_refs": [{"source_span_id": "should-not-be-carried"}],
                 },
@@ -152,15 +151,14 @@ def test_apply_recent_reading_memory_operations_appends_unit_level_entries_only(
     assert next_state is not state
     assert len(next_state["entries"]) == 1
     entry = next_state["entries"][0]
-    assert entry == {
-        "entry_id": "recent:c1:u0007:m1",
-        "source_unit_span_id": "unit:c1:p45@0-p61@120",
-        "kind": "event_or_situation",
-        "memory_text": "The prisoners begin adapting to camp shock through a staged psychological response.",
-        "status": "active",
-        "created_at_unit_index": 7,
-        "archived_by_consolidation_id": None,
-    }
+    assert "kind" not in entry
+    assert entry["entry_id"] == "recent:c1:u0007:m1"
+    assert entry["source_unit_span_id"] == "unit:c1:p45@0-p61@120"
+    assert entry["memory_text"] == "The prisoners begin adapting to camp shock through a staged psychological response."
+    assert entry["status"] == "active"
+    assert entry["created_at_unit_index"] == 7
+    assert entry["archived_by_consolidation_id"] is None
+    assert entry["token_estimate"]["estimator"] == "tiktoken_o200k_base_v1"
 
     source_span_state = apply_recent_reading_memory_operations(
         build_empty_recent_reading_memory(),
@@ -168,7 +166,7 @@ def test_apply_recent_reading_memory_operations_appends_unit_level_entries_only(
             {
                 "op": "append",
                 "target_store": "recent_reading_memory",
-                "payload": {"kind": "fact", "memory_text": "A source-span id also preserves the chapter token."},
+                "payload": {"memory_text": "A source-span id also preserves the chapter token."},
             }
         ],
         source_unit_span_id="src:c2:p3@0-p3@40",

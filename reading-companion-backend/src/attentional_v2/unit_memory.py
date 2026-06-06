@@ -32,7 +32,7 @@ from .storage import (
 )
 
 
-UNIT_MEMORY_ENTRY_SCHEMA_VERSION = "unit_memory_entry.v1"
+UNIT_MEMORY_ENTRY_SCHEMA_VERSION = "unit_memory_entry.v2"
 UNIT_MEMORY_QUERY_VERSION = "unit_memory_query.v1"
 UNIT_MEMORY_RECALL_QUERY_VERSION = "unit_memory_recall_query.v1"
 UNIT_MEMORY_RETRIEVAL_CONFIG_SCHEMA_VERSION = "unit_memory_retrieval_config.v1"
@@ -304,11 +304,10 @@ def _understanding_from_digest_result(digest_result: Mapping[str, object]) -> di
         if not content:
             continue
         return {
-            "kind": _clean_text(payload.get("kind")) or "other",
             "content": content,
             "token_estimate": token_estimate_payload(content),
         }
-    return {"kind": "other", "content": "", "token_estimate": token_estimate_payload("")}
+    return {"content": "", "token_estimate": token_estimate_payload("")}
 
 
 def build_unit_memory_entry(

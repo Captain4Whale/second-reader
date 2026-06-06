@@ -60,7 +60,7 @@ def _digest_result(understanding: str, response: str = "", annotation: str = "")
             {
                 "op": "append",
                 "target_store": "recent_reading_memory",
-                "payload": {"kind": "fact", "memory_text": understanding},
+                "payload": {"memory_text": understanding},
             }
         ],
     }

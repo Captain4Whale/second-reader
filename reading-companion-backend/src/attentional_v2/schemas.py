@@ -102,7 +102,6 @@ class RecentReadingMemoryEntry(TypedDict, total=False):
 
     entry_id: str
     source_unit_span_id: str
-    kind: str
     memory_text: str
     token_estimate: dict[str, object]
     status: str

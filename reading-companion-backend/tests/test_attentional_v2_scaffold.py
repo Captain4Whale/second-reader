@@ -234,7 +234,7 @@ def test_prompt_assembler_renders_spec_and_metadata_without_live_migration() -> 
     assert "test.role.v1" not in result.rendered_text
     assert "current_focus" not in result.rendered_text
     assert "ref=" not in result.rendered_text
-    assert DIGEST_PROMPT_VERSION == "attentional_v2.digest.v8"
+    assert DIGEST_PROMPT_VERSION == "attentional_v2.digest.v9"
     assert ATTENTIONAL_V2_PROMPTS.digest_system == "Follow the structured Digest prompt in the user message. Use the required submit_digest_result tool as the final output channel."
     assert "Structural frame:" not in ATTENTIONAL_V2_PROMPTS.digest_prompt
 
@@ -336,7 +336,7 @@ def test_digest_xml_prompt_example_renders_escaped_blocks() -> None:
     assert "reading_state" not in rendered
     assert "current_focus" not in rendered
     assert "output_contract" not in rendered
-    assert DIGEST_PROMPT_VERSION == "attentional_v2.digest.v8"
+    assert DIGEST_PROMPT_VERSION == "attentional_v2.digest.v9"
     assert ATTENTIONAL_V2_PROMPTS.digest_version == DIGEST_PROMPT_VERSION
     assert ATTENTIONAL_V2_PROMPTS.digest_system == "Follow the structured Digest prompt in the user message. Use the required submit_digest_result tool as the final output channel."
     assert "Structural frame:" not in ATTENTIONAL_V2_PROMPTS.digest_prompt
@@ -360,11 +360,11 @@ def test_full_digest_prompt_xml_assembly_renders_all_live_blocks() -> None:
         },
     )
 
-    assert result.spec_id == "attentional_v2.digest.xml.v8"
+    assert result.spec_id == "attentional_v2.digest.xml.v9"
     assert result.owner_node == "digest"
     assert result.prompt_version == DIGEST_PROMPT_VERSION
     assert result.promptset_version == DIGEST_XML_PROMPTSET_VERSION
-    assert result.output_contract == "digest_understanding_response_annotation_json_v2"
+    assert result.output_contract == "digest_understanding_response_annotation_json_v3"
     assert result.rendered_blocks == (
         "ReaderRole",
         "Instruction",
@@ -390,7 +390,7 @@ def test_full_digest_prompt_xml_assembly_renders_all_live_blocks() -> None:
     assert "<OutputContract>" in result.rendered_text
     assert "Alpha &lt;source&gt; &amp; line." in result.rendered_text
     assert "The author frames the opening as testimony." in result.rendered_text
-    assert '"understanding": {' in result.rendered_text
+    assert '"understanding": "..."' in result.rendered_text
     assert '"response": "..."' in result.rendered_text
     assert '"annotations": [' in result.rendered_text
     assert '"recent_reading_memory": []' not in result.rendered_text
@@ -400,7 +400,7 @@ def test_full_digest_prompt_xml_assembly_renders_all_live_blocks() -> None:
     assert "value_slot" not in result.rendered_text
     assert "book_identity" not in result.rendered_text
     assert "digest.role_and_stance" not in result.rendered_text
-    assert DIGEST_PROMPT_VERSION == "attentional_v2.digest.v8"
+    assert DIGEST_PROMPT_VERSION == "attentional_v2.digest.v9"
     assert ATTENTIONAL_V2_PROMPTS.digest_system == "Follow the structured Digest prompt in the user message. Use the required submit_digest_result tool as the final output channel."
 
 
@@ -470,7 +470,7 @@ def test_digest_reader_role_and_instruction_xml_renders_target_structure() -> No
     assert "reader.role" not in rendered
     assert "digest.current_step" not in rendered
     assert "reading-companion-backend" not in rendered
-    assert DIGEST_PROMPT_VERSION == "attentional_v2.digest.v8"
+    assert DIGEST_PROMPT_VERSION == "attentional_v2.digest.v9"
     assert ATTENTIONAL_V2_PROMPTS.digest_system == "Follow the structured Digest prompt in the user message. Use the required submit_digest_result tool as the final output channel."
     assert "Structural frame:" not in ATTENTIONAL_V2_PROMPTS.digest_prompt
     assert rendered.index("<ReaderRole>") < rendered.index("<Instruction>")
@@ -520,7 +520,7 @@ def test_digest_book_info_xml_renders_light_orientation_block() -> None:
     assert "book_identity" not in rendered
     assert "chapter_identity" not in rendered
     assert "ref=" not in rendered
-    assert DIGEST_PROMPT_VERSION == "attentional_v2.digest.v8"
+    assert DIGEST_PROMPT_VERSION == "attentional_v2.digest.v9"
     assert "Structural frame:" not in ATTENTIONAL_V2_PROMPTS.digest_prompt
 
 
@@ -587,7 +587,7 @@ def test_digest_current_focus_xml_renders_mainline_source_unit_with_paragraphs()
     assert "reading_path" not in rendered
     assert "reading_position" not in rendered
     assert "reading_intent" not in rendered
-    assert DIGEST_PROMPT_VERSION == "attentional_v2.digest.v8"
+    assert DIGEST_PROMPT_VERSION == "attentional_v2.digest.v9"
     assert "Structural frame:" not in ATTENTIONAL_V2_PROMPTS.digest_prompt
 
 
@@ -623,7 +623,6 @@ def test_digest_reading_memory_xml_projects_recent_memory_as_text_array_only() -
             "active_entries": [
                 {
                     "entry_id": "recent:c1:u0001:m1",
-                    "kind": "event_or_situation",
                     "memory_text": "作者说明 A & B < C。",
                     "source_unit_span_id": "src:c1:p1@0-p1@20",
                     "created_at_unit_index": 1,
@@ -631,7 +630,6 @@ def test_digest_reading_memory_xml_projects_recent_memory_as_text_array_only() -
                 },
                 {
                     "entry_id": "recent:c1:u0002:m1",
-                    "kind": "claim_or_argument",
                     "memory_text": "第二个阅读单元把作者的证据边界说清楚。",
                     "source_unit_span_id": "src:c1:p2@0-p2@20",
                     "created_at_unit_index": 2,
@@ -639,7 +637,6 @@ def test_digest_reading_memory_xml_projects_recent_memory_as_text_array_only() -
                 },
                 {
                     "entry_id": "recent:c1:u0003:m1",
-                    "kind": "other",
                     "memory_text": "",
                 },
             ],
@@ -664,7 +661,7 @@ def test_digest_reading_memory_xml_projects_recent_memory_as_text_array_only() -
     assert "value_slot" not in rendered
     assert "recent_memory" not in rendered
     assert "ref=" not in rendered
-    assert DIGEST_PROMPT_VERSION == "attentional_v2.digest.v8"
+    assert DIGEST_PROMPT_VERSION == "attentional_v2.digest.v9"
     assert "Structural frame:" not in ATTENTIONAL_V2_PROMPTS.digest_prompt
 
 
@@ -699,7 +696,7 @@ def test_runner_builds_unified_reading_memory_from_hot_and_retrieved_understandi
                     "unit_index": 3,
                     "source_span_id": "src:c1:p3@0-p3@10",
                     "digest": {
-                        "understanding": {"kind": "other", "content": "Retrieved prior understanding."},
+                        "understanding": {"content": "Retrieved prior understanding."},
                         "response": "Prior response should not be rendered.",
                         "annotations": [{"source_quote": "Prior quote", "content": "Prior note"}],
                     },
@@ -713,7 +710,7 @@ def test_runner_builds_unified_reading_memory_from_hot_and_retrieved_understandi
                     "unit_index": 4,
                     "source_span_id": "src:c1:p10@0-p10@20",
                     "digest": {
-                        "understanding": {"kind": "other", "content": "Duplicate should be suppressed."},
+                        "understanding": {"content": "Duplicate should be suppressed."},
                     },
                 },
             },
@@ -798,7 +795,7 @@ def test_digest_output_contract_xml_renders_target_contract() -> None:
     assert "<LanguageContract>" in rendered
     assert "必须使用 Chinese" in rendered
     assert "<ReturnFormat>" in rendered
-    assert '"understanding": {' in rendered
+    assert '"understanding": "..."' in rendered
     assert '"response": "..."' in rendered
     assert '"annotations": [' in rendered
     assert '"reading_impression": "..."' not in rendered
@@ -808,21 +805,21 @@ def test_digest_output_contract_xml_renders_target_contract() -> None:
     assert "<OutputFields>" in rendered
     assert "<UnderstandingField>" in rendered
     assert "one content-level understanding from the current source text" in rendered
-    assert "single object rather than a list of separate understanding items" in rendered
+    assert "one string rather than a list or object of separate understanding items" in rendered
     assert "<ResponseField>" in rendered
     assert "brief natural impression, feeling, thought, pressure, question, or aftertaste" in rendered
     assert "<AnnotationField>" in rendered
     assert '"source_quote": "..."' in rendered
     assert "<RecentReadingMemoryContract>" not in rendered
-    assert "Use `content` for the understanding itself." in rendered
-    assert "must remain a single object" in rendered
+    assert "Use `understanding` for the understanding itself." in rendered
+    assert "must remain one string" in rendered
     assert "Do not include operation-level reasons" in rendered
     assert "prompt_fragment_ref" not in rendered
     assert "value_slot" not in rendered
     assert "language_contract" not in rendered
     assert "digest.output_use_guide" not in rendered
     assert "ref=" not in rendered
-    assert DIGEST_PROMPT_VERSION == "attentional_v2.digest.v8"
+    assert DIGEST_PROMPT_VERSION == "attentional_v2.digest.v9"
     assert ATTENTIONAL_V2_PROMPTS.digest_system == "Follow the structured Digest prompt in the user message. Use the required submit_digest_result tool as the final output channel."
     assert "Structural frame:" not in ATTENTIONAL_V2_PROMPTS.digest_prompt
 
@@ -854,7 +851,7 @@ def test_digest_output_contract_template_declares_target_children() -> None:
         slot_values={"language_contract": "Use Chinese."},
     )
     assert "stored as ReadingMemory / Unit Memory" in rendered
-    assert "Pronouns may appear only when their referent is explicit inside the same `content`" in rendered
+    assert "Pronouns may appear only when their referent is explicit inside the same `understanding`" in rendered
 
 
 def test_digest_role_and_instruction_fragments_are_lossless() -> None:
@@ -903,9 +900,9 @@ def test_attentional_v2_prompt_registry_projects_current_bundle() -> None:
     ingest = ATTENTIONAL_V2_PROMPT_REGISTRY.get("attentional_v2.ingest")
     chapter = ATTENTIONAL_V2_PROMPT_REGISTRY.get("attentional_v2.chapter_consolidation")
 
-    assert ATTENTIONAL_V2_PROMPTSET_VERSION == "attentional_v2-phase6-v53"
+    assert ATTENTIONAL_V2_PROMPTSET_VERSION == "attentional_v2-phase6-v54"
     assert ATTENTIONAL_V2_PROMPTS.promptset_version == ATTENTIONAL_V2_PROMPTSET_VERSION
-    assert digest.version == DIGEST_PROMPT_VERSION == "attentional_v2.digest.v8"
+    assert digest.version == DIGEST_PROMPT_VERSION == "attentional_v2.digest.v9"
     assert ATTENTIONAL_V2_PROMPTS.digest_version == digest.version
     assert ATTENTIONAL_V2_PROMPTS.digest_system == digest.system_prompt
     assert ATTENTIONAL_V2_PROMPTS.digest_prompt == digest.user_prompt_template
@@ -1671,7 +1668,6 @@ def test_attentional_v2_read_book_runs_live_loop_and_persists_compatibility_resu
                     "operation_type": "append",
                     "target_store": "recent_reading_memory",
                     "payload": {
-                        "kind": "event_or_situation",
                         "memory_text": f"The unit leaves a remembered point around: {anchor_quote[:24]}",
                     },
                 }

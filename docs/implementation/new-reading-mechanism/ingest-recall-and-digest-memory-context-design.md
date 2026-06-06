@@ -17,8 +17,8 @@ Update when: Ingest recall wording, tool schema, recall output schema, retrieval
   - Ingest does not see, choose, or return retrieved memory brief ids; Ingest only expresses recall intentions and receives compact status/count tool results.
   - Digest now receives one top-level `ReadingMemory` block assembled from hot current-chapter Understanding plus runtime-selected long-distance Unit Memory Understanding.
 - Subject-continuity implementation:
-  - Digest prompt `attentional_v2.digest.v6` carries subject continuity through prior Understanding in `ReadingMemory`, not by adding raw-source backfill or a new Ingest-side reference-resolution surface.
-  - Digest uses current source text plus `ReadingMemory` to establish new subjects, continue known subjects, or explicitly preserve ambiguity inside `understanding.content`.
+  - Digest prompt `attentional_v2.digest.v9` carries subject continuity through prior Understanding in `ReadingMemory`, not by adding raw-source backfill or a new Ingest-side reference-resolution surface.
+  - Digest uses current source text plus `ReadingMemory` to establish new subjects, continue known subjects, or explicitly preserve ambiguity inside `understanding`.
 - Tool capability note:
   - On `2026-06-02`, a minimal live probe against the configured `MiniMax-M2.7` Anthropic-compatible endpoint succeeded with `tool_use -> tool_result -> final answer`.
   - The probe verifies basic provider support for Anthropic-style tools, not the Reading Companion retrieval tool implementation.
@@ -62,7 +62,7 @@ This design does not cover:
 
 ### Problem
 
-The current source unit may contain pronouns, quoted speech, unclear speakers, or deliberately delayed identities. If Digest writes those references into `understanding.content` as bare local pronouns, the resulting memory becomes hard to reuse later inside `ReadingMemory` and Unit Memory retrieval.
+The current source unit may contain pronouns, quoted speech, unclear speakers, or deliberately delayed identities. If Digest writes those references into `understanding` as bare local pronouns, the resulting memory becomes hard to reuse later inside `ReadingMemory` and Unit Memory retrieval.
 
 The solution should not reintroduce raw-source backread through runtime context and should not turn Ingest into a reference-resolution node. Subject continuity should travel through the same channel as the rest of reading continuity: prior Understanding.
 
@@ -76,7 +76,7 @@ This keeps the mechanism simple and universal:
 - no new Ingest-side reference-resolution output is added
 - no separate entity/coreference schema is introduced
 - `ReadingMemory` remains the prompt-facing carrier of prior Understanding
-- `understanding.content` becomes the place where subject continuity, new subject establishment, and unresolved ambiguity are recorded
+- `understanding` becomes the place where subject continuity, new subject establishment, and unresolved ambiguity are recorded
 
 ### Digest Subject-Continuity Rule
 
@@ -180,14 +180,14 @@ Runtime remains responsible for:
 - post-Digest settlement
 - trace / audit persistence
 
-Runtime may later support an audit-only checker for unresolved or floating pronouns in `understanding.content`, but the first design response should be prompt and example work in Digest rather than a new runtime memory schema.
+Runtime may later support an audit-only checker for unresolved or floating pronouns in `understanding`, but the first design response should be prompt and example work in Digest rather than a new runtime memory schema.
 
 ### Implementation Boundary
 
 Implemented first prompt slice:
 
 1. Digest `Understanding` instruction includes the subject-continuity rule.
-2. `OutputContract / UnderstandingField` says `understanding.content` is stored as ReadingMemory / Unit Memory and must be self-contained enough for later reading.
+2. `OutputContract / UnderstandingField` says `understanding` is stored as ReadingMemory / Unit Memory and must be self-contained enough for later reading.
 3. Digest prompt examples include known subject continuation, new subject establishment, and ambiguity preservation.
 4. Tests cover:
    - known first-person narrator continued through `ReadingMemory`
@@ -705,7 +705,7 @@ Field guidance:
   - include a compact chapter prefix only when needed for disambiguation, for example `C2 P42 U18`
   - never expose internal `source_span_id`, retrieval doc ids, SQL row ids, or embedding ids in prompt-facing memory
 - memory text
-  - use the canonical prior `understanding.content`
+  - use the canonical prior `understanding`
   - keep it as prose, not JSON
   - omit empty Understanding entries
 - source / retrieval metadata
@@ -742,12 +742,11 @@ Recommended estimator:
 - if observed MiniMax input-token usage diverges materially from the estimate, report it as an implementation finding and adjust the multiplier or tokenizer strategy deliberately
 - implementation note: `tiktoken` is now an explicit backend dependency for ReadingMemory budget control rather than an incidental environment package
 
-When Digest produces an Understanding, runtime should estimate and store the token cost of `understanding.content` with the Unit Memory / recent-memory entry:
+When Digest produces an Understanding, runtime should estimate and store the token cost of the `understanding` text with the Unit Memory / recent-memory entry:
 
 ```json
 {
   "understanding": {
-    "kind": "claim_or_argument",
     "content": "...",
     "token_estimate": {
       "estimator": "tiktoken_o200k_base_v1",

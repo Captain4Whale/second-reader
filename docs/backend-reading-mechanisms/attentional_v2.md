@@ -353,9 +353,9 @@ Use `docs/backend-reading-mechanism.md` for shared platform boundaries. Use `doc
 - This section freezes the approved next target shape after the post-E3 quality review.
 - The LLM-facing `Digest` contract minimally exposes:
   - `understanding`
-    - one holistic source-faithful object with `kind` and `content`
+    - one holistic source-faithful string
     - it may integrate several source-established meanings, but it must not split one unit into multiple understanding fragments
-    - runtime converts this object into zero or one internal `memory_uptake_ops[]` entry targeting `recent_reading_memory`
+    - runtime converts this string into zero or one internal `memory_uptake_ops[]` entry targeting `recent_reading_memory`
   - `response`
     - the temporary natural-language response left by the current unit
     - this is intentionally compact; it is the reader's immediate feeling, thought, pressure, question, or aftertaste after understanding the unit
@@ -437,14 +437,14 @@ Use `docs/backend-reading-mechanism.md` for shared platform boundaries. Use `doc
   - The current Ingest output contract is submitted through the `submit_ingest_result` final-output tool with `end_anchor_text`, `boundary_type`, `reason`, and bounded `memory_recalls[]`.
   - Digest XML renders `ReaderRole` and `Instruction` as separate top-level blocks; all fixed non-role Digest directions live under `Instruction`, while runtime context/data blocks remain separate.
   - Digest `Instruction` uses direct child blocks `CurrentStep`, `ContextUseGuide`, `Understanding`, `Response`, `Annotation`, `SourceGrounding`, and `ResponseDiscipline`.
-  - Digest `Understanding` prompt version `attentional_v2.digest.v8` uses content-level reading rules, text-type compression guidance, grammatical-subject guidance, source-established-content calibration, subject-continuity rules, and approved examples to keep stored Understanding memory self-contained without source-container commentary, passage-effect commentary, or source copying.
+  - Digest `Understanding` prompt version `attentional_v2.digest.v9` uses content-level reading rules, text-type compression guidance, grammatical-subject guidance, source-established-content calibration, subject-continuity rules, and approved examples to keep stored Understanding memory self-contained without source-container commentary, passage-effect commentary, source copying, or content-type classification.
   - The current Digest output contract is submitted through the `submit_digest_result` final-output tool with `understanding`, `response`, and `annotations`.
 - Current `attentional_v2` structured outputs use forced final-output tool use rather than free-text `Return JSON only` parsing.
   - Final-output tools are mechanism-private result channels, not business action tools.
   - The live final-output tools are `submit_ingest_result`, `submit_digest_result`, `submit_bridge_resolution_result`, `submit_reflective_promotion_result`, `submit_reconsolidation_result`, `submit_chapter_consolidation_result`, and `submit_survey_chapter_zone_result`.
   - `retrieve_unit_memory` remains the only current action tool; it is available to Ingest before the forced final-output submit step.
   - Missing submit-tool calls, wrong submit-tool names, non-object tool args, or business-validator failures are repaired once and then reported as public `llm_contract` problems if still invalid.
-- Subject continuity is implemented in Digest prompt `attentional_v2.digest.v8` and documented in `docs/implementation/new-reading-mechanism/ingest-recall-and-digest-memory-context-design.md`.
+- Subject continuity is implemented in Digest prompt `attentional_v2.digest.v9` and documented in `docs/implementation/new-reading-mechanism/ingest-recall-and-digest-memory-context-design.md`.
   - Prior Understanding in `ReadingMemory` carries narrator / speaker / actor / concept continuity forward; Digest uses that memory plus current source text to establish new subjects, continue known subjects, or explicitly preserve meaningful ambiguity.
   - Boundary: do not add raw prior-source backfill, Ingest reference-resolution fields, or a durable referent store for this slice.
   - Rule: Digest Understanding should be self-contained and memory-readable; it may use pronouns when their referent is explicit inside the same Understanding, but should not store floating pronouns.
@@ -501,8 +501,8 @@ Use `docs/backend-reading-mechanism.md` for shared platform boundaries. Use `doc
     - long-lived tensions, arcs, watchpoints, and unresolved thematic/narrative pulls should be handled through current/future Unit Memory retrieval design, not kept alive in a separate ActiveTension layer
   - `recent_reading_memory`
     - owns near-term semantic memory of just-read units
-    - Digest returns one LLM-facing `understanding` object; runtime converts it into at most one `memory_uptake_ops[]` entry with `target_store="recent_reading_memory"` and `op="append"`
-    - the LLM provides only `kind` and `content`; runtime stores `content` as `memory_text`, and Recent Memory append operations do not use an operation-level `reason`
+    - Digest returns one LLM-facing `understanding` string; runtime converts it into at most one `memory_uptake_ops[]` entry with `target_store="recent_reading_memory"` and `op="append"`
+    - the LLM provides only the understanding text; runtime stores it as `memory_text`, and Recent Memory append operations do not use an operation-level `reason` or content-type `kind`
     - the runner owns `entry_id`, `source_unit_span_id`, `created_at_unit_index`, `status`, and `archived_by_consolidation_id`
     - entries are grounded by the accepted read unit span as a whole; the first implementation does not require fine-grained `source_refs` or quote matching
     - this store remains append-only: Digest does not update, merge, resolve, close, link, or route recent entries into typed long-memory destinations

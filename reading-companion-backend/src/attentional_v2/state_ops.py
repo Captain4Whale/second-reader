@@ -370,7 +370,6 @@ def apply_recent_reading_memory_operations(
         entry: RecentReadingMemoryEntry = {
             "entry_id": entry_id,
             "source_unit_span_id": str(source_unit_span_id or "").strip(),
-            "kind": _compact_text(payload.get("kind")) or "other",
             "memory_text": memory_text,
             "token_estimate": token_estimate_payload(memory_text),
             "status": "active",

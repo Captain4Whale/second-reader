@@ -886,19 +886,15 @@ def _route_targets_from_ref_ids(
 def _understanding_output_to_recent_memory_ops(value: object) -> list[dict[str, object]]:
     """Convert Digest Understanding output into current runtime memory ops."""
 
-    if not isinstance(value, dict):
-        return []
     operations: list[dict[str, object]] = []
-    memory_text = _clean_text(value.get("content"))
+    memory_text = _clean_text(value)
     if not memory_text:
         return operations
-    kind = _clean_text(value.get("kind")) or "other"
     operations.append(
         {
             "op": "append",
             "target_store": "recent_reading_memory",
             "payload": {
-                "kind": kind,
                 "memory_text": memory_text,
             },
         }

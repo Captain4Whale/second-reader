@@ -85,7 +85,6 @@ def test_build_carry_forward_context_exposes_phase_c1_packet_shape():
         {
             "entry_id": "recent:c1:u0001:m1",
             "source_unit_span_id": "unit:c1:p1@0-p1@15",
-            "kind": "event_or_situation",
             "memory_text": "The opener introduces a practical dilemma that the next unit can build on.",
             "status": "active",
             "created_at_unit_index": 1,
@@ -94,7 +93,6 @@ def test_build_carry_forward_context_exposes_phase_c1_packet_shape():
         {
             "entry_id": "recent:c1:u0000:m1",
             "source_unit_span_id": "unit:c1:p0@0-p0@10",
-            "kind": "background",
             "memory_text": "Archived material should not enter Digest.",
             "status": "archived",
             "created_at_unit_index": 0,
@@ -234,7 +232,6 @@ def test_build_digest_prompt_packet_projects_compact_carry_forward_context():
         {
             "entry_id": "recent:c1:u0001:m1",
             "source_unit_span_id": "unit:c1:p1@0-p1@15",
-            "kind": "event_or_situation",
             "memory_text": "The opener introduces a practical dilemma that the next unit can build on.",
             "status": "active",
             "created_at_unit_index": 1,
@@ -243,7 +240,6 @@ def test_build_digest_prompt_packet_projects_compact_carry_forward_context():
         {
             "entry_id": "recent:c1:u0000:m1",
             "source_unit_span_id": "unit:c1:p0@0-p0@10",
-            "kind": "background",
             "memory_text": "Archived material should not enter Digest.",
             "status": "archived",
             "created_at_unit_index": 0,
@@ -301,7 +297,6 @@ def test_build_digest_prompt_packet_projects_compact_carry_forward_context():
         "active_entries": [
             {
                 "entry_id": "recent:c1:u0001:m1",
-                "kind": "event_or_situation",
                 "memory_text": "The opener introduces a practical dilemma that the next unit can build on.",
                 "source_unit_span_id": "unit:c1:p1@0-p1@15",
                 "created_at_unit_index": 1,

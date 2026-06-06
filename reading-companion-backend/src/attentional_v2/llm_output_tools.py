@@ -65,13 +65,7 @@ DIGEST_RESULT_TOOL = final_output_tool(
     "Submit the final Digest reading result. Use this tool exactly once as the final answer.",
     _object_schema(
         {
-            "understanding": _object_schema(
-                {
-                    "kind": {"type": "string"},
-                    "content": {"type": "string"},
-                },
-                required=["kind", "content"],
-            ),
+            "understanding": {"type": "string"},
             "response": {"type": "string"},
             "annotations": {
                 "type": "array",
@@ -206,8 +200,8 @@ def _is_content_bearing_text(texts: list[str]) -> bool:
 def validate_digest_result(payload: Mapping[str, Any], *, current_unit_texts: list[str]) -> list[str]:
     errors: list[str] = []
     understanding = payload.get("understanding")
-    if not isinstance(understanding, Mapping):
-        errors.append("understanding must be an object")
+    if not isinstance(understanding, str):
+        errors.append("understanding must be a string")
     annotations = payload.get("annotations")
     if not isinstance(annotations, list):
         errors.append("annotations must be an array")
@@ -216,9 +210,8 @@ def validate_digest_result(payload: Mapping[str, Any], *, current_unit_texts: li
         errors.append("response must be a string")
     content_required = _is_content_bearing_text(current_unit_texts)
     if content_required:
-        content = str(understanding.get("content") or "").strip() if isinstance(understanding, Mapping) else ""
-        if not content:
-            errors.append("understanding.content must be non-empty for content-bearing source text")
+        if not str(understanding or "").strip():
+            errors.append("understanding must be non-empty for content-bearing source text")
         if not str(response or "").strip():
             errors.append("response must be non-empty for content-bearing source text")
     return errors
@@ -231,4 +224,3 @@ def require_mapping_fields(*fields: str):
         return [f"{field} is required" for field in fields if field not in payload]
 
     return _validator
-

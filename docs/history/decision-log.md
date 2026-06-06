@@ -3266,3 +3266,30 @@ This new direction is design frozen but not yet implemented as a formal benchmar
 - `reading-companion-backend/src/attentional_v2/survey.py`
 - `reading-companion-backend/tests/test_llm_gateway.py`
 - `reading-companion-backend/tests/test_attentional_v2_llm_calls.py`
+
+## Entry 111
+**ID**: DEC-114
+**Status**: active
+
+**Decision / Inflection**: Remove `understanding.kind` from current Digest / Recent Reading Memory / Unit Memory live surfaces.
+
+**Period**: June 6, 2026, after the Digest Understanding review identified the inherited `kind` classifier as a leftover from the paused structured-memory direction rather than a necessary part of content-neutral Unit Memory.
+
+**Decision**: Current Digest now submits `understanding` as one string, not a `{kind, content}` object. Runtime converts that string into `recent_reading_memory` append operations that carry only `memory_text`. New Unit Memory entries store `digest.understanding.content` plus token estimate, without a content-type classifier. Retrieval continues to use Understanding text as the primary semantic surface; it does not use a fixed content taxonomy or `kind` facet.
+
+**Boundary**: This is a hard live-interface cleanup. Old artifacts and checkpoints that already contain `kind` remain historical data and are not migrated, but current model output, prompts, tool schema, runtime stores, prompt projection, tests, and stable docs should not expose `understanding.kind` as a live contract. Public frontend/API behavior is not changed.
+
+**Why this path won**: The current memory direction favors simplicity, universality, and content-neutral unit-level memory. A lightweight classifier still asks the model to label content types and can quietly reintroduce taxonomy maintenance without serving retrieval or Digest continuity. The useful memory object is the source-grounded Understanding text itself.
+
+**Primary evidence**:
+- `docs/current-state.md`
+- `docs/tasks/registry.md`
+- `docs/backend-reading-mechanisms/attentional_v2.md`
+- `docs/implementation/new-reading-mechanism/digest-understanding-response-annotation-design.md`
+- `docs/implementation/new-reading-mechanism/unit-memory-hybrid-retrieval-design.md`
+- `docs/implementation/new-reading-mechanism/ingest-recall-and-digest-memory-context-design.md`
+- `reading-companion-backend/src/attentional_v2/llm_output_tools.py`
+- `reading-companion-backend/src/attentional_v2/llm_calls.py`
+- `reading-companion-backend/src/attentional_v2/unit_memory.py`
+- `reading-companion-backend/src/attentional_v2/state_ops.py`
+- `reading-companion-backend/src/attentional_v2/state_projection.py`

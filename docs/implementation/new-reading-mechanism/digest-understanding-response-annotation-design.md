@@ -24,20 +24,20 @@ Update when: Digest action names, output fields, XML prompt structure, or runtim
 
 ## Implementation Status
 
-- Implemented prompt version: `attentional_v2.digest.v7`
-- Implemented XML assembly spec: `attentional_v2.digest.xml.v7`
-- Implemented promptset: `attentional_v2-phase6-v52`
-- Implemented output contract: `digest_understanding_response_annotation_json_v2`
+- Implemented prompt version: `attentional_v2.digest.v9`
+- Implemented XML assembly spec: `attentional_v2.digest.xml.v9`
+- Implemented promptset: `attentional_v2-phase6-v54`
+- Implemented output contract: `digest_understanding_response_annotation_json_v3`
 - Runtime mapping:
-  - `understanding.content` -> zero or one internal `memory_uptake_ops[].payload.memory_text` targeting `recent_reading_memory`
+  - `understanding` string -> zero or one internal `memory_uptake_ops[].payload.memory_text` targeting `recent_reading_memory`
   - `response` -> internal `DigestResult.reading_impression`
   - `annotations[]` -> internal `DigestResult.surfaced_reactions`
 - Subject-continuity mapping:
   - `ReadingMemory` is the only prompt-facing carrier of prior Understanding for subject continuity.
   - Digest should establish new subjects, continue known subjects from `ReadingMemory` when supported, and preserve genuine ambiguity instead of guessing.
-  - Pronouns are allowed only when the referent is clear inside the same `understanding.content`.
+  - Pronouns are allowed only when the referent is clear inside the same `understanding`.
 - Source-established-content calibration:
-  - Digest should write `understanding.content` as content established by the source text, not as commentary on what the passage does as a passage.
+  - Digest should write `understanding` as content established by the source text, not as commentary on what the passage does as a passage.
   - Readerly effects such as suspense, revelation, atmosphere, or aftertaste belong in `response` unless the source text itself states them as content.
 - Old model-facing fields `reading_impression`, `surfaced_reactions`, and `recent_reading_memory` are not accepted as current Digest LLM contract fields; internal runtime/audit names remain stable in this slice.
 
@@ -375,11 +375,11 @@ Implementation notes:
 - The grammatical-subject guidance steers the model toward content from the text: people, events, concepts, claims, relationships, scenes, methods, or conditions.
 - The source-established-content calibration keeps reading effects such as suspense, revelation, atmosphere, or aftertaste out of `Understanding` unless the source itself states them as content.
 - The five examples are approved from real five-window diagnostic units and show content-level, memory-ready Understanding without naming the source container.
-- The single-object rule for `understanding` lives in `OutputContract`, not in the reader-facing `Understanding` instruction.
+- The single-string rule for `understanding` lives in `OutputContract`, not in the reader-facing `Understanding` instruction.
 
 ### Implemented Subject-Continuity Understanding Rule
 
-Prompt version `attentional_v2.digest.v7` makes `understanding.content` self-contained by using the current source text and `ReadingMemory` to continue known subjects, establish new subjects, or preserve meaningful ambiguity.
+Prompt version `attentional_v2.digest.v9` makes `understanding` self-contained by using the current source text and `ReadingMemory` to continue known subjects, establish new subjects, or preserve meaningful ambiguity.
 
 This rule does not add raw prior-source context to Digest and does not make Ingest responsible for reference resolution.
 
@@ -449,7 +449,7 @@ He realizes that this is happening again and wants to tell him about it.
 
 That output is not acceptable as stored Understanding because the later reader cannot recover `he`, `this`, `him`, or `it` from memory.
 
-The same rule is reflected in `OutputContract / UnderstandingField`, because `understanding.content` is converted into runtime memory text and later rendered inside `ReadingMemory`.
+The same rule is reflected in `OutputContract / UnderstandingField`, because `understanding` is converted into runtime memory text and later rendered inside `ReadingMemory`.
 
 ### Response
 
@@ -530,10 +530,7 @@ Recommended LLM-facing contract:
 
 ```json
 {
-  "understanding": {
-    "kind": "event_or_situation|claim_or_argument|definition_or_distinction|causal_or_structural_link|character_or_relationship|emotional_or_tonal_shift|image_or_scene|local_pattern_or_thread|fact|author_or_method_frame|other",
-    "content": "..."
-  },
+  "understanding": "...",
   "response": "...",
   "annotations": [
     {
@@ -549,11 +546,11 @@ Recommended LLM-facing contract:
 
 Notes:
 
-- `understanding.content` replaces `recent_reading_memory[].memory_text` at the model-facing level.
+- `understanding` replaces `recent_reading_memory[].memory_text` at the model-facing level.
 - `response` replaces `reading_impression`.
 - `annotations` replaces `surfaced_reactions`.
-- `author_or_method_frame` is proposed as an optional `kind` because current prompt rules explicitly treat author stance, evidence boundary, writing method, and intended reader as meaningful content. If the team wants fewer kinds, this can remain `other` instead.
-- `understanding.content` may be empty only for empty or purely structural units; runtime does not append an empty recent-memory entry.
+- Digest no longer emits a content-type `kind`; Understanding remains content-neutral and retrieval should work from the text itself.
+- `understanding` may be empty only for empty or purely structural units; runtime does not append an empty recent-memory entry.
 
 Runtime mapping:
 
@@ -583,7 +580,7 @@ This keeps runtime state stable while making the LLM call semantically cleaner.
 - Update `OutputContract`:
   - `ReturnFormat`
   - field contracts
-  - output contract name: `digest_understanding_response_annotation_json_v2`
+  - output contract name: `digest_understanding_response_annotation_json_v3`
 - Update `llm_calls.digest(...)` normalizer:
   - parse `payload["understanding"]`
   - parse `payload["response"]`
@@ -608,5 +605,5 @@ This keeps runtime state stable while making the LLM call semantically cleaner.
   - Default recommendation: yes. It should stay compact and not compete with Understanding.
 - Should `annotations` remain 0-2 by default?
   - Default recommendation: yes. The current density rule is working conceptually and should not be loosened in this semantic refactor.
-- Should `understanding` be a list or one object/string?
-  - Resolved implementation: one object. `understanding.content` may contain one sentence or several compact paragraphs when needed, but the model-facing field is not a list.
+- Should `understanding` be a list, object, or string?
+  - Resolved implementation: one string. `understanding` may contain one sentence or several compact paragraphs when needed, but the model-facing field is not a list or object.
