@@ -36,11 +36,12 @@ Completed or partially landed repair evidence:
 - The post-R9 retrieved-memory review found mixed relevance: broad Siddhartha / Govinda continuity recall works, but auxiliary surfaces can pull terminology / note-cluster units into prompt-visible `ReadingMemory`.
 - Lexical surface weights now prioritize `unit_understanding` over `unit_source`, `unit_annotation`, and `unit_response`, preserving the auxiliary surfaces while restoring Understanding as the primary selection surface.
 - `unit_memory_reading_memory_selection` trace now records `rendered_retrieved_units` and `rendered_retrieved_unit_ids`, so future health packets can identify which selected Unit Memory entries actually survived hot-memory dedupe and budget trimming into Digest.
+- A post-R10/R11 `text_only` smoke on `xidaduo_private_zh__segment_1` was intentionally stopped after collecting rendered-id evidence. Its run-local health packet is `ok`: `47` Unit Memory entries, `293` retrieval docs, `54` retrieval rows, `47` selection rows, `selected_unit_count=18`, `renderable_selected_unit_count=11`, `retrieved_line_total=6`, and `rendered_retrieved_unique_unit_count=6`. This proves the Understanding-prioritized lexical path still renders prompt-visible retrieved memory and that the new trace fields work in live artifacts.
 
 Current unresolved target:
 
 - The `text_only` path has passed a live diagnostic proof for prompt-visible long-distance retrieved Understanding lines in Digest `ReadingMemory`.
-- A post-weighting smoke is still needed to prove that Understanding-prioritized lexical ranking preserves retrieval while reducing auxiliary-surface pollution.
+- Understanding-prioritized lexical ranking still retrieves and renders prior Understanding in live artifacts; the remaining text-only issue is relevance calibration, not mechanical renderability.
 - Hybrid dense retrieval remains environment-blocked because local Ollama / Qwen embedding service is unavailable; the goal should not claim hybrid success until dense candidates and RRF fusion are validated.
 - The latest smoke was intentionally stopped before full summary generation, so it is diagnostic repair evidence, not formal evaluation evidence.
 
@@ -187,7 +188,7 @@ Each phase must leave behind a concrete pass/fail result.
 | Phase 4 | `passed_deterministic` | Runtime retrieval can continue after boundary acceptance even if the earlier tool-stage trace was `boundary_unresolved`; horizon gates now record current unit, recent exclusion, max retrievable unit, prior count, and minimum prior count. | Validate the gate counts in fresh smoke artifacts. |
 | Phase 5 | `passed_deterministic` | A selected non-empty Understanding from the real Unit Memory index renders into Digest `ReadingMemory`, and prior Response / Annotation / raw source stay out of prompt-facing memory. | Validate prompt-visible retrieved lines in a no-judge smoke. |
 | Phase 6 | `not_started` | None. | Calibrate Ingest recall prompt only after retrieval/search/rendering is mechanically functional. |
-| Phase 7 | `post_r9_text_only_passed_r10_r11_repair_landed` | A post-R9 `text_only` smoke proved prompt-visible retrieved Understanding lines with health status `ok`; relevance review found auxiliary-surface pollution; lexical weights and rendered-unit trace were repaired. | Re-smoke text-only after R10/R11; hybrid dense validation remains environment-blocked. |
+| Phase 7 | `passed_post_r11_text_only_diagnostic` | Post-R9 and post-R10/R11 `text_only` smokes proved prompt-visible retrieved Understanding lines; rendered retrieved unit ids now appear in live traces; auxiliary-surface-only rendered pollution was reduced in the observed event. | Calibrate recall specificity / relevance; hybrid dense validation remains environment-blocked. |
 
 ### External Environment Handling
 
@@ -246,16 +247,15 @@ When Goal mode finishes or reaches a real blocker, it must produce:
 
 Continue from the smallest independent checks rather than jumping directly to a formal evaluation:
 
-1. Run a small no-judge `text_only` smoke after R10/R11 to confirm:
-   - retrieved Understanding lines still appear in Digest `ReadingMemory`
-   - the new `rendered_retrieved_unit_ids` trace field identifies prompt-visible retrieved units
-   - auxiliary-surface pollution is reduced relative to the post-R9 review packet
+1. Review/calibrate Ingest recall specificity and selection relevance:
+   - post-R11 rendered memory proves the chain works, but the observed rendered event still leans on broad Siddhartha / Govinda continuity rather than precise doctrinal recall
+   - avoid making recalls a mechanical keyword list; tune only after comparing the prompt-visible retrieved unit ids and current source units
 2. Attempt Phase 2 only when environment can support it:
    - sqlite-vec load works
    - Ollama is reachable
    - configured Qwen embedding model is available
    - query embedding cache and vector rows become nonzero
-3. Calibrate Ingest recall wording only after the post-R10/R11 retrieved-memory examples are reviewed for relevance and pollution.
+3. If recall-specificity tuning lands, rerun a small no-judge `text_only` smoke and compare rendered retrieved unit ids against the post-R11 review packet.
 
 Do not tune Ingest recall wording until search, selection, renderability, and trace mechanics have been proven with deterministic cases. Otherwise prompt changes may hide mechanical retrieval failures.
 
@@ -704,7 +704,7 @@ Acceptance:
 
 ### Phase 7. End-To-End Diagnostic Validation
 
-Status: `post_r9_text_only_passed_r10_r11_repair_landed`
+Status: `passed_post_r11_text_only_diagnostic`
 
 Current evidence:
 
@@ -733,6 +733,17 @@ Current evidence:
 - Post-review repair:
   - R10 lexical weights now prioritize `unit_understanding`
   - R11 selection traces now record actual rendered retrieved unit ids
+- Post-R10/R11 passing diagnostic:
+  - run id: `attentional_v2_unit_memory_text_only_smoke_xidaduo_post_r11_20260606`
+  - job id: `bgjob_unit_memory_text_only_smoke_xidaduo_post_r11_20260606`
+  - segment: `xidaduo_private_zh__segment_1`
+  - mode: `text_only`
+  - intentionally stopped after rendered-id evidence was collected; summary aggregate/report/usage files are absent
+  - health packet: `reading-companion-backend/eval/runs/attentional_v2/attentional_v2_unit_memory_text_only_smoke_xidaduo_post_r11_20260606/analysis/unit_memory_retrieval_health/summary.json`
+  - review packet: `reading-companion-backend/eval/runs/attentional_v2/attentional_v2_unit_memory_text_only_smoke_xidaduo_post_r11_20260606/analysis/unit_memory_retrieval_review/README.md`
+  - health status `ok`: `47` Unit Memory entries, `293` retrieval docs, `54` retrieval rows, `47` selection rows, `selected_unit_count=18`, `renderable_selected_unit_count=11`, `retrieved_line_total=6`, `rendered_retrieved_unique_unit_count=6`
+  - observed rendered retrieved ids: `u000010`, `u000009`, `u000007`, `u000006`, `u000003`, `u000002`
+  - interpretation: all rendered units had `unit_understanding` among matched surfaces, so the observed prompt-visible retrieved memory no longer comes from auxiliary-surface-only hits; relevance remains broad and should be calibrated at the recall specificity layer
 
 Goal:
 

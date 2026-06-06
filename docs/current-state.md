@@ -7,7 +7,7 @@ Update when: the current objective, active tasks, blockers, active jobs, open de
 
 This file is authoritative for durable current status. Do not keep unique active-state information only in `docs/agent-handoff.md`.
 
-Last verified: `2026-06-06T16:38:37+08:00`
+Last verified: `2026-06-06T17:01:54+08:00`
 
 ## Current Objective
 - The `Ingest -> Digest -> Reading Runner settlement` mechanism reframe is implemented; current work is fact alignment, smoke/diagnostic review, and calibration before any formal evaluation promotion.
@@ -103,10 +103,20 @@ Last verified: `2026-06-06T16:38:37+08:00`
       - finding: text-only retrieval now has useful continuity examples, but auxiliary FTS surfaces could still pull terminology / note-cluster units into Digest `ReadingMemory`
       - repair: Unit Memory lexical weights now prioritize `unit_understanding` over `unit_source`, `unit_annotation`, and `unit_response`
       - repair: selection trace rows now record `rendered_retrieved_units` and `rendered_retrieved_unit_ids` so future health reports can identify exactly which retrieved Unit Memory entries became prompt-visible
+    - post-R10/R11 `text_only` diagnostic smoke:
+      - run id: `attentional_v2_unit_memory_text_only_smoke_xidaduo_post_r11_20260606`
+      - job id: `bgjob_unit_memory_text_only_smoke_xidaduo_post_r11_20260606`
+      - segment: `xidaduo_private_zh__segment_1`
+      - result: intentionally stopped after rendered retrieved unit ids were captured; no summary aggregate/report/usage files were generated
+      - report: `docs/implementation/new-reading-mechanism/codex/reports/UnitMemory-Retrieval-TextOnly-PostR11-Smoke-Report v0.md`
+      - health packet: `reading-companion-backend/eval/runs/attentional_v2/attentional_v2_unit_memory_text_only_smoke_xidaduo_post_r11_20260606/analysis/unit_memory_retrieval_health/summary.json`
+      - review packet: `reading-companion-backend/eval/runs/attentional_v2/attentional_v2_unit_memory_text_only_smoke_xidaduo_post_r11_20260606/analysis/unit_memory_retrieval_review/README.md`
+      - retrieval outcome: health status `ok`; `47` Unit Memory entries, `293` retrieval docs, `54` retrieval rows, `47` selection rows, `selected_unit_count=18`, `renderable_selected_unit_count=11`, `retrieved_line_total=6`, and `rendered_retrieved_unique_unit_count=6`
+      - interpretation: R10 did not break text-only prompt-visible retrieval, and R11 trace observability works; the rendered retrieved units all had `unit_understanding` among their matched surfaces, but recall relevance remains broad rather than precise
   - next step:
-    - run a small no-judge post-R10/R11 `text_only` smoke to confirm retrieved lines still appear, rendered retrieved unit ids are trace-visible, and auxiliary-surface pollution is reduced
+    - treat text-only retrieval/rendering/trace mechanics as repaired enough for the next layer; review/calibrate Ingest recall specificity and selection relevance so broad protagonist recall does not crowd out more precise continuity memory
     - treat hybrid dense retrieval as blocked unless sqlite-vec, Ollama reachability, the configured Qwen embedding model, query embedding cache, vector rows, dense candidates, and RRF fusion are all validated
-    - do not run formal evaluation, update evidence catalog, or claim product quality from the intentionally stopped diagnostic smoke; first validate the post-R10/R11 text-only behavior and decide whether to validate the environment-blocked hybrid dense path
+    - do not run formal evaluation, update evidence catalog, or claim product quality from the intentionally stopped diagnostic smokes; decide whether to tune recall specificity first or validate the environment-blocked hybrid dense path once Ollama/Qwen is available
     - use `docs/implementation/new-reading-mechanism/ingest-context-and-navigate-mapping.md` as the implementation reference for the landed first-slice `Ingest` XML context
     - use `docs/implementation/new-reading-mechanism/digest-understanding-response-annotation-design.md` as the implemented reference for the Digest prompt/output semantic refactor
     - use `docs/implementation/new-reading-mechanism/unit-memory-hybrid-retrieval-design.md` as the implemented reference for the Unit Memory storage/index/retrieval trace bottom framework
