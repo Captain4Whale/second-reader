@@ -13,6 +13,8 @@ Update when: Ingest recall wording, tool schema, recall output schema, retrieval
   - `DEC-110` implemented the Unit Memory ledger, FTS5 text retrieval, optional sqlite-vec vector retrieval, retrieval mode config, and trace.
   - Ingest now emits bounded `memory_recalls[]` instead of model-facing `memory_query`.
   - The Ingest LLM call can invoke Unit Memory retrieval through an Anthropic-style `retrieve_unit_memory` tool loop.
+  - Model-side recalls are contract-validated against the current source text before retrieval execution: recall text must use the current source text's primary language when that language is clear, and model-side `basis` must remain `selected_source_unit`.
+  - `retrieve_unit_memory` action-tool preflight uses the same validator and returns `contract_violation` metadata when the action payload violates the recall contract, allowing the final-output repair path to correct the result without exposing retrieved memory back to Ingest.
   - Reading Runner/runtime keeps actual retrieval execution, score fusion, source-unit resolution, artifact writing, result selection, dedupe, budget trimming, and Digest `ReadingMemory` rendering.
   - Ingest does not see, choose, or return retrieved memory brief ids; Ingest only expresses recall intentions and receives compact status/count tool results.
   - Digest now receives one top-level `ReadingMemory` block assembled from hot current-chapter Understanding plus runtime-selected long-distance Unit Memory Understanding.
@@ -479,6 +481,8 @@ When nothing in the selected unit calls for earlier reading:
   - model-side value is exactly `selected_source_unit`
 
 Retrieval status, selected unit ids, selected brief ids, suppression reasons, and budget decisions are runtime trace / audit fields, not Ingest model-output fields.
+
+The same-language and basis rules are enforced as a structured-output contract, not only as prompt advice. If the source is clearly Chinese and the model emits an English recall, or if the model-side basis drifts from `selected_source_unit`, validation treats that as a contract failure and gives the model one repair attempt through the forced final-output tool path. Runtime fallback recalls may still use `runtime_source_text_fallback`, but that value is not a model-side basis.
 
 ### Good Recall Examples
 

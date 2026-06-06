@@ -33,6 +33,7 @@ from .llm_calls import (
     ingest as _call_ingest,
     digest as _call_digest,
 )
+from .llm_output_tools import validate_ingest_result
 from .observability import (
     maybe_capture_memory_quality_probe,
     memory_quality_probe_observability_settings,
@@ -1306,6 +1307,19 @@ def _compact_reading_memory_line_record(record: object) -> dict[str, object]:
     return compact
 
 
+def _current_view_source_texts(current_view_content: Mapping[str, object]) -> list[str]:
+    slices = current_view_content.get("paragraph_slices")
+    if not isinstance(slices, list):
+        return []
+    texts: list[str] = []
+    for item in slices:
+        if isinstance(item, Mapping):
+            text = _clean_text(item.get("text"))
+            if text:
+                texts.append(text)
+    return texts
+
+
 def _retrieve_unit_memory_for_prepared_source_unit(
     *,
     output_dir: Path,
@@ -1561,9 +1575,22 @@ def prepare_next_source_unit_for_read(
         if isinstance(preparation.get("current_view_content"), dict)
         else {}
     )
+    current_source_texts = _current_view_source_texts(current_view_content)
     tool_retrieval_results: list[dict[str, object]] = []
 
     def _unit_memory_tool_handler(args: Mapping[str, object]) -> Mapping[str, object]:
+        preflight_errors = validate_ingest_result(
+            dict(args),
+            tool_results=[{"status": "preflight"}],
+            current_source_texts=current_source_texts,
+        )
+        if preflight_errors:
+            return {
+                "status": "contract_violation",
+                "effective_mode": _clean_text((memory_retrieval_config or {}).get("mode")) or "hybrid",
+                "retrieval_summary": {"recall_count": 0, "candidate_unit_count": 0, "selected_unit_count": 0},
+                "degradation_reason": "; ".join(preflight_errors),
+            }
         recalls = normalize_unit_memory_recalls(args.get("memory_recalls"))
         tool_call_id = _clean_text(args.get("_tool_call_id"))
         if not recalls:

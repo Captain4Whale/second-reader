@@ -775,6 +775,19 @@ def _normalize_ingest_boundary_result(
     return result
 
 
+def _current_view_source_texts(current_view_content: Mapping[str, object]) -> list[str]:
+    slices = current_view_content.get("paragraph_slices")
+    if not isinstance(slices, list):
+        return []
+    texts: list[str] = []
+    for item in slices:
+        if isinstance(item, Mapping):
+            text = _clean_text(item.get("text"))
+            if text:
+                texts.append(text)
+    return texts
+
+
 def ingest(
     *,
     current_view_position: dict[str, object],
@@ -794,6 +807,7 @@ def ingest(
         current_view_content=current_view_content,
     )
     user_prompt = prompt_assembly.rendered_text
+    current_source_texts = _current_view_source_texts(current_view_content)
     _write_prompt_manifest(
         output_dir,
         node_name="ingest",
@@ -817,7 +831,11 @@ def ingest(
                 prompts.ingest_system,
                 prompt_text,
                 output_tool=INGEST_RESULT_TOOL,
-                validator=lambda payload: validate_ingest_result(payload, tool_results=[]),
+                validator=lambda payload: validate_ingest_result(
+                    payload,
+                    tool_results=[],
+                    current_source_texts=current_source_texts,
+                ),
             )
             result = _normalize_ingest_boundary_result(tool_result.payload)
             result["tool_loop_status"] = "final_without_tool"
@@ -840,7 +858,11 @@ def ingest(
             action_tools=[_INGEST_UNIT_MEMORY_TOOL],
             output_tool=INGEST_RESULT_TOOL,
             tool_handler=_handle_tool,
-            validator=lambda payload, tool_results: validate_ingest_result(payload, tool_results),
+            validator=lambda payload, tool_results: validate_ingest_result(
+                payload,
+                tool_results,
+                current_source_texts=current_source_texts,
+            ),
             max_tool_calls=1,
         )
         result = _normalize_ingest_boundary_result(tool_loop.payload)

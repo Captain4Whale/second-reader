@@ -7,7 +7,7 @@ Update when: the current objective, active tasks, blockers, active jobs, open de
 
 This file is authoritative for durable current status. Do not keep unique active-state information only in `docs/agent-handoff.md`.
 
-Last verified: `2026-06-06T18:28:48+08:00`
+Last verified: `2026-06-06T18:45:51+08:00`
 
 ## Current Objective
 - The `Ingest -> Digest -> Reading Runner settlement` mechanism reframe is implemented; current work is fact alignment, smoke/diagnostic review, and calibration before any formal evaluation promotion.
@@ -145,8 +145,24 @@ Last verified: `2026-06-06T18:28:48+08:00`
       - retrieval outcome: health status `ok`; `46` Unit Memory entries, `287` retrieval docs, `49` retrieval rows, `46` selection rows, `selected_unit_count=8`, `renderable_selected_unit_count=7`, `retrieved_line_total=2`, and `rendered_retrieved_unique_unit_count=2`
       - selection-cap evidence: one mature recall had `15` candidate units, selected `6`, and suppressed `8` candidates with `per_recall_selection_limit_exceeded`
       - follow-up finding: some Chinese-source recalls were emitted in English and some recall `basis` values drifted from the contract; Ingest v6 now tightens recall language and basis
+    - current recall-language contract repair:
+      - status: `validated_observed_live_contract_sample`
+      - code behavior: `submit_ingest_result` validation now receives the current source text and rejects model-side `memory_recalls[].recall_text` that clearly does not use the current source text's primary language; `retrieve_unit_memory` action-tool preflight applies the same validation before retrieval execution and returns `contract_violation` metadata for the forced final-output repair path
+      - pre-contract smoke:
+        - run id: `attentional_v2_unit_memory_text_only_smoke_xidaduo_post_ingest_v6_20260606`
+        - job id: `bgjob_unit_memory_text_only_smoke_xidaduo_post_ingest_v6_20260606`
+        - result: intentionally stopped after exposing that prompt-only Ingest v6 wording was insufficient; a Chinese source unit produced an English recall with `basis = selected_source_unit`
+        - review packet: `reading-companion-backend/eval/runs/attentional_v2/attentional_v2_unit_memory_text_only_smoke_xidaduo_post_ingest_v6_20260606/analysis/unit_memory_recall_language_review/README.md`
+      - post-contract smoke:
+        - run id: `attentional_v2_unit_memory_text_only_smoke_xidaduo_post_ingest_v6_contract_20260606`
+        - job id: `bgjob_unit_memory_text_only_smoke_xidaduo_post_ingest_v6_contract_20260606`
+        - result: intentionally stopped after an early contract sample; no summary aggregate/report/usage files were generated
+        - health packet: `reading-companion-backend/eval/runs/attentional_v2/attentional_v2_unit_memory_text_only_smoke_xidaduo_post_ingest_v6_contract_20260606/analysis/unit_memory_retrieval_health/summary.json`
+        - recall-language review: `reading-companion-backend/eval/runs/attentional_v2/attentional_v2_unit_memory_text_only_smoke_xidaduo_post_ingest_v6_contract_20260606/analysis/unit_memory_recall_language_review/summary.json`
+        - observed contract outcome: reviewed unique recalls had `language_violation_count = 0`, and model-side `basis` values were only `selected_source_unit`
+        - retrieval note: `retrieved_line_total = 0` in this early stopped sample because the run did not reach a mature long-distance retrieval horizon; this does not supersede the earlier post-R9/R11/post-selection-cap text-only proof of prompt-visible retrieved memory
   - next step:
-    - rerun a small no-judge `text_only` smoke after Ingest v6 if recall-language drift continues to weaken lexical retrieval, and inspect whether selected retrieved Understanding remains nonzero, narrower, and more directly tied to recall intent
+    - do not rerun solely for the Ingest v6 language/basis contract unless later live artifacts show drift again; the current observed sample is sufficient for this narrow contract, while long-distance retrieval maturity was intentionally not revalidated in that early stopped run
     - treat live hybrid dense retrieval as blocked unless Ollama reachability, the configured Qwen embedding model, real query embedding cache rows, real vector rows, dense candidates, and RRF fusion are all validated; sqlite-vec and the fake-embedder code path are no longer the blocker
     - do not run formal evaluation, update evidence catalog, or claim product quality from the intentionally stopped diagnostic smokes; decide whether to tune recall specificity first or validate the environment-blocked hybrid dense path once Ollama/Qwen is available
     - use `docs/implementation/new-reading-mechanism/ingest-context-and-navigate-mapping.md` as the implementation reference for the landed first-slice `Ingest` XML context

@@ -174,7 +174,37 @@ SURVEY_CHAPTER_ZONE_RESULT_TOOL = final_output_tool(
 )
 
 
-def validate_ingest_result(payload: Mapping[str, Any], tool_results: list[dict[str, Any]] | None = None) -> list[str]:
+def _script_counts(text: str) -> tuple[int, int]:
+    cjk_count = len(re.findall(r"[\u4e00-\u9fff]", text))
+    latin_count = len(re.findall(r"[A-Za-z]", text))
+    return cjk_count, latin_count
+
+
+def _primary_text_language(texts: list[str]) -> str:
+    text = "\n".join(str(item or "") for item in texts)
+    cjk_count, latin_count = _script_counts(text)
+    if cjk_count >= 20 and cjk_count >= latin_count * 2:
+        return "cjk"
+    if latin_count >= 40 and latin_count >= cjk_count * 2:
+        return "latin"
+    return "unknown"
+
+
+def _recall_language_error(recall_text: str, *, source_language: str, index: int) -> str:
+    cjk_count, latin_count = _script_counts(recall_text)
+    if source_language == "cjk" and latin_count >= 20 and cjk_count < 4:
+        return f"memory_recalls[{index}].recall_text must use the current source text's primary language"
+    if source_language == "latin" and cjk_count >= 10 and latin_count < 8:
+        return f"memory_recalls[{index}].recall_text must use the current source text's primary language"
+    return ""
+
+
+def validate_ingest_result(
+    payload: Mapping[str, Any],
+    tool_results: list[dict[str, Any]] | None = None,
+    *,
+    current_source_texts: list[str] | None = None,
+) -> list[str]:
     errors: list[str] = []
     if not str(payload.get("end_anchor_text") or "").strip():
         errors.append("end_anchor_text must be a non-empty exact source quote")
@@ -187,7 +217,13 @@ def validate_ingest_result(payload: Mapping[str, Any], tool_results: list[dict[s
         errors.append("memory_recalls must contain no more than three entries")
     elif recalls and not tool_results:
         errors.append("memory_recalls is non-empty but retrieve_unit_memory was not called")
+    for tool_result in tool_results or []:
+        result = tool_result.get("result") if isinstance(tool_result, Mapping) else None
+        if isinstance(result, Mapping) and str(result.get("status") or "").strip() == "contract_violation":
+            reason = str(result.get("degradation_reason") or "retrieve_unit_memory tool call contract violation").strip()
+            errors.append(reason)
     if isinstance(recalls, list):
+        source_language = _primary_text_language(list(current_source_texts or []))
         for index, item in enumerate(recalls):
             if not isinstance(item, Mapping):
                 errors.append(f"memory_recalls[{index}] must be an object")
@@ -199,6 +235,13 @@ def validate_ingest_result(payload: Mapping[str, Any], tool_results: list[dict[s
             basis = str(item.get("basis") or "selected_source_unit").strip()
             if basis != "selected_source_unit":
                 errors.append(f"memory_recalls[{index}].basis must be selected_source_unit")
+            language_error = _recall_language_error(
+                str(item.get("recall_text") or ""),
+                source_language=source_language,
+                index=index,
+            )
+            if language_error:
+                errors.append(language_error)
     return errors
 
 

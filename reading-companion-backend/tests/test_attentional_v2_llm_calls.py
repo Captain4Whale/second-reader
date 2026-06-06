@@ -99,6 +99,70 @@ def test_ingest_result_validator_requires_selected_source_unit_basis() -> None:
     assert "memory_recalls[0].basis must be selected_source_unit" in errors
 
 
+def test_ingest_result_validator_requires_recall_language_to_match_source() -> None:
+    errors = validate_ingest_result(
+        {
+            "end_anchor_text": "他继续向前走。",
+            "boundary_type": "paragraph_end",
+            "memory_recalls": [
+                {
+                    "recall_id": "r1",
+                    "recall_text": "Earlier reading about Siddhartha leaving the Brahmin household with Govinda.",
+                    "basis": "selected_source_unit",
+                }
+            ],
+        },
+        tool_results=[{"status": "ok"}],
+        current_source_texts=[
+            "悉达多继续向前走，乔文达仍然跟随他。两个人离开婆罗门的家，走向沙门的修行生活。"
+        ],
+    )
+
+    assert "memory_recalls[0].recall_text must use the current source text's primary language" in errors
+
+    valid_errors = validate_ingest_result(
+        {
+            "end_anchor_text": "他继续向前走。",
+            "boundary_type": "paragraph_end",
+            "memory_recalls": [
+                {
+                    "recall_id": "r1",
+                    "recall_text": "悉达多离开婆罗门家庭并带着乔文达走向沙门修行。",
+                    "basis": "selected_source_unit",
+                }
+            ],
+        },
+        tool_results=[{"status": "ok"}],
+        current_source_texts=[
+            "悉达多继续向前走，乔文达仍然跟随他。两个人离开婆罗门的家，走向沙门的修行生活。"
+        ],
+    )
+
+    assert valid_errors == []
+
+
+def test_ingest_result_validator_rejects_contract_violating_tool_result() -> None:
+    errors = validate_ingest_result(
+        {
+            "end_anchor_text": "他继续向前走。",
+            "boundary_type": "paragraph_end",
+            "memory_recalls": [
+                {
+                    "recall_id": "r1",
+                    "recall_text": "悉达多离开婆罗门家庭并带着乔文达走向沙门修行。",
+                    "basis": "selected_source_unit",
+                }
+            ],
+        },
+        tool_results=[{"result": {"status": "contract_violation", "degradation_reason": "bad recall language"}}],
+        current_source_texts=[
+            "悉达多继续向前走，乔文达仍然跟随他。两个人离开婆罗门的家，走向沙门的修行生活。"
+        ],
+    )
+
+    assert "bad recall language" in errors
+
+
 def _ingest_boundary_call(
     *,
     tmp_path: Path,
@@ -321,6 +385,65 @@ def test_ingest_tool_loop_returns_recalls_and_runtime_status(tmp_path: Path, mon
     output_basis_schema = captured["output_tool"]["input_schema"]["properties"]["memory_recalls"]["items"]["properties"]["basis"]
     assert output_basis_schema["enum"] == ["selected_source_unit"]
     assert "memory_query" not in json.dumps(captured["tools"], ensure_ascii=False)
+
+
+def test_ingest_tool_loop_validator_sees_current_source_language(tmp_path: Path, monkeypatch):
+    captured: dict[str, object] = {}
+
+    def fake_tool_loop(system_prompt, prompt, *, action_tools, output_tool, tool_handler, validator, max_tool_calls):
+        tool_result = {
+            "status": "ok",
+            "effective_mode": "text_only",
+            "retrieval_summary": {"recall_count": 1, "candidate_unit_count": 0, "selected_unit_count": 0},
+        }
+        bad_payload = {
+            "end_anchor_text": "乔文达仍然跟随他。",
+            "boundary_type": "paragraph_end",
+            "reason": "The unit closes here.",
+            "memory_recalls": [
+                {
+                    "recall_id": "r1",
+                    "recall_text": "Earlier reading about Siddhartha leaving home with Govinda.",
+                    "basis": "selected_source_unit",
+                }
+            ],
+        }
+        captured["bad_errors"] = validator(bad_payload, [{"result": tool_result}])
+        good_payload = {
+            **bad_payload,
+            "memory_recalls": [
+                {
+                    "recall_id": "r1",
+                    "recall_text": "悉达多离开婆罗门家庭并带着乔文达走向沙门修行。",
+                    "basis": "selected_source_unit",
+                }
+            ],
+        }
+        assert validator(good_payload, [{"result": tool_result}]) == []
+        return SimpleNamespace(
+            payload=good_payload,
+            status="action_tool_called",
+            tool_results=[{"result": tool_result}],
+        )
+
+    monkeypatch.setattr(llm_calls_module, "invoke_tool_loop_with_final_output", fake_tool_loop)
+
+    result = ingest(
+        current_view_position={"current_chapter_id": 1, "current_cursor": {"paragraph_index": 1, "char_offset": 0}},
+        current_view_content={
+            "paragraph_slices": [
+                {
+                    "paragraph_index": 1,
+                    "text": "悉达多继续向前走，乔文达仍然跟随他。两个人离开婆罗门的家，走向沙门的修行生活。",
+                }
+            ]
+        },
+        output_dir=tmp_path,
+        unit_memory_tool_handler=lambda _args: {"status": "ok"},
+    )
+
+    assert "memory_recalls[0].recall_text must use the current source text's primary language" in captured["bad_errors"]
+    assert result["memory_recalls"][0]["recall_text"].startswith("悉达多")
 
 
 def test_ingest_contract_failure_uses_safe_llm_fallback(tmp_path: Path, monkeypatch):

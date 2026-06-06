@@ -1,6 +1,6 @@
 {
   "schema_version": 1,
-  "updated_at": "2026-06-06T10:21:26.416709Z",
+  "updated_at": "2026-06-06T10:45:43.908023Z",
   "entries": [
     {
       "run_id": "attentional_v2_excerpt_surface_v1_1_judged_20260406",
@@ -2404,6 +2404,65 @@
       "local_missing_allowed": [],
       "metadata": {},
       "updated_at": "2026-06-06T09:45:59.346949Z"
+    },
+    {
+      "run_id": "attentional_v2_unit_memory_text_only_smoke_xidaduo_post_ingest_v6_20260606",
+      "date": "2026-06-06",
+      "surface": "unit_memory_retrieval_repair_smoke",
+      "lane": "mechanism_eval_smoke",
+      "status": "abandoned",
+      "mechanisms": [
+        "attentional_v2"
+      ],
+      "dataset_or_manifest": [
+        "eval/runs/attentional_v2/attentional_v2_unit_memory_text_only_smoke_xidaduo_post_ingest_v6_20260606/meta/selected_windows.json"
+      ],
+      "run_dir": "reading-companion-backend/eval/runs/attentional_v2/attentional_v2_unit_memory_text_only_smoke_xidaduo_post_ingest_v6_20260606",
+      "summary_paths": {},
+      "job_ids": [
+        "bgjob_unit_memory_text_only_smoke_xidaduo_post_ingest_v6_20260606"
+      ],
+      "report_paths": [
+        "reading-companion-backend/eval/runs/attentional_v2/attentional_v2_unit_memory_text_only_smoke_xidaduo_post_ingest_v6_20260606/analysis/unit_memory_recall_language_review/README.md"
+      ],
+      "catalog_status": "not_cataloged",
+      "notes": "Diagnostic-only pre-contract no-judge text_only smoke on xidaduo intentionally stopped after exposing Ingest v6 prompt-only recall-language drift: Chinese source produced an English recall while basis stayed selected_source_unit. This directly motivated structured-output source-language validation and action-tool preflight. No summary files, formal evidence, or evidence catalog update.",
+      "parent_run_id": "",
+      "child_run_ids": [],
+      "synthetic": false,
+      "local_missing_allowed": [],
+      "metadata": {},
+      "updated_at": "2026-06-06T10:45:33.681602Z"
+    },
+    {
+      "run_id": "attentional_v2_unit_memory_text_only_smoke_xidaduo_post_ingest_v6_contract_20260606",
+      "date": "2026-06-06",
+      "surface": "unit_memory_retrieval_repair_smoke",
+      "lane": "mechanism_eval_smoke",
+      "status": "abandoned",
+      "mechanisms": [
+        "attentional_v2"
+      ],
+      "dataset_or_manifest": [
+        "eval/runs/attentional_v2/attentional_v2_unit_memory_text_only_smoke_xidaduo_post_ingest_v6_contract_20260606/meta/selected_windows.json"
+      ],
+      "run_dir": "reading-companion-backend/eval/runs/attentional_v2/attentional_v2_unit_memory_text_only_smoke_xidaduo_post_ingest_v6_contract_20260606",
+      "summary_paths": {},
+      "job_ids": [
+        "bgjob_unit_memory_text_only_smoke_xidaduo_post_ingest_v6_contract_20260606"
+      ],
+      "report_paths": [
+        "reading-companion-backend/eval/runs/attentional_v2/attentional_v2_unit_memory_text_only_smoke_xidaduo_post_ingest_v6_contract_20260606/analysis/unit_memory_retrieval_health/README.md",
+        "reading-companion-backend/eval/runs/attentional_v2/attentional_v2_unit_memory_text_only_smoke_xidaduo_post_ingest_v6_contract_20260606/analysis/unit_memory_recall_language_review/README.md"
+      ],
+      "catalog_status": "not_cataloged",
+      "notes": "Diagnostic-only post-contract no-judge text_only smoke on xidaduo intentionally stopped after an early sample. It validated observed recall language/basis contract behavior in reviewed live artifacts: unique reviewed recalls had zero language violations and model-side basis stayed selected_source_unit. Retrieved-line total stayed zero because the run stopped before the long-distance retrieval horizon matured; no summary files, formal evidence, or evidence catalog update.",
+      "parent_run_id": "",
+      "child_run_ids": [],
+      "synthetic": false,
+      "local_missing_allowed": [],
+      "metadata": {},
+      "updated_at": "2026-06-06T10:45:43.907463Z"
     },
     {
       "run_id": "attentional_v2_unit_memory_text_only_smoke_xidaduo_post_r11_20260606",
