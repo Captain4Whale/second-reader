@@ -70,16 +70,45 @@ The goal is not to guarantee that every unit retrieves memory. The goal is that 
 
 This section is the executable contract for running this repair track in Codex Goal mode. Treat the design baseline documents as locked unless the user explicitly asks to redesign the mechanism. Goal-mode work should fix implementation, tests, prompts, traces, health reports, and stable fact docs so the current design actually works.
 
+### Goal-Mode Objective
+
+Use this objective if the work is launched through Codex Goal mode:
+
+```text
+Make the current attentional_v2 Unit Memory retrieval path conform to the locked design: Ingest expresses bounded prior-reading recalls, runtime retrieves/selects prior Unit Memory Understanding, Digest receives prompt-visible ReadingMemory, and settlement writes the new Unit Memory entry. Diagnose and repair implementation, prompt calibration, trace, health-report, and test gaps until the mechanism can demonstrate the path with deterministic fixtures plus a no-judge live smoke. Do not redesign the mechanism, do not update the evidence catalog, and do not revive retired Detour/backread or concept/thread stores.
+```
+
+### Design Baseline Lock
+
+Goal mode must treat these documents as the test oracle, not as material to redesign during execution:
+
+- `docs/implementation/new-reading-mechanism/unit-memory-hybrid-retrieval-design.md`
+- `docs/implementation/new-reading-mechanism/ingest-recall-and-digest-memory-context-design.md`
+- `docs/backend-reading-mechanisms/attentional_v2.md`
+
+Allowed document updates inside the goal:
+
+- update this repair plan's phase statuses, blocker notes, and validation evidence
+- update stable facts when implementation behavior or operator expectations actually change
+- update task registry/current-state references so another agent can resume from the same facts
+
+Disallowed document updates inside the goal:
+
+- change the retrieval architecture, Digest memory packaging, or Ingest/Digest responsibility split to make a failing implementation appear compliant
+- relax success criteria after a failed smoke unless the user explicitly changes the goal
+- move unresolved implementation problems into design docs as if they were intended behavior
+
 ### Completion Definition
 
 The goal is complete only when all of these are true:
 
 1. A no-judge live smoke proves that at least one Digest prompt receives prompt-visible long-distance retrieved Understanding memory.
 2. The smoke artifact health report shows:
-   - `retrieved_line_count > 0`
+   - `retrieved_line_total > 0` or an equivalent reviewed retrieved-line metric
    - `renderable_selected_unit_count > 0`
-   - `selected_but_not_rendered_count = 0`, or every nonzero case has a specific suppression reason
+   - every selected-but-not-rendered case has a specific suppression / dedupe / budget reason
    - at least one selected retrieved Unit Memory entry has non-empty Understanding
+   - rendered retrieved unit ids are machine-readable in the selection trace or health packet
 3. The retrieval trace can explain the path for each recall:
    - skipped intentionally
    - gated by horizon
@@ -102,6 +131,42 @@ text_only retrieval path passed; hybrid vector path blocked by environment.
 ```
 
 Goal mode should then continue through all non-hybrid phases before stopping, and the final report must include the exact hybrid blocker.
+
+### Continue / Pause / Complete Semantics
+
+Goal mode should continue working while any independent repair path remains actionable. A blocker in one layer is not a reason to abandon other layers.
+
+Continue when:
+
+- hybrid dense retrieval is blocked by Ollama / model availability, but text-only retrieval, selection, rendering, trace, or recall prompt calibration can still be tested
+- a smoke fails in the registered wrapper because of strict LLM-health or summary-generation problems, but run-local retrieval artifacts are complete enough to diagnose a lower layer
+- a prompt calibration issue is found after mechanics are proven, and it can be repaired without changing the locked design
+- a retrieved memory line is broad or weakly relevant, but the trace is sufficient to identify whether the cause is recall wording, retrieval weighting, selection, dedupe, or budget rendering
+
+Pause and ask the user only when:
+
+- the next repair would require changing the locked design baseline
+- the next repair would require installing or starting external services that the current environment cannot provide automatically
+- all remaining failures are subjective quality judgments rather than mechanism conformance gaps
+- the repo has unrelated user changes that directly conflict with the needed edit
+
+Mark the goal complete only when the completion definition is satisfied and no required work remains.
+
+Mark the goal blocked only when every remaining actionable path is blocked by the same external condition or design-level decision for at least three consecutive goal turns. Before marking blocked, the final status must state which non-blocked layers were already validated.
+
+### Issue Disposition Labels
+
+Use these labels in phase notes, review packets, and final reports:
+
+- `fixed`: implementation or prompt changed, targeted checks passed, and docs were updated if needed
+- `validated`: no change was needed; artifact or test evidence proves the layer already conforms
+- `pending_validation`: a fix landed but has not yet been proven in a live smoke or known-answer fixture
+- `deferred_environment`: blocked by local dependency such as Ollama / embedding model availability
+- `deferred_design`: would require changing the locked mechanism design; ask the user before proceeding
+- `deferred_quality`: subjective quality concern outside mechanism-conformance scope
+- `not_applicable`: old mechanism surface or non-goal
+
+Do not use `deferred_*` labels to hide a fixable implementation problem. Every deferred issue should include the next evidence that would reopen it.
 
 ### Allowed Changes
 
@@ -292,9 +357,9 @@ Likely causes:
 
 Repair direction:
 
-- add an invariant that separates `selected_unit_count`, `renderable_selected_unit_count`, and `retrieved_line_count`
+- add an invariant that separates `selected_unit_count`, `renderable_selected_unit_count`, and the retrieved-line metric such as `retrieved_line_total`
 - record why each selected candidate is rendered or suppressed
-- treat `selected_unit_count > 0` with `retrieved_line_count = 0` as a diagnostic failure unless every selected unit has an explicit suppression reason
+- treat `selected_unit_count > 0` with zero retrieved lines as a diagnostic failure unless every selected unit has an explicit suppression / dedupe / budget reason
 
 ### R2. Hybrid mode degrades before dense retrieval is tested
 
@@ -419,7 +484,7 @@ Repair direction:
 - do not treat `ReadingMemory` presence as retrieval success
 - add hard counters to smoke reports:
   - `hot_line_count`
-  - `retrieved_line_count`
+  - retrieved-line total / per-row retrieved-line counts
   - `selected_unit_count`
   - `renderable_selected_unit_count`
   - `selected_but_not_rendered_count`
@@ -554,7 +619,7 @@ Work:
 
 - enrich retrieval trace with renderability reasons
 - record selected-but-not-rendered suppressions
-- add smoke assertions for `selected_unit_count > 0` and `retrieved_line_count = 0`
+- add smoke assertions for `selected_unit_count > 0` and zero retrieved lines
 - make `ReadingMemory` prompt-manifest inspection report hot vs retrieved separately
 
 Acceptance:
@@ -758,7 +823,7 @@ Work:
 
 Acceptance:
 
-- `retrieved_line_count > 0` in a meaningful subset of mature units where prior memory exists
+- `retrieved_line_total > 0` or an equivalent reviewed retrieved-line metric in a meaningful subset of mature units where prior memory exists
 - selected retrieved Understanding lines are relevant to the current source unit
 - Digest prompt manifests include top-level `ReadingMemory` with hot and retrieved portions distinguishable by trace
 - no prior-memory overclaim or obvious memory pollution is introduced by the repair
@@ -812,9 +877,9 @@ Each post-repair retrieval health report should include:
 - budget suppressions
 - latency by retrieval stage
 
-## Stop Conditions
+## Reassessment Triggers
 
-Stop and reassess rather than continuing blindly if any of these remain true after the relevant phase:
+Reassess rather than continuing blindly if any of these remain true after the relevant phase:
 
 - `hybrid` still records zero vector rows and zero query embeddings after Phase 2
 - `text_only` still cannot retrieve known-answer lexical probes after Phase 3
@@ -822,7 +887,7 @@ Stop and reassess rather than continuing blindly if any of these remain true aft
 - selected non-empty Understanding entries still fail to render into Digest after Phase 5
 - retrieved lines enter Digest but are mostly irrelevant or polluting after Phase 7
 
-These stop conditions should lead to a focused diagnosis, not to reviving retired Detour/backread or content-typed concept/thread memory.
+These triggers are not terminal stop conditions by themselves. They should lead to a focused diagnosis, a smaller test, or a defer label while other independent phases continue. They must not lead to reviving retired Detour/backread or content-typed concept/thread memory.
 
 ## Implementation Notes
 
