@@ -16,9 +16,9 @@ Update when: Ingest recall wording, tool schema, recall output schema, retrieval
   - Reading Runner/runtime keeps actual retrieval execution, score fusion, source-unit resolution, artifact writing, result selection, dedupe, budget trimming, and Digest `ReadingMemory` rendering.
   - Ingest does not see, choose, or return retrieved memory brief ids; Ingest only expresses recall intentions and receives compact status/count tool results.
   - Digest now receives one top-level `ReadingMemory` block assembled from hot current-chapter Understanding plus runtime-selected long-distance Unit Memory Understanding.
-- Pending design extension, not implemented in the current live baseline:
-  - Subject continuity should be carried by prior Understanding in `ReadingMemory`, not by adding raw-source backfill or a new Ingest-side reference-resolution surface.
-  - Digest should use current source text plus `ReadingMemory` to establish new subjects, continue known subjects, or explicitly preserve ambiguity inside `understanding.content`.
+- Subject-continuity implementation:
+  - Digest prompt `attentional_v2.digest.v6` carries subject continuity through prior Understanding in `ReadingMemory`, not by adding raw-source backfill or a new Ingest-side reference-resolution surface.
+  - Digest uses current source text plus `ReadingMemory` to establish new subjects, continue known subjects, or explicitly preserve ambiguity inside `understanding.content`.
 - Tool capability note:
   - On `2026-06-02`, a minimal live probe against the configured `MiniMax-M2.7` Anthropic-compatible endpoint succeeded with `tool_use -> tool_result -> final answer`.
   - The probe verifies basic provider support for Anthropic-style tools, not the Reading Companion retrieval tool implementation.
@@ -184,18 +184,18 @@ Runtime may later support an audit-only checker for unresolved or floating prono
 
 ### Implementation Boundary
 
-Recommended first implementation slice:
+Implemented first prompt slice:
 
-1. Update Digest `Understanding` instruction with the subject-continuity rule.
-2. Update `OutputContract / UnderstandingField` so `understanding.content` is a self-contained memory line that may contain clear local pronouns but must not contain floating pronouns.
-3. Adjust few-shot examples where needed so new subjects, continued subjects, and ambiguity are written as memory-ready Understanding.
-4. Add tests for:
+1. Digest `Understanding` instruction includes the subject-continuity rule.
+2. `OutputContract / UnderstandingField` says `understanding.content` is stored as ReadingMemory / Unit Memory and must be self-contained enough for later reading.
+3. Digest prompt examples include known subject continuation, new subject establishment, and ambiguity preservation.
+4. Tests cover:
    - known first-person narrator continued through `ReadingMemory`
    - new first-person narrator established without a known identity
    - ambiguous pronoun preserved rather than guessed
    - clear pronoun inside the same Understanding allowed
 
-Do not add raw-source backfill, Ingest reference-resolution fields, or a durable referent store in this slice.
+This slice does not add raw-source backfill, Ingest reference-resolution fields, or a durable referent store.
 
 ## Ingest Prompt Design
 

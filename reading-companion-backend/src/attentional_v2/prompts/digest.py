@@ -18,9 +18,9 @@ from .reader_role import READER_ROLE_FRAGMENT
 from .types import PromptDefinition
 
 
-DIGEST_PROMPT_VERSION = "attentional_v2.digest.v5"
-DIGEST_XML_PROMPT_ASSEMBLY_SPEC_ID = "attentional_v2.digest.xml.v5"
-DIGEST_XML_PROMPTSET_VERSION = "attentional_v2-phase6-v50"
+DIGEST_PROMPT_VERSION = "attentional_v2.digest.v6"
+DIGEST_XML_PROMPT_ASSEMBLY_SPEC_ID = "attentional_v2.digest.xml.v6"
+DIGEST_XML_PROMPTSET_VERSION = "attentional_v2-phase6-v51"
 DIGEST_XML_TRANSPORT_SYSTEM_PROMPT = "Follow the structured Digest prompt in the user message. Return JSON only."
 
 
@@ -61,6 +61,17 @@ For list, taxonomy, or step text, preserve the structure with compact bullets or
 # Writing stance
 Let the grammatical subject normally be a person, event, concept, claim, relationship, scene, method, or condition from the text, rather than the source container itself.
 
+# Subject continuity
+Use ReadingMemory to understand whether the current source text continues an already established narrator, speaker, actor, concept, relationship, or point of view.
+
+When the current unit establishes a new subject, write that subject explicitly in Understanding. If the identity is not yet fully known, use the clearest source-supported description, such as the first-person narrator, a quoted speaker, a prisoner, Siddhartha's son, a company, a claim, or a relationship.
+
+When a pronoun or demonstrative clearly refers to a known subject from ReadingMemory or from the current unit, write the referent explicitly at its first important mention.
+
+When the referent is genuinely ambiguous, do not guess. Record the ambiguity as part of the Understanding when it matters for continued reading.
+
+Pronouns are acceptable after the referent is clear inside the same Understanding. Avoid floating pronouns that cannot be understood after this Understanding is stored as memory.
+
 # Concision
 Compress meaning, not wording. Be brief, but do not drop the main event, claim, condition, or relationship change. Do not copy the whole source or turn the understanding into a reaction, evaluation, or annotation. The understanding should be shorter than the source text and normally no more than a few compact sentences.
 
@@ -68,6 +79,31 @@ Compress meaning, not wording. Be brief, but do not drop the main event, claim, 
 If the source text is only a divider, empty heading, or other non-content structure, `content` may be empty; otherwise give a substantive understanding.
 
 # Examples
+## Subject continuity examples
+### Known subject continued
+ReadingMemory:
+P12 U4: The first-person narrator Frankl has arrived at the concentration camp and is describing the first night from his own experience.
+
+Source:
+I did not want to say more about it.
+
+Understanding:
+Frankl avoids dwelling on the friend's death and turns toward the psychological experience of arriving at the camp.
+
+### New subject established
+Source:
+I had never seen the city before.
+
+Understanding:
+A first-person narrator begins from an unfamiliar arrival in the city; the narrator's exact identity is not yet established.
+
+### Ambiguity preserved
+Source:
+He returned before anyone could explain why.
+
+Understanding:
+A male figure returns before the cause of his earlier absence is explained; the current memory does not yet make clear which person "he" refers to.
+
 ## Example 1 - Source
 “哪里？”我追问了一句。他随手指向几百码外的烟囱，烟囱里冒出的一串串火苗映照着波兰灰暗的天空，又慢慢融入幽暗的烟云。
 
@@ -535,7 +571,7 @@ Shape:
     "content": "..."
   }
 }
-Use `content` for the understanding itself. It may contain one sentence or several compact paragraphs when needed, but `understanding` must remain a single object rather than a list of separate understanding items. Do not include operation-level reasons, store names, durable-memory routing, hidden state, or source coordinates.""",
+Use `content` for the understanding itself. It may contain one sentence or several compact paragraphs when needed, but `understanding` must remain a single object rather than a list of separate understanding items. `content` is stored as ReadingMemory / Unit Memory and may be read later without the source unit. It must be self-contained enough for later reading: establish new subjects, continue known subjects from ReadingMemory when supported, and preserve genuine ambiguity rather than guessing. Pronouns may appear only when their referent is explicit inside the same `content`. Do not include operation-level reasons, store names, durable-memory routing, hidden state, or source coordinates.""",
 )
 
 

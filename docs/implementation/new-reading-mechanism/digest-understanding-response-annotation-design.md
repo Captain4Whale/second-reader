@@ -14,9 +14,9 @@ Update when: Digest action names, output fields, XML prompt structure, or runtim
   - This document remains the authority for Digest's three peer model-facing outputs: `understanding`, `response`, and `annotations`.
   - Its early `ReadingState` context examples were superseded by `docs/implementation/new-reading-mechanism/ingest-recall-and-digest-memory-context-design.md`.
   - The current live Digest prompt uses top-level `ReadingMemory`, not `ReadingState`, `RecentMemory`, or `RetrievedUnitMemory`.
-- Pending subject-continuity note:
-  - `docs/implementation/new-reading-mechanism/ingest-recall-and-digest-memory-context-design.md` now defines a not-yet-implemented follow-up for carrying narrator / speaker / actor / concept continuity through prior Understanding in `ReadingMemory`.
-  - This follow-up keeps the Digest goal as self-contained Understanding, not a mechanical ban on every pronoun and not a new raw-source backfill path.
+- Subject-continuity note:
+  - `docs/implementation/new-reading-mechanism/ingest-recall-and-digest-memory-context-design.md` defines the subject-continuity rule now implemented in Digest prompt `attentional_v2.digest.v6`.
+  - The implementation carries narrator / speaker / actor / concept continuity through prior Understanding in `ReadingMemory`; it is not a mechanical ban on every pronoun and does not add a new raw-source backfill path.
 - Current basis:
   - `DEC-108` makes `Digest` the concrete per-unit interpretation LLM call.
   - `DEC-109` removes content-typed structured long-memory stores from the current live surface.
@@ -24,14 +24,18 @@ Update when: Digest action names, output fields, XML prompt structure, or runtim
 
 ## Implementation Status
 
-- Implemented prompt version: `attentional_v2.digest.v5`
-- Implemented XML assembly spec: `attentional_v2.digest.xml.v5`
-- Implemented promptset: `attentional_v2-phase6-v50`
+- Implemented prompt version: `attentional_v2.digest.v6`
+- Implemented XML assembly spec: `attentional_v2.digest.xml.v6`
+- Implemented promptset: `attentional_v2-phase6-v51`
 - Implemented output contract: `digest_understanding_response_annotation_json_v2`
 - Runtime mapping:
   - `understanding.content` -> zero or one internal `memory_uptake_ops[].payload.memory_text` targeting `recent_reading_memory`
   - `response` -> internal `DigestResult.reading_impression`
   - `annotations[]` -> internal `DigestResult.surfaced_reactions`
+- Subject-continuity mapping:
+  - `ReadingMemory` is the only prompt-facing carrier of prior Understanding for subject continuity.
+  - Digest should establish new subjects, continue known subjects from `ReadingMemory` when supported, and preserve genuine ambiguity instead of guessing.
+  - Pronouns are allowed only when the referent is clear inside the same `understanding.content`.
 - Old model-facing fields `reading_impression`, `surfaced_reactions`, and `recent_reading_memory` are not accepted as current Digest LLM contract fields; internal runtime/audit names remain stable in this slice.
 
 ## Design Claim
@@ -362,13 +366,13 @@ Implementation notes:
 - The five examples are approved from real five-window diagnostic units and show content-level, memory-ready Understanding without naming the source container.
 - The single-object rule for `understanding` lives in `OutputContract`, not in the reader-facing `Understanding` instruction.
 
-### Pending Subject-Continuity Understanding Rule
+### Implemented Subject-Continuity Understanding Rule
 
-The next prompt slice should make `understanding.content` self-contained by using the current source text and `ReadingMemory` to continue known subjects, establish new subjects, or preserve meaningful ambiguity.
+Prompt version `attentional_v2.digest.v6` makes `understanding.content` self-contained by using the current source text and `ReadingMemory` to continue known subjects, establish new subjects, or preserve meaningful ambiguity.
 
-This rule should not add raw prior-source context to Digest and should not make Ingest responsible for reference resolution.
+This rule does not add raw prior-source context to Digest and does not make Ingest responsible for reference resolution.
 
-Target rule:
+Implemented rule:
 
 ```text
 # Subject continuity
@@ -434,7 +438,7 @@ He realizes that this is happening again and wants to tell him about it.
 
 That output is not acceptable as stored Understanding because the later reader cannot recover `he`, `this`, `him`, or `it` from memory.
 
-The same rule should be reflected in `OutputContract / UnderstandingField`, because `understanding.content` is converted into runtime memory text and later rendered inside `ReadingMemory`.
+The same rule is reflected in `OutputContract / UnderstandingField`, because `understanding.content` is converted into runtime memory text and later rendered inside `ReadingMemory`.
 
 ### Response
 
