@@ -351,6 +351,8 @@ The tool input should include the provisional boundary and the recalls. This let
 
 The model should not pass selected source text, previous memory ids, SQL, scores, or store names.
 
+Model-side recall `basis` is fixed to `selected_source_unit`. Runtime fallback recalls may use `runtime_source_text_fallback`, but that is not a model output value.
+
 ### Tool Result
 
 The tool result should be compact, status-oriented, and traceable. It should not expose retrieved memory brief content or ids to Ingest, because Ingest no longer chooses memory support:
@@ -471,8 +473,10 @@ When nothing in the selected unit calls for earlier reading:
   - reader-facing recall description that runtime can use as retrieval text
   - should combine concrete selected-unit cues with the kind of earlier reading needed
   - should not be a question for Digest to answer
+  - should use the same primary language as the current source text
+  - should preserve important names, titles, and technical terms in the form used by the source text when available
 - `basis`
-  - `selected_source_unit` for the first version
+  - model-side value is exactly `selected_source_unit`
 
 Retrieval status, selected unit ids, selected brief ids, suppression reasons, and budget decisions are runtime trace / audit fields, not Ingest model-output fields.
 

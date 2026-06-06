@@ -1,6 +1,6 @@
 {
   "schema_version": 1,
-  "updated_at": "2026-06-06T09:45:59.347361Z",
+  "updated_at": "2026-06-06T10:21:26.416709Z",
   "entries": [
     {
       "run_id": "attentional_v2_excerpt_surface_v1_1_judged_20260406",
@@ -2461,6 +2461,36 @@
       "local_missing_allowed": [],
       "metadata": {},
       "updated_at": "2026-06-06T08:31:45.577768Z"
+    },
+    {
+      "run_id": "attentional_v2_unit_memory_text_only_smoke_xidaduo_post_selection_cap_20260606",
+      "date": "2026-06-06",
+      "surface": "attentional_v2",
+      "lane": "mechanism_eval",
+      "status": "abandoned",
+      "mechanisms": [
+        "attentional_v2"
+      ],
+      "dataset_or_manifest": [
+        "eval/runs/attentional_v2/attentional_v2_unit_memory_text_only_smoke_xidaduo_post_selection_cap_20260606/meta/selected_windows.json"
+      ],
+      "run_dir": "reading-companion-backend/eval/runs/attentional_v2/attentional_v2_unit_memory_text_only_smoke_xidaduo_post_selection_cap_20260606",
+      "summary_paths": {},
+      "job_ids": [
+        "bgjob_unit_memory_text_only_smoke_xidaduo_post_selection_cap_20260606"
+      ],
+      "report_paths": [
+        "reading-companion-backend/eval/runs/attentional_v2/attentional_v2_unit_memory_text_only_smoke_xidaduo_post_selection_cap_20260606/analysis/unit_memory_retrieval_health/README.md",
+        "reading-companion-backend/eval/runs/attentional_v2/attentional_v2_unit_memory_text_only_smoke_xidaduo_post_selection_cap_20260606/analysis/unit_memory_retrieval_review/README.md"
+      ],
+      "catalog_status": "not_cataloged",
+      "notes": "Diagnostic-only no-judge text_only smoke on xidaduo_private_zh__segment_1 intentionally stopped after selection-cap evidence. Health status ok: 46 entries, 287 retrieval docs, selected_unit_count=8, retrieved_line_total=2, rendered_retrieved_unique_unit_count=2, per_recall_selection_limit_exceeded=8. Not formal evidence; no evidence catalog update.",
+      "parent_run_id": "",
+      "child_run_ids": [],
+      "synthetic": false,
+      "local_missing_allowed": [],
+      "metadata": {},
+      "updated_at": "2026-06-06T10:21:26.416312Z"
     }
   ]
 }

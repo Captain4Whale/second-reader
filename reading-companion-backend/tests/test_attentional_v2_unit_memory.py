@@ -12,6 +12,7 @@ from src.attentional_v2.unit_memory import (
     build_fts5_match_query,
     build_unit_memory_entry,
     effective_query_for_accepted_unit,
+    normalize_unit_memory_recalls,
     resolve_memory_retrieval_config,
     retrieval_docs_from_entry,
 )
@@ -117,6 +118,37 @@ def test_fts_query_builder_extracts_recall_terms_from_meta_wording():
     assert '"present"' in english_query
     assert '"value"' in english_query
     assert '"Earlier"' not in english_query
+
+
+def test_unit_memory_recalls_force_selected_source_unit_basis():
+    recalls = normalize_unit_memory_recalls(
+        [
+            {
+                "recall_id": "r1",
+                "recall_text": "悉达多和乔文达此前共同求道。",
+                "basis": "selected_unit_paragraphs_128_130",
+            }
+        ]
+    )
+
+    assert recalls == [
+        {
+            "recall_id": "r1",
+            "recall_text": "悉达多和乔文达此前共同求道。",
+            "basis": "selected_source_unit",
+        }
+    ]
+
+    fallback_recalls = normalize_unit_memory_recalls(
+        [
+            {
+                "recall_id": "runtime_fallback",
+                "recall_text": "当前 source unit 文本。",
+                "basis": "runtime_source_text_fallback",
+            }
+        ]
+    )
+    assert fallback_recalls[0]["basis"] == "runtime_source_text_fallback"
 
 
 def test_text_only_unit_memory_index_writes_and_retrieves_prior_units(tmp_path):

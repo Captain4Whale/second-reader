@@ -209,11 +209,14 @@ def normalize_unit_memory_recalls(value: object, *, limit: int = 3) -> list[Unit
             continue
         seen_texts.add(dedupe_key)
         recall_id = _clean_text(item.get("recall_id")) or f"r{len(recalls) + 1}"
+        basis = _clean_text(item.get("basis"))
+        if basis != "runtime_source_text_fallback":
+            basis = "selected_source_unit"
         recalls.append(
             {
                 "recall_id": recall_id[:24],
                 "recall_text": recall_text[:800],
-                "basis": _clean_text(item.get("basis")) or "selected_source_unit",
+                "basis": basis,
             }
         )
     return recalls

@@ -7,7 +7,7 @@ Update when: the current objective, active tasks, blockers, active jobs, open de
 
 This file is authoritative for durable current status. Do not keep unique active-state information only in `docs/agent-handoff.md`.
 
-Last verified: `2026-06-06T17:50:46+08:00`
+Last verified: `2026-06-06T18:18:20+08:00`
 
 ## Current Objective
 - The `Ingest -> Digest -> Reading Runner settlement` mechanism reframe is implemented; current work is fact alignment, smoke/diagnostic review, and calibration before any formal evaluation promotion.
@@ -38,9 +38,9 @@ Last verified: `2026-06-06T17:50:46+08:00`
     - current `attentional_v2` LLM calls submit structured results through mechanism-private final-output tools such as `submit_ingest_result` and `submit_digest_result`; `retrieve_unit_memory` remains the only live action tool, and final-output tools are result channels rather than business actions
     - runtime next-unit preparation lives outside `Ingest` as `prepare_next_source_unit_for_read`: it prepares source preview/context, calls `Ingest`, performs anchor resolution/retry/fallback boundary governance, and hands the accepted source unit to `Digest`
     - `Ingest` uses `ReaderRole`, `Instruction`, `BookInfo`, `CurrentView`, empty `RetrievalSurface`, and `OutputContract`; it may express up to three prior-reading recalls, while actual retrieval execution and prompt-facing memory selection remain Reading Runner runtime work
-    - Ingest prompt `attentional_v2.ingest.v5` calibrates `RecallPriorReading` toward the selected unit's primary semantic focus, away from broad character/protagonist background unless the current unit hinges on it, and toward empty recalls when only generic memory would be possible
+    - Ingest prompt `attentional_v2.ingest.v6` calibrates `RecallPriorReading` toward the selected unit's primary semantic focus, away from broad character/protagonist background unless the current unit hinges on it, and toward empty recalls when only generic memory would be possible; it also requires model-side recall text to use the current source text's primary language, preserve source-form names/terms when available, and keep recall `basis` exactly `selected_source_unit`
     - Digest semantic refactor is implemented: model-facing `understanding / response / annotations` are three peer outputs, with one holistic `understanding` string per unit mapped into `recent_reading_memory`
-    - Digest Understanding prompt `attentional_v2.digest.v9` now frames `understanding` as concise source-established content from the current source text, with light section headings, text-type compression guidance, grammatical-subject guidance, source-established-content calibration, subject-continuity rules, and approved examples to avoid unit/commentary-shaped, passage-effect, source-copying, floating-pronoun memory text, or content-type classification; the active promptset is `attentional_v2-phase6-v55`
+    - Digest Understanding prompt `attentional_v2.digest.v9` now frames `understanding` as concise source-established content from the current source text, with light section headings, text-type compression guidance, grammatical-subject guidance, source-established-content calibration, subject-continuity rules, and approved examples to avoid unit/commentary-shaped, passage-effect, source-copying, floating-pronoun memory text, or content-type classification; the active promptset is `attentional_v2-phase6-v56`
     - subject-continuity / standalone Understanding follow-up remains implemented in Digest prompt `attentional_v2.digest.v9`: prior Understanding in `ReadingMemory` carries narrator / speaker / actor / concept continuity; Digest establishes new subjects, continues known subjects when supported, or explicitly preserves meaningful ambiguity without adding raw prior-source backfill, Ingest reference-resolution fields, or a durable referent store
     - Unit Memory recall/retrieval/context framework is implemented: settlement writes one unit-centered ledger entry per accepted source unit, derives source / understanding / response / annotation retrieval documents, indexes them with SQLite FTS5, optionally indexes dense vectors through sqlite-vec + local Ollama, lets Ingest trigger bounded prior-reading recalls through `retrieve_unit_memory`, and writes retrieval/selection traces between `Ingest` and `Digest`
     - Digest now receives one top-level `ReadingMemory` block assembled by runtime from hot current-chapter Understanding plus selected long-distance Unit Memory Understanding; raw prior source, prior Response, and prior Annotation remain retrieval/audit surfaces only
@@ -131,11 +131,22 @@ Last verified: `2026-06-06T17:50:46+08:00`
       - interpretation: Ingest v5 did not disable retrieval and reduced the post-R11 broad sermon-area continuity injection, but later focused recalls can still render large broad retrieved sets
     - current selection-discipline repair:
       - config: `max_units_per_recall_to_digest_context = 6`
-      - status: `pending_validation`
+      - status: `validated_text_only_diagnostic`
       - intent: cap prompt-visible selected Unit Memory entries per recall while preserving the broader total long-distance budget for multiple specific recalls
       - trace requirement: capped candidates must record `per_recall_selection_limit_exceeded`, and retrieval traces must record the active `selection_config`
+    - post-selection-cap `text_only` diagnostic smoke:
+      - run id: `attentional_v2_unit_memory_text_only_smoke_xidaduo_post_selection_cap_20260606`
+      - job id: `bgjob_unit_memory_text_only_smoke_xidaduo_post_selection_cap_20260606`
+      - segment: `xidaduo_private_zh__segment_1`
+      - result: intentionally stopped after selection-cap evidence was collected; no summary aggregate/report/usage files were generated
+      - report: `docs/implementation/new-reading-mechanism/codex/reports/UnitMemory-Retrieval-TextOnly-PostSelectionCap-Smoke-Report v0.md`
+      - health packet: `reading-companion-backend/eval/runs/attentional_v2/attentional_v2_unit_memory_text_only_smoke_xidaduo_post_selection_cap_20260606/analysis/unit_memory_retrieval_health/summary.json`
+      - review packet: `reading-companion-backend/eval/runs/attentional_v2/attentional_v2_unit_memory_text_only_smoke_xidaduo_post_selection_cap_20260606/analysis/unit_memory_retrieval_review/README.md`
+      - retrieval outcome: health status `ok`; `46` Unit Memory entries, `287` retrieval docs, `49` retrieval rows, `46` selection rows, `selected_unit_count=8`, `renderable_selected_unit_count=7`, `retrieved_line_total=2`, and `rendered_retrieved_unique_unit_count=2`
+      - selection-cap evidence: one mature recall had `15` candidate units, selected `6`, and suppressed `8` candidates with `per_recall_selection_limit_exceeded`
+      - follow-up finding: some Chinese-source recalls were emitted in English and some recall `basis` values drifted from the contract; Ingest v6 now tightens recall language and basis
   - next step:
-    - run targeted checks and then rerun a small no-judge `text_only` smoke to validate that per-recall selection discipline keeps prompt-visible retrieved Understanding nonzero while making focused-recall retrieved sets smaller and more directly relevant than the post-Ingest-v5 broad later retrieved sets
+    - rerun a small no-judge `text_only` smoke after Ingest v6 if recall-language drift continues to weaken lexical retrieval, and inspect whether selected retrieved Understanding remains nonzero, narrower, and more directly tied to recall intent
     - treat hybrid dense retrieval as blocked unless sqlite-vec, Ollama reachability, the configured Qwen embedding model, query embedding cache, vector rows, dense candidates, and RRF fusion are all validated
     - do not run formal evaluation, update evidence catalog, or claim product quality from the intentionally stopped diagnostic smokes; decide whether to tune recall specificity first or validate the environment-blocked hybrid dense path once Ollama/Qwen is available
     - use `docs/implementation/new-reading-mechanism/ingest-context-and-navigate-mapping.md` as the implementation reference for the landed first-slice `Ingest` XML context

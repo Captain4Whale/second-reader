@@ -85,7 +85,7 @@ _INGEST_UNIT_MEMORY_TOOL = {
                     "properties": {
                         "recall_id": {"type": "string"},
                         "recall_text": {"type": "string"},
-                        "basis": {"type": "string"},
+                        "basis": {"type": "string", "enum": ["selected_source_unit"]},
                     },
                     "required": ["recall_id", "recall_text"],
                 },

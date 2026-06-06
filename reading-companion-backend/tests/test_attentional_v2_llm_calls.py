@@ -15,6 +15,7 @@ from src.attentional_v2.llm_calls import (
     ingest,
     digest,
 )
+from src.attentional_v2.llm_output_tools import validate_ingest_result
 from src.attentional_v2.state_projection import STATE_PACKET_VERSION
 
 
@@ -77,6 +78,25 @@ def test_ingest_recall_status_distinguishes_empty_from_malformed() -> None:
     assert provided_empty["memory_recalls_status"] == "provided"
     assert malformed["memory_recalls"] == []
     assert malformed["memory_recalls_status"] == "malformed"
+
+
+def test_ingest_result_validator_requires_selected_source_unit_basis() -> None:
+    errors = validate_ingest_result(
+        {
+            "end_anchor_text": "Beta.",
+            "boundary_type": "paragraph_end",
+            "memory_recalls": [
+                {
+                    "recall_id": "r1",
+                    "recall_text": "earlier setup",
+                    "basis": "selected_unit_paragraphs_1_2",
+                }
+            ],
+        },
+        tool_results=[{"status": "ok"}],
+    )
+
+    assert "memory_recalls[0].basis must be selected_source_unit" in errors
 
 
 def _ingest_boundary_call(
@@ -231,10 +251,12 @@ def test_ingest_writes_manifest_and_uses_xml_anchor_contract(tmp_path: Path, mon
     assert "Return exactly one act" not in captured["prompt"]
     assert "weak structure cues, not automatic standalone units" in captured["prompt"]
     assert "purely non-lexical residue" in captured["prompt"]
+    assert "same primary language as the current source text" in captured["prompt"]
+    assert "Set each recall `basis` exactly to `selected_source_unit`" in captured["prompt"]
     assert "Mainline preview" not in captured["prompt"]
     assert manifest["node_name"] == "ingest"
-    assert manifest["prompt_version"] == "attentional_v2.ingest.v5"
-    assert manifest["prompt_assembly"]["output_contract"] == "ingest_boundary_memory_recalls_json_v1"
+    assert manifest["prompt_version"] == "attentional_v2.ingest.v6"
+    assert manifest["prompt_assembly"]["output_contract"] == "ingest_boundary_memory_recalls_json_v2"
     assert manifest["prompt_assembly"]["owner_node"] == "ingest"
 
 
@@ -293,7 +315,11 @@ def test_ingest_tool_loop_returns_recalls_and_runtime_status(tmp_path: Path, mon
     assert result["tool_result_summary"]["status"] == "ok"
     assert result["tool_result_summary"]["tool_call_id_seen"] == "tool-1"
     assert captured["tools"][0]["name"] == "retrieve_unit_memory"
+    recall_basis_schema = captured["tools"][0]["input_schema"]["properties"]["memory_recalls"]["items"]["properties"]["basis"]
+    assert recall_basis_schema["enum"] == ["selected_source_unit"]
     assert captured["output_tool"]["name"] == "submit_ingest_result"
+    output_basis_schema = captured["output_tool"]["input_schema"]["properties"]["memory_recalls"]["items"]["properties"]["basis"]
+    assert output_basis_schema["enum"] == ["selected_source_unit"]
     assert "memory_query" not in json.dumps(captured["tools"], ensure_ascii=False)
 
 

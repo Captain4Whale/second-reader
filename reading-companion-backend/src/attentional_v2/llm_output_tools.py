@@ -49,7 +49,7 @@ INGEST_RESULT_TOOL = final_output_tool(
                     {
                         "recall_id": {"type": "string"},
                         "recall_text": {"type": "string"},
-                        "basis": {"type": "string"},
+                        "basis": {"type": "string", "enum": ["selected_source_unit"]},
                     },
                     required=["recall_id", "recall_text"],
                 ),
@@ -187,6 +187,18 @@ def validate_ingest_result(payload: Mapping[str, Any], tool_results: list[dict[s
         errors.append("memory_recalls must contain no more than three entries")
     elif recalls and not tool_results:
         errors.append("memory_recalls is non-empty but retrieve_unit_memory was not called")
+    if isinstance(recalls, list):
+        for index, item in enumerate(recalls):
+            if not isinstance(item, Mapping):
+                errors.append(f"memory_recalls[{index}] must be an object")
+                continue
+            if not str(item.get("recall_id") or "").strip():
+                errors.append(f"memory_recalls[{index}].recall_id must be non-empty")
+            if not str(item.get("recall_text") or "").strip():
+                errors.append(f"memory_recalls[{index}].recall_text must be non-empty")
+            basis = str(item.get("basis") or "selected_source_unit").strip()
+            if basis != "selected_source_unit":
+                errors.append(f"memory_recalls[{index}].basis must be selected_source_unit")
     return errors
 
 

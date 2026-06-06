@@ -15,9 +15,9 @@ from .reader_role import READER_ROLE_FRAGMENT
 from .types import PromptDefinition
 
 
-INGEST_PROMPT_VERSION = "attentional_v2.ingest.v5"
-INGEST_XML_PROMPT_ASSEMBLY_SPEC_ID = "attentional_v2.ingest.xml.v5"
-INGEST_XML_PROMPTSET_VERSION = "attentional_v2-phase6-v55"
+INGEST_PROMPT_VERSION = "attentional_v2.ingest.v6"
+INGEST_XML_PROMPT_ASSEMBLY_SPEC_ID = "attentional_v2.ingest.xml.v6"
+INGEST_XML_PROMPTSET_VERSION = "attentional_v2-phase6-v56"
 INGEST_TRANSPORT_SYSTEM_PROMPT = "Follow the structured Ingest prompt in the user message. Use the required submit_ingest_result tool as the final output channel."
 
 
@@ -90,6 +90,10 @@ Write recalls only when the selected unit gives you a real reason to remember ea
 Start from the selected unit's primary semantic focus: the claim, teaching, action, conflict, image, relationship, method, or term that Digest will need to understand.
 
 Each recall should name the concrete source footing in the selected unit and the specific earlier understanding it asks to remember.
+
+Write each `recall_text` in the same primary language as the current source text. Preserve important names, titles, and technical terms in the form used by the source text when available.
+
+Set each recall `basis` exactly to `selected_source_unit`.
 
 Do not request broad character background, general protagonist history, or a generic "remember this name/concept appeared before" just because a recurring person or term is present. Ask for person or relationship background only when the current unit actually hinges on that earlier relation, choice, conflict, or unresolved pressure.
 
@@ -324,7 +328,7 @@ def build_ingest_prompt_assembly_spec(
             "current_view_position",
             "current_view_content",
         ),
-        output_contract="ingest_boundary_memory_recalls_json_v1",
+                output_contract="ingest_boundary_memory_recalls_json_v2",
     )
 
 
@@ -361,5 +365,5 @@ INGEST_PROMPT = PromptDefinition(
     system_prompt=INGEST_TRANSPORT_SYSTEM_PROMPT,
     user_prompt_template="<IngestPrompt assembled by render_ingest_prompt_xml>",
     required_inputs=("book_identity", "current_view_position", "current_view_content"),
-    output_contract="ingest_boundary_memory_recalls_json_v1",
+    output_contract="ingest_boundary_memory_recalls_json_v2",
 )
