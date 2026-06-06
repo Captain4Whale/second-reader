@@ -19,6 +19,8 @@ if str(ROOT) not in sys.path:
 
 from src.attentional_v2.unit_memory import DEFAULT_RETRIEVAL_CONFIG  # noqa: E402
 
+DEFAULT_READINESS_TIMEOUT_MS = 10_000
+
 
 def _json_dumps(payload: object) -> str:
     return json.dumps(payload, ensure_ascii=False, indent=2, sort_keys=True)
@@ -169,7 +171,15 @@ def build_parser() -> argparse.ArgumentParser:
     parser.add_argument("--base-url", default="http://127.0.0.1:11434")
     parser.add_argument("--model-id", default=str(DEFAULT_RETRIEVAL_CONFIG["ollama_model_id"]))
     parser.add_argument("--expected-dimension", type=int, default=int(DEFAULT_RETRIEVAL_CONFIG["embedding_dimension"]))
-    parser.add_argument("--timeout-ms", type=int, default=int(DEFAULT_RETRIEVAL_CONFIG["query_embedding_timeout_ms"]))
+    parser.add_argument(
+        "--timeout-ms",
+        type=int,
+        default=DEFAULT_READINESS_TIMEOUT_MS,
+        help=(
+            "Probe timeout in milliseconds. The default is intentionally wider than the runtime "
+            "query-embedding timeout so a cold local Ollama model load is not misreported as unavailable."
+        ),
+    )
     parser.add_argument("--strict", action="store_true", help="Exit nonzero when hybrid readiness is blocked.")
     return parser
 

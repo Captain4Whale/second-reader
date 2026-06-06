@@ -7,7 +7,7 @@ Update when: the current objective, active tasks, blockers, active jobs, open de
 
 This file is authoritative for durable current status. Do not keep unique active-state information only in `docs/agent-handoff.md`.
 
-Last verified: `2026-06-06T21:05:29+08:00`
+Last verified: `2026-06-06T22:37:07+08:00`
 
 ## Current Objective
 - The `Ingest -> Digest -> Reading Runner settlement` mechanism reframe is implemented; current work is fact alignment, smoke/diagnostic review, and calibration before any formal evaluation promotion.
@@ -76,10 +76,10 @@ Last verified: `2026-06-06T21:05:29+08:00`
     - the configured `hybrid` mode degraded before dense retrieval was validated because sqlite-vec was unavailable; text-only fallback produced almost no candidates
     - current repair authority: `docs/implementation/new-reading-mechanism/unit-memory-retrieval-repair-validation-plan.md`
   - retrieval repair status:
-    - the staged retrieval repair track has proven prompt-visible retrieved Understanding lines in `text_only` diagnostic smokes, but the goal is not complete because live hybrid dense retrieval remains environment-blocked and recall relevance/language calibration is still under review
+    - the staged retrieval repair track has proven prompt-visible retrieved Understanding lines in `text_only` diagnostic smokes, and local hybrid readiness now passes after installing the Ollama App runtime plus `qwen3-embedding:0.6b`; the goal is not complete because live hybrid dense retrieval still needs a real smoke proving dense candidates, query-embedding cache rows, vector rows, and RRF contribution in current artifacts
     - Phase 0 health packet is in place and reproduced the five-window failure from artifacts; run-local health reports are under `reading-companion-backend/eval/runs/attentional_v2/attentional_v2_ingest_digest_unit_memory_full_diagnostic_20260603_parallel5/analysis/unit_memory_retrieval_health/`
     - Phase 1/5 deterministic trace-rendering repair now passes: retrieval suppresses candidates without renderable Understanding before final selection, health reports count retrieval-layer suppression reasons, and a runner-level known-answer case proves a selected non-empty Understanding from the real Unit Memory index renders into Digest `ReadingMemory` without prior Response / Annotation / raw source
-    - Phase 2 is now partially validated at the code-path layer: sqlite-vec adapter loading works, and a deterministic fake-embedder test proves vector rows, query embedding cache, dense sqlite-vec candidates, dense distance filtering, and dense-channel selection; live hybrid remains environment-blocked because local Ollama / Qwen embedding service is not reachable, so real Qwen embeddings and live dense/RRF behavior have not been validated
+    - Phase 2 is now ready for live validation: sqlite-vec adapter loading works, deterministic fake-embedder tests prove vector rows / query embedding cache / dense sqlite-vec candidates / dense distance filtering / dense-channel selection, and the local Ollama App service now exposes `qwen3-embedding:0.6b` with a `1024`-dimension embedding probe; real dense/RRF behavior still needs a live hybrid retrieval smoke
     - Phase 3 deterministic text-only repair now passes for Chinese recall-meta wording, English concept recall, and multi-recall aggregation with `matched_recalls`
     - Phase 4 deterministic boundary/horizon repair now passes: tool-stage `boundary_unresolved` no longer prevents runtime retrieval after accepted source-unit governance, and horizon gates record numeric counts rather than only labels
     - first post-repair `text_only` smoke attempt:
@@ -186,15 +186,16 @@ Last verified: `2026-06-06T21:05:29+08:00`
         - retrieval note: `retrieved_line_total = 0` in this early stopped sample because the run did not reach a mature long-distance retrieval horizon; this does not supersede the earlier post-R9/R11/post-selection-cap text-only proof of prompt-visible retrieved memory
     - current hybrid readiness check:
       - command: `cd reading-companion-backend && .venv/bin/python scripts/check_unit_memory_hybrid_readiness.py`
-      - latest local result: `status = blocked`
+      - latest local result: `status = ok`
       - sqlite-vec result: `import_ok = true`, `load_ok = true`, `vec0_table_ok = true`, `version = 0.1.9`
-      - Ollama result: `reachable = false`, `blocking_reasons = ["ollama_unreachable"]`
-      - interpretation: Phase 2 live hybrid remains blocked by the local Ollama/Qwen embedding service, not by sqlite-vec adapter loading
+      - Ollama result: App runtime installed via `ollama-app`, `reachable = true`, `model_available = true` for `qwen3-embedding:0.6b`, embedding probe `dimension = 1024`
+      - operator note: the Homebrew formula package was removed because it lacked `llama-server` on this machine; the App distribution is now the working local runtime
+      - interpretation: Phase 2 live hybrid is no longer environment-blocked; it still needs a live retrieval smoke before claiming dense retrieval success
   - next step:
     - inspect post-R16 selected-but-not-rendered / hot-budget behavior before further relevance calibration; mature post-R15 retrieval evidence has already been collected and motivated R16
     - do not rerun solely for the Ingest v6 language/basis contract unless later live artifacts show drift again; the current observed sample is sufficient for this narrow contract, while long-distance retrieval maturity was intentionally not revalidated in that early stopped run
-    - treat live hybrid dense retrieval as blocked unless Ollama reachability, the configured Qwen embedding model, real query embedding cache rows, real vector rows, dense candidates, and RRF fusion are all validated; sqlite-vec and the fake-embedder code path are no longer the blocker
-    - do not run formal evaluation, update evidence catalog, or claim product quality from the intentionally stopped diagnostic smokes; treat live hybrid dense validation as blocked until Ollama/Qwen is available
+    - run a small live hybrid retrieval smoke next to verify real query embedding cache rows, real vector rows, dense candidates, and RRF contribution; sqlite-vec and Ollama/Qwen readiness are no longer the blocker
+    - do not run formal evaluation, update evidence catalog, or claim product quality from the intentionally stopped diagnostic smokes; treat live hybrid dense validation as pending until the smoke shows actual dense retrieval contribution
     - use `docs/implementation/new-reading-mechanism/ingest-context-and-navigate-mapping.md` as the implementation reference for the landed first-slice `Ingest` XML context
     - use `docs/implementation/new-reading-mechanism/digest-understanding-response-annotation-design.md` as the implemented reference for the Digest prompt/output semantic refactor
     - use `docs/implementation/new-reading-mechanism/unit-memory-hybrid-retrieval-design.md` as the implemented reference for the Unit Memory storage/index/retrieval trace bottom framework

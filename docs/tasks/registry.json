@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "updated_at": "2026-06-06T22:07:51+08:00",
+  "updated_at": "2026-06-06T22:37:07+08:00",
   "tasks": [
     {
       "id": "TASK-SECOND-READER-INGEST-DIGEST-REFRAME-AUDIT-20260530",
@@ -52,7 +52,7 @@
         "bgjob_unit_memory_text_only_smoke_xidaduo_post_r16_aux_backing_20260606"
       ],
       "acceptance_ref": "",
-      "next_action": "Five-window Long Span vNext judged diagnostic completed for the current Ingest -> Digest -> Reading Runner settlement mechanism and is review_pending in the run ledger. Current live Ingest returns boundary fields plus bounded memory_recalls[]; retrieve_unit_memory triggers runtime Unit Memory retrieval/selection before Digest, and Digest receives top-level ReadingMemory assembled from hot current-chapter Understanding plus selected long-distance Unit Memory Understanding. Unit Memory retrieval repair remains active under docs/implementation/new-reading-mechanism/unit-memory-retrieval-repair-validation-plan.md: text_only smokes now prove prompt-visible retrieved Understanding, R14/R15 boundary fixes are live-smoked, and R16 auxiliary-backed Understanding gating is validated in deterministic tests plus the post-R16 text_only smoke. R16 suppresses weak auxiliary-surface candidates unless they also have enough unit_understanding score/rank, while preserving nonzero retrieved ReadingMemory; the post-R16 smoke showed selected_unit_count=5, renderable_selected_unit_count=5, retrieved_line_total=2, rendered_retrieved_unique_unit_count=2, candidate_below_selection_quality_threshold=33, and selected_but_not_rendered_count=3. Next action: inspect selected-but-not-rendered / hot-budget behavior before further relevance calibration. Live hybrid dense retrieval remains blocked by missing/unreachable local Ollama / Qwen embedding service, although sqlite-vec and fake-embedder code-path coverage pass; do not claim live hybrid success, run formal evaluation, or update evidence catalog from these diagnostic smokes.",
+      "next_action": "Five-window Long Span vNext judged diagnostic completed for the current Ingest -> Digest -> Reading Runner settlement mechanism and is review_pending in the run ledger. Current live Ingest returns boundary fields plus bounded memory_recalls[]; retrieve_unit_memory triggers runtime Unit Memory retrieval/selection before Digest, and Digest receives top-level ReadingMemory assembled from hot current-chapter Understanding plus selected long-distance Unit Memory Understanding. Unit Memory retrieval repair remains active under docs/implementation/new-reading-mechanism/unit-memory-retrieval-repair-validation-plan.md: text_only smokes now prove prompt-visible retrieved Understanding, R14/R15 boundary fixes are live-smoked, and R16 auxiliary-backed Understanding gating is validated in deterministic tests plus the post-R16 text_only smoke. R16 suppresses weak auxiliary-surface candidates unless they also have enough unit_understanding score/rank, while preserving nonzero retrieved ReadingMemory; the post-R16 smoke showed selected_unit_count=5, renderable_selected_unit_count=5, retrieved_line_total=2, rendered_retrieved_unique_unit_count=2, candidate_below_selection_quality_threshold=33, and selected_but_not_rendered_count=3. Local hybrid readiness now passes with sqlite-vec plus Ollama App `qwen3-embedding:0.6b` returning 1024-dimensional embeddings. Next action: run a small live hybrid dense retrieval smoke to verify real query-embedding cache rows, vector rows, dense candidates, and RRF contribution; do not claim live hybrid success, run formal evaluation, or update evidence catalog from these diagnostic smokes.",
       "blocked_by": [],
       "evidence_refs": [
         "docs/current-state.md",
@@ -101,7 +101,7 @@
         "reading-companion-backend/eval/runs/attentional_v2/attentional_v2_unit_memory_text_only_smoke_xidaduo_post_r16_aux_backing_20260606/analysis/unit_memory_retrieval_health/README.md",
         "reading-companion-backend/eval/runs/attentional_v2/attentional_v2_unit_memory_text_only_smoke_xidaduo_post_r16_aux_backing_20260606/analysis/unit_memory_post_r16_aux_backing_review/README.md"
       ],
-      "last_updated": "2026-06-06T18:51:45+08:00",
+      "last_updated": "2026-06-06T22:37:07+08:00",
       "last_updated_by": "codex"
     },
     {

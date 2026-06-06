@@ -86,3 +86,11 @@ def test_hybrid_readiness_accepts_model_and_embedding_dimension(monkeypatch):
     assert summary["blocking_reasons"] == []
     assert summary["embedding"]["ok"] is True
     assert summary["embedding"]["dimension"] == 3
+
+
+def test_hybrid_readiness_cli_uses_cold_start_safe_timeout_default():
+    parser = hybrid_readiness.build_parser()
+    args = parser.parse_args([])
+
+    assert args.timeout_ms == hybrid_readiness.DEFAULT_READINESS_TIMEOUT_MS
+    assert args.timeout_ms > hybrid_readiness.DEFAULT_RETRIEVAL_CONFIG["query_embedding_timeout_ms"]
