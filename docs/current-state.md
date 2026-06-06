@@ -7,7 +7,7 @@ Update when: the current objective, active tasks, blockers, active jobs, open de
 
 This file is authoritative for durable current status. Do not keep unique active-state information only in `docs/agent-handoff.md`.
 
-Last verified: `2026-06-06T10:41:29+08:00`
+Last verified: `2026-06-06T11:07:15+08:00`
 
 ## Current Objective
 - The `Ingest -> Digest -> Reading Runner settlement` mechanism reframe is implemented; current work is fact alignment, smoke/diagnostic review, and calibration before any formal evaluation promotion.
@@ -30,13 +30,14 @@ Last verified: `2026-06-06T10:41:29+08:00`
     - `DEC-108` renames the concrete current-unit LLM call from `Read` / `read_unit` to `Digest` and makes the XML Digest prompt the only live path
     - `DEC-109` removes the old concept/thread structured long-memory stores from current live schemas, runtime artifacts, checkpoints, prompt projections, settlement, audits, tests, and stable-doc current surfaces
     - `DEC-110` lands the Unit Memory ledger + hybrid retrieval bottom framework as the current long-distance memory substrate for `attentional_v2`
+    - `DEC-112` records that subject continuity should be carried through Digest Understanding and `ReadingMemory`, not through raw-source backfill or Ingest-side reference-resolution fields
     - current `llm_calls.ingest(...)` is the forward-only XML LLM boundary call: exact `end_anchor_text`, `boundary_type`, `reason`, and bounded `memory_recalls[]`
     - current LLM-call code now lives in `reading-companion-backend/src/attentional_v2/llm_calls.py`; the old ambiguous active module name is removed
     - runtime next-unit preparation lives outside `Ingest` as `prepare_next_source_unit_for_read`: it prepares source preview/context, calls `Ingest`, performs anchor resolution/retry/fallback boundary governance, and hands the accepted source unit to `Digest`
     - `Ingest` uses `ReaderRole`, `Instruction`, `BookInfo`, `CurrentView`, empty `RetrievalSurface`, and `OutputContract`; it may express up to three prior-reading recalls, while actual retrieval execution and prompt-facing memory selection remain Reading Runner runtime work
     - Digest semantic refactor is implemented: model-facing `understanding / response / annotations` are three peer outputs, with one holistic `understanding` object per unit mapped into `recent_reading_memory`
     - Digest Understanding prompt `attentional_v2.digest.v5` now frames `understanding` as concise content-level understanding from the current source text, with light section headings, text-type compression guidance, grammatical-subject guidance, and five approved real-unit examples to avoid unit/commentary-shaped or source-copying memory text
-    - reference-aware recall / standalone Understanding follow-up is now documented but not implemented: target design adds Ingest `PrecedingContext`, compact `reference_hints[]`, standalone `memory_recalls[]`, and Digest `ReferenceHints`; target Understanding allows clear local pronouns but rejects unresolved floating pronouns after memory storage
+    - subject-continuity / standalone Understanding follow-up is now documented but not implemented: target design carries narrator / speaker / actor / concept continuity through prior Understanding in `ReadingMemory`, does not add raw prior-source backfill or Ingest reference-resolution fields, and requires Digest to establish new subjects, continue known subjects, or explicitly preserve meaningful ambiguity while avoiding floating pronouns in stored memory
     - Unit Memory recall/retrieval/context framework is implemented: settlement writes one unit-centered ledger entry per accepted source unit, derives source / understanding / response / annotation retrieval documents, indexes them with SQLite FTS5, optionally indexes dense vectors through sqlite-vec + local Ollama, lets Ingest trigger bounded prior-reading recalls through `retrieve_unit_memory`, and writes retrieval/selection traces between `Ingest` and `Digest`
     - Digest now receives one top-level `ReadingMemory` block assembled by runtime from hot current-chapter Understanding plus selected long-distance Unit Memory Understanding; raw prior source, prior Response, and prior Annotation remain retrieval/audit surfaces only
     - current `Digest` has no path-redirection output contract and the Runner/audit path emits no Detour or source-backread runtime artifacts for new runs

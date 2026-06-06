@@ -3216,3 +3216,24 @@ This new direction is design frozen but not yet implemented as a formal benchmar
 - `reading-companion-backend/src/attentional_v2/runner.py`
 - `reading-companion-backend/eval/manifests/attentional_v2_minimal_eval_inventory_v1.json`
 - `reading-companion-backend/tests/test_long_span_vnext.py`
+
+## Entry 109
+**ID**: DEC-112
+**Status**: active
+
+**Decision / Inflection**: Carry subject continuity through Digest Understanding and ReadingMemory, not through raw-source backfill or Ingest-side reference-resolution fields.
+
+**Period**: June 6, 2026, after the first Digest Understanding review exposed floating-pronoun and subject-continuity risks in stored Understanding memory.
+
+**Decision**: The next subject-continuity follow-up should strengthen Digest Understanding rather than adding a separate reference-resolution surface. Digest should use the current source unit plus prior Understanding rendered in `ReadingMemory` to establish new subjects, continue known narrators / speakers / actors / concepts / relationships, or explicitly preserve meaningful ambiguity when the referent remains unclear. Stored `understanding.content` should be self-contained and memory-readable: it may use pronouns when their referent is explicit inside the same Understanding, but it should not store floating pronouns that later Digest calls cannot interpret.
+
+**Boundary**: This decision rejects the pending alternative of adding raw prior-source continuity context to Ingest or Digest, adding Ingest-side referent-hint fields, or creating a durable referent/coreference store for this slice. Ingest remains responsible for forward unit selection and bounded prior-reading recalls. Runtime remains responsible for Unit Memory retrieval, ReadingMemory rendering, settlement, and audit. A later audit-only checker for floating pronouns may be added if diagnostics show prompt/example work is insufficient, but it should not become a new memory schema by default.
+
+**Why this path won**: Subject continuity is part of reading continuity, and the project already has a channel for reading continuity: Understanding stored into Recent Reading Memory / Unit Memory and rendered back as `ReadingMemory`. Adding raw-source backfill would reintroduce a form of hidden backread, while adding Ingest referent hints would pull Ingest toward interpretation rather than boundary / recall preparation. The simpler universal rule is to make each Understanding carry the subject information that future reading needs, including ambiguity when the text itself withholds identity.
+
+**Primary evidence**:
+- `docs/current-state.md`
+- `docs/tasks/registry.md`
+- `docs/backend-reading-mechanisms/attentional_v2.md`
+- `docs/implementation/new-reading-mechanism/ingest-recall-and-digest-memory-context-design.md`
+- `docs/implementation/new-reading-mechanism/digest-understanding-response-annotation-design.md`

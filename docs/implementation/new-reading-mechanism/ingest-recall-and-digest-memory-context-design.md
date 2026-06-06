@@ -17,8 +17,8 @@ Update when: Ingest recall wording, tool schema, recall output schema, retrieval
   - Ingest does not see, choose, or return retrieved memory brief ids; Ingest only expresses recall intentions and receives compact status/count tool results.
   - Digest now receives one top-level `ReadingMemory` block assembled from hot current-chapter Understanding plus runtime-selected long-distance Unit Memory Understanding.
 - Pending design extension, not implemented in the current live baseline:
-  - Ingest should become reference-aware for the selected source unit by receiving a small immediate-preceding raw source window, resolving important local references that affect recall, and returning lightweight `reference_hints[]`.
-  - Digest should receive those runtime-accepted reference hints with the accepted source unit so `understanding.content` can be self-contained without forcing all pronouns out of natural prose.
+  - Subject continuity should be carried by prior Understanding in `ReadingMemory`, not by adding raw-source backfill or a new Ingest-side reference-resolution surface.
+  - Digest should use current source text plus `ReadingMemory` to establish new subjects, continue known subjects, or explicitly preserve ambiguity inside `understanding.content`.
 - Tool capability note:
   - On `2026-06-02`, a minimal live probe against the configured `MiniMax-M2.7` Anthropic-compatible endpoint succeeded with `tool_use -> tool_result -> final answer`.
   - The probe verifies basic provider support for Anthropic-style tools, not the Reading Companion retrieval tool implementation.
@@ -58,225 +58,144 @@ This design does not cover:
 - running eval
 - evidence catalog updates
 
-## Reference-Aware Recall Extension
+## Subject Continuity Through Understanding
 
 ### Problem
 
-The current recall/tool path can retrieve the wrong memory when the selected source unit depends on local pronouns or other context-bound references.
+The current source unit may contain pronouns, quoted speech, unclear speakers, or deliberately delayed identities. If Digest writes those references into `understanding.content` as bare local pronouns, the resulting memory becomes hard to reuse later inside `ReadingMemory` and Unit Memory retrieval.
 
-For example, if a selected unit says "I finally understood why he left", a recall such as "why he left" is a poor retrieval input. The useful recall needs the current reading's best supported referents, such as the narrator, a named character, a speaker in a quoted scene, or a relationship already established by the nearby source.
-
-Digest has a similar but downstream problem. It receives `ReadingMemory` as prior Understanding lines plus the current source unit. Because those prior lines are already decontextualized memory rather than raw preceding prose, Digest may not reliably recover whether a first-person or second-person pronoun in the current source continues the same speaker, shifts speaker, or belongs to a quoted voice.
-
-Therefore reference resolution should support both:
-
-- Ingest recall formation, so `memory_recalls[]` become standalone retrieval intentions rather than pronoun-shaped queries.
-- Digest Understanding formation, so `understanding.content` can be read later as memory without reopening the source unit.
+The solution should not reintroduce raw-source backread through runtime context and should not turn Ingest into a reference-resolution node. Subject continuity should travel through the same channel as the rest of reading continuity: prior Understanding.
 
 ### Design Principle
 
-Do not introduce a separate full-book coreference system or make Ingest a second interpretation node.
+Digest should use the current source unit plus existing `ReadingMemory` to continue, establish, or preserve uncertainty about subjects.
 
-Use an application-level, local-context approach:
+This keeps the mechanism simple and universal:
 
-- give Ingest a small immediate-preceding raw source window around the current cursor
-- let Ingest resolve only references that matter for the selected unit's recall and later understanding
-- keep the result as lightweight hints, not a memory store, entity graph, or authoritative source fact
-- let Digest produce the final self-contained Understanding
-- let runtime record reference hints in trace / prompt manifest for audit, but do not turn them into durable Unit Memory schema unless a later implementation proves a need
+- no raw prior-source context is injected by runtime
+- no new Ingest-side reference-resolution output is added
+- no separate entity/coreference schema is introduced
+- `ReadingMemory` remains the prompt-facing carrier of prior Understanding
+- `understanding.content` becomes the place where subject continuity, new subject establishment, and unresolved ambiguity are recorded
 
-This is a decontextualization support layer: it helps a selected source unit become independently understandable and retrievable after being cut out of continuous source flow.
+### Digest Subject-Continuity Rule
 
-### Ingest Context Addition
+When a subject, narrator, speaker, actor, concept, relationship, or point of view is newly established in the current unit, Digest should write that establishment into Understanding.
 
-Add an immediate raw-source context block to `CurrentView`:
+If current source text uses first-person or second-person language, Digest should use `ReadingMemory` and the current unit to decide whether the subject is already known:
 
-```xml
-<CurrentView>
-  <Position>...</Position>
-  <PrecedingContext>...</PrecedingContext>
-  <Content>...</Content>
-</CurrentView>
-```
+- if the subject is known, write the explicit subject in Understanding
+- if the current unit introduces a new subject, establish the subject with a name, role, speaker, group, concept, or relationship description
+- if the referent remains genuinely unclear, preserve that ambiguity explicitly instead of guessing
 
-`PrecedingContext` is not ReadingMemory and is not long-distance retrieval.
+This is not a no-pronoun rule. Pronouns are acceptable when their referent is explicit inside the same Understanding and cannot be misunderstood. The rule is against floating pronouns whose referent would disappear after the Understanding is stored as memory.
 
-Recommended V1 source:
-
-- a small window immediately before the current cursor
-- preferred implementation: previous accepted source unit tail plus current paragraph prefix when available
-- fallback implementation: last `800-1500` source characters or last `1-3` paragraph slices before the cursor
-- omit internal ids unless needed for audit; prompt-facing text should be plain source text with compact paragraph labels if useful
-
-`PrecedingContext` exists only to resolve local continuity and speaker/reference ambiguity for the selected unit. It should not invite Ingest to summarize prior content or retrieve memory from it.
-
-### Ingest Instruction Addition
-
-Ingest should first choose the boundary, then inspect the selected source unit for reference-sensitive phrases that affect recall or later understanding.
-
-Target instruction direction:
+Target prompt direction:
 
 ```text
-After choosing the next source unit, notice whether any pronoun, quoted speaker, demonstrative, role label, or context-bound phrase in the selected unit must be understood before you can form useful prior-reading recalls.
+# Subject continuity
+Use ReadingMemory to understand whether the current source text continues an already established narrator, speaker, actor, concept, relationship, or point of view.
 
-Use the selected source unit first. Use PrecedingContext only to resolve immediate local continuity, such as who "I", "you", "he", "she", "it", "they", "this", or "that" most safely refers to.
+When the current unit establishes a new subject, write that subject explicitly in Understanding. If the identity is not yet fully known, use the clearest source-supported description, such as the first-person narrator, a quoted speaker, a prisoner, Siddhartha's son, a company, a claim, or a relationship.
 
-Return only reference hints that matter for recall or for Digest understanding. Do not list every pronoun mechanically.
+When a pronoun or demonstrative clearly refers to a known subject from ReadingMemory or from the current unit, write the referent explicitly at its first important mention.
 
-If a referent is clear, name it with a person, role, speaker, concept, event, relationship, or scene from the source.
+When the referent is genuinely ambiguous, do not guess. Record the ambiguity as part of the Understanding when it matters for continued reading.
 
-If a referent is genuinely ambiguous, do not invent a name. Use the safest source-supported description, such as "the narrator", "the quoted speaker", "Siddhartha's son", "the company", or "the argument about safety margin".
+Pronouns are acceptable after the referent is clear inside the same Understanding. Avoid floating pronouns that cannot be understood after this Understanding is stored as memory.
 ```
 
-### Ingest Output Addition
+### Examples
 
-Add optional lightweight `reference_hints[]` to the final Ingest JSON:
-
-```json
-{
-  "end_anchor_text": "...",
-  "boundary_type": "paragraph_end",
-  "reason": "...",
-  "reference_hints": [
-    {
-      "surface": "我",
-      "resolved_as": "the narrator Viktor Frankl",
-      "basis": "selected_source_unit_and_preceding_context",
-      "confidence": "high"
-    },
-    {
-      "surface": "他",
-      "resolved_as": "Siddhartha's son",
-      "basis": "selected_source_unit",
-      "confidence": "medium"
-    }
-  ],
-  "memory_recalls": [
-    {
-      "recall_id": "r1",
-      "recall_text": "the earlier departure of Siddhartha's son and Siddhartha's continuing grief over him",
-      "basis": "selected_source_unit"
-    }
-  ]
-}
-```
-
-Field guidance:
-
-- `reference_hints`
-  - zero or more hints, but V1 should keep this small; recommended cap: `0-5`
-  - include only references that affect recall or understanding
-  - not a complete pronoun inventory
-- `surface`
-  - the visible expression in the selected source unit, such as `我`, `你`, `他`, `它`, `this`, `that`, `the one`, or a speaker/role phrase
-- `resolved_as`
-  - a compact source-supported subject or referent
-  - use names when supported; otherwise use roles or descriptions
-- `basis`
-  - `selected_source_unit`
-  - `preceding_context`
-  - `selected_source_unit_and_preceding_context`
-- `confidence`
-  - `high`, `medium`, or `low`
-  - low confidence hints should use role descriptions rather than guessed names
-
-`memory_recalls[]` should use resolved referents when they matter. A recall should not depend on `我`, `你`, `他`, `它`, `this`, or `that` to be understood.
-
-### Tool Loop Interaction
-
-When `memory_recalls[]` are non-empty, the `retrieve_unit_memory` tool input should include `reference_hints[]` alongside the provisional boundary and recalls:
-
-```json
-{
-  "end_anchor_text": "...",
-  "boundary_type": "paragraph_end",
-  "reason": "...",
-  "reference_hints": [...],
-  "memory_recalls": [...]
-}
-```
-
-Runtime may use `reference_hints[]` to:
-
-- enrich or validate internal retrieval query text
-- record why a recall used a specific subject
-- diagnose retrieval misses caused by unresolved references
-
-Runtime should not expose selected retrieved Understanding text back to Ingest. The existing tool-result rule still stands: Ingest receives status/count metadata, not memory bodies or selected ids.
-
-### Digest Context Addition
-
-After runtime accepts the selected boundary, pass the accepted reference hints into Digest as part of current focus, not as reading memory:
-
-```xml
-<CurrentFocus>
-  <ReadingPath>...</ReadingPath>
-  <ReadingPosition>...</ReadingPosition>
-  <ReferenceHints>
-    我 -> the narrator Viktor Frankl
-    他 -> Siddhartha's son
-  </ReferenceHints>
-  <ReadingObject>...</ReadingObject>
-  <ReadingIntent>...</ReadingIntent>
-</CurrentFocus>
-```
-
-`ReferenceHints` should be compact. They are local support for the current unit, not prior memory and not a substitute for ReadingMemory.
-
-Digest should treat reference hints as defeasible orientation:
-
-- use them when they clarify current source text
-- ignore them when the current source unit clearly contradicts them
-- avoid exposing the hints as internal machinery in reader-facing `response` or `annotations`
-
-### Digest Understanding Rule
-
-The target is not "no pronouns".
-
-The target is self-contained Understanding:
-
-- first mentions of important people, organizations, concepts, relationships, events, claims, and scenes should be explicit
-- pronouns are acceptable when their referent is already explicit earlier in the same Understanding and cannot be misunderstood
-- unresolved or floating pronouns are not acceptable in `understanding.content`
-- first-person and second-person source pronouns should normally become third-person subjects such as the narrator, author, quoted speaker, reader, named character, role, group, concept, or claim
-- if the referent cannot be safely identified from CurrentFocus, ReferenceHints, ReadingMemory, and source text, use a source-supported role description rather than guessing a name
-
-Good:
+Known subject continued:
 
 ```text
-Siddhartha's grief over his son drives him to cross the river and search for the boy. The river's laughter and Siddhartha's reflection make Siddhartha recognize that his pain repeats the pain he once caused his own father.
+ReadingMemory:
+P12 U4: The first-person narrator Frankl has arrived at the concentration camp and is describing the first night from his own experience.
+
+Current source:
+I did not want to say more about it.
+
+Understanding:
+Frankl avoids dwelling on the friend's death and turns toward the psychological experience of arriving at the camp.
 ```
 
-Also acceptable:
+New subject established:
 
 ```text
+Current source:
+I had never seen the city before.
+
+Understanding:
+A first-person narrator begins from an unfamiliar arrival in the city; the narrator's exact identity is not yet established.
+```
+
+Ambiguity preserved:
+
+```text
+Current source:
+He returned before anyone could explain why.
+
+Understanding:
+A male figure returns before the cause of his earlier absence is explained; the current memory does not yet make clear which person "he" refers to.
+```
+
+Clear local pronoun allowed:
+
+```text
+Understanding:
 Siddhartha recognizes that father-son suffering is recurring in his own life. This recognition gives Siddhartha hope and makes him want to speak with Vasudeva.
 ```
 
-The second example contains a pronoun-like phrase, but `This recognition` is clear because the referent is explicit in the preceding sentence. That is acceptable.
+Here `This recognition` is acceptable because the referent is explicit in the preceding sentence.
 
-Bad:
+Bad stored Understanding:
 
 ```text
 He realizes that this is happening again and wants to tell him about it.
 ```
 
-This is not acceptable because `he`, `this`, `him`, and `it` are not independently recoverable once the Understanding is stored as memory.
+This is not acceptable because `he`, `this`, `him`, and `it` cannot be recovered once the Understanding is later rendered as memory.
+
+### Ingest Boundary
+
+Ingest should not be given a new raw-source continuity block for reference resolution in this design.
+
+Ingest remains responsible for:
+
+- choosing the next forward source unit
+- expressing zero to three prior-reading recalls when the selected unit naturally asks for earlier memory
+- invoking `retrieve_unit_memory` when recalls exist
+
+`memory_recalls[]` should still be as standalone as the selected unit allows, but Ingest does not need to solve every pronoun in the source. Retrieval can often operate on concrete names, concepts, events, or pressure words in the selected unit. The final self-contained subject handling belongs to Digest Understanding.
+
+### Runtime Boundary
+
+Runtime should not inject raw preceding source text into Digest as a workaround for pronoun resolution.
+
+Runtime remains responsible for:
+
+- Unit Memory retrieval and selection
+- `ReadingMemory` rendering
+- post-Digest settlement
+- trace / audit persistence
+
+Runtime may later support an audit-only checker for unresolved or floating pronouns in `understanding.content`, but the first design response should be prompt and example work in Digest rather than a new runtime memory schema.
 
 ### Implementation Boundary
 
-This extension should be implemented as prompt/context/schema work, not as a new standalone LLM node by default.
-
 Recommended first implementation slice:
 
-1. Add `PrecedingContext` to Ingest `CurrentView`.
-2. Add `reference_hints[]` to Ingest output and tool input.
-3. Require `memory_recalls[]` to be standalone and reference-aware.
-4. Pass accepted `reference_hints[]` into Digest `CurrentFocus`.
-5. Update Digest Understanding instruction and output contract to require self-contained third-person subjects while allowing clear local pronouns.
-6. Add tests for first-person narration, quoted speakers, and ambiguous references.
+1. Update Digest `Understanding` instruction with the subject-continuity rule.
+2. Update `OutputContract / UnderstandingField` so `understanding.content` is a self-contained memory line that may contain clear local pronouns but must not contain floating pronouns.
+3. Adjust few-shot examples where needed so new subjects, continued subjects, and ambiguity are written as memory-ready Understanding.
+4. Add tests for:
+   - known first-person narrator continued through `ReadingMemory`
+   - new first-person narrator established without a known identity
+   - ambiguous pronoun preserved rather than guessed
+   - clear pronoun inside the same Understanding allowed
 
-Do not add a durable `resolved_referents` store in this slice. If later diagnostics show repeated failures, add an audit-only checker for unresolved pronouns before changing runtime memory schema.
+Do not add raw-source backfill, Ingest reference-resolution fields, or a durable referent store in this slice.
 
 ## Ingest Prompt Design
 

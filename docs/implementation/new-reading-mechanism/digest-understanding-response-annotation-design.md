@@ -14,9 +14,9 @@ Update when: Digest action names, output fields, XML prompt structure, or runtim
   - This document remains the authority for Digest's three peer model-facing outputs: `understanding`, `response`, and `annotations`.
   - Its early `ReadingState` context examples were superseded by `docs/implementation/new-reading-mechanism/ingest-recall-and-digest-memory-context-design.md`.
   - The current live Digest prompt uses top-level `ReadingMemory`, not `ReadingState`, `RecentMemory`, or `RetrievedUnitMemory`.
-- Pending reference-awareness note:
-  - `docs/implementation/new-reading-mechanism/ingest-recall-and-digest-memory-context-design.md` now defines a not-yet-implemented follow-up for Ingest `PrecedingContext`, `reference_hints[]`, and Digest `ReferenceHints`.
-  - This follow-up keeps the Digest goal as self-contained Understanding, not a mechanical ban on every pronoun.
+- Pending subject-continuity note:
+  - `docs/implementation/new-reading-mechanism/ingest-recall-and-digest-memory-context-design.md` now defines a not-yet-implemented follow-up for carrying narrator / speaker / actor / concept continuity through prior Understanding in `ReadingMemory`.
+  - This follow-up keeps the Digest goal as self-contained Understanding, not a mechanical ban on every pronoun and not a new raw-source backfill path.
 - Current basis:
   - `DEC-108` makes `Digest` the concrete per-unit interpretation LLM call.
   - `DEC-109` removes content-typed structured long-memory stores from the current live surface.
@@ -362,36 +362,63 @@ Implementation notes:
 - The five examples are approved from real five-window diagnostic units and show content-level, memory-ready Understanding without naming the source container.
 - The single-object rule for `understanding` lives in `OutputContract`, not in the reader-facing `Understanding` instruction.
 
-### Pending Reference-Aware Understanding Rule
+### Pending Subject-Continuity Understanding Rule
 
-The next prompt slice should make `understanding.content` self-contained without making the prose unnaturally pronoun-free.
+The next prompt slice should make `understanding.content` self-contained by using the current source text and `ReadingMemory` to continue known subjects, establish new subjects, or preserve meaningful ambiguity.
+
+This rule should not add raw prior-source context to Digest and should not make Ingest responsible for reference resolution.
 
 Target rule:
 
 ```text
-# Standalone reference
-Write Understanding so it can be read later without reopening the source unit.
+# Subject continuity
+Use ReadingMemory to understand whether the current source text continues an already established narrator, speaker, actor, concept, relationship, or point of view.
 
-First mentions of important people, organizations, concepts, relationships, events, claims, and scenes should be explicit.
+When the current unit establishes a new subject, write that subject explicitly in Understanding. If the identity is not yet fully known, use the clearest source-supported description, such as the first-person narrator, a quoted speaker, a prisoner, Siddhartha's son, a company, a claim, or a relationship.
 
-When the source text uses first-person or second-person pronouns, resolve them into the clearest supported third-person subject, such as the narrator, author, quoted speaker, reader, named character, role, group, concept, or claim.
+When a pronoun or demonstrative clearly refers to a known subject from ReadingMemory or from the current unit, write the referent explicitly at its first important mention.
 
-Pronouns are acceptable when their referent is already explicit earlier in the same Understanding and cannot be misunderstood.
+When the referent is genuinely ambiguous, do not guess. Record the ambiguity as part of the Understanding when it matters for continued reading.
 
-Avoid unresolved or floating pronouns such as 我, 你, 他, 她, 它, 他们, this, that, or it when their referent is not clear inside the same Understanding.
-
-If the referent cannot be safely identified from CurrentFocus, ReferenceHints, ReadingMemory, and source text, use a source-supported role description rather than guessing a name.
+Pronouns are acceptable after the referent is clear inside the same Understanding. Avoid floating pronouns that cannot be understood after this Understanding is stored as memory.
 ```
 
-This is a self-contained-memory rule, not a no-pronoun rule.
+This is a subject-continuity rule, not a no-pronoun rule.
 
-Good:
+Known subject continued:
 
 ```text
-Siddhartha's grief over his son drives Siddhartha to cross the river and search for the boy. The river's laughter and Siddhartha's reflection make Siddhartha recognize that his pain repeats the pain he once caused his own father.
+ReadingMemory:
+P12 U4: The first-person narrator Frankl has arrived at the concentration camp and is describing the first night from his own experience.
+
+Current source:
+I did not want to say more about it.
+
+Understanding:
+Frankl avoids dwelling on the friend's death and turns toward the psychological experience of arriving at the camp.
 ```
 
-Also acceptable:
+New subject established:
+
+```text
+Current source:
+I had never seen the city before.
+
+Understanding:
+A first-person narrator begins from an unfamiliar arrival in the city; the narrator's exact identity is not yet established.
+```
+
+Ambiguity preserved:
+
+```text
+Current source:
+He returned before anyone could explain why.
+
+Understanding:
+A male figure returns before the cause of his earlier absence is explained; the current memory does not yet make clear which person "he" refers to.
+```
+
+Clear local pronoun allowed:
 
 ```text
 Siddhartha recognizes that father-son suffering is recurring in his own life. This recognition gives Siddhartha hope and makes him want to speak with Vasudeva.
@@ -399,13 +426,13 @@ Siddhartha recognizes that father-son suffering is recurring in his own life. Th
 
 Here `This recognition` is acceptable because the referent is explicit in the preceding sentence.
 
-Bad:
+Bad stored Understanding:
 
 ```text
 He realizes that this is happening again and wants to tell him about it.
 ```
 
-That output is not acceptable as stored Understanding because the later reader cannot recover `he`, `this`, `him`, or `it` without reopening the source.
+That output is not acceptable as stored Understanding because the later reader cannot recover `he`, `this`, `him`, or `it` from memory.
 
 The same rule should be reflected in `OutputContract / UnderstandingField`, because `understanding.content` is converted into runtime memory text and later rendered inside `ReadingMemory`.
 
