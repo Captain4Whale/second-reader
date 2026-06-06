@@ -7,7 +7,7 @@ Update when: the current objective, active tasks, blockers, active jobs, open de
 
 This file is authoritative for durable current status. Do not keep unique active-state information only in `docs/agent-handoff.md`.
 
-Last verified: `2026-06-06T20:44:37+08:00`
+Last verified: `2026-06-06T21:05:29+08:00`
 
 ## Current Objective
 - The `Ingest -> Digest -> Reading Runner settlement` mechanism reframe is implemented; current work is fact alignment, smoke/diagnostic review, and calibration before any formal evaluation promotion.
@@ -164,7 +164,7 @@ Last verified: `2026-06-06T20:44:37+08:00`
       - R13 deterministic repair: selection now applies a content-neutral quality gate after aggregation and renderability checks; candidates need strong enough `unit_understanding` evidence or stricter auxiliary-surface evidence before they can occupy long-distance `ReadingMemory` slots, and weak candidates are suppressed with `candidate_below_selection_quality_threshold`
       - R13 status: validated in `text_only` diagnostics with a boundary caveat. The post-R13 smoke `attentional_v2_unit_memory_text_only_smoke_xidaduo_post_r13_20260606` was intentionally stopped after evidence; health status `ok` with `48` entries, `273` retrieval docs, `selected_unit_count=6`, `retrieved_line_total=6`, `rendered_retrieved_unique_unit_count=6`, `selected_but_not_rendered_count=0`, and `candidate_below_selection_quality_threshold=11`. Review then found one selected event attached to a one-character closing-quote fallback unit caused by straight-vs-curved quote anchor mismatch.
       - R14 boundary repair: `resolve_end_anchor_text(...)` now tries quote-normalized exact matching after source-exact matching fails, mapping the normalized match back to true source offsets. Deterministic coverage passes, and the post-R14 smoke `attentional_v2_unit_memory_text_only_smoke_xidaduo_post_r14_20260606` observed `4` live `normalized_exact_text` matches and did not reproduce the old `src:c1:p125@63-p125@64` one-character fallback; the Buddha recognition scene was captured as full source unit `src:c1:p127@0-p130@64`.
-      - R15 boundary repair: the same post-R14 smoke exposed a new quote-only remainder unit, `src:c1:p116@41-p116@42`, caused when an exact anchor ended before an immediately adjacent closing quote. `resolve_end_anchor_text(...)` now extends exact and quote-normalized matches over trailing closing punctuation. Deterministic coverage and real-source replay pass; live validation remains pending in the next smoke.
+      - R15 boundary repair: the same post-R14 smoke exposed a new quote-only remainder unit, `src:c1:p116@41-p116@42`, caused when an exact anchor ended before an immediately adjacent closing quote. `resolve_end_anchor_text(...)` now extends exact and quote-normalized matches over trailing closing punctuation. Deterministic coverage, real-source replay, and the post-R15 smoke pass: `9` live trailing-closer extensions, `tiny_unit_count=0`, and the prior p116 failure region resolved as full unit `src:c1:p115@0-p116@42`.
     - current recall-language contract repair:
       - status: `validated_observed_live_contract_sample`
       - code behavior: `submit_ingest_result` validation now receives the current source text and rejects model-side `memory_recalls[].recall_text` that clearly does not use the current source text's primary language; `retrieve_unit_memory` action-tool preflight applies the same validation before retrieval execution and returns `contract_violation` metadata for the forced final-output repair path
@@ -188,10 +188,10 @@ Last verified: `2026-06-06T20:44:37+08:00`
       - Ollama result: `reachable = false`, `blocking_reasons = ["ollama_unreachable"]`
       - interpretation: Phase 2 live hybrid remains blocked by the local Ollama/Qwen embedding service, not by sqlite-vec adapter loading
   - next step:
-    - validate R15 trailing-closing-punctuation boundary extension in the next no-judge smoke before judging post-R13 selected-memory relevance; R14 quote-normalized matching has live smoke evidence, but the same smoke found a different quote-only remainder that is now fixed deterministically and still needs live validation
+    - collect a mature post-R15 `text_only` retrieval sample before judging post-R13 selected-memory relevance; R14 and R15 boundary fixes now have live smoke evidence, but the post-R15 run stopped before long-distance retrieved memory selected
     - do not rerun solely for the Ingest v6 language/basis contract unless later live artifacts show drift again; the current observed sample is sufficient for this narrow contract, while long-distance retrieval maturity was intentionally not revalidated in that early stopped run
     - treat live hybrid dense retrieval as blocked unless Ollama reachability, the configured Qwen embedding model, real query embedding cache rows, real vector rows, dense candidates, and RRF fusion are all validated; sqlite-vec and the fake-embedder code path are no longer the blocker
-    - do not run formal evaluation, update evidence catalog, or claim product quality from the intentionally stopped diagnostic smokes; validate R15 before any further R13 selected-memory relevance calibration, and treat live hybrid dense validation as blocked until Ollama/Qwen is available
+    - do not run formal evaluation, update evidence catalog, or claim product quality from the intentionally stopped diagnostic smokes; collect a mature post-R15 retrieval sample before any further R13 selected-memory relevance calibration, and treat live hybrid dense validation as blocked until Ollama/Qwen is available
     - use `docs/implementation/new-reading-mechanism/ingest-context-and-navigate-mapping.md` as the implementation reference for the landed first-slice `Ingest` XML context
     - use `docs/implementation/new-reading-mechanism/digest-understanding-response-annotation-design.md` as the implemented reference for the Digest prompt/output semantic refactor
     - use `docs/implementation/new-reading-mechanism/unit-memory-hybrid-retrieval-design.md` as the implemented reference for the Unit Memory storage/index/retrieval trace bottom framework

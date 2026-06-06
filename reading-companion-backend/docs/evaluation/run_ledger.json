@@ -1,6 +1,6 @@
 {
   "schema_version": 1,
-  "updated_at": "2026-06-06T12:46:51.636106Z",
+  "updated_at": "2026-06-06T13:05:49.528475Z",
   "entries": [
     {
       "run_id": "attentional_v2_excerpt_surface_v1_1_judged_20260406",
@@ -2541,7 +2541,7 @@
         "reading-companion-backend/eval/runs/attentional_v2/attentional_v2_unit_memory_text_only_smoke_xidaduo_post_r13_20260606/analysis/unit_memory_r13_selection_quality_review/README.md"
       ],
       "catalog_status": "not_cataloged",
-      "notes": "Diagnostic-only no-judge text_only R13 selection-quality smoke on xidaduo_private_zh__segment_1 intentionally stopped after R13 evidence. Health status ok: 48 entries, 273 retrieval docs, selected_unit_count=6, retrieved_line_total=6, rendered_retrieved_unique_unit_count=6, selected_but_not_rendered_count=0, and candidate_below_selection_quality_threshold=11. Later review found one selected event boundary-contaminated by a one-character closing-quote fallback caused by straight-vs-curved quote anchor mismatch. R14 fixed the quote-normalized resolver after this run and was later live-smoked in the post-R14 diagnostic; that later smoke exposed R15 trailing-closing-quote remainder, so validate R15 before judging post-R13 selected-memory relevance. No summary files, formal evidence, or evidence catalog update.",
+      "notes": "Diagnostic-only no-judge text_only R13 selection-quality smoke on xidaduo_private_zh__segment_1 intentionally stopped after R13 evidence. Health status ok: 48 entries, 273 retrieval docs, selected_unit_count=6, retrieved_line_total=6, rendered_retrieved_unique_unit_count=6, selected_but_not_rendered_count=0, and candidate_below_selection_quality_threshold=11. Later review found one selected event boundary-contaminated by a one-character closing-quote fallback caused by straight-vs-curved quote anchor mismatch. R14 fixed the quote-normalized resolver after this run and was later live-smoked in the post-R14 diagnostic; R15 trailing-closing-punctuation extension was later live-smoked in the post-R15 diagnostic. A mature post-R15 retrieval sample is still needed before judging post-R13 selected-memory relevance. No summary files, formal evidence, or evidence catalog update.",
       "parent_run_id": "",
       "child_run_ids": [],
       "synthetic": false,
@@ -2568,13 +2568,40 @@
         "reading-companion-backend/eval/runs/attentional_v2/attentional_v2_unit_memory_text_only_smoke_xidaduo_post_r14_20260606/analysis/unit_memory_r14_boundary_review/README.md"
       ],
       "catalog_status": "not_cataloged",
-      "notes": "Diagnostic-only no-judge text_only post-R14 boundary smoke on xidaduo_private_zh__segment_1, intentionally stopped after boundary evidence. It observed 41 Unit Memory entries, 4 live normalized_exact_text matches, and did not reproduce the old src:c1:p125@63-p125@64 fallback; the Buddha recognition scene landed as full unit src:c1:p127@0-p130@64. The same run exposed R15: a quote-only remainder unit src:c1:p116@41-p116@42 caused by a successful exact anchor that stopped before an adjacent closing quote. R15 was fixed deterministically after this run; validate in a later smoke before using this run for relevance calibration. No summary files, formal evidence, or evidence catalog update.",
+      "notes": "Diagnostic-only no-judge text_only post-R14 boundary smoke on xidaduo_private_zh__segment_1, intentionally stopped after boundary evidence. It observed 41 Unit Memory entries, 4 live normalized_exact_text matches, and did not reproduce the old src:c1:p125@63-p125@64 fallback; the Buddha recognition scene landed as full unit src:c1:p127@0-p130@64. The same run exposed R15: a quote-only remainder unit src:c1:p116@41-p116@42 caused by a successful exact anchor that stopped before an adjacent closing quote. R15 was later live-smoked in the post-R15 diagnostic, so this run remains boundary evidence only and should not be used for selected-memory relevance calibration. No summary files, formal evidence, or evidence catalog update.",
       "parent_run_id": "",
       "child_run_ids": [],
       "synthetic": false,
       "local_missing_allowed": [],
       "metadata": {},
       "updated_at": "2026-06-06T12:46:31.346377Z"
+    },
+    {
+      "run_id": "attentional_v2_unit_memory_text_only_smoke_xidaduo_post_r15_20260606",
+      "date": "2026-06-06",
+      "surface": "unit_memory_retrieval_repair_smoke",
+      "lane": "mechanism_eval_smoke",
+      "status": "abandoned",
+      "mechanisms": [
+        "attentional_v2"
+      ],
+      "dataset_or_manifest": [],
+      "run_dir": "reading-companion-backend/eval/runs/attentional_v2/attentional_v2_unit_memory_text_only_smoke_xidaduo_post_r15_20260606",
+      "summary_paths": {},
+      "job_ids": [
+        "bgjob_unit_memory_text_only_smoke_xidaduo_post_r15_20260606"
+      ],
+      "report_paths": [
+        "reading-companion-backend/eval/runs/attentional_v2/attentional_v2_unit_memory_text_only_smoke_xidaduo_post_r15_20260606/analysis/unit_memory_r15_boundary_review/README.md"
+      ],
+      "catalog_status": "not_cataloged",
+      "notes": "Diagnostic-only no-judge text_only post-R15 boundary smoke on xidaduo_private_zh__segment_1, intentionally stopped after boundary evidence. It observed 41 Unit Memory entries, 42 unitization rows, 9 live trailing-closing-punctuation extensions, and zero quote-only/tiny Unit Memory entries. The prior p116 failure region resolved as full unit src:c1:p115@0-p116@42 with matched text ending in the closing quote. The Buddha recognition scene also remained a full source unit. The run stopped before long-distance retrieved memory selected, so it validates boundary behavior only, not R13 retrieval relevance. No summary files, formal evidence, or evidence catalog update.",
+      "parent_run_id": "",
+      "child_run_ids": [],
+      "synthetic": false,
+      "local_missing_allowed": [],
+      "metadata": {},
+      "updated_at": "2026-06-06T13:05:49.527460Z"
     },
     {
       "run_id": "attentional_v2_unit_memory_text_only_smoke_xidaduo_post_r9_20260606",

@@ -59,7 +59,7 @@ Current unresolved target:
 - The per-recall selection discipline slice is validated in `text_only` diagnostics: `max_units_per_recall_to_digest_context = 6` capped how many prior Unit Memory entries one recall could send toward Digest `ReadingMemory`, while preserving nonzero prompt-visible retrieved memory.
 - The prompt-visible hot-memory exclusion slice is validated in a `text_only` diagnostic smoke: selected long-distance slots were no longer consumed by units that Digest would already receive as hot current-chapter memory, with `selected_but_not_rendered_count=0` and `dedupe_hot_memory=0` in the observed sample.
 - The current non-hybrid selection-quality target is now validated in a no-judge `text_only` diagnostic: R13 suppressed weak broad candidates with explicit score/rank/surface-quality reasons while still rendering prompt-visible retrieved Understanding.
-- The post-R14 diagnostic validated the quote-normalized live path: the run observed `4` `normalized_exact_text` matches and did not reproduce the old `src:c1:p125@63-p125@64` fallback; the Buddha recognition scene landed as a full source unit. The same run exposed R15: if a successful exact anchor stops immediately before a closing quote, the quote can become a one-character remainder unit. R15 now has a deterministic trailing-closer repair and needs ordinary smoke coverage in the next live run.
+- The post-R14 diagnostic validated the quote-normalized live path: the run observed `4` `normalized_exact_text` matches and did not reproduce the old `src:c1:p125@63-p125@64` fallback; the Buddha recognition scene landed as a full source unit. The same run exposed R15: if a successful exact anchor stops immediately before a closing quote, the quote can become a one-character remainder unit. R15 now has deterministic and live `text_only` smoke coverage: the post-R15 smoke observed `9` trailing-closing-punctuation extensions and `tiny_unit_count=0` through the prior p116 failure region.
 - The narrow Ingest v6 language/basis contract is validated by deterministic tests and an observed early live sample. The next non-hybrid target is relevance calibration only if reviewed recalls / rendered memories remain too broad; otherwise the main unresolved target is live hybrid dense validation.
 - Hybrid dense retrieval remains environment-blocked because local Ollama / Qwen embedding service is unavailable; the goal should not claim live hybrid success until real Qwen embeddings, dense candidates, and RRF fusion are validated.
 - The latest smoke was intentionally stopped before full summary generation, so it is diagnostic repair evidence, not formal evaluation evidence.
@@ -174,6 +174,30 @@ If the goal reaches a blocker, the final report must distinguish:
 - implementation blockers
 - prompt/relevance calibration still worth doing
 - subjective quality findings that should not block mechanism-conformance completion
+
+### Goal-Mode Run Artifacts
+
+A Goal-mode execution should leave enough local artifacts that another agent can tell why it continued, paused, or stopped without reconstructing the chat.
+
+For each no-judge smoke or fixture packet used as validation evidence, create or update a run-local review directory with:
+
+- `goal_status.md`
+  - current phase
+  - latest completed action
+  - latest failed action, if any
+  - next smallest actionable step
+  - whether the result is deterministic evidence, no-judge live diagnostic evidence, or environment evidence
+- `non_blocking_findings.md`
+  - findings that should not stop the goal
+  - reason they are non-blocking
+  - owner layer such as prompt, selection, environment, or subjective quality
+  - next evidence that would reopen them
+- `stop_check.md`
+  - completion checklist result
+  - unresolved blockers
+  - explicit answer to whether the goal should continue, pause for user decision, finish as complete, or finish as blocked
+
+The goal runner should update stable docs only for durable project facts. Run-local artifacts are the right place for detailed smoke observations, examples, and temporary investigation notes.
 
 ### Design Baseline Lock
 
@@ -391,7 +415,7 @@ Each phase must leave behind a concrete pass/fail result.
 - Phase 6D has exited for `text_only`: prompt-visible hot-memory exclusion has deterministic coverage and a no-judge smoke proves selected long-distance slots are no longer being spent on hot-memory duplicates in the observed sample.
 - Phase 6E exits only when selection quality gating has deterministic coverage and a no-judge smoke or run-local replay proves weak broad candidates can be suppressed without clearing all useful retrieved Understanding.
 - Phase 6F exits only when quote-normalized anchor resolution has deterministic coverage and a live smoke shows the old equivalent-quote fallback no longer appears.
-- Phase 6G exits only when trailing-closing-punctuation extension has deterministic coverage and a live smoke shows the runner no longer creates one-character quote remainder units after successful anchor matches.
+- Phase 6G has exited for `text_only`: trailing-closing-punctuation extension has deterministic coverage and a live smoke shows the prior p116 quote remainder is absorbed into the full source unit.
 - Phase 7 exits only when a no-judge smoke shows prompt-visible retrieved Understanding lines and a review packet confirms they are relevant enough for continued reading.
 
 ### Phase Status Summary
@@ -408,10 +432,10 @@ Each phase must leave behind a concrete pass/fail result.
 | Phase 6B | `validated_text_only_diagnostic` | Per-recall selection discipline caps prompt-visible selected units per recall while preserving nonzero retrieved memory; post-selection-cap smoke selected `6` out of `15` candidate units for one recall, suppressed `8` with `per_recall_selection_limit_exceeded`, and rendered `2` retrieved Understanding lines. | Relevance calibration remains possible if reviewed recalls / rendered memories stay too broad; hybrid dense validation remains environment-blocked. |
 | Phase 6C | `validated_observed_live_contract_sample` | Ingest prompt `attentional_v2.ingest.v6`, structured-output validation, and action-tool preflight require model-side recalls to use the current source text's primary language and `basis = selected_source_unit`; runtime fallback recalls may still use `runtime_source_text_fallback`. A pre-contract smoke exposed English recall text for a Chinese source unit; a post-contract early stopped smoke observed zero language violations and only `selected_source_unit` basis values in reviewed unique recalls. | Do not treat the early stopped post-contract run as mature retrieval validation; rerun only if later artifacts show language/basis drift again or if a combined contract-plus-mature-retrieval sample is needed. |
 | Phase 6D | `validated_text_only_diagnostic` | Reading Runner excludes only prompt-visible hot current-chapter spans from long-distance Unit Memory retrieval and records the exclusion count; a deterministic runner fixture proves a non-hot matching prior unit can still be selected. The post-hot-exclusion smoke rendered `23` retrieved lines from `11` unique units with `selected_but_not_rendered_count=0`, `dedupe_hot_memory=0`, and `max_excluded_source_unit_span_count=36`. | Relevance review/calibration remains possible; live hybrid dense validation remains environment-blocked. |
-| Phase 6E | `validated_text_only_diagnostic_with_boundary_caveat` | Post-hot-exclusion review proved R12 mechanics but found low-score / weak broad long-distance fills after hot candidates were excluded. R13 adds a content-neutral quality gate: strong `unit_understanding` evidence can pass, auxiliary-only evidence must be stronger, and weak candidates are suppressed with `candidate_below_selection_quality_threshold`. The post-R13 text-only smoke rendered retrieved Understanding while suppressing weak candidates; one later selected event was contaminated by the R14 quote-anchor fallback bug. | Continue relevance review/calibration only if later rendered memories remain broad after R15 live validation; live hybrid dense validation remains environment-blocked. |
+| Phase 6E | `validated_text_only_diagnostic_with_boundary_caveat` | Post-hot-exclusion review proved R12 mechanics but found low-score / weak broad long-distance fills after hot candidates were excluded. R13 adds a content-neutral quality gate: strong `unit_understanding` evidence can pass, auxiliary-only evidence must be stronger, and weak candidates are suppressed with `candidate_below_selection_quality_threshold`. The post-R13 text-only smoke rendered retrieved Understanding while suppressing weak candidates; one later selected event was contaminated by the R14 quote-anchor fallback bug. | Continue relevance review/calibration only if a mature post-R15 retrieval sample still renders broad memories; live hybrid dense validation remains environment-blocked. |
 | Phase 6F | `validated_text_only_diagnostic_with_followup_boundary_issue` | Post-R13 review exposed a quote-equivalence boundary bug: straight-quote anchors did not match curved-quote source text and could fall back to a one-character structural unit. The resolver now supports quote-normalized exact matching while mapping back to true source offsets. The post-R14 smoke observed `4` live `normalized_exact_text` matches and did not reproduce the old `src:c1:p125@63-p125@64` fallback. | R14 itself is live-smoked; continue only because the same smoke found R15 trailing-quote remainder. |
-| Phase 6G | `fixed_deterministic_pending_live_validation` | The post-R14 smoke found a different quote-only unit, `src:c1:p116@41-p116@42`, caused by a successful exact anchor ending before an immediately adjacent closing quote. The resolver now extends exact and quote-normalized matches over trailing closing punctuation. Deterministic fixture and real-source replay pass. | Validate in the next smoke that quote-only remainder units no longer appear after successful anchor matches. |
-| Phase 7 | `passed_post_r11_text_only_diagnostic` | Post-R9 and post-R10/R11 `text_only` smokes proved prompt-visible retrieved Understanding lines; rendered retrieved unit ids now appear in live traces; auxiliary-surface-only rendered pollution was reduced in the observed event. | Calibrate recall specificity / relevance after R15 live validation; hybrid dense validation remains environment-blocked. |
+| Phase 6G | `validated_text_only_diagnostic` | The post-R14 smoke found a different quote-only unit, `src:c1:p116@41-p116@42`, caused by a successful exact anchor ending before an immediately adjacent closing quote. The resolver now extends exact and quote-normalized matches over trailing closing punctuation. Deterministic fixture, real-source replay, and post-R15 smoke pass: `9` live extensions, `tiny_unit_count=0`, and p116 resolved as full unit `src:c1:p115@0-p116@42`. | Continue to a mature post-R15 retrieval sample before judging selected-memory relevance; live hybrid dense validation remains environment-blocked. |
+| Phase 7 | `passed_post_r11_text_only_diagnostic` | Post-R9 and post-R10/R11 `text_only` smokes proved prompt-visible retrieved Understanding lines; rendered retrieved unit ids now appear in live traces; auxiliary-surface-only rendered pollution was reduced in the observed event. | Calibrate recall specificity / relevance after a mature post-R15 retrieval sample; hybrid dense validation remains environment-blocked. |
 
 ### External Environment Handling
 
@@ -477,11 +501,12 @@ Continue from the smallest independent checks rather than jumping directly to a 
    - R13 deterministic tests now cover strong Understanding evidence, weak filler suppression, and no-fill behavior when all candidates are weak
    - post-R13 text-only diagnostic evidence shows weak candidates suppressed with machine-readable reasons while useful retrieved Understanding still renders
    - post-R14 text-only diagnostic evidence validated the quote-normalized live path but exposed R15 trailing-quote remainder
-   - next action is review/calibration only if the selected rendered memories remain too broad after R15 live validation
-2. Validate R15 trailing-closing-punctuation boundary extension in the next smoke:
-   - deterministic resolver test and real-source replay pass now
-   - next smoke should not contain quote-only accepted source spans after successful anchors that stop immediately before closing quotes
-   - if quote-only units still appear, inspect boundary extension / fallback governance before tuning recall wording
+   - post-R15 text-only diagnostic evidence validated R15 boundary behavior, but stopped before long-distance retrieval selected
+   - next action is review/calibration only if a mature post-R15 retrieval sample still renders overly broad selected memories
+2. Collect a mature post-R15 retrieval sample:
+   - run a no-judge `text_only` diagnostic until selected long-distance retrieved memory appears
+   - inspect rendered retrieved unit ids and suppression reasons after R13/R14/R15 are all active
+   - if selected memories remain broad, calibrate recall specificity or selection thresholds; if selected memory stays zero, inspect retrieval horizon / quality gate thresholds
 3. Validate Ingest v6 recall language/basis tightening only if needed:
    - post-selection-cap smoke proved volume control works and retrieved memory remains prompt-visible
    - the same smoke exposed Chinese-source recalls written in English and model-side `basis` drift
@@ -825,7 +850,7 @@ Validation:
 
 - `fixed_deterministic`: `tests/test_attentional_v2_source_spans.py::test_resolver_includes_adjacent_trailing_closing_quote` verifies the resolver includes an immediately adjacent closing quote after an exact match.
 - `fixed_real_source_replay`: replaying the post-R14 p116 source/anchor now resolves to `p116@42` and matched text `还是让那些沙门老朽为这些把戏沾沾自喜吧！”`.
-- `pending_live_validation`: the next smoke should no longer produce one-character quote-only accepted units for this trailing-closer case.
+- `validated_text_only_diagnostic`: the post-R15 smoke `attentional_v2_unit_memory_text_only_smoke_xidaduo_post_r15_20260606` observed `9` live trailing-closing-punctuation extensions, `tiny_unit_count = 0`, and the prior p116 failure region resolved as full unit `src:c1:p115@0-p116@42`. It should not be used for retrieval relevance because it stopped before selected long-distance memory appeared.
 
 ## Golden Path Invariants
 
