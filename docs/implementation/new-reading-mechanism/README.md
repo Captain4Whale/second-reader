@@ -39,6 +39,9 @@ Update when: the design capture, plan, tracker, or open-question set changes dur
 - `ingest-digest-unit-memory-conformance-goal.md`
   - executable Goal contract for end-to-end structural conformance testing of the current `Ingest -> Unit Memory retrieval/selection -> Digest -> settlement` mechanism
   - use when running Codex Goal-mode checks against the locked design baseline without changing the mechanism design documents
+- `unit-memory-retrieval-repair-validation-plan.md`
+  - repair and validation plan for the current Unit Memory retrieval failure found in the five-window diagnostic run
+  - use when implementing staged fixes until `Ingest recalls -> runtime retrieval/selection -> Digest ReadingMemory` produces prompt-visible retrieved Understanding memory
 - `requirement-ledger.md`
   - atomic traceability ledger mapping design points to implementation, deferral, rejection, or stable-doc promotion
 - `implementation-plan.md`
@@ -128,5 +131,6 @@ Update when: the design capture, plan, tracker, or open-question set changes dur
 17. `mechanism-pattern-ledger.md`
 18. `runtime-artifact-map.md`
 19. `ingest-digest-unit-memory-conformance-goal.md`
-20. `second-reader-memory-planning/README.md`
-21. Stable docs listed above, as required by the task at hand
+20. `unit-memory-retrieval-repair-validation-plan.md`
+21. `second-reader-memory-planning/README.md`
+22. Stable docs listed above, as required by the task at hand

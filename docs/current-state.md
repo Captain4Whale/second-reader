@@ -7,7 +7,7 @@ Update when: the current objective, active tasks, blockers, active jobs, open de
 
 This file is authoritative for durable current status. Do not keep unique active-state information only in `docs/agent-handoff.md`.
 
-Last verified: `2026-06-06T13:58:01+08:00`
+Last verified: `2026-06-06T15:03:07+08:00`
 
 ## Current Objective
 - The `Ingest -> Digest -> Reading Runner settlement` mechanism reframe is implemented; current work is fact alignment, smoke/diagnostic review, and calibration before any formal evaluation promotion.
@@ -69,14 +69,20 @@ Last verified: `2026-06-06T13:58:01+08:00`
     - strict LLM health: all five `attentional_v2` output dirs checked `ok`
     - initial metric snapshot: fresh Memory Quality average `3.83` across `25` probes; fresh prior-memory safety audit found `0` prior-memory overclaims across all five windows
     - catalog status: `not_cataloged`; do not update evidence catalog until reviewed
+  - diagnostic review finding:
+    - the five-window run showed that Unit Memory retrieval is structurally present but not mechanism-effective yet
+    - `ReadingMemory` was rendered for Digest, but long-distance retrieved memory did not become prompt-visible: `retrieved_line_count` was `0` across all `531` Digest calls
+    - the configured `hybrid` mode degraded before dense retrieval was validated because sqlite-vec was unavailable; text-only fallback produced almost no candidates
+    - current repair authority: `docs/implementation/new-reading-mechanism/unit-memory-retrieval-repair-validation-plan.md`
   - next step:
-    - inspect summary files, Ingest recall samples, Unit Memory retrieval traces, Digest `ReadingMemory` prompts, and settlement artifacts
-    - produce a diagnostic interpretation before any evidence promotion
+    - implement and validate the Unit Memory retrieval repair track in stages, starting with retrieval health / trace invariants, hybrid vector path health, text-only fallback probes, horizon and boundary-governance repair, and selection-to-`ReadingMemory` rendering checks
+    - do not run formal evaluation, update evidence catalog, or claim product quality until a no-judge smoke proves prompt-visible retrieved Understanding memory
     - use `docs/implementation/new-reading-mechanism/ingest-context-and-navigate-mapping.md` as the implementation reference for the landed first-slice `Ingest` XML context
     - use `docs/implementation/new-reading-mechanism/digest-understanding-response-annotation-design.md` as the implemented reference for the Digest prompt/output semantic refactor
     - use `docs/implementation/new-reading-mechanism/unit-memory-hybrid-retrieval-design.md` as the implemented reference for the Unit Memory storage/index/retrieval trace bottom framework
     - use `docs/implementation/new-reading-mechanism/ingest-recall-and-digest-memory-context-design.md` as the implemented reference for bounded multi-recall Ingest output, Anthropic-style `retrieve_unit_memory` tool loop, multi-recall retrieval aggregation, and Digest `ReadingMemory` packaging
     - use `docs/implementation/new-reading-mechanism/ingest-digest-unit-memory-conformance-goal.md` as the completed structural conformance contract; it treated the mechanism design docs as a locked baseline and permitted fixing implementation/tests/stable docs only
+    - use `docs/implementation/new-reading-mechanism/unit-memory-retrieval-repair-validation-plan.md` as the active repair/validation plan for making Unit Memory retrieval actually select relevant prior Understanding and render it into Digest `ReadingMemory`
     - the no-judge hybrid smoke `attentional_v2_unit_memory_hybrid_smoke_nawaer_20260602` completed as a diagnostic only; it should not be treated as formal evidence or evidence-catalog material
     - do not update evidence catalog or claim product quality until this diagnostic has been reviewed
 - Historical concrete-node XML prompt / Recent Reading Memory full active diagnostic machine run has completed; post-run report is preserved for reference.
