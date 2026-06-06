@@ -7,7 +7,7 @@ Update when: the current objective, active tasks, blockers, active jobs, open de
 
 This file is authoritative for durable current status. Do not keep unique active-state information only in `docs/agent-handoff.md`.
 
-Last verified: `2026-06-06T15:18:40+08:00`
+Last verified: `2026-06-06T15:56:51+08:00`
 
 ## Current Objective
 - The `Ingest -> Digest -> Reading Runner settlement` mechanism reframe is implemented; current work is fact alignment, smoke/diagnostic review, and calibration before any formal evaluation promotion.
@@ -77,12 +77,20 @@ Last verified: `2026-06-06T15:18:40+08:00`
   - retrieval repair status:
     - the staged retrieval repair track has started, but the goal is not complete because no no-judge smoke has yet proven prompt-visible retrieved Understanding lines in Digest `ReadingMemory`
     - Phase 0 health packet is in place and reproduced the five-window failure from artifacts; run-local health reports are under `reading-companion-backend/eval/runs/attentional_v2/attentional_v2_ingest_digest_unit_memory_full_diagnostic_20260603_parallel5/analysis/unit_memory_retrieval_health/`
-    - Phase 1/5 trace-rendering repair has begun: selected-but-not-rendered retrieved candidates are now counted separately and empty/missing Understanding can be suppressed with explicit machine-readable reasons
+    - Phase 1/5 deterministic trace-rendering repair now passes: retrieval suppresses candidates without renderable Understanding before final selection, health reports count retrieval-layer suppression reasons, and a runner-level known-answer case proves a selected non-empty Understanding from the real Unit Memory index renders into Digest `ReadingMemory` without prior Response / Annotation / raw source
     - Phase 2 remains environment-blocked after sqlite-vec adapter repair because local Ollama / Qwen embedding service is not reachable, so dense candidates and RRF fusion have not been validated
-    - Phase 3 text-only repair has begun: FTS query construction now strips recall-meta wording and has a known-answer Chinese recall test that retrieves the expected prior Understanding
-    - Phase 4 boundary-governance repair has begun: tool-stage `boundary_unresolved` no longer prevents runtime retrieval after the source unit has been accepted
+    - Phase 3 deterministic text-only repair now passes for Chinese recall-meta wording, English concept recall, and multi-recall aggregation with `matched_recalls`
+    - Phase 4 deterministic boundary/horizon repair now passes: tool-stage `boundary_unresolved` no longer prevents runtime retrieval after accepted source-unit governance, and horizon gates record numeric counts rather than only labels
+    - first post-repair `text_only` smoke attempt:
+      - run id: `attentional_v2_unit_memory_text_only_smoke_value_20260606`
+      - job id: `bgjob_unit_memory_text_only_smoke_value_20260606`
+      - segment: `value_of_others_private_en__segment_1`
+      - result: the underlying read loop completed and wrote runtime artifacts, but the registered wrapper exited `1` because strict LLM-health validation reported `llm_fallback_events_present`; summary files were not generated
+      - health packet: `reading-companion-backend/eval/runs/attentional_v2/attentional_v2_unit_memory_text_only_smoke_value_20260606/analysis/unit_memory_retrieval_health/summary.json`
+      - retrieval outcome before the new fix: `50` Unit Memory entries and `228` retrieval docs existed, but `selected_unit_count=0`, `renderable_selected_unit_count=0`, and `retrieved_line_total=0`
+      - root cause found after the smoke: Runner passed the whole active Recent Reading Memory store as retrieval exclusions, which excluded nearly all prior units; this has been removed in code, but a post-fix smoke has not yet rerun
   - next step:
-    - continue the Unit Memory retrieval repair track from deterministic checks: finish selected/rendered trace invariants, broaden text-only known-answer probes, make horizon/recent-neighbor gates explainable, prove a selected non-empty Understanding renders into Digest `ReadingMemory`, and only then run a no-judge smoke
+    - rerun a no-judge post-repair smoke in `text_only` mode after the whole-Recent-Memory exclusion fix to prove prompt-visible `retrieved_line_count > 0` with renderable selected Unit Memory Understanding in real artifacts
     - treat hybrid dense retrieval as blocked unless sqlite-vec, Ollama reachability, the configured Qwen embedding model, query embedding cache, vector rows, dense candidates, and RRF fusion are all validated
     - do not run formal evaluation, update evidence catalog, or claim product quality until a no-judge smoke proves prompt-visible retrieved Understanding memory
     - use `docs/implementation/new-reading-mechanism/ingest-context-and-navigate-mapping.md` as the implementation reference for the landed first-slice `Ingest` XML context

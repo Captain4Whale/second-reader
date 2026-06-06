@@ -671,6 +671,7 @@ def ensure_window_output(
     require_probe_export: bool,
     probe_plan: dict[str, Any] | None = None,
     probe_plan_path: Path = DEFAULT_MEMORY_QUALITY_PROBE_PLAN_PATH,
+    memory_retrieval_mode: str | None = None,
 ) -> dict[str, Any]:
     output_dir = _output_dir_for(run_root, window.segment_id, mechanism_key)
     status = run_state_status(output_dir) if output_dir.exists() else ""
@@ -701,6 +702,8 @@ def ensure_window_output(
     mechanism = _mechanism_for_key(mechanism_key)
     segment_path = dataset_dir / window.segment_source_path
     mechanism_config: dict[str, object] = {"persist_normalized_eval_bundle": True}
+    if mechanism_key == "attentional_v2" and memory_retrieval_mode:
+        mechanism_config["memory_retrieval_mode"] = memory_retrieval_mode
     if mechanism_key == "attentional_v2" and require_probe_export:
         mechanism_config["memory_quality_probe_export"] = _v2_probe_config(
             window,
@@ -742,6 +745,7 @@ def ensure_window_output_with_retries(
     retry_sleep_seconds: int,
     probe_plan: dict[str, Any] | None = None,
     probe_plan_path: Path = DEFAULT_MEMORY_QUALITY_PROBE_PLAN_PATH,
+    memory_retrieval_mode: str | None = None,
 ) -> dict[str, Any]:
     output_dir = _output_dir_for(run_root, window.segment_id, mechanism_key)
     attempts = max(1, int(max_attempts or 1))
@@ -758,6 +762,7 @@ def ensure_window_output_with_retries(
                 require_probe_export=require_probe_export,
                 probe_plan=probe_plan,
                 probe_plan_path=probe_plan_path,
+                memory_retrieval_mode=memory_retrieval_mode,
             )
             payload["output_attempt"] = attempt
             return payload
@@ -1810,6 +1815,7 @@ def run_long_span_vnext(
     memory_quality_results_source_run_root: Path | None = None,
     copy_reaction_audit_from_source: bool = True,
     mechanism_keys: tuple[str, ...] = MECHANISM_KEYS,
+    memory_retrieval_mode: str | None = None,
 ) -> dict[str, Any]:
     worker_count = max(1, int(workers or 1))
     mechanism_keys = tuple(str(item).strip() for item in mechanism_keys if str(item).strip())
@@ -1848,6 +1854,7 @@ def run_long_span_vnext(
             "memory_quality_results_source_run_root": str(memory_quality_results_source_run_root) if memory_quality_results_source_run_root else "",
             "copy_reaction_audit_from_source": copy_reaction_audit_from_source,
             "mechanism_keys": list(mechanism_keys),
+            "memory_retrieval_mode": memory_retrieval_mode or "",
             "windows": [asdict(window) for window in windows],
             "window_fingerprints": [_window_fingerprint(dataset_dir, window) for window in windows],
         },
@@ -1944,6 +1951,7 @@ def run_long_span_vnext(
             retry_sleep_seconds=output_retry_sleep_seconds,
             probe_plan=memory_quality_probe_plan,
             probe_plan_path=memory_quality_probe_plan_path,
+            memory_retrieval_mode=memory_retrieval_mode,
         )
         return (window.segment_id, mechanism_key), payload
 
@@ -1957,6 +1965,7 @@ def run_long_span_vnext(
             "memory_quality_results_source_run_root": str(memory_quality_results_source_run_root) if memory_quality_results_source_run_root else "",
             "copy_reaction_audit_from_source": copy_reaction_audit_from_source,
             "mechanism_keys": list(mechanism_keys),
+            "memory_retrieval_mode": memory_retrieval_mode or "",
             "fresh_task_count": len(output_tasks),
             "fresh_tasks": [
                 {
@@ -2120,6 +2129,7 @@ def run_long_span_vnext(
         "reaction_audit_judge_contract": REACTION_AUDIT_JUDGE_CONTRACT,
         "metric_slugs": ["memory_quality", "prior_memory_continuity_safety", "prior_memory_overclaim_guardrail"],
         "mechanism_keys": list(mechanism_keys),
+        "memory_retrieval_mode": memory_retrieval_mode or "",
         "memory_quality": _aggregate_memory_quality(memory_quality_results),
         "reaction_audit": _aggregate_reaction_audit(reaction_window_summaries),
         "memory_quality_source": (
@@ -2206,6 +2216,12 @@ def main(argv: list[str] | None = None) -> int:
         action="store_true",
         help="Run and report only attentional_v2. Use for mechanism-quality diagnostic reruns where V1 comparison is out of scope.",
     )
+    parser.add_argument(
+        "--memory-retrieval-mode",
+        choices=("hybrid", "text_only"),
+        default=None,
+        help="Override attentional_v2 Unit Memory retrieval mode for fresh reads.",
+    )
     args = parser.parse_args(argv)
 
     run_root = args.runs_root / args.run_id
@@ -2234,6 +2250,7 @@ def main(argv: list[str] | None = None) -> int:
         memory_quality_results_source_run_root=memory_quality_results_source_run_root,
         copy_reaction_audit_from_source=not bool(args.rerun_reaction_audit),
         mechanism_keys=("attentional_v2",) if args.v2_only else MECHANISM_KEYS,
+        memory_retrieval_mode=args.memory_retrieval_mode,
     )
     print(json.dumps(aggregate, ensure_ascii=False, indent=2))
     return 0

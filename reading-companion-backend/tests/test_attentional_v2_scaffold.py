@@ -896,6 +896,134 @@ def test_runner_retries_retrieval_after_tool_boundary_unresolved(tmp_path: Path)
     assert traces[-1]["candidate_counts"]["candidate_units"] >= 1
 
 
+def test_runner_renders_retrieved_unit_memory_from_real_index(tmp_path: Path) -> None:
+    output_dir = tmp_path / "output" / "demo-book"
+    prior_source = {
+        "unit_id": "u000001",
+        "sequence_index": 1,
+        "source_span_id": "src:c1:p1@0-p1@20",
+        "source_text": "火车站台上的告别",
+        "paragraph_slices": [{"paragraph_index": 1, "text_role": "body", "start_char": 0, "end_char": 8, "text": "火车站台上的告别"}],
+    }
+    prior_digest = {
+        "reading_impression": "prior response should stay out of ReadingMemory",
+        "surfaced_reactions": [{"source_quote": "火车站台", "content": "prior annotation should stay out"}],
+        "memory_uptake_ops": [
+            {
+                "op": "append",
+                "target_store": "recent_reading_memory",
+                "payload": {"memory_text": "站台告别建立了旅程的起点。"},
+            }
+        ],
+    }
+    UnitMemoryIndex(
+        output_dir,
+        config={"mode": "text_only", "min_retrievable_prior_units": 0, "recent_neighbor_exclusion_unit_count": 0},
+    ).write_entry(
+        build_unit_memory_entry(
+            book_id="book-demo",
+            chapter_id=1,
+            chapter_ref="Chapter 1",
+            source_unit=prior_source,
+            digest_result=prior_digest,
+            memory_retrieval_mode="text_only",
+        ),
+        index_vectors=False,
+    )
+
+    retrieval = runner_module._retrieve_unit_memory_for_prepared_source_unit(
+        output_dir=output_dir,
+        book_id="book-demo",
+        prepared_source_unit={
+            "selected_source_unit": {
+                "unit_id": "u000002",
+                "source_span_id": "src:c1:p2@0-p2@20",
+                "source_text": "新的旅程再次提到火车站台。",
+            },
+            "memory_recalls": [{"recall_id": "r1", "recall_text": "火车站台 告别", "basis": "selected_source_unit"}],
+            "memory_recalls_status": "provided",
+        },
+        recent_reading_memory={"entries": []},
+        memory_retrieval_config={"mode": "text_only", "min_retrievable_prior_units": 0, "recent_neighbor_exclusion_unit_count": 0},
+    )
+    reading_memory = runner_module._build_digest_reading_memory(
+        recent_reading_memory={"entries": []},
+        chapter_id=1,
+        unit_memory_retrieval=retrieval,
+    )
+
+    assert retrieval["selected_units"][0]["unit_id"] == "u000001"
+    assert reading_memory["hot_line_count"] == 0
+    assert reading_memory["retrieved_line_count"] == 1
+    assert reading_memory["lines"] == ["P1 U1: 站台告别建立了旅程的起点。"]
+    assert "prior response" not in "\n".join(reading_memory["lines"])
+    assert "prior annotation" not in "\n".join(reading_memory["lines"])
+
+
+def test_runner_does_not_exclude_all_active_recent_memory_from_retrieval(tmp_path: Path) -> None:
+    output_dir = tmp_path / "output" / "demo-book"
+    prior_source = {
+        "unit_id": "u000001",
+        "sequence_index": 1,
+        "source_span_id": "src:c1:p1@0-p1@20",
+        "source_text": "火车站台上的告别",
+        "paragraph_slices": [{"paragraph_index": 1, "text_role": "body", "start_char": 0, "end_char": 8, "text": "火车站台上的告别"}],
+    }
+    prior_digest = {
+        "reading_impression": "quiet",
+        "surfaced_reactions": [],
+        "memory_uptake_ops": [
+            {
+                "op": "append",
+                "target_store": "recent_reading_memory",
+                "payload": {"memory_text": "站台告别建立了旅程的起点。"},
+            }
+        ],
+    }
+    UnitMemoryIndex(
+        output_dir,
+        config={"mode": "text_only", "min_retrievable_prior_units": 0, "recent_neighbor_exclusion_unit_count": 0},
+    ).write_entry(
+        build_unit_memory_entry(
+            book_id="book-demo",
+            chapter_id=1,
+            chapter_ref="Chapter 1",
+            source_unit=prior_source,
+            digest_result=prior_digest,
+            memory_retrieval_mode="text_only",
+        ),
+        index_vectors=False,
+    )
+
+    retrieval = runner_module._retrieve_unit_memory_for_prepared_source_unit(
+        output_dir=output_dir,
+        book_id="book-demo",
+        prepared_source_unit={
+            "selected_source_unit": {
+                "unit_id": "u000002",
+                "source_span_id": "src:c1:p2@0-p2@20",
+                "source_text": "新的旅程再次提到火车站台。",
+            },
+            "memory_recalls": [{"recall_id": "r1", "recall_text": "火车站台 告别", "basis": "selected_source_unit"}],
+            "memory_recalls_status": "provided",
+        },
+        recent_reading_memory={
+            "entries": [
+                {
+                    "entry_id": "recent:c1:u0001:m1",
+                    "source_unit_span_id": "src:c1:p1@0-p1@20",
+                    "memory_text": "站台告别建立了旅程的起点。",
+                    "status": "active",
+                    "created_at_unit_index": 1,
+                }
+            ]
+        },
+        memory_retrieval_config={"mode": "text_only", "min_retrievable_prior_units": 0, "recent_neighbor_exclusion_unit_count": 0},
+    )
+
+    assert retrieval["selected_units"][0]["unit_id"] == "u000001"
+
+
 def test_digest_output_contract_xml_renders_target_contract() -> None:
     rendered = render_digest_output_contract_xml(output_language_name="Chinese")
 

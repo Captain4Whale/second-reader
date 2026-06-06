@@ -222,6 +222,7 @@ def summarize_output(output_dir: Path) -> dict[str, Any]:
     mode_counts: Counter[str] = Counter()
     effective_mode_counts: Counter[str] = Counter()
     degradation_counts: Counter[str] = Counter()
+    retrieval_suppressed_reasons: Counter[str] = Counter()
     selected_rows = 0
     for row in retrieval_rows:
         query_source_counts[str(row.get("query_source") or "")] += 1
@@ -239,6 +240,11 @@ def summarize_output(output_dir: Path) -> dict[str, Any]:
         selected = row.get("selected_units")
         if isinstance(selected, list) and selected:
             selected_rows += 1
+        suppressed_units = row.get("suppressed_units")
+        if isinstance(suppressed_units, list):
+            for item in suppressed_units:
+                if isinstance(item, dict):
+                    retrieval_suppressed_reasons[str(item.get("reason") or "unknown")] += 1
         per_recall = row.get("per_recall")
         if isinstance(per_recall, list):
             for item in per_recall:
@@ -304,6 +310,7 @@ def summarize_output(output_dir: Path) -> dict[str, Any]:
             "selected_unit_count": selected_total,
             "selected_unique_unit_count": len(selected_unit_ids),
             "selected_unit_ids": sorted(selected_unit_ids)[:50],
+            "retrieval_suppressed_reasons": _counter_dict(retrieval_suppressed_reasons),
         },
         "reading_memory": {
             "line_total": selection_line_total,
@@ -330,6 +337,10 @@ def summarize_paths(paths: list[Path]) -> dict[str, Any]:
         "renderable_selected_unit_count": sum(int(item["sqlite"]["selected_renderable_unit_count"]) for item in outputs),
         "non_renderable_selected_unit_count": sum(int(item["sqlite"]["selected_non_renderable_unit_count"]) for item in outputs),
         "selected_but_not_rendered_count": sum(int(item["reading_memory"]["selected_but_not_rendered_count"]) for item in outputs),
+        "retrieval_suppressed_unit_count": sum(
+            sum(int(count) for count in item["trace"].get("retrieval_suppressed_reasons", {}).values())
+            for item in outputs
+        ),
         "hot_line_total": sum(int(item["reading_memory"]["hot_line_total"]) for item in outputs),
         "retrieved_line_total": sum(int(item["reading_memory"]["retrieved_line_total"]) for item in outputs),
         "query_embedding_cache_rows": sum(int(item["sqlite"]["query_embedding_cache_rows"]) for item in outputs),
@@ -364,6 +375,7 @@ def render_markdown(summary: dict[str, Any]) -> str:
         "renderable_selected_unit_count",
         "non_renderable_selected_unit_count",
         "selected_but_not_rendered_count",
+        "retrieval_suppressed_unit_count",
         "hot_line_total",
         "retrieved_line_total",
         "query_embedding_cache_rows",

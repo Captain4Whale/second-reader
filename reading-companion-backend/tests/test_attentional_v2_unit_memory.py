@@ -185,6 +185,100 @@ def test_text_only_retrieval_handles_meta_recall_wording(tmp_path):
     assert json.loads(trace_lines[-1])["candidate_counts"]["lexical_docs"] >= 1
 
 
+def test_text_only_retrieval_suppresses_empty_understanding_and_selects_renderable_unit(tmp_path):
+    config = {
+        "mode": "text_only",
+        "min_retrievable_prior_units": 0,
+        "recent_neighbor_exclusion_unit_count": 0,
+        "max_units_to_digest_context": 3,
+    }
+    index = UnitMemoryIndex(tmp_path, config=config)
+    index.write_entry(_entry("u000001", 1, "火车站台告别", ""), index_vectors=False)
+    index.write_entry(
+        _entry("u000002", 2, "火车站台上的旅程重新开始", "站台告别建立了旅程的起点。"),
+        index_vectors=False,
+    )
+
+    result = index.retrieve_for_recalls(
+        book_id="book-demo",
+        recalls=[{"recall_id": "r1", "recall_text": "火车站台 告别 旅程", "basis": "selected_source_unit"}],
+        query_source="tool_retrieve_unit_memory",
+        current_unit_index=3,
+    )
+
+    assert [item["unit_id"] for item in result["selected_units"]] == ["u000002"]
+    trace = json.loads(unit_memory_retrieval_trace_file(tmp_path).read_text(encoding="utf-8").strip().splitlines()[-1])
+    assert trace["selected_units"][0]["unit_id"] == "u000002"
+    assert trace["suppressed_units"][0]["unit_id"] == "u000001"
+    assert trace["suppressed_units"][0]["reason"] == "candidate_not_renderable_empty_understanding"
+
+
+def test_text_only_retrieval_handles_english_concept_recall(tmp_path):
+    config = {
+        "mode": "text_only",
+        "min_retrievable_prior_units": 0,
+        "recent_neighbor_exclusion_unit_count": 0,
+        "max_units_to_digest_context": 3,
+    }
+    index = UnitMemoryIndex(tmp_path, config=config)
+    index.write_entry(
+        _entry(
+            "u000001",
+            1,
+            "People assign value based on how others perceive desirability.",
+            "Perceived attractiveness changes valuation because people often want what others seem to want.",
+        ),
+        index_vectors=False,
+    )
+    index.write_entry(_entry("u000002", 2, "A separate example discusses social distance.", "Social distance shapes cooperation."), index_vectors=False)
+
+    result = index.retrieve_for_recalls(
+        book_id="book-demo",
+        recalls=[
+            {
+                "recall_id": "r1",
+                "recall_text": "Earlier reading about perceived attractiveness and valuation",
+                "basis": "selected_source_unit",
+            }
+        ],
+        query_source="tool_retrieve_unit_memory",
+        current_unit_index=3,
+    )
+
+    assert result["selected_units"][0]["unit_id"] == "u000001"
+    trace = json.loads(unit_memory_retrieval_trace_file(tmp_path).read_text(encoding="utf-8").strip().splitlines()[-1])
+    assert trace["candidate_counts"]["lexical_docs"] >= 1
+
+
+def test_retrieval_trace_records_horizon_gate_counts(tmp_path):
+    config = {
+        "mode": "text_only",
+        "min_retrievable_prior_units": 2,
+        "recent_neighbor_exclusion_unit_count": 1,
+    }
+    index = UnitMemoryIndex(tmp_path, config=config)
+    index.write_entry(_entry("u000001", 1, "火车站台上的告别", "站台告别建立了旅程的起点。"), index_vectors=False)
+
+    result = index.retrieve_for_recalls(
+        book_id="book-demo",
+        recalls=[{"recall_id": "r1", "recall_text": "火车站台 告别", "basis": "selected_source_unit"}],
+        query_source="tool_retrieve_unit_memory",
+        current_unit_index=3,
+    )
+
+    assert result["selected_units"] == []
+    trace = json.loads(unit_memory_retrieval_trace_file(tmp_path).read_text(encoding="utf-8").strip().splitlines()[-1])
+    assert trace["degradation_reason"] == "below_min_retrievable_prior_units"
+    assert trace["horizon"] == {
+        "current_unit_index": 3,
+        "recent_neighbor_exclusion_unit_count": 1,
+        "max_retrievable_unit_index": 2,
+        "prior_units_after_recent_exclusion": 1,
+        "min_retrievable_prior_units": 2,
+    }
+    assert trace["candidate_counts"]["remaining_retrievable_units"] == 1
+
+
 def test_multi_recall_retrieval_aggregates_by_unit_and_records_matches(tmp_path):
     config = {
         "mode": "text_only",

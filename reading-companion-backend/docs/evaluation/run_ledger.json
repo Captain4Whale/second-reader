@@ -1,6 +1,6 @@
 {
   "schema_version": 1,
-  "updated_at": "2026-06-03T04:23:24.841416Z",
+  "updated_at": "2026-06-06T07:59:02.211210Z",
   "entries": [
     {
       "run_id": "attentional_v2_excerpt_surface_v1_1_judged_20260406",
@@ -2348,6 +2348,33 @@
       "local_missing_allowed": [],
       "metadata": {},
       "updated_at": "2026-06-03T04:23:24.840694Z"
+    },
+    {
+      "run_id": "attentional_v2_unit_memory_text_only_smoke_value_20260606",
+      "date": "2026-06-06",
+      "surface": "unit_memory_retrieval_repair_smoke",
+      "lane": "mechanism_eval_smoke",
+      "status": "failed",
+      "mechanisms": [
+        "attentional_v2"
+      ],
+      "dataset_or_manifest": [],
+      "run_dir": "reading-companion-backend/eval/runs/attentional_v2/attentional_v2_unit_memory_text_only_smoke_value_20260606",
+      "summary_paths": {},
+      "job_ids": [
+        "bgjob_unit_memory_text_only_smoke_value_20260606"
+      ],
+      "report_paths": [
+        "reading-companion-backend/eval/runs/attentional_v2/attentional_v2_unit_memory_text_only_smoke_value_20260606/analysis/unit_memory_retrieval_health/README.md"
+      ],
+      "catalog_status": "not_cataloged",
+      "notes": "No-judge text_only Unit Memory retrieval repair smoke completed the underlying read loop, but the registered wrapper failed before summaries because strict LLM health reported llm_fallback_events_present. Run-local health packet showed no selected or rendered retrieved memory and exposed the whole-active-Recent-Memory exclusion bug; diagnostic only, no evidence catalog update.",
+      "parent_run_id": "",
+      "child_run_ids": [],
+      "synthetic": false,
+      "local_missing_allowed": [],
+      "metadata": {},
+      "updated_at": "2026-06-06T07:59:02.210762Z"
     }
   ]
 }

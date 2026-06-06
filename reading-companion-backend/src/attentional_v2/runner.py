@@ -1115,21 +1115,6 @@ def _compact_ingest_trace(ingest_trace: object) -> list[dict[str, object]]:
     return compact_entries
 
 
-def _active_recent_memory_source_span_ids(recent_reading_memory: RecentReadingMemoryState) -> set[str]:
-    """Return source spans already carried through direct recent memory."""
-
-    span_ids: set[str] = set()
-    for entry in recent_reading_memory.get("entries", []):
-        if not isinstance(entry, dict):
-            continue
-        if _clean_text(entry.get("status")) != "active":
-            continue
-        source_span_id = _clean_text(entry.get("source_unit_span_id"))
-        if source_span_id:
-            span_ids.add(source_span_id)
-    return span_ids
-
-
 def _source_span_position(source_span_id: str) -> tuple[int, int]:
     """Return paragraph/start position from a compact source span id."""
 
@@ -1354,7 +1339,7 @@ def _retrieve_unit_memory_for_prepared_source_unit(
                         recalls=fallback_recalls,
                         query_source="runtime_source_text_fallback",
                         current_unit_index=next_unit_sequence_index(output_dir),
-                        excluded_source_unit_span_ids=_active_recent_memory_source_span_ids(recent_reading_memory),
+                        excluded_source_unit_span_ids=set(),
                         accepted_source_span_id=_clean_text(selected_source_unit.get("source_span_id")),
                         accepted_unit_id=_clean_text(selected_source_unit.get("unit_id")),
                     )
@@ -1407,7 +1392,7 @@ def _retrieve_unit_memory_for_prepared_source_unit(
             recalls=recalls,
             query_source="ingest_recalls",
             current_unit_index=next_unit_sequence_index(output_dir),
-            excluded_source_unit_span_ids=_active_recent_memory_source_span_ids(recent_reading_memory),
+            excluded_source_unit_span_ids=set(),
             accepted_source_span_id=_clean_text(selected_source_unit.get("source_span_id")),
             accepted_unit_id=_clean_text(selected_source_unit.get("unit_id")),
         )
@@ -1624,7 +1609,7 @@ def prepare_next_source_unit_for_read(
                 recalls=recalls,
                 query_source="tool_retrieve_unit_memory",
                 current_unit_index=next_unit_sequence_index(output_dir),
-                excluded_source_unit_span_ids=_active_recent_memory_source_span_ids(recent_reading_memory or {}),
+                excluded_source_unit_span_ids=set(),
                 tool_call_id=tool_call_id,
                 accepted_source_span_id=tool_source_span_id,
             )

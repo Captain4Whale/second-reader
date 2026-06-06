@@ -291,6 +291,32 @@ def _json_loads(value: object, default: object) -> object:
         return default
 
 
+def _entry_understanding_content(entry: object) -> str:
+    if not isinstance(entry, Mapping):
+        return ""
+    digest = entry.get("digest")
+    if not isinstance(digest, Mapping):
+        return ""
+    understanding = digest.get("understanding")
+    if isinstance(understanding, Mapping):
+        return _clean_text(understanding.get("content"))
+    if isinstance(understanding, str):
+        return _clean_text(understanding)
+    return ""
+
+
+def _compact_retrieval_unit(item: Mapping[str, object]) -> dict[str, object]:
+    return {
+        "unit_id": item.get("unit_id"),
+        "unit_index": item.get("unit_index"),
+        "score": item.get("score"),
+        "matched_recalls": item.get("matched_recalls"),
+        "surfaces": item.get("surfaces"),
+        "channels": item.get("channels"),
+        "best_docs": item.get("best_docs"),
+    }
+
+
 def _understanding_from_digest_result(digest_result: Mapping[str, object]) -> dict[str, object]:
     for operation in digest_result.get("memory_uptake_ops", []):
         if not isinstance(operation, Mapping):
@@ -1093,6 +1119,27 @@ class UnitMemoryIndex:
         units.sort(key=lambda item: (-float(item.get("score", 0.0)), int(item.get("unit_index", 0) or 0)))
         return units[: max(1, _coerce_int(self.config.get("max_units_after_aggregation"), 20))]
 
+    def _select_renderable_units(self, units: list[dict[str, object]], *, limit: int) -> tuple[list[dict[str, object]], list[dict[str, object]]]:
+        selected: list[dict[str, object]] = []
+        suppressed: list[dict[str, object]] = []
+        for item in units:
+            compact = _compact_retrieval_unit(item)
+            entry = item.get("entry")
+            if not isinstance(entry, Mapping):
+                suppressed.append({**compact, "reason": "candidate_missing_entry"})
+                continue
+            if not isinstance(entry.get("digest"), Mapping):
+                suppressed.append({**compact, "reason": "candidate_missing_understanding"})
+                continue
+            if not _entry_understanding_content(entry):
+                suppressed.append({**compact, "reason": "candidate_not_renderable_empty_understanding"})
+                continue
+            if len(selected) < max(1, limit):
+                selected.append(item)
+            else:
+                suppressed.append({**compact, "reason": "selection_limit_exceeded"})
+        return selected, suppressed
+
     def retrieve_for_recalls(
         self,
         *,
@@ -1146,8 +1193,18 @@ class UnitMemoryIndex:
 
         recent_window = max(0, _coerce_int(self.config.get("recent_neighbor_exclusion_unit_count"), 20))
         max_unit_index = int(current_unit_index) - recent_window
+        trace["horizon"] = {
+            "current_unit_index": int(current_unit_index),
+            "recent_neighbor_exclusion_unit_count": recent_window,
+            "max_retrievable_unit_index": max_unit_index,
+        }
         if max_unit_index < 1:
             trace["degradation_reason"] = "not_enough_prior_units_after_recent_exclusion"
+            trace["candidate_counts"] = {
+                "current_unit_index": int(current_unit_index),
+                "excluded_recent_neighbor_units": recent_window,
+                "remaining_retrievable_units": 0,
+            }
             trace["latency_ms"] = int((time.monotonic() - started_at) * 1000)
             record_unit_memory_retrieval_trace(self.output_dir, trace)
             return {
@@ -1172,9 +1229,19 @@ class UnitMemoryIndex:
                 ).fetchone()["count"]
             )
             min_prior = max(0, _coerce_int(self.config.get("min_retrievable_prior_units"), 20))
+            existing_horizon = trace.get("horizon")
+            trace["horizon"] = {
+                **(dict(existing_horizon) if isinstance(existing_horizon, dict) else {}),
+                "prior_units_after_recent_exclusion": prior_count,
+                "min_retrievable_prior_units": min_prior,
+            }
             if prior_count < min_prior:
                 trace["degradation_reason"] = "below_min_retrievable_prior_units"
-                trace["candidate_counts"] = {"prior_units": prior_count}
+                trace["candidate_counts"] = {
+                    "prior_units": prior_count,
+                    "min_retrievable_prior_units": min_prior,
+                    "remaining_retrievable_units": prior_count,
+                }
                 trace["latency_ms"] = int((time.monotonic() - started_at) * 1000)
                 record_unit_memory_retrieval_trace(self.output_dir, trace)
                 return {
@@ -1244,20 +1311,12 @@ class UnitMemoryIndex:
                 all_candidates.extend([*lexical_candidates, *dense_candidates])
                 trace.setdefault("per_recall", []).append(per_recall)  # type: ignore[union-attr]
 
-        selected_units = self._aggregate_units(all_candidates)
-        selected_units = selected_units[: max(1, _coerce_int(self.config.get("max_units_to_digest_context"), 40))]
-        compact_selected = [
-            {
-                "unit_id": item.get("unit_id"),
-                "unit_index": item.get("unit_index"),
-                "score": item.get("score"),
-                "matched_recalls": item.get("matched_recalls"),
-                "surfaces": item.get("surfaces"),
-                "channels": item.get("channels"),
-                "best_docs": item.get("best_docs"),
-            }
-            for item in selected_units
-        ]
+        aggregated_units = self._aggregate_units(all_candidates)
+        selected_units, suppressed_units = self._select_renderable_units(
+            aggregated_units,
+            limit=max(1, _coerce_int(self.config.get("max_units_to_digest_context"), 40)),
+        )
+        compact_selected = [_compact_retrieval_unit(item) for item in selected_units]
         trace["effective_mode"] = effective_mode
         trace["degradation_reason"] = ";".join(degradation_reasons)
         trace["candidate_counts"] = {
@@ -1267,6 +1326,7 @@ class UnitMemoryIndex:
             "candidate_units": len({str(item.get("unit_id")) for item in all_candidates if item.get("unit_id")}),
         }
         trace["selected_units"] = compact_selected
+        trace["suppressed_units"] = suppressed_units
         trace["latency_ms"] = int((time.monotonic() - started_at) * 1000)
         record_unit_memory_retrieval_trace(self.output_dir, trace)
         return {
@@ -1317,8 +1377,18 @@ class UnitMemoryIndex:
 
         recent_window = max(0, _coerce_int(self.config.get("recent_neighbor_exclusion_unit_count"), 20))
         max_unit_index = int(current_unit_index) - recent_window
+        trace["horizon"] = {
+            "current_unit_index": int(current_unit_index),
+            "recent_neighbor_exclusion_unit_count": recent_window,
+            "max_retrievable_unit_index": max_unit_index,
+        }
         if max_unit_index < 1:
             trace["degradation_reason"] = "not_enough_prior_units_after_recent_exclusion"
+            trace["candidate_counts"] = {
+                "current_unit_index": int(current_unit_index),
+                "excluded_recent_neighbor_units": recent_window,
+                "remaining_retrievable_units": 0,
+            }
             trace["latency_ms"] = int((time.monotonic() - started_at) * 1000)
             record_unit_memory_retrieval_trace(self.output_dir, trace)
             return {"query": dict(query), "query_source": query_source, "mode": mode, "effective_mode": mode, "selected_units": [], "trace": trace}
@@ -1331,9 +1401,19 @@ class UnitMemoryIndex:
                 ).fetchone()["count"]
             )
             min_prior = max(0, _coerce_int(self.config.get("min_retrievable_prior_units"), 20))
+            existing_horizon = trace.get("horizon")
+            trace["horizon"] = {
+                **(dict(existing_horizon) if isinstance(existing_horizon, dict) else {}),
+                "prior_units_after_recent_exclusion": prior_count,
+                "min_retrievable_prior_units": min_prior,
+            }
             if prior_count < min_prior:
                 trace["degradation_reason"] = "below_min_retrievable_prior_units"
-                trace["candidate_counts"] = {"prior_units": prior_count}
+                trace["candidate_counts"] = {
+                    "prior_units": prior_count,
+                    "min_retrievable_prior_units": min_prior,
+                    "remaining_retrievable_units": prior_count,
+                }
                 trace["latency_ms"] = int((time.monotonic() - started_at) * 1000)
                 record_unit_memory_retrieval_trace(self.output_dir, trace)
                 return {"query": dict(query), "query_source": query_source, "mode": mode, "effective_mode": mode, "selected_units": [], "trace": trace}
@@ -1375,20 +1455,14 @@ class UnitMemoryIndex:
                 "lexical_docs": len(lexical_candidates),
                 "dense_docs": len(dense_candidates),
             }
-            selected_units = self._aggregate_units([*lexical_candidates, *dense_candidates])
-            selected_units = selected_units[: max(1, _coerce_int(self.config.get("max_units_to_digest_context"), 6))]
-            compact_selected = [
-                {
-                    "unit_id": item.get("unit_id"),
-                    "unit_index": item.get("unit_index"),
-                    "score": item.get("score"),
-                    "surfaces": item.get("surfaces"),
-                    "channels": item.get("channels"),
-                    "best_docs": item.get("best_docs"),
-                }
-                for item in selected_units
-            ]
+            aggregated_units = self._aggregate_units([*lexical_candidates, *dense_candidates])
+            selected_units, suppressed_units = self._select_renderable_units(
+                aggregated_units,
+                limit=max(1, _coerce_int(self.config.get("max_units_to_digest_context"), 6)),
+            )
+            compact_selected = [_compact_retrieval_unit(item) for item in selected_units]
             trace["selected_units"] = compact_selected
+            trace["suppressed_units"] = suppressed_units
             trace["latency_ms"] = int((time.monotonic() - started_at) * 1000)
             record_unit_memory_retrieval_trace(self.output_dir, trace)
             return {

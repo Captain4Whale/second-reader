@@ -67,7 +67,7 @@ def _write_entry(output_dir: Path, unit_id: str, sequence_index: int, text: str,
     ).write_entry(entry, index_vectors=False)
 
 
-def test_health_script_reports_selected_but_not_renderable_unit(tmp_path: Path) -> None:
+def test_health_script_reports_non_renderable_retrieval_candidate(tmp_path: Path) -> None:
     output_dir = tmp_path / "outputs" / "demo_segment" / "attentional_v2"
     config = resolve_memory_retrieval_config(output_dir, {"memory_retrieval_mode": "text_only"})
     _write_entry(output_dir, "u000001", 1, "火车站台上的告别", "")
@@ -78,7 +78,8 @@ def test_health_script_reports_selected_but_not_renderable_unit(tmp_path: Path) 
         query_source="tool_retrieve_unit_memory",
         current_unit_index=2,
     )
-    assert retrieval["selected_units"]
+    assert not retrieval["selected_units"]
+    assert retrieval["trace"]["suppressed_units"][0]["reason"] == "candidate_not_renderable_empty_understanding"
     unit_memory_retrieval_trace_file(output_dir).write_text(
         unit_memory_retrieval_trace_file(output_dir).read_text(encoding="utf-8")
         + json.dumps(
@@ -97,11 +98,13 @@ def test_health_script_reports_selected_but_not_renderable_unit(tmp_path: Path) 
     summary = health_script.summarize_paths([tmp_path])
 
     assert summary["status"] == "needs_repair"
-    assert summary["total"]["selected_unit_count"] == 1
+    assert summary["total"]["selected_unit_count"] == 0
     assert summary["total"]["renderable_selected_unit_count"] == 0
-    assert summary["total"]["non_renderable_selected_unit_count"] == 1
+    assert summary["total"]["non_renderable_selected_unit_count"] == 0
+    assert summary["total"]["retrieval_suppressed_unit_count"] == 1
     assert summary["total"]["retrieved_line_total"] == 0
-    assert "selected_units_not_renderable" in summary["warnings"]
+    output = summary["outputs"][0]
+    assert output["trace"]["retrieval_suppressed_reasons"] == {"candidate_not_renderable_empty_understanding": 1}
 
 
 def test_health_script_discovers_output_dir_from_nested_runtime_path(tmp_path: Path) -> None:
