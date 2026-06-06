@@ -25,6 +25,11 @@ Update when: document layering, reading order, task routing, or cross-project co
   - backend contract changes require frontend route/client review
   - frontend integration changes require backend contract verification
 - Prefer codifying workflows in root scripts and docs instead of leaving process knowledge only in chat.
+- Treat local environment blockers as part of the task, not as passive stopping points.
+  - When a project task requires a local dependency, service, model, CLI, or runtime that is missing or stopped, Codex may install it, start it, pull required local model assets, or repair the local service setup when this is reasonably scoped to the workspace and can be verified locally.
+  - After changing local environment state, verify it with the project's own health/readiness checks when available, and report what changed so future agents do not rediscover the same blocker.
+  - Do not let an environment issue remain unresolved merely as a note if it is safe and practical to fix it during the task.
+  - Stop and ask the user before high-risk environment actions: destructive OS/package-manager operations, broad permission or security-policy changes, credential creation or disclosure, paid/cloud resource changes, system-wide service changes unrelated to this workspace, or anything likely to disrupt other user work.
 - After completing a task that changes tracked files, run the appropriate checks, stage only the files related to the task, and create a git commit automatically unless the user explicitly asks not to commit.
   - Do not auto-push unless the user explicitly asks for a push.
   - If checks cannot be run or fail for reasons outside the task scope, report that clearly before committing.
