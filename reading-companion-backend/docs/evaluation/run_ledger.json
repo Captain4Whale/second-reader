@@ -1,6 +1,6 @@
 {
   "schema_version": 1,
-  "updated_at": "2026-06-06T09:04:38.394632Z",
+  "updated_at": "2026-06-06T09:45:59.347361Z",
   "entries": [
     {
       "run_id": "attentional_v2_excerpt_surface_v1_1_judged_20260406",
@@ -2375,6 +2375,35 @@
       "local_missing_allowed": [],
       "metadata": {},
       "updated_at": "2026-06-06T07:59:02.210762Z"
+    },
+    {
+      "run_id": "attentional_v2_unit_memory_text_only_smoke_xidaduo_post_ingest_v5_20260606",
+      "date": "2026-06-06",
+      "surface": "unit_memory_retrieval_repair_smoke",
+      "lane": "mechanism_eval_smoke",
+      "status": "abandoned",
+      "mechanisms": [
+        "attentional_v2"
+      ],
+      "dataset_or_manifest": [],
+      "run_dir": "reading-companion-backend/eval/runs/attentional_v2/attentional_v2_unit_memory_text_only_smoke_xidaduo_post_ingest_v5_20260606",
+      "summary_paths": {},
+      "job_ids": [
+        "bgjob_unit_memory_text_only_smoke_xidaduo_post_ingest_v5_20260606"
+      ],
+      "report_paths": [
+        "reading-companion-backend/eval/runs/attentional_v2/attentional_v2_unit_memory_text_only_smoke_xidaduo_post_ingest_v5_20260606/analysis/unit_memory_retrieval_health/README.md",
+        "reading-companion-backend/eval/runs/attentional_v2/attentional_v2_unit_memory_text_only_smoke_xidaduo_post_ingest_v5_20260606/analysis/unit_memory_retrieval_review/README.md",
+        "docs/implementation/new-reading-mechanism/codex/reports/UnitMemory-Retrieval-TextOnly-PostIngestV5-Smoke-Report v0.md"
+      ],
+      "catalog_status": "not_cataloged",
+      "notes": "Post-Ingest-v5 no-judge text_only Unit Memory retrieval smoke on xidaduo was intentionally stopped after recall-specificity evidence was captured. Health packet is ok with 68 entries, 445 retrieval docs, selected_unit_count=50, renderable_selected_unit_count=32, retrieved_line_total=27, and rendered_retrieved_unique_unit_count=19. The prompt reduced the post-R11 broad sermon-area continuity injection but later focused recalls still rendered broad retrieved sets. No summary aggregate/report/usage files were generated; diagnostic only, no evidence catalog update.",
+      "parent_run_id": "",
+      "child_run_ids": [],
+      "synthetic": false,
+      "local_missing_allowed": [],
+      "metadata": {},
+      "updated_at": "2026-06-06T09:45:59.346949Z"
     },
     {
       "run_id": "attentional_v2_unit_memory_text_only_smoke_xidaduo_post_r11_20260606",

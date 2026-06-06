@@ -55,6 +55,7 @@ DEFAULT_RETRIEVAL_CONFIG: dict[str, object] = {
     "rrf_k": 60,
     "max_units_after_aggregation": 20,
     "max_units_to_digest_context": 40,
+    "max_units_per_recall_to_digest_context": 6,
     "max_docs_per_unit_for_scoring": 5,
     "recent_neighbor_exclusion_unit_count": 20,
     "min_retrievable_prior_units": 20,
@@ -1119,9 +1120,16 @@ class UnitMemoryIndex:
         units.sort(key=lambda item: (-float(item.get("score", 0.0)), int(item.get("unit_index", 0) or 0)))
         return units[: max(1, _coerce_int(self.config.get("max_units_after_aggregation"), 20))]
 
-    def _select_renderable_units(self, units: list[dict[str, object]], *, limit: int) -> tuple[list[dict[str, object]], list[dict[str, object]]]:
+    def _select_renderable_units(
+        self,
+        units: list[dict[str, object]],
+        *,
+        limit: int,
+        per_recall_limit: int = 0,
+    ) -> tuple[list[dict[str, object]], list[dict[str, object]]]:
         selected: list[dict[str, object]] = []
         suppressed: list[dict[str, object]] = []
+        selected_by_recall: dict[str, int] = {}
         for item in units:
             compact = _compact_retrieval_unit(item)
             entry = item.get("entry")
@@ -1134,8 +1142,20 @@ class UnitMemoryIndex:
             if not _entry_understanding_content(entry):
                 suppressed.append({**compact, "reason": "candidate_not_renderable_empty_understanding"})
                 continue
+            matched_recalls = [
+                _clean_text(recall_id)
+                for recall_id in (item.get("matched_recalls") if isinstance(item.get("matched_recalls"), list) else [])
+                if _clean_text(recall_id)
+            ]
+            if per_recall_limit > 0 and matched_recalls and all(
+                selected_by_recall.get(recall_id, 0) >= per_recall_limit for recall_id in matched_recalls
+            ):
+                suppressed.append({**compact, "reason": "per_recall_selection_limit_exceeded"})
+                continue
             if len(selected) < max(1, limit):
                 selected.append(item)
+                for recall_id in matched_recalls:
+                    selected_by_recall[recall_id] = selected_by_recall.get(recall_id, 0) + 1
             else:
                 suppressed.append({**compact, "reason": "selection_limit_exceeded"})
         return selected, suppressed
@@ -1312,9 +1332,12 @@ class UnitMemoryIndex:
                 trace.setdefault("per_recall", []).append(per_recall)  # type: ignore[union-attr]
 
         aggregated_units = self._aggregate_units(all_candidates)
+        max_units_to_digest_context = max(1, _coerce_int(self.config.get("max_units_to_digest_context"), 40))
+        max_units_per_recall = max(0, _coerce_int(self.config.get("max_units_per_recall_to_digest_context"), 6))
         selected_units, suppressed_units = self._select_renderable_units(
             aggregated_units,
-            limit=max(1, _coerce_int(self.config.get("max_units_to_digest_context"), 40)),
+            limit=max_units_to_digest_context,
+            per_recall_limit=max_units_per_recall,
         )
         compact_selected = [_compact_retrieval_unit(item) for item in selected_units]
         trace["effective_mode"] = effective_mode
@@ -1324,6 +1347,10 @@ class UnitMemoryIndex:
             "lexical_docs": total_lexical,
             "dense_docs": total_dense,
             "candidate_units": len({str(item.get("unit_id")) for item in all_candidates if item.get("unit_id")}),
+        }
+        trace["selection_config"] = {
+            "max_units_to_digest_context": max_units_to_digest_context,
+            "max_units_per_recall_to_digest_context": max_units_per_recall,
         }
         trace["selected_units"] = compact_selected
         trace["suppressed_units"] = suppressed_units

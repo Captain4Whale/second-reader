@@ -240,9 +240,15 @@ A recall is not a search string and not a summary task. It is a concise descript
 
 Write recalls only when the selected unit gives you a real reason to remember earlier reading: a returning person, place, object, concept, question, image, scene, argument, contrast, relationship, or unresolved pressure.
 
-Each recall should name the concrete source footing in the selected unit and the kind of earlier reading it asks to remember.
+Start from the selected unit's primary semantic focus: the claim, teaching, action, conflict, image, relationship, method, or term that Digest will need to understand.
 
-Do not list every name or noun. Do not split mechanically by entity. Create separate recalls only when the selected unit contains distinct recall needs.
+Each recall should name the concrete source footing in the selected unit and the specific earlier understanding it asks to remember.
+
+Do not request broad character background, general protagonist history, or a generic "remember this name/concept appeared before" just because a recurring person or term is present. Ask for person or relationship background only when the current unit actually hinges on that earlier relation, choice, conflict, or unresolved pressure.
+
+For doctrinal, argumentative, conceptual, or methodological units, prefer prior claims, definitions, examples, contrasts, or teaching content over generic person-history recall.
+
+Do not list every name or noun. Do not split mechanically by entity. Create separate recalls only when the selected unit contains distinct recall needs. If only a generic recall would be possible, return an empty list.
 
 Return zero to three recalls. If nothing in the selected unit asks for earlier memory, return an empty list.
 

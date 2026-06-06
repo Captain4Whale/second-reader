@@ -37,11 +37,15 @@ Completed or partially landed repair evidence:
 - Lexical surface weights now prioritize `unit_understanding` over `unit_source`, `unit_annotation`, and `unit_response`, preserving the auxiliary surfaces while restoring Understanding as the primary selection surface.
 - `unit_memory_reading_memory_selection` trace now records `rendered_retrieved_units` and `rendered_retrieved_unit_ids`, so future health packets can identify which selected Unit Memory entries actually survived hot-memory dedupe and budget trimming into Digest.
 - A post-R10/R11 `text_only` smoke on `xidaduo_private_zh__segment_1` was intentionally stopped after collecting rendered-id evidence. Its run-local health packet is `ok`: `47` Unit Memory entries, `293` retrieval docs, `54` retrieval rows, `47` selection rows, `selected_unit_count=18`, `renderable_selected_unit_count=11`, `retrieved_line_total=6`, and `rendered_retrieved_unique_unit_count=6`. This proves the Understanding-prioritized lexical path still renders prompt-visible retrieved memory and that the new trace fields work in live artifacts.
+- Phase 6 prompt calibration is now implemented in Ingest prompt `attentional_v2.ingest.v5` / promptset `attentional_v2-phase6-v55`. The `RecallPriorReading` instruction now tells Ingest to start from the selected unit's primary semantic focus, avoid broad character/protagonist background unless the current unit hinges on it, prefer prior doctrinal/argument/concept content for doctrinal or argumentative units, and return no recall when only a generic recall would be possible.
+- A post-Ingest-v5 `text_only` smoke on `xidaduo_private_zh__segment_1` was intentionally stopped after enough recall-specificity evidence was captured. Its run-local health packet is `ok`: `68` Unit Memory entries, `445` retrieval docs, `75` retrieval rows, `68` selection rows, `selected_unit_count=50`, `renderable_selected_unit_count=32`, `retrieved_line_total=27`, and `rendered_retrieved_unique_unit_count=19`. This proves v5 did not disable retrieval and reduced the post-R11 broad Buddha-sermon continuity injection, but it also exposed that later focused recalls can still render overly broad retrieved sets.
 
 Current unresolved target:
 
 - The `text_only` path has passed a live diagnostic proof for prompt-visible long-distance retrieved Understanding lines in Digest `ReadingMemory`.
 - Understanding-prioritized lexical ranking still retrieves and renders prior Understanding in live artifacts; the remaining text-only issue is relevance calibration, not mechanical renderability.
+- The first recall-specificity prompt calibration has been live-smoked in `text_only`: it is partially validated for avoiding the post-R11 sermon-area broad recall, but the remaining relevance problem has moved toward retrieval selection / budget discipline for focused recalls.
+- The next repair slice adds per-recall selection discipline: `max_units_per_recall_to_digest_context = 6` caps how many prior Unit Memory entries one recall can send toward Digest `ReadingMemory`, while preserving the broader total long-distance budget for multiple specific recalls. This is `pending_validation` until a fresh smoke proves that retrieved sets become smaller without disappearing.
 - Hybrid dense retrieval remains environment-blocked because local Ollama / Qwen embedding service is unavailable; the goal should not claim hybrid success until dense candidates and RRF fusion are validated.
 - The latest smoke was intentionally stopped before full summary generation, so it is diagnostic repair evidence, not formal evaluation evidence.
 
@@ -168,6 +172,45 @@ Use these labels in phase notes, review packets, and final reports:
 
 Do not use `deferred_*` labels to hide a fixable implementation problem. Every deferred issue should include the next evidence that would reopen it.
 
+### Goal-Mode Repair Matrix
+
+Use this matrix to keep automatic repair work on the intended path. The design baseline is the oracle; implementation is repaired to meet it.
+
+| Problem observed | Primary repair layer | Allowed actions | Required evidence | Stop / continue rule |
+| --- | --- | --- | --- | --- |
+| No Unit Memory entries or retrieval docs are written after Digest settlement | ledger / settlement | fix writeback, entry derivation, artifact paths, trace creation | deterministic writeback test plus run-local sqlite row counts | continue until settlement writes new entry or a repo/runtime blocker prevents writing |
+| Retrieval trace exists but candidate counts are zero for obvious known-answer recall | FTS query / lexical index / vector adapter | fix tokenizer/query builder, FTS table wiring, vector degradation handling | known-answer fixture retrieves expected unit id; trace shows channel counts | continue through text-only even if hybrid is environment-blocked |
+| Selected units exist but Digest receives no retrieved lines | renderability / ReadingMemory packaging | fix empty-Understanding suppression, hot-memory dedupe reason, token-budget rendering, trace fields | selection trace has render/suppress reasons and Digest prompt manifest contains retrieved Understanding lines | continue until every selected-but-not-rendered case has a machine-readable reason |
+| One recall renders a large broad pack of loosely related prior memories | selection / budget discipline | add per-recall cap, score threshold, rank-gap threshold, or selected-set policy; preserve Understanding-only memory | deterministic cap/threshold fixture plus no-judge smoke review of rendered unit ids | continue; this is implementation calibration, not design failure |
+| Ingest emits broad generic recalls where no specific memory is needed | Ingest recall prompt | tune `RecallPriorReading` wording after retrieval mechanics are proven | no-judge smoke review showing fewer generic recalls without disabling useful recalls | continue after selection/rendering mechanics are already validated |
+| Hybrid mode degrades to text-only because Ollama or Qwen embedding is unavailable | environment / vector adapter | repair adapter if code-owned; otherwise record service/model blocker and keep text-only validation moving | sqlite-vec import/load check, Ollama reachability/model check, trace degradation reason | do not stop other phases; report `deferred_environment` for hybrid only |
+| Retrieved memory is visible but subjectively weak or not very helpful | review / prompt calibration | create review packet; tune only if pattern is mechanical or prompt-contract related | examples with source unit, recall, rendered memory, and suspected layer | do not mark goal complete on subjective quality alone, but do not block mechanical validation if chain works |
+
+### Current Selection-Discipline Slice
+
+Status: `pending_validation`
+
+Repair rule:
+
+- `max_units_per_recall_to_digest_context = 6`
+- The total long-distance selection ceiling remains `max_units_to_digest_context = 40`.
+- The fixed Digest `ReadingMemory` budgets remain `5K` hot, `10K` retrieved, and `15K` total estimated tokens.
+- The per-recall cap applies after unit aggregation and renderability checks, before Digest `ReadingMemory` rendering.
+- Suppressed candidates must record `per_recall_selection_limit_exceeded`.
+
+Rationale:
+
+- Post-Ingest-v5 smoke showed that retrieval is no longer mechanically absent, but a single focused recall can still render a large broad memory pack.
+- The product goal is not to shrink long-distance memory to a few entries globally. The goal is to prevent one recall from monopolizing prompt-visible memory while allowing multiple specific recalls to cover more of the already-read book.
+- This repair does not change Ingest's responsibility, does not expose retrieved content back to Ingest, and does not put prior source / Response / Annotation into Digest.
+
+Acceptance:
+
+- deterministic fixture proves one recall that matches many renderable prior units selects no more than the cap and suppresses the rest with `per_recall_selection_limit_exceeded`
+- trace records `selection_config.max_units_per_recall_to_digest_context`
+- a fresh no-judge `text_only` smoke shows prompt-visible retrieved Understanding remains nonzero
+- review packet confirms rendered retrieved sets are smaller and more directly tied to recall intent than the post-Ingest-v5 broad later retrieved packs
+
 ### Allowed Changes
 
 Goal-mode repair may change:
@@ -226,6 +269,9 @@ Minimum fixture set:
 7. Boundary fallback
    - the raw boundary attempt is unresolved but runtime accepts a source unit
    - retrieval still runs from the accepted source unit / accepted recalls instead of stopping at `boundary_unresolved`
+8. Per-recall selection discipline
+   - one recall matches many renderable prior units
+   - selection caps prompt-visible candidates for that recall and records `per_recall_selection_limit_exceeded` for the rest
 
 The fixture pass should verify known expected unit ids, not only nonzero candidate counts.
 
@@ -240,6 +286,7 @@ Each phase must leave behind a concrete pass/fail result.
 - Phase 4 exits only when horizon and boundary gates are counted and explainable, and boundary fallback can still run retrieval when an accepted source unit exists.
 - Phase 5 exits only when a selected non-empty Understanding can be rendered into Digest `ReadingMemory`.
 - Phase 6 exits only when recall prompt calibration is tested after the retrieval path is already mechanically functional.
+- Phase 6B exits only when retrieval selection discipline has deterministic coverage and a no-judge smoke proves it does not remove prompt-visible retrieved memory.
 - Phase 7 exits only when a no-judge smoke shows prompt-visible retrieved Understanding lines and a review packet confirms they are relevant enough for continued reading.
 
 ### Phase Status Summary
@@ -252,7 +299,8 @@ Each phase must leave behind a concrete pass/fail result.
 | Phase 3 | `passed_deterministic_text_only` | Text-only FTS retrieves known Chinese and English prior Understanding; multi-recall aggregation preserves recall-match metadata; empty-Understanding candidates are suppressed. | Validate with a post-repair no-judge smoke; dense paraphrase remains Phase 2-dependent. |
 | Phase 4 | `passed_deterministic` | Runtime retrieval can continue after boundary acceptance even if the earlier tool-stage trace was `boundary_unresolved`; horizon gates now record current unit, recent exclusion, max retrievable unit, prior count, and minimum prior count. | Validate the gate counts in fresh smoke artifacts. |
 | Phase 5 | `passed_deterministic` | A selected non-empty Understanding from the real Unit Memory index renders into Digest `ReadingMemory`, and prior Response / Annotation / raw source stay out of prompt-facing memory. | Validate prompt-visible retrieved lines in a no-judge smoke. |
-| Phase 6 | `not_started` | None. | Calibrate Ingest recall prompt only after retrieval/search/rendering is mechanically functional. |
+| Phase 6 | `partially_validated_post_ingest_v5_text_only` | Ingest prompt `attentional_v2.ingest.v5` now asks recalls to follow the selected unit's primary semantic focus, avoid broad background recall unless needed, prefer prior doctrinal / argument / concept content for such units, and return empty when only generic recall is possible. A post-v5 text-only smoke rendered retrieved memory later in the run and avoided the post-R11 broad sermon-area recall. | Tighten selection / budget discipline so focused recalls do not expand into large broad life-history retrieved packs; then rerun a small no-judge text-only smoke. |
+| Phase 6B | `pending_validation` | Per-recall selection discipline is the next repair target: cap prompt-visible selected units per recall while preserving the total long-distance budget for multiple specific recalls. | Add deterministic cap coverage, run targeted tests, and rerun a small no-judge text-only smoke to prove retrieved memory remains nonzero but narrower. |
 | Phase 7 | `passed_post_r11_text_only_diagnostic` | Post-R9 and post-R10/R11 `text_only` smokes proved prompt-visible retrieved Understanding lines; rendered retrieved unit ids now appear in live traces; auxiliary-surface-only rendered pollution was reduced in the observed event. | Calibrate recall specificity / relevance; hybrid dense validation remains environment-blocked. |
 
 ### External Environment Handling
@@ -312,9 +360,12 @@ When Goal mode finishes or reaches a real blocker, it must produce:
 
 Continue from the smallest independent checks rather than jumping directly to a formal evaluation:
 
-1. Review/calibrate Ingest recall specificity and selection relevance:
-   - post-R11 rendered memory proves the chain works, but the observed rendered event still leans on broad Siddhartha / Govinda continuity rather than precise doctrinal recall
-   - avoid making recalls a mechanical keyword list; tune only after comparing the prompt-visible retrieved unit ids and current source units
+1. Tighten retrieval selection / budget discipline for focused recalls:
+   - post-Ingest-v5 smoke proves recall prompting no longer injects broad long-distance memory around the Buddha-sermon baseline and does not shut retrieval off
+   - remaining issue is that later focused recalls can still render large broad retrieved sets
+   - first implement and validate the per-recall cap because it narrows one broad recall without shrinking total multi-recall coverage
+   - only consider minimum lexical score / rank-gap thresholds, or a smaller selected-set policy if the cap does not produce enough relevance control
+   - preserve the policy that Digest `ReadingMemory` contains Understanding only
 2. Attempt Phase 2 only when environment can support it:
    - sqlite-vec load works
    - Ollama is reachable
@@ -749,7 +800,24 @@ Acceptance:
 
 ### Phase 6. Ingest Recall Calibration
 
-Status: `not_started`
+Status: `partially_validated_post_ingest_v5_text_only`
+
+Current evidence:
+
+- Prompt calibration landed in `attentional_v2.ingest.v5` / promptset `attentional_v2-phase6-v55`.
+- The updated `RecallPriorReading` prompt keeps the reader-shaped recall framing but adds specificity guidance:
+  - start from the selected unit's primary semantic focus
+  - avoid broad character background / protagonist history unless the current unit hinges on it
+  - prefer prior doctrinal, argumentative, conceptual, or methodological content for units whose main focus is teaching / claim / concept / method
+  - return no recall when only a generic recall would be possible
+- Post-Ingest-v5 text-only smoke:
+  - run id: `attentional_v2_unit_memory_text_only_smoke_xidaduo_post_ingest_v5_20260606`
+  - job id: `bgjob_unit_memory_text_only_smoke_xidaduo_post_ingest_v5_20260606`
+  - intentionally stopped after diagnostic evidence; no summary aggregate/report/usage files are present
+  - health packet: `reading-companion-backend/eval/runs/attentional_v2/attentional_v2_unit_memory_text_only_smoke_xidaduo_post_ingest_v5_20260606/analysis/unit_memory_retrieval_health/summary.json`
+  - review packet: `reading-companion-backend/eval/runs/attentional_v2/attentional_v2_unit_memory_text_only_smoke_xidaduo_post_ingest_v5_20260606/analysis/unit_memory_retrieval_review/README.md`
+  - health status `ok`: `68` Unit Memory entries, `445` retrieval docs, `75` retrieval rows, `68` selection rows, `selected_unit_count=50`, `renderable_selected_unit_count=32`, `retrieved_line_total=27`, and `rendered_retrieved_unique_unit_count=19`
+  - interpretation: v5 reduced the post-R11 broad Buddha-sermon continuity injection and still allowed later retrieval, but some later focused recalls still rendered large broad retrieved sets
 
 Goal:
 
@@ -766,6 +834,14 @@ Acceptance:
 - recalls are produced for obvious returns to prior persons, concepts, images, claims, and unresolved pressures
 - no-recall units are reviewable and generally defensible
 - recall wording is standalone enough for retrieval without becoming a mechanical keyword list
+- rendered retrieved Unit Memory after the next smoke is not dominated by broad protagonist / character-background continuity when the current source unit's primary focus is doctrinal, argumentative, conceptual, or methodological
+
+Current disposition:
+
+- `validated`: v5 did not shut retrieval off; prompt-visible retrieved lines still appear.
+- `validated`: the post-R11 sermon-area broad Siddhartha / Govinda continuity injection was reduced in the reviewed event.
+- `pending_validation`: whether v5 recall wording is robust across books and languages.
+- `new_repair_target`: retrieval selection / budget discipline needs tightening because focused recalls can still render too many broad partially related units.
 
 ### Phase 7. End-To-End Diagnostic Validation
 

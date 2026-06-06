@@ -212,6 +212,9 @@ def test_ingest_writes_manifest_and_uses_xml_anchor_contract(tmp_path: Path, mon
     assert "You are in the Ingest step of a sequential deep-reading loop." in captured["prompt"]
     assert "Select one forward source unit from the current reading cursor." in captured["prompt"]
     assert "notice whether this unit naturally calls back" in captured["prompt"]
+    assert "primary semantic focus" in captured["prompt"]
+    assert "Do not request broad character background" in captured["prompt"]
+    assert "If only a generic recall would be possible, return an empty list" in captured["prompt"]
     assert '"memory_recalls"' in captured["prompt"]
     assert '"memory_query"' not in captured["prompt"]
     assert "Do not resolve anchors, retry or choose fallback boundaries" in captured["prompt"]
@@ -230,7 +233,7 @@ def test_ingest_writes_manifest_and_uses_xml_anchor_contract(tmp_path: Path, mon
     assert "purely non-lexical residue" in captured["prompt"]
     assert "Mainline preview" not in captured["prompt"]
     assert manifest["node_name"] == "ingest"
-    assert manifest["prompt_version"] == "attentional_v2.ingest.v4"
+    assert manifest["prompt_version"] == "attentional_v2.ingest.v5"
     assert manifest["prompt_assembly"]["output_contract"] == "ingest_boundary_memory_recalls_json_v1"
     assert manifest["prompt_assembly"]["owner_node"] == "ingest"
 

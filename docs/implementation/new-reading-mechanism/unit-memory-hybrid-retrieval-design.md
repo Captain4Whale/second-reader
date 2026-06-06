@@ -16,7 +16,7 @@ Update when: Unit Memory entry shape, indexed fields, retrieval ranking, query g
   - `DEC-108` makes `Digest` the concrete per-unit interpretation LLM call.
   - `DEC-109` removes content-typed concept/thread long-memory stores from the current live surface.
   - `DEC-110` makes Unit Memory ledger + hybrid retrieval the current long-distance memory substrate for `attentional_v2`.
-  - Digest now emits model-facing `understanding`, `response`, and `annotations`, with the single `understanding` object stored internally through the existing `recent_reading_memory` path.
+  - Digest now emits model-facing `understanding`, `response`, and `annotations`, with the single `understanding` text stored internally through the existing `recent_reading_memory` path.
 - Follow-up implementation reference:
   - `docs/implementation/new-reading-mechanism/ingest-recall-and-digest-memory-context-design.md` records the implemented slice that replaces the single model-facing `memory_query` with bounded `memory_recalls[]`, adds the Anthropic-style `retrieve_unit_memory` tool loop, aggregates multi-recall retrieval, and renders Digest `ReadingMemory`.
 
@@ -392,9 +392,14 @@ Initial aggregation defaults:
 - `recent_neighbor_exclusion_unit_count = 20`
 - also exclude any source unit ids already carried directly in the Digest recent-memory context
 - `max_units_after_aggregation = 20`
-- `max_units_to_digest_context` should be recalibrated by the later Digest memory-budget slice
+- `max_units_to_digest_context = 40` as the total long-distance selected-unit ceiling before Digest `ReadingMemory` token-budget rendering
   - do not inherit the old `4` to `6` detailed-memory cap now that Digest context is Understanding-only
   - Understanding-only briefs should optimize for broader relevant Entry coverage under the final budget
+- `max_units_per_recall_to_digest_context = 6` as the V1 per-recall prompt-visible selection cap
+  - this is a selection-discipline guardrail, not a retrieval-search limit
+  - it prevents one broad or partially matched recall from consuming most of the long-distance memory budget
+  - multiple specific recalls can still cover more prior units under the total `max_units_to_digest_context` and `15K` ReadingMemory budget
+  - suppressed units should record `per_recall_selection_limit_exceeded` so review can distinguish a deliberate cap from retrieval failure
 
 Unit-level score should consider:
 

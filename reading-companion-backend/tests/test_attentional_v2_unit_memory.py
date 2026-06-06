@@ -314,6 +314,41 @@ def test_multi_recall_retrieval_aggregates_by_unit_and_records_matches(tmp_path)
     assert trace["selected_units"][0]["matched_recalls"]
 
 
+def test_retrieval_selection_enforces_per_recall_digest_context_limit(tmp_path):
+    config = {
+        "mode": "text_only",
+        "min_retrievable_prior_units": 0,
+        "recent_neighbor_exclusion_unit_count": 0,
+        "max_units_after_aggregation": 10,
+        "max_units_to_digest_context": 10,
+        "max_units_per_recall_to_digest_context": 2,
+    }
+    index = UnitMemoryIndex(tmp_path, config=config)
+    for sequence_index in range(1, 6):
+        index.write_entry(
+            _entry(
+                f"u{sequence_index:06d}",
+                sequence_index,
+                f"共同主题在第 {sequence_index} 个场景里出现。",
+                f"共同主题推动第 {sequence_index} 个单元的理解。",
+            ),
+            index_vectors=False,
+        )
+
+    result = index.retrieve_for_recalls(
+        book_id="book-demo",
+        recalls=[{"recall_id": "r1", "recall_text": "共同主题", "basis": "selected_source_unit"}],
+        query_source="tool_retrieve_unit_memory",
+        current_unit_index=6,
+    )
+
+    assert len(result["selected_units"]) == 2
+    trace = json.loads(unit_memory_retrieval_trace_file(tmp_path).read_text(encoding="utf-8").strip().splitlines()[-1])
+    assert trace["selection_config"]["max_units_per_recall_to_digest_context"] == 2
+    suppressed_reasons = {item["reason"] for item in trace["suppressed_units"]}
+    assert "per_recall_selection_limit_exceeded" in suppressed_reasons
+
+
 def test_hybrid_vector_status_only_marks_understanding_docs_pending(tmp_path):
     index = UnitMemoryIndex(
         tmp_path,
