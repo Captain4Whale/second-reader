@@ -699,6 +699,25 @@ _SINGLE_QUOTE_EQUIVALENTS = {
     "‛",
     "＇",
 }
+_TRAILING_CLOSER_CHARS = {
+    '"',
+    "'",
+    "”",
+    "’",
+    "」",
+    "』",
+    "）",
+    ")",
+    "］",
+    "]",
+    "】",
+    "〗",
+    "｝",
+    "}",
+    "》",
+    "〉",
+    "»",
+}
 
 
 def _normalize_anchor_match_char(value: str) -> str:
@@ -742,6 +761,13 @@ def _find_unique_normalized_anchor_match(source_text: str, anchor: str) -> tuple
     return "matched", 1, original_starts[match_start], original_ends[match_end_index]
 
 
+def _extend_flat_offset_over_trailing_closers(source_text: str, flat_offset: int) -> tuple[int, str]:
+    cursor = max(0, min(flat_offset, len(source_text)))
+    while cursor < len(source_text) and source_text[cursor] in _TRAILING_CLOSER_CHARS:
+        cursor += 1
+    return cursor, source_text[flat_offset:cursor]
+
+
 def resolve_end_anchor_text(
     *,
     preview: Mapping[str, object],
@@ -767,16 +793,23 @@ def resolve_end_anchor_text(
             anchor,
         )
         if normalized_status == "matched":
-            end_cursor = cursor_from_flat_offset(preview, original_end)
-            return {
+            extended_end, trailing_closers = _extend_flat_offset_over_trailing_closers(source_text, original_end)
+            end_cursor = cursor_from_flat_offset(preview, extended_end)
+            result: dict[str, object] = {
                 "status": "matched",
                 "method": "normalized_exact_text",
                 "end_cursor": end_cursor,
-                "matched_text": source_text[original_start:original_end],
+                "matched_text": source_text[original_start:extended_end],
                 "match_count": 1,
                 "normalization": "quote_equivalence",
                 "anchor_text": anchor,
             }
+            if trailing_closers:
+                result["end_cursor_extension"] = {
+                    "kind": "trailing_closing_punctuation",
+                    "text": trailing_closers,
+                }
+            return result
         if normalized_status == "ambiguous":
             return {
                 "status": "ambiguous",
@@ -801,14 +834,22 @@ def resolve_end_anchor_text(
             "match_count": len(matches),
             "reason": "end_anchor_text matched more than once in preview source_text",
         }
-    end_cursor = cursor_from_flat_offset(preview, matches[0] + len(anchor))
-    return {
+    original_end = matches[0] + len(anchor)
+    extended_end, trailing_closers = _extend_flat_offset_over_trailing_closers(source_text, original_end)
+    end_cursor = cursor_from_flat_offset(preview, extended_end)
+    result: dict[str, object] = {
         "status": "matched",
         "method": "exact_text",
         "end_cursor": end_cursor,
-        "matched_text": anchor,
+        "matched_text": source_text[matches[0]:extended_end],
         "match_count": 1,
     }
+    if trailing_closers:
+        result["end_cursor_extension"] = {
+            "kind": "trailing_closing_punctuation",
+            "text": trailing_closers,
+        }
+    return result
 
 
 def fallback_end_cursor_for_preview(preview: Mapping[str, object]) -> SourceCursor:

@@ -107,6 +107,35 @@ def test_resolver_matches_anchor_with_equivalent_quote_marks() -> None:
     assert resolution["end_cursor"]["char_offset"] == len("“看！”悉达多轻声对乔文达道，“此人就是佛陀。”")
 
 
+def test_resolver_includes_adjacent_trailing_closing_quote() -> None:
+    chapter = {
+        "id": 1,
+        "title": "Chapter 1",
+        "paragraphs": [
+            {"paragraph_index": 1, "text": "“在水面行走并不是我的追求。”", "text_role": "body"},
+        ],
+    }
+    preview = build_paragraph_offset_preview(
+        chapter=chapter,
+        current_cursor={"chapter_id": 1, "chapter_ref": "Chapter 1", "paragraph_index": 1, "char_offset": 0},
+        reader_policy={"unitize": {"preview_soft_min_chars": 20, "preview_hard_max_chars": 100, "max_lookahead_paragraphs": 1}},
+    )
+
+    resolution = resolve_end_anchor_text(
+        preview=preview,
+        end_anchor_text="在水面行走并不是我的追求。",
+    )
+
+    assert resolution["status"] == "matched"
+    assert resolution["method"] == "exact_text"
+    assert resolution["matched_text"] == "在水面行走并不是我的追求。”"
+    assert resolution["end_cursor_extension"] == {
+        "kind": "trailing_closing_punctuation",
+        "text": "”",
+    }
+    assert resolution["end_cursor"]["char_offset"] == len("“在水面行走并不是我的追求。”")
+
+
 def test_resolver_reports_ambiguous_and_missing_anchor() -> None:
     preview = {
         "chapter_id": 1,
