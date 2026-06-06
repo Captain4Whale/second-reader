@@ -121,6 +121,34 @@ The goal runner may use this phase order unless a newer phase status in this doc
 
 Do not let the goal runner convert this document into a moving target. If the implementation fails the locked design, repair the implementation. If a locked design point is genuinely impossible or inconsistent, record a `deferred_design` or `design_ambiguity_blocker`, continue the remaining independent checks, and ask the user before changing the design.
 
+### Goal-Mode End-To-End Checklist
+
+Goal mode should judge the mechanism by observable actions and artifacts, not by subjective reading quality. The executor should keep this checklist open while working and should not stop merely because one row has a finding if later rows can still be exercised.
+
+| Layer | Required observable | Pass condition | If it fails |
+| --- | --- | --- | --- |
+| Ingest boundary | prompt manifest, Ingest trace, accepted source unit | Ingest selects a forward source boundary and runtime accepts a concrete source unit for Digest | repair boundary prompt/runtime governance, or record `design_ambiguity_blocker` only if the locked boundary contract is internally inconsistent |
+| Ingest recalls | final-output tool args and `retrieve_unit_memory` tool traces | recalls are `0-3`, source-language aligned, `basis = selected_source_unit`, and empty recalls are allowed when no specific prior memory is needed | repair Ingest prompt, structured-output validation, or action-tool preflight; do not invent a separate query LLM |
+| Retrieval execution | `unit_memory_retrieval_trace.jsonl` | every non-empty recall is either searched, gated with counts, or rejected with a contract reason | repair horizon gates, accepted-unit handoff, or trace completeness |
+| Lexical retrieval | Unit Memory SQLite, FTS candidate trace | known-answer text-only recalls can retrieve expected prior units and trace candidate counts | repair FTS docs, tokenizer/query builder, ranking, or thresholds |
+| Dense retrieval | sqlite-vec/vector rows/query embedding cache/dense candidate trace | hybrid produces real dense candidates when sqlite-vec, Ollama, and Qwen embeddings are available | repair code-owned adapter/index/cache problems; otherwise mark only the dense path `deferred_environment` and continue non-hybrid checks |
+| Selection | selected/suppressed unit trace | selected units are deduped, renderable, Understanding-bearing, and suppressions have explicit reasons | repair aggregation, exclusion, per-recall cap, score/rank policy, or renderability filtering |
+| Digest ReadingMemory | Digest prompt manifest and selection trace | prompt-visible memory contains hot Understanding plus any selected long-distance Understanding, and no raw prior source/Response/Annotation | repair ReadingMemory renderer, budget accounting, or hot/retrieved trace separation |
+| Digest output | final-output tool args, read audit | Digest returns `understanding`, `response`, and `annotations`; runtime maps Understanding to recent memory | repair Digest prompt/schema/validator/runtime mapping; do not treat subjective phrasing quality as a retrieval blocker |
+| Settlement/writeback | Recent Reading Memory, Unit Memory ledger/index rows | the newly digested unit is written back and retrieval docs are derived for later units | repair settlement/index writeback before claiming end-to-end success |
+| Review packet | run-local report | selected retrieved Understanding lines, receiving source units, recall texts, and selection reasons are human-readable | add or repair the review packet before using the smoke as validation evidence |
+
+### Goal-Mode Issue Handling
+
+The executor should classify each issue as soon as it is understood, then continue every independent check that remains available.
+
+- Fix immediately when the issue is a clear implementation, prompt-contract, trace, test, or stable-fact mismatch against the locked baseline.
+- Record and continue when the issue is subjective quality, relevance nuance, or a design question that does not prevent the mechanism path from being exercised.
+- Record and continue non-hybrid phases when hybrid dense validation is blocked only by local service/model availability.
+- Do not edit the locked design docs to make a failure disappear. If the design itself seems wrong, write the blocker in this plan or the final report and ask the user before redesigning.
+- Do not mark the goal complete from deterministic tests alone when the goal still requires a live no-judge smoke. Deterministic tests can prove code paths; the smoke must prove the live chain is observable.
+- Do not mark the goal blocked while any non-blocked layer can still produce useful evidence or receive an allowed repair.
+
 ### Goal-Mode Progress Ledger
 
 Every goal run should keep the phase table below current. Each phase update should include:
