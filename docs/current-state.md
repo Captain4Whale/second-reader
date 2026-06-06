@@ -7,7 +7,7 @@ Update when: the current objective, active tasks, blockers, active jobs, open de
 
 This file is authoritative for durable current status. Do not keep unique active-state information only in `docs/agent-handoff.md`.
 
-Last verified: `2026-06-06T19:45:00+08:00`
+Last verified: `2026-06-06T20:14:00+08:00`
 
 ## Current Objective
 - The `Ingest -> Digest -> Reading Runner settlement` mechanism reframe is implemented; current work is fact alignment, smoke/diagnostic review, and calibration before any formal evaluation promotion.
@@ -162,7 +162,7 @@ Last verified: `2026-06-06T19:45:00+08:00`
       - interpretation: selected long-distance slots were no longer consumed by hot-memory duplicates in the observed sample; `dedupe_hot_memory=0` and retrieved Understanding remained prompt-visible
       - follow-up relevance review: R12 mechanics are validated, but four selected/rendered retrieval events showed the next failure mode: after prompt-visible hot candidates are correctly excluded, the selection layer can backfill long-distance slots with low-score or broad weak memories, such as childhood / parental-background memories for a water-walking / samana-magic unit or father-vigil memories for a Gotama-doctrine / Govinda-parting unit
       - R13 deterministic repair: selection now applies a content-neutral quality gate after aggregation and renderability checks; candidates need strong enough `unit_understanding` evidence or stricter auxiliary-surface evidence before they can occupy long-distance `ReadingMemory` slots, and weak candidates are suppressed with `candidate_below_selection_quality_threshold`
-      - R13 status: deterministic tests pass for strong Understanding survival, weak filler suppression, and no-fill behavior when all candidates are weak; live smoke/replay validation remains pending
+      - R13 status: validated in `text_only` diagnostics. The post-R13 smoke `attentional_v2_unit_memory_text_only_smoke_xidaduo_post_r13_20260606` was intentionally stopped after evidence; health status `ok` with `48` entries, `273` retrieval docs, `selected_unit_count=6`, `retrieved_line_total=6`, `rendered_retrieved_unique_unit_count=6`, `selected_but_not_rendered_count=0`, and `candidate_below_selection_quality_threshold=11`
     - current recall-language contract repair:
       - status: `validated_observed_live_contract_sample`
       - code behavior: `submit_ingest_result` validation now receives the current source text and rejects model-side `memory_recalls[].recall_text` that clearly does not use the current source text's primary language; `retrieve_unit_memory` action-tool preflight applies the same validation before retrieval execution and returns `contract_violation` metadata for the forced final-output repair path
@@ -186,10 +186,10 @@ Last verified: `2026-06-06T19:45:00+08:00`
       - Ollama result: `reachable = false`, `blocking_reasons = ["ollama_unreachable"]`
       - interpretation: Phase 2 live hybrid remains blocked by the local Ollama/Qwen embedding service, not by sqlite-vec adapter loading
   - next step:
-    - validate R13 selection-quality gating with a small no-judge text-only smoke or run-local replay before changing Ingest recall wording again; deterministic tests now pass, but live artifacts must show weak candidates are suppressed without clearing useful retrieved Understanding
+    - review R13 selected-memory examples if relevance still looks broad; R13 selection-quality gating itself is validated in a no-judge `text_only` diagnostic and should not be re-run unless later artifacts regress
     - do not rerun solely for the Ingest v6 language/basis contract unless later live artifacts show drift again; the current observed sample is sufficient for this narrow contract, while long-distance retrieval maturity was intentionally not revalidated in that early stopped run
     - treat live hybrid dense retrieval as blocked unless Ollama reachability, the configured Qwen embedding model, real query embedding cache rows, real vector rows, dense candidates, and RRF fusion are all validated; sqlite-vec and the fake-embedder code path are no longer the blocker
-    - do not run formal evaluation, update evidence catalog, or claim product quality from the intentionally stopped diagnostic smokes; tune retrieval selection quality first, and treat live hybrid dense validation as blocked until Ollama/Qwen is available
+    - do not run formal evaluation, update evidence catalog, or claim product quality from the intentionally stopped diagnostic smokes; review R13 selected-memory examples before any further relevance calibration, and treat live hybrid dense validation as blocked until Ollama/Qwen is available
     - use `docs/implementation/new-reading-mechanism/ingest-context-and-navigate-mapping.md` as the implementation reference for the landed first-slice `Ingest` XML context
     - use `docs/implementation/new-reading-mechanism/digest-understanding-response-annotation-design.md` as the implemented reference for the Digest prompt/output semantic refactor
     - use `docs/implementation/new-reading-mechanism/unit-memory-hybrid-retrieval-design.md` as the implemented reference for the Unit Memory storage/index/retrieval trace bottom framework

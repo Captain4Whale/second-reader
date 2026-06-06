@@ -412,7 +412,7 @@ Initial aggregation defaults:
   - `min_understanding_doc_score_to_digest_context = 0.019`
   - `max_understanding_doc_rank_to_digest_context = 12`
   - `min_auxiliary_unit_score_to_digest_context = 0.08`
-  - `max_auxiliary_doc_rank_to_digest_context = 5`
+  - `max_auxiliary_doc_rank_to_digest_context = 6`
   - these are content-neutral calibration defaults, not quality claims
   - a candidate that fails the gate should be suppressed with `candidate_below_selection_quality_threshold`
   - runtime may select fewer than the cap, including zero long-distance entries, when candidates are too weak

@@ -61,7 +61,7 @@ DEFAULT_RETRIEVAL_CONFIG: dict[str, object] = {
     "min_understanding_doc_score_to_digest_context": 0.019,
     "max_understanding_doc_rank_to_digest_context": 12,
     "min_auxiliary_unit_score_to_digest_context": 0.08,
-    "max_auxiliary_doc_rank_to_digest_context": 5,
+    "max_auxiliary_doc_rank_to_digest_context": 6,
     "recent_neighbor_exclusion_unit_count": 20,
     "min_retrievable_prior_units": 20,
     "retrieval_total_timeout_ms": 800,
@@ -1164,7 +1164,7 @@ class UnitMemoryIndex:
         min_understanding_score = _coerce_float(self.config.get("min_understanding_doc_score_to_digest_context"), 0.019)
         max_understanding_rank = max(0, _coerce_int(self.config.get("max_understanding_doc_rank_to_digest_context"), 12))
         min_auxiliary_unit_score = _coerce_float(self.config.get("min_auxiliary_unit_score_to_digest_context"), 0.08)
-        max_auxiliary_rank = max(0, _coerce_int(self.config.get("max_auxiliary_doc_rank_to_digest_context"), 5))
+        max_auxiliary_rank = max(0, _coerce_int(self.config.get("max_auxiliary_doc_rank_to_digest_context"), 6))
 
         has_strong_understanding = understanding_score >= min_understanding_score or (
             max_understanding_rank > 0 and 0 < understanding_rank <= max_understanding_rank
