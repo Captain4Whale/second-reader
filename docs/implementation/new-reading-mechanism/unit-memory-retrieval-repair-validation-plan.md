@@ -45,6 +45,7 @@ Completed or partially landed repair evidence:
 - Prompt-visible hot-memory exclusion now has deterministic and live `text_only` smoke coverage. Reading Runner computes only the hot current-chapter spans that would already render in Digest `ReadingMemory`, excludes those spans from long-distance Unit Memory retrieval, and records `excluded_source_unit_span_count` in retrieval trace rows. This is deliberately narrower than the old R9 bug: the full active Recent Reading Memory store is not excluded.
 - A post-hot-exclusion `text_only` smoke on `xidaduo_private_zh__segment_1` was intentionally stopped after R12 evidence was captured. Its run-local health packet is `ok`: `52` Unit Memory entries, `306` retrieval docs, `57` retrieval rows, `52` selection rows, `selected_unit_count=23`, `retrieved_line_total=23`, `rendered_retrieved_unique_unit_count=11`, `selected_but_not_rendered_count=0`, `excluded_source_unit_span_total=250`, `max_excluded_source_unit_span_count=36`, and `dedupe_hot_memory=0`. This validates that hot-memory exclusion no longer clears retrieved memory and no longer spends selected long-distance slots on hot duplicates in the observed sample.
 - Post-hot-exclusion relevance review then exposed the next repair target: once prompt-visible hot memories are correctly excluded, the selection layer can still fill the freed long-distance slots with low-score or broad weak matches. Examples include a water-walking / samana-magic unit receiving childhood or parental-background memories, and a Gotama-doctrine / Govinda-parting unit receiving father-vigil memories. This is now tracked as R13 / Phase 6E: a selection-quality gate is needed so runtime may choose fewer or no long-distance memories instead of filling the budget with weak candidates.
+- R13 selection-quality gating is now implemented at the deterministic layer: after aggregation and renderability checks, candidates must show strong enough `unit_understanding` evidence or stricter auxiliary-surface evidence before final selection. Weak candidates are suppressed with `candidate_below_selection_quality_threshold`, and tests cover both "strong candidate survives while weak filler is suppressed" and "all candidates weak means no long-distance selection." Live smoke/replay validation remains pending.
 - Ingest prompt `attentional_v2.ingest.v6` / promptset `attentional_v2-phase6-v56` tightened recall contract after that smoke exposed language/basis drift: model-side recall text should use the current source text's primary language, preserve source-form names/terms when available, and keep `basis` exactly `selected_source_unit`.
 - A pre-contract Ingest-v6 `text_only` smoke on `xidaduo_private_zh__segment_1` confirmed that prompt wording alone was insufficient: a Chinese source unit produced an English recall with `basis = selected_source_unit`. The run was intentionally stopped and recorded as diagnostic-only.
 - The Ingest structured-output contract now validates recall language against the current source text, and the `retrieve_unit_memory` action-tool preflight runs the same validator before retrieval execution. If the model emits a cross-language recall or other contract-violating recall payload, the tool returns `contract_violation` metadata so the forced final-output path can repair the result instead of silently retrieving on a bad recall.
@@ -57,7 +58,7 @@ Current unresolved target:
 - The first recall-specificity prompt calibration has been live-smoked in `text_only`: it is partially validated for avoiding the post-R11 sermon-area broad recall, but the remaining relevance problem has moved toward retrieval selection / budget discipline for focused recalls.
 - The per-recall selection discipline slice is validated in `text_only` diagnostics: `max_units_per_recall_to_digest_context = 6` capped how many prior Unit Memory entries one recall could send toward Digest `ReadingMemory`, while preserving nonzero prompt-visible retrieved memory.
 - The prompt-visible hot-memory exclusion slice is validated in a `text_only` diagnostic smoke: selected long-distance slots were no longer consumed by units that Digest would already receive as hot current-chapter memory, with `selected_but_not_rendered_count=0` and `dedupe_hot_memory=0` in the observed sample.
-- The next non-hybrid repair target is relevance-preserving selection quality: after hot-memory exclusions remove the most direct recent candidates, Unit Memory selection should not automatically backfill the freed slots with low-score broad candidates. A fix should be traceable as explicit score/rank/surface-quality suppression rather than hidden by budget trimming.
+- The next non-hybrid validation target is relevance-preserving selection quality: R13 deterministic tests now prove weak broad candidates can be suppressed with explicit score/rank/surface-quality reasons, but a no-judge smoke or run-local replay still needs to show the gate does not clear useful prompt-visible retrieved Understanding.
 - The narrow Ingest v6 language/basis contract is validated by deterministic tests and an observed early live sample. The next non-hybrid target is relevance calibration only if reviewed recalls / rendered memories remain too broad; otherwise the main unresolved target is live hybrid dense validation.
 - Hybrid dense retrieval remains environment-blocked because local Ollama / Qwen embedding service is unavailable; the goal should not claim live hybrid success until real Qwen embeddings, dense candidates, and RRF fusion are validated.
 - The latest smoke was intentionally stopped before full summary generation, so it is diagnostic repair evidence, not formal evaluation evidence.
@@ -402,7 +403,7 @@ Each phase must leave behind a concrete pass/fail result.
 | Phase 6B | `validated_text_only_diagnostic` | Per-recall selection discipline caps prompt-visible selected units per recall while preserving nonzero retrieved memory; post-selection-cap smoke selected `6` out of `15` candidate units for one recall, suppressed `8` with `per_recall_selection_limit_exceeded`, and rendered `2` retrieved Understanding lines. | Relevance calibration remains possible if reviewed recalls / rendered memories stay too broad; hybrid dense validation remains environment-blocked. |
 | Phase 6C | `validated_observed_live_contract_sample` | Ingest prompt `attentional_v2.ingest.v6`, structured-output validation, and action-tool preflight require model-side recalls to use the current source text's primary language and `basis = selected_source_unit`; runtime fallback recalls may still use `runtime_source_text_fallback`. A pre-contract smoke exposed English recall text for a Chinese source unit; a post-contract early stopped smoke observed zero language violations and only `selected_source_unit` basis values in reviewed unique recalls. | Do not treat the early stopped post-contract run as mature retrieval validation; rerun only if later artifacts show language/basis drift again or if a combined contract-plus-mature-retrieval sample is needed. |
 | Phase 6D | `validated_text_only_diagnostic` | Reading Runner excludes only prompt-visible hot current-chapter spans from long-distance Unit Memory retrieval and records the exclusion count; a deterministic runner fixture proves a non-hot matching prior unit can still be selected. The post-hot-exclusion smoke rendered `23` retrieved lines from `11` unique units with `selected_but_not_rendered_count=0`, `dedupe_hot_memory=0`, and `max_excluded_source_unit_span_count=36`. | Relevance review/calibration remains possible; live hybrid dense validation remains environment-blocked. |
-| Phase 6E | `new_repair_target` | Post-hot-exclusion review proved R12 mechanics but found low-score / weak broad long-distance fills after hot candidates were excluded. The current selection layer can choose memories that are renderable and non-hot but too weak to be useful continuity. | Add a selection-quality gate that can suppress weak candidates with explicit reasons, then validate with deterministic fixtures and a small no-judge text-only smoke or replay. |
+| Phase 6E | `passed_deterministic_pending_smoke` | Post-hot-exclusion review proved R12 mechanics but found low-score / weak broad long-distance fills after hot candidates were excluded. R13 adds a content-neutral quality gate: strong `unit_understanding` evidence can pass, auxiliary-only evidence must be stronger, and weak candidates are suppressed with `candidate_below_selection_quality_threshold`. | Validate with a small no-judge text-only smoke or run-local replay showing weak candidates suppressed without clearing useful prompt-visible retrieved Understanding. |
 | Phase 7 | `passed_post_r11_text_only_diagnostic` | Post-R9 and post-R10/R11 `text_only` smokes proved prompt-visible retrieved Understanding lines; rendered retrieved unit ids now appear in live traces; auxiliary-surface-only rendered pollution was reduced in the observed event. | Calibrate recall specificity / relevance; hybrid dense validation remains environment-blocked. |
 
 ### External Environment Handling
@@ -463,12 +464,11 @@ When Goal mode finishes or reaches a real blocker, it must produce:
 
 Continue from the smallest independent checks rather than jumping directly to a formal evaluation:
 
-1. Implement and validate R13 selection-quality gating:
+1. Validate R13 selection-quality gating with smoke/replay evidence:
    - R12 mechanics are validated in `text_only`
    - post-hot-exclusion review found that the selection layer can backfill freed long-distance slots with low-score or broad weak candidates after prompt-visible hot memories are correctly excluded
-   - fix selection before changing Ingest recall wording again
-   - candidate fixes include minimum selected-unit score, rank/surface-evidence gates, auxiliary-only thresholds, and explicit no-fill behavior when candidates are too weak
-   - required evidence: deterministic weak-filler fixture plus a run-local smoke/replay review showing weak candidates suppressed with machine-readable reasons while useful retrieved Understanding can still render
+   - R13 deterministic tests now cover strong Understanding evidence, weak filler suppression, and no-fill behavior when all candidates are weak
+   - required next evidence: a run-local smoke/replay review showing weak candidates suppressed with machine-readable reasons while useful retrieved Understanding can still render
 2. Validate Ingest v6 recall language/basis tightening only if needed:
    - post-selection-cap smoke proved volume control works and retrieved memory remains prompt-visible
    - the same smoke exposed Chinese-source recalls written in English and model-side `basis` drift
@@ -1013,7 +1013,7 @@ Current disposition:
 - `validated`: v5 did not shut retrieval off; prompt-visible retrieved lines still appear.
 - `validated`: the post-R11 sermon-area broad Siddhartha / Govinda continuity injection was reduced in the reviewed event.
 - `pending_validation`: whether v5 recall wording is robust across books and languages.
-- `new_repair_target`: retrieval selection / budget discipline needs tightening because focused recalls can still render too many broad partially related units.
+- `fixed_pending_validation`: retrieval selection / budget discipline now has a deterministic R13 quality gate, but focused-recall live artifacts still need smoke/replay validation.
 
 Post-v6 follow-up:
 
@@ -1025,7 +1025,7 @@ Post-v6 follow-up:
 
 ### Phase 6E. Selection Quality Gate
 
-Status: `new_repair_target`
+Status: `passed_deterministic_pending_smoke`
 
 Current evidence:
 
@@ -1034,6 +1034,9 @@ Current evidence:
   - water-walking / samana-magic rejection received childhood, parental, or general quest memories
   - Gotama doctrine / Govinda parting received father-vigil or general early-life memories
 - These examples are not a reason to restore broad hot exclusions. They show that the selection layer needs a quality gate that can decline weak long-distance candidates after hot candidates are correctly removed.
+- Deterministic tests now cover the quality gate:
+  - a weak broad candidate with low Understanding evidence is suppressed even when it has a higher aggregate score than a strong Understanding-bearing candidate
+  - when all candidates are weak, runtime can select no long-distance Unit Memory entries
 
 Goal:
 
@@ -1049,10 +1052,10 @@ Work:
 
 Acceptance:
 
-- deterministic fixture proves a strong Understanding-bearing candidate survives while weak broad candidates are suppressed
-- deterministic fixture proves runtime can select no long-distance memories when all candidates are weak
-- trace includes a specific quality-gate suppression reason and enough score/surface metadata to review the decision
-- a no-judge smoke or run-local replay shows R13 does not regress the already validated text-only ability to render useful retrieved Understanding lines
+- `validated`: deterministic fixture proves a strong Understanding-bearing candidate survives while weak broad candidates are suppressed
+- `validated`: deterministic fixture proves runtime can select no long-distance memories when all candidates are weak
+- `validated`: trace includes a specific quality-gate suppression reason and enough score/surface metadata to review the decision
+- `pending_validation`: a no-judge smoke or run-local replay should show R13 does not regress the already validated text-only ability to render useful retrieved Understanding lines
 
 ### Phase 7. End-To-End Diagnostic Validation
 

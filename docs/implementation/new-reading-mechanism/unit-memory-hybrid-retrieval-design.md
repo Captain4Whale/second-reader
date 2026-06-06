@@ -408,6 +408,14 @@ Initial aggregation defaults:
   - it prevents one broad or partially matched recall from consuming most of the long-distance memory budget
   - multiple specific recalls can still cover more prior units under the total `max_units_to_digest_context` and `15K` ReadingMemory budget
   - suppressed units should record `per_recall_selection_limit_exceeded` so review can distinguish a deliberate cap from retrieval failure
+- selection quality gate defaults:
+  - `min_understanding_doc_score_to_digest_context = 0.019`
+  - `max_understanding_doc_rank_to_digest_context = 12`
+  - `min_auxiliary_unit_score_to_digest_context = 0.08`
+  - `max_auxiliary_doc_rank_to_digest_context = 5`
+  - these are content-neutral calibration defaults, not quality claims
+  - a candidate that fails the gate should be suppressed with `candidate_below_selection_quality_threshold`
+  - runtime may select fewer than the cap, including zero long-distance entries, when candidates are too weak
 
 Unit-level score should consider:
 

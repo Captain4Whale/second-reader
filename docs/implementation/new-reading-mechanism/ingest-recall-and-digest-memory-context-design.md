@@ -644,6 +644,7 @@ Initial recommendation:
 - per recall dense top-k: lower than current single-query top-k, for example `40`
 - aggregate final retrieved units: keep a bounded runtime selection cap, calibrated for broad Understanding coverage
 - let runtime select fewer than the retrieval cap, including none, after relevance, dedupe, neighbor exclusion, and token-budget checks
+- apply a content-neutral selection-quality gate before final Digest context rendering, so weak broad candidates do not fill long-distance slots merely because budget remains
 - skip vector work entirely in `text_only` mode
 - cache query embeddings per recall text
 
@@ -799,6 +800,7 @@ All retrieval documents may participate in recall, ranking, fusion, and Entry se
   - is the primary lexical surface for Entry selection
   - is the only surface embedded for dense vector retrieval in V1
   - enters `ReadingMemory` by default for selected Entries when non-empty
+  - provides the preferred quality signal for final selection
 - `unit_response`
   - participates in lexical / FTS retrieval with lower weight
   - does not enter `ReadingMemory`
@@ -866,6 +868,7 @@ The selection goal is to maximize useful continuity under a small context budget
 - include more distinct Entries rather than enriching a few Entries
 - avoid repeating the same remembered content across briefs
 - prefer compact Understanding briefs over raw source text or subjective prior responses
+- allow no long-distance retrieved line when the available candidates are too weak; not filling the budget is better than injecting broad continuity noise
 
 ### Selection Within A Unit
 

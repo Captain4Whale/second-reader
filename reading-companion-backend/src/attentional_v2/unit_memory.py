@@ -58,6 +58,10 @@ DEFAULT_RETRIEVAL_CONFIG: dict[str, object] = {
     "max_units_to_digest_context": 40,
     "max_units_per_recall_to_digest_context": 6,
     "max_docs_per_unit_for_scoring": 5,
+    "min_understanding_doc_score_to_digest_context": 0.019,
+    "max_understanding_doc_rank_to_digest_context": 12,
+    "min_auxiliary_unit_score_to_digest_context": 0.08,
+    "max_auxiliary_doc_rank_to_digest_context": 5,
     "recent_neighbor_exclusion_unit_count": 20,
     "min_retrievable_prior_units": 20,
     "retrieval_total_timeout_ms": 800,
@@ -322,6 +326,7 @@ def _compact_retrieval_unit(item: Mapping[str, object]) -> dict[str, object]:
         "unit_id": item.get("unit_id"),
         "unit_index": item.get("unit_index"),
         "score": item.get("score"),
+        "quality": item.get("quality"),
         "matched_recalls": item.get("matched_recalls"),
         "surfaces": item.get("surfaces"),
         "channels": item.get("channels"),
@@ -1111,6 +1116,10 @@ class UnitMemoryIndex:
             score += 0.03 * min(max(0, len(surfaces) - 1), 3)
             if {"lexical", "dense"} <= channels:
                 score += 0.03
+            understanding_docs = [item for item in docs if str(item.get("surface", "")) == "unit_understanding"]
+            auxiliary_docs = [item for item in docs if str(item.get("surface", "")) != "unit_understanding"]
+            best_understanding_doc = max(understanding_docs, key=lambda item: float(item.get("score", 0.0)), default={})
+            best_auxiliary_doc = max(auxiliary_docs, key=lambda item: float(item.get("score", 0.0)), default={})
             entry_json = _json_loads(docs[0].get("entry_json"), {}) if docs else {}
             units.append(
                 {
@@ -1120,6 +1129,12 @@ class UnitMemoryIndex:
                     "surfaces": sorted(surfaces),
                     "channels": sorted(channels),
                     "matched_recalls": sorted(recall_ids),
+                    "quality": {
+                        "best_understanding_doc_score": best_understanding_doc.get("score"),
+                        "best_understanding_doc_rank": best_understanding_doc.get("rank"),
+                        "best_auxiliary_doc_score": best_auxiliary_doc.get("score"),
+                        "best_auxiliary_doc_rank": best_auxiliary_doc.get("rank"),
+                    },
                     "best_docs": [
                         {
                             "retrieval_doc_id": item.get("retrieval_doc_id"),
@@ -1136,6 +1151,32 @@ class UnitMemoryIndex:
             )
         units.sort(key=lambda item: (-float(item.get("score", 0.0)), int(item.get("unit_index", 0) or 0)))
         return units[: max(1, _coerce_int(self.config.get("max_units_after_aggregation"), 20))]
+
+    def _selection_quality_reason(self, item: Mapping[str, object]) -> str:
+        quality = item.get("quality")
+        quality_map = quality if isinstance(quality, Mapping) else {}
+        understanding_score = _coerce_float(quality_map.get("best_understanding_doc_score"), 0.0)
+        understanding_rank = _coerce_int(quality_map.get("best_understanding_doc_rank"), 0)
+        auxiliary_score = _coerce_float(quality_map.get("best_auxiliary_doc_score"), 0.0)
+        auxiliary_rank = _coerce_int(quality_map.get("best_auxiliary_doc_rank"), 0)
+        unit_score = _coerce_float(item.get("score"), 0.0)
+
+        min_understanding_score = _coerce_float(self.config.get("min_understanding_doc_score_to_digest_context"), 0.019)
+        max_understanding_rank = max(0, _coerce_int(self.config.get("max_understanding_doc_rank_to_digest_context"), 12))
+        min_auxiliary_unit_score = _coerce_float(self.config.get("min_auxiliary_unit_score_to_digest_context"), 0.08)
+        max_auxiliary_rank = max(0, _coerce_int(self.config.get("max_auxiliary_doc_rank_to_digest_context"), 5))
+
+        has_strong_understanding = understanding_score >= min_understanding_score or (
+            max_understanding_rank > 0 and 0 < understanding_rank <= max_understanding_rank
+        )
+        if has_strong_understanding:
+            return ""
+
+        has_strong_auxiliary = max_auxiliary_rank > 0 and 0 < auxiliary_rank <= max_auxiliary_rank
+        if has_strong_auxiliary and unit_score >= min_auxiliary_unit_score:
+            return ""
+
+        return "candidate_below_selection_quality_threshold"
 
     def _select_renderable_units(
         self,
@@ -1158,6 +1199,10 @@ class UnitMemoryIndex:
                 continue
             if not _entry_understanding_content(entry):
                 suppressed.append({**compact, "reason": "candidate_not_renderable_empty_understanding"})
+                continue
+            quality_reason = self._selection_quality_reason(item)
+            if quality_reason:
+                suppressed.append({**compact, "reason": quality_reason})
                 continue
             matched_recalls = [
                 _clean_text(recall_id)
@@ -1374,6 +1419,10 @@ class UnitMemoryIndex:
         trace["selection_config"] = {
             "max_units_to_digest_context": max_units_to_digest_context,
             "max_units_per_recall_to_digest_context": max_units_per_recall,
+            "min_understanding_doc_score_to_digest_context": self.config.get("min_understanding_doc_score_to_digest_context"),
+            "max_understanding_doc_rank_to_digest_context": self.config.get("max_understanding_doc_rank_to_digest_context"),
+            "min_auxiliary_unit_score_to_digest_context": self.config.get("min_auxiliary_unit_score_to_digest_context"),
+            "max_auxiliary_doc_rank_to_digest_context": self.config.get("max_auxiliary_doc_rank_to_digest_context"),
         }
         trace["selected_units"] = compact_selected
         trace["suppressed_units"] = suppressed_units
@@ -1514,6 +1563,13 @@ class UnitMemoryIndex:
                 limit=max(1, _coerce_int(self.config.get("max_units_to_digest_context"), 6)),
             )
             compact_selected = [_compact_retrieval_unit(item) for item in selected_units]
+            trace["selection_config"] = {
+                "max_units_to_digest_context": max(1, _coerce_int(self.config.get("max_units_to_digest_context"), 6)),
+                "min_understanding_doc_score_to_digest_context": self.config.get("min_understanding_doc_score_to_digest_context"),
+                "max_understanding_doc_rank_to_digest_context": self.config.get("max_understanding_doc_rank_to_digest_context"),
+                "min_auxiliary_unit_score_to_digest_context": self.config.get("min_auxiliary_unit_score_to_digest_context"),
+                "max_auxiliary_doc_rank_to_digest_context": self.config.get("max_auxiliary_doc_rank_to_digest_context"),
+            }
             trace["selected_units"] = compact_selected
             trace["suppressed_units"] = suppressed_units
             trace["latency_ms"] = int((time.monotonic() - started_at) * 1000)

@@ -357,6 +357,8 @@ def test_retrieval_selection_enforces_per_recall_digest_context_limit(tmp_path):
         "max_units_after_aggregation": 10,
         "max_units_to_digest_context": 10,
         "max_units_per_recall_to_digest_context": 2,
+        "min_understanding_doc_score_to_digest_context": 0,
+        "max_understanding_doc_rank_to_digest_context": 100,
     }
     index = UnitMemoryIndex(tmp_path, config=config)
     for sequence_index in range(1, 6):
@@ -382,6 +384,74 @@ def test_retrieval_selection_enforces_per_recall_digest_context_limit(tmp_path):
     assert trace["selection_config"]["max_units_per_recall_to_digest_context"] == 2
     suppressed_reasons = {item["reason"] for item in trace["suppressed_units"]}
     assert "per_recall_selection_limit_exceeded" in suppressed_reasons
+
+
+def test_selection_quality_gate_suppresses_weak_filler_candidates(tmp_path):
+    index = UnitMemoryIndex(tmp_path, config={"mode": "text_only"})
+    weak = {
+        "unit_id": "u000001",
+        "unit_index": 1,
+        "score": 0.07,
+        "surfaces": ["unit_source", "unit_understanding"],
+        "channels": ["lexical"],
+        "matched_recalls": ["r1"],
+        "quality": {
+            "best_understanding_doc_score": 0.014,
+            "best_understanding_doc_rank": 34,
+            "best_auxiliary_doc_score": 0.010,
+            "best_auxiliary_doc_rank": 33,
+        },
+        "best_docs": [],
+        "entry": _entry("u000001", 1, "泛泛的早年背景。", "早年背景与当前召回只有宽泛关系。"),
+    }
+    strong = {
+        "unit_id": "u000002",
+        "unit_index": 2,
+        "score": 0.03,
+        "surfaces": ["unit_understanding"],
+        "channels": ["lexical"],
+        "matched_recalls": ["r1"],
+        "quality": {
+            "best_understanding_doc_score": 0.021,
+            "best_understanding_doc_rank": 3,
+            "best_auxiliary_doc_score": None,
+            "best_auxiliary_doc_rank": None,
+        },
+        "best_docs": [],
+        "entry": _entry("u000002", 2, "精确的法义讨论。", "悉达多认为佛陀法义不能替代个人亲身求道。"),
+    }
+
+    selected, suppressed = index._select_renderable_units([weak, strong], limit=5)
+
+    assert [item["unit_id"] for item in selected] == ["u000002"]
+    assert suppressed[0]["unit_id"] == "u000001"
+    assert suppressed[0]["reason"] == "candidate_below_selection_quality_threshold"
+    assert suppressed[0]["quality"]["best_understanding_doc_rank"] == 34
+
+
+def test_selection_quality_gate_allows_no_long_distance_selection_when_all_candidates_are_weak(tmp_path):
+    index = UnitMemoryIndex(tmp_path, config={"mode": "text_only"})
+    weak = {
+        "unit_id": "u000001",
+        "unit_index": 1,
+        "score": 0.04,
+        "surfaces": ["unit_source"],
+        "channels": ["lexical"],
+        "matched_recalls": ["r1"],
+        "quality": {
+            "best_understanding_doc_score": None,
+            "best_understanding_doc_rank": None,
+            "best_auxiliary_doc_score": 0.011,
+            "best_auxiliary_doc_rank": 9,
+        },
+        "best_docs": [],
+        "entry": _entry("u000001", 1, "只共享人物名字的背景。", "这个单元只有宽泛背景重叠。"),
+    }
+
+    selected, suppressed = index._select_renderable_units([weak], limit=5)
+
+    assert selected == []
+    assert suppressed[0]["reason"] == "candidate_below_selection_quality_threshold"
 
 
 def test_hybrid_vector_status_only_marks_understanding_docs_pending(tmp_path):
