@@ -1290,6 +1290,22 @@ def _build_digest_reading_memory(
     }
 
 
+def _compact_reading_memory_line_record(record: object) -> dict[str, object]:
+    if not isinstance(record, dict):
+        return {}
+    compact: dict[str, object] = {
+        "origin": _clean_text(record.get("origin")),
+        "unit_id": _clean_text(record.get("unit_id")),
+        "source_span_id": _clean_text(record.get("source_span_id")),
+        "unit_index": int(record.get("unit_index", 0) or 0),
+        "estimated_tokens": int(record.get("estimated_tokens", 0) or 0),
+    }
+    matched_recalls = record.get("matched_recalls")
+    if isinstance(matched_recalls, list):
+        compact["matched_recalls"] = [str(item) for item in matched_recalls if str(item or "").strip()]
+    return compact
+
+
 def _retrieve_unit_memory_for_prepared_source_unit(
     *,
     output_dir: Path,
@@ -2208,6 +2224,19 @@ def _settle_next_unit(
         unit_memory_retrieval=unit_memory_retrieval,
     )
     unit_memory_retrieval["reading_memory_lines"] = list(reading_memory.get("line_records", []))  # type: ignore[index]
+    reading_memory_line_records = (
+        list(reading_memory.get("line_records", [])) if isinstance(reading_memory.get("line_records"), list) else []
+    )
+    rendered_retrieved_units = [
+        _compact_reading_memory_line_record(record)
+        for record in reading_memory_line_records
+        if isinstance(record, dict) and _clean_text(record.get("origin")) == "retrieved"
+    ]
+    rendered_hot_units = [
+        _compact_reading_memory_line_record(record)
+        for record in reading_memory_line_records
+        if isinstance(record, dict) and _clean_text(record.get("origin")) == "hot"
+    ]
     record_unit_memory_retrieval_trace(
         output_dir,
         {
@@ -2221,6 +2250,13 @@ def _settle_next_unit(
             "estimated_tokens": int(reading_memory.get("estimated_tokens", 0) or 0),
             "budget": dict(reading_memory.get("budget", {})) if isinstance(reading_memory.get("budget"), dict) else {},
             "suppressed": list(reading_memory.get("suppressed", [])) if isinstance(reading_memory.get("suppressed"), list) else [],
+            "rendered_retrieved_units": rendered_retrieved_units,
+            "rendered_retrieved_unit_ids": [
+                str(item.get("unit_id"))
+                for item in rendered_retrieved_units
+                if _clean_text(item.get("unit_id"))
+            ],
+            "rendered_hot_units": rendered_hot_units,
         },
     )
 

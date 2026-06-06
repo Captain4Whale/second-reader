@@ -67,10 +67,10 @@ DEFAULT_RETRIEVAL_CONFIG: dict[str, object] = {
 }
 
 SURFACE_CHANNEL_WEIGHTS: dict[str, dict[str, float]] = {
-    "unit_source": {"lexical": 1.25},
-    "unit_understanding": {"lexical": 0.85, "dense": 1.35},
-    "unit_annotation": {"lexical": 1.10},
-    "unit_response": {"lexical": 0.45},
+    "unit_understanding": {"lexical": 1.35, "dense": 1.35},
+    "unit_source": {"lexical": 0.80},
+    "unit_annotation": {"lexical": 0.65},
+    "unit_response": {"lexical": 0.35},
 }
 
 

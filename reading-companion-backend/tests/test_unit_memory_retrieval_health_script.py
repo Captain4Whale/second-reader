@@ -107,6 +107,45 @@ def test_health_script_reports_non_renderable_retrieval_candidate(tmp_path: Path
     assert output["trace"]["retrieval_suppressed_reasons"] == {"candidate_not_renderable_empty_understanding": 1}
 
 
+def test_health_script_reports_rendered_retrieved_unit_ids(tmp_path: Path) -> None:
+    output_dir = tmp_path / "outputs" / "demo_segment" / "attentional_v2"
+    config = resolve_memory_retrieval_config(output_dir, {"memory_retrieval_mode": "text_only"})
+    _write_entry(output_dir, "u000001", 1, "火车站台上的告别", "站台告别建立了旅程起点。")
+    UnitMemoryIndex(output_dir, config=config).retrieve_for_recalls(
+        book_id="book-demo",
+        recalls=[{"recall_id": "r1", "recall_text": "火车站台 告别", "basis": "selected_source_unit"}],
+        query_source="tool_retrieve_unit_memory",
+        current_unit_index=2,
+    )
+    unit_memory_retrieval_trace_file(output_dir).write_text(
+        unit_memory_retrieval_trace_file(output_dir).read_text(encoding="utf-8")
+        + json.dumps(
+            {
+                "event_type": "unit_memory_reading_memory_selection",
+                "line_count": 1,
+                "hot_line_count": 0,
+                "retrieved_line_count": 1,
+                "rendered_retrieved_units": [
+                    {
+                        "unit_id": "u000001",
+                        "source_span_id": "src:c1:p1@0-p1@8",
+                        "unit_index": 1,
+                        "matched_recalls": ["r1"],
+                    }
+                ],
+            }
+        )
+        + "\n",
+        encoding="utf-8",
+    )
+
+    summary = health_script.summarize_paths([tmp_path])
+
+    assert summary["total"]["rendered_retrieved_unique_unit_count"] == 1
+    output = summary["outputs"][0]
+    assert output["reading_memory"]["rendered_retrieved_unit_ids"] == ["u000001"]
+
+
 def test_health_script_discovers_output_dir_from_nested_runtime_path(tmp_path: Path) -> None:
     output_dir = tmp_path / "custom_root" / "demo_segment" / "attentional_v2"
     config = resolve_memory_retrieval_config(output_dir, {"memory_retrieval_mode": "text_only"})

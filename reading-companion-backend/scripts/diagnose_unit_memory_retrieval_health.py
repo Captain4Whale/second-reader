@@ -258,6 +258,7 @@ def summarize_output(output_dir: Path) -> dict[str, Any]:
     selection_line_total = 0
     hot_line_total = 0
     retrieved_line_total = 0
+    rendered_retrieved_unit_ids: set[str] = set()
     suppressed_reasons: Counter[str] = Counter()
     for row in selection_rows:
         line_count = int(row.get("line_count") or 0)
@@ -271,6 +272,20 @@ def summarize_output(output_dir: Path) -> dict[str, Any]:
             for item in suppressed:
                 if isinstance(item, dict):
                     suppressed_reasons[str(item.get("reason") or "unknown")] += 1
+        rendered_units = row.get("rendered_retrieved_units")
+        if isinstance(rendered_units, list):
+            for item in rendered_units:
+                if not isinstance(item, dict):
+                    continue
+                unit_id = str(item.get("unit_id") or "").strip()
+                if unit_id:
+                    rendered_retrieved_unit_ids.add(unit_id)
+        rendered_unit_ids = row.get("rendered_retrieved_unit_ids")
+        if isinstance(rendered_unit_ids, list):
+            for item in rendered_unit_ids:
+                unit_id = str(item or "").strip()
+                if unit_id:
+                    rendered_retrieved_unit_ids.add(unit_id)
     selected_but_not_rendered_count = max(0, selected_total - retrieved_line_total)
     status = "ok"
     warnings: list[str] = []
@@ -316,6 +331,8 @@ def summarize_output(output_dir: Path) -> dict[str, Any]:
             "line_total": selection_line_total,
             "hot_line_total": hot_line_total,
             "retrieved_line_total": retrieved_line_total,
+            "rendered_retrieved_unique_unit_count": len(rendered_retrieved_unit_ids),
+            "rendered_retrieved_unit_ids": sorted(rendered_retrieved_unit_ids)[:50],
             "selected_but_not_rendered_count": selected_but_not_rendered_count,
             "suppressed_reasons": _counter_dict(suppressed_reasons),
         },
@@ -343,6 +360,13 @@ def summarize_paths(paths: list[Path]) -> dict[str, Any]:
         ),
         "hot_line_total": sum(int(item["reading_memory"]["hot_line_total"]) for item in outputs),
         "retrieved_line_total": sum(int(item["reading_memory"]["retrieved_line_total"]) for item in outputs),
+        "rendered_retrieved_unique_unit_count": len(
+            {
+                unit_id
+                for item in outputs
+                for unit_id in item["reading_memory"].get("rendered_retrieved_unit_ids", [])
+            }
+        ),
         "query_embedding_cache_rows": sum(int(item["sqlite"]["query_embedding_cache_rows"]) for item in outputs),
         "vector_rows": sum(int(item["sqlite"]["vector_rows"]) for item in outputs),
     }
@@ -378,6 +402,7 @@ def render_markdown(summary: dict[str, Any]) -> str:
         "retrieval_suppressed_unit_count",
         "hot_line_total",
         "retrieved_line_total",
+        "rendered_retrieved_unique_unit_count",
         "query_embedding_cache_rows",
         "vector_rows",
     ):
@@ -403,6 +428,7 @@ def render_markdown(summary: dict[str, Any]) -> str:
         lines.append(f"- selected units: `{trace.get('selected_unit_count', 0)}`")
         lines.append(f"- renderable selected units: `{sqlite.get('selected_renderable_unit_count', 0)}`")
         lines.append(f"- hot / retrieved lines: `{reading_memory.get('hot_line_total', 0)} / {reading_memory.get('retrieved_line_total', 0)}`")
+        lines.append(f"- rendered retrieved unique units: `{reading_memory.get('rendered_retrieved_unique_unit_count', 0)}`")
         lines.append("")
     return "\n".join(lines) + "\n"
 

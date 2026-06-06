@@ -7,7 +7,7 @@ Update when: the current objective, active tasks, blockers, active jobs, open de
 
 This file is authoritative for durable current status. Do not keep unique active-state information only in `docs/agent-handoff.md`.
 
-Last verified: `2026-06-06T16:30:01+08:00`
+Last verified: `2026-06-06T16:38:37+08:00`
 
 ## Current Objective
 - The `Ingest -> Digest -> Reading Runner settlement` mechanism reframe is implemented; current work is fact alignment, smoke/diagnostic review, and calibration before any formal evaluation promotion.
@@ -98,11 +98,15 @@ Last verified: `2026-06-06T16:30:01+08:00`
       - review packet: `reading-companion-backend/eval/runs/attentional_v2/attentional_v2_unit_memory_text_only_smoke_xidaduo_post_r9_20260606/analysis/unit_memory_retrieval_review/README.md`
       - retrieval outcome: health status `ok`; `57` Unit Memory entries, `353` retrieval docs, `67` retrieval rows, `57` selection rows, `selected_unit_count=71`, `renderable_selected_unit_count=29`, `retrieved_line_total=45`, and `non_renderable_selected_unit_count=0`
       - interpretation: the `text_only` Unit Memory path now proves selected prior Understanding can become prompt-visible long-distance `ReadingMemory`; `selected_but_not_rendered_count=26` was explained by `dedupe_hot_memory`
+    - post-R9 relevance review and repair:
+      - report: `docs/implementation/new-reading-mechanism/codex/reports/UnitMemory-Retrieval-TextOnly-PostR9-Relevance-Review v0.md`
+      - finding: text-only retrieval now has useful continuity examples, but auxiliary FTS surfaces could still pull terminology / note-cluster units into Digest `ReadingMemory`
+      - repair: Unit Memory lexical weights now prioritize `unit_understanding` over `unit_source`, `unit_annotation`, and `unit_response`
+      - repair: selection trace rows now record `rendered_retrieved_units` and `rendered_retrieved_unit_ids` so future health reports can identify exactly which retrieved Unit Memory entries became prompt-visible
   - next step:
-    - treat the non-hybrid retrieval path as mechanically repaired after the post-R9 smoke; inspect the review packet for relevance/pollution before changing recall prompt wording
-    - improve observability if needed so future selection traces can identify the exact selected Unit Memory ids that survive hot-memory dedupe into rendered retrieved lines
+    - run a small no-judge post-R10/R11 `text_only` smoke to confirm retrieved lines still appear, rendered retrieved unit ids are trace-visible, and auxiliary-surface pollution is reduced
     - treat hybrid dense retrieval as blocked unless sqlite-vec, Ollama reachability, the configured Qwen embedding model, query embedding cache, vector rows, dense candidates, and RRF fusion are all validated
-    - do not run formal evaluation, update evidence catalog, or claim product quality from the intentionally stopped diagnostic smoke; first review retrieved-memory relevance/pollution and decide whether to validate the environment-blocked hybrid dense path
+    - do not run formal evaluation, update evidence catalog, or claim product quality from the intentionally stopped diagnostic smoke; first validate the post-R10/R11 text-only behavior and decide whether to validate the environment-blocked hybrid dense path
     - use `docs/implementation/new-reading-mechanism/ingest-context-and-navigate-mapping.md` as the implementation reference for the landed first-slice `Ingest` XML context
     - use `docs/implementation/new-reading-mechanism/digest-understanding-response-annotation-design.md` as the implemented reference for the Digest prompt/output semantic refactor
     - use `docs/implementation/new-reading-mechanism/unit-memory-hybrid-retrieval-design.md` as the implemented reference for the Unit Memory storage/index/retrieval trace bottom framework

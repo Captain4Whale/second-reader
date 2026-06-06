@@ -348,6 +348,40 @@ def test_dense_channel_weight_exists_only_for_understanding_surface():
     assert dense_surfaces == {"unit_understanding"}
 
 
+def test_lexical_surface_weights_prioritize_understanding_over_auxiliary_surfaces():
+    assert SURFACE_CHANNEL_WEIGHTS["unit_understanding"]["lexical"] > SURFACE_CHANNEL_WEIGHTS["unit_source"]["lexical"]
+    assert SURFACE_CHANNEL_WEIGHTS["unit_understanding"]["lexical"] > SURFACE_CHANNEL_WEIGHTS["unit_annotation"]["lexical"]
+    assert SURFACE_CHANNEL_WEIGHTS["unit_understanding"]["lexical"] > SURFACE_CHANNEL_WEIGHTS["unit_response"]["lexical"]
+
+
+def test_text_only_retrieval_prefers_understanding_match_over_source_only_match(tmp_path):
+    config = {
+        "mode": "text_only",
+        "min_retrievable_prior_units": 0,
+        "recent_neighbor_exclusion_unit_count": 0,
+        "max_units_to_digest_context": 2,
+    }
+    index = UnitMemoryIndex(tmp_path, config=config)
+    index.write_entry(
+        _entry("u000001", 1, "铺垫文字之后出现共同短语", "这个单元的理解与目标概念无关。"),
+        index_vectors=False,
+    )
+    index.write_entry(
+        _entry("u000002", 2, "另一个场景", "共同短语标记的理解内容应该优先成为长期记忆召回结果。"),
+        index_vectors=False,
+    )
+
+    result = index.retrieve_for_recalls(
+        book_id="book-demo",
+        recalls=[{"recall_id": "r1", "recall_text": "共同短语", "basis": "selected_source_unit"}],
+        query_source="tool_retrieve_unit_memory",
+        current_unit_index=3,
+    )
+
+    assert result["selected_units"][0]["unit_id"] == "u000002"
+    assert result["selected_units"][0]["best_docs"][0]["surface"] == "unit_understanding"
+
+
 def test_hybrid_mode_degrades_when_vector_adapter_is_unavailable(tmp_path):
     config = {
         "mode": "hybrid",

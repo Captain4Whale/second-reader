@@ -777,10 +777,12 @@ All retrieval documents may participate in recall, ranking, fusion, and Entry se
 - `unit_source`
   - participates in lexical / FTS retrieval
   - helps the system find relevant Entries
+  - uses an auxiliary lexical weight lower than `unit_understanding`
   - does not enter `ReadingMemory` as prior source text
   - is not embedded for dense vector retrieval in V1
 - `unit_understanding`
   - participates in lexical / FTS retrieval
+  - is the primary lexical surface for Entry selection
   - is the only surface embedded for dense vector retrieval in V1
   - enters `ReadingMemory` by default for selected Entries when non-empty
 - `unit_response`

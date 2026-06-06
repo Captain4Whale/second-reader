@@ -515,7 +515,7 @@ Use `docs/backend-reading-mechanism.md` for shared platform boundaries. Use `doc
     - each entry preserves the accepted source unit plus the model-facing `understanding`, `response`, and `annotations`
     - retrieval documents are derived from source, understanding, response, and annotation surfaces
     - FTS5 text retrieval is always available when SQLite supports FTS5; sqlite-vec + local Ollama embedding is optional and degrades to text-only behavior
-    - all retrieval documents may participate in FTS retrieval; only `unit_understanding` participates in dense vector retrieval in the current policy
+    - all retrieval documents may participate in FTS retrieval, but lexical ranking prioritizes `unit_understanding` over source / response / annotation auxiliary surfaces; only `unit_understanding` participates in dense vector retrieval in the current policy
     - prompt-visible Digest memory is Understanding-only and rendered through one `ReadingMemory` block
   - `artifacts / history`
     - `reaction_records`

@@ -956,6 +956,10 @@ def test_runner_renders_retrieved_unit_memory_from_real_index(tmp_path: Path) ->
     assert reading_memory["hot_line_count"] == 0
     assert reading_memory["retrieved_line_count"] == 1
     assert reading_memory["lines"] == ["P1 U1: 站台告别建立了旅程的起点。"]
+    assert reading_memory["line_records"][0]["origin"] == "retrieved"
+    assert reading_memory["line_records"][0]["unit_id"] == "u000001"
+    assert reading_memory["line_records"][0]["source_span_id"] == "src:c1:p1@0-p1@20"
+    assert reading_memory["line_records"][0]["matched_recalls"] == ["r1"]
     assert "prior response" not in "\n".join(reading_memory["lines"])
     assert "prior annotation" not in "\n".join(reading_memory["lines"])
 
