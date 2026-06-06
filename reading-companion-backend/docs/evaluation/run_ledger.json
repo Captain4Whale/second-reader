@@ -1,6 +1,6 @@
 {
   "schema_version": 1,
-  "updated_at": "2026-06-06T13:05:49.528475Z",
+  "updated_at": "2026-06-06T14:08:58.890293Z",
   "entries": [
     {
       "run_id": "attentional_v2_excerpt_surface_v1_1_judged_20260406",
@@ -2541,13 +2541,13 @@
         "reading-companion-backend/eval/runs/attentional_v2/attentional_v2_unit_memory_text_only_smoke_xidaduo_post_r13_20260606/analysis/unit_memory_r13_selection_quality_review/README.md"
       ],
       "catalog_status": "not_cataloged",
-      "notes": "Diagnostic-only no-judge text_only R13 selection-quality smoke on xidaduo_private_zh__segment_1 intentionally stopped after R13 evidence. Health status ok: 48 entries, 273 retrieval docs, selected_unit_count=6, retrieved_line_total=6, rendered_retrieved_unique_unit_count=6, selected_but_not_rendered_count=0, and candidate_below_selection_quality_threshold=11. Later review found one selected event boundary-contaminated by a one-character closing-quote fallback caused by straight-vs-curved quote anchor mismatch. R14 fixed the quote-normalized resolver after this run and was later live-smoked in the post-R14 diagnostic; R15 trailing-closing-punctuation extension was later live-smoked in the post-R15 diagnostic. A mature post-R15 retrieval sample is still needed before judging post-R13 selected-memory relevance. No summary files, formal evidence, or evidence catalog update.",
+      "notes": "Diagnostic-only no-judge text_only R13 selection-quality smoke on xidaduo_private_zh__segment_1 intentionally stopped after R13 evidence. Health status ok: 48 entries, 273 retrieval docs, selected_unit_count=6, retrieved_line_total=6, rendered_retrieved_unique_unit_count=6, selected_but_not_rendered_count=0, and candidate_below_selection_quality_threshold=11. Later review found one selected event boundary-contaminated by a one-character closing-quote fallback caused by straight-vs-curved quote anchor mismatch. R14 fixed the quote-normalized resolver, R15 fixed trailing-closing-punctuation remainder units, and the later mature post-R15 / R16 smokes now carry selected-memory relevance calibration forward. No summary files, formal evidence, or evidence catalog update.",
       "parent_run_id": "",
       "child_run_ids": [],
       "synthetic": false,
       "local_missing_allowed": [],
       "metadata": {},
-      "updated_at": "2026-06-06T12:46:51.635604Z"
+      "updated_at": "2026-06-06T14:08:58.889208Z"
     },
     {
       "run_id": "attentional_v2_unit_memory_text_only_smoke_xidaduo_post_r14_20260606",
@@ -2602,6 +2602,62 @@
       "local_missing_allowed": [],
       "metadata": {},
       "updated_at": "2026-06-06T13:05:49.527460Z"
+    },
+    {
+      "run_id": "attentional_v2_unit_memory_text_only_smoke_xidaduo_post_r15_mature_20260606",
+      "date": "2026-06-06",
+      "surface": "unit_memory_retrieval_repair_smoke",
+      "lane": "mechanism_eval_smoke",
+      "status": "abandoned",
+      "mechanisms": [
+        "attentional_v2"
+      ],
+      "dataset_or_manifest": [],
+      "run_dir": "reading-companion-backend/eval/runs/attentional_v2/attentional_v2_unit_memory_text_only_smoke_xidaduo_post_r15_mature_20260606",
+      "summary_paths": {},
+      "job_ids": [
+        "bgjob_unit_memory_text_only_smoke_xidaduo_post_r15_mature_20260606"
+      ],
+      "report_paths": [
+        "reading-companion-backend/eval/runs/attentional_v2/attentional_v2_unit_memory_text_only_smoke_xidaduo_post_r15_mature_20260606/analysis/unit_memory_retrieval_health/README.md",
+        "reading-companion-backend/eval/runs/attentional_v2/attentional_v2_unit_memory_text_only_smoke_xidaduo_post_r15_mature_20260606/analysis/unit_memory_post_r15_mature_review/README.md"
+      ],
+      "catalog_status": "not_cataloged",
+      "notes": "Diagnostic-only no-judge text_only mature post-R15 retrieval smoke on xidaduo_private_zh__segment_1, intentionally stopped after long-distance retrieval evidence. Health status ok: 43 entries, 261 retrieval docs, selected_unit_count=5, retrieved_line_total=5, rendered_retrieved_unique_unit_count=3, selected_but_not_rendered_count=0. Review found selected memory relevance remained broad, motivating R16 auxiliary-backed Understanding gating. No summary files, formal evidence, or evidence catalog update.",
+      "parent_run_id": "",
+      "child_run_ids": [],
+      "synthetic": false,
+      "local_missing_allowed": [],
+      "metadata": {},
+      "updated_at": "2026-06-06T14:06:08.484853Z"
+    },
+    {
+      "run_id": "attentional_v2_unit_memory_text_only_smoke_xidaduo_post_r16_aux_backing_20260606",
+      "date": "2026-06-06",
+      "surface": "unit_memory_retrieval_repair_smoke",
+      "lane": "mechanism_eval_smoke",
+      "status": "abandoned",
+      "mechanisms": [
+        "attentional_v2"
+      ],
+      "dataset_or_manifest": [],
+      "run_dir": "reading-companion-backend/eval/runs/attentional_v2/attentional_v2_unit_memory_text_only_smoke_xidaduo_post_r16_aux_backing_20260606",
+      "summary_paths": {},
+      "job_ids": [
+        "bgjob_unit_memory_text_only_smoke_xidaduo_post_r16_aux_backing_20260606"
+      ],
+      "report_paths": [
+        "reading-companion-backend/eval/runs/attentional_v2/attentional_v2_unit_memory_text_only_smoke_xidaduo_post_r16_aux_backing_20260606/analysis/unit_memory_retrieval_health/README.md",
+        "reading-companion-backend/eval/runs/attentional_v2/attentional_v2_unit_memory_text_only_smoke_xidaduo_post_r16_aux_backing_20260606/analysis/unit_memory_post_r16_aux_backing_review/README.md"
+      ],
+      "catalog_status": "not_cataloged",
+      "notes": "Diagnostic-only no-judge text_only post-R16 retrieval smoke on xidaduo_private_zh__segment_1, intentionally stopped after auxiliary-backed Understanding gate evidence. Health status ok: 57 entries, 381 retrieval docs, selected_unit_count=5, renderable_selected_unit_count=5, retrieved_line_total=2, rendered_retrieved_unique_unit_count=2, candidate_below_selection_quality_threshold=33, selected_but_not_rendered_count=3. R16 validated weak auxiliary-surface suppression while preserving prompt-visible Understanding-backed memory; next target is ReadingMemory budget/rendering discipline. No summary files, formal evidence, or evidence catalog update.",
+      "parent_run_id": "",
+      "child_run_ids": [],
+      "synthetic": false,
+      "local_missing_allowed": [],
+      "metadata": {},
+      "updated_at": "2026-06-06T14:06:19.146206Z"
     },
     {
       "run_id": "attentional_v2_unit_memory_text_only_smoke_xidaduo_post_r9_20260606",

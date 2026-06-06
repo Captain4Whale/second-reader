@@ -62,6 +62,8 @@ DEFAULT_RETRIEVAL_CONFIG: dict[str, object] = {
     "max_understanding_doc_rank_to_digest_context": 12,
     "min_auxiliary_unit_score_to_digest_context": 0.08,
     "max_auxiliary_doc_rank_to_digest_context": 6,
+    "min_auxiliary_backed_understanding_doc_score_to_digest_context": 0.017,
+    "max_auxiliary_backed_understanding_doc_rank_to_digest_context": 20,
     "recent_neighbor_exclusion_unit_count": 20,
     "min_retrievable_prior_units": 20,
     "retrieval_total_timeout_ms": 800,
@@ -1165,6 +1167,14 @@ class UnitMemoryIndex:
         max_understanding_rank = max(0, _coerce_int(self.config.get("max_understanding_doc_rank_to_digest_context"), 12))
         min_auxiliary_unit_score = _coerce_float(self.config.get("min_auxiliary_unit_score_to_digest_context"), 0.08)
         max_auxiliary_rank = max(0, _coerce_int(self.config.get("max_auxiliary_doc_rank_to_digest_context"), 6))
+        min_auxiliary_backed_understanding_score = _coerce_float(
+            self.config.get("min_auxiliary_backed_understanding_doc_score_to_digest_context"),
+            0.017,
+        )
+        max_auxiliary_backed_understanding_rank = max(
+            0,
+            _coerce_int(self.config.get("max_auxiliary_backed_understanding_doc_rank_to_digest_context"), 20),
+        )
 
         has_strong_understanding = understanding_score >= min_understanding_score or (
             max_understanding_rank > 0 and 0 < understanding_rank <= max_understanding_rank
@@ -1173,7 +1183,12 @@ class UnitMemoryIndex:
             return ""
 
         has_strong_auxiliary = max_auxiliary_rank > 0 and 0 < auxiliary_rank <= max_auxiliary_rank
-        if has_strong_auxiliary and unit_score >= min_auxiliary_unit_score:
+        has_auxiliary_backed_understanding = (
+            understanding_score >= min_auxiliary_backed_understanding_score
+            and max_auxiliary_backed_understanding_rank > 0
+            and 0 < understanding_rank <= max_auxiliary_backed_understanding_rank
+        )
+        if has_strong_auxiliary and unit_score >= min_auxiliary_unit_score and has_auxiliary_backed_understanding:
             return ""
 
         return "candidate_below_selection_quality_threshold"
@@ -1423,6 +1438,12 @@ class UnitMemoryIndex:
             "max_understanding_doc_rank_to_digest_context": self.config.get("max_understanding_doc_rank_to_digest_context"),
             "min_auxiliary_unit_score_to_digest_context": self.config.get("min_auxiliary_unit_score_to_digest_context"),
             "max_auxiliary_doc_rank_to_digest_context": self.config.get("max_auxiliary_doc_rank_to_digest_context"),
+            "min_auxiliary_backed_understanding_doc_score_to_digest_context": self.config.get(
+                "min_auxiliary_backed_understanding_doc_score_to_digest_context"
+            ),
+            "max_auxiliary_backed_understanding_doc_rank_to_digest_context": self.config.get(
+                "max_auxiliary_backed_understanding_doc_rank_to_digest_context"
+            ),
         }
         trace["selected_units"] = compact_selected
         trace["suppressed_units"] = suppressed_units
@@ -1569,6 +1590,12 @@ class UnitMemoryIndex:
                 "max_understanding_doc_rank_to_digest_context": self.config.get("max_understanding_doc_rank_to_digest_context"),
                 "min_auxiliary_unit_score_to_digest_context": self.config.get("min_auxiliary_unit_score_to_digest_context"),
                 "max_auxiliary_doc_rank_to_digest_context": self.config.get("max_auxiliary_doc_rank_to_digest_context"),
+                "min_auxiliary_backed_understanding_doc_score_to_digest_context": self.config.get(
+                    "min_auxiliary_backed_understanding_doc_score_to_digest_context"
+                ),
+                "max_auxiliary_backed_understanding_doc_rank_to_digest_context": self.config.get(
+                    "max_auxiliary_backed_understanding_doc_rank_to_digest_context"
+                ),
             }
             trace["selected_units"] = compact_selected
             trace["suppressed_units"] = suppressed_units

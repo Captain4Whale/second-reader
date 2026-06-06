@@ -454,6 +454,57 @@ def test_selection_quality_gate_allows_no_long_distance_selection_when_all_candi
     assert suppressed[0]["reason"] == "candidate_below_selection_quality_threshold"
 
 
+def test_selection_quality_gate_requires_understanding_backing_for_auxiliary_match(tmp_path):
+    index = UnitMemoryIndex(tmp_path, config={"mode": "text_only"})
+    weak_auxiliary = {
+        "unit_id": "u000001",
+        "unit_index": 1,
+        "score": 0.081,
+        "surfaces": ["unit_source", "unit_understanding"],
+        "channels": ["lexical"],
+        "matched_recalls": ["r1"],
+        "quality": {
+            "best_understanding_doc_score": 0.015,
+            "best_understanding_doc_rank": 28,
+            "best_auxiliary_doc_score": 0.012,
+            "best_auxiliary_doc_rank": 6,
+        },
+        "best_docs": [],
+        "entry": _entry("u000001", 1, "宽泛冥想背景。", "悉达多和乔文达曾在榕树下冥想。"),
+    }
+
+    selected, suppressed = index._select_renderable_units([weak_auxiliary], limit=5)
+
+    assert selected == []
+    assert suppressed[0]["unit_id"] == "u000001"
+    assert suppressed[0]["reason"] == "candidate_below_selection_quality_threshold"
+
+
+def test_selection_quality_gate_allows_auxiliary_match_with_understanding_backing(tmp_path):
+    index = UnitMemoryIndex(tmp_path, config={"mode": "text_only"})
+    backed_auxiliary = {
+        "unit_id": "u000001",
+        "unit_index": 1,
+        "score": 0.09,
+        "surfaces": ["unit_source", "unit_understanding"],
+        "channels": ["lexical"],
+        "matched_recalls": ["r1"],
+        "quality": {
+            "best_understanding_doc_score": 0.018,
+            "best_understanding_doc_rank": 16,
+            "best_auxiliary_doc_score": 0.012,
+            "best_auxiliary_doc_rank": 3,
+        },
+        "best_docs": [],
+        "entry": _entry("u000001", 1, "可用的前情理解。", "乔文达此前请求聆听佛陀说法并准备皈依。"),
+    }
+
+    selected, suppressed = index._select_renderable_units([backed_auxiliary], limit=5)
+
+    assert [item["unit_id"] for item in selected] == ["u000001"]
+    assert suppressed == []
+
+
 def test_hybrid_vector_status_only_marks_understanding_docs_pending(tmp_path):
     index = UnitMemoryIndex(
         tmp_path,
