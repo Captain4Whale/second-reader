@@ -519,6 +519,7 @@ Use `docs/backend-reading-mechanism.md` for shared platform boundaries. Use `doc
     - each entry preserves the accepted source unit plus the model-facing `understanding`, `response`, and `annotations`
     - retrieval documents are derived from source, understanding, response, and annotation surfaces
     - FTS5 text retrieval is always available when SQLite supports FTS5; sqlite-vec + local Ollama embedding is optional and degrades to text-only behavior
+    - hybrid readiness can be checked without starting services through `cd reading-companion-backend && .venv/bin/python scripts/check_unit_memory_hybrid_readiness.py`; current Phase 2 live validation requires sqlite-vec load, Ollama reachability, the configured Qwen embedding model, a valid embedding dimension, dense candidates, and RRF contribution
     - all retrieval documents may participate in FTS retrieval, but lexical ranking prioritizes `unit_understanding` over source / response / annotation auxiliary surfaces; only `unit_understanding` participates in dense vector retrieval in the current policy, and dense candidates are filtered by distance before aggregation
     - prompt-visible Digest memory is Understanding-only and rendered through one `ReadingMemory` block
   - `artifacts / history`
@@ -622,6 +623,7 @@ Use `docs/backend-reading-mechanism.md` for shared platform boundaries. Use `doc
     - `unit_memory_entries` is the durable per-unit memory source of truth
     - `retrieval_docs`, FTS5 rows, vector rows, and query-embedding cache are derived retrieval/index state
     - sqlite-vec and local Ollama embedding are optional; when unavailable, retrieval degrades to text-only behavior
+    - use `scripts/check_unit_memory_hybrid_readiness.py` to distinguish sqlite-vec readiness from Ollama/model availability before claiming live `hybrid` validation
   - `_mechanisms/attentional_v2/runtime/unit_memory_retrieval_trace.jsonl`
     - trace record of retrieval attempts and ReadingMemory selection between `Ingest` and `Digest`
     - records recall count, per-recall candidate counts, effective retrieval mode, channel availability/degradation, selected/suppressed units, latency, and prompt-facing memory token accounting

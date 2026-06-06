@@ -7,7 +7,7 @@ Update when: the current objective, active tasks, blockers, active jobs, open de
 
 This file is authoritative for durable current status. Do not keep unique active-state information only in `docs/agent-handoff.md`.
 
-Last verified: `2026-06-06T18:45:51+08:00`
+Last verified: `2026-06-06T18:51:45+08:00`
 
 ## Current Objective
 - The `Ingest -> Digest -> Reading Runner settlement` mechanism reframe is implemented; current work is fact alignment, smoke/diagnostic review, and calibration before any formal evaluation promotion.
@@ -161,6 +161,12 @@ Last verified: `2026-06-06T18:45:51+08:00`
         - recall-language review: `reading-companion-backend/eval/runs/attentional_v2/attentional_v2_unit_memory_text_only_smoke_xidaduo_post_ingest_v6_contract_20260606/analysis/unit_memory_recall_language_review/summary.json`
         - observed contract outcome: reviewed unique recalls had `language_violation_count = 0`, and model-side `basis` values were only `selected_source_unit`
         - retrieval note: `retrieved_line_total = 0` in this early stopped sample because the run did not reach a mature long-distance retrieval horizon; this does not supersede the earlier post-R9/R11/post-selection-cap text-only proof of prompt-visible retrieved memory
+    - current hybrid readiness check:
+      - command: `cd reading-companion-backend && .venv/bin/python scripts/check_unit_memory_hybrid_readiness.py`
+      - latest local result: `status = blocked`
+      - sqlite-vec result: `import_ok = true`, `load_ok = true`, `vec0_table_ok = true`, `version = 0.1.9`
+      - Ollama result: `reachable = false`, `blocking_reasons = ["ollama_unreachable"]`
+      - interpretation: Phase 2 live hybrid remains blocked by the local Ollama/Qwen embedding service, not by sqlite-vec adapter loading
   - next step:
     - do not rerun solely for the Ingest v6 language/basis contract unless later live artifacts show drift again; the current observed sample is sufficient for this narrow contract, while long-distance retrieval maturity was intentionally not revalidated in that early stopped run
     - treat live hybrid dense retrieval as blocked unless Ollama reachability, the configured Qwen embedding model, real query embedding cache rows, real vector rows, dense candidates, and RRF fusion are all validated; sqlite-vec and the fake-embedder code path are no longer the blocker
