@@ -1,6 +1,6 @@
 {
   "schema_version": 1,
-  "updated_at": "2026-06-06T10:45:43.908023Z",
+  "updated_at": "2026-06-06T11:31:20.707695Z",
   "entries": [
     {
       "run_id": "attentional_v2_excerpt_surface_v1_1_judged_20260406",
@@ -2375,6 +2375,34 @@
       "local_missing_allowed": [],
       "metadata": {},
       "updated_at": "2026-06-06T07:59:02.210762Z"
+    },
+    {
+      "run_id": "attentional_v2_unit_memory_text_only_smoke_xidaduo_post_hot_exclusion_20260606",
+      "date": "2026-06-06",
+      "surface": "unit_memory_retrieval_repair_smoke",
+      "lane": "mechanism_eval_smoke",
+      "status": "abandoned",
+      "mechanisms": [
+        "attentional_v2"
+      ],
+      "dataset_or_manifest": [],
+      "run_dir": "reading-companion-backend/eval/runs/attentional_v2/attentional_v2_unit_memory_text_only_smoke_xidaduo_post_hot_exclusion_20260606",
+      "summary_paths": {},
+      "job_ids": [
+        "bgjob_unit_memory_text_only_smoke_xidaduo_post_hot_exclusion_20260606"
+      ],
+      "report_paths": [
+        "reading-companion-backend/eval/runs/attentional_v2/attentional_v2_unit_memory_text_only_smoke_xidaduo_post_hot_exclusion_20260606/analysis/unit_memory_retrieval_health/README.md",
+        "reading-companion-backend/eval/runs/attentional_v2/attentional_v2_unit_memory_text_only_smoke_xidaduo_post_hot_exclusion_20260606/analysis/unit_memory_hot_exclusion_review/README.md"
+      ],
+      "catalog_status": "not_cataloged",
+      "notes": "Diagnostic-only no-judge text_only smoke on xidaduo_private_zh__segment_1 intentionally stopped after prompt-visible hot-memory exclusion evidence. Health status ok: 52 entries, 306 retrieval docs, selected_unit_count=23, retrieved_line_total=23, rendered_retrieved_unique_unit_count=11, selected_but_not_rendered_count=0, excluded_source_unit_span_total=250, max_excluded_source_unit_span_count=36, dedupe_hot_memory=0. Not formal evidence; no evidence catalog update.",
+      "parent_run_id": "",
+      "child_run_ids": [],
+      "synthetic": false,
+      "local_missing_allowed": [],
+      "metadata": {},
+      "updated_at": "2026-06-06T11:31:20.707230Z"
     },
     {
       "run_id": "attentional_v2_unit_memory_text_only_smoke_xidaduo_post_ingest_v5_20260606",

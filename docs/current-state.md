@@ -7,7 +7,7 @@ Update when: the current objective, active tasks, blockers, active jobs, open de
 
 This file is authoritative for durable current status. Do not keep unique active-state information only in `docs/agent-handoff.md`.
 
-Last verified: `2026-06-06T19:03:16+08:00`
+Last verified: `2026-06-06T19:31:24+08:00`
 
 ## Current Objective
 - The `Ingest -> Digest -> Reading Runner settlement` mechanism reframe is implemented; current work is fact alignment, smoke/diagnostic review, and calibration before any formal evaluation promotion.
@@ -146,12 +146,20 @@ Last verified: `2026-06-06T19:03:16+08:00`
       - selection-cap evidence: one mature recall had `15` candidate units, selected `6`, and suppressed `8` candidates with `per_recall_selection_limit_exceeded`
       - follow-up finding: some Chinese-source recalls were emitted in English and some recall `basis` values drifted from the contract; Ingest v6 now tightens recall language and basis
     - current prompt-visible hot-memory exclusion repair:
-      - status: `passed_deterministic_pending_live_smoke`
+      - status: `validated_text_only_diagnostic`
       - behavior: before Unit Memory retrieval, Reading Runner now computes only the hot current-chapter source spans that would already render in Digest `ReadingMemory` and passes those spans as retrieval exclusions
       - boundary: this does not exclude the whole active Recent Reading Memory store; non-hot active recent memory remains retrievable when relevant
       - trace: Unit Memory retrieval rows now record `excluded_source_unit_span_count`
       - intent: prevent selected long-distance slots from being spent on units that will later be suppressed as `dedupe_hot_memory`
-      - next validation: run a small no-judge `text_only` smoke and inspect whether selected long-distance candidates are less often suppressed as hot-memory duplicates while retrieved Understanding lines remain prompt-visible
+    - post-hot-exclusion `text_only` diagnostic smoke:
+      - run id: `attentional_v2_unit_memory_text_only_smoke_xidaduo_post_hot_exclusion_20260606`
+      - job id: `bgjob_unit_memory_text_only_smoke_xidaduo_post_hot_exclusion_20260606`
+      - segment: `xidaduo_private_zh__segment_1`
+      - result: intentionally stopped after R12 hot-exclusion evidence was collected; no summary aggregate/report/usage files were generated
+      - health packet: `reading-companion-backend/eval/runs/attentional_v2/attentional_v2_unit_memory_text_only_smoke_xidaduo_post_hot_exclusion_20260606/analysis/unit_memory_retrieval_health/summary.json`
+      - review packet: `reading-companion-backend/eval/runs/attentional_v2/attentional_v2_unit_memory_text_only_smoke_xidaduo_post_hot_exclusion_20260606/analysis/unit_memory_hot_exclusion_review/README.md`
+      - retrieval outcome: health status `ok`; `52` Unit Memory entries, `306` retrieval docs, `57` retrieval rows, `52` selection rows, `selected_unit_count=23`, `retrieved_line_total=23`, `rendered_retrieved_unique_unit_count=11`, `selected_but_not_rendered_count=0`, `excluded_source_unit_span_total=250`, and `max_excluded_source_unit_span_count=36`
+      - interpretation: selected long-distance slots were no longer consumed by hot-memory duplicates in the observed sample; `dedupe_hot_memory=0` and retrieved Understanding remained prompt-visible
     - current recall-language contract repair:
       - status: `validated_observed_live_contract_sample`
       - code behavior: `submit_ingest_result` validation now receives the current source text and rejects model-side `memory_recalls[].recall_text` that clearly does not use the current source text's primary language; `retrieve_unit_memory` action-tool preflight applies the same validation before retrieval execution and returns `contract_violation` metadata for the forced final-output repair path
@@ -175,7 +183,7 @@ Last verified: `2026-06-06T19:03:16+08:00`
       - Ollama result: `reachable = false`, `blocking_reasons = ["ollama_unreachable"]`
       - interpretation: Phase 2 live hybrid remains blocked by the local Ollama/Qwen embedding service, not by sqlite-vec adapter loading
   - next step:
-    - first run a small no-judge `text_only` smoke after the prompt-visible hot-memory exclusion repair; verify `excluded_source_unit_span_count`, lower `dedupe_hot_memory` suppression in selected long-distance candidates, and nonzero prompt-visible retrieved Understanding when relevant candidates exist
+    - review the post-hot-exclusion rendered retrieved ids for relevance before changing recall prompt wording or selection thresholds; the mechanical R12 target is validated in `text_only`, but subjective relevance quality was not judged
     - do not rerun solely for the Ingest v6 language/basis contract unless later live artifacts show drift again; the current observed sample is sufficient for this narrow contract, while long-distance retrieval maturity was intentionally not revalidated in that early stopped run
     - treat live hybrid dense retrieval as blocked unless Ollama reachability, the configured Qwen embedding model, real query embedding cache rows, real vector rows, dense candidates, and RRF fusion are all validated; sqlite-vec and the fake-embedder code path are no longer the blocker
     - do not run formal evaluation, update evidence catalog, or claim product quality from the intentionally stopped diagnostic smokes; decide whether to tune recall specificity first or validate the environment-blocked hybrid dense path once Ollama/Qwen is available

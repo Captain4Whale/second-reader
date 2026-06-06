@@ -224,12 +224,23 @@ def summarize_output(output_dir: Path) -> dict[str, Any]:
     degradation_counts: Counter[str] = Counter()
     retrieval_suppressed_reasons: Counter[str] = Counter()
     selected_rows = 0
+    excluded_source_unit_span_total = 0
+    excluded_source_unit_span_rows = 0
+    max_excluded_source_unit_span_count = 0
     for row in retrieval_rows:
         query_source_counts[str(row.get("query_source") or "")] += 1
         mode_counts[str(row.get("mode") or "")] += 1
         effective_mode_counts[str(row.get("effective_mode") or "")] += 1
         degradation = str(row.get("degradation_reason") or "").strip()
         degradation_counts[degradation or "none"] += 1
+        try:
+            excluded_count = int(row.get("excluded_source_unit_span_count") or 0)
+        except (TypeError, ValueError):
+            excluded_count = 0
+        if excluded_count > 0:
+            excluded_source_unit_span_rows += 1
+            excluded_source_unit_span_total += excluded_count
+            max_excluded_source_unit_span_count = max(max_excluded_source_unit_span_count, excluded_count)
         counts = row.get("candidate_counts")
         if isinstance(counts, dict):
             for key in ("recall_count", "prior_units", "lexical_docs", "dense_docs", "candidate_units"):
@@ -325,6 +336,9 @@ def summarize_output(output_dir: Path) -> dict[str, Any]:
             "selected_unit_count": selected_total,
             "selected_unique_unit_count": len(selected_unit_ids),
             "selected_unit_ids": sorted(selected_unit_ids)[:50],
+            "excluded_source_unit_span_total": excluded_source_unit_span_total,
+            "retrieval_rows_with_excluded_source_unit_spans": excluded_source_unit_span_rows,
+            "max_excluded_source_unit_span_count": max_excluded_source_unit_span_count,
             "retrieval_suppressed_reasons": _counter_dict(retrieval_suppressed_reasons),
         },
         "reading_memory": {
@@ -354,6 +368,13 @@ def summarize_paths(paths: list[Path]) -> dict[str, Any]:
         "renderable_selected_unit_count": sum(int(item["sqlite"]["selected_renderable_unit_count"]) for item in outputs),
         "non_renderable_selected_unit_count": sum(int(item["sqlite"]["selected_non_renderable_unit_count"]) for item in outputs),
         "selected_but_not_rendered_count": sum(int(item["reading_memory"]["selected_but_not_rendered_count"]) for item in outputs),
+        "excluded_source_unit_span_total": sum(int(item["trace"]["excluded_source_unit_span_total"]) for item in outputs),
+        "retrieval_rows_with_excluded_source_unit_spans": sum(
+            int(item["trace"]["retrieval_rows_with_excluded_source_unit_spans"]) for item in outputs
+        ),
+        "max_excluded_source_unit_span_count": max(
+            [int(item["trace"]["max_excluded_source_unit_span_count"]) for item in outputs] or [0]
+        ),
         "retrieval_suppressed_unit_count": sum(
             sum(int(count) for count in item["trace"].get("retrieval_suppressed_reasons", {}).values())
             for item in outputs
@@ -399,6 +420,9 @@ def render_markdown(summary: dict[str, Any]) -> str:
         "renderable_selected_unit_count",
         "non_renderable_selected_unit_count",
         "selected_but_not_rendered_count",
+        "excluded_source_unit_span_total",
+        "retrieval_rows_with_excluded_source_unit_spans",
+        "max_excluded_source_unit_span_count",
         "retrieval_suppressed_unit_count",
         "hot_line_total",
         "retrieved_line_total",
@@ -427,6 +451,12 @@ def render_markdown(summary: dict[str, Any]) -> str:
         lines.append(f"- retrieval rows: `{trace.get('retrieval_rows', 0)}`")
         lines.append(f"- selected units: `{trace.get('selected_unit_count', 0)}`")
         lines.append(f"- renderable selected units: `{sqlite.get('selected_renderable_unit_count', 0)}`")
+        lines.append(
+            "- excluded prompt-visible hot spans: "
+            f"`total={trace.get('excluded_source_unit_span_total', 0)}, "
+            f"rows={trace.get('retrieval_rows_with_excluded_source_unit_spans', 0)}, "
+            f"max={trace.get('max_excluded_source_unit_span_count', 0)}`"
+        )
         lines.append(f"- hot / retrieved lines: `{reading_memory.get('hot_line_total', 0)} / {reading_memory.get('retrieved_line_total', 0)}`")
         lines.append(f"- rendered retrieved unique units: `{reading_memory.get('rendered_retrieved_unique_unit_count', 0)}`")
         lines.append("")

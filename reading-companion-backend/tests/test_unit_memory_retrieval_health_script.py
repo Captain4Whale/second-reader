@@ -116,6 +116,7 @@ def test_health_script_reports_rendered_retrieved_unit_ids(tmp_path: Path) -> No
         recalls=[{"recall_id": "r1", "recall_text": "火车站台 告别", "basis": "selected_source_unit"}],
         query_source="tool_retrieve_unit_memory",
         current_unit_index=2,
+        excluded_source_unit_span_ids={"src:c1:p99@0-p99@8"},
     )
     unit_memory_retrieval_trace_file(output_dir).write_text(
         unit_memory_retrieval_trace_file(output_dir).read_text(encoding="utf-8")
@@ -142,7 +143,11 @@ def test_health_script_reports_rendered_retrieved_unit_ids(tmp_path: Path) -> No
     summary = health_script.summarize_paths([tmp_path])
 
     assert summary["total"]["rendered_retrieved_unique_unit_count"] == 1
+    assert summary["total"]["excluded_source_unit_span_total"] == 1
+    assert summary["total"]["retrieval_rows_with_excluded_source_unit_spans"] == 1
+    assert summary["total"]["max_excluded_source_unit_span_count"] == 1
     output = summary["outputs"][0]
+    assert output["trace"]["excluded_source_unit_span_total"] == 1
     assert output["reading_memory"]["rendered_retrieved_unit_ids"] == ["u000001"]
 
 
