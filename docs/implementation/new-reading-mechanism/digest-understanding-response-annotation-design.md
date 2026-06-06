@@ -14,6 +14,9 @@ Update when: Digest action names, output fields, XML prompt structure, or runtim
   - This document remains the authority for Digest's three peer model-facing outputs: `understanding`, `response`, and `annotations`.
   - Its early `ReadingState` context examples were superseded by `docs/implementation/new-reading-mechanism/ingest-recall-and-digest-memory-context-design.md`.
   - The current live Digest prompt uses top-level `ReadingMemory`, not `ReadingState`, `RecentMemory`, or `RetrievedUnitMemory`.
+- Pending reference-awareness note:
+  - `docs/implementation/new-reading-mechanism/ingest-recall-and-digest-memory-context-design.md` now defines a not-yet-implemented follow-up for Ingest `PrecedingContext`, `reference_hints[]`, and Digest `ReferenceHints`.
+  - This follow-up keeps the Digest goal as self-contained Understanding, not a mechanical ban on every pronoun.
 - Current basis:
   - `DEC-108` makes `Digest` the concrete per-unit interpretation LLM call.
   - `DEC-109` removes content-typed structured long-memory stores from the current live surface.
@@ -358,6 +361,53 @@ Implementation notes:
 - The grammatical-subject guidance steers the model toward content from the text: people, events, concepts, claims, relationships, scenes, methods, or conditions.
 - The five examples are approved from real five-window diagnostic units and show content-level, memory-ready Understanding without naming the source container.
 - The single-object rule for `understanding` lives in `OutputContract`, not in the reader-facing `Understanding` instruction.
+
+### Pending Reference-Aware Understanding Rule
+
+The next prompt slice should make `understanding.content` self-contained without making the prose unnaturally pronoun-free.
+
+Target rule:
+
+```text
+# Standalone reference
+Write Understanding so it can be read later without reopening the source unit.
+
+First mentions of important people, organizations, concepts, relationships, events, claims, and scenes should be explicit.
+
+When the source text uses first-person or second-person pronouns, resolve them into the clearest supported third-person subject, such as the narrator, author, quoted speaker, reader, named character, role, group, concept, or claim.
+
+Pronouns are acceptable when their referent is already explicit earlier in the same Understanding and cannot be misunderstood.
+
+Avoid unresolved or floating pronouns such as 我, 你, 他, 她, 它, 他们, this, that, or it when their referent is not clear inside the same Understanding.
+
+If the referent cannot be safely identified from CurrentFocus, ReferenceHints, ReadingMemory, and source text, use a source-supported role description rather than guessing a name.
+```
+
+This is a self-contained-memory rule, not a no-pronoun rule.
+
+Good:
+
+```text
+Siddhartha's grief over his son drives Siddhartha to cross the river and search for the boy. The river's laughter and Siddhartha's reflection make Siddhartha recognize that his pain repeats the pain he once caused his own father.
+```
+
+Also acceptable:
+
+```text
+Siddhartha recognizes that father-son suffering is recurring in his own life. This recognition gives Siddhartha hope and makes him want to speak with Vasudeva.
+```
+
+Here `This recognition` is acceptable because the referent is explicit in the preceding sentence.
+
+Bad:
+
+```text
+He realizes that this is happening again and wants to tell him about it.
+```
+
+That output is not acceptable as stored Understanding because the later reader cannot recover `he`, `this`, `him`, or `it` without reopening the source.
+
+The same rule should be reflected in `OutputContract / UnderstandingField`, because `understanding.content` is converted into runtime memory text and later rendered inside `ReadingMemory`.
 
 ### Response
 

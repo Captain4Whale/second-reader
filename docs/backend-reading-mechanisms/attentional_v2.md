@@ -439,6 +439,9 @@ Use `docs/backend-reading-mechanism.md` for shared platform boundaries. Use `doc
   - Digest `Instruction` uses direct child blocks `CurrentStep`, `ContextUseGuide`, `Understanding`, `Response`, `Annotation`, `SourceGrounding`, and `ResponseDiscipline`.
   - Digest `Understanding` prompt version `attentional_v2.digest.v5` uses content-level reading rules, text-type compression guidance, grammatical-subject guidance, and five approved real-unit examples to keep stored Understanding memory from becoming source-container commentary or source copying.
   - The current Digest output contract is flat JSON with `understanding`, `response`, and `annotations`.
+- A not-yet-implemented reference-aware follow-up is documented in `docs/implementation/new-reading-mechanism/ingest-recall-and-digest-memory-context-design.md`.
+  - Target shape: Ingest receives immediate `PrecedingContext`, returns compact `reference_hints[]` for the selected unit, writes standalone `memory_recalls[]`, and passes accepted reference hints into Digest `CurrentFocus`.
+  - Target rule: Digest Understanding should be self-contained and third-person-readable; it may use pronouns only when their referent is explicit inside the same Understanding.
 - The stable carry taxonomy is now:
   - `always carry`
   - `selective carry`
