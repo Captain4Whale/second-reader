@@ -589,8 +589,8 @@ def test_digest_uses_live_xml_prompt_and_filters_surface_reactions(tmp_path: Pat
     }
     assert op["target_key"] != "legacy-ignored"
     assert manifest["node_name"] == "digest"
-    assert manifest["prompt_version"] == "attentional_v2.digest.v6"
-    assert manifest["prompt_assembly"]["spec_id"] == "attentional_v2.digest.xml.v6"
+    assert manifest["prompt_version"] == "attentional_v2.digest.v7"
+    assert manifest["prompt_assembly"]["spec_id"] == "attentional_v2.digest.xml.v7"
     assert manifest["prompt_assembly"]["output_contract"] == "digest_understanding_response_annotation_json_v2"
     assert "mode" not in manifest["prompt_assembly"]
     assert manifest["prompt_assembly"]["rendered_blocks"] == [

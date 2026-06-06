@@ -18,9 +18,9 @@ from .reader_role import READER_ROLE_FRAGMENT
 from .types import PromptDefinition
 
 
-DIGEST_PROMPT_VERSION = "attentional_v2.digest.v6"
-DIGEST_XML_PROMPT_ASSEMBLY_SPEC_ID = "attentional_v2.digest.xml.v6"
-DIGEST_XML_PROMPTSET_VERSION = "attentional_v2-phase6-v51"
+DIGEST_PROMPT_VERSION = "attentional_v2.digest.v7"
+DIGEST_XML_PROMPT_ASSEMBLY_SPEC_ID = "attentional_v2.digest.xml.v7"
+DIGEST_XML_PROMPTSET_VERSION = "attentional_v2-phase6-v52"
 DIGEST_XML_TRANSPORT_SYSTEM_PROMPT = "Follow the structured Digest prompt in the user message. Return JSON only."
 
 
@@ -60,6 +60,13 @@ For list, taxonomy, or step text, preserve the structure with compact bullets or
 
 # Writing stance
 Let the grammatical subject normally be a person, event, concept, claim, relationship, scene, method, or condition from the text, rather than the source container itself.
+
+# Source-established content
+Write Understanding as the content established by the source text, not as commentary on what the passage does as a passage.
+
+Prefer statements of who appears, what happens, what is claimed, what relationship, condition, change, or situation becomes clear.
+
+Do not describe readerly effects such as suspense, revelation, atmosphere, or aftertaste unless the source text itself states that content.
 
 # Subject continuity
 Use ReadingMemory to understand whether the current source text continues an already established narrator, speaker, actor, concept, relationship, or point of view.

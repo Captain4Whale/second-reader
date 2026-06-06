@@ -15,7 +15,7 @@ Update when: Digest action names, output fields, XML prompt structure, or runtim
   - Its early `ReadingState` context examples were superseded by `docs/implementation/new-reading-mechanism/ingest-recall-and-digest-memory-context-design.md`.
   - The current live Digest prompt uses top-level `ReadingMemory`, not `ReadingState`, `RecentMemory`, or `RetrievedUnitMemory`.
 - Subject-continuity note:
-  - `docs/implementation/new-reading-mechanism/ingest-recall-and-digest-memory-context-design.md` defines the subject-continuity rule now implemented in Digest prompt `attentional_v2.digest.v6`.
+  - `docs/implementation/new-reading-mechanism/ingest-recall-and-digest-memory-context-design.md` defines the subject-continuity rule now implemented in Digest prompt `attentional_v2.digest.v7`.
   - The implementation carries narrator / speaker / actor / concept continuity through prior Understanding in `ReadingMemory`; it is not a mechanical ban on every pronoun and does not add a new raw-source backfill path.
 - Current basis:
   - `DEC-108` makes `Digest` the concrete per-unit interpretation LLM call.
@@ -24,9 +24,9 @@ Update when: Digest action names, output fields, XML prompt structure, or runtim
 
 ## Implementation Status
 
-- Implemented prompt version: `attentional_v2.digest.v6`
-- Implemented XML assembly spec: `attentional_v2.digest.xml.v6`
-- Implemented promptset: `attentional_v2-phase6-v51`
+- Implemented prompt version: `attentional_v2.digest.v7`
+- Implemented XML assembly spec: `attentional_v2.digest.xml.v7`
+- Implemented promptset: `attentional_v2-phase6-v52`
 - Implemented output contract: `digest_understanding_response_annotation_json_v2`
 - Runtime mapping:
   - `understanding.content` -> zero or one internal `memory_uptake_ops[].payload.memory_text` targeting `recent_reading_memory`
@@ -36,6 +36,9 @@ Update when: Digest action names, output fields, XML prompt structure, or runtim
   - `ReadingMemory` is the only prompt-facing carrier of prior Understanding for subject continuity.
   - Digest should establish new subjects, continue known subjects from `ReadingMemory` when supported, and preserve genuine ambiguity instead of guessing.
   - Pronouns are allowed only when the referent is clear inside the same `understanding.content`.
+- Source-established-content calibration:
+  - Digest should write `understanding.content` as content established by the source text, not as commentary on what the passage does as a passage.
+  - Readerly effects such as suspense, revelation, atmosphere, or aftertaste belong in `response` unless the source text itself states them as content.
 - Old model-facing fields `reading_impression`, `surfaced_reactions`, and `recent_reading_memory` are not accepted as current Digest LLM contract fields; internal runtime/audit names remain stable in this slice.
 
 ## Design Claim
@@ -290,6 +293,13 @@ For list, taxonomy, or step text, preserve the structure with compact bullets or
 # Writing stance
 Let the grammatical subject normally be a person, event, concept, claim, relationship, scene, method, or condition from the text, rather than the source container itself.
 
+# Source-established content
+Write Understanding as the content established by the source text, not as commentary on what the passage does as a passage.
+
+Prefer statements of who appears, what happens, what is claimed, what relationship, condition, change, or situation becomes clear.
+
+Do not describe readerly effects such as suspense, revelation, atmosphere, or aftertaste unless the source text itself states that content.
+
 # Concision
 Compress meaning, not wording. Be brief, but do not drop the main event, claim, condition, or relationship change. Do not copy the whole source or turn the understanding into a reaction, evaluation, or annotation. The understanding should be shorter than the source text and normally no more than a few compact sentences.
 
@@ -363,12 +373,13 @@ Implementation notes:
 - This wording intentionally avoids asking the model to describe what the unit "does" in the reading, because that led to commentary-like `本单元/This unit` outputs.
 - It adds type-aware compression rules for narrative/scene text, claim/argument text, and list/taxonomy/step text so the model compresses meaning rather than reproducing source wording.
 - The grammatical-subject guidance steers the model toward content from the text: people, events, concepts, claims, relationships, scenes, methods, or conditions.
+- The source-established-content calibration keeps reading effects such as suspense, revelation, atmosphere, or aftertaste out of `Understanding` unless the source itself states them as content.
 - The five examples are approved from real five-window diagnostic units and show content-level, memory-ready Understanding without naming the source container.
 - The single-object rule for `understanding` lives in `OutputContract`, not in the reader-facing `Understanding` instruction.
 
 ### Implemented Subject-Continuity Understanding Rule
 
-Prompt version `attentional_v2.digest.v6` makes `understanding.content` self-contained by using the current source text and `ReadingMemory` to continue known subjects, establish new subjects, or preserve meaningful ambiguity.
+Prompt version `attentional_v2.digest.v7` makes `understanding.content` self-contained by using the current source text and `ReadingMemory` to continue known subjects, establish new subjects, or preserve meaningful ambiguity.
 
 This rule does not add raw prior-source context to Digest and does not make Ingest responsible for reference resolution.
 
