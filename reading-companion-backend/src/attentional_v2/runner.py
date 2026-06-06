@@ -1231,6 +1231,7 @@ def _retrieved_reading_memory_lines(
             continue
         entry = item.get("entry")
         if not isinstance(entry, dict):
+            suppressed.append({"unit_id": _clean_text(item.get("unit_id")), "reason": "candidate_missing_entry"})
             continue
         source_span_id = _clean_text(entry.get("source_span_id"))
         unit_id = _clean_text(entry.get("unit_id"))
@@ -1241,9 +1242,11 @@ def _retrieved_reading_memory_lines(
         digest = dict(digest) if isinstance(digest, dict) else {}
         understanding = digest.get("understanding")
         if not isinstance(understanding, dict):
+            suppressed.append({"unit_id": unit_id, "source_span_id": source_span_id, "reason": "candidate_missing_understanding"})
             continue
         memory_text = _clean_text(understanding.get("content"))
         if not memory_text:
+            suppressed.append({"unit_id": unit_id, "source_span_id": source_span_id, "reason": "candidate_not_renderable_empty_understanding"})
             continue
         unit_index = int(entry.get("unit_index", item.get("unit_index", 0)) or 0)
         prefix = _reading_memory_prefix(source_span_id=source_span_id, unit_index=unit_index)
@@ -1313,7 +1316,13 @@ def _retrieve_unit_memory_for_prepared_source_unit(
     """Run Unit Memory retrieval between Ingest boundary acceptance and Digest."""
 
     existing = prepared_source_unit.get("unit_memory_retrieval")
-    if isinstance(existing, dict) and existing.get("trace"):
+    existing_trace = (
+        dict(existing.get("trace", {}))
+        if isinstance(existing, dict) and isinstance(existing.get("trace"), dict)
+        else {}
+    )
+    existing_degradation = _clean_text(existing_trace.get("degradation_reason"))
+    if isinstance(existing, dict) and existing.get("trace") and existing_degradation != "boundary_unresolved":
         return dict(existing)
 
     selected_source_unit = (

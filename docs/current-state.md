@@ -7,7 +7,7 @@ Update when: the current objective, active tasks, blockers, active jobs, open de
 
 This file is authoritative for durable current status. Do not keep unique active-state information only in `docs/agent-handoff.md`.
 
-Last verified: `2026-06-06T15:03:07+08:00`
+Last verified: `2026-06-06T15:18:40+08:00`
 
 ## Current Objective
 - The `Ingest -> Digest -> Reading Runner settlement` mechanism reframe is implemented; current work is fact alignment, smoke/diagnostic review, and calibration before any formal evaluation promotion.
@@ -74,8 +74,16 @@ Last verified: `2026-06-06T15:03:07+08:00`
     - `ReadingMemory` was rendered for Digest, but long-distance retrieved memory did not become prompt-visible: `retrieved_line_count` was `0` across all `531` Digest calls
     - the configured `hybrid` mode degraded before dense retrieval was validated because sqlite-vec was unavailable; text-only fallback produced almost no candidates
     - current repair authority: `docs/implementation/new-reading-mechanism/unit-memory-retrieval-repair-validation-plan.md`
+  - retrieval repair status:
+    - the staged retrieval repair track has started, but the goal is not complete because no no-judge smoke has yet proven prompt-visible retrieved Understanding lines in Digest `ReadingMemory`
+    - Phase 0 health packet is in place and reproduced the five-window failure from artifacts; run-local health reports are under `reading-companion-backend/eval/runs/attentional_v2/attentional_v2_ingest_digest_unit_memory_full_diagnostic_20260603_parallel5/analysis/unit_memory_retrieval_health/`
+    - Phase 1/5 trace-rendering repair has begun: selected-but-not-rendered retrieved candidates are now counted separately and empty/missing Understanding can be suppressed with explicit machine-readable reasons
+    - Phase 2 remains environment-blocked after sqlite-vec adapter repair because local Ollama / Qwen embedding service is not reachable, so dense candidates and RRF fusion have not been validated
+    - Phase 3 text-only repair has begun: FTS query construction now strips recall-meta wording and has a known-answer Chinese recall test that retrieves the expected prior Understanding
+    - Phase 4 boundary-governance repair has begun: tool-stage `boundary_unresolved` no longer prevents runtime retrieval after the source unit has been accepted
   - next step:
-    - implement and validate the Unit Memory retrieval repair track in stages, starting with retrieval health / trace invariants, hybrid vector path health, text-only fallback probes, horizon and boundary-governance repair, and selection-to-`ReadingMemory` rendering checks
+    - continue the Unit Memory retrieval repair track from deterministic checks: finish selected/rendered trace invariants, broaden text-only known-answer probes, make horizon/recent-neighbor gates explainable, prove a selected non-empty Understanding renders into Digest `ReadingMemory`, and only then run a no-judge smoke
+    - treat hybrid dense retrieval as blocked unless sqlite-vec, Ollama reachability, the configured Qwen embedding model, query embedding cache, vector rows, dense candidates, and RRF fusion are all validated
     - do not run formal evaluation, update evidence catalog, or claim product quality until a no-judge smoke proves prompt-visible retrieved Understanding memory
     - use `docs/implementation/new-reading-mechanism/ingest-context-and-navigate-mapping.md` as the implementation reference for the landed first-slice `Ingest` XML context
     - use `docs/implementation/new-reading-mechanism/digest-understanding-response-annotation-design.md` as the implemented reference for the Digest prompt/output semantic refactor

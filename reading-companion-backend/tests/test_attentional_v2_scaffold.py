@@ -75,6 +75,7 @@ from src.attentional_v2.storage import (
     unitization_audit_file,
     active_attention_file,
 )
+from src.attentional_v2.unit_memory import UnitMemoryIndex, build_unit_memory_entry
 from src.reading_core.runtime_contracts import ParseRequest, ReadRequest
 from src.reading_mechanisms.attentional_v2 import AttentionalV2Mechanism
 from src.reading_runtime.provisioning import ProvisionedBook
@@ -733,6 +734,45 @@ def test_runner_builds_unified_reading_memory_from_hot_and_retrieved_understandi
     assert any(item["reason"] == "dedupe_hot_memory" for item in result["suppressed"])
 
 
+def test_runner_records_suppression_for_selected_unit_without_understanding() -> None:
+    retrieval = {
+        "selected_units": [
+            {
+                "unit_id": "u000003",
+                "unit_index": 3,
+                "entry": {
+                    "unit_id": "u000003",
+                    "unit_index": 3,
+                    "source_span_id": "src:c1:p3@0-p3@10",
+                    "digest": {"understanding": {"content": ""}},
+                },
+            },
+            {
+                "unit_id": "u000004",
+                "unit_index": 4,
+                "entry": {
+                    "unit_id": "u000004",
+                    "unit_index": 4,
+                    "source_span_id": "src:c1:p4@0-p4@10",
+                    "digest": {},
+                },
+            },
+        ]
+    }
+
+    result = runner_module._build_digest_reading_memory(
+        recent_reading_memory={"entries": []},
+        chapter_id=1,
+        unit_memory_retrieval=retrieval,
+    )
+
+    assert result["retrieved_line_count"] == 0
+    assert {item["reason"] for item in result["suppressed"]} == {
+        "candidate_not_renderable_empty_understanding",
+        "candidate_missing_understanding",
+    }
+
+
 def test_runner_falls_back_to_source_text_when_recalls_are_malformed(tmp_path: Path) -> None:
     output_dir = tmp_path / "output" / "demo-book"
     result = runner_module._retrieve_unit_memory_for_prepared_source_unit(
@@ -785,6 +825,75 @@ def test_runner_respects_intentional_empty_recalls_without_fallback(tmp_path: Pa
     trace = json.loads(unit_memory_retrieval_trace_file(output_dir).read_text(encoding="utf-8").strip())
     assert trace["query_source"] == "skip_empty_recalls"
     assert trace["degradation_reason"] == "no_recall"
+
+
+def test_runner_retries_retrieval_after_tool_boundary_unresolved(tmp_path: Path) -> None:
+    output_dir = tmp_path / "output" / "demo-book"
+    prior_source = {
+        "unit_id": "u000001",
+        "sequence_index": 1,
+        "source_span_id": "src:c1:p1@0-p1@20",
+        "source_text": "火车站台上的告别",
+        "paragraph_slices": [{"paragraph_index": 1, "text_role": "body", "start_char": 0, "end_char": 8, "text": "火车站台上的告别"}],
+    }
+    prior_digest = {
+        "reading_impression": "quiet",
+        "surfaced_reactions": [],
+        "memory_uptake_ops": [
+            {
+                "op": "append",
+                "target_store": "recent_reading_memory",
+                "payload": {"memory_text": "站台告别建立了旅程的起点。"},
+            }
+        ],
+    }
+    entry = build_unit_memory_entry(
+        book_id="book-demo",
+        chapter_id=1,
+        chapter_ref="Chapter 1",
+        source_unit=prior_source,
+        digest_result=prior_digest,
+        memory_retrieval_mode="text_only",
+    )
+    UnitMemoryIndex(
+        output_dir,
+        config={"mode": "text_only", "min_retrievable_prior_units": 0, "recent_neighbor_exclusion_unit_count": 0},
+    ).write_entry(entry, index_vectors=False)
+
+    result = runner_module._retrieve_unit_memory_for_prepared_source_unit(
+        output_dir=output_dir,
+        book_id="book-demo",
+        prepared_source_unit={
+            "selected_source_unit": {
+                "unit_id": "u000002",
+                "source_span_id": "src:c1:p2@0-p2@20",
+                "source_text": "新的旅程再次提到火车站台。",
+            },
+            "memory_recalls": [{"recall_id": "r1", "recall_text": "火车站台 告别", "basis": "selected_source_unit"}],
+            "memory_recalls_status": "provided",
+            "unit_memory_retrieval": {
+                "recalls": [{"recall_id": "r1", "recall_text": "火车站台 告别", "basis": "selected_source_unit"}],
+                "selected_units": [],
+                "trace": {
+                    "event_type": "unit_memory_retrieval",
+                    "query_source": "tool_boundary_unresolved",
+                    "degradation_reason": "boundary_unresolved",
+                },
+            },
+        },
+        recent_reading_memory={"entries": []},
+        memory_retrieval_config={"mode": "text_only", "min_retrievable_prior_units": 0, "recent_neighbor_exclusion_unit_count": 0},
+    )
+
+    assert result["query_source"] == "ingest_recalls"
+    assert result["selected_units"][0]["unit_id"] == "u000001"
+    traces = [
+        json.loads(line)
+        for line in unit_memory_retrieval_trace_file(output_dir).read_text(encoding="utf-8").splitlines()
+        if line.strip()
+    ]
+    assert traces[-1]["query_source"] == "ingest_recalls"
+    assert traces[-1]["candidate_counts"]["candidate_units"] >= 1
 
 
 def test_digest_output_contract_xml_renders_target_contract() -> None:

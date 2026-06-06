@@ -449,8 +449,50 @@ def build_fts5_match_query(query_text: object) -> tuple[str, str]:
     normalized = _normalized_query_text(query_text)
     if len(normalized) < 3:
         return "", "empty_or_too_short_query"
-    parts = re.split(r"[。！？!?；;\n\r]+", normalized)
+    stop_words = {
+        "about",
+        "again",
+        "earlier",
+        "from",
+        "into",
+        "paragraph",
+        "prior",
+        "reading",
+        "recall",
+        "the",
+        "this",
+        "unit",
+    }
+    lexical_text = normalized
+    for pattern in (
+        r"先前阅读中",
+        r"此前阅读中",
+        r"早前阅读中",
+        r"前文中",
+        r"本段",
+        r"本单元",
+        r"这一段",
+        r"这一单元",
+        r"第\d+段",
+        r"paragraph\s*\d+",
+        r"earlier reading",
+        r"prior reading",
+        r"recall",
+    ):
+        lexical_text = re.sub(pattern, " ", lexical_text, flags=re.IGNORECASE)
+    lexical_text = _normalized_query_text(lexical_text)
     phrases: list[str] = []
+
+    def add_phrase(value: str, *, max_len: int = 80) -> None:
+        value = _normalized_query_text(value)
+        if len(value) < 3:
+            return
+        escaped = value[:max_len].replace('"', '""')
+        phrase = f'"{escaped}"'
+        if phrase not in phrases:
+            phrases.append(phrase)
+
+    parts = re.split(r"[。！？!?；;\n\r]+", lexical_text)
     for part in parts:
         candidate = _normalized_query_text(part)
         candidate_values = [candidate]
@@ -460,15 +502,30 @@ def build_fts5_match_query(query_text: object) -> tuple[str, str]:
                 candidate_values.append(compact_candidate)
             candidate_values.extend(_normalized_query_text(item) for item in re.split(r"\s+", candidate))
         for candidate_value in candidate_values:
-            if len(candidate_value) < 3:
-                continue
-            candidate_value = candidate_value[:80].replace('"', '""')
-            phrase = f'"{candidate_value}"'
-            if phrase not in phrases:
-                phrases.append(phrase)
-            if len(phrases) >= 8:
+            add_phrase(candidate_value)
+            if len(phrases) >= 12:
                 break
-        if len(phrases) >= 8:
+        if len(phrases) >= 12:
+            break
+
+    for token in re.findall(r"[A-Za-z][A-Za-z0-9_'-]{2,}", lexical_text):
+        cleaned = token.strip("'\"")
+        if cleaned.lower() in stop_words:
+            continue
+        add_phrase(cleaned, max_len=40)
+        if len(phrases) >= 20:
+            break
+
+    cjk_text = re.sub(r"[^\u4e00-\u9fff]+", "", lexical_text)
+    for length in (3, 4):
+        for index in range(0, max(0, len(cjk_text) - length + 1)):
+            chunk = cjk_text[index : index + length]
+            if chunk in {"先前", "此前", "早前", "阅读中"}:
+                continue
+            add_phrase(chunk, max_len=8)
+            if len(phrases) >= 28:
+                break
+        if len(phrases) >= 28:
             break
     if not phrases:
         return "", "empty_or_too_short_query"
@@ -533,15 +590,33 @@ class UnitMemoryIndex:
         if self._vector_available is not None:
             if self._vector_available and self._sqlite_vec is not None:
                 try:
+                    if hasattr(connection, "enable_load_extension"):
+                        connection.enable_load_extension(True)
                     self._sqlite_vec.load(connection)
+                    if hasattr(connection, "enable_load_extension"):
+                        connection.enable_load_extension(False)
                 except Exception:
+                    try:
+                        if hasattr(connection, "enable_load_extension"):
+                            connection.enable_load_extension(False)
+                    except Exception:
+                        pass
                     return False
             return bool(self._vector_available)
         try:
             import sqlite_vec  # type: ignore[import-not-found]
 
+            if hasattr(connection, "enable_load_extension"):
+                connection.enable_load_extension(True)
             sqlite_vec.load(connection)
+            if hasattr(connection, "enable_load_extension"):
+                connection.enable_load_extension(False)
         except Exception as exc:
+            try:
+                if hasattr(connection, "enable_load_extension"):
+                    connection.enable_load_extension(False)
+            except Exception:
+                pass
             self._vector_available = False
             self._vector_unavailable_reason = f"sqlite_vec_unavailable:{type(exc).__name__}"
             return False

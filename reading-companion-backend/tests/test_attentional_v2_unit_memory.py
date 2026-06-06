@@ -101,6 +101,24 @@ def test_fts_query_builder_quotes_phrases_and_skips_short_queries():
     assert build_fts5_match_query("火")[1] == "empty_or_too_short_query"
 
 
+def test_fts_query_builder_extracts_recall_terms_from_meta_wording():
+    query, reason = build_fts5_match_query(
+        "先前阅读中悉达多对佛陀法义的态度和评价，以及乔文达对佛陀法义宗旨的了解程度"
+    )
+
+    assert reason == ""
+    assert '"悉达多"' in query
+    assert '"乔文达"' in query
+    assert '"先前阅读中"' not in query
+
+    english_query, _reason = build_fts5_match_query(
+        "Earlier reading on present value versus future value and how perceived attractiveness changes valuation"
+    )
+    assert '"present"' in english_query
+    assert '"value"' in english_query
+    assert '"Earlier"' not in english_query
+
+
 def test_text_only_unit_memory_index_writes_and_retrieves_prior_units(tmp_path):
     config = {
         "mode": "text_only",
@@ -128,6 +146,43 @@ def test_text_only_unit_memory_index_writes_and_retrieves_prior_units(tmp_path):
     with sqlite3.connect(unit_memory_sqlite_file(tmp_path)) as connection:
         assert connection.execute("SELECT COUNT(*) FROM unit_memory_entries").fetchone()[0] == 2
         assert connection.execute("SELECT COUNT(*) FROM retrieval_docs").fetchone()[0] >= 4
+
+
+def test_text_only_retrieval_handles_meta_recall_wording(tmp_path):
+    config = {
+        "mode": "text_only",
+        "min_retrievable_prior_units": 0,
+        "recent_neighbor_exclusion_unit_count": 0,
+        "max_units_to_digest_context": 3,
+    }
+    index = UnitMemoryIndex(tmp_path, config=config)
+    index.write_entry(
+        _entry(
+            "u000001",
+            1,
+            "悉达多认真聆听佛陀说法。",
+            "悉达多对佛陀法义保持敬意，但认为法义不能替代个人亲身求道。",
+        ),
+        index_vectors=False,
+    )
+    index.write_entry(_entry("u000002", 2, "乔文达继续追随朋友。", "乔文达仍把追随悉达多视为自己的道路。"), index_vectors=False)
+
+    result = index.retrieve_for_recalls(
+        book_id="book-demo",
+        recalls=[
+            {
+                "recall_id": "r1",
+                "recall_text": "先前阅读中悉达多对佛陀法义的态度和评价",
+                "basis": "selected_source_unit",
+            }
+        ],
+        query_source="tool_retrieve_unit_memory",
+        current_unit_index=3,
+    )
+
+    assert result["selected_units"][0]["unit_id"] == "u000001"
+    trace_lines = unit_memory_retrieval_trace_file(tmp_path).read_text(encoding="utf-8").strip().splitlines()
+    assert json.loads(trace_lines[-1])["candidate_counts"]["lexical_docs"] >= 1
 
 
 def test_multi_recall_retrieval_aggregates_by_unit_and_records_matches(tmp_path):

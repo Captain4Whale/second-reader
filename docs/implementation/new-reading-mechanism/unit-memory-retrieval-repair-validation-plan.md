@@ -8,7 +8,7 @@ Update when: a retrieval repair slice lands, a validation gate passes/fails, or 
 ## Status
 
 - Date: `2026-06-06`
-- Status: repair-validation plan, not yet implemented.
+- Status: repair-validation in progress.
 - Source diagnostic run: `attentional_v2_ingest_digest_unit_memory_full_diagnostic_20260603_parallel5`
 - Source audit directory: `reading-companion-backend/eval/runs/attentional_v2/attentional_v2_ingest_digest_unit_memory_full_diagnostic_20260603_parallel5/analysis/core_mechanism_behavior_audit/`
 - Design baseline:
@@ -18,6 +18,29 @@ Update when: a retrieval repair slice lands, a validation gate passes/fails, or 
   - do not revive Detour, source-backread, source-skill, concept registry, or thread trace
   - do not inject raw prior source text into Digest as a retrieval workaround
   - do not update the evidence catalog from these repair checks
+
+## Current Progress Snapshot
+
+This track has started implementation, but the retrieval mechanism is not yet goal-complete.
+
+Completed or partially landed repair evidence:
+
+- Phase 0 health packet exists and reproduces the five-window diagnostic failure from artifacts.
+- Trace/rendering repair has begun: selected-but-not-rendered retrieved candidates are now counted separately from hot memory and have explicit suppression reasons when the selected unit is missing, lacks Understanding, or has empty Understanding.
+- The sqlite-vec load path has been repaired locally: the adapter now enables SQLite extension loading before loading `sqlite_vec`, and a local `vec0` table with cosine distance can be created.
+- The local hybrid path is still blocked by environment because Ollama is not installed or reachable on `127.0.0.1:11434`; therefore dense retrieval has not been validated.
+- Text-only retrieval has an initial repair: recall-meta wording is stripped from FTS queries, English keywords and Chinese character chunks are added, and a known-answer test verifies a Chinese recall can retrieve the expected prior Understanding.
+- Runtime boundary governance has an initial repair: a tool-stage `boundary_unresolved` trace no longer prevents runtime retrieval after the source unit has been accepted.
+
+Current unresolved target:
+
+- No no-judge live smoke has yet proven prompt-visible long-distance retrieved Understanding lines in Digest `ReadingMemory`.
+- The goal remains active until at least one repair smoke demonstrates `retrieved_line_count > 0` with renderable selected Unit Memory Understanding.
+
+Current run-local health packet:
+
+- JSON: `reading-companion-backend/eval/runs/attentional_v2/attentional_v2_ingest_digest_unit_memory_full_diagnostic_20260603_parallel5/analysis/unit_memory_retrieval_health/summary.json`
+- Markdown: `reading-companion-backend/eval/runs/attentional_v2/attentional_v2_ingest_digest_unit_memory_full_diagnostic_20260603_parallel5/analysis/unit_memory_retrieval_health/README.md`
 
 ## Goal
 
@@ -146,6 +169,19 @@ Each phase must leave behind a concrete pass/fail result.
 - Phase 6 exits only when recall prompt calibration is tested after the retrieval path is already mechanically functional.
 - Phase 7 exits only when a no-judge smoke shows prompt-visible retrieved Understanding lines and a review packet confirms they are relevant enough for continued reading.
 
+### Phase Status Summary
+
+| Phase | Current status | What is proven | What remains |
+| --- | --- | --- | --- |
+| Phase 0 | `passed_initial` | The health packet reproduces the five-window failure and separates hot memory, retrieved memory, selected candidates, renderability, vector availability, and degradation facts. | Keep the packet updated as later trace fields change. |
+| Phase 1 | `in_progress` | Selected-but-not-rendered candidates are no longer invisible; empty/missing Understanding now has a suppression path. | Run a fresh post-repair smoke to prove every unrendered selected candidate has a reason in real artifacts. |
+| Phase 2 | `blocked_by_ollama_environment_after_sqlite_vec_fix` | sqlite-vec can be imported and loaded locally after the adapter fix. | Ollama/Qwen embedding service must be available before query embeddings, vector rows, dense candidates, and RRF fusion can be validated. |
+| Phase 3 | `in_progress` | Text-only FTS can retrieve a known Chinese prior Understanding despite recall-meta wording. | Broaden deterministic probes to English concepts, Chinese paraphrases, and multi-recall aggregation. |
+| Phase 4 | `in_progress` | Runtime retrieval can continue after boundary acceptance even if the earlier tool-stage trace was `boundary_unresolved`. | Make horizon/recent-neighbor gates counted and explainable in real smoke artifacts. |
+| Phase 5 | `in_progress` | Non-renderable selected candidates are explicitly suppressed. | Prove that a selected non-empty Understanding is actually rendered into Digest `ReadingMemory`. |
+| Phase 6 | `not_started` | None. | Calibrate Ingest recall prompt only after retrieval/search/rendering is mechanically functional. |
+| Phase 7 | `not_started` | None. | Run no-judge smoke and produce a human-readable review packet with selected retrieved Understanding examples. |
+
 ### External Environment Handling
 
 Hybrid depends on local sqlite-vec and Ollama. Goal mode should handle those as repairable environment dependencies, not as silent degradations.
@@ -198,6 +234,31 @@ When Goal mode finishes or reaches a real blocker, it must produce:
   - implementation
   - prompt
   - evaluation/review
+
+## Next Repair Queue
+
+Continue from the smallest independent checks rather than jumping directly to a formal evaluation:
+
+1. Finish Phase 1 by running a small post-repair artifact check or smoke that proves selected-but-not-rendered candidates always carry machine-readable suppression reasons.
+2. Finish Phase 3 deterministic coverage:
+   - Chinese exact / near-exact recall
+   - Chinese paraphrase recall when dense retrieval is unavailable should still expose lexical limits clearly
+   - English concept recall
+   - multi-recall dedupe / aggregation
+3. Finish Phase 4 trace visibility:
+   - count prior units
+   - count hot-neighbor exclusions
+   - count remaining retrievable units
+   - record whether retrieval skipped because the remaining horizon was too small
+4. Finish Phase 5 by constructing or running a known-answer case where a selected non-empty Understanding appears in Digest `ReadingMemory`.
+5. Attempt Phase 2 only when environment can support it:
+   - sqlite-vec load works
+   - Ollama is reachable
+   - configured Qwen embedding model is available
+   - query embedding cache and vector rows become nonzero
+6. Run Phase 7 no-judge smoke only after at least one deterministic selected-and-rendered case passes.
+
+Do not tune Ingest recall wording until search, selection, renderability, and trace mechanics have been proven with deterministic cases. Otherwise prompt changes may hide mechanical retrieval failures.
 
 ## Current Failure Summary
 
@@ -383,7 +444,20 @@ Every repair slice should preserve these invariants:
 
 ### Phase 0. Baseline Reproduction And Health Packet
 
-Status: `not_started`
+Status: `passed_initial`
+
+Current evidence:
+
+- added `reading-companion-backend/scripts/diagnose_unit_memory_retrieval_health.py`
+- generated run-local health artifacts for `attentional_v2_ingest_digest_unit_memory_full_diagnostic_20260603_parallel5`
+- reproduced the diagnostic failure:
+  - `531` Unit Memory entries
+  - `576` retrieval rows
+  - `retrieved_line_total = 0`
+  - `selected_unit_count = 1`
+  - `renderable_selected_unit_count = 0`
+  - `query_embedding_cache_rows = 0`
+  - `vector_rows = 0`
 
 Goal:
 
@@ -408,7 +482,12 @@ Acceptance:
 
 ### Phase 1. Trace And Invariant Repair
 
-Status: `not_started`
+Status: `in_progress`
+
+Current evidence:
+
+- Digest `ReadingMemory` rendering now records suppression reasons when selected units are missing an entry, missing Understanding, or have empty Understanding.
+- The health packet reports selected-but-not-rendered counts separately from hot/retrieved line totals.
 
 Goal:
 
@@ -428,7 +507,14 @@ Acceptance:
 
 ### Phase 2. Hybrid Vector Path Repair
 
-Status: `not_started`
+Status: `blocked_by_ollama_environment_after_sqlite_vec_fix`
+
+Current evidence:
+
+- `sqlite-vec` is declared in `pyproject.toml`.
+- Current venv initially lacked `sqlite_vec`; installing `sqlite-vec>=0.1.6` fixed the import.
+- The sqlite-vec adapter now enables SQLite extension loading before calling `sqlite_vec.load(...)`; vec0 table creation with `distance_metric=cosine` is locally verified.
+- Current machine does not have the `ollama` command and `127.0.0.1:11434` is not serving embeddings, so full hybrid query embedding / dense retrieval remains environment-blocked.
 
 Goal:
 
@@ -454,7 +540,13 @@ Acceptance:
 
 ### Phase 3. Text-Only Retrieval Repair
 
-Status: `not_started`
+Status: `in_progress`
+
+Current evidence:
+
+- FTS query builder now removes recall-meta wording such as `先前阅读中`, `Earlier reading`, `Paragraph N`, and `recall`.
+- FTS query builder now adds English keyword phrases and Chinese three/four-character chunks so text-only retrieval can match paraphrastic recall wording more often.
+- A known-answer text-only test now verifies that a recall like `先前阅读中悉达多对佛陀法义的态度和评价` retrieves the prior unit whose Understanding discusses `悉达多` and `佛陀法义`.
 
 Goal:
 
@@ -478,7 +570,12 @@ Acceptance:
 
 ### Phase 4. Horizon And Boundary Governance Repair
 
-Status: `not_started`
+Status: `in_progress`
+
+Current evidence:
+
+- Runtime retrieval no longer returns the stale tool result when the only existing tool trace is `boundary_unresolved`.
+- After runtime accepts a source unit, the same `memory_recalls[]` can run through normal retrieval even if the tool-stage boundary anchor was unresolved.
 
 Goal:
 
@@ -499,7 +596,11 @@ Acceptance:
 
 ### Phase 5. Selection And Digest Rendering Repair
 
-Status: `not_started`
+Status: `in_progress`
+
+Current evidence:
+
+- Selected units with empty or missing Understanding are now suppressed with explicit reasons instead of disappearing silently before Digest `ReadingMemory`.
 
 Goal:
 
