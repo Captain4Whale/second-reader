@@ -38,7 +38,6 @@ from src.reading_runtime.provisioning import ensure_canonical_parse  # noqa: E40
 
 DEFAULT_RUNS_ROOT = ROOT / "eval" / "runs" / "attentional_v2"
 DEFAULT_TARGET_IDS = (
-    "MiniMax-M2.7-personal",
     "MiniMax-M2.7-personal-2",
 )
 DEFAULT_MAX_UNITS = 8

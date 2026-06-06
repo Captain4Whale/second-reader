@@ -7,7 +7,7 @@ Update when: the current objective, active tasks, blockers, active jobs, open de
 
 This file is authoritative for durable current status. Do not keep unique active-state information only in `docs/agent-handoff.md`.
 
-Last verified: `2026-06-06T11:14:37+08:00`
+Last verified: `2026-06-06T11:26:06+08:00`
 
 ## Current Objective
 - The `Ingest -> Digest -> Reading Runner settlement` mechanism reframe is implemented; current work is fact alignment, smoke/diagnostic review, and calibration before any formal evaluation promotion.
@@ -1736,7 +1736,7 @@ Last verified: `2026-06-06T11:14:37+08:00`
       - ZH `7 keep`, `1 unclear`
     - operator posture retained:
       - all completed reserve/primary review waves still used serial packet workers
-      - current live local posture is now a pooled primary tier of `MiniMax-M2.7-personal` plus `MiniMax-M2.7-personal-2`
+      - current live local posture is now a single usable primary target: `MiniMax-M2.7-personal-2`
 - The older formal benchmark-v1 freeze remains historical evidence only:
   - historical manifest:
     - `reading-companion-backend/eval/manifests/splits/attentional_v2_formal_benchmark_v1_draft.json`
@@ -1915,11 +1915,9 @@ Last verified: `2026-06-06T11:14:37+08:00`
     - explicit `LLM_FORCE_TARGET_ID` is still the process-level selector when we want deterministic routing
     - because `LLM_FORCE_TARGET_ID` is process-wide and cached in-process, retargeting requires a fresh launch rather than editing config mid-run
   - the current local LLM posture is now:
-    - `reading-companion-backend/config/llm_targets.local.json` defines two separate local MiniMax M2.7 targets:
-      - `MiniMax-M2.7-personal`
-      - `MiniMax-M2.7-personal-2`
-    - target-level concurrency is `32 / 12 / 32 / 2` on both targets
-    - `reading-companion-backend/config/llm_profile_bindings.local.json` binds `runtime_reader_default`, `dataset_review_high_trust`, and `eval_judge_high_trust` to one pooled `primary` tier containing both targets
+    - `reading-companion-backend/config/llm_targets.local.json` now keeps one usable local MiniMax M2.7 target: `MiniMax-M2.7-personal-2`
+    - `reading-companion-backend/config/llm_profile_bindings.local.json` binds `runtime_reader_default`, `dataset_review_high_trust`, and `eval_judge_high_trust` to one `primary` tier containing only `MiniMax-M2.7-personal-2`
+    - `MiniMax-M2.7-personal` returned `429 usage limit exceeded (2056)` on `2026-06-06` and is no longer part of the local active target pool
     - the gateway now persists a shared pooled-tier `next_index` cursor under `BACKEND_RUNTIME_ROOT/state/llm_gateway/tier_dispatch/`, so future sibling Python processes do not all restart from target index `0`
     - because each long reading scope still pins one concrete target for its lifetime, already-running jobs launched before that repair can remain visibly skewed until they are relaunched
     - current operator policy is:
@@ -3185,7 +3183,7 @@ Last verified: `2026-06-06T11:14:37+08:00`
 - Pre-fix parallel comparison artifacts can misassign case-to-output mappings, so partial outputs from the earlier round-3 reruns must be sanity-checked before they are treated as evidence.
 - Malformed-JSON handling in the reading path can still terminate a bounded rerun after substantial partial output has already been written.
 - Launching `run_registered_job.py` from a transient agent shell without the detached launcher can leave long-running jobs looking `abandoned` even when the wrapped command itself never raised a Python traceback.
-- The current live local posture is intentionally a pooled primary tier of `MiniMax-M2.7-personal` plus `MiniMax-M2.7-personal-2`.
+- The current live local posture is one usable primary target, `MiniMax-M2.7-personal-2`; `MiniMax-M2.7-personal` is removed from active local routing after a `429 usage limit exceeded (2056)` live check on `2026-06-06`.
 - The shared cross-process pooled-tier dispatch fix is now landed for future launches, but the already-completed long-span judged lane was launched before that code was loaded, so its visible `by_target` skew should be treated as historical launch posture rather than as the current default.
 - `excerpt surface v1.1` now has one explicit documented `5`-case exception on `nawaer_baodian_private_zh__22`; treat that as a known surface constraint for later ROI retune, not as a blocker on interpreting the completed formal run.
 - The new v1.1 reuse pass showed that `value_of_others_private_en__8` only supports `8` real unique-span cases after duplicate-control pruning, so older apparent `14`-row density numbers should no longer be used for ROI estimates.

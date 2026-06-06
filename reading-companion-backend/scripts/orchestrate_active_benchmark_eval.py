@@ -363,7 +363,7 @@ def main() -> int:
     args = parse_args()
     run_root = RUNS_ROOT / str(args.run_id)
     run_root.mkdir(parents=True, exist_ok=True)
-    target_ids = [str(item) for item in (args.target_ids or ["MiniMax-M2.7-personal", "MiniMax-M2.7-personal-2"])]
+    target_ids = [str(item) for item in (args.target_ids or ["MiniMax-M2.7-personal-2"])]
 
     excerpt_args = [
         "--run-id",

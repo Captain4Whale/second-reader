@@ -32,7 +32,7 @@ PYTHON = BACKEND_ROOT / ".venv" / "bin" / "python"
 RUNS_ROOT = BACKEND_ROOT / "eval" / "runs" / "attentional_v2"
 
 TASK_REF = "TASK-ATTENTIONAL-V2-STRUCTURAL-REWORK"
-TARGET_IDS = ("MiniMax-M2.7-personal", "MiniMax-M2.7-personal-2")
+TARGET_IDS = ("MiniMax-M2.7-personal-2",)
 SUCCESS_TERMINAL_STATUSES = {"completed", "ready"}
 
 LONG_RUN_ID = "attentional_v2_post_phase_d_longspan_judged_20260413"

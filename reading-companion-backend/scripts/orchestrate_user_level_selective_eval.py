@@ -35,7 +35,7 @@ from scripts.update_evaluation_catalog import build_entry, upsert_catalog_entry 
 PYTHON = BACKEND_ROOT / ".venv" / "bin" / "python"
 RUNNER = BACKEND_ROOT / "eval" / "attentional_v2" / "run_user_level_selective_comparison.py"
 RUNS_ROOT = BACKEND_ROOT / "eval" / "runs" / "attentional_v2"
-DEFAULT_TARGET_IDS = ("MiniMax-M2.7-personal", "MiniMax-M2.7-personal-2")
+DEFAULT_TARGET_IDS = ("MiniMax-M2.7-personal-2",)
 RETRYABLE_ERROR_MARKERS = (
     "ReaderLLMError",
     "timed out or interrupted",
