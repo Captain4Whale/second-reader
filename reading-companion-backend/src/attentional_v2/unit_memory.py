@@ -52,6 +52,7 @@ DEFAULT_RETRIEVAL_CONFIG: dict[str, object] = {
     "query_instruction_version": UNIT_MEMORY_QUERY_INSTRUCTION_VERSION,
     "lexical_top_k": 40,
     "dense_top_k": 40,
+    "dense_max_distance": 0.80,
     "rrf_k": 60,
     "max_units_after_aggregation": 20,
     "max_units_to_digest_context": 40,
@@ -102,6 +103,13 @@ def normalize_memory_retrieval_mode(value: object) -> tuple[MemoryRetrievalMode,
 def _coerce_int(value: object, default: int) -> int:
     try:
         return int(value)
+    except (TypeError, ValueError):
+        return default
+
+
+def _coerce_float(value: object, default: float) -> float:
+    try:
+        return float(value)
     except (TypeError, ValueError):
         return default
 
@@ -1044,13 +1052,14 @@ class UnitMemoryIndex:
         query_text: str,
         max_unit_index: int,
         excluded_source_unit_span_ids: set[str],
-    ) -> tuple[list[dict[str, object]], str]:
+    ) -> tuple[list[dict[str, object]], str, int]:
         if not self._load_sqlite_vec(connection):
-            return [], self._vector_unavailable_reason or "sqlite_vec_unavailable"
+            return [], self._vector_unavailable_reason or "sqlite_vec_unavailable", 0
         embedding = self._embed_query(connection, query_text)
         if embedding is None:
-            return [], "query_embedding_unavailable"
+            return [], "query_embedding_unavailable", 0
         dense_top_k = max(1, _coerce_int(self.config.get("dense_top_k"), 80))
+        max_distance = _coerce_float(self.config.get("dense_max_distance"), 0.80)
         try:
             rows = connection.execute(
                 """
@@ -1070,13 +1079,18 @@ class UnitMemoryIndex:
                 (self._serialize_vector(embedding), dense_top_k, book_id, max_unit_index),
             ).fetchall()
         except sqlite3.Error as exc:
-            return [], f"vector_query_failed:{type(exc).__name__}"
+            return [], f"vector_query_failed:{type(exc).__name__}", 0
         candidates = []
+        filtered_by_distance = 0
         for rank, row in enumerate(rows, start=1):
+            distance = float(row["distance"])
+            if distance > max_distance:
+                filtered_by_distance += 1
+                continue
             if str(row["source_span_id"] or "") in excluded_source_unit_span_ids:
                 continue
-            candidates.append(self._candidate_row(row, channel="dense", rank=rank, raw_score=float(row["distance"])))
-        return candidates, ""
+            candidates.append(self._candidate_row(row, channel="dense", rank=rank, raw_score=distance))
+        return candidates, "", filtered_by_distance
 
     def _aggregate_units(self, candidates: list[dict[str, object]]) -> list[dict[str, object]]:
         grouped: dict[str, list[dict[str, object]]] = {}
@@ -1242,6 +1256,7 @@ class UnitMemoryIndex:
         all_candidates: list[dict[str, object]] = []
         total_lexical = 0
         total_dense = 0
+        total_dense_filtered = 0
         degradation_reasons: list[str] = []
         effective_mode = mode
         with self._connect() as connection:
@@ -1312,8 +1327,9 @@ class UnitMemoryIndex:
 
                 dense_candidates: list[dict[str, object]] = []
                 dense_degradation = ""
+                dense_filtered_by_distance = 0
                 if mode == "hybrid":
-                    dense_candidates, dense_degradation = self._dense_candidates(
+                    dense_candidates, dense_degradation, dense_filtered_by_distance = self._dense_candidates(
                         connection,
                         book_id=book_id,
                         query_text=query_text,
@@ -1329,8 +1345,10 @@ class UnitMemoryIndex:
 
                 per_recall["lexical_docs"] = len(lexical_candidates)
                 per_recall["dense_docs"] = len(dense_candidates)
+                per_recall["dense_docs_filtered_by_distance"] = dense_filtered_by_distance
                 total_lexical += len(lexical_candidates)
                 total_dense += len(dense_candidates)
+                total_dense_filtered += dense_filtered_by_distance
                 all_candidates.extend([*lexical_candidates, *dense_candidates])
                 trace.setdefault("per_recall", []).append(per_recall)  # type: ignore[union-attr]
 
@@ -1349,6 +1367,7 @@ class UnitMemoryIndex:
             "recall_count": len(normalized_recalls),
             "lexical_docs": total_lexical,
             "dense_docs": total_dense,
+            "dense_docs_filtered_by_distance": total_dense_filtered,
             "candidate_units": len({str(item.get("unit_id")) for item in all_candidates if item.get("unit_id")}),
         }
         trace["selection_config"] = {
@@ -1466,9 +1485,10 @@ class UnitMemoryIndex:
 
             dense_candidates: list[dict[str, object]] = []
             dense_degradation = ""
+            dense_filtered_by_distance = 0
             effective_mode = mode
             if mode == "hybrid":
-                dense_candidates, dense_degradation = self._dense_candidates(
+                dense_candidates, dense_degradation, dense_filtered_by_distance = self._dense_candidates(
                     connection,
                     book_id=book_id,
                     query_text=query_text,
@@ -1484,6 +1504,7 @@ class UnitMemoryIndex:
                 "prior_units": prior_count,
                 "lexical_docs": len(lexical_candidates),
                 "dense_docs": len(dense_candidates),
+                "dense_docs_filtered_by_distance": dense_filtered_by_distance,
             }
             aggregated_units = self._aggregate_units([*lexical_candidates, *dense_candidates])
             selected_units, suppressed_units = self._select_renderable_units(

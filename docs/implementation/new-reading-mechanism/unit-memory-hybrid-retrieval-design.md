@@ -78,6 +78,12 @@ Implemented now:
   - generated in the same LLM call as boundary selection
   - no separate query-generation LLM call
   - when recalls are non-empty, the Ingest call must use the `retrieve_unit_memory` tool loop
+- Current retrieval calibration:
+  - lexical ranking prioritizes `unit_understanding` over source / annotation / response auxiliary surfaces
+  - dense retrieval uses only `unit_understanding` vector rows
+  - dense sqlite-vec candidates are filtered by `dense_max_distance` before unit aggregation
+  - selection caps prompt-visible candidates per recall with `max_units_per_recall_to_digest_context`
+  - direct hot memory is deduped during `ReadingMemory` packaging rather than by excluding the whole active Recent Reading Memory store from retrieval
 - Reading Runner now executes retrieval after accepting the source unit and before `Digest`
   - runtime selects Understanding memory, dedupes against hot current-chapter memory, and renders top-level Digest `ReadingMemory`
   - tool results exposed back to Ingest are status/count summaries only, never retrieved Understanding text or selected memory ids
@@ -338,12 +344,14 @@ doc_rrf_score =
 
 Initial defaults:
 
-- `lexical_top_k = 80`
-- `dense_top_k = 80`
+- `lexical_top_k = 40`
+- `dense_top_k = 40`
+- `dense_max_distance = 0.80`
 - `rrf_k = 60`
 - base lexical channel weight = `1.0`
 - base dense channel weight = `1.0`
 - apply each retrieval document's `weight_profile` after rank conversion or during unit aggregation, not by mutating raw BM25/vector scores
+- discard dense candidates with distance greater than `dense_max_distance` before aggregation; this keeps sqlite-vec top-k fanout from admitting obviously distant semantic neighbors merely because they were in the nearest-neighbor result list
 
 In `text_only` mode, skip query embedding, sqlite-vec KNN, dense channel weighting, and RRF cross-channel fusion. Rank the FTS5 candidate list, apply lexical surface weights, then aggregate by unit using the same unit aggregation path.
 
@@ -351,12 +359,12 @@ Initial surface / channel weights:
 
 | surface | lexical weight | dense weight | purpose |
 | --- | ---: | ---: | --- |
-| `unit_source` | `1.25` | none | emphasize exact wording, names, quote callbacks, and source recurrence |
-| `unit_understanding` | `0.85` | `1.35` | emphasize semantic continuity and what the unit established |
-| `unit_annotation` | `1.10` | none | let exact quote and note wording act as an auxiliary lexical signal |
-| `unit_response` | `0.45` | none | keep readerly aftertaste as a weak lexical support signal |
+| `unit_understanding` | `1.35` | `1.35` | primary semantic memory surface and prompt-facing long-distance memory substance |
+| `unit_source` | `0.80` | none | auxiliary exact wording, names, quote callbacks, and source recurrence |
+| `unit_annotation` | `0.65` | none | auxiliary exact quote / note wording signal; not prompt-facing memory |
+| `unit_response` | `0.35` | none | weak readerly aftertaste signal; not prompt-facing memory |
 
-These weights are deliberately modest. They should express surface posture without overpowering rank evidence. Dense weights apply only to vector-eligible `unit_understanding` documents.
+These weights are deliberately modest. They should express surface posture without overpowering rank evidence. `unit_understanding` now has the highest lexical weight because current Digest `ReadingMemory` is Understanding-only; source, annotation, and response remain useful lexical cues, but they should not outrank a direct Understanding match. Dense weights apply only to vector-eligible `unit_understanding` documents.
 
 Why not weighted sum first:
 
@@ -388,9 +396,9 @@ Initial aggregation defaults:
 - `surface_coverage_bonus = 0.03 * min(distinct_surface_count - 1, 3)`
 - `channel_coverage_bonus = 0.03` when both lexical and dense channels matched
 - `exact_phrase_bonus = 0.0` by default; record exact phrase / quote matches for audit and later calibration, but do not add another boost until query fields are designed
-- distance penalty = none by default beyond recent-neighbor exclusion
+- dense distance gate = `dense_max_distance`; no additional distance penalty by default after the gate
 - `recent_neighbor_exclusion_unit_count = 20`
-- also exclude any source unit ids already carried directly in the Digest recent-memory context
+- do not exclude the whole active Recent Reading Memory store from Unit Memory retrieval; hot current-chapter memory is deduped against retrieved memory during `ReadingMemory` rendering
 - `max_units_after_aggregation = 20`
 - `max_units_to_digest_context = 40` as the total long-distance selected-unit ceiling before Digest `ReadingMemory` token-budget rendering
   - do not inherit the old `4` to `6` detailed-memory cap now that Digest context is Understanding-only
@@ -988,6 +996,7 @@ Remaining implementation hardening:
 - explicit rebuild / catch-up command for derived retrieval documents, FTS5 rows, and Understanding vector rows
 - tokenizer review results and whether V2 needs a dual lexical channel
 - embedding model version pinning and local Ollama health checks beyond graceful degradation
+- dense distance threshold calibration after a real Ollama/Qwen hybrid smoke
 - index rebuild checksums and prompt-version compatibility
 
 ## What We Still Need To Design
@@ -1025,7 +1034,7 @@ Create retrieval documents from all four memory surfaces. Every valid retrieval 
 
 This keeps retrieval broad while making the semantic memory spine explicit. Source, response, and annotation documents may recall Entries through lexical evidence, but `understanding` has the highest authority and is the only dense-vector surface.
 
-Use the initial conservative retrieval parameters in this document: per-recall top `40` lexical docs across all FTS surfaces, per-recall top `40` dense docs from `unit_understanding`, `rrf_k = 60`, modest surface / channel weights, unit aggregation led by the best matching retrieval document, and MMR disabled unless review shows repeated near-duplicate briefs.
+Use the initial conservative retrieval parameters in this document: per-recall top `40` lexical docs across all FTS surfaces, per-recall top `40` dense docs from `unit_understanding`, `dense_max_distance = 0.80`, `rrf_k = 60`, Understanding-prioritized surface / channel weights, unit aggregation led by the best matching retrieval document, and MMR disabled unless review shows repeated near-duplicate briefs.
 
 Before reading a book / starting a read session, choose `memory_retrieval_mode`: default `hybrid` for FTS5 plus query embedding and sqlite-vec, or `text_only` for FTS5-only low-latency memory retrieval. Treat `UnitMemoryLedger` as the only durable fact source for long-distance memory. Keep FTS5 and sqlite-vec as rebuildable indexes. Execute retrieval in runtime after `Ingest` and before `Digest`, enforce the performance budget, degrade gracefully when retrieval/index channels fail, and use retrieval review records to calibrate parameters before broad evaluation.
 

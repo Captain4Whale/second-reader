@@ -28,10 +28,11 @@ Completed or partially landed repair evidence:
 - Phase 0 health packet exists and reproduces the five-window diagnostic failure from artifacts.
 - Trace/rendering repair has deterministic coverage: selected-but-not-rendered retrieved candidates are counted separately from hot memory, retrieval-layer suppressed candidates are counted by reason, and candidates without renderable Understanding are suppressed before entering `selected_units`.
 - The sqlite-vec load path has been repaired locally: the adapter now enables SQLite extension loading before loading `sqlite_vec`, and a local `vec0` table with cosine distance can be created.
-- The local hybrid path is still blocked by environment because Ollama is not installed or reachable on `127.0.0.1:11434`; therefore dense retrieval has not been validated.
+- Dense retrieval has deterministic code-path coverage with a fake embedder: `unit_understanding` vector rows are indexed, query embeddings are cached, sqlite-vec KNN returns dense candidates, distant dense candidates are filtered by `dense_max_distance`, and the selected result can come from the dense channel.
+- The local live hybrid path is still blocked by environment because Ollama is not installed or reachable on `127.0.0.1:11434`; therefore real Qwen embeddings, live dense candidates, and live RRF fusion have not been validated.
 - Text-only retrieval has deterministic coverage for Chinese recall-meta wording, English concept recall, multi-recall aggregation, and empty-Understanding suppression.
 - Runtime boundary / horizon governance has deterministic coverage: a tool-stage `boundary_unresolved` trace no longer prevents runtime retrieval after the source unit has been accepted, and horizon gates record counts rather than only labels.
-- A first post-repair no-judge `text_only` smoke on `value_of_others_private_en__segment_1` completed the reading loop but failed the registered wrapper's strict LLM-health gate before summary generation. Its run-local retrieval health packet still showed no prompt-visible retrieved memory and exposed a new root cause: the Runner was passing the whole active Recent Reading Memory store as retrieval exclusions, which excluded all prior units by the end of the run. That exclusion bug has been removed in code and still needs a fresh smoke.
+- A first post-repair no-judge `text_only` smoke on `value_of_others_private_en__segment_1` completed the reading loop but failed the registered wrapper's strict LLM-health gate before summary generation. Its run-local retrieval health packet still showed no prompt-visible retrieved memory and exposed a new root cause: the Runner was passing the whole active Recent Reading Memory store as retrieval exclusions, which excluded all prior units by the end of the run. That exclusion bug was removed, and later post-R9/post-R11 smokes proved retrieved Understanding can become prompt-visible.
 - A post-R9 `text_only` diagnostic smoke on `xidaduo_private_zh__segment_1` was intentionally stopped after collecting retrieval-success evidence. Its run-local health packet is `ok`: `57` Unit Memory entries, `353` retrieval docs, `67` retrieval rows, `57` selection rows, `selected_unit_count=71`, `renderable_selected_unit_count=29`, `retrieved_line_total=45`, and `non_renderable_selected_unit_count=0`. This proves the non-hybrid retrieval path can select prior Understanding and render long-distance retrieved lines into Digest `ReadingMemory`.
 - The post-R9 retrieved-memory review found mixed relevance: broad Siddhartha / Govinda continuity recall works, but auxiliary surfaces can pull terminology / note-cluster units into prompt-visible `ReadingMemory`.
 - Lexical surface weights now prioritize `unit_understanding` over `unit_source`, `unit_annotation`, and `unit_response`, preserving the auxiliary surfaces while restoring Understanding as the primary selection surface.
@@ -48,7 +49,7 @@ Current unresolved target:
 - Understanding-prioritized lexical ranking still retrieves and renders prior Understanding in live artifacts; the remaining text-only issue is relevance calibration, not mechanical renderability.
 - The first recall-specificity prompt calibration has been live-smoked in `text_only`: it is partially validated for avoiding the post-R11 sermon-area broad recall, but the remaining relevance problem has moved toward retrieval selection / budget discipline for focused recalls.
 - The per-recall selection discipline slice is validated in `text_only` diagnostics: `max_units_per_recall_to_digest_context = 6` capped how many prior Unit Memory entries one recall could send toward Digest `ReadingMemory`, while preserving nonzero prompt-visible retrieved memory. The next non-hybrid target is validating Ingest v6 language/basis contract in a small smoke if recall-language drift persists.
-- Hybrid dense retrieval remains environment-blocked because local Ollama / Qwen embedding service is unavailable; the goal should not claim hybrid success until dense candidates and RRF fusion are validated.
+- Hybrid dense retrieval remains environment-blocked because local Ollama / Qwen embedding service is unavailable; the goal should not claim live hybrid success until real Qwen embeddings, dense candidates, and RRF fusion are validated.
 - The latest smoke was intentionally stopped before full summary generation, so it is diagnostic repair evidence, not formal evaluation evidence.
 
 Current run-local health packet:
@@ -235,7 +236,7 @@ Use this matrix to keep automatic repair work on the intended path. The design b
 | Selected units exist but Digest receives no retrieved lines | renderability / ReadingMemory packaging | fix empty-Understanding suppression, hot-memory dedupe reason, token-budget rendering, trace fields | selection trace has render/suppress reasons and Digest prompt manifest contains retrieved Understanding lines | continue until every selected-but-not-rendered case has a machine-readable reason |
 | One recall renders a large broad pack of loosely related prior memories | selection / budget discipline | add per-recall cap, score threshold, rank-gap threshold, or selected-set policy; preserve Understanding-only memory | deterministic cap/threshold fixture plus no-judge smoke review of rendered unit ids | continue; this is implementation calibration, not design failure |
 | Ingest emits broad generic recalls where no specific memory is needed | Ingest recall prompt | tune `RecallPriorReading` wording after retrieval mechanics are proven | no-judge smoke review showing fewer generic recalls without disabling useful recalls | continue after selection/rendering mechanics are already validated |
-| Hybrid mode degrades to text-only because Ollama or Qwen embedding is unavailable | environment / vector adapter | repair adapter if code-owned; otherwise record service/model blocker and keep text-only validation moving | sqlite-vec import/load check, Ollama reachability/model check, trace degradation reason | do not stop other phases; report `deferred_environment` for hybrid only |
+| Hybrid mode degrades to text-only because Ollama or Qwen embedding is unavailable | environment / vector adapter | repair adapter if code-owned; otherwise record service/model blocker and keep text-only validation moving | sqlite-vec import/load check, deterministic fake-embedder dense-path test, Ollama reachability/model check, trace degradation reason | do not stop other phases; report `deferred_environment` for live hybrid only |
 | Retrieved memory is visible but subjectively weak or not very helpful | review / prompt calibration | create review packet; tune only if pattern is mechanical or prompt-contract related | examples with source unit, recall, rendered memory, and suspected layer | do not mark goal complete on subjective quality alone, but do not block mechanical validation if chain works |
 
 ### Current Selection-Discipline Slice
@@ -348,7 +349,7 @@ Each phase must leave behind a concrete pass/fail result.
 | --- | --- | --- | --- |
 | Phase 0 | `passed_initial` | The health packet reproduces the five-window failure and separates hot memory, retrieved memory, selected candidates, renderability, vector availability, and degradation facts. | Keep the packet updated as later trace fields change. |
 | Phase 1 | `passed_deterministic` | Selected-but-not-rendered candidates are no longer invisible; retrieval-layer suppressed candidates are counted by reason; empty/missing Understanding is suppressed before selection. | Run a fresh post-repair smoke to prove the trace behavior in real artifacts. |
-| Phase 2 | `blocked_by_ollama_environment_after_sqlite_vec_fix` | sqlite-vec can be imported and loaded locally after the adapter fix. | Ollama/Qwen embedding service must be available before query embeddings, vector rows, dense candidates, and RRF fusion can be validated. |
+| Phase 2 | `partially_validated_fake_embedder_deferred_environment` | sqlite-vec can be imported and loaded locally after the adapter fix; deterministic fake-embedder coverage proves vector rows, query embedding cache, dense candidates, dense distance filtering, and dense-channel selection work in code. | Ollama/Qwen embedding service must be available before real Qwen query embeddings, live dense candidates, and live RRF fusion can be validated. |
 | Phase 3 | `passed_deterministic_text_only` | Text-only FTS retrieves known Chinese and English prior Understanding; multi-recall aggregation preserves recall-match metadata; empty-Understanding candidates are suppressed. | Validate with a post-repair no-judge smoke; dense paraphrase remains Phase 2-dependent. |
 | Phase 4 | `passed_deterministic` | Runtime retrieval can continue after boundary acceptance even if the earlier tool-stage trace was `boundary_unresolved`; horizon gates now record current unit, recent exclusion, max retrievable unit, prior count, and minimum prior count. | Validate the gate counts in fresh smoke artifacts. |
 | Phase 5 | `passed_deterministic` | A selected non-empty Understanding from the real Unit Memory index renders into Digest `ReadingMemory`, and prior Response / Annotation / raw source stay out of prompt-facing memory. | Validate prompt-visible retrieved lines in a no-judge smoke. |
@@ -610,12 +611,12 @@ Root cause:
 - The Runner conflated "hot memory should not be duplicated in the Digest prompt" with "all active Recent Reading Memory source spans should be excluded from Unit Memory retrieval".
 - Because active Recent Reading Memory accumulates through the chapter, the exclusion set grew until it covered nearly all prior units.
 
-Repair direction:
+Repair:
 
 - Do not pass the whole active Recent Reading Memory store as `excluded_source_unit_span_ids` to Unit Memory retrieval.
 - Let UnitMemoryIndex horizon gates exclude only direct recent neighbors for long-distance retrieval.
 - Let Digest `ReadingMemory` rendering dedupe retrieved lines against hot memory, rather than preventing retrieval from seeing the whole prior ledger.
-- Re-run a no-judge smoke after the fix; this R9 repair is not validated until fresh artifacts show whether candidates can now be selected and rendered.
+- Post-R9 and post-R11 no-judge `text_only` smokes validated that prior Understanding candidates can now be selected and rendered.
 
 ### R10. Auxiliary retrieval surfaces outweighed Understanding in lexical ranking
 
@@ -631,9 +632,9 @@ Repair:
 - `unit_source`, `unit_annotation`, and `unit_response` still participate in FTS retrieval, but as auxiliary cue surfaces.
 - A deterministic test now verifies that when the same recall phrase matches one unit's source text and another unit's Understanding, the Understanding match ranks first.
 
-Validation needed:
+Validation:
 
-- Run a post-R10 no-judge `text_only` smoke and review whether auxiliary-surface pollution decreases without losing useful continuity recall.
+- A post-R10/R11 no-judge `text_only` smoke showed prompt-visible retrieved memory still worked and rendered retrieved unit ids were traceable. Relevance improved by restoring Understanding as the primary surface, but further recall/selection calibration remains separate follow-up work.
 
 ### R11. Selection trace did not identify rendered retrieved unit ids
 
@@ -647,9 +648,9 @@ Repair:
 - `unit_memory_reading_memory_selection` rows now record `rendered_retrieved_units`, `rendered_retrieved_unit_ids`, and `rendered_hot_units`.
 - The health script reports `rendered_retrieved_unique_unit_count` and rendered retrieved ids when available.
 
-Validation needed:
+Validation:
 
-- Run a post-R11 smoke and confirm the new fields appear in fresh runtime traces and health packets.
+- Post-R11 and post-selection-cap smoke artifacts confirmed the new fields appear in fresh runtime traces and health packets.
 
 ## Golden Path Invariants
 
@@ -734,14 +735,15 @@ Acceptance:
 
 ### Phase 2. Hybrid Vector Path Repair
 
-Status: `blocked_by_ollama_environment_after_sqlite_vec_fix`
+Status: `partially_validated_fake_embedder_deferred_environment`
 
 Current evidence:
 
 - `sqlite-vec` is declared in `pyproject.toml`.
 - Current venv initially lacked `sqlite_vec`; installing `sqlite-vec>=0.1.6` fixed the import.
 - The sqlite-vec adapter now enables SQLite extension loading before calling `sqlite_vec.load(...)`; vec0 table creation with `distance_metric=cosine` is locally verified.
-- Current machine does not have the `ollama` command and `127.0.0.1:11434` is not serving embeddings, so full hybrid query embedding / dense retrieval remains environment-blocked.
+- Deterministic fake-embedder coverage verifies the code path that writes `unit_understanding` vector rows, caches query embeddings, runs sqlite-vec KNN, filters distant dense candidates with `dense_max_distance`, and selects a dense-channel result.
+- Current machine does not have the `ollama` command and `127.0.0.1:11434` is not serving embeddings, so real Qwen query embedding / live dense retrieval remains environment-blocked.
 
 Goal:
 
@@ -764,6 +766,7 @@ Acceptance:
   - query embedding cache nonzero after retrieval
   - at least one dense candidate returned for a known prior-memory query
   - effective search channel is not only text-only
+- deterministic fake-embedder coverage can prove the adapter and sqlite-vec code path, but it does not satisfy live hybrid acceptance until the local Ollama/Qwen service is available
 
 ### Phase 3. Text-Only Retrieval Repair
 

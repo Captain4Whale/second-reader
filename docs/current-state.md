@@ -7,7 +7,7 @@ Update when: the current objective, active tasks, blockers, active jobs, open de
 
 This file is authoritative for durable current status. Do not keep unique active-state information only in `docs/agent-handoff.md`.
 
-Last verified: `2026-06-06T18:18:20+08:00`
+Last verified: `2026-06-06T18:28:48+08:00`
 
 ## Current Objective
 - The `Ingest -> Digest -> Reading Runner settlement` mechanism reframe is implemented; current work is fact alignment, smoke/diagnostic review, and calibration before any formal evaluation promotion.
@@ -42,7 +42,7 @@ Last verified: `2026-06-06T18:18:20+08:00`
     - Digest semantic refactor is implemented: model-facing `understanding / response / annotations` are three peer outputs, with one holistic `understanding` string per unit mapped into `recent_reading_memory`
     - Digest Understanding prompt `attentional_v2.digest.v9` now frames `understanding` as concise source-established content from the current source text, with light section headings, text-type compression guidance, grammatical-subject guidance, source-established-content calibration, subject-continuity rules, and approved examples to avoid unit/commentary-shaped, passage-effect, source-copying, floating-pronoun memory text, or content-type classification; the active promptset is `attentional_v2-phase6-v56`
     - subject-continuity / standalone Understanding follow-up remains implemented in Digest prompt `attentional_v2.digest.v9`: prior Understanding in `ReadingMemory` carries narrator / speaker / actor / concept continuity; Digest establishes new subjects, continues known subjects when supported, or explicitly preserves meaningful ambiguity without adding raw prior-source backfill, Ingest reference-resolution fields, or a durable referent store
-    - Unit Memory recall/retrieval/context framework is implemented: settlement writes one unit-centered ledger entry per accepted source unit, derives source / understanding / response / annotation retrieval documents, indexes them with SQLite FTS5, optionally indexes dense vectors through sqlite-vec + local Ollama, lets Ingest trigger bounded prior-reading recalls through `retrieve_unit_memory`, and writes retrieval/selection traces between `Ingest` and `Digest`
+    - Unit Memory recall/retrieval/context framework is implemented: settlement writes one unit-centered ledger entry per accepted source unit, derives source / understanding / response / annotation retrieval documents, indexes them with SQLite FTS5, optionally indexes dense vectors through sqlite-vec + local Ollama, filters dense candidates by `dense_max_distance`, lets Ingest trigger bounded prior-reading recalls through `retrieve_unit_memory`, and writes retrieval/selection traces between `Ingest` and `Digest`
     - Digest now receives one top-level `ReadingMemory` block assembled by runtime from hot current-chapter Understanding plus selected long-distance Unit Memory Understanding; raw prior source, prior Response, and prior Annotation remain retrieval/audit surfaces only
     - current `Digest` has no path-redirection output contract and the Runner/audit path emits no Detour or source-backread runtime artifacts for new runs
     - current `local_continuity` contains only forward-reading continuity; old Detour-era checkpoint/artifact shapes are not a compatibility target
@@ -76,10 +76,10 @@ Last verified: `2026-06-06T18:18:20+08:00`
     - the configured `hybrid` mode degraded before dense retrieval was validated because sqlite-vec was unavailable; text-only fallback produced almost no candidates
     - current repair authority: `docs/implementation/new-reading-mechanism/unit-memory-retrieval-repair-validation-plan.md`
   - retrieval repair status:
-    - the staged retrieval repair track has started, but the goal is not complete because no no-judge smoke has yet proven prompt-visible retrieved Understanding lines in Digest `ReadingMemory`
+    - the staged retrieval repair track has proven prompt-visible retrieved Understanding lines in `text_only` diagnostic smokes, but the goal is not complete because live hybrid dense retrieval remains environment-blocked and recall relevance/language calibration is still under review
     - Phase 0 health packet is in place and reproduced the five-window failure from artifacts; run-local health reports are under `reading-companion-backend/eval/runs/attentional_v2/attentional_v2_ingest_digest_unit_memory_full_diagnostic_20260603_parallel5/analysis/unit_memory_retrieval_health/`
     - Phase 1/5 deterministic trace-rendering repair now passes: retrieval suppresses candidates without renderable Understanding before final selection, health reports count retrieval-layer suppression reasons, and a runner-level known-answer case proves a selected non-empty Understanding from the real Unit Memory index renders into Digest `ReadingMemory` without prior Response / Annotation / raw source
-    - Phase 2 remains environment-blocked after sqlite-vec adapter repair because local Ollama / Qwen embedding service is not reachable, so dense candidates and RRF fusion have not been validated
+    - Phase 2 is now partially validated at the code-path layer: sqlite-vec adapter loading works, and a deterministic fake-embedder test proves vector rows, query embedding cache, dense sqlite-vec candidates, dense distance filtering, and dense-channel selection; live hybrid remains environment-blocked because local Ollama / Qwen embedding service is not reachable, so real Qwen embeddings and live dense/RRF behavior have not been validated
     - Phase 3 deterministic text-only repair now passes for Chinese recall-meta wording, English concept recall, and multi-recall aggregation with `matched_recalls`
     - Phase 4 deterministic boundary/horizon repair now passes: tool-stage `boundary_unresolved` no longer prevents runtime retrieval after accepted source-unit governance, and horizon gates record numeric counts rather than only labels
     - first post-repair `text_only` smoke attempt:
@@ -89,7 +89,7 @@ Last verified: `2026-06-06T18:18:20+08:00`
       - result: the underlying read loop completed and wrote runtime artifacts, but the registered wrapper exited `1` because strict LLM-health validation reported `llm_fallback_events_present`; summary files were not generated
       - health packet: `reading-companion-backend/eval/runs/attentional_v2/attentional_v2_unit_memory_text_only_smoke_value_20260606/analysis/unit_memory_retrieval_health/summary.json`
       - retrieval outcome before the new fix: `50` Unit Memory entries and `228` retrieval docs existed, but `selected_unit_count=0`, `renderable_selected_unit_count=0`, and `retrieved_line_total=0`
-      - root cause found after the smoke: Runner passed the whole active Recent Reading Memory store as retrieval exclusions, which excluded nearly all prior units; this has been removed in code, but a post-fix smoke has not yet rerun
+      - root cause found after the smoke: Runner passed the whole active Recent Reading Memory store as retrieval exclusions, which excluded nearly all prior units; this was removed in code and later post-R9/post-R11 smokes proved retrieved Understanding can become prompt-visible
     - post-R9 `text_only` diagnostic smoke:
       - run id: `attentional_v2_unit_memory_text_only_smoke_xidaduo_post_r9_20260606`
       - job id: `bgjob_unit_memory_text_only_smoke_xidaduo_post_r9_20260606`
@@ -147,7 +147,7 @@ Last verified: `2026-06-06T18:18:20+08:00`
       - follow-up finding: some Chinese-source recalls were emitted in English and some recall `basis` values drifted from the contract; Ingest v6 now tightens recall language and basis
   - next step:
     - rerun a small no-judge `text_only` smoke after Ingest v6 if recall-language drift continues to weaken lexical retrieval, and inspect whether selected retrieved Understanding remains nonzero, narrower, and more directly tied to recall intent
-    - treat hybrid dense retrieval as blocked unless sqlite-vec, Ollama reachability, the configured Qwen embedding model, query embedding cache, vector rows, dense candidates, and RRF fusion are all validated
+    - treat live hybrid dense retrieval as blocked unless Ollama reachability, the configured Qwen embedding model, real query embedding cache rows, real vector rows, dense candidates, and RRF fusion are all validated; sqlite-vec and the fake-embedder code path are no longer the blocker
     - do not run formal evaluation, update evidence catalog, or claim product quality from the intentionally stopped diagnostic smokes; decide whether to tune recall specificity first or validate the environment-blocked hybrid dense path once Ollama/Qwen is available
     - use `docs/implementation/new-reading-mechanism/ingest-context-and-navigate-mapping.md` as the implementation reference for the landed first-slice `Ingest` XML context
     - use `docs/implementation/new-reading-mechanism/digest-understanding-response-annotation-design.md` as the implemented reference for the Digest prompt/output semantic refactor

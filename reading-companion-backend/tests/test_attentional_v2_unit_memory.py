@@ -1,6 +1,9 @@
 import json
 import sqlite3
 
+import pytest
+
+import src.attentional_v2.unit_memory as unit_memory_module
 from src.attentional_v2.storage import (
     memory_retrieval_config_file,
     unit_memory_retrieval_trace_file,
@@ -413,6 +416,77 @@ def test_dense_channel_weight_exists_only_for_understanding_surface():
     }
 
     assert dense_surfaces == {"unit_understanding"}
+
+
+def test_hybrid_dense_retrieval_uses_understanding_vectors_and_filters_distance(tmp_path, monkeypatch):
+    pytest.importorskip("sqlite_vec")
+
+    class FakeEmbedder:
+        def __init__(self, **kwargs):
+            pass
+
+        def embed(self, text):
+            lowered = text.lower()
+            if "river" in lowered or "ferryman" in lowered or "water" in lowered:
+                return [1.0, 0.0, 0.0]
+            if "merchant" in lowered or "profit" in lowered:
+                return [0.0, 1.0, 0.0]
+            return [0.0, 0.0, 1.0]
+
+    monkeypatch.setattr(unit_memory_module, "OllamaEmbedder", FakeEmbedder)
+    index = UnitMemoryIndex(
+        tmp_path,
+        config={
+            "mode": "hybrid",
+            "embedding_dimension": 3,
+            "min_retrievable_prior_units": 0,
+            "recent_neighbor_exclusion_unit_count": 0,
+            "dense_top_k": 5,
+            "lexical_top_k": 5,
+            "dense_max_distance": 0.25,
+        },
+    )
+    index.write_entry(
+        _entry(
+            "u000001",
+            1,
+            "The old ferryman waits.",
+            "The ferryman listens beside flowing water.",
+        ),
+        index_vectors=True,
+    )
+    index.write_entry(
+        _entry(
+            "u000002",
+            2,
+            "A merchant counts coins.",
+            "The merchant measures profit.",
+        ),
+        index_vectors=True,
+    )
+
+    result = index.retrieve_for_recalls(
+        book_id="book-demo",
+        recalls=[{"recall_id": "r1", "recall_text": "river crossing", "basis": "selected_source_unit"}],
+        query_source="tool_retrieve_unit_memory",
+        current_unit_index=3,
+    )
+
+    assert result["effective_mode"] == "hybrid"
+    assert result["degradation_reason"] == ""
+    assert [item["unit_id"] for item in result["selected_units"]] == ["u000001"]
+    assert result["selected_units"][0]["best_docs"][0]["channel"] == "dense"
+    trace = result["trace"]
+    assert trace["candidate_counts"]["dense_docs"] == 1
+    assert trace["candidate_counts"]["dense_docs_filtered_by_distance"] >= 1
+    assert trace["per_recall"][0]["dense_docs_filtered_by_distance"] >= 1
+
+    with index._connect() as connection:
+        assert index._load_sqlite_vec(connection)
+        vector_rows = connection.execute("SELECT COUNT(*) FROM retrieval_doc_vectors").fetchone()[0]
+        query_cache_rows = connection.execute("SELECT COUNT(*) FROM query_embedding_cache").fetchone()[0]
+    assert vector_rows == 2
+    assert query_cache_rows == 1
 
 
 def test_lexical_surface_weights_prioritize_understanding_over_auxiliary_surfaces():

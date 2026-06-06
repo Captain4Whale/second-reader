@@ -127,6 +127,7 @@ Use `docs/backend-reading-mechanism.md` for shared platform boundaries. Use `doc
   - The implementation currently covers Digest-time formation, append-only persistence, prompt projection, checkpoint / resume carriage, settlement audit visibility, and evaluation snapshot inclusion.
   - Long-distance Unit Memory now has a live recall/retrieval/context framework: settlement writes one ledger entry per accepted source unit, derives retrieval documents from source / understanding / response / annotation surfaces, builds FTS5 lexical retrieval, attempts optional sqlite-vec vector indexing in `hybrid` mode, records retrieval traces between `Ingest` and `Digest`, and renders runtime-selected Understanding lines into Digest `ReadingMemory`.
   - Unit Memory selection now has per-recall prompt-visible discipline: one recall can select at most `max_units_per_recall_to_digest_context` entries toward Digest `ReadingMemory` before traceable suppression with `per_recall_selection_limit_exceeded`; the broader total long-distance budget still covers multiple specific recalls.
+  - Dense Unit Memory retrieval now filters sqlite-vec candidates through `dense_max_distance` before aggregation, so `dense_top_k` does not automatically admit semantically distant vector neighbors.
   - Digest prompt-facing memory is now one top-level `ReadingMemory` text block assembled from hot current-chapter Understanding plus selected long-distance Unit Memory Understanding; raw prior source text, prior Response, and prior Annotation remain retrieval/audit surfaces rather than prompt-visible memory.
   - The next long-memory direction should be content-neutral unit-level memory, not content-typed concept/thread schemas; visible reactions belong in `reaction_records`.
   - Do not expand ActiveTension to cover these needs. Keep its existing fields (`tension_from`, `tension_focus`, `working_interpretation`, `source_refs`, `development_source_refs`, terminal reasons / coordinates, `status`, and legacy inputs) only as deprecated data until cleanup.
@@ -517,7 +518,7 @@ Use `docs/backend-reading-mechanism.md` for shared platform boundaries. Use `doc
     - each entry preserves the accepted source unit plus the model-facing `understanding`, `response`, and `annotations`
     - retrieval documents are derived from source, understanding, response, and annotation surfaces
     - FTS5 text retrieval is always available when SQLite supports FTS5; sqlite-vec + local Ollama embedding is optional and degrades to text-only behavior
-    - all retrieval documents may participate in FTS retrieval, but lexical ranking prioritizes `unit_understanding` over source / response / annotation auxiliary surfaces; only `unit_understanding` participates in dense vector retrieval in the current policy
+    - all retrieval documents may participate in FTS retrieval, but lexical ranking prioritizes `unit_understanding` over source / response / annotation auxiliary surfaces; only `unit_understanding` participates in dense vector retrieval in the current policy, and dense candidates are filtered by distance before aggregation
     - prompt-visible Digest memory is Understanding-only and rendered through one `ReadingMemory` block
   - `artifacts / history`
     - `reaction_records`
