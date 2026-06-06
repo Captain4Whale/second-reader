@@ -7,7 +7,7 @@ Update when: the current objective, active tasks, blockers, active jobs, open de
 
 This file is authoritative for durable current status. Do not keep unique active-state information only in `docs/agent-handoff.md`.
 
-Last verified: `2026-06-06T18:51:45+08:00`
+Last verified: `2026-06-06T19:03:16+08:00`
 
 ## Current Objective
 - The `Ingest -> Digest -> Reading Runner settlement` mechanism reframe is implemented; current work is fact alignment, smoke/diagnostic review, and calibration before any formal evaluation promotion.
@@ -145,6 +145,13 @@ Last verified: `2026-06-06T18:51:45+08:00`
       - retrieval outcome: health status `ok`; `46` Unit Memory entries, `287` retrieval docs, `49` retrieval rows, `46` selection rows, `selected_unit_count=8`, `renderable_selected_unit_count=7`, `retrieved_line_total=2`, and `rendered_retrieved_unique_unit_count=2`
       - selection-cap evidence: one mature recall had `15` candidate units, selected `6`, and suppressed `8` candidates with `per_recall_selection_limit_exceeded`
       - follow-up finding: some Chinese-source recalls were emitted in English and some recall `basis` values drifted from the contract; Ingest v6 now tightens recall language and basis
+    - current prompt-visible hot-memory exclusion repair:
+      - status: `passed_deterministic_pending_live_smoke`
+      - behavior: before Unit Memory retrieval, Reading Runner now computes only the hot current-chapter source spans that would already render in Digest `ReadingMemory` and passes those spans as retrieval exclusions
+      - boundary: this does not exclude the whole active Recent Reading Memory store; non-hot active recent memory remains retrievable when relevant
+      - trace: Unit Memory retrieval rows now record `excluded_source_unit_span_count`
+      - intent: prevent selected long-distance slots from being spent on units that will later be suppressed as `dedupe_hot_memory`
+      - next validation: run a small no-judge `text_only` smoke and inspect whether selected long-distance candidates are less often suppressed as hot-memory duplicates while retrieved Understanding lines remain prompt-visible
     - current recall-language contract repair:
       - status: `validated_observed_live_contract_sample`
       - code behavior: `submit_ingest_result` validation now receives the current source text and rejects model-side `memory_recalls[].recall_text` that clearly does not use the current source text's primary language; `retrieve_unit_memory` action-tool preflight applies the same validation before retrieval execution and returns `contract_violation` metadata for the forced final-output repair path
@@ -168,6 +175,7 @@ Last verified: `2026-06-06T18:51:45+08:00`
       - Ollama result: `reachable = false`, `blocking_reasons = ["ollama_unreachable"]`
       - interpretation: Phase 2 live hybrid remains blocked by the local Ollama/Qwen embedding service, not by sqlite-vec adapter loading
   - next step:
+    - first run a small no-judge `text_only` smoke after the prompt-visible hot-memory exclusion repair; verify `excluded_source_unit_span_count`, lower `dedupe_hot_memory` suppression in selected long-distance candidates, and nonzero prompt-visible retrieved Understanding when relevant candidates exist
     - do not rerun solely for the Ingest v6 language/basis contract unless later live artifacts show drift again; the current observed sample is sufficient for this narrow contract, while long-distance retrieval maturity was intentionally not revalidated in that early stopped run
     - treat live hybrid dense retrieval as blocked unless Ollama reachability, the configured Qwen embedding model, real query embedding cache rows, real vector rows, dense candidates, and RRF fusion are all validated; sqlite-vec and the fake-embedder code path are no longer the blocker
     - do not run formal evaluation, update evidence catalog, or claim product quality from the intentionally stopped diagnostic smokes; decide whether to tune recall specificity first or validate the environment-blocked hybrid dense path once Ollama/Qwen is available

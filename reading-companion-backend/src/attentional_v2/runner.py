@@ -1196,6 +1196,22 @@ def _hot_reading_memory_lines(
     return lines, {str(item.get("source_span_id")) for item in lines if item.get("source_span_id")}, suppressed
 
 
+def _prompt_visible_hot_source_span_ids(
+    recent_reading_memory: RecentReadingMemoryState | None,
+    *,
+    chapter_id: int,
+) -> set[str]:
+    """Return only hot memory spans that would already enter Digest ReadingMemory."""
+
+    if not isinstance(recent_reading_memory, dict):
+        return set()
+    _lines, hot_span_ids, _suppressed = _hot_reading_memory_lines(
+        recent_reading_memory,
+        chapter_id=chapter_id,
+    )
+    return set(hot_span_ids)
+
+
 def _retrieved_reading_memory_lines(
     unit_memory_retrieval: dict[str, object] | None,
     *,
@@ -1351,6 +1367,10 @@ def _retrieve_unit_memory_for_prepared_source_unit(
     recalls_status = _clean_text(prepared_source_unit.get("memory_recalls_status"))
     if not recalls_status and isinstance(selected_trace, dict):
         recalls_status = _clean_text(selected_trace.get("memory_recalls_status"))
+    excluded_hot_span_ids = _prompt_visible_hot_source_span_ids(
+        recent_reading_memory,
+        chapter_id=int(prepared_source_unit.get("chapter_id", 0) or 0),
+    )
     if not recalls:
         if recalls_status in {"missing", "malformed", "malformed_payload"}:
             fallback_query = fallback_query_from_source_unit(selected_source_unit)
@@ -1369,7 +1389,7 @@ def _retrieve_unit_memory_for_prepared_source_unit(
                         recalls=fallback_recalls,
                         query_source="runtime_source_text_fallback",
                         current_unit_index=next_unit_sequence_index(output_dir),
-                        excluded_source_unit_span_ids=set(),
+                        excluded_source_unit_span_ids=set(excluded_hot_span_ids),
                         accepted_source_span_id=_clean_text(selected_source_unit.get("source_span_id")),
                         accepted_unit_id=_clean_text(selected_source_unit.get("unit_id")),
                     )
@@ -1422,7 +1442,7 @@ def _retrieve_unit_memory_for_prepared_source_unit(
             recalls=recalls,
             query_source="ingest_recalls",
             current_unit_index=next_unit_sequence_index(output_dir),
-            excluded_source_unit_span_ids=set(),
+            excluded_source_unit_span_ids=set(excluded_hot_span_ids),
             accepted_source_span_id=_clean_text(selected_source_unit.get("source_span_id")),
             accepted_unit_id=_clean_text(selected_source_unit.get("unit_id")),
         )
@@ -1652,7 +1672,10 @@ def prepare_next_source_unit_for_read(
                 recalls=recalls,
                 query_source="tool_retrieve_unit_memory",
                 current_unit_index=next_unit_sequence_index(output_dir),
-                excluded_source_unit_span_ids=set(),
+                excluded_source_unit_span_ids=_prompt_visible_hot_source_span_ids(
+                    recent_reading_memory,
+                    chapter_id=chapter_id,
+                ),
                 tool_call_id=tool_call_id,
                 accepted_source_span_id=tool_source_span_id,
             )

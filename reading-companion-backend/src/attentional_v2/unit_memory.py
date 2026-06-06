@@ -1212,6 +1212,7 @@ class UnitMemoryIndex:
             "candidate_counts": {},
             "per_recall": [],
             "degradation_reason": "",
+            "excluded_source_unit_span_count": len(excluded_source_unit_span_ids),
             "selected_units": [],
             "suppressed_units": [],
         }
@@ -1416,6 +1417,7 @@ class UnitMemoryIndex:
             "latency_ms": 0,
             "candidate_counts": {},
             "degradation_reason": "",
+            "excluded_source_unit_span_count": len(excluded_source_unit_span_ids),
             "selected_units": [],
         }
         if not query_text:

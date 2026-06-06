@@ -127,6 +127,7 @@ Use `docs/backend-reading-mechanism.md` for shared platform boundaries. Use `doc
   - The implementation currently covers Digest-time formation, append-only persistence, prompt projection, checkpoint / resume carriage, settlement audit visibility, and evaluation snapshot inclusion.
   - Long-distance Unit Memory now has a live recall/retrieval/context framework: settlement writes one ledger entry per accepted source unit, derives retrieval documents from source / understanding / response / annotation surfaces, builds FTS5 lexical retrieval, attempts optional sqlite-vec vector indexing in `hybrid` mode, records retrieval traces between `Ingest` and `Digest`, and renders runtime-selected Understanding lines into Digest `ReadingMemory`.
   - Unit Memory selection now has per-recall prompt-visible discipline: one recall can select at most `max_units_per_recall_to_digest_context` entries toward Digest `ReadingMemory` before traceable suppression with `per_recall_selection_limit_exceeded`; the broader total long-distance budget still covers multiple specific recalls.
+  - Unit Memory retrieval excludes only hot current-chapter spans that are already prompt-visible in Digest `ReadingMemory`; it does not exclude the whole active Recent Reading Memory store. Retrieval traces record the prompt-visible hot span exclusion count so long-distance selection slots are not silently spent on hot-memory duplicates.
   - Dense Unit Memory retrieval now filters sqlite-vec candidates through `dense_max_distance` before aggregation, so `dense_top_k` does not automatically admit semantically distant vector neighbors.
   - Digest prompt-facing memory is now one top-level `ReadingMemory` text block assembled from hot current-chapter Understanding plus selected long-distance Unit Memory Understanding; raw prior source text, prior Response, and prior Annotation remain retrieval/audit surfaces rather than prompt-visible memory.
   - The next long-memory direction should be content-neutral unit-level memory, not content-typed concept/thread schemas; visible reactions belong in `reaction_records`.
@@ -464,6 +465,7 @@ Use `docs/backend-reading-mechanism.md` for shared platform boundaries. Use `doc
   - top-level `ReadingMemory`
     - hot current-chapter Understanding lines from `recent_reading_memory`
     - runtime-selected long-distance Unit Memory Understanding lines
+    - long-distance selection excludes the hot lines that are already prompt-visible, while leaving non-hot active Recent Reading Memory available for retrieval when it is genuinely relevant
     - simple position-prefixed text lines under the fixed `5K hot / 10K retrieved / 15K total` estimated-token budget
   - `CurrentFocus`
     - the accepted source unit as the immediate object of careful reading
@@ -626,7 +628,7 @@ Use `docs/backend-reading-mechanism.md` for shared platform boundaries. Use `doc
     - use `scripts/check_unit_memory_hybrid_readiness.py` to distinguish sqlite-vec readiness from Ollama/model availability before claiming live `hybrid` validation
   - `_mechanisms/attentional_v2/runtime/unit_memory_retrieval_trace.jsonl`
     - trace record of retrieval attempts and ReadingMemory selection between `Ingest` and `Digest`
-    - records recall count, per-recall candidate counts, effective retrieval mode, channel availability/degradation, selected/suppressed units, latency, and prompt-facing memory token accounting
+    - records recall count, per-recall candidate counts, prompt-visible hot span exclusion counts, effective retrieval mode, channel availability/degradation, selected/suppressed units, latency, and prompt-facing memory token accounting
     - tool results exposed to Ingest stay status/count-only; retrieved Understanding text and selected ids remain runtime-owned
   - `_mechanisms/attentional_v2/runtime/unit_span_ledger.jsonl`
     - canonical runtime fact for accepted mainline source units
