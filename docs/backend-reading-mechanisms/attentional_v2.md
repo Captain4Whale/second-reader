@@ -173,7 +173,7 @@ Use `docs/backend-reading-mechanism.md` for shared platform boundaries. Use `doc
     - receives that already-prepared adaptive source preview in XML context
     - returns boundary fields, including an exact `end_anchor_text` rather than sentence ids or raw numeric offsets
     - may also return up to three `memory_recalls[]` items for Unit Memory retrieval support
-  - `Reading Runner` boundary governance resolves the returned anchor, retries once when the anchor is unresolved, falls back to a deterministic cursor boundary when needed, and produces the accepted `PreparedSourceUnit`
+  - `Reading Runner` boundary governance resolves the returned anchor with source-exact matching first and quote-normalized exact matching second, retries once when the anchor is unresolved, falls back to a deterministic cursor boundary when needed, and produces the accepted `PreparedSourceUnit`
   - `Reading Runner` executes Unit Memory retrieval for the accepted unit when recalls are present, selects prompt-facing Understanding memory, and records `unit_memory_retrieval_trace.jsonl`
   - mandatory `Digest` call with bounded `ReadingMemory`
   - `Digest` directly surfaces zero-to-many reading-time reactions and emits bounded Recent Reading Memory

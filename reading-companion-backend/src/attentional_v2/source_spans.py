@@ -681,6 +681,67 @@ def cursor_from_flat_offset(
     )
 
 
+_DOUBLE_QUOTE_EQUIVALENTS = {
+    '"',
+    "“",
+    "”",
+    "„",
+    "‟",
+    "＂",
+    "«",
+    "»",
+}
+_SINGLE_QUOTE_EQUIVALENTS = {
+    "'",
+    "‘",
+    "’",
+    "‚",
+    "‛",
+    "＇",
+}
+
+
+def _normalize_anchor_match_char(value: str) -> str:
+    if value in _DOUBLE_QUOTE_EQUIVALENTS:
+        return '"'
+    if value in _SINGLE_QUOTE_EQUIVALENTS:
+        return "'"
+    return value
+
+
+def _normalized_anchor_projection(value: str) -> tuple[str, list[int], list[int]]:
+    normalized_chars: list[str] = []
+    original_starts: list[int] = []
+    original_ends: list[int] = []
+    for index, char in enumerate(value):
+        normalized_chars.append(_normalize_anchor_match_char(char))
+        original_starts.append(index)
+        original_ends.append(index + 1)
+    return "".join(normalized_chars), original_starts, original_ends
+
+
+def _find_unique_normalized_anchor_match(source_text: str, anchor: str) -> tuple[str, int, int, int]:
+    normalized_source, original_starts, original_ends = _normalized_anchor_projection(source_text)
+    normalized_anchor, _anchor_starts, _anchor_ends = _normalized_anchor_projection(anchor)
+    if not normalized_anchor:
+        return "", 0, 0, 0
+
+    matches: list[int] = []
+    start = 0
+    while True:
+        index = normalized_source.find(normalized_anchor, start)
+        if index < 0:
+            break
+        matches.append(index)
+        start = index + max(1, len(normalized_anchor))
+    if len(matches) != 1:
+        return "ambiguous" if len(matches) > 1 else "not_found", len(matches), 0, 0
+
+    match_start = matches[0]
+    match_end_index = match_start + len(normalized_anchor) - 1
+    return "matched", 1, original_starts[match_start], original_ends[match_end_index]
+
+
 def resolve_end_anchor_text(
     *,
     preview: Mapping[str, object],
@@ -701,6 +762,30 @@ def resolve_end_anchor_text(
         matches.append(index)
         start = index + max(1, len(anchor))
     if not matches:
+        normalized_status, normalized_count, original_start, original_end = _find_unique_normalized_anchor_match(
+            source_text,
+            anchor,
+        )
+        if normalized_status == "matched":
+            end_cursor = cursor_from_flat_offset(preview, original_end)
+            return {
+                "status": "matched",
+                "method": "normalized_exact_text",
+                "end_cursor": end_cursor,
+                "matched_text": source_text[original_start:original_end],
+                "match_count": 1,
+                "normalization": "quote_equivalence",
+                "anchor_text": anchor,
+            }
+        if normalized_status == "ambiguous":
+            return {
+                "status": "ambiguous",
+                "method": "normalized_exact_text",
+                "matched_text": anchor,
+                "match_count": normalized_count,
+                "normalization": "quote_equivalence",
+                "reason": "end_anchor_text matched more than once in preview source_text after quote normalization",
+            }
         return {
             "status": "not_found",
             "method": "exact_text",

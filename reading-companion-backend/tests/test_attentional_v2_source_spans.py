@@ -79,6 +79,34 @@ def test_resolver_maps_end_anchor_to_paragraph_offset_cursor() -> None:
     assert resolution["end_cursor"]["char_offset"] == len("Beta bridge.")
 
 
+def test_resolver_matches_anchor_with_equivalent_quote_marks() -> None:
+    chapter = {
+        "id": 1,
+        "title": "Chapter 1",
+        "paragraphs": [
+            {"paragraph_index": 1, "text": "”", "text_role": "body"},
+            {"paragraph_index": 2, "text": "“看！”悉达多轻声对乔文达道，“此人就是佛陀。”", "text_role": "body"},
+        ],
+    }
+    preview = build_paragraph_offset_preview(
+        chapter=chapter,
+        current_cursor={"chapter_id": 1, "chapter_ref": "Chapter 1", "paragraph_index": 1, "char_offset": 1},
+        reader_policy={"unitize": {"preview_soft_min_chars": 50, "preview_hard_max_chars": 200, "max_lookahead_paragraphs": 4}},
+    )
+
+    resolution = resolve_end_anchor_text(
+        preview=preview,
+        end_anchor_text='"看！"悉达多轻声对乔文达道，"此人就是佛陀。"',
+    )
+
+    assert resolution["status"] == "matched"
+    assert resolution["method"] == "normalized_exact_text"
+    assert resolution["normalization"] == "quote_equivalence"
+    assert resolution["matched_text"] == "“看！”悉达多轻声对乔文达道，“此人就是佛陀。”"
+    assert resolution["end_cursor"]["paragraph_index"] == 2
+    assert resolution["end_cursor"]["char_offset"] == len("“看！”悉达多轻声对乔文达道，“此人就是佛陀。”")
+
+
 def test_resolver_reports_ambiguous_and_missing_anchor() -> None:
     preview = {
         "chapter_id": 1,

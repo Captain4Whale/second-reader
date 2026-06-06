@@ -7,7 +7,7 @@ Update when: the current objective, active tasks, blockers, active jobs, open de
 
 This file is authoritative for durable current status. Do not keep unique active-state information only in `docs/agent-handoff.md`.
 
-Last verified: `2026-06-06T20:14:00+08:00`
+Last verified: `2026-06-06T20:22:42+08:00`
 
 ## Current Objective
 - The `Ingest -> Digest -> Reading Runner settlement` mechanism reframe is implemented; current work is fact alignment, smoke/diagnostic review, and calibration before any formal evaluation promotion.
@@ -36,7 +36,7 @@ Last verified: `2026-06-06T20:14:00+08:00`
     - current `llm_calls.ingest(...)` is the forward-only XML LLM boundary call: exact `end_anchor_text`, `boundary_type`, `reason`, and bounded `memory_recalls[]`
     - current LLM-call code now lives in `reading-companion-backend/src/attentional_v2/llm_calls.py`; the old ambiguous active module name is removed
     - current `attentional_v2` LLM calls submit structured results through mechanism-private final-output tools such as `submit_ingest_result` and `submit_digest_result`; `retrieve_unit_memory` remains the only live action tool, and final-output tools are result channels rather than business actions
-    - runtime next-unit preparation lives outside `Ingest` as `prepare_next_source_unit_for_read`: it prepares source preview/context, calls `Ingest`, performs anchor resolution/retry/fallback boundary governance, and hands the accepted source unit to `Digest`
+    - runtime next-unit preparation lives outside `Ingest` as `prepare_next_source_unit_for_read`: it prepares source preview/context, calls `Ingest`, performs exact / quote-normalized anchor resolution, retry/fallback boundary governance, and hands the accepted source unit to `Digest`
     - `Ingest` uses `ReaderRole`, `Instruction`, `BookInfo`, `CurrentView`, empty `RetrievalSurface`, and `OutputContract`; it may express up to three prior-reading recalls, while actual retrieval execution and prompt-facing memory selection remain Reading Runner runtime work
     - Ingest prompt `attentional_v2.ingest.v6` calibrates `RecallPriorReading` toward the selected unit's primary semantic focus, away from broad character/protagonist background unless the current unit hinges on it, and toward empty recalls when only generic memory would be possible; it also requires model-side recall text to use the current source text's primary language, preserve source-form names/terms when available, and keep recall `basis` exactly `selected_source_unit`
     - Digest semantic refactor is implemented: model-facing `understanding / response / annotations` are three peer outputs, with one holistic `understanding` string per unit mapped into `recent_reading_memory`
@@ -162,7 +162,8 @@ Last verified: `2026-06-06T20:14:00+08:00`
       - interpretation: selected long-distance slots were no longer consumed by hot-memory duplicates in the observed sample; `dedupe_hot_memory=0` and retrieved Understanding remained prompt-visible
       - follow-up relevance review: R12 mechanics are validated, but four selected/rendered retrieval events showed the next failure mode: after prompt-visible hot candidates are correctly excluded, the selection layer can backfill long-distance slots with low-score or broad weak memories, such as childhood / parental-background memories for a water-walking / samana-magic unit or father-vigil memories for a Gotama-doctrine / Govinda-parting unit
       - R13 deterministic repair: selection now applies a content-neutral quality gate after aggregation and renderability checks; candidates need strong enough `unit_understanding` evidence or stricter auxiliary-surface evidence before they can occupy long-distance `ReadingMemory` slots, and weak candidates are suppressed with `candidate_below_selection_quality_threshold`
-      - R13 status: validated in `text_only` diagnostics. The post-R13 smoke `attentional_v2_unit_memory_text_only_smoke_xidaduo_post_r13_20260606` was intentionally stopped after evidence; health status `ok` with `48` entries, `273` retrieval docs, `selected_unit_count=6`, `retrieved_line_total=6`, `rendered_retrieved_unique_unit_count=6`, `selected_but_not_rendered_count=0`, and `candidate_below_selection_quality_threshold=11`
+      - R13 status: validated in `text_only` diagnostics with a boundary caveat. The post-R13 smoke `attentional_v2_unit_memory_text_only_smoke_xidaduo_post_r13_20260606` was intentionally stopped after evidence; health status `ok` with `48` entries, `273` retrieval docs, `selected_unit_count=6`, `retrieved_line_total=6`, `rendered_retrieved_unique_unit_count=6`, `selected_but_not_rendered_count=0`, and `candidate_below_selection_quality_threshold=11`. Review then found one selected event attached to a one-character closing-quote fallback unit caused by straight-vs-curved quote anchor mismatch.
+      - R14 boundary repair: `resolve_end_anchor_text(...)` now tries quote-normalized exact matching after source-exact matching fails, mapping the normalized match back to true source offsets. Deterministic coverage passes; live validation remains pending in the next smoke.
     - current recall-language contract repair:
       - status: `validated_observed_live_contract_sample`
       - code behavior: `submit_ingest_result` validation now receives the current source text and rejects model-side `memory_recalls[].recall_text` that clearly does not use the current source text's primary language; `retrieve_unit_memory` action-tool preflight applies the same validation before retrieval execution and returns `contract_violation` metadata for the forced final-output repair path
@@ -186,7 +187,7 @@ Last verified: `2026-06-06T20:14:00+08:00`
       - Ollama result: `reachable = false`, `blocking_reasons = ["ollama_unreachable"]`
       - interpretation: Phase 2 live hybrid remains blocked by the local Ollama/Qwen embedding service, not by sqlite-vec adapter loading
   - next step:
-    - review R13 selected-memory examples if relevance still looks broad; R13 selection-quality gating itself is validated in a no-judge `text_only` diagnostic and should not be re-run unless later artifacts regress
+    - validate R14 quote-normalized anchor resolution in the next no-judge smoke before judging post-R13 selected-memory relevance; the R13 quality gate itself is validated, but one selected event in that smoke was boundary-contaminated
     - do not rerun solely for the Ingest v6 language/basis contract unless later live artifacts show drift again; the current observed sample is sufficient for this narrow contract, while long-distance retrieval maturity was intentionally not revalidated in that early stopped run
     - treat live hybrid dense retrieval as blocked unless Ollama reachability, the configured Qwen embedding model, real query embedding cache rows, real vector rows, dense candidates, and RRF fusion are all validated; sqlite-vec and the fake-embedder code path are no longer the blocker
     - do not run formal evaluation, update evidence catalog, or claim product quality from the intentionally stopped diagnostic smokes; review R13 selected-memory examples before any further relevance calibration, and treat live hybrid dense validation as blocked until Ollama/Qwen is available
