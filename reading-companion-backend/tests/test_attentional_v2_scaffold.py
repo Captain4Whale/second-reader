@@ -199,7 +199,7 @@ def test_prompt_assembler_renders_spec_and_metadata_without_live_migration() -> 
                 ),
             ),
             PromptTemplateNode(element_name="CurrentFocus", value_slot="current_focus"),
-            PromptTemplateNode(element_name="OutputContract", literal_value="Return JSON only."),
+            PromptTemplateNode(element_name="OutputContract", literal_value="Submit via tool only."),
         ),
         fragment_registry=PromptFragmentRegistry(
             [
@@ -220,7 +220,7 @@ def test_prompt_assembler_renders_spec_and_metadata_without_live_migration() -> 
     assert "<CurrentFocus>" in result.rendered_text
     assert "Use A &amp; B &lt; safely." in result.rendered_text
     assert "Current unit &lt;text&gt; &amp; intent." in result.rendered_text
-    assert "Return JSON only." in result.rendered_text
+    assert "Submit via tool only." in result.rendered_text
     assert result.spec_id == "attentional_v2.test_node.xml.v1"
     assert result.owner_node == "test_node"
     assert result.prompt_version == "attentional_v2.test.v1"
@@ -234,8 +234,8 @@ def test_prompt_assembler_renders_spec_and_metadata_without_live_migration() -> 
     assert "test.role.v1" not in result.rendered_text
     assert "current_focus" not in result.rendered_text
     assert "ref=" not in result.rendered_text
-    assert DIGEST_PROMPT_VERSION == "attentional_v2.digest.v7"
-    assert ATTENTIONAL_V2_PROMPTS.digest_system == "Follow the structured Digest prompt in the user message. Return JSON only."
+    assert DIGEST_PROMPT_VERSION == "attentional_v2.digest.v8"
+    assert ATTENTIONAL_V2_PROMPTS.digest_system == "Follow the structured Digest prompt in the user message. Use the required submit_digest_result tool as the final output channel."
     assert "Structural frame:" not in ATTENTIONAL_V2_PROMPTS.digest_prompt
 
 
@@ -336,9 +336,9 @@ def test_digest_xml_prompt_example_renders_escaped_blocks() -> None:
     assert "reading_state" not in rendered
     assert "current_focus" not in rendered
     assert "output_contract" not in rendered
-    assert DIGEST_PROMPT_VERSION == "attentional_v2.digest.v7"
+    assert DIGEST_PROMPT_VERSION == "attentional_v2.digest.v8"
     assert ATTENTIONAL_V2_PROMPTS.digest_version == DIGEST_PROMPT_VERSION
-    assert ATTENTIONAL_V2_PROMPTS.digest_system == "Follow the structured Digest prompt in the user message. Return JSON only."
+    assert ATTENTIONAL_V2_PROMPTS.digest_system == "Follow the structured Digest prompt in the user message. Use the required submit_digest_result tool as the final output channel."
     assert "Structural frame:" not in ATTENTIONAL_V2_PROMPTS.digest_prompt
 
 
@@ -360,7 +360,7 @@ def test_full_digest_prompt_xml_assembly_renders_all_live_blocks() -> None:
         },
     )
 
-    assert result.spec_id == "attentional_v2.digest.xml.v7"
+    assert result.spec_id == "attentional_v2.digest.xml.v8"
     assert result.owner_node == "digest"
     assert result.prompt_version == DIGEST_PROMPT_VERSION
     assert result.promptset_version == DIGEST_XML_PROMPTSET_VERSION
@@ -400,8 +400,8 @@ def test_full_digest_prompt_xml_assembly_renders_all_live_blocks() -> None:
     assert "value_slot" not in result.rendered_text
     assert "book_identity" not in result.rendered_text
     assert "digest.role_and_stance" not in result.rendered_text
-    assert DIGEST_PROMPT_VERSION == "attentional_v2.digest.v7"
-    assert ATTENTIONAL_V2_PROMPTS.digest_system == "Follow the structured Digest prompt in the user message. Return JSON only."
+    assert DIGEST_PROMPT_VERSION == "attentional_v2.digest.v8"
+    assert ATTENTIONAL_V2_PROMPTS.digest_system == "Follow the structured Digest prompt in the user message. Use the required submit_digest_result tool as the final output channel."
 
 
 def test_digest_reader_role_and_instruction_xml_renders_target_structure() -> None:
@@ -470,8 +470,8 @@ def test_digest_reader_role_and_instruction_xml_renders_target_structure() -> No
     assert "reader.role" not in rendered
     assert "digest.current_step" not in rendered
     assert "reading-companion-backend" not in rendered
-    assert DIGEST_PROMPT_VERSION == "attentional_v2.digest.v7"
-    assert ATTENTIONAL_V2_PROMPTS.digest_system == "Follow the structured Digest prompt in the user message. Return JSON only."
+    assert DIGEST_PROMPT_VERSION == "attentional_v2.digest.v8"
+    assert ATTENTIONAL_V2_PROMPTS.digest_system == "Follow the structured Digest prompt in the user message. Use the required submit_digest_result tool as the final output channel."
     assert "Structural frame:" not in ATTENTIONAL_V2_PROMPTS.digest_prompt
     assert rendered.index("<ReaderRole>") < rendered.index("<Instruction>")
     assert rendered.index("<Instruction>") < rendered.index("<CurrentStep>")
@@ -520,7 +520,7 @@ def test_digest_book_info_xml_renders_light_orientation_block() -> None:
     assert "book_identity" not in rendered
     assert "chapter_identity" not in rendered
     assert "ref=" not in rendered
-    assert DIGEST_PROMPT_VERSION == "attentional_v2.digest.v7"
+    assert DIGEST_PROMPT_VERSION == "attentional_v2.digest.v8"
     assert "Structural frame:" not in ATTENTIONAL_V2_PROMPTS.digest_prompt
 
 
@@ -587,7 +587,7 @@ def test_digest_current_focus_xml_renders_mainline_source_unit_with_paragraphs()
     assert "reading_path" not in rendered
     assert "reading_position" not in rendered
     assert "reading_intent" not in rendered
-    assert DIGEST_PROMPT_VERSION == "attentional_v2.digest.v7"
+    assert DIGEST_PROMPT_VERSION == "attentional_v2.digest.v8"
     assert "Structural frame:" not in ATTENTIONAL_V2_PROMPTS.digest_prompt
 
 
@@ -664,7 +664,7 @@ def test_digest_reading_memory_xml_projects_recent_memory_as_text_array_only() -
     assert "value_slot" not in rendered
     assert "recent_memory" not in rendered
     assert "ref=" not in rendered
-    assert DIGEST_PROMPT_VERSION == "attentional_v2.digest.v7"
+    assert DIGEST_PROMPT_VERSION == "attentional_v2.digest.v8"
     assert "Structural frame:" not in ATTENTIONAL_V2_PROMPTS.digest_prompt
 
 
@@ -734,43 +734,6 @@ def test_runner_builds_unified_reading_memory_from_hot_and_retrieved_understandi
     ]
     assert "Prior response" not in "\n".join(result["lines"])
     assert any(item["reason"] == "dedupe_hot_memory" for item in result["suppressed"])
-
-
-def test_runner_treats_recalls_without_tool_call_as_contract_violation(tmp_path: Path) -> None:
-    output_dir = tmp_path / "output" / "demo-book"
-    result = runner_module._retrieve_unit_memory_for_prepared_source_unit(
-        output_dir=output_dir,
-        book_id="book-demo",
-        prepared_source_unit={
-            "memory_recalls": [
-                {
-                    "recall_id": "r1",
-                    "recall_text": "earlier station farewell",
-                    "basis": "selected_source_unit",
-                }
-            ],
-            "ingest_trace": [
-                {
-                    "tool_loop_status": "tool_call_contract_violation",
-                    "memory_recalls": [
-                        {
-                            "recall_id": "r1",
-                            "recall_text": "earlier station farewell",
-                            "basis": "selected_source_unit",
-                        }
-                    ],
-                }
-            ],
-        },
-        recent_reading_memory={"entries": []},
-        memory_retrieval_config={"mode": "hybrid"},
-    )
-
-    assert result["selected_units"] == []
-    assert result["query_source"] == "tool_call_contract_violation"
-    trace = json.loads(unit_memory_retrieval_trace_file(output_dir).read_text(encoding="utf-8").strip())
-    assert trace["query_source"] == "tool_call_contract_violation"
-    assert trace["candidate_counts"] == {"recall_count": 1}
 
 
 def test_runner_falls_back_to_source_text_when_recalls_are_malformed(tmp_path: Path) -> None:
@@ -859,8 +822,8 @@ def test_digest_output_contract_xml_renders_target_contract() -> None:
     assert "language_contract" not in rendered
     assert "digest.output_use_guide" not in rendered
     assert "ref=" not in rendered
-    assert DIGEST_PROMPT_VERSION == "attentional_v2.digest.v7"
-    assert ATTENTIONAL_V2_PROMPTS.digest_system == "Follow the structured Digest prompt in the user message. Return JSON only."
+    assert DIGEST_PROMPT_VERSION == "attentional_v2.digest.v8"
+    assert ATTENTIONAL_V2_PROMPTS.digest_system == "Follow the structured Digest prompt in the user message. Use the required submit_digest_result tool as the final output channel."
     assert "Structural frame:" not in ATTENTIONAL_V2_PROMPTS.digest_prompt
 
 
@@ -911,7 +874,7 @@ def test_digest_role_and_instruction_fragments_are_lossless() -> None:
     assert "\n".join(fragment.text for fragment in DIGEST_ROLE_AND_INSTRUCTION_FRAGMENTS).startswith(
         "你是一个知识渊博"
     )
-    assert ATTENTIONAL_V2_PROMPTS.digest_system == "Follow the structured Digest prompt in the user message. Return JSON only."
+    assert ATTENTIONAL_V2_PROMPTS.digest_system == "Follow the structured Digest prompt in the user message. Use the required submit_digest_result tool as the final output channel."
     assert DIGEST_ROLE_AND_INSTRUCTION_FRAGMENTS[0] == READER_ROLE_FRAGMENT
 
 
@@ -940,13 +903,13 @@ def test_attentional_v2_prompt_registry_projects_current_bundle() -> None:
     ingest = ATTENTIONAL_V2_PROMPT_REGISTRY.get("attentional_v2.ingest")
     chapter = ATTENTIONAL_V2_PROMPT_REGISTRY.get("attentional_v2.chapter_consolidation")
 
-    assert ATTENTIONAL_V2_PROMPTSET_VERSION == "attentional_v2-phase6-v52"
+    assert ATTENTIONAL_V2_PROMPTSET_VERSION == "attentional_v2-phase6-v53"
     assert ATTENTIONAL_V2_PROMPTS.promptset_version == ATTENTIONAL_V2_PROMPTSET_VERSION
-    assert digest.version == DIGEST_PROMPT_VERSION == "attentional_v2.digest.v7"
+    assert digest.version == DIGEST_PROMPT_VERSION == "attentional_v2.digest.v8"
     assert ATTENTIONAL_V2_PROMPTS.digest_version == digest.version
     assert ATTENTIONAL_V2_PROMPTS.digest_system == digest.system_prompt
     assert ATTENTIONAL_V2_PROMPTS.digest_prompt == digest.user_prompt_template
-    assert ingest.version == INGEST_PROMPT_VERSION == "attentional_v2.ingest.v3"
+    assert ingest.version == INGEST_PROMPT_VERSION == "attentional_v2.ingest.v4"
     assert ATTENTIONAL_V2_PROMPTS.ingest_version == ingest.version
     assert ATTENTIONAL_V2_PROMPTS.ingest_system == ingest.system_prompt
     assert ATTENTIONAL_V2_PROMPTS.chapter_consolidation_prompt == chapter.user_prompt_template

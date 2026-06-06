@@ -21,6 +21,7 @@ CurrentReadingProblemCode = Literal[
     "llm_timeout",
     "llm_quota",
     "llm_auth",
+    "llm_contract",
     "search_timeout",
     "search_quota",
     "search_auth",

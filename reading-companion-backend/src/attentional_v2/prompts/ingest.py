@@ -15,10 +15,10 @@ from .reader_role import READER_ROLE_FRAGMENT
 from .types import PromptDefinition
 
 
-INGEST_PROMPT_VERSION = "attentional_v2.ingest.v3"
-INGEST_XML_PROMPT_ASSEMBLY_SPEC_ID = "attentional_v2.ingest.xml.v3"
-INGEST_XML_PROMPTSET_VERSION = "attentional_v2-phase6-v52"
-INGEST_TRANSPORT_SYSTEM_PROMPT = "Follow the structured Ingest prompt in the user message. Return JSON only."
+INGEST_PROMPT_VERSION = "attentional_v2.ingest.v4"
+INGEST_XML_PROMPT_ASSEMBLY_SPEC_ID = "attentional_v2.ingest.xml.v4"
+INGEST_XML_PROMPTSET_VERSION = "attentional_v2-phase6-v53"
+INGEST_TRANSPORT_SYSTEM_PROMPT = "Follow the structured Ingest prompt in the user message. Use the required submit_ingest_result tool as the final output channel."
 
 
 INGEST_CURRENT_STEP_FRAGMENT = PromptFragment(
@@ -107,7 +107,7 @@ Do not perform runtime work. Do not resolve anchors, retry or choose fallback bo
 
 Do not use external web search. Use only the provided Unit Memory retrieval tool when recalls are non-empty.
 
-Return only the JSON described by OutputContract. Do not include markdown, commentary, hidden reasoning, or fields that are not requested.""",
+Submit only the result described by OutputContract through the required final output tool. Do not include markdown, commentary, hidden reasoning, or fields that are not requested.""",
 )
 
 
@@ -128,7 +128,7 @@ INGEST_RETURN_FORMAT_FRAGMENT = PromptFragment(
     fragment_id="ingest.return_format",
     text="""`ReturnFormat` defines the concrete JSON shape.
 
-Return JSON only:
+Submit this shape through the required final output tool:
 
 {
   "end_anchor_text": "...",

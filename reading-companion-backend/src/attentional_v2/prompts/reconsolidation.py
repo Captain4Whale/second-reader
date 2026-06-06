@@ -5,7 +5,7 @@ from __future__ import annotations
 from .types import PromptDefinition
 
 
-RECONSOLIDATION_PROMPT_VERSION = 'attentional_v2.reconsolidation.v1'
+RECONSOLIDATION_PROMPT_VERSION = 'attentional_v2.reconsolidation.v2'
 
 
 RECONSOLIDATION_PROMPT = PromptDefinition(
@@ -23,7 +23,7 @@ Rules:
 - Only reconsolidate when the interpretive change is material rather than cosmetic.
 - The later thought must stay independently anchored to the later reading moment.
 - Do not search, bridge, or choose the next move here.
-- Return JSON only.""",
+- Submit the final result through the required submit_reconsolidation_result tool only.""",
     user_prompt_template="""Structural frame:
 {structural_frame}
 
@@ -49,7 +49,7 @@ Output language contract:
 - 专有名词、作品名、机构名、URL 可保留原文
 - 如果需要引用语义段编号，只能使用输入中提供的可见锚点，不要生成内部编号
 
-Return JSON:
+Submit this shape through the required final output tool:
 {
   "decision": "keep_prior",
   "reason": "<brief reason>",

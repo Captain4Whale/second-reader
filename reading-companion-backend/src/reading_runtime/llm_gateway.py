@@ -102,6 +102,18 @@ class LLMToolLoopResult:
 
 
 @dataclass(frozen=True)
+class LLMStructuredOutputResult:
+    """Payload plus compact metadata from a forced final-output tool call."""
+
+    payload: dict[str, Any]
+    status: str
+    tool_calls: list[dict[str, Any]] = field(default_factory=list)
+    tool_results: list[dict[str, Any]] = field(default_factory=list)
+    repair_attempted: bool = False
+    validation_errors: list[str] = field(default_factory=list)
+
+
+@dataclass(frozen=True)
 class LLMTraceContext:
     """Trace sink and metadata passed through one invocation scope."""
 
@@ -2210,6 +2222,254 @@ def invoke_json_with_tool_loop(
     )
 
 
+def _tool_name(tool: Mapping[str, Any]) -> str:
+    return _clean_text(tool.get("name"))
+
+
+def _forced_tool_choice(tool_name: str) -> dict[str, str]:
+    return {"type": "tool", "name": tool_name}
+
+
+def _structured_contract_errors(
+    *,
+    calls: list[dict[str, Any]],
+    output_tool_name: str,
+    validator: Callable[[Mapping[str, Any]], list[str]] | None,
+) -> tuple[dict[str, Any] | None, list[str]]:
+    matching = [call for call in calls if _clean_text(call.get("name")) == output_tool_name]
+    other_names = [
+        _clean_text(call.get("name"))
+        for call in calls
+        if _clean_text(call.get("name")) and _clean_text(call.get("name")) != output_tool_name
+    ]
+    if not matching:
+        if other_names:
+            return None, [f"required tool {output_tool_name} not called; got {', '.join(other_names)}"]
+        return None, [f"required tool {output_tool_name} not called"]
+    if other_names:
+        return None, [f"final output must call only {output_tool_name}; got extra tool(s): {', '.join(other_names)}"]
+    if len(matching) > 1:
+        return None, [f"required tool {output_tool_name} must be called exactly once"]
+    args = matching[0].get("args")
+    if not isinstance(args, Mapping):
+        return None, [f"required tool {output_tool_name} args must be an object"]
+    payload = dict(args)
+    if validator is None:
+        return payload, []
+    errors = [error for error in validator(payload) if _clean_text(error)]
+    if errors:
+        return payload, errors
+    return payload, []
+
+
+def _structured_repair_prompt(
+    user_prompt: str,
+    *,
+    output_tool_name: str,
+    errors: list[str],
+) -> str:
+    issue_lines = "\n".join(f"- {error}" for error in errors[:8])
+    return (
+        f"{user_prompt}\n\n"
+        "<RuntimeRepair>\n"
+        f"Your previous response did not satisfy the required structured output contract for `{output_tool_name}`.\n"
+        f"Issues:\n{issue_lines}\n"
+        f"Use the `{output_tool_name}` tool exactly once as the final answer. "
+        "Return no prose outside the tool call.\n"
+        "</RuntimeRepair>"
+    )
+
+
+def invoke_structured_output_tool(
+    system_prompt: str,
+    user_prompt: str,
+    *,
+    output_tool: Mapping[str, Any],
+    validator: Callable[[Mapping[str, Any]], list[str]] | None = None,
+    profile_id: str | None = None,
+    max_repair_attempts: int = 1,
+) -> LLMStructuredOutputResult:
+    """Force one final-output tool call and return its validated arguments."""
+
+    output_tool_name = _tool_name(output_tool)
+    if not output_tool_name:
+        raise ValueError("Structured output tool must define a non-empty name.")
+
+    prompt_text = user_prompt
+    all_calls: list[dict[str, Any]] = []
+    last_errors: list[str] = []
+    repair_attempted = False
+    attempts = max(1, 1 + max(0, int(max_repair_attempts)))
+    for attempt_index in range(attempts):
+        if attempt_index > 0:
+            repair_attempted = True
+        response = _invoke_response(
+            system_prompt,
+            prompt_text,
+            explicit_profile_id=profile_id,
+            expect_json=False,
+            tools=[output_tool],
+            tool_choice=_forced_tool_choice(output_tool_name),
+        )
+        calls = _extract_tool_calls(response)
+        all_calls.extend(calls)
+        payload, errors = _structured_contract_errors(
+            calls=calls,
+            output_tool_name=output_tool_name,
+            validator=validator,
+        )
+        if not errors and payload is not None:
+            return LLMStructuredOutputResult(
+                payload=payload,
+                status="final_output_tool_called" if not repair_attempted else "repaired_final_output_tool_called",
+                tool_calls=all_calls,
+                tool_results=[],
+                repair_attempted=repair_attempted,
+                validation_errors=[],
+            )
+        last_errors = errors
+        prompt_text = _structured_repair_prompt(user_prompt, output_tool_name=output_tool_name, errors=errors)
+
+    raise ReaderLLMError(
+        f"Structured output contract failed for {output_tool_name}: {'; '.join(last_errors)}",
+        problem_code="llm_contract",
+    )
+
+
+def invoke_tool_loop_with_final_output(
+    system_prompt: str,
+    user_prompt: str,
+    *,
+    action_tools: list[Mapping[str, Any]],
+    output_tool: Mapping[str, Any],
+    tool_handler: Callable[[str, Mapping[str, Any], str], Mapping[str, Any]],
+    validator: Callable[[Mapping[str, Any], list[dict[str, Any]]], list[str]] | None = None,
+    profile_id: str | None = None,
+    max_tool_calls: int = 1,
+    max_repair_attempts: int = 1,
+) -> LLMStructuredOutputResult:
+    """Run one bounded action-tool turn, then force a final-output tool call."""
+
+    output_tool_name = _tool_name(output_tool)
+    if not output_tool_name:
+        raise ValueError("Structured output tool must define a non-empty name.")
+    action_names = {_tool_name(tool) for tool in action_tools if _tool_name(tool)}
+    tools = [*action_tools, output_tool]
+
+    def _validate(payload: Mapping[str, Any], tool_results: list[dict[str, Any]]) -> list[str]:
+        return validator(payload, tool_results) if validator is not None else []
+
+    prompt_text = user_prompt
+    all_calls: list[dict[str, Any]] = []
+    last_errors: list[str] = []
+    repair_attempted = False
+    attempts = max(1, 1 + max(0, int(max_repair_attempts)))
+
+    for attempt_index in range(attempts):
+        if attempt_index > 0:
+            repair_attempted = True
+        first_response = _invoke_response(
+            system_prompt,
+            prompt_text,
+            explicit_profile_id=profile_id,
+            expect_json=False,
+            tools=tools,
+            tool_choice="auto",
+        )
+        first_calls = _extract_tool_calls(first_response)
+        all_calls.extend(first_calls)
+        action_calls = [call for call in first_calls if _clean_text(call.get("name")) in action_names]
+        output_calls = [call for call in first_calls if _clean_text(call.get("name")) == output_tool_name]
+        unsupported_calls = [
+            _clean_text(call.get("name"))
+            for call in first_calls
+            if _clean_text(call.get("name")) and _clean_text(call.get("name")) not in action_names and _clean_text(call.get("name")) != output_tool_name
+        ]
+        tool_results: list[dict[str, Any]] = []
+
+        if unsupported_calls:
+            last_errors = [f"unsupported tool called: {', '.join(unsupported_calls)}"]
+        elif action_calls:
+            bounded_calls = action_calls[: max(0, int(max_tool_calls))]
+            messages: list[Any] = [
+                SystemMessage(content=system_prompt),
+                HumanMessage(content=prompt_text),
+                first_response,
+            ]
+            for call in bounded_calls:
+                result = dict(
+                    tool_handler(
+                        _clean_text(call.get("name")),
+                        dict(call.get("args") or {}),
+                        _clean_text(call.get("id")),
+                    )
+                )
+                tool_results.append(
+                    {
+                        "id": _clean_text(call.get("id")),
+                        "name": _clean_text(call.get("name")),
+                        "result": result,
+                    }
+                )
+                messages.append(
+                    ToolMessage(
+                        content=json.dumps(result, ensure_ascii=False),
+                        tool_call_id=_clean_text(call.get("id")),
+                    )
+                )
+            final_response = _invoke_response(
+                system_prompt,
+                prompt_text,
+                explicit_profile_id=profile_id,
+                expect_json=False,
+                messages_override=messages,
+                tools=[output_tool],
+                tool_choice=_forced_tool_choice(output_tool_name),
+            )
+            final_calls = _extract_tool_calls(final_response)
+            all_calls.extend(final_calls)
+            payload, errors = _structured_contract_errors(
+                calls=final_calls,
+                output_tool_name=output_tool_name,
+                validator=lambda payload: _validate(payload, tool_results),
+            )
+            if not errors and payload is not None:
+                return LLMStructuredOutputResult(
+                    payload=payload,
+                    status="action_tool_called" if not repair_attempted else "repaired_action_tool_called",
+                    tool_calls=all_calls,
+                    tool_results=tool_results,
+                    repair_attempted=repair_attempted,
+                    validation_errors=[],
+                )
+            last_errors = errors
+        elif output_calls:
+            payload, errors = _structured_contract_errors(
+                calls=output_calls,
+                output_tool_name=output_tool_name,
+                validator=lambda payload: _validate(payload, tool_results),
+            )
+            if not errors and payload is not None:
+                return LLMStructuredOutputResult(
+                    payload=payload,
+                    status="final_output_tool_called" if not repair_attempted else "repaired_final_output_tool_called",
+                    tool_calls=all_calls,
+                    tool_results=[],
+                    repair_attempted=repair_attempted,
+                    validation_errors=[],
+                )
+            last_errors = errors
+        else:
+            last_errors = [f"required tool {output_tool_name} not called"]
+
+        prompt_text = _structured_repair_prompt(user_prompt, output_tool_name=output_tool_name, errors=last_errors)
+
+    raise ReaderLLMError(
+        f"Structured output contract failed for {output_tool_name}: {'; '.join(last_errors)}",
+        problem_code="llm_contract",
+    )
+
+
 def invoke_json(system_prompt: str, user_prompt: str, default: Any, *, profile_id: str | None = None) -> Any:
     """Invoke the configured LLM and parse a JSON payload."""
 
@@ -2230,6 +2490,7 @@ __all__ = [
     "JsonlTraceSink",
     "LLMContractAdapter",
     "LLMInvocationOverrides",
+    "LLMStructuredOutputResult",
     "LLMTraceContext",
     "LLMToolLoopResult",
     "ReaderLLMError",
@@ -2240,7 +2501,9 @@ __all__ = [
     "get_llm_provider_stable_concurrency",
     "invoke_json",
     "invoke_json_with_tool_loop",
+    "invoke_structured_output_tool",
     "invoke_text",
+    "invoke_tool_loop_with_final_output",
     "llm_invocation_scope",
     "parse_json_payload",
     "response_text",

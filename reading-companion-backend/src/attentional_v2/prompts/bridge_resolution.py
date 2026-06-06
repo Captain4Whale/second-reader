@@ -5,7 +5,7 @@ from __future__ import annotations
 from .types import PromptDefinition
 
 
-BRIDGE_RESOLUTION_PROMPT_VERSION = 'attentional_v2.bridge_resolution.v5'
+BRIDGE_RESOLUTION_PROMPT_VERSION = 'attentional_v2.bridge_resolution.v6'
 
 
 BRIDGE_RESOLUTION_PROMPT = PromptDefinition(
@@ -28,7 +28,7 @@ Rules:
 - Do not invent targets outside the supplied candidate set.
 - Search is rare and must stay separate from ordinary prior-knowledge use.
 - Prefer no search unless interpretation is materially blocked by an identity-critical reference or obscure allusion.
-- Return JSON only.""",
+- Submit the final result through the required submit_bridge_resolution_result tool only.""",
     user_prompt_template="""Structural frame:
 {structural_frame}
 
@@ -57,7 +57,7 @@ Output language contract:
 - 专有名词、作品名、机构名、URL 可保留原文
 - 如果需要引用语义段编号，只能使用输入中提供的可见锚点，不要生成内部编号
 
-Return JSON:
+Submit this shape through the required final output tool:
 {
   "decision": "decline",
   "reason": "<brief reason>",

@@ -17,6 +17,18 @@
             "description": "Public reaction id of the active durable thought referenced by the event when available.",
             "title": "Active Reaction Id"
           },
+          "anchor_quote": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Compatibility alias for the source quote used to group visible reactions.",
+            "title": "Anchor Quote"
+          },
           "chapter_id": {
             "anyOf": [
               {
@@ -267,6 +279,11 @@
         "additionalProperties": false,
         "description": "Compact reaction payload used inside one sentence-level mindstream event.",
         "properties": {
+          "anchor_quote": {
+            "description": "Compatibility alias for the quoted source text from the source book.",
+            "title": "Anchor Quote",
+            "type": "string"
+          },
           "content": {
             "description": "AI-authored reaction text shown to the user.",
             "title": "Content",
@@ -339,6 +356,7 @@
           "reaction_id",
           "type",
           "source_quote",
+          "anchor_quote",
           "content",
           "section_ref"
         ],
@@ -1765,6 +1783,7 @@
                   "llm_timeout",
                   "llm_quota",
                   "llm_auth",
+                  "llm_contract",
                   "search_timeout",
                   "search_quota",
                   "search_auth",
@@ -2082,6 +2101,11 @@
         "additionalProperties": false,
         "description": "Compact reaction payload used in teasers, cards, and realtime summaries.",
         "properties": {
+          "anchor_quote": {
+            "description": "Compatibility alias for the quoted source text from the source book.",
+            "title": "Anchor Quote",
+            "type": "string"
+          },
           "book_id": {
             "description": "Stable public integer identifier of the book that owns this reaction.",
             "title": "Book Id",
@@ -2188,6 +2212,7 @@
           "reaction_id",
           "type",
           "source_quote",
+          "anchor_quote",
           "content",
           "book_id",
           "chapter_id",
@@ -2551,6 +2576,11 @@
         "additionalProperties": false,
         "description": "Persisted user mark record.",
         "properties": {
+          "anchor_quote": {
+            "description": "Compatibility alias for the source quote used to recall the marked passage.",
+            "title": "Anchor Quote",
+            "type": "string"
+          },
           "book_id": {
             "description": "Public integer book identifier for the marked reaction.",
             "title": "Book Id",
@@ -2676,6 +2706,7 @@
           "mark_type",
           "reaction_excerpt",
           "source_quote",
+          "anchor_quote",
           "created_at",
           "updated_at"
         ],
@@ -2744,6 +2775,11 @@
         "additionalProperties": false,
         "description": "Visible reaction card rendered in result views.",
         "properties": {
+          "anchor_quote": {
+            "description": "Compatibility alias for the source quote taken from the source book.",
+            "title": "Anchor Quote",
+            "type": "string"
+          },
           "content": {
             "description": "Full AI reaction content.",
             "title": "Content",
@@ -2865,6 +2901,7 @@
           "reaction_id",
           "type",
           "source_quote",
+          "anchor_quote",
           "content",
           "search_results",
           "section_ref",

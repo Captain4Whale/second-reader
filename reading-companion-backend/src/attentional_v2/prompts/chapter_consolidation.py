@@ -5,7 +5,7 @@ from __future__ import annotations
 from .types import PromptDefinition
 
 
-CHAPTER_CONSOLIDATION_PROMPT_VERSION = 'attentional_v2.chapter_consolidation.v5'
+CHAPTER_CONSOLIDATION_PROMPT_VERSION = 'attentional_v2.chapter_consolidation.v6'
 
 
 CHAPTER_CONSOLIDATION_PROMPT = PromptDefinition(
@@ -26,7 +26,7 @@ Rules:
 - Do not rewrite earlier persisted reactions.
 - Do not let `optional_chapter_reaction` masquerade as a callback bridge; if it mentions earlier material, that material must stay concrete and attributable.
 - Do not read future chapter text or search.
-- Return JSON only.""",
+- Submit the final result through the required submit_chapter_consolidation_result tool only.""",
     user_prompt_template="""Structural frame:
 {structural_frame}
 
@@ -61,7 +61,7 @@ Output language contract:
 - 专有名词、作品名、机构名、URL 可保留原文
 - 如果需要引用语义段编号，只能使用输入中提供的可见锚点，不要生成内部编号
 
-Return JSON:
+Submit this shape through the required final output tool:
 {
   "chapter_ref": "<chapter reference>",
   "backward_sweep": [],

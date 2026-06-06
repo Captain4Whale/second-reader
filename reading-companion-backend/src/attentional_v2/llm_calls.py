@@ -11,8 +11,8 @@ from src.iterator_reader.language import language_name
 from src.iterator_reader.llm_utils import (
     LLMTraceContext,
     ReaderLLMError,
-    invoke_json,
-    invoke_json_with_tool_loop,
+    invoke_structured_output_tool,
+    invoke_tool_loop_with_final_output,
     llm_invocation_scope,
 )
 
@@ -45,6 +45,12 @@ from .schemas import (
 )
 from .storage import prompt_manifest_file, save_json
 from .unit_memory import normalize_unit_memory_recalls
+from .llm_output_tools import (
+    DIGEST_RESULT_TOOL,
+    INGEST_RESULT_TOOL,
+    validate_digest_result,
+    validate_ingest_result,
+)
 
 
 _REACTION_TYPES: set[ReactionType] = {
@@ -807,8 +813,15 @@ def ingest(
 
     def _invoke_with_tools(prompt_text: str) -> IngestBoundaryResult:
         if unit_memory_tool_handler is None:
-            payload = invoke_json(prompts.ingest_system, prompt_text, default={})
-            return _normalize_ingest_boundary_result(payload)
+            tool_result = invoke_structured_output_tool(
+                prompts.ingest_system,
+                prompt_text,
+                output_tool=INGEST_RESULT_TOOL,
+                validator=lambda payload: validate_ingest_result(payload, tool_results=[]),
+            )
+            result = _normalize_ingest_boundary_result(tool_result.payload)
+            result["tool_loop_status"] = "final_without_tool"
+            return result
 
         def _handle_tool(tool_name: str, args: Mapping[str, object], tool_call_id: str) -> Mapping[str, object]:
             if tool_name != "retrieve_unit_memory":
@@ -821,16 +834,17 @@ def ingest(
             tool_args["_tool_call_id"] = tool_call_id
             return dict(unit_memory_tool_handler(tool_args))
 
-        tool_loop = invoke_json_with_tool_loop(
+        tool_loop = invoke_tool_loop_with_final_output(
             prompts.ingest_system,
             prompt_text,
-            default={},
-            tools=[_INGEST_UNIT_MEMORY_TOOL],
+            action_tools=[_INGEST_UNIT_MEMORY_TOOL],
+            output_tool=INGEST_RESULT_TOOL,
             tool_handler=_handle_tool,
+            validator=lambda payload, tool_results: validate_ingest_result(payload, tool_results),
             max_tool_calls=1,
         )
         result = _normalize_ingest_boundary_result(tool_loop.payload)
-        result["tool_loop_status"] = str(tool_loop.status)
+        result["tool_loop_status"] = "tool_called" if tool_loop.tool_results else "final_without_tool"
         if tool_loop.tool_results:
             first_result = tool_loop.tool_results[0].get("result")
             if isinstance(first_result, Mapping):
@@ -839,19 +853,7 @@ def ingest(
 
     try:
         with llm_invocation_scope(trace_context=LLMTraceContext(stage="phase4", node="ingest")):
-            result = _invoke_with_tools(user_prompt)
-            if unit_memory_tool_handler is not None and result.get("memory_recalls") and result.get("tool_loop_status") == "final_without_tool":
-                repair_prompt = (
-                    f"{user_prompt}\n\n"
-                    "<RuntimeRepair>\n"
-                    "Your previous Ingest result included memory_recalls but did not call retrieve_unit_memory. "
-                    "When memory_recalls is non-empty, you must call retrieve_unit_memory before returning final JSON.\n"
-                    "</RuntimeRepair>"
-                )
-                result = _invoke_with_tools(repair_prompt)
-                if result.get("memory_recalls") and result.get("tool_loop_status") == "final_without_tool":
-                    result["tool_loop_status"] = "tool_call_contract_violation"
-            return result
+            return _invoke_with_tools(user_prompt)
     except ReaderLLMError:
         return {
             "reason": "ingest_llm_error",
@@ -972,7 +974,13 @@ def digest(
         prompt_assembly=prompt_assembly_metadata,
     )
     with llm_invocation_scope(trace_context=LLMTraceContext(stage="phase4", node="digest")):
-        payload = invoke_json(system_prompt, user_prompt, default={})
+        structured_output = invoke_structured_output_tool(
+            system_prompt,
+            user_prompt,
+            output_tool=DIGEST_RESULT_TOOL,
+            validator=lambda payload: validate_digest_result(payload, current_unit_texts=current_unit_texts),
+        )
+        payload = structured_output.payload
 
     allowed_ref_ids = {
         _clean_text(ref.get("ref_id"))

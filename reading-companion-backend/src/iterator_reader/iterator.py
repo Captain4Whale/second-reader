@@ -124,6 +124,7 @@ _CURRENT_READING_PROBLEM_CODES: set[str] = {
     "llm_timeout",
     "llm_quota",
     "llm_auth",
+    "llm_contract",
     "search_timeout",
     "search_quota",
     "search_auth",
@@ -131,6 +132,7 @@ _CURRENT_READING_PROBLEM_CODES: set[str] = {
 }
 _PROBLEM_EVENT_TYPES = {
     "llm_timeout": "llm_timeout_detected",
+    "llm_contract": "runtime_stalled",
     "search_timeout": "search_timeout_detected",
 }
 _READING_ACTIVITY_HEARTBEAT_SECONDS = 2.0

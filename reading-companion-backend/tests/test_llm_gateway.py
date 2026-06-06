@@ -33,6 +33,8 @@ from src.reading_runtime.llm_gateway import (
     get_llm_provider_stable_concurrency,
     invoke_json,
     invoke_json_with_tool_loop,
+    invoke_structured_output_tool,
+    invoke_tool_loop_with_final_output,
     llm_invocation_scope,
     parse_json_payload,
     runtime_trace_context,
@@ -137,6 +139,35 @@ class _ToolLoopRecordingAdapter:
                 ],
             )
         return _FakeResponse('{"ok": true, "memory_recalls": [{"recall_id": "r1"}]}')
+
+
+class _SequencedToolAdapter:
+    def __init__(self, responses: list[Any]):
+        self.responses = list(responses)
+        self.calls: list[dict[str, Any]] = []
+
+    def invoke(
+        self,
+        messages: list[Any],
+        *,
+        provider: Any,
+        profile: Any,
+        api_key: str,
+        timeout_seconds: int,
+        tools: list[dict[str, Any]] | None = None,
+        tool_choice: str | dict[str, Any] | None = None,
+    ) -> Any:
+        self.calls.append(
+            {
+                "message_types": [type(message).__name__ for message in messages],
+                "tools": tools,
+                "tool_choice": tool_choice,
+                "message_count": len(messages),
+            }
+        )
+        if not self.responses:
+            return _FakeToolResponse(content="", tool_calls=[])
+        return self.responses.pop(0)
 
 
 class _SleepingRecordingAdapter(_RecordingAdapter):
@@ -806,6 +837,239 @@ def test_invoke_json_with_tool_loop_appends_tool_result(monkeypatch: pytest.Monk
     ]
     assert adapter.calls[0]["tools"][0]["name"] == "retrieve_unit_memory"
     assert adapter.calls[0]["tool_choice"] == "auto"
+    assert "ToolMessage" in adapter.calls[1]["message_types"]
+
+
+def _runtime_minimax_registry(monkeypatch: pytest.MonkeyPatch) -> None:
+    _set_targets_and_bindings(
+        monkeypatch,
+        targets={
+            "targets": [
+                {
+                    "target_id": "minimax_runtime",
+                    "contract": "anthropic",
+                    "base_url": "https://api.minimaxi.com/anthropic",
+                    "model": "MiniMax-M2.7",
+                    "credentials": [{"credential_id": "primary", "api_key": "runtime-key"}],
+                }
+            ]
+        },
+        bindings=_required_bindings("minimax_runtime"),
+    )
+
+
+def test_invoke_structured_output_tool_forces_submit_tool(monkeypatch: pytest.MonkeyPatch):
+    _runtime_minimax_registry(monkeypatch)
+    adapter = _SequencedToolAdapter(
+        [
+            _FakeToolResponse(
+                content="",
+                tool_calls=[
+                    {
+                        "id": "submit-1",
+                        "name": "submit_digest_result",
+                        "args": {
+                            "understanding": {"kind": "fact", "content": "Alpha happens."},
+                            "response": "A brief response.",
+                            "annotations": [],
+                        },
+                    }
+                ],
+            )
+        ]
+    )
+    monkeypatch.setitem(CONTRACT_ADAPTERS, "anthropic", adapter)
+
+    result = invoke_structured_output_tool(
+        "system",
+        "user",
+        output_tool={
+            "name": "submit_digest_result",
+            "description": "Submit Digest.",
+            "input_schema": {"type": "object", "properties": {}, "required": []},
+        },
+        validator=lambda payload: [] if payload.get("understanding") else ["understanding is required"],
+    )
+
+    assert result.status == "final_output_tool_called"
+    assert result.payload["understanding"]["content"] == "Alpha happens."
+    assert adapter.calls[0]["tool_choice"] == {"type": "tool", "name": "submit_digest_result"}
+    assert adapter.calls[0]["tools"][0]["name"] == "submit_digest_result"
+
+
+def test_invoke_structured_output_tool_repairs_invalid_payload(monkeypatch: pytest.MonkeyPatch):
+    _runtime_minimax_registry(monkeypatch)
+    adapter = _SequencedToolAdapter(
+        [
+            _FakeToolResponse(
+                content="",
+                tool_calls=[{"id": "submit-1", "name": "submit_digest_result", "args": {}}],
+            ),
+            _FakeToolResponse(
+                content="",
+                tool_calls=[
+                    {
+                        "id": "submit-2",
+                        "name": "submit_digest_result",
+                        "args": {
+                            "understanding": {"kind": "fact", "content": "Alpha happens."},
+                            "response": "A brief response.",
+                            "annotations": [],
+                        },
+                    }
+                ],
+            ),
+        ]
+    )
+    monkeypatch.setitem(CONTRACT_ADAPTERS, "anthropic", adapter)
+
+    result = invoke_structured_output_tool(
+        "system",
+        "user",
+        output_tool={
+            "name": "submit_digest_result",
+            "description": "Submit Digest.",
+            "input_schema": {"type": "object", "properties": {}, "required": []},
+        },
+        validator=lambda payload: [] if payload.get("understanding") else ["understanding is required"],
+    )
+
+    assert result.status == "repaired_final_output_tool_called"
+    assert result.repair_attempted is True
+    assert len(adapter.calls) == 2
+
+
+@pytest.mark.parametrize(
+    "bad_call",
+    [
+        {"id": "wrong-1", "name": "submit_other_result", "args": {}},
+        {"id": "submit-1", "name": "submit_digest_result", "args": "not-an-object"},
+    ],
+)
+def test_invoke_structured_output_tool_repairs_tool_contract_errors(
+    monkeypatch: pytest.MonkeyPatch,
+    bad_call: dict[str, Any],
+):
+    _runtime_minimax_registry(monkeypatch)
+    adapter = _SequencedToolAdapter(
+        [
+            _FakeToolResponse(content="", tool_calls=[bad_call]),
+            _FakeToolResponse(
+                content="",
+                tool_calls=[
+                    {
+                        "id": "submit-2",
+                        "name": "submit_digest_result",
+                        "args": {
+                            "understanding": {"kind": "fact", "content": "Alpha happens."},
+                            "response": "A brief response.",
+                            "annotations": [],
+                        },
+                    }
+                ],
+            ),
+        ]
+    )
+    monkeypatch.setitem(CONTRACT_ADAPTERS, "anthropic", adapter)
+
+    result = invoke_structured_output_tool(
+        "system",
+        "user",
+        output_tool={
+            "name": "submit_digest_result",
+            "description": "Submit Digest.",
+            "input_schema": {"type": "object", "properties": {}, "required": []},
+        },
+        validator=lambda payload: [] if payload.get("understanding") else ["understanding is required"],
+    )
+
+    assert result.status == "repaired_final_output_tool_called"
+    assert result.repair_attempted is True
+    assert len(adapter.calls) == 2
+
+
+def test_invoke_structured_output_tool_raises_llm_contract_after_failed_repair(monkeypatch: pytest.MonkeyPatch):
+    _runtime_minimax_registry(monkeypatch)
+    adapter = _SequencedToolAdapter(
+        [
+            _FakeToolResponse(content="", tool_calls=[]),
+            _FakeToolResponse(content="", tool_calls=[]),
+        ]
+    )
+    monkeypatch.setitem(CONTRACT_ADAPTERS, "anthropic", adapter)
+
+    with pytest.raises(ReaderLLMError) as exc_info:
+        invoke_structured_output_tool(
+            "system",
+            "user",
+            output_tool={
+                "name": "submit_digest_result",
+                "description": "Submit Digest.",
+                "input_schema": {"type": "object", "properties": {}, "required": []},
+            },
+            validator=lambda _payload: [],
+        )
+
+    assert exc_info.value.problem_code == "llm_contract"
+
+
+def test_invoke_tool_loop_with_final_output_runs_action_then_submit(monkeypatch: pytest.MonkeyPatch):
+    _runtime_minimax_registry(monkeypatch)
+    adapter = _SequencedToolAdapter(
+        [
+            _FakeToolResponse(
+                content="",
+                tool_calls=[
+                    {
+                        "id": "tool-1",
+                        "name": "retrieve_unit_memory",
+                        "args": {"memory_recalls": [{"recall_id": "r1", "recall_text": "earlier Alpha"}]},
+                    }
+                ],
+            ),
+            _FakeToolResponse(
+                content="",
+                tool_calls=[
+                    {
+                        "id": "submit-1",
+                        "name": "submit_ingest_result",
+                        "args": {
+                            "end_anchor_text": "Alpha.",
+                            "boundary_type": "paragraph_end",
+                            "reason": "Alpha closes.",
+                            "memory_recalls": [{"recall_id": "r1", "recall_text": "earlier Alpha"}],
+                        },
+                    }
+                ],
+            ),
+        ]
+    )
+    monkeypatch.setitem(CONTRACT_ADAPTERS, "anthropic", adapter)
+    handler_calls: list[dict[str, Any]] = []
+
+    def handler(name: str, args: dict[str, Any], tool_call_id: str) -> dict[str, Any]:
+        handler_calls.append({"name": name, "args": args, "tool_call_id": tool_call_id})
+        return {"status": "ok", "selected_unit_count": 1}
+
+    result = invoke_tool_loop_with_final_output(
+        "system",
+        "user",
+        action_tools=[{"name": "retrieve_unit_memory", "description": "Retrieve memory."}],
+        output_tool={
+            "name": "submit_ingest_result",
+            "description": "Submit Ingest.",
+            "input_schema": {"type": "object", "properties": {}, "required": []},
+        },
+        tool_handler=handler,
+        validator=lambda payload, tool_results: [] if tool_results and payload.get("end_anchor_text") else ["bad"],
+    )
+
+    assert result.status == "action_tool_called"
+    assert result.payload["end_anchor_text"] == "Alpha."
+    assert result.tool_results[0]["result"]["status"] == "ok"
+    assert handler_calls[0]["tool_call_id"] == "tool-1"
+    assert adapter.calls[0]["tool_choice"] == "auto"
+    assert adapter.calls[1]["tool_choice"] == {"type": "tool", "name": "submit_ingest_result"}
     assert "ToolMessage" in adapter.calls[1]["message_types"]
 
 
@@ -1706,7 +1970,25 @@ def test_attentional_node_uses_shared_runtime_trace(tmp_path: Path, monkeypatch:
             ],
         },
     )
-    adapter = _RecordingAdapter(response_content='{"understanding": {"kind": "other", "content": ""}, "response": "Focused on the hinge.", "annotations": []}')
+    adapter = _SequencedToolAdapter([
+        _FakeToolResponse(
+            content="",
+            tool_calls=[
+                {
+                    "id": "submit-1",
+                    "name": "submit_digest_result",
+                    "args": {
+                        "understanding": {
+                            "kind": "other",
+                            "content": "The alpha hinge line becomes the current unit's focus.",
+                        },
+                        "response": "Focused on the hinge.",
+                        "annotations": [],
+                    },
+                }
+            ],
+        )
+    ])
     monkeypatch.setitem(CONTRACT_ADAPTERS, "anthropic", adapter)
 
     output_dir = tmp_path / "output" / "attn-demo"

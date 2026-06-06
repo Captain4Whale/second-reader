@@ -5,7 +5,7 @@ from __future__ import annotations
 from .types import PromptDefinition
 
 
-SURVEY_CHAPTER_ZONE_PROMPT_VERSION = 'attentional_v2.survey_chapter_zone.v1'
+SURVEY_CHAPTER_ZONE_PROMPT_VERSION = 'attentional_v2.survey_chapter_zone.v2'
 
 
 SURVEY_CHAPTER_ZONE_PROMPT = PromptDefinition(
@@ -31,7 +31,7 @@ Rules:
 - Prefer `main_body` unless the evidence for a support/auxiliary role is clear.
 - Use the heuristic hint only as a weak prior. It is allowed to be wrong.
 - Keep `reason` short, structural, and non-interpretive.
-- Return JSON only.""",
+- Submit the final result through the required submit_survey_chapter_zone_result tool only.""",
     user_prompt_template="""Book frame:
 {book_frame}
 
@@ -44,7 +44,7 @@ Neighboring chapter titles:
 Weak heuristic hint:
 {heuristic_hint}
 
-Return JSON:
+Submit this shape through the required final output tool:
 {
   "zone": "main_body",
   "confidence": "medium",

@@ -1430,6 +1430,7 @@ const MINDSTREAM_LIVE_PROBLEM_COPY_KEYS: Record<MindstreamProblemCode, Controlle
   llm_timeout: "overview.mindstream.live.problem.llm_timeout",
   llm_quota: "overview.mindstream.live.problem.llm_quota",
   llm_auth: "overview.mindstream.live.problem.llm_auth",
+  llm_contract: "overview.mindstream.live.problem.llm_contract",
   search_timeout: "overview.mindstream.live.problem.search_timeout",
   search_quota: "overview.mindstream.live.problem.search_quota",
   search_auth: "overview.mindstream.live.problem.search_auth",

@@ -3237,3 +3237,32 @@ This new direction is design frozen but not yet implemented as a formal benchmar
 - `docs/backend-reading-mechanisms/attentional_v2.md`
 - `docs/implementation/new-reading-mechanism/ingest-recall-and-digest-memory-context-design.md`
 - `docs/implementation/new-reading-mechanism/digest-understanding-response-annotation-design.md`
+
+## Entry 110
+**ID**: DEC-113
+**Status**: active
+
+**Decision / Inflection**: Use forced final-output tool calls for current `attentional_v2` structured LLM outputs.
+
+**Period**: June 6, 2026, after Digest Understanding diagnostics showed that free-text JSON output could still silently violate required output contracts and produce empty or malformed fields.
+
+**Decision**: Current `attentional_v2` structured LLM calls now submit their final result through mechanism-private final-output tools instead of relying on `Return JSON only` text parsing. Ingest uses `submit_ingest_result`; Digest uses `submit_digest_result`; bridge resolution, reflective promotion, reconsolidation, chapter consolidation, and survey chapter-zone classification use their own `submit_*_result` tools. These tools are output channels only. `retrieve_unit_memory` remains the only live action tool and is kept separate from final-output submit tools.
+
+**Boundary**: This migration covers the current `attentional_v2` mechanism. Retired `book_analysis`, legacy `iterator_reader`, and other non-current fallback paths may continue using legacy JSON parsing unless a later task explicitly migrates them. Runtime validators remain mandatory because tool schemas enforce shape but not reading-specific business semantics. If a required submit tool is missing, has the wrong name, has non-object args, or fails the node validator, the gateway attempts one repair; persistent failure is surfaced as public problem code `llm_contract`.
+
+**Why this path won**: Tool-use output submission makes the model's structured-output channel explicit and easier to validate with MiniMax's Anthropic-compatible tool-use path, while still preserving the runtime's responsibility for semantic validation, repair, fallback, traceability, and public problem reporting. It also keeps true action tools, such as Unit Memory retrieval, separate from result-submission tools so Ingest/Digest control flow remains inspectable.
+
+**Primary evidence**:
+- `docs/current-state.md`
+- `docs/tasks/registry.md`
+- `docs/backend-reading-mechanisms/attentional_v2.md`
+- `docs/api-contract.md`
+- `docs/api-integration.md`
+- `reading-companion-backend/src/reading_runtime/llm_gateway.py`
+- `reading-companion-backend/src/attentional_v2/llm_output_tools.py`
+- `reading-companion-backend/src/attentional_v2/llm_calls.py`
+- `reading-companion-backend/src/attentional_v2/bridge.py`
+- `reading-companion-backend/src/attentional_v2/slow_cycle.py`
+- `reading-companion-backend/src/attentional_v2/survey.py`
+- `reading-companion-backend/tests/test_llm_gateway.py`
+- `reading-companion-backend/tests/test_attentional_v2_llm_calls.py`

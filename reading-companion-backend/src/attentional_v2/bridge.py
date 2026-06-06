@@ -6,7 +6,7 @@ from datetime import datetime, timezone
 from pathlib import Path
 
 from src.iterator_reader.language import language_name
-from src.iterator_reader.llm_utils import LLMTraceContext, invoke_json, llm_invocation_scope
+from src.iterator_reader.llm_utils import LLMTraceContext, invoke_structured_output_tool, llm_invocation_scope
 
 from .knowledge import (
     apply_activation_operations,
@@ -39,6 +39,7 @@ from .schemas import (
     ReaderPolicy,
     ActiveAttention,
 )
+from .llm_output_tools import BRIDGE_RESOLUTION_RESULT_TOOL, require_mapping_fields
 from .state_ops import (
     append_anchor_relation,
     apply_anchor_bank_operations,
@@ -433,7 +434,12 @@ def bridge_resolution(
     with llm_invocation_scope(
         trace_context=LLMTraceContext(stage="phase5", node="bridge_resolution")
     ):
-        payload = invoke_json(prompts.bridge_resolution_system, user_prompt, default={})
+        payload = invoke_structured_output_tool(
+            prompts.bridge_resolution_system,
+            user_prompt,
+            output_tool=BRIDGE_RESOLUTION_RESULT_TOOL,
+            validator=require_mapping_fields("decision", "reason"),
+        ).payload
     decision = _clean_text(payload.get("decision")).lower() if isinstance(payload, dict) else ""
     if decision not in {"bridge", "decline"}:
         decision = "decline"

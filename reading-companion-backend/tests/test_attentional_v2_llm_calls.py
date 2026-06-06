@@ -6,6 +6,8 @@ import json
 from pathlib import Path
 from types import SimpleNamespace
 
+import pytest
+
 from src.attentional_v2 import llm_calls as llm_calls_module
 from src.attentional_v2 import runner as runner_module
 from src.attentional_v2.llm_calls import (
@@ -137,24 +139,21 @@ def test_ingest_writes_manifest_and_uses_xml_anchor_contract(tmp_path: Path, mon
 
     captured: dict[str, str] = {}
 
-    def fake_invoke_json(system_prompt: str, prompt: str, default: object) -> object:
+    def fake_structured_output(system_prompt: str, prompt: str, *, output_tool, validator) -> object:
         captured["system_prompt"] = system_prompt
         captured["prompt"] = prompt
-        return {
+        payload = {
             "end_anchor_text": "Beta.",
             "boundary_type": "cross_paragraph_continuation",
             "reason": "The line clearly keeps running.",
-            "memory_recalls": [
-                {
-                    "recall_id": "r1",
-                    "recall_text": "Beta continuation",
-                    "basis": "selected_source_unit",
-                }
-            ],
+            "memory_recalls": [],
             "continuation" + "_pressure": True,
         }
+        assert output_tool["name"] == "submit_ingest_result"
+        assert validator(payload) == []
+        return SimpleNamespace(payload=payload, status="final_output_tool_called", tool_results=[])
 
-    monkeypatch.setattr(llm_calls_module, "invoke_json", fake_invoke_json)
+    monkeypatch.setattr(llm_calls_module, "invoke_structured_output_tool", fake_structured_output)
 
     preview_sentences = [
         _sentence("c1-s1", "Alpha.", sentence_index=1, paragraph_index=1),
@@ -192,8 +191,8 @@ def test_ingest_writes_manifest_and_uses_xml_anchor_contract(tmp_path: Path, mon
     assert "selection" + "_mode" not in decision
     assert "continuation" + "_pressure" not in decision
     assert decision["end_anchor_text"] == "Beta."
-    assert decision["memory_recalls"][0]["recall_text"] == "Beta continuation"
-    assert captured["system_prompt"] == "Follow the structured Ingest prompt in the user message. Return JSON only."
+    assert decision["memory_recalls"] == []
+    assert captured["system_prompt"] == "Follow the structured Ingest prompt in the user message. Use the required submit_ingest_result tool as the final output channel."
     assert "<ReaderRole>" in captured["prompt"]
     assert "<Instruction>" in captured["prompt"]
     assert "<CurrentStep>" in captured["prompt"]
@@ -231,7 +230,7 @@ def test_ingest_writes_manifest_and_uses_xml_anchor_contract(tmp_path: Path, mon
     assert "purely non-lexical residue" in captured["prompt"]
     assert "Mainline preview" not in captured["prompt"]
     assert manifest["node_name"] == "ingest"
-    assert manifest["prompt_version"] == "attentional_v2.ingest.v3"
+    assert manifest["prompt_version"] == "attentional_v2.ingest.v4"
     assert manifest["prompt_assembly"]["output_contract"] == "ingest_boundary_memory_recalls_json_v1"
     assert manifest["prompt_assembly"]["owner_node"] == "ingest"
 
@@ -239,10 +238,11 @@ def test_ingest_writes_manifest_and_uses_xml_anchor_contract(tmp_path: Path, mon
 def test_ingest_tool_loop_returns_recalls_and_runtime_status(tmp_path: Path, monkeypatch):
     captured: dict[str, object] = {}
 
-    def fake_tool_loop(system_prompt, prompt, default, *, tools, tool_handler, max_tool_calls):
+    def fake_tool_loop(system_prompt, prompt, *, action_tools, output_tool, tool_handler, validator, max_tool_calls):
         captured["system_prompt"] = system_prompt
         captured["prompt"] = prompt
-        captured["tools"] = tools
+        captured["tools"] = action_tools
+        captured["output_tool"] = output_tool
         tool_result = tool_handler(
             "retrieve_unit_memory",
             {
@@ -255,20 +255,22 @@ def test_ingest_tool_loop_returns_recalls_and_runtime_status(tmp_path: Path, mon
             "tool-1",
         )
         captured["tool_result"] = tool_result
+        payload = {
+            "end_anchor_text": "Beta.",
+            "boundary_type": "paragraph_end",
+            "reason": "Beta closes the local move.",
+            "memory_recalls": [
+                {"recall_id": "r1", "recall_text": "the earlier beta setup", "basis": "selected_source_unit"}
+            ],
+        }
+        assert validator(payload, [{"result": tool_result}]) == []
         return SimpleNamespace(
-            payload={
-                "end_anchor_text": "Beta.",
-                "boundary_type": "paragraph_end",
-                "reason": "Beta closes the local move.",
-                "memory_recalls": [
-                    {"recall_id": "r1", "recall_text": "the earlier beta setup", "basis": "selected_source_unit"}
-                ],
-            },
-            status="tool_called",
+            payload=payload,
+            status="action_tool_called",
             tool_results=[{"result": tool_result}],
         )
 
-    monkeypatch.setattr(llm_calls_module, "invoke_json_with_tool_loop", fake_tool_loop)
+    monkeypatch.setattr(llm_calls_module, "invoke_tool_loop_with_final_output", fake_tool_loop)
 
     result = ingest(
         current_view_position={"current_chapter_id": 1, "current_cursor": {"paragraph_index": 1, "char_offset": 0}},
@@ -288,28 +290,20 @@ def test_ingest_tool_loop_returns_recalls_and_runtime_status(tmp_path: Path, mon
     assert result["tool_result_summary"]["status"] == "ok"
     assert result["tool_result_summary"]["tool_call_id_seen"] == "tool-1"
     assert captured["tools"][0]["name"] == "retrieve_unit_memory"
+    assert captured["output_tool"]["name"] == "submit_ingest_result"
     assert "memory_query" not in json.dumps(captured["tools"], ensure_ascii=False)
 
 
-def test_ingest_marks_recalls_without_tool_as_contract_violation(tmp_path: Path, monkeypatch):
-    calls = {"count": 0}
+def test_ingest_contract_failure_uses_safe_llm_fallback(tmp_path: Path, monkeypatch):
+    """Structured-output contract failures should fall back to a safe empty boundary."""
 
     def fake_tool_loop(*_args, **_kwargs):
-        calls["count"] += 1
-        return SimpleNamespace(
-            payload={
-                "end_anchor_text": "Beta.",
-                "boundary_type": "paragraph_end",
-                "reason": "Beta closes the local move.",
-                "memory_recalls": [
-                    {"recall_id": "r1", "recall_text": "the earlier beta setup", "basis": "selected_source_unit"}
-                ],
-            },
-            status="final_without_tool",
-            tool_results=[],
+        raise llm_calls_module.ReaderLLMError(
+            "structured output contract failed",
+            problem_code="llm_contract",
         )
 
-    monkeypatch.setattr(llm_calls_module, "invoke_json_with_tool_loop", fake_tool_loop)
+    monkeypatch.setattr(llm_calls_module, "invoke_tool_loop_with_final_output", fake_tool_loop)
 
     result = ingest(
         current_view_position={"current_chapter_id": 1, "current_cursor": {"paragraph_index": 1, "char_offset": 0}},
@@ -318,21 +312,21 @@ def test_ingest_marks_recalls_without_tool_as_contract_violation(tmp_path: Path,
         unit_memory_tool_handler=lambda _args: {"status": "ok"},
     )
 
-    assert calls["count"] == 2
-    assert result["tool_loop_status"] == "tool_call_contract_violation"
+    assert result["reason"] == "ingest_llm_error"
+    assert result["memory_recalls"] == []
 
 
 def test_ingest_can_trim_leading_boundary_residue(tmp_path: Path, monkeypatch):
     """Ingest preserves the selected end anchor for a short structural unit."""
 
-    def fake_invoke_json(_system_prompt: str, _prompt: str, default: object) -> object:
-        return {
+    def fake_structured_output(_system_prompt: str, _prompt: str, **_kwargs) -> object:
+        return SimpleNamespace(payload={
             "end_anchor_text": "运用专长，发挥杠杆效应，最终你会得到自己应得的。",
             "boundary_type": "paragraph_end",
             "reason": "The divider is a structural cue, not content.",
-        }
+        })
 
-    monkeypatch.setattr(llm_calls_module, "invoke_json", fake_invoke_json)
+    monkeypatch.setattr(llm_calls_module, "invoke_structured_output_tool", fake_structured_output)
 
     preview_sentences = [
         _sentence("c1-s1", "∨", sentence_index=1, paragraph_index=1),
@@ -349,14 +343,14 @@ def test_ingest_can_trim_leading_boundary_residue(tmp_path: Path, monkeypatch):
 def test_ingest_refuses_to_trim_leading_lexical_content(tmp_path: Path, monkeypatch):
     """Ingest no longer exposes a separate mutable start boundary."""
 
-    def fake_invoke_json(_system_prompt: str, _prompt: str, default: object) -> object:
-        return {
+    def fake_structured_output(_system_prompt: str, _prompt: str, **_kwargs) -> object:
+        return SimpleNamespace(payload={
             "end_anchor_text": "Other people are typically a problem until they prove otherwise.",
             "boundary_type": "paragraph_end",
             "reason": "The visible sentence completes the local move.",
-        }
+        })
 
-    monkeypatch.setattr(llm_calls_module, "invoke_json", fake_invoke_json)
+    monkeypatch.setattr(llm_calls_module, "invoke_structured_output_tool", fake_structured_output)
 
     preview_sentences = [
         _sentence("c1-s1", "People want things from other people.", sentence_index=1, paragraph_index=1),
@@ -374,7 +368,7 @@ def test_ingest_fallback_merges_heading_with_following_body(tmp_path: Path, monk
 
     monkeypatch.setattr(
         llm_calls_module,
-        "invoke_json",
+        "invoke_structured_output_tool",
         lambda *_args, **_kwargs: (_ for _ in ()).throw(
             llm_calls_module.ReaderLLMError("temporary ingest failure", problem_code="network_blocked")
         ),
@@ -399,7 +393,7 @@ def test_ingest_fallback_keeps_body_paragraph_behavior(tmp_path: Path, monkeypat
 
     monkeypatch.setattr(
         llm_calls_module,
-        "invoke_json",
+        "invoke_structured_output_tool",
         lambda *_args, **_kwargs: (_ for _ in ()).throw(
             llm_calls_module.ReaderLLMError("temporary ingest failure", problem_code="network_blocked")
         ),
@@ -423,7 +417,7 @@ def test_ingest_fallback_allows_heading_only_when_no_body_follows(tmp_path: Path
 
     monkeypatch.setattr(
         llm_calls_module,
-        "invoke_json",
+        "invoke_structured_output_tool",
         lambda *_args, **_kwargs: (_ for _ in ()).throw(
             llm_calls_module.ReaderLLMError("temporary ingest failure", problem_code="network_blocked")
         ),
@@ -444,10 +438,10 @@ def test_digest_uses_live_xml_prompt_and_filters_surface_reactions(tmp_path: Pat
 
     captured: dict[str, str] = {}
 
-    def fake_invoke_json(system_prompt: str, prompt: str, default: object) -> object:
+    def fake_structured_output(system_prompt: str, prompt: str, *, output_tool, validator) -> object:
         captured["system_prompt"] = system_prompt
         captured["prompt"] = prompt
-        return {
+        payload = {
             "response": "The line flips the frame.",
             "annotations": [
                 {
@@ -494,8 +488,11 @@ def test_digest_uses_live_xml_prompt_and_filters_surface_reactions(tmp_path: Pat
                 }
             ],
         }
+        assert output_tool["name"] == "submit_digest_result"
+        assert validator(payload) == []
+        return SimpleNamespace(payload=payload, status="final_output_tool_called")
 
-    monkeypatch.setattr(llm_calls_module, "invoke_json", fake_invoke_json)
+    monkeypatch.setattr(llm_calls_module, "invoke_structured_output_tool", fake_structured_output)
 
     result = digest(
         current_unit_sentences=[
@@ -524,7 +521,7 @@ def test_digest_uses_live_xml_prompt_and_filters_surface_reactions(tmp_path: Pat
 
     manifest = json.loads((tmp_path / "_mechanisms" / "attentional_v2" / "internal" / "prompt_manifests" / "digest.json").read_text(encoding="utf-8"))
 
-    assert captured["system_prompt"] == "Follow the structured Digest prompt in the user message. Return JSON only."
+    assert captured["system_prompt"] == "Follow the structured Digest prompt in the user message. Use the required submit_digest_result tool as the final output channel."
     assert "<ReaderRole>" in captured["prompt"]
     assert "<Instruction>" in captured["prompt"]
     assert "<BookInfo>" in captured["prompt"]
@@ -589,8 +586,8 @@ def test_digest_uses_live_xml_prompt_and_filters_surface_reactions(tmp_path: Pat
     }
     assert op["target_key"] != "legacy-ignored"
     assert manifest["node_name"] == "digest"
-    assert manifest["prompt_version"] == "attentional_v2.digest.v7"
-    assert manifest["prompt_assembly"]["spec_id"] == "attentional_v2.digest.xml.v7"
+    assert manifest["prompt_version"] == "attentional_v2.digest.v8"
+    assert manifest["prompt_assembly"]["spec_id"] == "attentional_v2.digest.xml.v8"
     assert manifest["prompt_assembly"]["output_contract"] == "digest_understanding_response_annotation_json_v2"
     assert "mode" not in manifest["prompt_assembly"]
     assert manifest["prompt_assembly"]["rendered_blocks"] == [
@@ -603,10 +600,10 @@ def test_digest_uses_live_xml_prompt_and_filters_surface_reactions(tmp_path: Pat
     ]
 
 
-def test_digest_ignores_legacy_understanding_list_payload(tmp_path: Path, monkeypatch):
-    """Digest should no longer treat a legacy Understanding list as memory ops."""
+def test_digest_rejects_legacy_understanding_list_payload(tmp_path: Path, monkeypatch):
+    """Digest should not silently accept a legacy Understanding list payload."""
 
-    def fake_invoke_json(system_prompt: str, prompt: str, default: object) -> object:
+    def fake_structured_output(system_prompt: str, prompt: str, *, output_tool, validator) -> object:
         payload: dict[str, object] = {
             "response": "A compact response remains valid.",
             "annotations": [],
@@ -617,24 +614,29 @@ def test_digest_ignores_legacy_understanding_list_payload(tmp_path: Path, monkey
                 "content": "Legacy list item should not become current memory.",
             }
         ]
-        return payload
+        errors = validator(payload)
+        assert "understanding must be an object" in errors
+        raise llm_calls_module.ReaderLLMError(
+            "structured output contract failed",
+            problem_code="llm_contract",
+        )
 
-    monkeypatch.setattr(llm_calls_module, "invoke_json", fake_invoke_json)
+    monkeypatch.setattr(llm_calls_module, "invoke_structured_output_tool", fake_structured_output)
 
-    result = digest(
-        current_unit_sentences=[
-            _sentence("c1-s1", "Alpha hinge.", sentence_index=1, paragraph_index=1),
-        ],
-        carry_forward_context={"packet_version": STATE_PACKET_VERSION, "refs": []},
-        output_language="en",
-        output_dir=tmp_path,
-        book_title="Demo Book",
-        author="Tester",
-        chapter_title="Chapter 1",
-    )
+    with pytest.raises(llm_calls_module.ReaderLLMError) as exc_info:
+        digest(
+            current_unit_sentences=[
+                _sentence("c1-s1", "Alpha hinge.", sentence_index=1, paragraph_index=1),
+            ],
+            carry_forward_context={"packet_version": STATE_PACKET_VERSION, "refs": []},
+            output_language="en",
+            output_dir=tmp_path,
+            book_title="Demo Book",
+            author="Tester",
+            chapter_title="Chapter 1",
+        )
 
-    assert result["reading_impression"] == "A compact response remains valid."
-    assert result["memory_uptake_ops"] == []
+    assert exc_info.value.problem_code == "llm_contract"
 
 
 def test_memory_uptake_source_ref_normalization_keeps_development_evidence_separate():

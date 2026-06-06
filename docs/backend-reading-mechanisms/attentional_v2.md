@@ -434,12 +434,17 @@ Use `docs/backend-reading-mechanism.md` for shared platform boundaries. Use `doc
   - The reader role fragment is `reader.role`, owned by `attentional_v2/prompts/reader_role.py`.
   - Ingest reuses the same reader role and supplies its own `Instruction` fragment.
   - Ingest XML context uses top-level `ReaderRole`, `Instruction`, `BookInfo`, `CurrentView`, an empty self-closing `RetrievalSurface`, and `OutputContract`.
-  - The current Ingest output contract is flat JSON with `end_anchor_text`, `boundary_type`, `reason`, and bounded `memory_recalls[]`.
+  - The current Ingest output contract is submitted through the `submit_ingest_result` final-output tool with `end_anchor_text`, `boundary_type`, `reason`, and bounded `memory_recalls[]`.
   - Digest XML renders `ReaderRole` and `Instruction` as separate top-level blocks; all fixed non-role Digest directions live under `Instruction`, while runtime context/data blocks remain separate.
   - Digest `Instruction` uses direct child blocks `CurrentStep`, `ContextUseGuide`, `Understanding`, `Response`, `Annotation`, `SourceGrounding`, and `ResponseDiscipline`.
-  - Digest `Understanding` prompt version `attentional_v2.digest.v7` uses content-level reading rules, text-type compression guidance, grammatical-subject guidance, source-established-content calibration, subject-continuity rules, and approved examples to keep stored Understanding memory self-contained without source-container commentary, passage-effect commentary, or source copying.
-  - The current Digest output contract is flat JSON with `understanding`, `response`, and `annotations`.
-- Subject continuity is implemented in Digest prompt `attentional_v2.digest.v7` and documented in `docs/implementation/new-reading-mechanism/ingest-recall-and-digest-memory-context-design.md`.
+  - Digest `Understanding` prompt version `attentional_v2.digest.v8` uses content-level reading rules, text-type compression guidance, grammatical-subject guidance, source-established-content calibration, subject-continuity rules, and approved examples to keep stored Understanding memory self-contained without source-container commentary, passage-effect commentary, or source copying.
+  - The current Digest output contract is submitted through the `submit_digest_result` final-output tool with `understanding`, `response`, and `annotations`.
+- Current `attentional_v2` structured outputs use forced final-output tool use rather than free-text `Return JSON only` parsing.
+  - Final-output tools are mechanism-private result channels, not business action tools.
+  - The live final-output tools are `submit_ingest_result`, `submit_digest_result`, `submit_bridge_resolution_result`, `submit_reflective_promotion_result`, `submit_reconsolidation_result`, `submit_chapter_consolidation_result`, and `submit_survey_chapter_zone_result`.
+  - `retrieve_unit_memory` remains the only current action tool; it is available to Ingest before the forced final-output submit step.
+  - Missing submit-tool calls, wrong submit-tool names, non-object tool args, or business-validator failures are repaired once and then reported as public `llm_contract` problems if still invalid.
+- Subject continuity is implemented in Digest prompt `attentional_v2.digest.v8` and documented in `docs/implementation/new-reading-mechanism/ingest-recall-and-digest-memory-context-design.md`.
   - Prior Understanding in `ReadingMemory` carries narrator / speaker / actor / concept continuity forward; Digest uses that memory plus current source text to establish new subjects, continue known subjects, or explicitly preserve meaningful ambiguity.
   - Boundary: do not add raw prior-source backfill, Ingest reference-resolution fields, or a durable referent store for this slice.
   - Rule: Digest Understanding should be self-contained and memory-readable; it may use pronouns when their referent is explicit inside the same Understanding, but should not store floating pronouns.

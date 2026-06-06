@@ -5,7 +5,7 @@ from __future__ import annotations
 from .types import PromptDefinition
 
 
-REFLECTIVE_PROMOTION_PROMPT_VERSION = 'attentional_v2.reflective_promotion.v1'
+REFLECTIVE_PROMOTION_PROMPT_VERSION = 'attentional_v2.reflective_promotion.v2'
 
 
 REFLECTIVE_PROMOTION_PROMPT = PromptDefinition(
@@ -22,7 +22,7 @@ Rules:
 - Promote only when the candidate is source-supported and durable enough to matter beyond the immediate local moment.
 - Do not silently overwrite older reflective meaning.
 - If the new item replaces an older reflective item, supersede it explicitly.
-- Return JSON only.""",
+- Submit the final result through the required submit_reflective_promotion_result tool only.""",
     user_prompt_template="""Structural frame:
 {structural_frame}
 
@@ -45,7 +45,7 @@ Output language contract:
 - 专有名词、作品名、机构名、URL 可保留原文
 - 如果需要引用语义段编号，只能使用输入中提供的可见锚点，不要生成内部编号
 
-Return JSON:
+Submit this shape through the required final output tool:
 {
   "decision": "withhold",
   "reason": "<brief reason>",

@@ -657,10 +657,12 @@ def _featured_reaction_preview(
     """Normalize one compact featured reaction payload."""
     internal_reaction_id = str(item.get("reaction_id", ""))
     primary_source_ref = _reaction_primary_source_ref(item)
+    source_quote = _reaction_source_quote(item)
     return {
         "reaction_id": to_api_reaction_id(book_id=book_id, reaction_id=internal_reaction_id),
         "type": to_api_reaction_type(str(item.get("type", ""))),
-        "source_quote": _reaction_source_quote(item),
+        "source_quote": source_quote,
+        "anchor_quote": source_quote,
         "content": str(item.get("content", "")),
         "book_id": to_api_book_id(book_id),
         "chapter_id": chapter_id,
@@ -683,10 +685,12 @@ def _activity_reaction_preview(
 ) -> dict:
     """Normalize one compact reaction payload embedded in an activity event."""
     raw_reaction_id = str(item.get("reaction_id", "") or "").strip() or f"{section_ref}:{index}"
+    source_quote = _reaction_source_quote(item)
     return {
         "reaction_id": to_api_reaction_id(book_id=book_id, reaction_id=raw_reaction_id),
         "type": to_api_reaction_type(str(item.get("type", ""))),
-        "source_quote": _reaction_source_quote(item),
+        "source_quote": source_quote,
+        "anchor_quote": source_quote,
         "content": str(item.get("content", "")),
         "section_ref": section_ref,
         "search_query": str(item.get("search_query", "") or "") or None,
@@ -764,6 +768,7 @@ def _decorate_activity_event(
         excerpt=_clean_text(event.get("highlight_quote") or event.get("source_quote") or event.get("anchor_quote")),
         root=root,
     )
+    event_source_quote = str(event.get("source_quote", event.get("anchor_quote", "")) or "") or None
     return {
         "event_id": str(event.get("event_id", "") or _event_id(event)),
         "timestamp": str(event.get("timestamp", "")),
@@ -778,7 +783,8 @@ def _decorate_activity_event(
         "section_ref": section_ref,
         "reading_locus": reading_locus,
         "active_reaction_id": _public_optional_reaction_id(book_id, event.get("active_reaction_id")),
-        "source_quote": str(event.get("source_quote", event.get("anchor_quote", "")) or "") or None,
+        "source_quote": event_source_quote,
+        "anchor_quote": event_source_quote,
         "highlight_quote": str(event.get("highlight_quote", "") or "") or None,
         "reaction_types": [to_api_reaction_type(str(item)) for item in event.get("reaction_types", []) if str(item).strip()],
         "search_query": str(event.get("search_query", "") or "") or None,
@@ -868,10 +874,12 @@ def _reaction_card(section: dict, reaction: dict, mark_index: dict[str, str]) ->
     """Build one frontend reaction card."""
     reaction_id = str(reaction.get("reaction_id", ""))
     book_id = str(section.get("_book_id", ""))
+    source_quote = _reaction_source_quote(reaction)
     return {
         "reaction_id": to_api_reaction_id(book_id=book_id, reaction_id=reaction_id),
         "type": to_api_reaction_type(str(reaction.get("type", ""))),
-        "source_quote": _reaction_source_quote(reaction),
+        "source_quote": source_quote,
+        "anchor_quote": source_quote,
         "content": str(reaction.get("content", "")),
         "search_query": str(reaction.get("search_query", "") or "") or None,
         "search_results": list(reaction.get("search_results", [])),
@@ -1293,7 +1301,7 @@ def _analysis_current_reading_activity(
                 payload["search_query"] = search_query
             if thought_family in {"highlight", "association", "curious", "discern", "retrospect"}:
                 payload["thought_family"] = thought_family
-            if problem_code in {"llm_timeout", "llm_quota", "llm_auth", "search_timeout", "search_quota", "search_auth", "network_blocked"}:
+            if problem_code in {"llm_timeout", "llm_quota", "llm_auth", "llm_contract", "search_timeout", "search_quota", "search_auth", "network_blocked"}:
                 payload["problem_code"] = problem_code
 
     if payload is None:

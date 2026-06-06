@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import json
+from types import SimpleNamespace
 
 from src.attentional_v2 import survey as survey_module
 from src.attentional_v2.survey import build_book_survey, write_book_survey_artifacts
@@ -240,16 +241,16 @@ def test_build_book_survey_uses_llm_zone_classifier_when_available(monkeypatch):
     })
     calls: list[str] = []
 
-    def fake_invoke_json(_system_prompt, user_prompt, default=None):
+    def fake_structured_output(_system_prompt, user_prompt, **_kwargs):
         calls.append(user_prompt)
         if len(calls) == 1:
-            return {"zone": "front_support", "confidence": "high", "reason": "Preface introduces the book."}
+            return SimpleNamespace(payload={"zone": "front_support", "confidence": "high", "reason": "Preface introduces the book."})
         if len(calls) == 2:
-            return {"zone": "main_body", "confidence": "high", "reason": "This is the main chapter."}
-        return {"zone": "back_support", "confidence": "medium", "reason": "Appendix-like supporting material."}
+            return SimpleNamespace(payload={"zone": "main_body", "confidence": "high", "reason": "This is the main chapter."})
+        return SimpleNamespace(payload={"zone": "back_support", "confidence": "medium", "reason": "Appendix-like supporting material."})
 
     monkeypatch.setattr(survey_module, "current_llm_scope", lambda: object())
-    monkeypatch.setattr(survey_module, "invoke_json", fake_invoke_json)
+    monkeypatch.setattr(survey_module, "invoke_structured_output_tool", fake_structured_output)
 
     survey = build_book_survey(
         document,  # type: ignore[arg-type]
@@ -270,7 +271,7 @@ def test_build_book_survey_falls_back_when_llm_classifier_errors(monkeypatch):
     """Survey should keep generating a plan even if the chapter-zone classifier fails."""
 
     monkeypatch.setattr(survey_module, "current_llm_scope", lambda: object())
-    monkeypatch.setattr(survey_module, "invoke_json", lambda *_args, **_kwargs: (_ for _ in ()).throw(RuntimeError("boom")))
+    monkeypatch.setattr(survey_module, "invoke_structured_output_tool", lambda *_args, **_kwargs: (_ for _ in ()).throw(RuntimeError("boom")))
 
     survey = build_book_survey(
         _sample_book_document(),  # type: ignore[arg-type]

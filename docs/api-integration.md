@@ -45,6 +45,7 @@ Frontend defaults can be overridden with:
 - `GET /api/books` now suppresses stale opaque upload/test stubs that never became real readable books, so the routed bookshelf is expected to show only meaningful shelf entries rather than old hash-like failed-upload leftovers.
 - Backend analysis state and the mindstream view of the activity feed are used by the adaptive `/books/:id` overview when a book is in progress; WebSocket messages trigger refreshes, while polling remains the fallback.
 - The top runtime line in `Reading mindstream` is driven by `analysis-state.current_reading_activity`, which is a runtime snapshot rather than a persisted history item.
+- `analysis-state.current_reading_activity.problem_code = llm_contract` means the backend could not obtain a valid required structured LLM output after one repair attempt; frontend copy should present it as model-output repair / contract failure rather than network loss or quota exhaustion.
 - Public runtime surfaces now also carry additive `status_reason` on:
   - `GET /api/books`
   - `GET /api/books/{book_id}`

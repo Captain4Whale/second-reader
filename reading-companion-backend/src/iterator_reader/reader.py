@@ -96,6 +96,7 @@ _CURRENT_READING_PROBLEM_CODES: set[str] = {
     "llm_timeout",
     "llm_quota",
     "llm_auth",
+    "llm_contract",
     "search_timeout",
     "search_quota",
     "search_auth",

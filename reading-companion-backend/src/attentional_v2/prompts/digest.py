@@ -18,10 +18,10 @@ from .reader_role import READER_ROLE_FRAGMENT
 from .types import PromptDefinition
 
 
-DIGEST_PROMPT_VERSION = "attentional_v2.digest.v7"
-DIGEST_XML_PROMPT_ASSEMBLY_SPEC_ID = "attentional_v2.digest.xml.v7"
-DIGEST_XML_PROMPTSET_VERSION = "attentional_v2-phase6-v52"
-DIGEST_XML_TRANSPORT_SYSTEM_PROMPT = "Follow the structured Digest prompt in the user message. Return JSON only."
+DIGEST_PROMPT_VERSION = "attentional_v2.digest.v8"
+DIGEST_XML_PROMPT_ASSEMBLY_SPEC_ID = "attentional_v2.digest.xml.v8"
+DIGEST_XML_PROMPTSET_VERSION = "attentional_v2-phase6-v53"
+DIGEST_XML_TRANSPORT_SYSTEM_PROMPT = "Follow the structured Digest prompt in the user message. Use the required submit_digest_result tool as the final output channel."
 
 
 # These fragments define the live Digest reader action and its XML Instruction blocks.
@@ -214,7 +214,7 @@ If you callback to earlier material in visible content, speak naturally to the r
         text="""- Do not output broad chapter summary.
 - Do not explain whether you "used prior material".
 - Do not decide or name the next route. After this read, the runner will settle the unit and advance normally.
-- Return JSON only.""",
+- Submit the final result through the required final output tool only.""",
     ),
 )
 
@@ -541,13 +541,13 @@ def render_digest_current_focus_xml(
 
 DIGEST_OUTPUT_USE_GUIDE_FRAGMENT = PromptFragment(
     fragment_id="digest.output_use_guide",
-    text="Follow the instructions above when deciding what to produce; use this section for the exact JSON field names and shapes.",
+    text="Follow the instructions above when deciding what to produce; use this section for the exact final-output tool field names and shapes.",
 )
 
 
 DIGEST_RETURN_FORMAT_FRAGMENT = PromptFragment(
     fragment_id="digest.return_format_contract",
-    text="""Return JSON only.
+    text="""Submit this shape through the required final output tool.
 Top-level fields:
 {
   "understanding": {

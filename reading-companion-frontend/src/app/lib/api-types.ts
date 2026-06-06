@@ -7,7 +7,6 @@ export type SearchHit = ApiSchemas["SearchHit"];
 export type SourceAsset = ApiSchemas["SourceAsset"];
 export type TextSpanLocator = ApiSchemas["TextSpanLocator"];
 export type ReactionTargetLocator = ApiSchemas["ReactionTargetLocator"];
-export type ReactionAnchor = ApiSchemas["ReactionAnchor"];
 export type ReadingLocus = ApiSchemas["ReadingLocus"];
 export type FeaturedReactionPreview = ApiSchemas["FeaturedReactionPreview"];
 export type BookShelfCard = ApiSchemas["BookShelfCard"];

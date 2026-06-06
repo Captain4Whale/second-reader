@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import json
+from types import SimpleNamespace
 
 from src.attentional_v2 import llm_calls as llm_calls_module
 from src.attentional_v2 import runner as runner_module
@@ -69,9 +70,9 @@ def test_digest_projects_compact_packet_and_returns_f1_surface_contract(tmp_path
     AttentionalV2Mechanism().initialize_artifacts(output_dir)
     captured: dict[str, str] = {}
 
-    def fake_invoke_json(_system: str, prompt: str, default: object) -> object:
+    def fake_structured_output(_system: str, prompt: str, **_kwargs) -> object:
         captured["prompt"] = prompt
-        return {
+        return SimpleNamespace(payload={
             "response": "The second sentence sharpens the first one.",
             "annotations": [
                 {
@@ -88,9 +89,9 @@ def test_digest_projects_compact_packet_and_returns_f1_surface_contract(tmp_path
                 "kind": "claim_or_argument",
                 "content": "The second sentence sharpens the first one.",
             },
-        }
+        })
 
-    monkeypatch.setattr(llm_calls_module, "invoke_json", fake_invoke_json)
+    monkeypatch.setattr(llm_calls_module, "invoke_structured_output_tool", fake_structured_output)
 
     local_buffer = build_empty_local_buffer()
     local_buffer["recent_sentences"] = [
@@ -184,7 +185,7 @@ def test_digest_projects_compact_packet_and_returns_f1_surface_contract(tmp_path
     assert "\"earlier_excerpts\"" not in captured["prompt"]
     assert "\"refs\": [" not in captured["prompt"]
     assert manifest["node_name"] == "digest"
-    assert manifest["prompt_version"] == "attentional_v2.digest.v7"
+    assert manifest["prompt_version"] == "attentional_v2.digest.v8"
     assert result["reading_impression"] == "The second sentence sharpens the first one."
     assert result["surfaced_reactions"][0]["source_quote"] == "Beta sentence."
     assert result["surfaced_reactions"][0]["prior_link"] is None

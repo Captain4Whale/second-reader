@@ -383,6 +383,11 @@ export interface components {
              */
             active_reaction_id?: number | null;
             /**
+             * Anchor Quote
+             * @description Compatibility alias for the source quote used to group visible reactions.
+             */
+            anchor_quote?: string | null;
+            /**
              * Chapter Id
              * @description Related stable parsed-book chapter key when applicable.
              */
@@ -501,6 +506,11 @@ export interface components {
          * @description Compact reaction payload used inside one sentence-level mindstream event.
          */
         ActivityReactionPreview: {
+            /**
+             * Anchor Quote
+             * @description Compatibility alias for the quoted source text from the source book.
+             */
+            anchor_quote: string;
             /**
              * Content
              * @description AI-authored reaction text shown to the user.
@@ -1348,7 +1358,7 @@ export interface components {
              * Problem Code
              * @description Optional machine-readable problem code when the live activity is degraded by an external failure.
              */
-            problem_code?: ("llm_timeout" | "llm_quota" | "llm_auth" | "search_timeout" | "search_quota" | "search_auth" | "network_blocked") | null;
+            problem_code?: ("llm_timeout" | "llm_quota" | "llm_auth" | "llm_contract" | "search_timeout" | "search_quota" | "search_auth" | "network_blocked") | null;
             /** @description Additive span- or sentence-based reading locus projected from mechanism truth when available. */
             reading_locus?: components["schemas"]["ReadingLocus"] | null;
             /**
@@ -1503,6 +1513,11 @@ export interface components {
          * @description Compact reaction payload used in teasers, cards, and realtime summaries.
          */
         FeaturedReactionPreview: {
+            /**
+             * Anchor Quote
+             * @description Compatibility alias for the quoted source text from the source book.
+             */
+            anchor_quote: string;
             /**
              * Book Id
              * @description Stable public integer identifier of the book that owns this reaction.
@@ -1744,6 +1759,11 @@ export interface components {
          */
         MarkRecord: {
             /**
+             * Anchor Quote
+             * @description Compatibility alias for the source quote used to recall the marked passage.
+             */
+            anchor_quote: string;
+            /**
              * Book Id
              * @description Public integer book identifier for the marked reaction.
              */
@@ -1862,6 +1882,11 @@ export interface components {
          * @description Visible reaction card rendered in result views.
          */
         ReactionCard: {
+            /**
+             * Anchor Quote
+             * @description Compatibility alias for the source quote taken from the source book.
+             */
+            anchor_quote: string;
             /**
              * Content
              * @description Full AI reaction content.

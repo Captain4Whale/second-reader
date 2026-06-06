@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import json
+from types import SimpleNamespace
 
 from src.attentional_v2 import slow_cycle as slow_cycle_module
 from src.attentional_v2.schemas import (
@@ -363,8 +364,8 @@ def test_reconsolidation_appends_later_reaction_without_mutating_earlier_one(mon
 
     monkeypatch.setattr(
         slow_cycle_module,
-        "invoke_json",
-        lambda *_args, **_kwargs: {
+        "invoke_structured_output_tool",
+        lambda *_args, **_kwargs: SimpleNamespace(payload={
             "decision": "reconsolidate",
             "reason": "The later sentence materially narrows the earlier claim.",
             "reconsolidation_record": {
@@ -381,7 +382,7 @@ def test_reconsolidation_appends_later_reaction_without_mutating_earlier_one(mon
                 "search_results": [],
             },
             "state_updates": [],
-        },
+        }),
     )
 
     result = reconsolidation(
@@ -415,9 +416,9 @@ def test_run_phase6_chapter_cycle_applies_cooling_promotion_and_optional_reactio
     output_dir = tmp_path / "output" / "demo-book"
     AttentionalV2Mechanism().initialize_artifacts(output_dir)
 
-    def fake_invoke_json(system_prompt: str, prompt: str, default: object) -> object:
+    def fake_structured_output(system_prompt: str, prompt: str, **_kwargs) -> object:
         if "chapter-consolidation node" in system_prompt:
-            return {
+            return SimpleNamespace(payload={
                 "chapter_ref": "Chapter 1",
                 "backward_sweep": [
                     {
@@ -497,10 +498,10 @@ def test_run_phase6_chapter_cycle_applies_cooling_promotion_and_optional_reactio
                     "search_query": "",
                     "search_results": [],
                 },
-            }
+            })
         if "reflective-promotion node" in system_prompt:
             if "pc-missing" in prompt:
-                return {
+                return SimpleNamespace(payload={
                     "decision": "withhold",
                     "reason": "Missing supporting SourceRefs.",
                     "target_bucket": "chapter_understandings",
@@ -509,8 +510,8 @@ def test_run_phase6_chapter_cycle_applies_cooling_promotion_and_optional_reactio
                     "supersede_item_id": "",
                     "state_operations": [],
                     "chapter_ref": "Chapter 1",
-                }
-            return {
+                })
+            return SimpleNamespace(payload={
                 "decision": "promote",
                 "reason": "The statement is chapter-durable and well supported.",
                 "target_bucket": "chapter_understandings",
@@ -529,10 +530,10 @@ def test_run_phase6_chapter_cycle_applies_cooling_promotion_and_optional_reactio
                 "supersede_item_id": "",
                 "state_operations": [],
                 "chapter_ref": "Chapter 1",
-            }
-        return default
+            })
+        return SimpleNamespace(payload={})
 
-    monkeypatch.setattr(slow_cycle_module, "invoke_json", fake_invoke_json)
+    monkeypatch.setattr(slow_cycle_module, "invoke_structured_output_tool", fake_structured_output)
 
     result = run_phase6_chapter_cycle(
         book_id="demo-book",
@@ -598,12 +599,12 @@ def test_run_phase6_chapter_cycle_applies_cooling_promotion_and_optional_reactio
     assert result["knowledge_activations"]["activations"][0]["activation_id"] == "ka-1"
     assert result["reaction_records"]["records"][0]["type"] == "retrospect"
     assert result["compatibility_payload"]["visible_reaction_count"] == 1
-    assert chapter_manifest["prompt_version"] == "attentional_v2.chapter_consolidation.v5"
+    assert chapter_manifest["prompt_version"] == "attentional_v2.chapter_consolidation.v6"
     assert '"tension_from"' in chapter_manifest["system_prompt"] or '"tension_from"' in chapter_manifest["user_prompt"]
     assert '"answer_boundary"' not in chapter_manifest["system_prompt"]
     assert '"answer_boundary": "<what later source evidence would advance, answer, or close this inquiry>"' not in chapter_manifest["user_prompt"]
     assert '"statement": "<live near-term item to carry forward>"' not in chapter_manifest["user_prompt"]
-    assert promotion_manifest["prompt_version"] == "attentional_v2.reflective_promotion.v1"
+    assert promotion_manifest["prompt_version"] == "attentional_v2.reflective_promotion.v2"
 
     audit_rows = [
         json.loads(line)

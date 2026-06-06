@@ -1437,6 +1437,13 @@ export const CONTROLLED_COPY = {
     toneNote: "Calm and diagnostic.",
     usageScope: "Book overview mindstream live activity.",
   },
+  "overview.mindstream.live.problem.llm_contract": {
+    en: "Repairing the model output",
+    zh: "正在修正模型输出",
+    intent: "Degraded live-activity line when the model response does not satisfy the required structured output contract.",
+    toneNote: "Calm and diagnostic.",
+    usageScope: "Book overview mindstream live activity.",
+  },
   "overview.mindstream.live.problem.search_timeout": {
     en: "Search is taking too long",
     zh: "搜索这会儿太慢了",

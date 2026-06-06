@@ -216,6 +216,7 @@ class FeaturedReactionPreview(ApiModel):
     reaction_id: int = Field(description="Stable public integer identifier for the reaction.")
     type: ReactionType = Field(description="Reaction type key.")
     source_quote: str = Field(description="Quoted source text from the source book.")
+    anchor_quote: str = Field(description="Compatibility alias for the quoted source text from the source book.")
     content: str = Field(description="AI-authored reaction text shown to the user.")
     book_id: int = Field(description="Stable public integer identifier of the book that owns this reaction.")
     chapter_id: int = Field(description="Stable parsed-book chapter key that owns this reaction.")
@@ -249,6 +250,7 @@ class ActivityReactionPreview(ApiModel):
     reaction_id: int = Field(description="Stable public integer identifier for the reaction.")
     type: ReactionType = Field(description="Reaction type key.")
     source_quote: str = Field(description="Quoted source text from the source book.")
+    anchor_quote: str = Field(description="Compatibility alias for the quoted source text from the source book.")
     content: str = Field(description="AI-authored reaction text shown to the user.")
     section_ref: str = Field(description="Human-readable section reference, such as 3.2.")
     search_query: Optional[str] = Field(default=None, description="Search query attached to the reaction when applicable.")
@@ -416,6 +418,7 @@ class CurrentReadingActivity(ApiModel):
             "llm_timeout",
             "llm_quota",
             "llm_auth",
+            "llm_contract",
             "search_timeout",
             "search_quota",
             "search_auth",
@@ -550,6 +553,7 @@ class ActivityEvent(ApiModel):
         description="Public reaction id of the active durable thought referenced by the event when available.",
     )
     source_quote: Optional[str] = Field(default=None, description="Source quote used to group visible reactions when available.")
+    anchor_quote: Optional[str] = Field(default=None, description="Compatibility alias for the source quote used to group visible reactions.")
     highlight_quote: Optional[str] = Field(default=None, description="High-signal source quote attached to the event when available.")
     reaction_types: list[ReactionType] = Field(description="Reaction types represented in this event.")
     search_query: Optional[str] = Field(default=None, description="Search query attached to the event when applicable.")
@@ -621,6 +625,7 @@ class ReactionCard(ApiModel):
     reaction_id: int = Field(description="Stable public integer reaction identifier.")
     type: ReactionType = Field(description="Reaction type key.")
     source_quote: str = Field(description="Source quote taken from the source book.")
+    anchor_quote: str = Field(description="Compatibility alias for the source quote taken from the source book.")
     content: str = Field(description="Full AI reaction content.")
     search_query: Optional[str] = Field(default=None, description="Search query used to gather additional evidence when applicable.")
     search_results: list[SearchHit] = Field(description="External search results attached to the reaction.")
@@ -740,6 +745,7 @@ class MarkRecord(ApiModel):
     mark_type: MarkType = Field(description="User-selected mark value.")
     reaction_excerpt: str = Field(description="Short excerpt of the reaction content used in marks views.")
     source_quote: str = Field(description="Source quote used to recall the marked passage.")
+    anchor_quote: str = Field(description="Compatibility alias for the source quote used to recall the marked passage.")
     primary_source_ref: Optional[SourceRef] = Field(
         default=None,
         description="Mechanism-authored primary source reference preserved on the mark when available.",

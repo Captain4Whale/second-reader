@@ -1327,30 +1327,6 @@ def _retrieve_unit_memory_for_prepared_source_unit(
     recalls_status = _clean_text(prepared_source_unit.get("memory_recalls_status"))
     if not recalls_status and isinstance(selected_trace, dict):
         recalls_status = _clean_text(selected_trace.get("memory_recalls_status"))
-    if (
-        recalls
-        and isinstance(selected_trace, dict)
-        and _clean_text(selected_trace.get("tool_loop_status")) == "tool_call_contract_violation"
-    ):
-        trace = {
-            "recorded_at": _timestamp(),
-            "event_type": "unit_memory_retrieval",
-            "book_id": book_id,
-            "recalls": [dict(item) for item in recalls],
-            "query_source": "tool_call_contract_violation",
-            "mode": _clean_text(memory_retrieval_config.get("mode")) or "hybrid",
-            "effective_mode": _clean_text(memory_retrieval_config.get("mode")) or "hybrid",
-            "degradation_reason": "tool_call_contract_violation",
-            "candidate_counts": {"recall_count": len(recalls)},
-            "selected_units": [],
-        }
-        record_unit_memory_retrieval_trace(output_dir, trace)
-        return {
-            "recalls": [dict(item) for item in recalls],
-            "query_source": "tool_call_contract_violation",
-            "selected_units": [],
-            "trace": trace,
-        }
     if not recalls:
         if recalls_status in {"missing", "malformed", "malformed_payload"}:
             fallback_query = fallback_query_from_source_unit(selected_source_unit)

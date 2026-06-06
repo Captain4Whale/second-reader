@@ -248,6 +248,8 @@ except as migration compatibility text where the underlying value remains in the
   - optional `last_resume_kind`
   - optional `active_reaction_id`
   - optional `problem_code`
+    - allowed machine-readable values are `llm_timeout`, `llm_quota`, `llm_auth`, `llm_contract`, `search_timeout`, `search_quota`, `search_auth`, and `network_blocked`
+    - `llm_contract` means the active reader could not obtain a valid required structured model output after its repair attempt
 - `current_state_panel.reaction_counts` keyed only by the five canonical reaction types
 - optional additive `current_chapter_number`
 - `recent_completed_chapters[].result_url` pointing to canonical frontend routes

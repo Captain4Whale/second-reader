@@ -8,7 +8,7 @@ from pathlib import Path
 from typing import Mapping
 
 from src.iterator_reader.language import language_name
-from src.iterator_reader.llm_utils import LLMTraceContext, invoke_json, llm_invocation_scope
+from src.iterator_reader.llm_utils import LLMTraceContext, invoke_structured_output_tool, llm_invocation_scope
 from src.reading_core.book_document import BookChapter, ParagraphRecord
 
 from .knowledge import apply_activation_operations
@@ -20,6 +20,12 @@ from .llm_calls import (
     _render_prompt,
     _structural_frame,
     _write_prompt_manifest,
+)
+from .llm_output_tools import (
+    CHAPTER_CONSOLIDATION_RESULT_TOOL,
+    RECONSOLIDATION_RESULT_TOOL,
+    REFLECTIVE_PROMOTION_RESULT_TOOL,
+    require_mapping_fields,
 )
 from .prompts import ATTENTIONAL_V2_PROMPTS
 from .schemas import (
@@ -1020,7 +1026,12 @@ def reflective_promotion(
     with llm_invocation_scope(
         trace_context=LLMTraceContext(stage="phase6", node="reflective_promotion")
     ):
-        payload = invoke_json(prompts.reflective_promotion_system, user_prompt, default={})
+        payload = invoke_structured_output_tool(
+            prompts.reflective_promotion_system,
+            user_prompt,
+            output_tool=REFLECTIVE_PROMOTION_RESULT_TOOL,
+            validator=require_mapping_fields("decision", "reason"),
+        ).payload
     normalized = _normalize_reflective_promotion_result(payload)
     if normalized.get("reflective_item"):
         normalized["reflective_item"]["chapter_ref"] = chapter_ref
@@ -1132,7 +1143,12 @@ def reconsolidation(
     with llm_invocation_scope(
         trace_context=LLMTraceContext(stage="phase6", node="reconsolidation")
     ):
-        payload = invoke_json(prompts.reconsolidation_system, user_prompt, default={})
+        payload = invoke_structured_output_tool(
+            prompts.reconsolidation_system,
+            user_prompt,
+            output_tool=RECONSOLIDATION_RESULT_TOOL,
+            validator=require_mapping_fields("decision", "reason"),
+        ).payload
     if not isinstance(payload, dict):
         return {
             "decision": "keep_prior",
@@ -1343,7 +1359,12 @@ def chapter_consolidation(
     with llm_invocation_scope(
         trace_context=LLMTraceContext(stage="phase6", node="chapter_consolidation")
     ):
-        payload = invoke_json(prompts.chapter_consolidation_system, user_prompt, default={})
+        payload = invoke_structured_output_tool(
+            prompts.chapter_consolidation_system,
+            user_prompt,
+            output_tool=CHAPTER_CONSOLIDATION_RESULT_TOOL,
+            validator=require_mapping_fields("chapter_ref"),
+        ).payload
     normalized = _normalize_chapter_consolidation_result(payload)
     if not normalized.get("chapter_ref"):
         normalized["chapter_ref"] = chapter_ref

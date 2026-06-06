@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import json
+from types import SimpleNamespace
 
 from src.attentional_v2 import bridge as bridge_module
 from src.attentional_v2.prompts import ATTENTIONAL_V2_PROMPTS
@@ -74,8 +75,8 @@ def test_bridge_resolution_writes_manifest_and_keeps_search_rare(tmp_path, monke
     output_dir = tmp_path / "output" / "demo-book"
     AttentionalV2Mechanism().initialize_artifacts(output_dir)
 
-    def fake_invoke_json(_system: str, _prompt: str, default: object) -> object:
-        return {
+    def fake_structured_output(_system: str, _prompt: str, **_kwargs) -> object:
+        return SimpleNamespace(payload={
             "decision": "bridge",
             "reason": "the earlier relation frame should be tested directly",
             "primary_bridge": {
@@ -103,9 +104,9 @@ def test_bridge_resolution_writes_manifest_and_keeps_search_rare(tmp_path, monke
             "search_policy_mode": "search_now",
             "search_trigger": "genuine_curiosity",
             "search_query": "exchange theory relation frame",
-        }
+        })
 
-    monkeypatch.setattr(bridge_module, "invoke_json", fake_invoke_json)
+    monkeypatch.setattr(bridge_module, "invoke_structured_output_tool", fake_structured_output)
 
     result = bridge_resolution(
         current_span_sentences=[
@@ -147,15 +148,15 @@ def test_bridge_resolution_writes_manifest_and_keeps_search_rare(tmp_path, monke
     assert result["primary_attribution"]["target_quote"] == "Value first appears in relation."
     assert result["supporting_bridges"][0]["target_sentence_id"] == "c1-s2"
     assert result["search_policy_mode"] == "defer_search"
-    assert manifest["prompt_version"] == "attentional_v2.bridge_resolution.v5"
+    assert manifest["prompt_version"] == "attentional_v2.bridge_resolution.v6"
     assert manifest["promptset_version"] == ATTENTIONAL_V2_PROMPTS.promptset_version
 
 
 def test_bridge_resolution_declines_generic_bridge_without_specific_attribution(monkeypatch):
     """Bridge judgment should decline when it cannot name the specific earlier target and local relation honestly."""
 
-    def fake_invoke_json(_system: str, _prompt: str, default: object) -> object:
-        return {
+    def fake_structured_output(_system: str, _prompt: str, **_kwargs) -> object:
+        return SimpleNamespace(payload={
             "decision": "bridge",
             "reason": "the chapter generally returns to an earlier theme",
             "primary_bridge": {
@@ -176,9 +177,9 @@ def test_bridge_resolution_declines_generic_bridge_without_specific_attribution(
             "search_policy_mode": "no_search",
             "search_trigger": "none",
             "search_query": "",
-        }
+        })
 
-    monkeypatch.setattr(bridge_module, "invoke_json", fake_invoke_json)
+    monkeypatch.setattr(bridge_module, "invoke_structured_output_tool", fake_structured_output)
 
     result = bridge_resolution(
         current_span_sentences=[
@@ -235,8 +236,8 @@ def test_generate_candidate_set_treats_qianmian_as_explicit_callback_marker():
 def test_run_phase5_bridge_cycle_materializes_anchor_state(monkeypatch):
     """The Phase 5 helper should turn bridge judgment into durable anchor and move state."""
 
-    def fake_invoke_json(_system: str, _prompt: str, default: object) -> object:
-        return {
+    def fake_structured_output(_system: str, _prompt: str, **_kwargs) -> object:
+        return SimpleNamespace(payload={
             "decision": "bridge",
             "reason": "the current line sharpens the earlier relation frame",
             "primary_bridge": {
@@ -290,9 +291,9 @@ def test_run_phase5_bridge_cycle_materializes_anchor_state(monkeypatch):
             "search_policy_mode": "no_search",
             "search_trigger": "none",
             "search_query": "",
-        }
+        })
 
-    monkeypatch.setattr(bridge_module, "invoke_json", fake_invoke_json)
+    monkeypatch.setattr(bridge_module, "invoke_structured_output_tool", fake_structured_output)
 
     result = run_phase5_bridge_cycle(
         current_span_sentences=[

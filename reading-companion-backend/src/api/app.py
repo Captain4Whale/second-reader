@@ -536,6 +536,7 @@ def _mark_record(payload: dict) -> dict:
     normalized["reaction_type"] = to_api_reaction_type(str(payload.get("reaction_type", "")))
     normalized["mark_type"] = to_api_mark_type(str(payload.get("mark_type", "")))
     normalized["section_ref"] = str(payload.get("section_ref", payload.get("segment_ref", "")))
+    normalized["anchor_quote"] = str(payload.get("anchor_quote", payload.get("source_quote", "")) or "")
     supersedes_reaction_id = str(payload.get("supersedes_reaction_id", "") or "").strip()
     normalized["supersedes_reaction_id"] = (
         to_api_reaction_id(book_id=internal_book_id, reaction_id=supersedes_reaction_id)
