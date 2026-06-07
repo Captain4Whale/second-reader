@@ -15,9 +15,9 @@ from .reader_role import READER_ROLE_FRAGMENT
 from .types import PromptDefinition
 
 
-INGEST_PROMPT_VERSION = "attentional_v2.ingest.v11"
-INGEST_XML_PROMPT_ASSEMBLY_SPEC_ID = "attentional_v2.ingest.xml.v11"
-INGEST_XML_PROMPTSET_VERSION = "attentional_v2-phase6-v61"
+INGEST_PROMPT_VERSION = "attentional_v2.ingest.v12"
+INGEST_XML_PROMPT_ASSEMBLY_SPEC_ID = "attentional_v2.ingest.xml.v12"
+INGEST_XML_PROMPTSET_VERSION = "attentional_v2-phase6-v62"
 INGEST_TRANSPORT_SYSTEM_PROMPT = "Follow the structured Ingest prompt in the user message. Use the required submit_ingest_result tool as the final output channel."
 
 
@@ -178,8 +178,12 @@ Fields:
 
 - `end_anchor_text`: exact visible source quote at the end of the chosen unit
 - `boundary_type`: boundary classification for why the unit ends there
-- `reason`: brief internal reason for the boundary choice
-- `memory_recalls`: zero to three prior-reading recalls raised by the selected unit""",
+- `reason`: boundary rationale for why the source unit that starts at the current cursor should end at `end_anchor_text`
+- `memory_recalls`: zero to three prior-reading recalls raised by the selected unit
+
+`reason` should name the reading boundary that becomes clear here: for example, a claim completes, an example closes, a scene or exchange ends, a contrast resolves, a definition or distinction is established, a transition begins, or the preview limit forces the best honest stopping point.
+
+`reason` is not a separate source-span selection and does not define another start point. It should help audit the boundary judgment, not restate a different focal paragraph or range.""",
 )
 
 
