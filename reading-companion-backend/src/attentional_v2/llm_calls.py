@@ -748,13 +748,7 @@ def _normalize_ingest_boundary_result(
     """Normalize one Ingest boundary result."""
 
     if not isinstance(value, dict):
-        return {
-            "reason": "ingest_empty_source_anchor",
-            "end_anchor_text": "",
-            "boundary_type": "paragraph_end",
-            "memory_recalls": [],
-            "memory_recalls_status": "malformed_payload",
-        }
+        raise ReaderLLMError("Ingest result payload must be an object.", problem_code="llm_contract")
     raw_recalls = value.get("memory_recalls")
     normalized_recalls = normalize_unit_memory_recalls(raw_recalls)
     if "memory_recalls" not in value:
@@ -772,6 +766,8 @@ def _normalize_ingest_boundary_result(
         "memory_recalls": normalized_recalls,
         "memory_recalls_status": recalls_status,
     }
+    if not result["end_anchor_text"]:
+        raise ReaderLLMError("Ingest result end_anchor_text must be non-empty.", problem_code="llm_contract")
     return result
 
 
@@ -873,16 +869,8 @@ def ingest(
                 result["tool_result_summary"] = dict(first_result)
         return result
 
-    try:
-        with llm_invocation_scope(trace_context=LLMTraceContext(stage="phase4", node="ingest")):
-            return _invoke_with_tools(user_prompt)
-    except ReaderLLMError:
-        return {
-            "reason": "ingest_llm_error",
-            "end_anchor_text": "",
-            "boundary_type": "paragraph_end",
-            "memory_recalls": [],
-        }
+    with llm_invocation_scope(trace_context=LLMTraceContext(stage="phase4", node="ingest")):
+        return _invoke_with_tools(user_prompt)
 
 
 def _route_targets_from_ref_ids(

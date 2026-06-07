@@ -56,6 +56,22 @@ def test_ingest_boundary_contract_has_only_boundary_fields() -> None:
     assert payload["memory_recalls_status"] == "missing"
 
 
+def test_ingest_normalizer_rejects_empty_anchor() -> None:
+    """Normalizer hardening prevents malformed payloads from becoming fallback units."""
+
+    with pytest.raises(llm_calls_module.ReaderLLMError) as exc_info:
+        llm_calls_module._normalize_ingest_boundary_result(  # noqa: SLF001
+            {
+                "end_anchor_text": "",
+                "boundary_type": "paragraph_end",
+                "reason": "missing anchor",
+                "memory_recalls": [],
+            }
+        )
+
+    assert exc_info.value.problem_code == "llm_contract"
+
+
 def test_ingest_recall_status_distinguishes_empty_from_malformed() -> None:
     provided_empty = llm_calls_module._normalize_ingest_boundary_result(  # noqa: SLF001
         {
@@ -490,8 +506,8 @@ def test_ingest_tool_loop_validator_sees_current_source_language(tmp_path: Path,
     assert result["memory_recalls"][0]["recall_text"].startswith("悉达多")
 
 
-def test_ingest_contract_failure_uses_safe_llm_fallback(tmp_path: Path, monkeypatch):
-    """Structured-output contract failures should fall back to a safe empty boundary."""
+def test_ingest_contract_failure_propagates_llm_contract(tmp_path: Path, monkeypatch):
+    """Structured-output contract failures must not become empty fallback boundaries."""
 
     def fake_tool_loop(*_args, **_kwargs):
         raise llm_calls_module.ReaderLLMError(
@@ -501,15 +517,15 @@ def test_ingest_contract_failure_uses_safe_llm_fallback(tmp_path: Path, monkeypa
 
     monkeypatch.setattr(llm_calls_module, "invoke_tool_loop_with_final_output", fake_tool_loop)
 
-    result = ingest(
-        current_view_position={"current_chapter_id": 1, "current_cursor": {"paragraph_index": 1, "char_offset": 0}},
-        current_view_content={"paragraph_slices": [{"paragraph_index": 1, "text": "Beta."}]},
-        output_dir=tmp_path,
-        unit_memory_tool_handler=lambda _args: {"status": "ok"},
-    )
+    with pytest.raises(llm_calls_module.ReaderLLMError) as exc_info:
+        ingest(
+            current_view_position={"current_chapter_id": 1, "current_cursor": {"paragraph_index": 1, "char_offset": 0}},
+            current_view_content={"paragraph_slices": [{"paragraph_index": 1, "text": "Beta."}]},
+            output_dir=tmp_path,
+            unit_memory_tool_handler=lambda _args: {"status": "ok"},
+        )
 
-    assert result["reason"] == "ingest_llm_error"
-    assert result["memory_recalls"] == []
+    assert exc_info.value.problem_code == "llm_contract"
 
 
 def test_ingest_can_trim_leading_boundary_residue(tmp_path: Path, monkeypatch):
@@ -559,8 +575,8 @@ def test_ingest_refuses_to_trim_leading_lexical_content(tmp_path: Path, monkeypa
     assert "start_sentence_id" not in decision
 
 
-def test_ingest_fallback_merges_heading_with_following_body(tmp_path: Path, monkeypatch):
-    """LLM failure should fall back to an empty anchor and safe forward act shape."""
+def test_ingest_llm_failure_does_not_return_empty_boundary_for_heading_preview(tmp_path: Path, monkeypatch):
+    """LLM failure should stop Ingest instead of returning an empty boundary."""
 
     monkeypatch.setattr(
         llm_calls_module,
@@ -576,16 +592,14 @@ def test_ingest_fallback_merges_heading_with_following_body(tmp_path: Path, monk
         _sentence("c1-s3", "而且值得学。", sentence_index=3, paragraph_index=2),
     ]
 
-    decision = _ingest_boundary_call(tmp_path=tmp_path, preview_sentences=preview_sentences)
+    with pytest.raises(llm_calls_module.ReaderLLMError) as exc_info:
+        _ingest_boundary_call(tmp_path=tmp_path, preview_sentences=preview_sentences)
 
-    assert "decision" not in decision
-    assert "selection" + "_mode" not in decision
-    assert decision["end_anchor_text"] == ""
-    assert decision["reason"] == "ingest_llm_error"
+    assert exc_info.value.problem_code == "network_blocked"
 
 
-def test_ingest_fallback_keeps_body_paragraph_behavior(tmp_path: Path, monkeypatch):
-    """Ordinary body fallback keeps the same safe forward act shape."""
+def test_ingest_llm_failure_does_not_return_empty_boundary_for_body_preview(tmp_path: Path, monkeypatch):
+    """Ordinary body previews must not be settled from an empty LLM boundary."""
 
     monkeypatch.setattr(
         llm_calls_module,
@@ -601,15 +615,14 @@ def test_ingest_fallback_keeps_body_paragraph_behavior(tmp_path: Path, monkeypat
         _sentence("c1-s3", "Gamma.", sentence_index=3, paragraph_index=2),
     ]
 
-    decision = _ingest_boundary_call(tmp_path=tmp_path, preview_sentences=preview_sentences)
+    with pytest.raises(llm_calls_module.ReaderLLMError) as exc_info:
+        _ingest_boundary_call(tmp_path=tmp_path, preview_sentences=preview_sentences)
 
-    assert decision["end_anchor_text"] == ""
-    assert decision["boundary_type"] == "paragraph_end"
-    assert decision["reason"] == "ingest_llm_error"
+    assert exc_info.value.problem_code == "network_blocked"
 
 
-def test_ingest_fallback_allows_heading_only_when_no_body_follows(tmp_path: Path, monkeypatch):
-    """Heading-only fallback keeps the same safe forward act shape."""
+def test_ingest_llm_failure_does_not_return_empty_boundary_for_heading_only(tmp_path: Path, monkeypatch):
+    """Heading-only previews still require a valid Ingest boundary."""
 
     monkeypatch.setattr(
         llm_calls_module,
@@ -623,10 +636,10 @@ def test_ingest_fallback_allows_heading_only_when_no_body_follows(tmp_path: Path
         _sentence("c1-s1", "Chapter 2", sentence_index=1, paragraph_index=1, text_role="chapter_heading"),
     ]
 
-    decision = _ingest_boundary_call(tmp_path=tmp_path, preview_sentences=preview_sentences)
+    with pytest.raises(llm_calls_module.ReaderLLMError) as exc_info:
+        _ingest_boundary_call(tmp_path=tmp_path, preview_sentences=preview_sentences)
 
-    assert decision["end_anchor_text"] == ""
-    assert decision["reason"] == "ingest_llm_error"
+    assert exc_info.value.problem_code == "network_blocked"
 
 
 def test_digest_uses_live_xml_prompt_and_filters_surface_reactions(tmp_path: Path, monkeypatch):

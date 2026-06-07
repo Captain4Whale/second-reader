@@ -146,7 +146,8 @@ Use `docs/backend-reading-mechanism.md` for shared platform boundaries. Use `doc
 - The `Ingest` LLM-call boundary is now landed.
   - The current Ingest contract is a pure LLM boundary call: **Choose the Boundary of the Next Unit That Should Be Read**.
   - Reading Runner owns runtime next-unit preparation through `prepare_next_source_unit_for_read` and consumes one `PreparedSourceUnit`.
-  - The runtime operation prepares source preview/context, calls `Ingest`, resolves or retries the returned anchor, applies fallback boundary governance when needed, and produces the accepted forward source unit for `Digest`.
+  - The runtime operation prepares source preview/context, calls `Ingest`, resolves or retries the returned anchor, applies fallback boundary governance for unresolved non-empty anchors when needed, and produces the accepted forward source unit for `Digest`.
+  - Ingest structured-output / LLM failures are not accepted as boundary choices. Empty or malformed final-output payloads surface as LLM problem codes such as `llm_contract` rather than being normalized into `end_anchor_text = ""` and settled through deterministic cursor fallback.
   - The current prompt and schema expose boundary fields for that forward source unit plus bounded Unit Memory recall intentions: exact `end_anchor_text`, `boundary_type`, `reason`, and `memory_recalls[]`.
   - When Ingest returns non-empty recalls, the LLM call must use the mechanism-private `retrieve_unit_memory` tool loop; Reading Runner executes Unit Memory retrieval/selection after boundary acceptance and before calling `Digest`.
 - Phase D of the post-eval structural rework is now landed as preserved intermediate continuity / recall / resume evidence.
@@ -173,7 +174,8 @@ Use `docs/backend-reading-mechanism.md` for shared platform boundaries. Use `doc
     - receives that already-prepared adaptive source preview in XML context
     - returns boundary fields, including an exact `end_anchor_text` rather than sentence ids or raw numeric offsets
     - may also return up to three `memory_recalls[]` items for Unit Memory retrieval support
-  - `Reading Runner` boundary governance resolves the returned anchor with source-exact matching first, quote-normalized exact matching second, and trailing-closing-punctuation extension before retry/fallback; it retries once when the anchor is unresolved, falls back to a deterministic cursor boundary when needed, and produces the accepted `PreparedSourceUnit`
+  - `Reading Runner` boundary governance resolves the returned anchor with source-exact matching first, quote-normalized exact matching second, and trailing-closing-punctuation extension before retry/fallback; it retries once when a non-empty anchor is unresolved, falls back to a deterministic cursor boundary when needed, and produces the accepted `PreparedSourceUnit`
+  - Ingest contract failures, including empty final `end_anchor_text`, stop at the LLM-call contract boundary and are reported as explicit LLM problems instead of becoming fallback `PreparedSourceUnit` records
   - `Reading Runner` executes Unit Memory retrieval for the accepted unit when recalls are present, selects prompt-facing Understanding memory, and records `unit_memory_retrieval_trace.jsonl`
   - mandatory `Digest` call with bounded `ReadingMemory`
   - `Digest` directly surfaces zero-to-many reading-time reactions and emits bounded Recent Reading Memory
@@ -246,7 +248,8 @@ Use `docs/backend-reading-mechanism.md` for shared platform boundaries. Use `doc
     - the current interface exposes no non-mainline routing or source-skill action
   - deterministically resolve `end_anchor_text` against the preview and map it to an end-exclusive `end_cursor`
     - if the anchor cannot be resolved, retry Ingest once with the failed resolution as source evidence
-    - if retry still fails, fall back conservatively to the current paragraph end or preview boundary and record the resolution status
+    - if a non-empty anchor still cannot be resolved, fall back conservatively to the current paragraph end or preview boundary and record the resolution status
+    - if Ingest fails its structured-output contract or submits an empty `end_anchor_text`, surface the LLM problem such as `llm_contract` instead of manufacturing an empty boundary for fallback settlement
   - retrieve/select prior Understanding when Ingest supplied recalls, then build a bounded prompt-facing `ReadingMemory` block from hot current-chapter Understanding plus selected long-distance Unit Memory Understanding
   - formally digest the accepted source unit through `Digest`
   - let `Digest` produce three model-facing reading outputs for that exact unit: `understanding`, `response`, and `annotations`
