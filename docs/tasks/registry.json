@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "updated_at": "2026-06-06T22:37:07+08:00",
+  "updated_at": "2026-06-07T08:51:54+08:00",
   "tasks": [
     {
       "id": "TASK-SECOND-READER-INGEST-DIGEST-REFRAME-AUDIT-20260530",
@@ -52,7 +52,7 @@
         "bgjob_unit_memory_text_only_smoke_xidaduo_post_r16_aux_backing_20260606"
       ],
       "acceptance_ref": "",
-      "next_action": "Five-window Long Span vNext judged diagnostic completed for the current Ingest -> Digest -> Reading Runner settlement mechanism and is review_pending in the run ledger. Current live Ingest returns boundary fields plus bounded memory_recalls[]; retrieve_unit_memory triggers runtime Unit Memory retrieval/selection before Digest, and Digest receives top-level ReadingMemory assembled from hot current-chapter Understanding plus selected long-distance Unit Memory Understanding. Unit Memory retrieval repair under docs/implementation/new-reading-mechanism/unit-memory-retrieval-repair-validation-plan.md now has diagnostic proof for both text_only and live hybrid mechanics. Text_only smokes prove prompt-visible retrieved Understanding; R14/R15 boundary fixes and R16 auxiliary-backed Understanding gating are validated. The earlier post-R16 selected_but_not_rendered_count=3 reading is now classified as stopped-smoke pending selection, not a live rendering failure. Local hybrid readiness passes with sqlite-vec plus Ollama App `qwen3-embedding:0.6b`; after an initial embedding-timeout degradation, the raised-timeout live hybrid smoke `attentional_v2_unit_memory_hybrid_smoke_xidaduo_phase2_r1_20260606` reached health status ok with 47 unit_understanding vector rows, 2 real Qwen query cache rows, 21 dense docs, 21 lexical docs, 11 selected units, 11 retrieved ReadingMemory lines, and 8 unique rendered retrieved units. Next action: review retrieved-memory usefulness/relevance or decide whether to launch a separately authorized formal evaluation; do not claim product quality or update evidence catalog from these diagnostic smokes.",
+      "next_action": "Five-window Long Span vNext judged diagnostic completed for the current Ingest -> Digest -> Reading Runner settlement mechanism and is review_pending in the run ledger. Current live Ingest returns boundary fields plus bounded memory_recalls[]; retrieve_unit_memory triggers runtime Unit Memory retrieval/selection before Digest, and Digest receives top-level ReadingMemory assembled from hot current-chapter Understanding plus selected long-distance Unit Memory Understanding. Unit Memory retrieval repair under docs/implementation/new-reading-mechanism/unit-memory-retrieval-repair-validation-plan.md now has diagnostic proof for both text_only and live hybrid mechanics. Text_only smokes prove prompt-visible retrieved Understanding; R14/R15 boundary fixes and R16 auxiliary-backed Understanding gating are validated. The earlier post-R16 selected_but_not_rendered_count=3 reading is now classified as stopped-smoke pending selection, not a live rendering failure. Local hybrid readiness passes with sqlite-vec plus Ollama App `qwen3-embedding:0.6b`; after an initial embedding-timeout degradation, the raised-timeout live hybrid smoke `attentional_v2_unit_memory_hybrid_smoke_xidaduo_phase2_r1_20260606` reached health status ok with 47 unit_understanding vector rows, 2 real Qwen query cache rows, 21 dense docs, 21 lexical docs, 11 selected units, 11 retrieved ReadingMemory lines, and 8 unique rendered retrieved units. Ingest prompt `attentional_v2.ingest.v8` / promptset `attentional_v2-phase6-v58` now calibrates recall text as retrieval-friendly prior-understanding intent, requires recall to look backward beyond the selected unit, and forbids paragraph / line / XML identifiers. Next action: review retrieved-memory usefulness/relevance or decide whether to launch a separately authorized formal evaluation; do not claim product quality or update evidence catalog from these diagnostic smokes.",
       "blocked_by": [],
       "evidence_refs": [
         "docs/current-state.md",
@@ -101,7 +101,7 @@
         "reading-companion-backend/eval/runs/attentional_v2/attentional_v2_unit_memory_text_only_smoke_xidaduo_post_r16_aux_backing_20260606/analysis/unit_memory_retrieval_health/README.md",
         "reading-companion-backend/eval/runs/attentional_v2/attentional_v2_unit_memory_text_only_smoke_xidaduo_post_r16_aux_backing_20260606/analysis/unit_memory_post_r16_aux_backing_review/README.md"
       ],
-      "last_updated": "2026-06-06T22:37:07+08:00",
+      "last_updated": "2026-06-07T08:51:54+08:00",
       "last_updated_by": "codex"
     },
     {

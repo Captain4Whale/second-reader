@@ -20,7 +20,7 @@ from .types import PromptDefinition
 
 DIGEST_PROMPT_VERSION = "attentional_v2.digest.v9"
 DIGEST_XML_PROMPT_ASSEMBLY_SPEC_ID = "attentional_v2.digest.xml.v9"
-DIGEST_XML_PROMPTSET_VERSION = "attentional_v2-phase6-v56"
+DIGEST_XML_PROMPTSET_VERSION = "attentional_v2-phase6-v58"
 DIGEST_XML_TRANSPORT_SYSTEM_PROMPT = "Follow the structured Digest prompt in the user message. Use the required submit_digest_result tool as the final output channel."
 
 

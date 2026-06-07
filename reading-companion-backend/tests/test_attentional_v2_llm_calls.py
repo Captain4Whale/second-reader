@@ -295,10 +295,15 @@ def test_ingest_writes_manifest_and_uses_xml_anchor_contract(tmp_path: Path, mon
     assert "<ReturnFormat>" in captured["prompt"]
     assert "You are in the Ingest step of a sequential deep-reading loop." in captured["prompt"]
     assert "Select one forward source unit from the current reading cursor." in captured["prompt"]
-    assert "notice whether this unit naturally calls back" in captured["prompt"]
-    assert "primary semantic focus" in captured["prompt"]
-    assert "Do not request broad character background" in captured["prompt"]
-    assert "If only a generic recall would be possible, return an empty list" in captured["prompt"]
+    assert "A recall is a focused memory intention" in captured["prompt"]
+    assert "book's ongoing movement" in captured["prompt"]
+    assert "look backward beyond the selected unit" in captured["prompt"]
+    assert "inside the selected unit itself" in captured["prompt"]
+    assert "# Retrieval-friendly content" in captured["prompt"]
+    assert "Do not mention paragraph numbers" in captured["prompt"]
+    assert "Paragraph 109" in captured["prompt"]
+    assert "Prefer one strong focused recall over several weak recalls" in captured["prompt"]
+    assert "instead of inventing a name" in captured["prompt"]
     assert '"memory_recalls"' in captured["prompt"]
     assert '"memory_query"' not in captured["prompt"]
     assert "Do not resolve anchors, retry or choose fallback boundaries" in captured["prompt"]
@@ -319,7 +324,7 @@ def test_ingest_writes_manifest_and_uses_xml_anchor_contract(tmp_path: Path, mon
     assert "Set each recall `basis` exactly to `selected_source_unit`" in captured["prompt"]
     assert "Mainline preview" not in captured["prompt"]
     assert manifest["node_name"] == "ingest"
-    assert manifest["prompt_version"] == "attentional_v2.ingest.v6"
+    assert manifest["prompt_version"] == "attentional_v2.ingest.v8"
     assert manifest["prompt_assembly"]["output_contract"] == "ingest_boundary_memory_recalls_json_v2"
     assert manifest["prompt_assembly"]["owner_node"] == "ingest"
 

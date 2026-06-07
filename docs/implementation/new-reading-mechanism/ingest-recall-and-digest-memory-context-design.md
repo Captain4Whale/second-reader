@@ -236,23 +236,61 @@ Recommended XML child under `Instruction`:
 Target text:
 
 ```text
-After choosing the next source unit, notice whether this unit naturally calls back to anything already read.
+# Purpose
 
-A recall is not a search string and not a summary task. It is a concise description of something from earlier reading that would help you read the selected unit continuously now.
+After choosing the next source unit, bring forward prior reading that would help Digest read this unit as part of the book's ongoing movement.
 
-Write recalls only when the selected unit gives you a real reason to remember earlier reading: a returning person, place, object, concept, question, image, scene, argument, contrast, relationship, or unresolved pressure.
+A recall is a focused memory intention: it names the earlier understanding that would make the selected unit more continuous, situated, or meaningful when read now.
 
-Start from the selected unit's primary semantic focus: the claim, teaching, action, conflict, image, relationship, method, or term that Digest will need to understand.
+The recall should look backward beyond the selected unit. Do not use recall to summarize, rephrase, or search for another sentence inside the selected unit itself.
 
-Each recall should name the concrete source footing in the selected unit and the specific earlier understanding it asks to remember.
+# When to recall
 
-Do not request broad character background, general protagonist history, or a generic "remember this name/concept appeared before" just because a recurring person or term is present. Ask for person or relationship background only when the current unit actually hinges on that earlier relation, choice, conflict, or unresolved pressure.
+Write a recall when the selected unit returns to, develops, contrasts with, or depends on something already read: a person, relationship, concept, question, object, image, scene, argument, choice, conflict, method, term, or unresolved pressure.
 
-For doctrinal, argumentative, conceptual, or methodological units, prefer prior claims, definitions, examples, contrasts, or teaching content over generic person-history recall.
+If the selected unit is purely structural, too thin to benefit from prior memory, or only invites generic background, return an empty list.
 
-Do not list every name or noun. Do not split mechanically by entity. Create separate recalls only when the selected unit contains distinct recall needs. If only a generic recall would be possible, return an empty list.
+# Retrieval-friendly content
 
-Return zero to three recalls. If nothing in the selected unit asks for earlier memory, return an empty list.
+Write each `recall_text` as the prior understanding runtime should try to find.
+
+A strong `recall_text` names the relevant subject and the earlier meaning, relation, claim, action, or tension to retrieve.
+
+Use content-grounded wording:
+- "悉达多此前对婆罗门教诲、沙门苦行和法义传授产生怀疑，认为教义和修习不能替代亲身探索、求道与觉悟。"
+- "乔文达此前一直追随悉达多，把他视为精神上的榜样和同行者。"
+
+# Focus
+
+Let the selected unit decide the recall focus. The recall should support what Digest will need to understand in this unit: its claim, action, conflict, image, relationship, method, term, contrast, or development.
+
+For doctrinal, argumentative, conceptual, or methodological units, recall prior claims, definitions, examples, contrasts, or teaching content.
+
+For person or relationship units, recall earlier choices, conflicts, attachments, obligations, or unresolved tensions that matter to the present unit.
+
+# Writing constraints
+
+Write each `recall_text` in the same primary language as the current source text.
+
+Preserve important names, titles, and technical terms in the form used by the source text when available.
+
+Do not mention paragraph numbers, line numbers, XML ids, CurrentView labels, or phrases like "Paragraph 109" / "段落11".
+
+Do not use outside knowledge about the book, author, later plot, or general literary context. Use only the selected source unit and the already-read continuity implied by the reading so far.
+
+When naming people or speakers, use names that are explicit in the selected unit or unambiguous from already-read continuity. If the subject is unclear, keep the wording neutral instead of inventing a name.
+
+Set each recall `basis` exactly to `selected_source_unit`.
+
+# Number of recalls
+
+Return zero to three recalls.
+
+Prefer one strong focused recall over several weak recalls.
+
+Create separate recalls only when the selected unit contains distinct continuity needs. Do not list every name or noun, and do not split mechanically by entity.
+
+# Tool use
 
 If you write one or more recalls, call the Unit Memory retrieval tool with those recalls so runtime can retrieve, select, and prepare the prior understanding that may support Digest.
 ```
