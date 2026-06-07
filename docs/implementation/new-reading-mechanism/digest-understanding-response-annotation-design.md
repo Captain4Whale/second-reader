@@ -26,7 +26,7 @@ Update when: Digest action names, output fields, XML prompt structure, or runtim
 
 - Implemented prompt version: `attentional_v2.digest.v9`
 - Implemented XML assembly spec: `attentional_v2.digest.xml.v9`
-- Implemented promptset: `attentional_v2-phase6-v60`
+- Implemented promptset: `attentional_v2-phase6-v61`
 - Implemented output contract: `digest_understanding_response_annotation_json_v3`
 - Runtime mapping:
   - `understanding` string -> zero or one internal `memory_uptake_ops[].payload.memory_text` targeting `recent_reading_memory`

@@ -220,6 +220,12 @@ End anchor and continuation:
 - Copy `end_anchor_text` character-for-character from the preview source text. Do not paraphrase, omit punctuation, or add ellipses.
 - Choose a sufficiently unique tail anchor, usually 20-80 Chinese characters or 8-25 English words. If the unit is very short, the full unit tail is acceptable.
 - If the move is still unfinished at the available boundary, choose the best honest end point you have. Do not pretend the local move is complete.
+
+Boundary closure check:
+- After choosing the semantic end of the unit, check whether `end_anchor_text` accidentally leaves behind punctuation that belongs to the same sentence, quotation, parenthetical, bracketed span, or footnote marker.
+- Include terminal punctuation and attached closing marks that complete the chosen unit, such as `。`, `.`, `！`, `？`, `”`, `’`, `）`, `]`, and `】`.
+- Do not stop immediately before punctuation or a closing mark that closes the sentence, quote, parenthesis, bracket, or note span you are choosing.
+- Do not absorb opening punctuation, bullets, separators, or markers that begin the next unit.
 ```
 
 #### RecallPriorReading

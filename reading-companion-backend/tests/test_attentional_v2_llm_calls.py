@@ -355,11 +355,15 @@ def test_ingest_writes_manifest_and_uses_xml_anchor_contract(tmp_path: Path, mon
     assert "Return exactly one act" not in captured["prompt"]
     assert "weak structure cues, not automatic standalone units" in captured["prompt"]
     assert "purely non-lexical residue" in captured["prompt"]
+    assert "Boundary closure check" in captured["prompt"]
+    assert "accidentally leaves behind punctuation" in captured["prompt"]
+    assert "Do not stop immediately before punctuation or a closing mark" in captured["prompt"]
+    assert "Do not absorb opening punctuation" in captured["prompt"]
     assert "same primary language as the current source text" in captured["prompt"]
     assert "Set each recall `basis` exactly to `selected_source_unit`" in captured["prompt"]
     assert "Mainline preview" not in captured["prompt"]
     assert manifest["node_name"] == "ingest"
-    assert manifest["prompt_version"] == "attentional_v2.ingest.v10"
+    assert manifest["prompt_version"] == "attentional_v2.ingest.v11"
     assert manifest["prompt_assembly"]["output_contract"] == "ingest_boundary_memory_recalls_json_v2"
     assert manifest["prompt_assembly"]["owner_node"] == "ingest"
 
