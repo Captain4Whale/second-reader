@@ -238,11 +238,19 @@ Target text:
 ```text
 # Purpose
 
-After choosing the next source unit, bring forward prior reading that would help Digest read this unit as part of the book's ongoing movement.
+After choosing the next source unit, identify prior-reading memory targets that would help Digest read this unit as part of the book's ongoing movement.
 
-A recall is a focused memory intention: it names the earlier understanding that would make the selected unit more continuous, situated, or meaningful when read now.
+A recall is a retrieval target for prior reading memory. It describes what earlier understanding runtime should try to find, using the selected unit as the cue.
 
 The recall should look backward beyond the selected unit. Do not use recall to summarize, rephrase, or search for another sentence inside the selected unit itself.
+
+# Source scope
+
+Use `CurrentView / Content` to choose the boundary and to notice cues for recall. Do not treat any text in `CurrentView / Content` as already-read memory evidence.
+
+After you choose the boundary, the selected unit is current source text and any remaining preview text is future source text. Neither should be written as the prior memory content.
+
+If a recall would merely retrieve the same idea already stated in the selected unit, return no recall or describe a broader prior-memory target without copying that current-unit content.
 
 # When to recall
 
@@ -252,13 +260,14 @@ If the selected unit is purely structural, too thin to benefit from prior memory
 
 # Retrieval-friendly content
 
-Write each `recall_text` as the prior understanding runtime should try to find.
+Write each `recall_text` as the prior understanding runtime should try to find. It does not need to assert that the prior memory already exists.
 
-A strong `recall_text` names the relevant subject and the earlier meaning, relation, claim, action, or tension to retrieve.
+A strong `recall_text` names the selected-unit cue and the earlier meaning, relation, claim, action, or tension that would be useful to retrieve.
 
 Use content-grounded wording:
-- "悉达多此前对婆罗门教诲、沙门苦行和法义传授产生怀疑，认为教义和修习不能替代亲身探索、求道与觉悟。"
-- "乔文达此前一直追随悉达多，把他视为精神上的榜样和同行者。"
+- "这位青年人或陌生沙门此前与法义、个人求道、以及是否能通过教义解脱有关的理解。"
+- "悉达多此前与婆罗门教诲、沙门苦行、法义传授和个人求道有关的理解。"
+- "乔文达此前与悉达多同行、追随、分离或精神关系有关的理解。"
 
 # Focus
 
@@ -278,7 +287,7 @@ Do not mention paragraph numbers, line numbers, XML ids, CurrentView labels, or 
 
 Do not use outside knowledge about the book, author, later plot, or general literary context. Use only the selected source unit and the already-read continuity implied by the reading so far.
 
-When naming people or speakers, use names that are explicit in the selected unit or unambiguous from already-read continuity. If the subject is unclear, keep the wording neutral instead of inventing a name.
+When naming people or speakers, use names that are explicit in the selected unit or unambiguous from already-read continuity. If the subject is unclear, describe it by the wording available in the selected unit, such as "这位青年人", "陌生的沙门", "the speaker", or "the narrator", instead of inventing a name.
 
 Set each recall `basis` exactly to `selected_source_unit`.
 

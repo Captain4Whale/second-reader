@@ -2397,10 +2397,11 @@ def invoke_tool_loop_with_final_output(
                 first_response,
             ]
             for call in bounded_calls:
+                call_args = dict(call.get("args") or {})
                 result = dict(
                     tool_handler(
                         _clean_text(call.get("name")),
-                        dict(call.get("args") or {}),
+                        call_args,
                         _clean_text(call.get("id")),
                     )
                 )
@@ -2408,6 +2409,7 @@ def invoke_tool_loop_with_final_output(
                     {
                         "id": _clean_text(call.get("id")),
                         "name": _clean_text(call.get("name")),
+                        "args": call_args,
                         "result": result,
                     }
                 )

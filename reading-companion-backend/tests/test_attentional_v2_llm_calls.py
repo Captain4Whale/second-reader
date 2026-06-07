@@ -163,6 +163,34 @@ def test_ingest_result_validator_rejects_contract_violating_tool_result() -> Non
     assert "bad recall language" in errors
 
 
+def test_ingest_result_validator_requires_final_recalls_to_match_tool_call() -> None:
+    errors = validate_ingest_result(
+        {
+            "end_anchor_text": "他继续向前走。",
+            "boundary_type": "paragraph_end",
+            "memory_recalls": [],
+        },
+        tool_results=[
+            {
+                "name": "retrieve_unit_memory",
+                "args": {
+                    "memory_recalls": [
+                        {
+                            "recall_id": "r1",
+                            "recall_text": "悉达多此前与求道有关的理解。",
+                            "basis": "selected_source_unit",
+                        }
+                    ]
+                },
+                "result": {"status": "ok"},
+            }
+        ],
+        current_source_texts=["悉达多继续向前走。"],
+    )
+
+    assert "memory_recalls must match the retrieve_unit_memory tool call recalls" in errors
+
+
 def _ingest_boundary_call(
     *,
     tmp_path: Path,
@@ -295,11 +323,18 @@ def test_ingest_writes_manifest_and_uses_xml_anchor_contract(tmp_path: Path, mon
     assert "<ReturnFormat>" in captured["prompt"]
     assert "You are in the Ingest step of a sequential deep-reading loop." in captured["prompt"]
     assert "Select one forward source unit from the current reading cursor." in captured["prompt"]
-    assert "A recall is a focused memory intention" in captured["prompt"]
+    assert "A recall is a retrieval target for prior reading memory" in captured["prompt"]
+    assert "using the selected unit as the cue" in captured["prompt"]
     assert "book's ongoing movement" in captured["prompt"]
     assert "look backward beyond the selected unit" in captured["prompt"]
     assert "inside the selected unit itself" in captured["prompt"]
+    assert "# Source scope" in captured["prompt"]
+    assert "not treat any text in `CurrentView / Content` as already-read memory evidence" in captured["prompt"]
+    assert "remaining preview text is future source text" in captured["prompt"]
+    assert "describe a broader prior-memory target" in captured["prompt"]
     assert "# Retrieval-friendly content" in captured["prompt"]
+    assert "does not need to assert that the prior memory already exists" in captured["prompt"]
+    assert "这位青年人或陌生沙门" in captured["prompt"]
     assert "Do not mention paragraph numbers" in captured["prompt"]
     assert "Paragraph 109" in captured["prompt"]
     assert "Prefer one strong focused recall over several weak recalls" in captured["prompt"]
@@ -324,7 +359,7 @@ def test_ingest_writes_manifest_and_uses_xml_anchor_contract(tmp_path: Path, mon
     assert "Set each recall `basis` exactly to `selected_source_unit`" in captured["prompt"]
     assert "Mainline preview" not in captured["prompt"]
     assert manifest["node_name"] == "ingest"
-    assert manifest["prompt_version"] == "attentional_v2.ingest.v8"
+    assert manifest["prompt_version"] == "attentional_v2.ingest.v10"
     assert manifest["prompt_assembly"]["output_contract"] == "ingest_boundary_memory_recalls_json_v2"
     assert manifest["prompt_assembly"]["owner_node"] == "ingest"
 

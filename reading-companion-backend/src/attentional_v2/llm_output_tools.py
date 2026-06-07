@@ -217,11 +217,20 @@ def validate_ingest_result(
         errors.append("memory_recalls must contain no more than three entries")
     elif recalls and not tool_results:
         errors.append("memory_recalls is non-empty but retrieve_unit_memory was not called")
+    action_recalls: list[Any] = []
     for tool_result in tool_results or []:
+        tool_args = tool_result.get("args") if isinstance(tool_result, Mapping) else None
+        if isinstance(tool_args, Mapping):
+            supplied_recalls = tool_args.get("memory_recalls")
+            if isinstance(supplied_recalls, list) and supplied_recalls:
+                action_recalls = supplied_recalls
         result = tool_result.get("result") if isinstance(tool_result, Mapping) else None
         if isinstance(result, Mapping) and str(result.get("status") or "").strip() == "contract_violation":
             reason = str(result.get("degradation_reason") or "retrieve_unit_memory tool call contract violation").strip()
             errors.append(reason)
+    if action_recalls:
+        if not isinstance(recalls, list) or _recall_signature(recalls) != _recall_signature(action_recalls):
+            errors.append("memory_recalls must match the retrieve_unit_memory tool call recalls")
     if isinstance(recalls, list):
         source_language = _primary_text_language(list(current_source_texts or []))
         for index, item in enumerate(recalls):
@@ -243,6 +252,22 @@ def validate_ingest_result(
             if language_error:
                 errors.append(language_error)
     return errors
+
+
+def _recall_signature(recalls: list[Any]) -> list[tuple[str, str, str]]:
+    signature: list[tuple[str, str, str]] = []
+    for item in recalls:
+        if not isinstance(item, Mapping):
+            signature.append(("", "", ""))
+            continue
+        signature.append(
+            (
+                str(item.get("recall_id") or "").strip(),
+                str(item.get("recall_text") or "").strip(),
+                str(item.get("basis") or "selected_source_unit").strip(),
+            )
+        )
+    return signature
 
 
 def _is_content_bearing_text(texts: list[str]) -> bool:

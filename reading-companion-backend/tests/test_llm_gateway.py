@@ -1066,6 +1066,7 @@ def test_invoke_tool_loop_with_final_output_runs_action_then_submit(monkeypatch:
 
     assert result.status == "action_tool_called"
     assert result.payload["end_anchor_text"] == "Alpha."
+    assert result.tool_results[0]["args"] == {"memory_recalls": [{"recall_id": "r1", "recall_text": "earlier Alpha"}]}
     assert result.tool_results[0]["result"]["status"] == "ok"
     assert handler_calls[0]["tool_call_id"] == "tool-1"
     assert adapter.calls[0]["tool_choice"] == "auto"
