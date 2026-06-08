@@ -10,7 +10,7 @@ from pathlib import Path
 from typing import Literal, TypedDict
 
 from src.reading_core import BookDocument, build_sentence_records
-from src.iterator_reader.llm_utils import LLMTraceContext, current_llm_scope, invoke_structured_output_tool, llm_invocation_scope
+from src.iterator_reader.llm_utils import LLMTraceContext, current_llm_scope, invoke_structured_output, llm_invocation_scope
 
 from .llm_output_tools import SURVEY_CHAPTER_ZONE_RESULT_TOOL, require_mapping_fields
 from .schemas import ATTENTIONAL_V2_MECHANISM_VERSION, ATTENTIONAL_V2_SCHEMA_VERSION
@@ -287,7 +287,7 @@ def _classify_chapter_zone(
 
     try:
         with llm_invocation_scope(trace_context=LLMTraceContext(stage="survey", node="chapter_zone_classifier")):
-            payload = invoke_structured_output_tool(
+            payload = invoke_structured_output(
                 prompts.survey_chapter_zone_system,
                 user_prompt,
                 output_tool=SURVEY_CHAPTER_ZONE_RESULT_TOOL,

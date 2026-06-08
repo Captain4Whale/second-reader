@@ -1328,7 +1328,6 @@ def test_target_and_profile_provider_options_merge_into_invocation(monkeypatch: 
 
     assert payload == {"ok": True}
     assert adapter.calls[0]["invocation_options"] == {
-        "response_format": {"type": "json_object"},
         "thinking": {"type": "enabled"},
         "reasoning_effort": "medium",
     }
@@ -3283,10 +3282,8 @@ def test_openai_compatible_contract_adapter_disables_sdk_retries_and_maps_tools(
     assert captured["timeout"] == 21
     assert captured["max_retries"] == 0
     assert captured["message_count"] == 1
-    assert captured["model_kwargs"] == {
-        "response_format": {"type": "json_object"},
-        "thinking": {"type": "enabled"},
-    }
+    assert "model_kwargs" not in captured
+    assert captured["extra_body"] == {"response_format": {"type": "json_object"}}
     assert captured["bound_tools"] == [
         {
             "type": "function",
@@ -3302,6 +3299,80 @@ def test_openai_compatible_contract_adapter_disables_sdk_retries_and_maps_tools(
         "type": "function",
         "function": {"name": "submit_digest_result"},
     }
+
+
+def test_openai_compatible_contract_adapter_omits_thinking_for_auto_tools(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    captured: dict[str, Any] = {}
+
+    class FakeChatOpenAI:
+        def __init__(self, **kwargs: Any) -> None:
+            captured.update(kwargs)
+
+        def bind_tools(self, tools: list[dict[str, Any]], *, tool_choice: Any = None) -> "FakeChatOpenAI":
+            captured["bound_tools"] = tools
+            captured["bound_tool_choice"] = tool_choice
+            return self
+
+        def invoke(self, messages: list[Any]) -> Any:
+            captured["message_count"] = len(messages)
+            return _FakeResponse('{"ok": true}')
+
+    monkeypatch.setitem(sys.modules, "langchain_openai", type("FakeModule", (), {"ChatOpenAI": FakeChatOpenAI}))
+
+    adapter = OpenAICompatibleContractAdapter()
+    response = adapter.invoke(
+        ["demo"],
+        provider=type("Provider", (), {"base_url": "https://example.invalid"})(),
+        profile=type("Profile", (), {"model": "gpt-test", "temperature": 0.0, "max_output_tokens": 256})(),
+        api_key="secret",
+        timeout_seconds=21,
+        tools=[{"name": "retrieve_unit_memory", "description": "Retrieve memory."}],
+        tool_choice="auto",
+        invocation_options={
+            "response_format": {"type": "json_object"},
+            "thinking": {"type": "enabled"},
+            "extra_body": {"thinking": {"type": "enabled"}, "custom": "ok"},
+        },
+    )
+
+    assert response.content == '{"ok": true}'
+    assert captured["extra_body"] == {
+        "response_format": {"type": "json_object"},
+        "custom": "ok",
+    }
+    assert captured["bound_tool_choice"] == "auto"
+
+
+def test_openai_compatible_contract_adapter_keeps_response_format_standard_without_tools(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    captured: dict[str, Any] = {}
+
+    class FakeChatOpenAI:
+        def __init__(self, **kwargs: Any) -> None:
+            captured.update(kwargs)
+
+        def invoke(self, messages: list[Any]) -> Any:
+            captured["message_count"] = len(messages)
+            return _FakeResponse('{"ok": true}')
+
+    monkeypatch.setitem(sys.modules, "langchain_openai", type("FakeModule", (), {"ChatOpenAI": FakeChatOpenAI}))
+
+    adapter = OpenAICompatibleContractAdapter()
+    response = adapter.invoke(
+        ["demo"],
+        provider=type("Provider", (), {"base_url": "https://example.invalid"})(),
+        profile=type("Profile", (), {"model": "gpt-test", "temperature": 0.0, "max_output_tokens": 256})(),
+        api_key="secret",
+        timeout_seconds=21,
+        invocation_options={"response_format": {"type": "json_object"}, "thinking": {"type": "enabled"}},
+    )
+
+    assert response.content == '{"ok": true}'
+    assert captured["model_kwargs"] == {"response_format": {"type": "json_object"}}
+    assert captured["extra_body"] == {"thinking": {"type": "enabled"}}
 
 
 def test_quota_cooldown_state_is_shared_across_processes(tmp_path: Path, monkeypatch: pytest.MonkeyPatch):

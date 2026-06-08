@@ -8,7 +8,7 @@ from pathlib import Path
 from typing import Mapping
 
 from src.iterator_reader.language import language_name
-from src.iterator_reader.llm_utils import LLMTraceContext, invoke_structured_output_tool, llm_invocation_scope
+from src.iterator_reader.llm_utils import LLMTraceContext, invoke_structured_output, llm_invocation_scope
 from src.reading_core.book_document import BookChapter, ParagraphRecord
 
 from .knowledge import apply_activation_operations
@@ -1026,7 +1026,7 @@ def reflective_promotion(
     with llm_invocation_scope(
         trace_context=LLMTraceContext(stage="phase6", node="reflective_promotion")
     ):
-        payload = invoke_structured_output_tool(
+        payload = invoke_structured_output(
             prompts.reflective_promotion_system,
             user_prompt,
             output_tool=REFLECTIVE_PROMOTION_RESULT_TOOL,
@@ -1143,7 +1143,7 @@ def reconsolidation(
     with llm_invocation_scope(
         trace_context=LLMTraceContext(stage="phase6", node="reconsolidation")
     ):
-        payload = invoke_structured_output_tool(
+        payload = invoke_structured_output(
             prompts.reconsolidation_system,
             user_prompt,
             output_tool=RECONSOLIDATION_RESULT_TOOL,
@@ -1359,7 +1359,7 @@ def chapter_consolidation(
     with llm_invocation_scope(
         trace_context=LLMTraceContext(stage="phase6", node="chapter_consolidation")
     ):
-        payload = invoke_structured_output_tool(
+        payload = invoke_structured_output(
             prompts.chapter_consolidation_system,
             user_prompt,
             output_tool=CHAPTER_CONSOLIDATION_RESULT_TOOL,

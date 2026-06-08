@@ -302,14 +302,27 @@ def _merge_provider_options(*option_sets: Mapping[str, Any] | None) -> dict[str,
     return merged
 
 
+def _provider_options_without_response_format(options: Mapping[str, Any] | None) -> dict[str, Any]:
+    copied = _provider_options_copy(options)
+    copied.pop("response_format", None)
+    return copied
+
+
 def _effective_invocation_options(
     provider: LLMProviderConfig,
     profile: LLMProfileConfig,
     invocation_options: Mapping[str, Any] | None = None,
+    *,
+    include_config_response_format: bool = True,
 ) -> dict[str, Any]:
+    provider_options = getattr(provider, "provider_options", None)
+    profile_options = getattr(profile, "provider_options", None)
+    if not include_config_response_format:
+        provider_options = _provider_options_without_response_format(provider_options)
+        profile_options = _provider_options_without_response_format(profile_options)
     return _merge_provider_options(
-        getattr(provider, "provider_options", None),
-        getattr(profile, "provider_options", None),
+        provider_options,
+        profile_options,
         invocation_options,
     )
 
@@ -822,6 +835,14 @@ def _tool_choice_for_openai(tool_choice: str | Mapping[str, Any] | None) -> str 
     return dict(tool_choice)
 
 
+def _tool_choice_is_forced(tool_choice: str | Mapping[str, Any] | None) -> bool:
+    if tool_choice is None:
+        return False
+    if isinstance(tool_choice, str):
+        return _clean_text(tool_choice) not in {"", "auto"}
+    return True
+
+
 class AnthropicContractAdapter:
     """Anthropic-compatible LangChain adapter."""
 
@@ -864,6 +885,36 @@ class AnthropicContractAdapter:
 class OpenAICompatibleContractAdapter:
     """OpenAI-compatible LangChain adapter."""
 
+    _REQUEST_OPTION_KEYS = {
+        "response_format",
+        "reasoning_effort",
+    }
+
+    def _split_invocation_options(
+        self,
+        options: Mapping[str, Any] | None,
+        *,
+        tools_present: bool = False,
+        forced_tool_choice: bool = False,
+    ) -> tuple[dict[str, Any], dict[str, Any]]:
+        request_options: dict[str, Any] = {}
+        extra_body: dict[str, Any] = {}
+        for key, value in _provider_options_copy(options).items():
+            if tools_present and key == "thinking":
+                continue
+            if key == "extra_body" and isinstance(value, Mapping):
+                copied_extra_body = _provider_options_copy(value)
+                if tools_present:
+                    copied_extra_body.pop("thinking", None)
+                extra_body.update(copied_extra_body)
+            elif tools_present and key == "response_format":
+                extra_body[key] = value
+            elif key in self._REQUEST_OPTION_KEYS:
+                request_options[key] = value
+            else:
+                extra_body[key] = value
+        return request_options, extra_body
+
     def invoke(
         self,
         messages: list[Any],
@@ -889,9 +940,15 @@ class OpenAICompatibleContractAdapter:
             "timeout": timeout_seconds,
             "max_retries": 0,
         }
-        options = _provider_options_copy(invocation_options)
-        if options:
-            client_kwargs["model_kwargs"] = options
+        request_options, extra_body = self._split_invocation_options(
+            invocation_options,
+            tools_present=bool(tools),
+            forced_tool_choice=_tool_choice_is_forced(tool_choice),
+        )
+        if request_options:
+            client_kwargs["model_kwargs"] = request_options
+        if extra_body:
+            client_kwargs["extra_body"] = extra_body
         client = module.ChatOpenAI(**client_kwargs)
         if tools:
             formatted_tools = _tools_for_openai(tools) or []
@@ -2081,6 +2138,7 @@ def _invoke_response(
                                 provider,
                                 attempt_profile,
                                 invocation_options,
+                                include_config_response_format=False,
                             ),
                         }
                         if tools is not None or tool_choice is not None:
