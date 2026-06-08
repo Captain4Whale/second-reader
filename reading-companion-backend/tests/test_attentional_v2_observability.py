@@ -90,7 +90,7 @@ def test_record_read_writes_memory_uptake_op_contracts(tmp_path: Path) -> None:
         output_dir,
         chapter_id=1,
         chapter_ref="Chapter 1",
-        unitize_decision={"boundary_type": "paragraph_end"},
+        unitize_decision={"reason": "test boundary"},
         carry_forward_context={},
         digest_result={
             "reading_impression": "A hinge appears.",
@@ -203,7 +203,7 @@ def test_record_read_writes_compact_ingest_trace(tmp_path: Path) -> None:
         output_dir,
         chapter_id=1,
         chapter_ref="Chapter 1",
-        unitize_decision={"boundary_type": "paragraph_end"},
+        unitize_decision={"reason": "test boundary"},
         carry_forward_context={},
         digest_result={
             "reading_impression": "A mainline unit lands.",

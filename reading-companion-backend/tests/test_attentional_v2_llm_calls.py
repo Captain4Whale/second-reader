@@ -50,6 +50,7 @@ def test_ingest_boundary_contract_has_only_boundary_fields() -> None:
     )
     assert "decision" not in payload
     assert "selection" + "_mode" not in payload
+    assert "boundary_type" not in payload
     assert "continuation" + "_pressure" not in payload
     assert payload["end_anchor_text"] == "Beta."
     assert payload["memory_recalls"] == []
@@ -63,7 +64,6 @@ def test_ingest_normalizer_rejects_empty_anchor() -> None:
         llm_calls_module._normalize_ingest_boundary_result(  # noqa: SLF001
             {
                 "end_anchor_text": "",
-                "boundary_type": "paragraph_end",
                 "reason": "missing anchor",
                 "memory_recalls": [],
             }
@@ -76,7 +76,6 @@ def test_ingest_recall_status_distinguishes_empty_from_malformed() -> None:
     provided_empty = llm_calls_module._normalize_ingest_boundary_result(  # noqa: SLF001
         {
             "end_anchor_text": "Beta.",
-            "boundary_type": "paragraph_end",
             "reason": "Done.",
             "memory_recalls": [],
         }
@@ -84,7 +83,6 @@ def test_ingest_recall_status_distinguishes_empty_from_malformed() -> None:
     malformed = llm_calls_module._normalize_ingest_boundary_result(  # noqa: SLF001
         {
             "end_anchor_text": "Beta.",
-            "boundary_type": "paragraph_end",
             "reason": "Done.",
             "memory_recalls": {"recall_text": "not a list"},
         }
@@ -100,7 +98,6 @@ def test_ingest_result_validator_requires_selected_source_unit_basis() -> None:
     errors = validate_ingest_result(
         {
             "end_anchor_text": "Beta.",
-            "boundary_type": "paragraph_end",
             "memory_recalls": [
                 {
                     "recall_id": "r1",
@@ -119,7 +116,6 @@ def test_ingest_result_validator_requires_recall_language_to_match_source() -> N
     errors = validate_ingest_result(
         {
             "end_anchor_text": "他继续向前走。",
-            "boundary_type": "paragraph_end",
             "memory_recalls": [
                 {
                     "recall_id": "r1",
@@ -139,7 +135,6 @@ def test_ingest_result_validator_requires_recall_language_to_match_source() -> N
     valid_errors = validate_ingest_result(
         {
             "end_anchor_text": "他继续向前走。",
-            "boundary_type": "paragraph_end",
             "memory_recalls": [
                 {
                     "recall_id": "r1",
@@ -161,7 +156,6 @@ def test_ingest_result_validator_rejects_contract_violating_tool_result() -> Non
     errors = validate_ingest_result(
         {
             "end_anchor_text": "他继续向前走。",
-            "boundary_type": "paragraph_end",
             "memory_recalls": [
                 {
                     "recall_id": "r1",
@@ -183,7 +177,6 @@ def test_ingest_result_validator_requires_final_recalls_to_match_tool_call() -> 
     errors = validate_ingest_result(
         {
             "end_anchor_text": "他继续向前走。",
-            "boundary_type": "paragraph_end",
             "memory_recalls": [],
         },
         tool_results=[
@@ -272,7 +265,6 @@ def test_ingest_writes_manifest_and_uses_xml_anchor_contract(tmp_path: Path, mon
         captured["prompt"] = prompt
         payload = {
             "end_anchor_text": "Beta.",
-            "boundary_type": "cross_paragraph_continuation",
             "reason": "The line clearly keeps running.",
             "memory_recalls": [],
             "continuation" + "_pressure": True,
@@ -337,6 +329,7 @@ def test_ingest_writes_manifest_and_uses_xml_anchor_contract(tmp_path: Path, mon
     assert "<OutputContract>" in captured["prompt"]
     assert "<OutputFields>" in captured["prompt"]
     assert "<ReturnFormat>" in captured["prompt"]
+    assert "boundary_type" not in captured["prompt"]
     assert "You are in the Ingest step of a sequential deep-reading loop." in captured["prompt"]
     assert "Select one forward source unit from the current reading cursor." in captured["prompt"]
     assert "A recall is a retrieval target for prior reading memory" in captured["prompt"]
@@ -382,8 +375,8 @@ def test_ingest_writes_manifest_and_uses_xml_anchor_contract(tmp_path: Path, mon
     assert "Set each recall `basis` exactly to `selected_source_unit`" in captured["prompt"]
     assert "Mainline preview" not in captured["prompt"]
     assert manifest["node_name"] == "ingest"
-    assert manifest["prompt_version"] == "attentional_v2.ingest.v12"
-    assert manifest["prompt_assembly"]["output_contract"] == "ingest_boundary_memory_recalls_json_v2"
+    assert manifest["prompt_version"] == "attentional_v2.ingest.v13"
+    assert manifest["prompt_assembly"]["output_contract"] == "ingest_boundary_memory_recalls_json_v3"
     assert manifest["prompt_assembly"]["owner_node"] == "ingest"
 
 
@@ -399,7 +392,6 @@ def test_ingest_tool_loop_returns_recalls_and_runtime_status(tmp_path: Path, mon
             "retrieve_unit_memory",
             {
                 "end_anchor_text": "Beta.",
-                "boundary_type": "paragraph_end",
                 "memory_recalls": [
                     {"recall_id": "r1", "recall_text": "the earlier beta setup", "basis": "selected_source_unit"}
                 ],
@@ -409,7 +401,6 @@ def test_ingest_tool_loop_returns_recalls_and_runtime_status(tmp_path: Path, mon
         captured["tool_result"] = tool_result
         payload = {
             "end_anchor_text": "Beta.",
-            "boundary_type": "paragraph_end",
             "reason": "Beta closes the local move.",
             "memory_recalls": [
                 {"recall_id": "r1", "recall_text": "the earlier beta setup", "basis": "selected_source_unit"}
@@ -444,9 +435,11 @@ def test_ingest_tool_loop_returns_recalls_and_runtime_status(tmp_path: Path, mon
     assert captured["tools"][0]["name"] == "retrieve_unit_memory"
     recall_basis_schema = captured["tools"][0]["input_schema"]["properties"]["memory_recalls"]["items"]["properties"]["basis"]
     assert recall_basis_schema["enum"] == ["selected_source_unit"]
+    assert "boundary_type" not in captured["tools"][0]["input_schema"]["properties"]
     assert captured["output_tool"]["name"] == "submit_ingest_result"
     output_basis_schema = captured["output_tool"]["input_schema"]["properties"]["memory_recalls"]["items"]["properties"]["basis"]
     assert output_basis_schema["enum"] == ["selected_source_unit"]
+    assert "boundary_type" not in captured["output_tool"]["input_schema"]["properties"]
     assert "memory_query" not in json.dumps(captured["tools"], ensure_ascii=False)
 
 
@@ -461,7 +454,6 @@ def test_ingest_tool_loop_validator_sees_current_source_language(tmp_path: Path,
         }
         bad_payload = {
             "end_anchor_text": "乔文达仍然跟随他。",
-            "boundary_type": "paragraph_end",
             "reason": "The unit closes here.",
             "memory_recalls": [
                 {
@@ -537,7 +529,6 @@ def test_ingest_can_trim_leading_boundary_residue(tmp_path: Path, monkeypatch):
     def fake_structured_output(_system_prompt: str, _prompt: str, **_kwargs) -> object:
         return SimpleNamespace(payload={
             "end_anchor_text": "运用专长，发挥杠杆效应，最终你会得到自己应得的。",
-            "boundary_type": "paragraph_end",
             "reason": "The divider is a structural cue, not content.",
         })
 
@@ -561,7 +552,6 @@ def test_ingest_refuses_to_trim_leading_lexical_content(tmp_path: Path, monkeypa
     def fake_structured_output(_system_prompt: str, _prompt: str, **_kwargs) -> object:
         return SimpleNamespace(payload={
             "end_anchor_text": "Other people are typically a problem until they prove otherwise.",
-            "boundary_type": "paragraph_end",
             "reason": "The visible sentence completes the local move.",
         })
 

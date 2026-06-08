@@ -1035,7 +1035,6 @@ def test_invoke_tool_loop_with_final_output_runs_action_then_submit(monkeypatch:
                         "name": "submit_ingest_result",
                         "args": {
                             "end_anchor_text": "Alpha.",
-                            "boundary_type": "paragraph_end",
                             "reason": "Alpha closes.",
                             "memory_recalls": [{"recall_id": "r1", "recall_text": "earlier Alpha"}],
                         },

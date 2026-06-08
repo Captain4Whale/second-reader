@@ -185,7 +185,7 @@ def test_digest_projects_compact_packet_and_returns_f1_surface_contract(tmp_path
     assert "\"earlier_excerpts\"" not in captured["prompt"]
     assert "\"refs\": [" not in captured["prompt"]
     assert manifest["node_name"] == "digest"
-    assert manifest["prompt_version"] == "attentional_v2.digest.v8"
+    assert manifest["prompt_version"] == "attentional_v2.digest.v9"
     assert result["reading_impression"] == "The second sentence sharpens the first one."
     assert result["surfaced_reactions"][0]["source_quote"] == "Beta sentence."
     assert result["surfaced_reactions"][0]["prior_link"] is None
@@ -237,7 +237,6 @@ def test_run_digest_for_source_unit_reads_once_and_persists_read_cycle_audit(tmp
             "start_sentence_id": "c1-s2",
             "end_sentence_id": "c1-s2",
             "preview_range": {"start_sentence_id": "c1-s2", "end_sentence_id": "c1-s2"},
-            "boundary_type": "paragraph_end",
             "evidence_sentence_ids": ["c1-s2"],
             "reason": "phase-f1-test",
         },

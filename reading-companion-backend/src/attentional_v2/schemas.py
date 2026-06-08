@@ -10,13 +10,6 @@ from src.reading_core.normalized_outputs import ReactionType, SearchHit
 from src.reading_core.runtime_contracts import ObservabilityMode, ResumeKind, RuntimeArtifactRefs, SharedRunCursor
 
 
-UnitizeBoundaryType = Literal[
-    "paragraph_end",
-    "intra_paragraph_semantic_close",
-    "cross_paragraph_continuation",
-    "section_end",
-    "budget_cap",
-]
 StateOperationType = Literal[
     "append",
     "update",
@@ -188,7 +181,6 @@ class UnitizeDecision(TypedDict, total=False):
     source_span_id: str
     resolution: dict[str, object]
     preview_range: PreviewRange
-    boundary_type: UnitizeBoundaryType
     evidence_sentence_ids: list[str]
     reason: str
 
@@ -359,7 +351,6 @@ class IngestBoundaryResult(TypedDict, total=False):
 
     reason: str
     end_anchor_text: str
-    boundary_type: UnitizeBoundaryType
     memory_recalls: list["UnitMemoryRecall"]
     memory_recalls_status: str
     tool_loop_status: str

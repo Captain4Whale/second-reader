@@ -15,9 +15,9 @@ from .reader_role import READER_ROLE_FRAGMENT
 from .types import PromptDefinition
 
 
-INGEST_PROMPT_VERSION = "attentional_v2.ingest.v12"
-INGEST_XML_PROMPT_ASSEMBLY_SPEC_ID = "attentional_v2.ingest.xml.v12"
-INGEST_XML_PROMPTSET_VERSION = "attentional_v2-phase6-v62"
+INGEST_PROMPT_VERSION = "attentional_v2.ingest.v13"
+INGEST_XML_PROMPT_ASSEMBLY_SPEC_ID = "attentional_v2.ingest.xml.v13"
+INGEST_XML_PROMPTSET_VERSION = "attentional_v2-phase6-v63"
 INGEST_TRANSPORT_SYSTEM_PROMPT = "Follow the structured Ingest prompt in the user message. Use the required submit_ingest_result tool as the final output channel."
 
 
@@ -177,7 +177,6 @@ INGEST_OUTPUT_FIELDS_FRAGMENT = PromptFragment(
 Fields:
 
 - `end_anchor_text`: exact visible source quote at the end of the chosen unit
-- `boundary_type`: boundary classification for why the unit ends there
 - `reason`: boundary rationale for why the source unit that starts at the current cursor should end at `end_anchor_text`
 - `memory_recalls`: zero to three prior-reading recalls raised by the selected unit
 
@@ -195,7 +194,6 @@ Submit this shape through the required final output tool:
 
 {
   "end_anchor_text": "...",
-  "boundary_type": "paragraph_end",
   "reason": "...",
   "memory_recalls": [
     {
@@ -381,7 +379,7 @@ def build_ingest_prompt_assembly_spec(
             "current_view_position",
             "current_view_content",
         ),
-                output_contract="ingest_boundary_memory_recalls_json_v2",
+                output_contract="ingest_boundary_memory_recalls_json_v3",
     )
 
 
@@ -418,5 +416,5 @@ INGEST_PROMPT = PromptDefinition(
     system_prompt=INGEST_TRANSPORT_SYSTEM_PROMPT,
     user_prompt_template="<IngestPrompt assembled by render_ingest_prompt_xml>",
     required_inputs=("book_identity", "current_view_position", "current_view_content"),
-    output_contract="ingest_boundary_memory_recalls_json_v2",
+    output_contract="ingest_boundary_memory_recalls_json_v3",
 )

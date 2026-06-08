@@ -40,7 +40,6 @@ from .schemas import (
     SearchIntent,
     StateOperation,
     SurfacedReaction,
-    UnitizeBoundaryType,
     UnitizeDecision,
 )
 from .storage import prompt_manifest_file, save_json
@@ -62,13 +61,6 @@ _REACTION_TYPES: set[ReactionType] = {
     "silent",
 }
 _OUTSIDE_LINK_KINDS = {"work", "person", "concept", "history", "analogy", "other"}
-_UNITIZE_BOUNDARY_TYPES: set[UnitizeBoundaryType] = {
-    "paragraph_end",
-    "intra_paragraph_semantic_close",
-    "cross_paragraph_continuation",
-    "section_end",
-    "budget_cap",
-}
 _INGEST_UNIT_MEMORY_TOOL = {
     "name": "retrieve_unit_memory",
     "description": "Retrieve prior Unit Memory status for recalls raised by the selected source unit.",
@@ -76,7 +68,6 @@ _INGEST_UNIT_MEMORY_TOOL = {
         "type": "object",
         "properties": {
             "end_anchor_text": {"type": "string"},
-            "boundary_type": {"type": "string"},
             "reason": {"type": "string"},
             "memory_recalls": {
                 "type": "array",
@@ -92,7 +83,7 @@ _INGEST_UNIT_MEMORY_TOOL = {
                 "maxItems": 3,
             },
         },
-        "required": ["end_anchor_text", "boundary_type", "memory_recalls"],
+        "required": ["end_anchor_text", "memory_recalls"],
     },
 }
 _STATE_OPERATION_TYPES = {
@@ -347,15 +338,6 @@ def build_unitize_preview(
         "start_sentence_id": _sentence_id(preview_sentences[0]),
         "end_sentence_id": _sentence_id(preview_sentences[-1]),
     }
-
-
-def _normalize_unitize_boundary_type(value: object) -> UnitizeBoundaryType:
-    """Normalize one unitize boundary type with a conservative fallback."""
-
-    normalized = _clean_text(value).lower().replace("-", "_")
-    if normalized in _UNITIZE_BOUNDARY_TYPES:
-        return normalized  # type: ignore[return-value]
-    return "paragraph_end"
 
 
 _MISSING_TARGET_STORE_WARNING = "missing_target_store_defaulted"
@@ -762,7 +744,6 @@ def _normalize_ingest_boundary_result(
     result: IngestBoundaryResult = {
         "reason": _clean_text(value.get("reason")),
         "end_anchor_text": _clean_text(value.get("end_anchor_text")),
-        "boundary_type": _normalize_unitize_boundary_type(value.get("boundary_type")),
         "memory_recalls": normalized_recalls,
         "memory_recalls_status": recalls_status,
     }

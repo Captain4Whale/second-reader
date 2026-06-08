@@ -7,15 +7,6 @@ from collections.abc import Mapping
 from typing import Any
 
 
-UNITIZE_BOUNDARY_TYPES = {
-    "paragraph_end",
-    "intra_paragraph_semantic_close",
-    "cross_paragraph_continuation",
-    "section_end",
-    "budget_cap",
-}
-
-
 def _object_schema(properties: dict[str, Any], *, required: list[str] | None = None) -> dict[str, Any]:
     return {
         "type": "object",
@@ -40,7 +31,6 @@ INGEST_RESULT_TOOL = final_output_tool(
     _object_schema(
         {
             "end_anchor_text": {"type": "string"},
-            "boundary_type": {"type": "string", "enum": sorted(UNITIZE_BOUNDARY_TYPES)},
             "reason": {"type": "string"},
             "memory_recalls": {
                 "type": "array",
@@ -55,7 +45,7 @@ INGEST_RESULT_TOOL = final_output_tool(
                 ),
             },
         },
-        required=["end_anchor_text", "boundary_type", "memory_recalls"],
+        required=["end_anchor_text", "memory_recalls"],
     ),
 )
 
@@ -208,8 +198,6 @@ def validate_ingest_result(
     errors: list[str] = []
     if not str(payload.get("end_anchor_text") or "").strip():
         errors.append("end_anchor_text must be a non-empty exact source quote")
-    if str(payload.get("boundary_type") or "").strip() not in UNITIZE_BOUNDARY_TYPES:
-        errors.append("boundary_type must be one of the supported Ingest boundary types")
     recalls = payload.get("memory_recalls")
     if not isinstance(recalls, list):
         errors.append("memory_recalls must be an array")

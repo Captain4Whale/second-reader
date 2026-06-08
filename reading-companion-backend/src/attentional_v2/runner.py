@@ -1520,7 +1520,6 @@ def _resolve_ingest_boundary(
             if isinstance(preview.get("preview_end_cursor"), dict)
             else {},
         },
-        "boundary_type": _clean_text(selected_result.get("boundary_type")) or "paragraph_end",  # type: ignore[typeddict-item]
         "reason": _clean_text(selected_result.get("reason")),
         "resolution": resolution,
     }
