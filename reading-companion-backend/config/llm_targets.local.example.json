@@ -41,6 +41,25 @@
       "timeout_seconds": 120,
       "retry_attempts": 3,
       "max_concurrency": 8
+    },
+    {
+      "target_id": "opencode_deepseek_v4_flash",
+      "contract": "openai_compatible",
+      "base_url": "https://opencode.ai/zen/go/v1",
+      "model": "deepseek-v4-flash",
+      "credentials": [
+        {
+          "credential_id": "primary_env",
+          "api_key_env": "OPENCODE_GO_API_KEY"
+        }
+      ],
+      "provider_options": {
+        "response_format": {"type": "json_object"},
+        "thinking": {"type": "enabled"}
+      },
+      "timeout_seconds": 120,
+      "retry_attempts": 3,
+      "max_concurrency": 8
     }
   ]
 }

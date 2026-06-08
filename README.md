@@ -66,6 +66,9 @@ Recommended local LLM setup:
 - edit `reading-companion-backend/config/llm_targets.local.json` to define named runtime targets
   - write the provider `contract`, `base_url`, `model`, and one or more credentials there
   - this is the file where you put URL, model name, and API key information
+  - supported provider contracts include `anthropic`, `google_genai`, and `openai_compatible`
+  - `openai_compatible` targets require the backend dependencies `langchain-openai`, `openai`, and `instructor`; Instructor is used only as an optional structure/validation aid and does not replace project validators
+  - `provider_options` may be set on a target for provider-specific request options such as `response_format`, `thinking`, or `reasoning_effort`
 - edit `reading-companion-backend/config/llm_profile_bindings.local.json` to bind stable project profile ids to those named targets
   - current stable profile ids are:
     - `runtime_reader_default`
@@ -80,6 +83,7 @@ Recommended local LLM setup:
     - sibling Python processes now share a pooled-tier dispatch cursor under `BACKEND_RUNTIME_ROOT/state/llm_gateway/tier_dispatch/`, so future launches do not all restart from the first target in the tier
     - already-running scopes are not rebalanced mid-flight; if you want a live job to pick up new pooled-routing behavior, relaunch that job
   - this is the file where you choose which target tier policy each profile uses and any profile-level overrides such as `temperature`, `max_output_tokens`, `retry_attempts`, `max_concurrency`, `quota_retry_attempts`, and `quota_wait_budget_seconds`
+  - `provider_options` may also be set per profile; profile options override target options at invocation time
 
 Recommended tiered binding shape:
 ```json
@@ -136,6 +140,31 @@ Pooled primary-tier shape for dual-target parallelism:
 Tracked templates for the new local setup:
 - `reading-companion-backend/config/llm_targets.local.example.json`
 - `reading-companion-backend/config/llm_profile_bindings.local.example.json`
+
+OpenAI-compatible JSON-object targets:
+```json
+{
+  "target_id": "opencode_deepseek_v4_flash",
+  "contract": "openai_compatible",
+  "base_url": "https://opencode.ai/zen/go/v1",
+  "model": "deepseek-v4-flash",
+  "credentials": [
+    {
+      "credential_id": "primary_env",
+      "api_key_env": "OPENCODE_GO_API_KEY"
+    }
+  ],
+  "provider_options": {
+    "response_format": {"type": "json_object"},
+    "thinking": {"type": "enabled"}
+  }
+}
+```
+- project tools stay in the internal canonical shape `name`, `description`, `input_schema`
+- the Anthropic adapter emits Anthropic-style tool definitions; the OpenAI-compatible adapter emits OpenAI function tools and maps forced tool choice at the adapter boundary
+- when the selected OpenAI-compatible profile enables `response_format: {"type": "json_object"}`, current `attentional_v2` Ingest/Digest final structured outputs use JSON object mode plus local validator/repair
+- `retrieve_unit_memory` remains a normal `tool_choice="auto"` action tool; it is not forced merely to carry final structured output
+- standard runtime artifacts and traces should not store raw reasoning/thinking content; keep only normal content, usage, and metadata unless a debug trace explicitly opts in
 
 Compatibility and fallback modes:
 - `BACKEND_READING_MECHANISM`

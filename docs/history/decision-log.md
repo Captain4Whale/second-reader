@@ -3293,3 +3293,30 @@ This new direction is design frozen but not yet implemented as a formal benchmar
 - `reading-companion-backend/src/attentional_v2/unit_memory.py`
 - `reading-companion-backend/src/attentional_v2/state_ops.py`
 - `reading-companion-backend/src/attentional_v2/state_projection.py`
+
+## Entry 112
+**ID**: DEC-115
+**Status**: active
+
+**Decision / Inflection**: Keep LLM prompts/tools protocol-neutral while allowing profile-selected structured-output transports.
+
+**Period**: June 8, 2026, after deciding to add OpenAI-compatible OpenCode/DeepSeek runtime support without duplicating mechanism prompts or redefining action tools.
+
+**Decision**: Project-owned tools and final-output schemas stay in one canonical shape: `name`, `description`, and `input_schema`. The shared LLM gateway now translates that shape into Anthropic-style tools or OpenAI-compatible function tools at the adapter boundary. Target/profile `provider_options` carry provider-specific invocation features such as `response_format`, `thinking`, and `reasoning_effort`. Current `attentional_v2` Ingest and Digest final structured outputs use the selected profile transport: Anthropic-compatible profiles keep forced final-output tools, while OpenAI-compatible profiles configured with `response_format: {"type": "json_object"}` use JSON-object output plus local validation/repair.
+
+**Boundary**: This does not turn final structured outputs into business action tools. `retrieve_unit_memory` remains the live action tool and stays `tool_choice="auto"` so the model may choose whether retrieval is needed. Runtime validators remain mandatory for reading-specific correctness regardless of transport. Raw provider reasoning/thinking content is not stored in standard runtime artifacts; only normal content, usage, and compact metadata belong in standard traces unless a future debug-only path explicitly opts in.
+
+**Why this path won**: The project needs to switch between Anthropic-compatible MiniMax and OpenAI-compatible DeepSeek/OpenCode profiles without letting provider protocol details leak into mechanism design. Treating forced final-output tools and JSON-object mode as transport choices preserves the clearer separation introduced by `DEC-113` while using the more natural OpenAI-compatible structured-output path for models that support JSON object mode but not strict JSON schema.
+
+**Primary evidence**:
+- `README.md`
+- `docs/current-state.md`
+- `docs/backend-reading-mechanism.md`
+- `docs/backend-reading-mechanisms/attentional_v2.md`
+- `reading-companion-backend/config/llm_targets.local.example.json`
+- `reading-companion-backend/pyproject.toml`
+- `reading-companion-backend/src/reading_runtime/llm_registry.py`
+- `reading-companion-backend/src/reading_runtime/llm_gateway.py`
+- `reading-companion-backend/src/attentional_v2/llm_calls.py`
+- `reading-companion-backend/tests/test_llm_gateway.py`
+- `reading-companion-backend/tests/test_attentional_v2_llm_calls.py`

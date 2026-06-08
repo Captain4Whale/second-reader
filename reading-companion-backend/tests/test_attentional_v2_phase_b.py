@@ -91,7 +91,7 @@ def test_digest_projects_compact_packet_and_returns_f1_surface_contract(tmp_path
             },
         })
 
-    monkeypatch.setattr(llm_calls_module, "invoke_structured_output_tool", fake_structured_output)
+    monkeypatch.setattr(llm_calls_module, "invoke_structured_output", fake_structured_output)
 
     local_buffer = build_empty_local_buffer()
     local_buffer["recent_sentences"] = [

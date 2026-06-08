@@ -2,9 +2,10 @@
 
 from __future__ import annotations
 
+import copy
 import json
 import os
-from dataclasses import dataclass, replace
+from dataclasses import dataclass, field, replace
 from functools import lru_cache
 from pathlib import Path
 from typing import Any, Literal
@@ -108,6 +109,7 @@ class LLMProviderConfig:
     quota_cooldown_base_seconds: int
     quota_cooldown_max_seconds: int
     quota_state_ttl_seconds: int
+    provider_options: dict[str, Any] = field(default_factory=dict)
 
     def resolved_key_pool(self) -> list[dict[str, str]]:
         """Return the configured key slots that currently resolve to non-empty values."""
@@ -139,6 +141,7 @@ class LLMProfileConfig:
     default_burst_concurrency: int
     quota_retry_attempts: int
     quota_wait_budget_seconds: int
+    provider_options: dict[str, Any] = field(default_factory=dict)
     selected_target_id: str | None = None
     selected_tier_id: str | None = None
     selection_reason: str | None = None
@@ -222,6 +225,14 @@ def _copy_present_fields(source: dict[str, Any], field_names: tuple[str, ...]) -
         if value is not None:
             copied[field_name] = value
     return copied
+
+
+def _clean_mapping(value: Any, *, context: str) -> dict[str, Any]:
+    if value is None:
+        return {}
+    if not isinstance(value, dict):
+        raise LLMRegistryError(f"{context} must be an object.")
+    return copy.deepcopy(value)
 
 
 def _clean_str_list(value: Any, *, context: str) -> list[str]:
@@ -358,6 +369,9 @@ def _compile_target_entry(entry: Any) -> dict[str, Any]:
         "supported_models": [model],
     }
     provider_entry.update(_copy_present_fields(entry, _TARGET_PROVIDER_OPTIONAL_FIELDS))
+    provider_options = _clean_mapping(entry.get("provider_options"), context=f"Target {target_id} provider_options")
+    if provider_options:
+        provider_entry["provider_options"] = provider_options
     return {
         "target_id": target_id,
         "enabled": bool(entry.get("enabled", True)),
@@ -500,6 +514,9 @@ def _compile_profile_binding_entry(entry: Any, *, compiled_targets: dict[str, di
         "target_tiers": compiled_tiers,
     }
     compiled_profile.update(_copy_present_fields(entry, _PROFILE_OPTIONAL_FIELDS))
+    provider_options = _clean_mapping(entry.get("provider_options"), context=f"Profile {profile_id} provider_options")
+    if provider_options:
+        compiled_profile["provider_options"] = provider_options
     return compiled_profile
 
 
@@ -790,6 +807,7 @@ def _parse_provider(entry: Any) -> LLMProviderConfig:
             int(entry.get("quota_cooldown_max_seconds", 60) or 60),
         ),
         quota_state_ttl_seconds=max(1, int(entry.get("quota_state_ttl_seconds", 120) or 120)),
+        provider_options=_clean_mapping(entry.get("provider_options"), context=f"Provider {provider_id} provider_options"),
     )
 
 
@@ -1033,6 +1051,7 @@ def _parse_profile(entry: Any, providers: dict[str, LLMProviderConfig]) -> LLMPr
                 else raw_quota_wait_budget_seconds
             ),
         ),
+        provider_options=_clean_mapping(entry.get("provider_options"), context=f"Profile {profile_id} provider_options"),
     )
 
 

@@ -11,8 +11,8 @@ from src.iterator_reader.language import language_name
 from src.iterator_reader.llm_utils import (
     LLMTraceContext,
     ReaderLLMError,
-    invoke_structured_output_tool,
-    invoke_tool_loop_with_final_output,
+    invoke_structured_output,
+    invoke_tool_loop_with_structured_output,
     llm_invocation_scope,
 )
 
@@ -40,7 +40,6 @@ from .schemas import (
     SearchIntent,
     StateOperation,
     SurfacedReaction,
-    UnitizeDecision,
 )
 from .storage import prompt_manifest_file, save_json
 from .unit_memory import normalize_unit_memory_recalls
@@ -804,7 +803,7 @@ def ingest(
 
     def _invoke_with_tools(prompt_text: str) -> IngestBoundaryResult:
         if unit_memory_tool_handler is None:
-            tool_result = invoke_structured_output_tool(
+            tool_result = invoke_structured_output(
                 prompts.ingest_system,
                 prompt_text,
                 output_tool=INGEST_RESULT_TOOL,
@@ -829,7 +828,7 @@ def ingest(
             tool_args["_tool_call_id"] = tool_call_id
             return dict(unit_memory_tool_handler(tool_args))
 
-        tool_loop = invoke_tool_loop_with_final_output(
+        tool_loop = invoke_tool_loop_with_structured_output(
             prompts.ingest_system,
             prompt_text,
             action_tools=[_INGEST_UNIT_MEMORY_TOOL],
@@ -961,7 +960,7 @@ def digest(
         prompt_assembly=prompt_assembly_metadata,
     )
     with llm_invocation_scope(trace_context=LLMTraceContext(stage="phase4", node="digest")):
-        structured_output = invoke_structured_output_tool(
+        structured_output = invoke_structured_output(
             system_prompt,
             user_prompt,
             output_tool=DIGEST_RESULT_TOOL,

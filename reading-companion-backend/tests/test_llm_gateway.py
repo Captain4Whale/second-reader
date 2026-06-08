@@ -23,7 +23,6 @@ from src.reading_runtime.job_concurrency import resolve_worker_policy
 from src.reading_runtime.llm_gateway import (
     AnthropicContractAdapter,
     CONTRACT_ADAPTERS,
-    JsonlTraceSink,
     OpenAICompatibleContractAdapter,
     ReaderLLMError,
     clear_llm_gateway_runtime_state,
@@ -33,8 +32,11 @@ from src.reading_runtime.llm_gateway import (
     get_llm_provider_stable_concurrency,
     invoke_json,
     invoke_json_with_tool_loop,
+    invoke_structured_json_object,
+    invoke_structured_output,
     invoke_structured_output_tool,
     invoke_tool_loop_with_final_output,
+    invoke_tool_loop_with_structured_output,
     llm_invocation_scope,
     parse_json_payload,
     runtime_trace_context,
@@ -75,6 +77,7 @@ class _RecordingAdapter:
         profile: Any,
         api_key: str,
         timeout_seconds: int,
+        invocation_options: dict[str, Any] | None = None,
     ) -> Any:
         self.calls.append(
             {
@@ -84,6 +87,7 @@ class _RecordingAdapter:
                 "api_key": api_key,
                 "timeout_seconds": timeout_seconds,
                 "message_count": len(messages),
+                "invocation_options": invocation_options,
             }
         )
         action = self.behavior.get(api_key, "ok")
@@ -111,12 +115,14 @@ class _ToolLoopRecordingAdapter:
         timeout_seconds: int,
         tools: list[dict[str, Any]] | None = None,
         tool_choice: str | dict[str, Any] | None = None,
+        invocation_options: dict[str, Any] | None = None,
     ) -> Any:
         self.calls.append(
             {
                 "message_types": [type(message).__name__ for message in messages],
                 "tools": tools,
                 "tool_choice": tool_choice,
+                "invocation_options": invocation_options,
             }
         )
         if len(self.calls) == 1:
@@ -156,6 +162,7 @@ class _SequencedToolAdapter:
         timeout_seconds: int,
         tools: list[dict[str, Any]] | None = None,
         tool_choice: str | dict[str, Any] | None = None,
+        invocation_options: dict[str, Any] | None = None,
     ) -> Any:
         self.calls.append(
             {
@@ -163,6 +170,7 @@ class _SequencedToolAdapter:
                 "tools": tools,
                 "tool_choice": tool_choice,
                 "message_count": len(messages),
+                "invocation_options": invocation_options,
             }
         )
         if not self.responses:
@@ -186,6 +194,7 @@ class _SleepingRecordingAdapter(_RecordingAdapter):
         profile: Any,
         api_key: str,
         timeout_seconds: int,
+        invocation_options: dict[str, Any] | None = None,
     ) -> Any:
         with self._lock:
             self.active_calls += 1
@@ -198,6 +207,7 @@ class _SleepingRecordingAdapter(_RecordingAdapter):
                 profile=profile,
                 api_key=api_key,
                 timeout_seconds=timeout_seconds,
+                invocation_options=invocation_options,
             )
         finally:
             with self._lock:
@@ -217,6 +227,7 @@ class _SequencedRecordingAdapter(_RecordingAdapter):
         profile: Any,
         api_key: str,
         timeout_seconds: int,
+        invocation_options: dict[str, Any] | None = None,
     ) -> Any:
         self.calls.append(
             {
@@ -226,6 +237,7 @@ class _SequencedRecordingAdapter(_RecordingAdapter):
                 "api_key": api_key,
                 "timeout_seconds": timeout_seconds,
                 "message_count": len(messages),
+                "invocation_options": invocation_options,
             }
         )
         action = self._actions.pop(0) if self._actions else "ok"
@@ -858,6 +870,28 @@ def _runtime_minimax_registry(monkeypatch: pytest.MonkeyPatch) -> None:
     )
 
 
+def _runtime_openai_json_registry(monkeypatch: pytest.MonkeyPatch) -> None:
+    _set_targets_and_bindings(
+        monkeypatch,
+        targets={
+            "targets": [
+                {
+                    "target_id": "opencode_deepseek_v4_flash",
+                    "contract": "openai_compatible",
+                    "base_url": "https://opencode.ai/zen/go/v1",
+                    "model": "deepseek-v4-flash",
+                    "credentials": [{"credential_id": "primary", "api_key": "runtime-key"}],
+                    "provider_options": {
+                        "response_format": {"type": "json_object"},
+                        "thinking": {"type": "enabled"},
+                    },
+                }
+            ]
+        },
+        bindings=_required_bindings("opencode_deepseek_v4_flash"),
+    )
+
+
 def test_invoke_structured_output_tool_forces_submit_tool(monkeypatch: pytest.MonkeyPatch):
     _runtime_minimax_registry(monkeypatch)
     adapter = _SequencedToolAdapter(
@@ -1073,6 +1107,144 @@ def test_invoke_tool_loop_with_final_output_runs_action_then_submit(monkeypatch:
     assert "ToolMessage" in adapter.calls[1]["message_types"]
 
 
+def test_invoke_structured_output_uses_json_object_for_openai_profile(monkeypatch: pytest.MonkeyPatch):
+    _runtime_openai_json_registry(monkeypatch)
+    adapter = _RecordingAdapter(
+        response_content=json.dumps(
+            {
+                "understanding": "Alpha happens.",
+                "response": "A brief response.",
+                "annotations": [],
+            }
+        )
+    )
+    monkeypatch.setitem(CONTRACT_ADAPTERS, "openai_compatible", adapter)
+
+    result = invoke_structured_output(
+        "system",
+        "user",
+        output_tool={
+            "name": "submit_digest_result",
+            "description": "Submit Digest.",
+            "input_schema": {"type": "object", "properties": {}, "required": []},
+        },
+        validator=lambda payload: [] if payload.get("understanding") else ["understanding is required"],
+    )
+
+    assert result.status == "json_object_returned"
+    assert result.payload["understanding"] == "Alpha happens."
+    assert adapter.calls[0]["invocation_options"]["response_format"] == {"type": "json_object"}
+    assert adapter.calls[0]["invocation_options"]["thinking"] == {"type": "enabled"}
+
+
+def test_invoke_structured_json_object_repairs_invalid_json(monkeypatch: pytest.MonkeyPatch):
+    _runtime_openai_json_registry(monkeypatch)
+    adapter = _SequencedRecordingAdapter(
+        [
+            ("response", "not json at all"),
+            (
+                "response",
+                json.dumps(
+                    {
+                        "understanding": "Alpha happens.",
+                        "response": "A brief response.",
+                        "annotations": [],
+                    }
+                ),
+            ),
+        ]
+    )
+    monkeypatch.setitem(CONTRACT_ADAPTERS, "openai_compatible", adapter)
+
+    result = invoke_structured_json_object(
+        "system",
+        "user",
+        output_tool={
+            "name": "submit_digest_result",
+            "description": "Submit Digest.",
+            "input_schema": {"type": "object", "properties": {}, "required": []},
+        },
+        validator=lambda payload: [] if payload.get("understanding") else ["understanding is required"],
+    )
+
+    assert result.status == "repaired_json_object_returned"
+    assert result.repair_attempted is True
+    assert len(adapter.calls) == 2
+
+
+def test_invoke_structured_json_object_raises_llm_contract_after_failed_repair(
+    monkeypatch: pytest.MonkeyPatch,
+):
+    _runtime_openai_json_registry(monkeypatch)
+    adapter = _SequencedRecordingAdapter([("response", "{}"), ("response", "{}")])
+    monkeypatch.setitem(CONTRACT_ADAPTERS, "openai_compatible", adapter)
+
+    with pytest.raises(ReaderLLMError) as exc_info:
+        invoke_structured_json_object(
+            "system",
+            "user",
+            output_tool={
+                "name": "submit_digest_result",
+                "description": "Submit Digest.",
+                "input_schema": {"type": "object", "properties": {}, "required": []},
+            },
+            validator=lambda payload: [] if payload.get("understanding") else ["understanding is required"],
+        )
+
+    assert exc_info.value.problem_code == "llm_contract"
+
+
+def test_invoke_tool_loop_with_structured_output_keeps_action_tool_auto_on_json_path(
+    monkeypatch: pytest.MonkeyPatch,
+):
+    _runtime_openai_json_registry(monkeypatch)
+    adapter = _SequencedToolAdapter(
+        [
+            _FakeToolResponse(
+                content="",
+                tool_calls=[
+                    {
+                        "id": "tool-1",
+                        "name": "retrieve_unit_memory",
+                        "args": {"memory_recalls": [{"recall_id": "r1", "recall_text": "earlier Alpha"}]},
+                    }
+                ],
+            ),
+            _FakeResponse(
+                json.dumps(
+                    {
+                        "end_anchor_text": "Alpha.",
+                        "reason": "Alpha closes.",
+                        "memory_recalls": [{"recall_id": "r1", "recall_text": "earlier Alpha"}],
+                    }
+                )
+            ),
+        ]
+    )
+    monkeypatch.setitem(CONTRACT_ADAPTERS, "openai_compatible", adapter)
+
+    result = invoke_tool_loop_with_structured_output(
+        "system",
+        "user",
+        action_tools=[{"name": "retrieve_unit_memory", "description": "Retrieve memory."}],
+        output_tool={
+            "name": "submit_ingest_result",
+            "description": "Submit Ingest.",
+            "input_schema": {"type": "object", "properties": {}, "required": []},
+        },
+        tool_handler=lambda _name, _args, _tool_call_id: {"status": "ok"},
+        validator=lambda payload, tool_results: [] if tool_results and payload.get("end_anchor_text") else ["bad"],
+    )
+
+    assert result.status == "json_object_tool_called"
+    assert result.payload["end_anchor_text"] == "Alpha."
+    assert adapter.calls[0]["tools"][0]["name"] == "retrieve_unit_memory"
+    assert adapter.calls[0]["tool_choice"] == "auto"
+    assert adapter.calls[1]["tools"] is None
+    assert "ToolMessage" in adapter.calls[1]["message_types"]
+    assert adapter.calls[1]["invocation_options"]["response_format"] == {"type": "json_object"}
+
+
 def test_mixed_target_bindings_support_different_contracts_and_models(monkeypatch: pytest.MonkeyPatch):
     _set_targets_and_bindings(
         monkeypatch,
@@ -1111,6 +1283,55 @@ def test_mixed_target_bindings_support_different_contracts_and_models(monkeypatc
     assert runtime_profile.model == "MiniMax-M2.5-highspeed"
     assert dataset_profile.provider_id == "gemini_judge"
     assert dataset_profile.model == "gemini-3.1-pro"
+
+
+def test_target_and_profile_provider_options_merge_into_invocation(monkeypatch: pytest.MonkeyPatch):
+    _set_targets_and_bindings(
+        monkeypatch,
+        targets={
+            "targets": [
+                {
+                    "target_id": "opencode_deepseek_v4_flash",
+                    "contract": "openai_compatible",
+                    "base_url": "https://opencode.ai/zen/go/v1",
+                    "model": "deepseek-v4-flash",
+                    "credentials": [{"credential_id": "primary", "api_key": "runtime-key"}],
+                    "provider_options": {
+                        "response_format": {"type": "json_object"},
+                        "thinking": {"type": "enabled"},
+                    },
+                }
+            ]
+        },
+        bindings={
+            "profiles": [
+                {
+                    "profile_id": DEFAULT_RUNTIME_PROFILE_ID,
+                    "target_id": "opencode_deepseek_v4_flash",
+                    "provider_options": {"reasoning_effort": "medium"},
+                },
+                {
+                    "profile_id": DEFAULT_DATASET_REVIEW_PROFILE_ID,
+                    "target_id": "opencode_deepseek_v4_flash",
+                },
+                {
+                    "profile_id": DEFAULT_EVAL_JUDGE_PROFILE_ID,
+                    "target_id": "opencode_deepseek_v4_flash",
+                },
+            ]
+        },
+    )
+    adapter = _RecordingAdapter(response_content='{"ok": true}')
+    monkeypatch.setitem(CONTRACT_ADAPTERS, "openai_compatible", adapter)
+
+    payload = invoke_json("system", "user", {})
+
+    assert payload == {"ok": True}
+    assert adapter.calls[0]["invocation_options"] == {
+        "response_format": {"type": "json_object"},
+        "thinking": {"type": "enabled"},
+        "reasoning_effort": "medium",
+    }
 
 
 def test_target_tiers_compile_into_profile_selection_policy(monkeypatch: pytest.MonkeyPatch):
@@ -2973,6 +3194,11 @@ def test_anthropic_contract_adapter_disables_sdk_retries(monkeypatch: pytest.Mon
         def __init__(self, **kwargs: Any) -> None:
             captured.update(kwargs)
 
+        def bind_tools(self, tools: list[dict[str, Any]], *, tool_choice: Any = None) -> "FakeChatAnthropic":
+            captured["bound_tools"] = tools
+            captured["bound_tool_choice"] = tool_choice
+            return self
+
         def invoke(self, messages: list[Any]) -> Any:
             captured["message_count"] = len(messages)
             return _FakeResponse('{"ok": true}')
@@ -2990,20 +3216,43 @@ def test_anthropic_contract_adapter_disables_sdk_retries(monkeypatch: pytest.Mon
         )(),
         api_key="secret",
         timeout_seconds=37,
+        tools=[
+            {
+                "name": "submit_digest_result",
+                "description": "Submit Digest.",
+                "input_schema": {"type": "object", "properties": {"understanding": {"type": "string"}}},
+            }
+        ],
+        tool_choice={"type": "tool", "name": "submit_digest_result"},
     )
 
     assert response.content == '{"ok": true}'
     assert captured["timeout"] == 37
     assert captured["max_retries"] == 0
     assert captured["message_count"] == 1
+    assert captured["bound_tools"] == [
+        {
+            "name": "submit_digest_result",
+            "description": "Submit Digest.",
+            "input_schema": {"type": "object", "properties": {"understanding": {"type": "string"}}},
+        }
+    ]
+    assert captured["bound_tool_choice"] == {"type": "tool", "name": "submit_digest_result"}
 
 
-def test_openai_compatible_contract_adapter_disables_sdk_retries(monkeypatch: pytest.MonkeyPatch) -> None:
+def test_openai_compatible_contract_adapter_disables_sdk_retries_and_maps_tools(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
     captured: dict[str, Any] = {}
 
     class FakeChatOpenAI:
         def __init__(self, **kwargs: Any) -> None:
             captured.update(kwargs)
+
+        def bind_tools(self, tools: list[dict[str, Any]], *, tool_choice: Any = None) -> "FakeChatOpenAI":
+            captured["bound_tools"] = tools
+            captured["bound_tool_choice"] = tool_choice
+            return self
 
         def invoke(self, messages: list[Any]) -> Any:
             captured["message_count"] = len(messages)
@@ -3018,12 +3267,41 @@ def test_openai_compatible_contract_adapter_disables_sdk_retries(monkeypatch: py
         profile=type("Profile", (), {"model": "gpt-test", "temperature": 0.0, "max_output_tokens": 256})(),
         api_key="secret",
         timeout_seconds=21,
+        tools=[
+            {
+                "name": "submit_digest_result",
+                "description": "Submit Digest.",
+                "input_schema": {"type": "object", "properties": {"understanding": {"type": "string"}}},
+                "strict": True,
+            }
+        ],
+        tool_choice={"type": "tool", "name": "submit_digest_result"},
+        invocation_options={"response_format": {"type": "json_object"}, "thinking": {"type": "enabled"}},
     )
 
     assert response.content == '{"ok": true}'
     assert captured["timeout"] == 21
     assert captured["max_retries"] == 0
     assert captured["message_count"] == 1
+    assert captured["model_kwargs"] == {
+        "response_format": {"type": "json_object"},
+        "thinking": {"type": "enabled"},
+    }
+    assert captured["bound_tools"] == [
+        {
+            "type": "function",
+            "function": {
+                "name": "submit_digest_result",
+                "description": "Submit Digest.",
+                "parameters": {"type": "object", "properties": {"understanding": {"type": "string"}}},
+                "strict": True,
+            },
+        }
+    ]
+    assert captured["bound_tool_choice"] == {
+        "type": "function",
+        "function": {"name": "submit_digest_result"},
+    }
 
 
 def test_quota_cooldown_state_is_shared_across_processes(tmp_path: Path, monkeypatch: pytest.MonkeyPatch):

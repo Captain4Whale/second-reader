@@ -273,7 +273,7 @@ def test_ingest_writes_manifest_and_uses_xml_anchor_contract(tmp_path: Path, mon
         assert validator(payload) == []
         return SimpleNamespace(payload=payload, status="final_output_tool_called", tool_results=[])
 
-    monkeypatch.setattr(llm_calls_module, "invoke_structured_output_tool", fake_structured_output)
+    monkeypatch.setattr(llm_calls_module, "invoke_structured_output", fake_structured_output)
 
     preview_sentences = [
         _sentence("c1-s1", "Alpha.", sentence_index=1, paragraph_index=1),
@@ -413,7 +413,7 @@ def test_ingest_tool_loop_returns_recalls_and_runtime_status(tmp_path: Path, mon
             tool_results=[{"result": tool_result}],
         )
 
-    monkeypatch.setattr(llm_calls_module, "invoke_tool_loop_with_final_output", fake_tool_loop)
+    monkeypatch.setattr(llm_calls_module, "invoke_tool_loop_with_structured_output", fake_tool_loop)
 
     result = ingest(
         current_view_position={"current_chapter_id": 1, "current_cursor": {"paragraph_index": 1, "char_offset": 0}},
@@ -481,7 +481,7 @@ def test_ingest_tool_loop_validator_sees_current_source_language(tmp_path: Path,
             tool_results=[{"result": tool_result}],
         )
 
-    monkeypatch.setattr(llm_calls_module, "invoke_tool_loop_with_final_output", fake_tool_loop)
+    monkeypatch.setattr(llm_calls_module, "invoke_tool_loop_with_structured_output", fake_tool_loop)
 
     result = ingest(
         current_view_position={"current_chapter_id": 1, "current_cursor": {"paragraph_index": 1, "char_offset": 0}},
@@ -510,7 +510,7 @@ def test_ingest_contract_failure_propagates_llm_contract(tmp_path: Path, monkeyp
             problem_code="llm_contract",
         )
 
-    monkeypatch.setattr(llm_calls_module, "invoke_tool_loop_with_final_output", fake_tool_loop)
+    monkeypatch.setattr(llm_calls_module, "invoke_tool_loop_with_structured_output", fake_tool_loop)
 
     with pytest.raises(llm_calls_module.ReaderLLMError) as exc_info:
         ingest(
@@ -532,7 +532,7 @@ def test_ingest_can_trim_leading_boundary_residue(tmp_path: Path, monkeypatch):
             "reason": "The divider is a structural cue, not content.",
         })
 
-    monkeypatch.setattr(llm_calls_module, "invoke_structured_output_tool", fake_structured_output)
+    monkeypatch.setattr(llm_calls_module, "invoke_structured_output", fake_structured_output)
 
     preview_sentences = [
         _sentence("c1-s1", "∨", sentence_index=1, paragraph_index=1),
@@ -555,7 +555,7 @@ def test_ingest_refuses_to_trim_leading_lexical_content(tmp_path: Path, monkeypa
             "reason": "The visible sentence completes the local move.",
         })
 
-    monkeypatch.setattr(llm_calls_module, "invoke_structured_output_tool", fake_structured_output)
+    monkeypatch.setattr(llm_calls_module, "invoke_structured_output", fake_structured_output)
 
     preview_sentences = [
         _sentence("c1-s1", "People want things from other people.", sentence_index=1, paragraph_index=1),
@@ -573,7 +573,7 @@ def test_ingest_llm_failure_does_not_return_empty_boundary_for_heading_preview(t
 
     monkeypatch.setattr(
         llm_calls_module,
-        "invoke_structured_output_tool",
+        "invoke_structured_output",
         lambda *_args, **_kwargs: (_ for _ in ()).throw(
             llm_calls_module.ReaderLLMError("temporary ingest failure", problem_code="network_blocked")
         ),
@@ -596,7 +596,7 @@ def test_ingest_llm_failure_does_not_return_empty_boundary_for_body_preview(tmp_
 
     monkeypatch.setattr(
         llm_calls_module,
-        "invoke_structured_output_tool",
+        "invoke_structured_output",
         lambda *_args, **_kwargs: (_ for _ in ()).throw(
             llm_calls_module.ReaderLLMError("temporary ingest failure", problem_code="network_blocked")
         ),
@@ -619,7 +619,7 @@ def test_ingest_llm_failure_does_not_return_empty_boundary_for_heading_only(tmp_
 
     monkeypatch.setattr(
         llm_calls_module,
-        "invoke_structured_output_tool",
+        "invoke_structured_output",
         lambda *_args, **_kwargs: (_ for _ in ()).throw(
             llm_calls_module.ReaderLLMError("temporary ingest failure", problem_code="network_blocked")
         ),
@@ -691,7 +691,7 @@ def test_digest_uses_live_xml_prompt_and_filters_surface_reactions(tmp_path: Pat
         assert validator(payload) == []
         return SimpleNamespace(payload=payload, status="final_output_tool_called")
 
-    monkeypatch.setattr(llm_calls_module, "invoke_structured_output_tool", fake_structured_output)
+    monkeypatch.setattr(llm_calls_module, "invoke_structured_output", fake_structured_output)
 
     result = digest(
         current_unit_sentences=[
@@ -818,7 +818,7 @@ def test_digest_rejects_legacy_understanding_list_payload(tmp_path: Path, monkey
             problem_code="llm_contract",
         )
 
-    monkeypatch.setattr(llm_calls_module, "invoke_structured_output_tool", fake_structured_output)
+    monkeypatch.setattr(llm_calls_module, "invoke_structured_output", fake_structured_output)
 
     with pytest.raises(llm_calls_module.ReaderLLMError) as exc_info:
         digest(

@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import contextlib
 import contextvars
+import copy
 import hashlib
 import importlib
 import json
@@ -87,6 +88,7 @@ class LLMContractAdapter(Protocol):
         timeout_seconds: int,
         tools: list[Mapping[str, Any]] | None = None,
         tool_choice: str | Mapping[str, Any] | None = None,
+        invocation_options: Mapping[str, Any] | None = None,
     ) -> Any:
         """Invoke the provider client and return a LangChain-style response."""
 
@@ -284,6 +286,32 @@ def parse_json_payload(text: str, default: Any) -> Any:
             return parsed
 
     return default
+
+
+def _provider_options_copy(options: Mapping[str, Any] | None) -> dict[str, Any]:
+    if not options:
+        return {}
+    return copy.deepcopy(dict(options))
+
+
+def _merge_provider_options(*option_sets: Mapping[str, Any] | None) -> dict[str, Any]:
+    merged: dict[str, Any] = {}
+    for options in option_sets:
+        if options:
+            merged.update(_provider_options_copy(options))
+    return merged
+
+
+def _effective_invocation_options(
+    provider: LLMProviderConfig,
+    profile: LLMProfileConfig,
+    invocation_options: Mapping[str, Any] | None = None,
+) -> dict[str, Any]:
+    return _merge_provider_options(
+        getattr(provider, "provider_options", None),
+        getattr(profile, "provider_options", None),
+        invocation_options,
+    )
 
 
 def _json_parse_candidates(text: str) -> list[str]:
@@ -704,6 +732,96 @@ def _clear_quota_pressure_if_recovered(provider: LLMProviderConfig) -> None:
             _clear_quota_state_locked(provider)
 
 
+def _canonical_tool_name(tool: Mapping[str, Any]) -> str:
+    name = _clean_text(tool.get("name"))
+    if name:
+        return name
+    function = tool.get("function")
+    if isinstance(function, Mapping):
+        return _clean_text(function.get("name"))
+    return ""
+
+
+def _canonical_tool_description(tool: Mapping[str, Any]) -> str:
+    description = _clean_text(tool.get("description"))
+    if description:
+        return description
+    function = tool.get("function")
+    if isinstance(function, Mapping):
+        return _clean_text(function.get("description"))
+    return ""
+
+
+def _canonical_tool_schema(tool: Mapping[str, Any]) -> dict[str, Any]:
+    input_schema = tool.get("input_schema")
+    if isinstance(input_schema, Mapping):
+        return _provider_options_copy(input_schema)
+    function = tool.get("function")
+    if isinstance(function, Mapping) and isinstance(function.get("parameters"), Mapping):
+        return _provider_options_copy(function["parameters"])
+    return {"type": "object", "properties": {}}
+
+
+def _tools_for_anthropic(tools: list[Mapping[str, Any]] | None) -> list[dict[str, Any]] | None:
+    if tools is None:
+        return None
+    formatted: list[dict[str, Any]] = []
+    for tool in tools:
+        name = _canonical_tool_name(tool)
+        if not name:
+            continue
+        formatted.append(
+            {
+                "name": name,
+                "description": _canonical_tool_description(tool),
+                "input_schema": _canonical_tool_schema(tool),
+            }
+        )
+    return formatted
+
+
+def _tools_for_openai(tools: list[Mapping[str, Any]] | None) -> list[dict[str, Any]] | None:
+    if tools is None:
+        return None
+    formatted: list[dict[str, Any]] = []
+    for tool in tools:
+        name = _canonical_tool_name(tool)
+        if not name:
+            continue
+        function: dict[str, Any] = {
+            "name": name,
+            "description": _canonical_tool_description(tool),
+            "parameters": _canonical_tool_schema(tool),
+        }
+        if "strict" in tool:
+            function["strict"] = bool(tool.get("strict"))
+        formatted.append({"type": "function", "function": function})
+    return formatted
+
+
+def _tool_choice_for_anthropic(tool_choice: str | Mapping[str, Any] | None) -> str | dict[str, Any] | None:
+    if not isinstance(tool_choice, Mapping):
+        return tool_choice
+    name = _clean_text(tool_choice.get("name"))
+    if not name and isinstance(tool_choice.get("function"), Mapping):
+        name = _clean_text(tool_choice["function"].get("name"))
+    if name and _clean_text(tool_choice.get("type")) in {"tool", "function"}:
+        return {"type": "tool", "name": name}
+    return dict(tool_choice)
+
+
+def _tool_choice_for_openai(tool_choice: str | Mapping[str, Any] | None) -> str | dict[str, Any] | None:
+    if not isinstance(tool_choice, Mapping):
+        return tool_choice
+    name = _clean_text(tool_choice.get("name"))
+    function = tool_choice.get("function")
+    if isinstance(function, Mapping):
+        name = _clean_text(function.get("name")) or name
+    if name and _clean_text(tool_choice.get("type")) in {"tool", "function"}:
+        return {"type": "function", "function": {"name": name}}
+    return dict(tool_choice)
+
+
 class AnthropicContractAdapter:
     """Anthropic-compatible LangChain adapter."""
 
@@ -717,6 +835,7 @@ class AnthropicContractAdapter:
         timeout_seconds: int,
         tools: list[Mapping[str, Any]] | None = None,
         tool_choice: str | Mapping[str, Any] | None = None,
+        invocation_options: Mapping[str, Any] | None = None,
     ) -> Any:
         try:
             module = importlib.import_module("langchain_anthropic")
@@ -732,11 +851,13 @@ class AnthropicContractAdapter:
             max_retries=0,
         )
         if tools:
+            formatted_tools = _tools_for_anthropic(tools) or []
+            formatted_tool_choice = _tool_choice_for_anthropic(tool_choice)
             if not hasattr(client, "bind_tools"):
                 raise LLMRegistryError("Anthropic contract client does not support tool binding.")
-            if tool_choice is not None:
-                return client.bind_tools(list(tools), tool_choice=tool_choice).invoke(messages)
-            return client.bind_tools(list(tools)).invoke(messages)
+            if formatted_tool_choice is not None:
+                return client.bind_tools(formatted_tools, tool_choice=formatted_tool_choice).invoke(messages)
+            return client.bind_tools(formatted_tools).invoke(messages)
         return client.invoke(messages)
 
 
@@ -753,26 +874,33 @@ class OpenAICompatibleContractAdapter:
         timeout_seconds: int,
         tools: list[Mapping[str, Any]] | None = None,
         tool_choice: str | Mapping[str, Any] | None = None,
+        invocation_options: Mapping[str, Any] | None = None,
     ) -> Any:
         try:
             module = importlib.import_module("langchain_openai")
         except ModuleNotFoundError as exc:
             raise LLMRegistryError("langchain-openai is not installed for openai_compatible contract usage.") from exc
-        client = module.ChatOpenAI(
-            base_url=provider.base_url,
-            api_key=api_key,
-            model=profile.model,
-            temperature=profile.temperature,
-            max_tokens=profile.max_output_tokens,
-            timeout=timeout_seconds,
-            max_retries=0,
-        )
+        client_kwargs: dict[str, Any] = {
+            "base_url": provider.base_url,
+            "api_key": api_key,
+            "model": profile.model,
+            "temperature": profile.temperature,
+            "max_tokens": profile.max_output_tokens,
+            "timeout": timeout_seconds,
+            "max_retries": 0,
+        }
+        options = _provider_options_copy(invocation_options)
+        if options:
+            client_kwargs["model_kwargs"] = options
+        client = module.ChatOpenAI(**client_kwargs)
         if tools:
+            formatted_tools = _tools_for_openai(tools) or []
+            formatted_tool_choice = _tool_choice_for_openai(tool_choice)
             if not hasattr(client, "bind_tools"):
                 raise LLMRegistryError("OpenAI-compatible contract client does not support tool binding.")
-            if tool_choice is not None:
-                return client.bind_tools(list(tools), tool_choice=tool_choice).invoke(messages)
-            return client.bind_tools(list(tools)).invoke(messages)
+            if formatted_tool_choice is not None:
+                return client.bind_tools(formatted_tools, tool_choice=formatted_tool_choice).invoke(messages)
+            return client.bind_tools(formatted_tools).invoke(messages)
         return client.invoke(messages)
 
 
@@ -789,6 +917,7 @@ class GoogleGenAIContractAdapter:
         timeout_seconds: int,
         tools: list[Mapping[str, Any]] | None = None,
         tool_choice: str | Mapping[str, Any] | None = None,
+        invocation_options: Mapping[str, Any] | None = None,
     ) -> Any:
         try:
             module = importlib.import_module("langchain_google_genai")
@@ -1787,6 +1916,7 @@ def _invoke_response(
     messages_override: list[Any] | None = None,
     tools: list[Mapping[str, Any]] | None = None,
     tool_choice: str | Mapping[str, Any] | None = None,
+    invocation_options: Mapping[str, Any] | None = None,
 ) -> Any:
     scope = current_llm_scope()
     trace_context = scope.trace_context if scope else None
@@ -1947,6 +2077,11 @@ def _invoke_response(
                             "profile": attempt_profile,
                             "api_key": key_slot["api_key"],
                             "timeout_seconds": profile.timeout_seconds,
+                            "invocation_options": _effective_invocation_options(
+                                provider,
+                                attempt_profile,
+                                invocation_options,
+                            ),
                         }
                         if tools is not None or tool_choice is not None:
                             invoke_kwargs["tools"] = tools
@@ -2280,6 +2415,179 @@ def _structured_repair_prompt(
     )
 
 
+def _response_format_is_json_object(options: Mapping[str, Any]) -> bool:
+    response_format = options.get("response_format")
+    return isinstance(response_format, Mapping) and _clean_text(response_format.get("type")) == "json_object"
+
+
+def _json_object_invocation_options() -> dict[str, Any]:
+    return {"response_format": {"type": "json_object"}}
+
+
+def _structured_output_uses_json_object(profile_id: str | None) -> bool:
+    scope = current_llm_scope()
+    profile = _effective_profile(scope, profile_id)
+    providers = _resolve_provider_sequence(profile)
+    if not providers:
+        return False
+    provider = providers[0]
+    if provider.contract != "openai_compatible":
+        return False
+    attempt_profile = _profile_for_provider_attempt(profile, provider)
+    return _response_format_is_json_object(_effective_invocation_options(provider, attempt_profile))
+
+
+def _json_object_contract_prompt(
+    user_prompt: str,
+    *,
+    output_tool: Mapping[str, Any],
+    output_tool_name: str,
+) -> str:
+    schema = output_tool.get("input_schema") if isinstance(output_tool.get("input_schema"), Mapping) else {}
+    schema_json = json.dumps(schema, ensure_ascii=False, indent=2)
+    return (
+        f"{user_prompt}\n\n"
+        "<OutputTransport>\n"
+        f"Return exactly one JSON object for `{output_tool_name}`. "
+        "Return pure JSON only: no markdown, no commentary, no tool call, and no text outside the JSON object.\n"
+        "The JSON object must satisfy this schema:\n"
+        f"{schema_json}\n"
+        "</OutputTransport>"
+    )
+
+
+def _json_object_repair_prompt(
+    user_prompt: str,
+    *,
+    output_tool: Mapping[str, Any],
+    output_tool_name: str,
+    errors: list[str],
+) -> str:
+    issue_lines = "\n".join(f"- {error}" for error in errors[:8])
+    schema = output_tool.get("input_schema") if isinstance(output_tool.get("input_schema"), Mapping) else {}
+    schema_json = json.dumps(schema, ensure_ascii=False, indent=2)
+    return (
+        f"{user_prompt}\n\n"
+        "<RuntimeRepair>\n"
+        f"Your previous response did not satisfy the required JSON object contract for `{output_tool_name}`.\n"
+        f"Issues:\n{issue_lines}\n"
+        "Return exactly one valid JSON object. Return no markdown, commentary, tool call, or text outside JSON.\n"
+        "The JSON object must satisfy this schema:\n"
+        f"{schema_json}\n"
+        "</RuntimeRepair>"
+    )
+
+
+def _json_object_contract_errors(
+    *,
+    parsed: Any,
+    output_tool_name: str,
+    validator: Callable[[Mapping[str, Any]], list[str]] | None,
+) -> tuple[dict[str, Any] | None, list[str]]:
+    if parsed is _JSON_MALFORMED:
+        return None, [f"required JSON object {output_tool_name} was not valid JSON"]
+    if not isinstance(parsed, Mapping):
+        return None, [f"required JSON object {output_tool_name} must be an object"]
+    payload = dict(parsed)
+    if validator is None:
+        return payload, []
+    errors = [error for error in validator(payload) if _clean_text(error)]
+    if errors:
+        return payload, errors
+    return payload, []
+
+
+def invoke_structured_json_object(
+    system_prompt: str,
+    user_prompt: str,
+    *,
+    output_tool: Mapping[str, Any],
+    validator: Callable[[Mapping[str, Any]], list[str]] | None = None,
+    profile_id: str | None = None,
+    max_repair_attempts: int = 1,
+) -> LLMStructuredOutputResult:
+    """Request one structured result through OpenAI JSON-object mode and validate it locally."""
+
+    output_tool_name = _tool_name(output_tool)
+    if not output_tool_name:
+        raise ValueError("Structured output tool must define a non-empty name.")
+
+    prompt_text = _json_object_contract_prompt(
+        user_prompt,
+        output_tool=output_tool,
+        output_tool_name=output_tool_name,
+    )
+    last_errors: list[str] = []
+    repair_attempted = False
+    attempts = max(1, 1 + max(0, int(max_repair_attempts)))
+    for attempt_index in range(attempts):
+        if attempt_index > 0:
+            repair_attempted = True
+        response = _invoke_response(
+            system_prompt,
+            prompt_text,
+            explicit_profile_id=profile_id,
+            expect_json=False,
+            invocation_options=_json_object_invocation_options(),
+        )
+        payload, errors = _json_object_contract_errors(
+            parsed=parse_json_payload(response_text(response), _JSON_MALFORMED),
+            output_tool_name=output_tool_name,
+            validator=validator,
+        )
+        if not errors and payload is not None:
+            return LLMStructuredOutputResult(
+                payload=payload,
+                status="json_object_returned" if not repair_attempted else "repaired_json_object_returned",
+                tool_calls=[],
+                tool_results=[],
+                repair_attempted=repair_attempted,
+                validation_errors=[],
+            )
+        last_errors = errors
+        prompt_text = _json_object_repair_prompt(
+            user_prompt,
+            output_tool=output_tool,
+            output_tool_name=output_tool_name,
+            errors=errors,
+        )
+
+    raise ReaderLLMError(
+        f"Structured JSON object contract failed for {output_tool_name}: {'; '.join(last_errors)}",
+        problem_code="llm_contract",
+    )
+
+
+def invoke_structured_output(
+    system_prompt: str,
+    user_prompt: str,
+    *,
+    output_tool: Mapping[str, Any],
+    validator: Callable[[Mapping[str, Any]], list[str]] | None = None,
+    profile_id: str | None = None,
+    max_repair_attempts: int = 1,
+) -> LLMStructuredOutputResult:
+    """Invoke one final structured output using the selected profile's configured transport."""
+
+    if _structured_output_uses_json_object(profile_id):
+        return invoke_structured_json_object(
+            system_prompt,
+            user_prompt,
+            output_tool=output_tool,
+            validator=validator,
+            profile_id=profile_id,
+            max_repair_attempts=max_repair_attempts,
+        )
+    return invoke_structured_output_tool(
+        system_prompt,
+        user_prompt,
+        output_tool=output_tool,
+        validator=validator,
+        profile_id=profile_id,
+        max_repair_attempts=max_repair_attempts,
+    )
+
+
 def invoke_structured_output_tool(
     system_prompt: str,
     user_prompt: str,
@@ -2469,6 +2777,227 @@ def invoke_tool_loop_with_final_output(
     raise ReaderLLMError(
         f"Structured output contract failed for {output_tool_name}: {'; '.join(last_errors)}",
         problem_code="llm_contract",
+    )
+
+
+def invoke_tool_loop_with_json_object_output(
+    system_prompt: str,
+    user_prompt: str,
+    *,
+    action_tools: list[Mapping[str, Any]],
+    output_tool: Mapping[str, Any],
+    tool_handler: Callable[[str, Mapping[str, Any], str], Mapping[str, Any]],
+    validator: Callable[[Mapping[str, Any], list[dict[str, Any]]], list[str]] | None = None,
+    profile_id: str | None = None,
+    max_tool_calls: int = 1,
+    max_repair_attempts: int = 1,
+) -> LLMStructuredOutputResult:
+    """Run one bounded action-tool turn, then request the final result as a JSON object."""
+
+    output_tool_name = _tool_name(output_tool)
+    if not output_tool_name:
+        raise ValueError("Structured output tool must define a non-empty name.")
+    action_names = {_tool_name(tool) for tool in action_tools if _tool_name(tool)}
+    prompt_text = _json_object_contract_prompt(
+        user_prompt,
+        output_tool=output_tool,
+        output_tool_name=output_tool_name,
+    )
+
+    def _validate(payload: Mapping[str, Any], tool_results: list[dict[str, Any]]) -> list[str]:
+        return validator(payload, tool_results) if validator is not None else []
+
+    first_response = _invoke_response(
+        system_prompt,
+        prompt_text,
+        explicit_profile_id=profile_id,
+        expect_json=False,
+        tools=action_tools,
+        tool_choice="auto",
+        invocation_options=_json_object_invocation_options(),
+    )
+    first_calls = _extract_tool_calls(first_response)
+    all_calls: list[dict[str, Any]] = list(first_calls)
+    if not first_calls:
+        payload, errors = _json_object_contract_errors(
+            parsed=parse_json_payload(response_text(first_response), _JSON_MALFORMED),
+            output_tool_name=output_tool_name,
+            validator=lambda payload: _validate(payload, []),
+        )
+        if not errors and payload is not None:
+            return LLMStructuredOutputResult(
+                payload=payload,
+                status="json_object_without_tool",
+                tool_calls=[],
+                tool_results=[],
+                repair_attempted=False,
+                validation_errors=[],
+            )
+        repaired = invoke_structured_json_object(
+            system_prompt,
+            _json_object_repair_prompt(
+                user_prompt,
+                output_tool=output_tool,
+                output_tool_name=output_tool_name,
+                errors=errors,
+            ),
+            output_tool=output_tool,
+            validator=lambda payload: _validate(payload, []),
+            profile_id=profile_id,
+            max_repair_attempts=max_repair_attempts,
+        )
+        return replace(
+            repaired,
+            status="repaired_json_object_without_tool",
+            repair_attempted=True,
+        )
+
+    action_calls = [call for call in first_calls if _clean_text(call.get("name")) in action_names]
+    unsupported_calls = [
+        _clean_text(call.get("name"))
+        for call in first_calls
+        if _clean_text(call.get("name")) and _clean_text(call.get("name")) not in action_names
+    ]
+    if unsupported_calls or not action_calls:
+        last_errors = [
+            f"unsupported tool called: {', '.join(unsupported_calls)}"
+            if unsupported_calls
+            else f"required JSON object {output_tool_name} not returned"
+        ]
+        repaired = invoke_structured_json_object(
+            system_prompt,
+            _json_object_repair_prompt(
+                user_prompt,
+                output_tool=output_tool,
+                output_tool_name=output_tool_name,
+                errors=last_errors,
+            ),
+            output_tool=output_tool,
+            validator=lambda payload: _validate(payload, []),
+            profile_id=profile_id,
+            max_repair_attempts=max_repair_attempts,
+        )
+        return replace(
+            repaired,
+            status="repaired_json_object_without_tool",
+            tool_calls=all_calls,
+            repair_attempted=True,
+        )
+
+    bounded_calls = action_calls[: max(0, int(max_tool_calls))]
+    tool_results: list[dict[str, Any]] = []
+    messages: list[Any] = [
+        SystemMessage(content=system_prompt),
+        HumanMessage(content=prompt_text),
+        first_response,
+    ]
+    for call in bounded_calls:
+        call_args = dict(call.get("args") or {})
+        result = dict(
+            tool_handler(
+                _clean_text(call.get("name")),
+                call_args,
+                _clean_text(call.get("id")),
+            )
+        )
+        tool_results.append(
+            {
+                "id": _clean_text(call.get("id")),
+                "name": _clean_text(call.get("name")),
+                "args": call_args,
+                "result": result,
+            }
+        )
+        messages.append(
+            ToolMessage(
+                content=json.dumps(result, ensure_ascii=False),
+                tool_call_id=_clean_text(call.get("id")),
+            )
+        )
+
+    last_errors: list[str] = []
+    attempts = max(1, 1 + max(0, int(max_repair_attempts)))
+    for attempt_index in range(attempts):
+        repair_attempted = attempt_index > 0
+        attempt_messages = messages
+        if repair_attempted:
+            attempt_messages = [
+                *messages,
+                HumanMessage(
+                    content=_json_object_repair_prompt(
+                        user_prompt,
+                        output_tool=output_tool,
+                        output_tool_name=output_tool_name,
+                        errors=last_errors,
+                    )
+                ),
+            ]
+        final_response = _invoke_response(
+            system_prompt,
+            prompt_text,
+            explicit_profile_id=profile_id,
+            expect_json=False,
+            messages_override=attempt_messages,
+            invocation_options=_json_object_invocation_options(),
+        )
+        payload, errors = _json_object_contract_errors(
+            parsed=parse_json_payload(response_text(final_response), _JSON_MALFORMED),
+            output_tool_name=output_tool_name,
+            validator=lambda payload: _validate(payload, tool_results),
+        )
+        if not errors and payload is not None:
+            return LLMStructuredOutputResult(
+                payload=payload,
+                status="json_object_tool_called" if not repair_attempted else "repaired_json_object_tool_called",
+                tool_calls=all_calls,
+                tool_results=tool_results,
+                repair_attempted=repair_attempted,
+                validation_errors=[],
+            )
+        last_errors = errors
+
+    raise ReaderLLMError(
+        f"Structured JSON object contract failed for {output_tool_name}: {'; '.join(last_errors)}",
+        problem_code="llm_contract",
+    )
+
+
+def invoke_tool_loop_with_structured_output(
+    system_prompt: str,
+    user_prompt: str,
+    *,
+    action_tools: list[Mapping[str, Any]],
+    output_tool: Mapping[str, Any],
+    tool_handler: Callable[[str, Mapping[str, Any], str], Mapping[str, Any]],
+    validator: Callable[[Mapping[str, Any], list[dict[str, Any]]], list[str]] | None = None,
+    profile_id: str | None = None,
+    max_tool_calls: int = 1,
+    max_repair_attempts: int = 1,
+) -> LLMStructuredOutputResult:
+    """Run action tools and return a final structured result using the selected transport."""
+
+    if _structured_output_uses_json_object(profile_id):
+        return invoke_tool_loop_with_json_object_output(
+            system_prompt,
+            user_prompt,
+            action_tools=action_tools,
+            output_tool=output_tool,
+            tool_handler=tool_handler,
+            validator=validator,
+            profile_id=profile_id,
+            max_tool_calls=max_tool_calls,
+            max_repair_attempts=max_repair_attempts,
+        )
+    return invoke_tool_loop_with_final_output(
+        system_prompt,
+        user_prompt,
+        action_tools=action_tools,
+        output_tool=output_tool,
+        tool_handler=tool_handler,
+        validator=validator,
+        profile_id=profile_id,
+        max_tool_calls=max_tool_calls,
+        max_repair_attempts=max_repair_attempts,
     )
 
 
