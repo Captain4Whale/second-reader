@@ -7,7 +7,7 @@ Update when: task status, priority, blockers, decision refs, job refs, evidence 
 
 This document is the human-readable companion to `docs/tasks/registry.json`.
 
-Last updated: `2026-06-08T08:38:00+08:00`
+Last updated: `2026-06-09T20:54:51+08:00`
 
 ## Status Values
 - `active`
@@ -53,6 +53,7 @@ Last updated: `2026-06-08T08:38:00+08:00`
   - `DEC-112`
   - `DEC-113`
   - `DEC-114`
+  - `DEC-115`
   - `docs/current-state.md`
   - `docs/implementation/new-reading-mechanism/ingest-context-and-navigate-mapping.md`
   - `docs/implementation/new-reading-mechanism/digest-understanding-response-annotation-design.md`
@@ -60,6 +61,7 @@ Last updated: `2026-06-08T08:38:00+08:00`
   - `docs/implementation/new-reading-mechanism/ingest-recall-and-digest-memory-context-design.md`
   - `docs/implementation/new-reading-mechanism/ingest-digest-unit-memory-conformance-goal.md`
   - `docs/implementation/new-reading-mechanism/unit-memory-retrieval-repair-validation-plan.md`
+  - `docs/implementation/new-reading-mechanism/llm-structured-output-protocol-note.md`
   - `docs/implementation/new-reading-mechanism/codex/reports/Ingest-Digest-UnitMemory-Conformance-Smoke-Post-run-Report v0.md`
   - `docs/implementation/new-reading-mechanism/second-reader-memory-planning/README.md`
   - `reading-companion-backend/eval/runs/attentional_v2/attentional_v2_unit_memory_text_only_smoke_value_20260606/analysis/unit_memory_retrieval_health/summary.json`

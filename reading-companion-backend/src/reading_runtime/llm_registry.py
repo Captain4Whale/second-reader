@@ -57,6 +57,8 @@ _PROFILE_OPTIONAL_FIELDS = (
     "quota_wait_budget_seconds",
 )
 _ALLOWED_PROFILE_MODEL_SOURCES = {"profile", "selected_target"}
+_DEFAULT_MAX_OUTPUT_TOKENS = 4096
+_THINKING_ENABLED_DEFAULT_MAX_OUTPUT_TOKENS = 8192
 _PROCESS_PROFILE_CONCURRENCY_CAP_ENV_BY_PROFILE = {
     DEFAULT_RUNTIME_PROFILE_ID: "LLM_PROCESS_RUNTIME_PROFILE_MAX_CONCURRENCY",
     DEFAULT_DATASET_REVIEW_PROFILE_ID: "LLM_PROCESS_DATASET_REVIEW_PROFILE_MAX_CONCURRENCY",
@@ -233,6 +235,22 @@ def _clean_mapping(value: Any, *, context: str) -> dict[str, Any]:
     if not isinstance(value, dict):
         raise LLMRegistryError(f"{context} must be an object.")
     return copy.deepcopy(value)
+
+
+def _thinking_enabled_in_options(*option_sets: dict[str, Any]) -> bool:
+    for options in option_sets:
+        thinking = options.get("thinking")
+        if isinstance(thinking, dict) and _clean_str(thinking.get("type")).lower() in {"enabled", "adaptive"}:
+            return True
+        extra_body = options.get("extra_body")
+        if isinstance(extra_body, dict):
+            nested_thinking = extra_body.get("thinking")
+            if isinstance(nested_thinking, dict) and _clean_str(nested_thinking.get("type")).lower() in {
+                "enabled",
+                "adaptive",
+            }:
+                return True
+    return False
 
 
 def _clean_str_list(value: Any, *, context: str) -> list[str]:
@@ -637,7 +655,7 @@ def _legacy_registry_payload() -> dict[str, Any]:
                 "provider_id": "legacy_default",
                 "model_env": "LLM_MODEL",
                 "temperature": _env_float("LLM_RUNTIME_TEMPERATURE", 0.2),
-                "max_output_tokens": _env_int("LLM_RUNTIME_MAX_OUTPUT_TOKENS", 4096),
+                "max_output_tokens": _env_int("LLM_RUNTIME_MAX_OUTPUT_TOKENS", _DEFAULT_MAX_OUTPUT_TOKENS),
                 "timeout_seconds": _env_int("LLM_RUNTIME_TIMEOUT_SECONDS", 120),
                 "retry_attempts": get_llm_retry_attempts(),
                 "max_concurrency": get_llm_max_concurrency(),
@@ -657,7 +675,7 @@ def _legacy_registry_payload() -> dict[str, Any]:
                 "provider_id": "legacy_default",
                 "model_env": "LLM_DATASET_REVIEW_MODEL",
                 "temperature": _env_float("LLM_DATASET_REVIEW_TEMPERATURE", 0.2),
-                "max_output_tokens": _env_int("LLM_DATASET_REVIEW_MAX_OUTPUT_TOKENS", 4096),
+                "max_output_tokens": _env_int("LLM_DATASET_REVIEW_MAX_OUTPUT_TOKENS", _DEFAULT_MAX_OUTPUT_TOKENS),
                 "timeout_seconds": _env_int("LLM_DATASET_REVIEW_TIMEOUT_SECONDS", 120),
                 "retry_attempts": _env_int("LLM_DATASET_REVIEW_RETRY_ATTEMPTS", get_llm_retry_attempts()),
                 "max_concurrency": _env_int("LLM_DATASET_REVIEW_MAX_CONCURRENCY", get_llm_max_concurrency()),
@@ -677,7 +695,7 @@ def _legacy_registry_payload() -> dict[str, Any]:
                 "provider_id": "legacy_default",
                 "model_env": "LLM_EVAL_JUDGE_MODEL",
                 "temperature": _env_float("LLM_EVAL_JUDGE_TEMPERATURE", 0.2),
-                "max_output_tokens": _env_int("LLM_EVAL_JUDGE_MAX_OUTPUT_TOKENS", 4096),
+                "max_output_tokens": _env_int("LLM_EVAL_JUDGE_MAX_OUTPUT_TOKENS", _DEFAULT_MAX_OUTPUT_TOKENS),
                 "timeout_seconds": _env_int("LLM_EVAL_JUDGE_TIMEOUT_SECONDS", 120),
                 "retry_attempts": _env_int("LLM_EVAL_JUDGE_RETRY_ATTEMPTS", get_llm_retry_attempts()),
                 "max_concurrency": _env_int("LLM_EVAL_JUDGE_MAX_CONCURRENCY", get_llm_max_concurrency()),
@@ -1015,6 +1033,12 @@ def _parse_profile(entry: Any, providers: dict[str, LLMProviderConfig]) -> LLMPr
     quota_wait_budget_seconds_default = _default_quota_wait_budget_seconds(profile_id)
     raw_quota_retry_attempts = entry.get("quota_retry_attempts")
     raw_quota_wait_budget_seconds = entry.get("quota_wait_budget_seconds")
+    profile_provider_options = _clean_mapping(entry.get("provider_options"), context=f"Profile {profile_id} provider_options")
+    default_max_output_tokens = (
+        _THINKING_ENABLED_DEFAULT_MAX_OUTPUT_TOKENS
+        if _thinking_enabled_in_options(provider.provider_options, profile_provider_options)
+        else _DEFAULT_MAX_OUTPUT_TOKENS
+    )
 
     return LLMProfileConfig(
         profile_id=profile_id,
@@ -1025,7 +1049,7 @@ def _parse_profile(entry: Any, providers: dict[str, LLMProviderConfig]) -> LLMPr
         target_tiers=target_tiers,
         model=model,
         temperature=float(entry.get("temperature", 0.2) or 0.2),
-        max_output_tokens=max(1, int(entry.get("max_output_tokens", 4096) or 4096)),
+        max_output_tokens=max(1, int(entry.get("max_output_tokens", default_max_output_tokens) or default_max_output_tokens)),
         timeout_seconds=max(1, int(entry.get("timeout_seconds", provider.timeout_seconds) or provider.timeout_seconds)),
         retry_attempts=max(1, int(entry.get("retry_attempts", provider.retry_attempts) or provider.retry_attempts)),
         max_concurrency=max(1, int(entry.get("max_concurrency", provider.max_concurrency) or provider.max_concurrency)),
@@ -1051,7 +1075,7 @@ def _parse_profile(entry: Any, providers: dict[str, LLMProviderConfig]) -> LLMPr
                 else raw_quota_wait_budget_seconds
             ),
         ),
-        provider_options=_clean_mapping(entry.get("provider_options"), context=f"Profile {profile_id} provider_options"),
+        provider_options=profile_provider_options,
     )
 
 

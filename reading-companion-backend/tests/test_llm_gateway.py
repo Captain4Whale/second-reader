@@ -892,6 +892,12 @@ def _runtime_openai_json_registry(monkeypatch: pytest.MonkeyPatch) -> None:
     )
 
 
+def test_thinking_enabled_profile_defaults_to_larger_output_budget(monkeypatch: pytest.MonkeyPatch) -> None:
+    _runtime_openai_json_registry(monkeypatch)
+
+    assert get_llm_profile(DEFAULT_RUNTIME_PROFILE_ID).max_output_tokens == 8192
+
+
 def test_invoke_structured_output_tool_forces_submit_tool(monkeypatch: pytest.MonkeyPatch):
     _runtime_minimax_registry(monkeypatch)
     adapter = _SequencedToolAdapter(
@@ -1133,6 +1139,8 @@ def test_invoke_structured_output_uses_json_object_for_openai_profile(monkeypatc
 
     assert result.status == "json_object_returned"
     assert result.payload["understanding"] == "Alpha happens."
+    # OpenAI-compatible JSON-object profiles submit final structured output as
+    # JSON content, not as a forced final-output tool call.
     assert adapter.calls[0]["invocation_options"]["response_format"] == {"type": "json_object"}
     assert adapter.calls[0]["invocation_options"]["thinking"] == {"type": "enabled"}
 
@@ -3281,6 +3289,7 @@ def test_openai_compatible_contract_adapter_disables_sdk_retries_and_maps_tools(
     assert response.content == '{"ok": true}'
     assert captured["timeout"] == 21
     assert captured["max_retries"] == 0
+    assert captured["default_headers"] == {"User-Agent": "OpenAI/Python 1.0"}
     assert captured["message_count"] == 1
     assert "model_kwargs" not in captured
     assert captured["extra_body"] == {"response_format": {"type": "json_object"}}
@@ -3338,6 +3347,7 @@ def test_openai_compatible_contract_adapter_omits_thinking_for_auto_tools(
     )
 
     assert response.content == '{"ok": true}'
+    assert captured["default_headers"] == {"User-Agent": "OpenAI/Python 1.0"}
     assert captured["extra_body"] == {
         "response_format": {"type": "json_object"},
         "custom": "ok",
@@ -3371,6 +3381,7 @@ def test_openai_compatible_contract_adapter_keeps_response_format_standard_witho
     )
 
     assert response.content == '{"ok": true}'
+    assert captured["default_headers"] == {"User-Agent": "OpenAI/Python 1.0"}
     assert captured["model_kwargs"] == {"response_format": {"type": "json_object"}}
     assert captured["extra_body"] == {"thinking": {"type": "enabled"}}
 

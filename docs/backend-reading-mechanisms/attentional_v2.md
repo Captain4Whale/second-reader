@@ -457,6 +457,7 @@ Use `docs/backend-reading-mechanism.md` for shared platform boundaries. Use `doc
   - `retrieve_unit_memory` remains the only current action tool; it is available to Ingest as `tool_choice="auto"` before final structured output and is never forced merely to transport final JSON.
   - Missing submit-tool calls, wrong submit-tool names, non-object tool args, malformed JSON objects, or business-validator failures are repaired once and then reported as public `llm_contract` problems if still invalid.
   - Raw provider reasoning/thinking content is not a standard runtime artifact; standard traces keep only normal content, usage, and compact metadata.
+  - MiniMax / DeepSeek protocol details and the tested transport matrix are recorded in `docs/implementation/new-reading-mechanism/llm-structured-output-protocol-note.md`.
 - Subject continuity is implemented in Digest prompt `attentional_v2.digest.v9` and documented in `docs/implementation/new-reading-mechanism/ingest-recall-and-digest-memory-context-design.md`.
   - Prior Understanding in `ReadingMemory` carries narrator / speaker / actor / concept continuity forward; Digest uses that memory plus current source text to establish new subjects, continue known subjects, or explicitly preserve meaningful ambiguity.
   - Boundary: do not add raw prior-source backfill, Ingest reference-resolution fields, or a durable referent store for this slice.

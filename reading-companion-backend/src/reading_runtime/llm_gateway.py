@@ -885,6 +885,11 @@ class AnthropicContractAdapter:
 class OpenAICompatibleContractAdapter:
     """OpenAI-compatible LangChain adapter."""
 
+    _DEFAULT_HEADERS = {
+        # OpenCode Go rejects requests from generic urllib-style clients; keep the
+        # OpenAI-compatible path looking like a normal OpenAI SDK request.
+        "User-Agent": "OpenAI/Python 1.0",
+    }
     _REQUEST_OPTION_KEYS = {
         "response_format",
         "reasoning_effort",
@@ -939,6 +944,7 @@ class OpenAICompatibleContractAdapter:
             "max_tokens": profile.max_output_tokens,
             "timeout": timeout_seconds,
             "max_retries": 0,
+            "default_headers": dict(self._DEFAULT_HEADERS),
         }
         request_options, extra_body = self._split_invocation_options(
             invocation_options,
@@ -2564,7 +2570,12 @@ def invoke_structured_json_object(
     profile_id: str | None = None,
     max_repair_attempts: int = 1,
 ) -> LLMStructuredOutputResult:
-    """Request one structured result through OpenAI JSON-object mode and validate it locally."""
+    """Request one structured result through OpenAI JSON-object mode and validate it locally.
+
+    This is the OpenAI-compatible / Instructor-compatible transport selected by
+    JSON-object profiles. Instructor may assist future parser refinements, but
+    project validators and repair remain the authoritative business contract.
+    """
 
     output_tool_name = _tool_name(output_tool)
     if not output_tool_name:

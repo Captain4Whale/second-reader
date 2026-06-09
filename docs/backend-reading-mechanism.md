@@ -29,6 +29,7 @@ Use `docs/backend-sequential-lifecycle.md` for the job-level workflow over time.
   - Project-owned prompt-to-provider calls should use that shared gateway rather than instantiating provider clients inside one mechanism package or one-off eval code.
   - Project tools and final-output schemas are defined once in protocol-neutral shape (`name`, `description`, `input_schema`). Provider adapters translate them into Anthropic-style tools or OpenAI-compatible function tools, and profile/target `provider_options` carry provider-specific request features such as JSON-object response format or thinking/reasoning controls.
   - Structured final outputs may be transported by forced final-output tool calls or, for OpenAI-compatible profiles configured with `response_format: {"type": "json_object"}`, by JSON-object output plus local validation/repair. Mechanism validators remain the source of truth for reading-specific correctness.
+  - The verified MiniMax / DeepSeek transport matrix and current default policy live in `docs/implementation/new-reading-mechanism/llm-structured-output-protocol-note.md`.
   - Standard runtime artifacts must not store raw provider reasoning/thinking content; only normal response content, usage, and compact metadata belong in standard traces unless a debug-only path explicitly opts in.
   - Top-level `public/` and `_runtime/` are shared cross-mechanism territory.
   - `_mechanisms/<mechanism_key>/` is mechanism-owned territory.

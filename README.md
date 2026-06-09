@@ -163,8 +163,10 @@ OpenAI-compatible JSON-object targets:
 - project tools stay in the internal canonical shape `name`, `description`, `input_schema`
 - the Anthropic adapter emits Anthropic-style tool definitions; the OpenAI-compatible adapter emits OpenAI function tools and maps forced tool choice at the adapter boundary
 - when the selected OpenAI-compatible profile enables `response_format: {"type": "json_object"}`, current `attentional_v2` Ingest/Digest final structured outputs use JSON object mode plus local validator/repair
+- thinking-enabled target/profile options default to a larger `max_output_tokens` budget when the profile does not set one explicitly; use `8192` for Ingest probes that need visible reasoning plus final JSON
 - `retrieve_unit_memory` remains a normal `tool_choice="auto"` action tool; it is not forced merely to carry final structured output
 - standard runtime artifacts and traces should not store raw reasoning/thinking content; keep only normal content, usage, and metadata unless a debug trace explicitly opts in
+- the verified MiniMax / DeepSeek transport matrix and default policy live in `docs/implementation/new-reading-mechanism/llm-structured-output-protocol-note.md`
 
 Compatibility and fallback modes:
 - `BACKEND_READING_MECHANISM`
