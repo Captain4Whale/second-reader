@@ -21,7 +21,7 @@ Current project-owned prompts and tools stay protocol-neutral. The active profil
 | Provider path | Verified model / endpoint | Thinking request | Final structured output | Reasoning location | Notes |
 | --- | --- | --- | --- | --- | --- |
 | MiniMax Anthropic-compatible | `MiniMax-M2.7` at `https://api.minimaxi.com/anthropic` | `thinking={"type":"enabled","budget_tokens":N}` | forced final-output tool, such as `submit_ingest_result` | `response.content[]` block with `type == "thinking"` | Keep final-output tools as the default Anthropic transport. |
-| DeepSeek OpenAI-compatible | `deepseek-v4-flash` at `https://opencode.ai/zen/go/v1` | `extra_body={"thinking":{"type":"enabled"}}` | `response_format={"type":"json_object"}` plus local validator / repair | `message.reasoning_content` | Do not force final-output `tool_choice` while thinking is enabled. |
+| DeepSeek OpenAI-compatible | `deepseek-v4-flash` at `https://opencode.ai/zen/go/v1` | `extra_body={"thinking":{"type":"enabled"}}` | `response_format={"type":"json_object"}` plus local validator / repair | `message.reasoning_content` | Auto action tools can be used with thinking; do not force final-output `tool_choice` while thinking is enabled. |
 
 OpenCode Go requires a normal OpenAI-like `User-Agent`; the shared OpenAI-compatible adapter sends `User-Agent: OpenAI/Python 1.0` by default.
 
@@ -63,8 +63,9 @@ OpenCode Go requires a normal OpenAI-like `User-Agent`; the shared OpenAI-compat
 ### Action Tools With OpenAI-Compatible Profiles
 
 - If `retrieve_unit_memory` is available, expose it as an auto action tool.
-- The first action-tool turn may use tools; provider `thinking` is omitted in tool-present OpenAI-compatible calls because forced/tool mixed thinking has provider limitations.
+- The first action-tool turn may use `tool_choice="auto"` with provider thinking enabled; the June 9 Ingest reasoning probe confirmed that DeepSeek returns both `reasoning_content` and an auto `retrieve_unit_memory` tool call.
 - After action tool results, request final JSON object output with no final-output `tool_choice`.
+- The restriction is on forced final-output tool choice under thinking, not on auto action-tool use.
 
 ## Trace And Artifact Policy
 
