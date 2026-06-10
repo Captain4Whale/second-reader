@@ -1068,9 +1068,9 @@ def build_default_reader_policy(
         "updated_at": _timestamp(),
         "unitize": {
             "max_coverage_unit_sentences": 12,
-            "preview_soft_min_chars": 1500,
-            "preview_hard_max_chars": 4000,
-            "max_lookahead_paragraphs": 4,
+            "preview_soft_min_chars": 3000,
+            "preview_hard_max_chars": 7000,
+            "max_lookahead_paragraphs": 12,
         },
         "knowledge": {
             "default_mode": "book_grounded_only",

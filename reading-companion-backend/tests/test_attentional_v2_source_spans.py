@@ -25,6 +25,80 @@ def _chapter() -> dict[str, object]:
     }
 
 
+def test_default_preview_is_larger_reading_lookahead_window() -> None:
+    chapter = {
+        "id": 1,
+        "title": "Chapter 1",
+        "paragraphs": [
+            {"paragraph_index": index, "text": f"Paragraph {index}.", "text_role": "body"}
+            for index in range(1, 20)
+        ],
+    }
+
+    preview = build_paragraph_offset_preview(
+        chapter=chapter,
+        current_cursor={"chapter_id": 1, "chapter_ref": "Chapter 1", "paragraph_index": 1, "char_offset": 0},
+    )
+
+    assert preview["paragraph_count"] == 13
+    assert preview["paragraph_slices"][-1]["paragraph_index"] == 13
+    assert preview["preview_end_cursor"]["paragraph_index"] == 13
+    assert preview["truncated"] is False
+
+
+def test_default_preview_stops_after_soft_minimum_when_enough_text_is_visible() -> None:
+    chapter = {
+        "id": 1,
+        "title": "Chapter 1",
+        "paragraphs": [
+            {"paragraph_index": index, "text": f"{index}".ljust(500, "x"), "text_role": "body"}
+            for index in range(1, 20)
+        ],
+    }
+
+    preview = build_paragraph_offset_preview(
+        chapter=chapter,
+        current_cursor={"chapter_id": 1, "chapter_ref": "Chapter 1", "paragraph_index": 1, "char_offset": 0},
+    )
+
+    assert preview["paragraph_count"] == 6
+    assert preview["char_count"] == 3000
+    assert preview["preview_end_cursor"] == {
+        "chapter_id": 1,
+        "chapter_ref": "Chapter 1",
+        "paragraph_index": 6,
+        "char_offset": 500,
+    }
+    assert preview["truncated"] is False
+
+
+def test_default_preview_truncates_at_larger_hard_max() -> None:
+    chapter = {
+        "id": 1,
+        "title": "Chapter 1",
+        "paragraphs": [
+            {"paragraph_index": 1, "text": "x" * 8000, "text_role": "body"},
+            {"paragraph_index": 2, "text": "Next paragraph.", "text_role": "body"},
+        ],
+    }
+
+    preview = build_paragraph_offset_preview(
+        chapter=chapter,
+        current_cursor={"chapter_id": 1, "chapter_ref": "Chapter 1", "paragraph_index": 1, "char_offset": 0},
+    )
+
+    assert preview["paragraph_count"] == 1
+    assert preview["char_count"] == 7000
+    assert preview["source_text"] == "x" * 7000
+    assert preview["preview_end_cursor"] == {
+        "chapter_id": 1,
+        "chapter_ref": "Chapter 1",
+        "paragraph_index": 1,
+        "char_offset": 7000,
+    }
+    assert preview["truncated"] is True
+
+
 def test_preview_keeps_long_current_paragraph_only() -> None:
     chapter = _chapter()
     preview = build_paragraph_offset_preview(

@@ -265,9 +265,9 @@ Use `docs/backend-reading-mechanism.md` for shared platform boundaries. Use `doc
   - The current mainline preview window is paragraph-offset and adaptive:
     - always starts at the exact current cursor
     - includes at least the current paragraph remainder
-    - appends following paragraphs when the visible remainder is short
+    - appends following paragraphs to form a larger reading lookahead window for boundary selection
     - does not cross chapter boundaries
-    - defaults live in `reader_policy.unitize`: `preview_soft_min_chars = 1500`, `preview_hard_max_chars = 4000`, `max_lookahead_paragraphs = 4`
+    - defaults live in `reader_policy.unitize`: `preview_soft_min_chars = 3000`, `preview_hard_max_chars = 7000`, `max_lookahead_paragraphs = 12`
   - Ingest does not return raw offsets. It returns `end_anchor_text`, an exact quote from the visible preview near the selected unit boundary.
   - Parse-time `text_role` is still available during this step, but only as an inherited block-level weak cue rather than a sentence-level truth packet.
   - Heading handling is now deliberately conservative:
@@ -488,7 +488,7 @@ Use `docs/backend-reading-mechanism.md` for shared platform boundaries. Use `doc
   - source-grounded earlier text should not be injected into Digest unless a later design explicitly approves a bounded reader-safe locator
 - Mainline unitization preview is intentionally source-local and deterministic.
   - It previews from the exact paragraph-offset cursor, not from a precomputed sentence index.
-  - It always includes the current paragraph remainder and may append a small number of following paragraphs when the remainder is too short to support a natural unit decision.
+  - It always includes the current paragraph remainder and may append following paragraphs to provide a bounded reading lookahead window for a natural unit-boundary decision.
   - The semantic choice of where to stop inside that preview is prompt-led through `end_anchor_text`.
   - Runtime imposes deterministic guardrails through `reader_policy.unitize.preview_soft_min_chars`, `preview_hard_max_chars`, and `max_lookahead_paragraphs`.
 - Search posture is separate from prior-knowledge posture.

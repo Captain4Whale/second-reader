@@ -528,9 +528,9 @@ def _unitize_policy(reader_policy: ReaderPolicy | Mapping[str, object] | None) -
 
 def _preview_limits(reader_policy: ReaderPolicy | Mapping[str, object] | None) -> tuple[int, int, int]:
     policy = _unitize_policy(reader_policy)
-    soft_min = max(1, _int(policy.get("preview_soft_min_chars"), 1500))
-    hard_max = max(soft_min, _int(policy.get("preview_hard_max_chars"), 4000))
-    max_lookahead = max(0, _int(policy.get("max_lookahead_paragraphs"), 4))
+    soft_min = max(1, _int(policy.get("preview_soft_min_chars"), 3000))
+    hard_max = max(soft_min, _int(policy.get("preview_hard_max_chars"), 7000))
+    max_lookahead = max(0, _int(policy.get("max_lookahead_paragraphs"), 12))
     return soft_min, hard_max, max_lookahead
 
 
