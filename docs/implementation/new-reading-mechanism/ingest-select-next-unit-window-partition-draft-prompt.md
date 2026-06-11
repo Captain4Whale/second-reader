@@ -3,13 +3,16 @@
 Purpose: hold the reviewed draft prompt used by the `window_partition_draft`
 Ingest A/B probes.
 
-Use when: reviewing, editing, or preparing a possible replacement for the
-current live `Ingest / SelectNextUnit` prompt.
+Use when: reviewing the prompt text that became the live
+`attentional_v2.ingest.v14` Ingest unit-boundary selector.
 
-Not for: live runtime behavior, evaluation scoring, or Unit Memory retrieval
-policy.
+Not for: editing live runtime behavior, evaluation scoring, or Unit Memory
+retrieval policy.
 
-Status: draft for review. It is not the live prompt.
+Status: promoted to live Ingest prompt `attentional_v2.ingest.v14` /
+promptset `attentional_v2-phase6-v64` on `2026-06-11`. The production source
+of truth is now
+`reading-companion-backend/src/attentional_v2/prompts/ingest.py`.
 
 Last synchronized: `2026-06-11`
 
@@ -237,7 +240,8 @@ than copied mechanically.
 
 ## Review Notes
 
-- The draft changes boundary expression from live `end_anchor_text` to
+- The promoted prompt changes boundary expression from the former live
+  `end_anchor_text` to
   `unit.end_paragraph_n + unit.end_at`.
 - `paragraph_end` means the selected unit ends at the end of the visible
   paragraph slice with that `n`.
@@ -247,5 +251,9 @@ than copied mechanically.
   reading units, but only commit the first unit.
 - The A/B probe intentionally isolated retrieval: `memory_recalls` was recorded
   for observation, but retrieval was not executed.
-- The A/B probe schema did not require `reason`, although the prompt did ask for
-  it. If promoted to live, this should be resolved deliberately.
+- The production schema intentionally keeps `reason` optional, matching the A/B
+  probe schema while still preserving it when the model supplies one.
+- Known A/B follow-up caveats to watch in later eval/review, without changing
+  this promoted prompt in the landing commit: true heading attachment can still
+  be backward-sensitive, meta-transition units can over-merge, and some
+  scene-ending boundaries can over-partition.

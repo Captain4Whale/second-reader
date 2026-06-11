@@ -66,7 +66,14 @@ _INGEST_UNIT_MEMORY_TOOL = {
     "input_schema": {
         "type": "object",
         "properties": {
-            "end_anchor_text": {"type": "string"},
+            "unit": {
+                "type": "object",
+                "properties": {
+                    "end_paragraph_n": {"type": ["string", "number"]},
+                    "end_at": {"type": "string"},
+                },
+                "required": ["end_paragraph_n", "end_at"],
+            },
             "reason": {"type": "string"},
             "memory_recalls": {
                 "type": "array",
@@ -82,7 +89,7 @@ _INGEST_UNIT_MEMORY_TOOL = {
                 "maxItems": 3,
             },
         },
-        "required": ["end_anchor_text", "memory_recalls"],
+        "required": ["unit", "memory_recalls"],
     },
 }
 _STATE_OPERATION_TYPES = {
@@ -730,6 +737,18 @@ def _normalize_ingest_boundary_result(
 
     if not isinstance(value, dict):
         raise ReaderLLMError("Ingest result payload must be an object.", problem_code="llm_contract")
+    raw_unit = value.get("unit")
+    if not isinstance(raw_unit, Mapping):
+        raise ReaderLLMError("Ingest result unit must be an object.", problem_code="llm_contract")
+    unit = {
+        "end_paragraph_n": _clean_text(raw_unit.get("end_paragraph_n")),
+        "end_at": _clean_text(raw_unit.get("end_at")),
+    }
+    if not unit["end_paragraph_n"] or not unit["end_at"]:
+        raise ReaderLLMError(
+            "Ingest result unit.end_paragraph_n and unit.end_at must be non-empty.",
+            problem_code="llm_contract",
+        )
     raw_recalls = value.get("memory_recalls")
     normalized_recalls = normalize_unit_memory_recalls(raw_recalls)
     if "memory_recalls" not in value:
@@ -742,12 +761,10 @@ def _normalize_ingest_boundary_result(
         recalls_status = "provided"
     result: IngestBoundaryResult = {
         "reason": _clean_text(value.get("reason")),
-        "end_anchor_text": _clean_text(value.get("end_anchor_text")),
+        "unit": unit,
         "memory_recalls": normalized_recalls,
         "memory_recalls_status": recalls_status,
     }
-    if not result["end_anchor_text"]:
-        raise ReaderLLMError("Ingest result end_anchor_text must be non-empty.", problem_code="llm_contract")
     return result
 
 
@@ -762,6 +779,19 @@ def _current_view_source_texts(current_view_content: Mapping[str, object]) -> li
             if text:
                 texts.append(text)
     return texts
+
+
+def _current_view_visible_paragraph_ns(current_view_content: Mapping[str, object]) -> list[str]:
+    slices = current_view_content.get("paragraph_slices")
+    if not isinstance(slices, list):
+        return []
+    paragraph_ns: list[str] = []
+    for item in slices:
+        if isinstance(item, Mapping):
+            paragraph_n = _clean_text(item.get("paragraph_index"))
+            if paragraph_n:
+                paragraph_ns.append(paragraph_n)
+    return paragraph_ns
 
 
 def ingest(
@@ -784,6 +814,7 @@ def ingest(
     )
     user_prompt = prompt_assembly.rendered_text
     current_source_texts = _current_view_source_texts(current_view_content)
+    current_visible_paragraph_ns = _current_view_visible_paragraph_ns(current_view_content)
     _write_prompt_manifest(
         output_dir,
         node_name="ingest",
@@ -811,6 +842,7 @@ def ingest(
                     payload,
                     tool_results=[],
                     current_source_texts=current_source_texts,
+                    current_visible_paragraph_ns=current_visible_paragraph_ns,
                 ),
             )
             result = _normalize_ingest_boundary_result(tool_result.payload)
@@ -838,6 +870,7 @@ def ingest(
                 payload,
                 tool_results,
                 current_source_texts=current_source_texts,
+                current_visible_paragraph_ns=current_visible_paragraph_ns,
             ),
             max_tool_calls=1,
         )

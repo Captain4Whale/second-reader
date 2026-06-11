@@ -51,7 +51,7 @@ from .source_spans import (
     first_cursor_for_chapter,
     normalize_cursor_for_chapter,
     readable_paragraphs,
-    resolve_end_anchor_text,
+    resolve_ingest_unit_boundary,
     source_locus_from_unit,
     source_ref_from_span,
     source_ref_from_unit,
@@ -1060,6 +1060,7 @@ def _ingest_trace_entry(
 
     entry: IngestTraceEntry = {
         "reason": _clean_text(boundary_result.get("reason")),
+        "unit": dict(boundary_result.get("unit", {})) if isinstance(boundary_result.get("unit"), dict) else {},
         "end_anchor_text": _clean_text(boundary_result.get("end_anchor_text")),
         "memory_recalls": [
             dict(item)
@@ -1093,6 +1094,7 @@ def _compact_ingest_trace(ingest_trace: object) -> list[dict[str, object]]:
         entry: dict[str, object] = {}
         for key in (
             "reason",
+            "unit",
             "end_anchor_text",
             "memory_recalls",
             "memory_recalls_status",
@@ -1336,6 +1338,19 @@ def _current_view_source_texts(current_view_content: Mapping[str, object]) -> li
     return texts
 
 
+def _current_view_visible_paragraph_ns(current_view_content: Mapping[str, object]) -> list[str]:
+    slices = current_view_content.get("paragraph_slices")
+    if not isinstance(slices, list):
+        return []
+    paragraph_ns: list[str] = []
+    for item in slices:
+        if isinstance(item, Mapping):
+            paragraph_n = _clean_text(item.get("paragraph_index"))
+            if paragraph_n:
+                paragraph_ns.append(paragraph_n)
+    return paragraph_ns
+
+
 def _retrieve_unit_memory_for_prepared_source_unit(
     *,
     output_dir: Path,
@@ -1471,13 +1486,13 @@ def _resolve_ingest_boundary(
     boundary_result: IngestBoundaryResult,
     retry_boundary_result: IngestBoundaryResult | None = None,
 ) -> tuple[dict[str, object], UnitizeDecision]:
-    """Resolve Ingest's source-text tail anchor into an accepted unit span."""
+    """Resolve Ingest's unit-boundary object into an accepted unit span."""
 
     selected_result = dict(retry_boundary_result or boundary_result)
-    end_anchor_text = _clean_text(selected_result.get("end_anchor_text"))
-    resolution = resolve_end_anchor_text(
+    unit = dict(selected_result.get("unit", {})) if isinstance(selected_result.get("unit"), dict) else {}
+    resolution = resolve_ingest_unit_boundary(
         preview=preview,
-        end_anchor_text=end_anchor_text,
+        unit=unit,
     )
     if _clean_text(resolution.get("status")) == "matched":
         end_cursor = dict(resolution.get("end_cursor", {}))
@@ -1508,7 +1523,11 @@ def _resolve_ingest_boundary(
     }
     source_unit = source_unit_from_span(chapter=chapter, source_span=source_span)
     source_id = source_span_id(source_span)
+    end_anchor_text = _clean_text(resolution.get("matched_text"))
+    if not end_anchor_text:
+        end_anchor_text = _clean_text(unit.get("end_at"))
     unitize_decision: UnitizeDecision = {
+        "unit": unit,
         "end_anchor_text": end_anchor_text,
         "source_span": source_span,
         "source_span_id": source_id,
@@ -1545,6 +1564,7 @@ def _accept_ingest_boundary(
         retry_boundary_result=retry_boundary_result,
     )
     selected_boundary = retry_boundary_result if retry_boundary_result is not None else boundary_result
+    selected_boundary["end_anchor_text"] = _clean_text(unitize_decision.get("end_anchor_text"))
     selected_boundary["source_span_id"] = _clean_text(unitize_decision.get("source_span_id"))
     selected_boundary["source_span"] = dict(unitize_decision.get("source_span", {}))
     selected_boundary["resolution"] = dict(unitize_decision.get("resolution", {}))
@@ -1595,6 +1615,7 @@ def prepare_next_source_unit_for_read(
         else {}
     )
     current_source_texts = _current_view_source_texts(current_view_content)
+    current_visible_paragraph_ns = _current_view_visible_paragraph_ns(current_view_content)
     tool_retrieval_results: list[dict[str, object]] = []
 
     def _unit_memory_tool_handler(args: Mapping[str, object]) -> Mapping[str, object]:
@@ -1602,6 +1623,7 @@ def prepare_next_source_unit_for_read(
             dict(args),
             tool_results=[{"status": "preflight"}],
             current_source_texts=current_source_texts,
+            current_visible_paragraph_ns=current_visible_paragraph_ns,
         )
         if preflight_errors:
             return {
@@ -1619,9 +1641,10 @@ def prepare_next_source_unit_for_read(
                 "retrieval_summary": {"recall_count": 0, "candidate_unit_count": 0, "selected_unit_count": 0},
                 "degradation_reason": "",
             }
-        resolution_for_tool = resolve_end_anchor_text(
+        unit_for_tool = dict(args.get("unit", {})) if isinstance(args.get("unit"), Mapping) else {}
+        resolution_for_tool = resolve_ingest_unit_boundary(
             preview=preview,
-            end_anchor_text=_clean_text(args.get("end_anchor_text")),
+            unit=unit_for_tool,
         )
         if _clean_text(resolution_for_tool.get("status")) != "matched":
             trace = {
@@ -1723,9 +1746,9 @@ def prepare_next_source_unit_for_read(
         author=author,
         unit_memory_tool_handler=_unit_memory_tool_handler,
     )
-    resolution = resolve_end_anchor_text(
+    resolution = resolve_ingest_unit_boundary(
         preview=preview,
-        end_anchor_text=_clean_text(boundary_result.get("end_anchor_text")),
+        unit=dict(boundary_result.get("unit", {})) if isinstance(boundary_result.get("unit"), dict) else {},
     )
     retry_boundary_result: IngestBoundaryResult | None = None
     if _clean_text(resolution.get("status")) != "matched":
@@ -1733,9 +1756,14 @@ def prepare_next_source_unit_for_read(
         retry_position.update(
             {
                 "retry": True,
-                "previous_end_anchor_text": _clean_text(boundary_result.get("end_anchor_text")),
+                "previous_unit": dict(boundary_result.get("unit", {}))
+                if isinstance(boundary_result.get("unit"), dict)
+                else {},
                 "previous_resolution": dict(resolution),
-                "retry_instruction": "Return a longer, unique end_anchor_text copied exactly from the end of the chosen unit.",
+                "retry_instruction": (
+                    "Return a visible unit boundary object: set unit.end_paragraph_n to a visible Paragraph n "
+                    "and unit.end_at to paragraph_end or a longer unique exact tail quote inside that paragraph."
+                ),
             }
         )
         retry_boundary_result = _call_ingest(

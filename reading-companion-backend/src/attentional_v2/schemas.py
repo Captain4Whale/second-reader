@@ -176,6 +176,7 @@ class UnitizeDecision(TypedDict, total=False):
 
     start_sentence_id: str
     end_sentence_id: str
+    unit: dict[str, object]
     end_anchor_text: str
     source_span: dict[str, object]
     source_span_id: str
@@ -350,6 +351,7 @@ class IngestBoundaryResult(TypedDict, total=False):
     """One bounded Ingest LLM boundary result."""
 
     reason: str
+    unit: dict[str, object]
     end_anchor_text: str
     memory_recalls: list["UnitMemoryRecall"]
     memory_recalls_status: str
@@ -361,6 +363,7 @@ class IngestTraceEntry(TypedDict, total=False):
     """One compact Ingest boundary trace entry."""
 
     reason: str
+    unit: dict[str, object]
     end_anchor_text: str
     memory_recalls: list["UnitMemoryRecall"]
     memory_recalls_status: str

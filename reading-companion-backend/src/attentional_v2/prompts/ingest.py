@@ -15,9 +15,9 @@ from .reader_role import READER_ROLE_FRAGMENT
 from .types import PromptDefinition
 
 
-INGEST_PROMPT_VERSION = "attentional_v2.ingest.v13"
-INGEST_XML_PROMPT_ASSEMBLY_SPEC_ID = "attentional_v2.ingest.xml.v13"
-INGEST_XML_PROMPTSET_VERSION = "attentional_v2-phase6-v63"
+INGEST_PROMPT_VERSION = "attentional_v2.ingest.v14"
+INGEST_XML_PROMPT_ASSEMBLY_SPEC_ID = "attentional_v2.ingest.xml.v14"
+INGEST_XML_PROMPTSET_VERSION = "attentional_v2-phase6-v64"
 INGEST_TRANSPORT_SYSTEM_PROMPT = "Follow the structured Ingest prompt in the user message. Use the required submit_ingest_result tool as the final output channel."
 
 
@@ -25,13 +25,14 @@ INGEST_CURRENT_STEP_FRAGMENT = PromptFragment(
     fragment_id="ingest.current_step",
     text="""You are in the Ingest step of a sequential deep-reading loop.
 
-This step happens before Digest. You are not yet reading the selected unit for interpretation or reader-facing output. You are previewing the bounded forward source area from the current reading cursor in order to prepare Digest.
+This step happens before Digest. You are not yet reading the selected unit for interpretation or reader-facing output.
 
-Your work in this call is to select the next forward source unit that you should read carefully in the Digest step.
+You are shown a bounded forward reading lookahead window from the current reading cursor. In this call you do two things:
 
-After selecting it, briefly name any earlier reading that this unit makes you want to remember before Digest reads it closely.
+1. Consider the window as a sequence of coherent reading units, then commit only the FIRST unit as the next source unit Digest should read closely.
+2. After committing that first unit, briefly name any earlier reading that this unit makes you want to remember before Digest reads it closely.
 
-When those recalls exist, use the available Unit Memory retrieval tool so runtime can prepare prior-reading support before you return the final Ingest JSON.""",
+The rest of the window is lookahead context only. It helps you place the first boundary; it is not itself being read by Digest yet.""",
 )
 
 
@@ -46,42 +47,54 @@ INGEST_CONTEXT_USE_GUIDE_FRAGMENT = PromptFragment(
 
 INGEST_SELECT_NEXT_UNIT_FRAGMENT = PromptFragment(
     fragment_id="ingest.select_next_unit",
-    text="""Select one forward source unit from the current reading cursor.
+    text="""Partition the forward window into coherent reading units, then commit the first one. The first unit starts at the current reading cursor.
 
-Priority order:
-- Judge from the visible source text first.
-- Respect author structure before local convenience.
+What a semantic unit is — a continuous span of source text that satisfies all of:
 
-Source range:
-- Choose directly from `CurrentView / Content`.
-- Do not cross the provided `CurrentView / Content` boundary.
-- The unit always starts at the current source cursor in `CurrentView / Position`. Do not invent a start id.
+- Internally coherent: its sentences hang together on one topic, argument, scene, exchange, image, concept, or logical move.
+- Locally complete: it closes one forward move enough for Digest to read it as the present object of attention. For example: a claim and its immediate support, an example and its point, a scene or beat that lands, a concept introduced and initially unpacked, a turn in dialogue, or a local summary.
+- Minimal: it is the smallest span that is still locally complete. Do not greedily merge several complete moves into one large unit just because they are related.
+- Naturally bounded: it ends at a real transition, such as topic shift, argument closing, scene change, change in speaker, change in rhetorical function, or the start of a new move.
 
-Unit size:
-- Choose the smallest complete local move that can honestly be read as one unit.
-- Prefer ending within the current paragraph.
-- Continue into the next paragraph only when the same local move is clearly continuing.
-- Do not pretend a move is finished when it is still unfolding; choose the best honest boundary available.
+How to choose the boundary:
+
+- Consider the whole visible window first. Do not commit a boundary the moment you reach the first plausible stopping point.
+- Conceptually divide the window into consecutive reading units in order, with no gaps. Use that whole-window view only to place the first boundary well.
+- Commit only the FIRST unit. Anything after it is provisional lookahead context.
+- The first unit always starts at the current source cursor in `CurrentView / Position`. Do not invent or output a start position.
+- A boundary falls on a sentence edge and never inside a sentence.
+- A boundary may fall inside a paragraph when one long paragraph contains more than one complete move.
+- A unit may also span several paragraphs when the same local move clearly continues across them.
+- The window is assembled from paragraph slices, but the unit is not required to align to paragraph edges.
+
+Window tail:
+
+- The window end is controlled by runtime budget and may fall in the middle of a move.
+- Do not over-merge the first unit just to make the later window tail look balanced or complete.
+- Only the first boundary is authoritative.
+
+Signals you may use:
+- Lexical cohesion / topic continuity: while the same entities and keywords are still in play, the unit continues; when the topical center clearly shifts (old entities exit, new ones enter), that is a boundary.
+- Argument completeness: claim → evidence → qualification forms one unit; a new claim opens a new unit.
+- Narrative change: a clear change of time, place, character, goal, or cause-effect marks a natural boundary.
+- One main idea: a unit should be roughly what compresses into a single main idea; if it sprawls into several, it is too long.
+- Prediction break: when what comes next can no longer be predicted from the current idea, a new unit has begun.
+
+Size and length:
+
+- A unit is a small, digestible reading move: about the amount Digest can turn into one coherent Understanding.
+- It may be part of a long paragraph, one paragraph, or a few paragraphs.
+- It must never cross a chapter boundary.
+- The lookahead window is deliberately longer than one unit. The first unit should usually end well within it.
+- If the first unit approaches the length of the whole window, you have almost certainly merged too much. Back off to the nearest earlier locally complete move.
 
 Structural cues:
+
 - Treat `chapter_heading` and `section_heading` as weak structure cues, not automatic standalone units.
-- A heading may stand alone only when its visible wording already forms a complete, meaningful local move.
-- If a heading reads more like a label, lead-in, or structural setup, merge it with the immediately following body paragraph when `CurrentView / Content` allows.
-- Stay proportionate around thin structural text. Do not carve out a very short unit just because the text is marked as a heading.
-- Before finalizing the unit boundary, trim only boundary sentences that are purely non-lexical residue, such as ornament/divider/separator lines.
-- `text_role` may help orient you, but it must not decide the boundary by itself.
-
-End anchor and continuation:
-- Set `end_anchor_text` to an exact quote from the visible preview at the end of the unit you choose.
-- Copy `end_anchor_text` character-for-character from the preview source text. Do not paraphrase, omit punctuation, or add ellipses.
-- Choose a sufficiently unique tail anchor, usually 20-80 Chinese characters or 8-25 English words. If the unit is very short, the full unit tail is acceptable.
-- If the move is still unfinished at the available boundary, choose the best honest end point you have. Do not pretend the local move is complete.
-
-Boundary closure check:
-- After choosing the semantic end of the unit, check whether `end_anchor_text` accidentally leaves behind punctuation that belongs to the same sentence, quotation, parenthetical, bracketed span, or footnote marker.
-- Include terminal punctuation and attached closing marks that complete the chosen unit, such as `。`, `.`, `！`, `？`, `”`, `’`, `）`, `]`, and `】`.
-- Do not stop immediately before punctuation or a closing mark that closes the sentence, quote, parenthesis, bracket, or note span you are choosing.
-- Do not absorb opening punctuation, bullets, separators, or markers that begin the next unit.""",
+- Merge a label-like heading with the body it introduces.
+- Let a heading stand alone only if its wording itself forms a complete, meaningful move.
+- Ignore pure ornament / divider / separator lines at the boundary.
+- `text_role` may help orient you, but it must not decide the boundary by itself.""",
 )
 
 
@@ -172,37 +185,40 @@ Submit only the result described by OutputContract through the required final ou
 
 INGEST_OUTPUT_FIELDS_FRAGMENT = PromptFragment(
     fragment_id="ingest.output_fields",
-    text="""`OutputFields` names the information Ingest must output.
-
-Fields:
-
-- `end_anchor_text`: exact visible source quote at the end of the chosen unit
-- `reason`: boundary rationale for why the source unit that starts at the current cursor should end at `end_anchor_text`
-- `memory_recalls`: zero to three prior-reading recalls raised by the selected unit
-
-`reason` should name the reading boundary that becomes clear here: for example, a claim completes, an example closes, a scene or exchange ends, a contrast resolves, a definition or distinction is established, a transition begins, or the preview limit forces the best honest stopping point.
-
-`reason` is not a separate source-span selection and does not define another start point. It should help audit the boundary judgment, not restate a different focal paragraph or range.""",
+    text="""`OutputFields` and `ReturnFormat` define the concrete structured result.""",
 )
 
 
 INGEST_RETURN_FORMAT_FRAGMENT = PromptFragment(
     fragment_id="ingest.return_format",
-    text="""`ReturnFormat` defines the concrete JSON shape.
-
-Submit this shape through the required final output tool:
+    text="""Submit this shape through the required final output tool:
 
 {
-  "end_anchor_text": "...",
-  "reason": "...",
+  "unit": {
+    "end_paragraph_n": "<the n attribute of the Paragraph where the first unit ends>",
+    "end_at": "paragraph_end | <exact tail quote located inside end_paragraph_n>"
+  },
+  "reason": "<boundary rationale>",
   "memory_recalls": [
     {
       "recall_id": "r1",
-      "recall_text": "...",
+      "recall_text": "<concise prior-reading memory target>",
       "basis": "selected_source_unit"
     }
   ]
-}""",
+}
+
+Rules:
+
+- The committed unit starts at the current cursor in `CurrentView / Position`; do not emit a start position.
+- `end_paragraph_n` must copy the `n` attribute from one visible `Paragraph` in `CurrentView / Content`.
+- Use `"paragraph_end"` when the unit ends at the end of that visible paragraph slice.
+- Use an exact tail quote only when the unit must end inside a long paragraph at a sentence boundary.
+- The exact tail quote must be copied character-for-character from `end_paragraph_n` and must uniquely identify the unit end within that paragraph.
+- `reason` explains why the unit starting at the current cursor should end at this boundary. It is a boundary rationale, not a summary and not a second source span.
+- `memory_recalls` contains zero to three entries. Use an empty list if the selected unit does not call for prior memory.
+- Every recall `basis` must be exactly `"selected_source_unit"`.
+- Do not output markdown, commentary, or extra fields.""",
 )
 
 
@@ -379,7 +395,7 @@ def build_ingest_prompt_assembly_spec(
             "current_view_position",
             "current_view_content",
         ),
-                output_contract="ingest_boundary_memory_recalls_json_v3",
+        output_contract="ingest_unit_boundary_memory_recalls_json_v4",
     )
 
 
@@ -416,5 +432,5 @@ INGEST_PROMPT = PromptDefinition(
     system_prompt=INGEST_TRANSPORT_SYSTEM_PROMPT,
     user_prompt_template="<IngestPrompt assembled by render_ingest_prompt_xml>",
     required_inputs=("book_identity", "current_view_position", "current_view_content"),
-    output_contract="ingest_boundary_memory_recalls_json_v3",
+    output_contract="ingest_unit_boundary_memory_recalls_json_v4",
 )

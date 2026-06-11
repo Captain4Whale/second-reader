@@ -146,9 +146,9 @@ Use `docs/backend-reading-mechanism.md` for shared platform boundaries. Use `doc
 - The `Ingest` LLM-call boundary is now landed.
   - The current Ingest contract is a pure LLM boundary call: **Choose the Boundary of the Next Unit That Should Be Read**.
   - Reading Runner owns runtime next-unit preparation through `prepare_next_source_unit_for_read` and consumes one `PreparedSourceUnit`.
-  - The runtime operation prepares source preview/context, calls `Ingest`, resolves or retries the returned anchor, applies fallback boundary governance for unresolved non-empty anchors when needed, and produces the accepted forward source unit for `Digest`.
-  - Ingest structured-output / LLM failures are not accepted as boundary choices. Empty or malformed final-output payloads surface as LLM problem codes such as `llm_contract` rather than being normalized into `end_anchor_text = ""` and settled through deterministic cursor fallback.
-  - The current prompt and schema expose boundary fields for that forward source unit plus bounded Unit Memory recall intentions: exact `end_anchor_text`, boundary-rationale `reason`, and `memory_recalls[]`.
+  - The runtime operation prepares source preview/context, calls `Ingest`, resolves or retries the returned unit-boundary object, applies fallback boundary governance for unresolved non-empty boundaries when needed, and produces the accepted forward source unit for `Digest`.
+  - Ingest structured-output / LLM failures are not accepted as boundary choices. Empty or malformed final-output payloads surface as LLM problem codes such as `llm_contract` rather than being normalized into an empty boundary and settled through deterministic cursor fallback.
+  - The current prompt and schema expose boundary fields for that forward source unit plus bounded Unit Memory recall intentions: `unit.end_paragraph_n`, `unit.end_at`, optional boundary-rationale `reason`, and `memory_recalls[]`.
   - When Ingest returns non-empty recalls, the LLM call must use the mechanism-private `retrieve_unit_memory` tool loop; Reading Runner executes Unit Memory retrieval/selection after boundary acceptance and before calling `Digest`.
 - Phase D of the post-eval structural rework is now landed as preserved intermediate continuity / recall / resume evidence.
   - that branch added a budget-bounded multi-step supplemental loop around the old concrete reading node.
@@ -172,10 +172,10 @@ Use `docs/backend-reading-mechanism.md` for shared platform boundaries. Use `doc
   - `Reading Runner` prepares the next source-unit request with source preview and cursor state
   - `Ingest`
     - receives that already-prepared adaptive source preview in XML context
-    - returns boundary fields, including an exact `end_anchor_text` rather than sentence ids or raw numeric offsets
+    - returns boundary fields, including `unit.end_paragraph_n` plus `unit.end_at`, rather than sentence ids or raw numeric offsets
     - may also return up to three `memory_recalls[]` items for Unit Memory retrieval support
-  - `Reading Runner` boundary governance resolves the returned anchor with source-exact matching first, quote-normalized exact matching second, and trailing-closing-punctuation extension before retry/fallback; it retries once when a non-empty anchor is unresolved, falls back to a deterministic cursor boundary when needed, and produces the accepted `PreparedSourceUnit`
-  - Ingest contract failures, including empty final `end_anchor_text`, stop at the LLM-call contract boundary and are reported as explicit LLM problems instead of becoming fallback `PreparedSourceUnit` records
+  - `Reading Runner` boundary governance resolves `paragraph_end` directly to the visible paragraph-slice end, or resolves paragraph-local tail quotes with source-exact matching first, quote-normalized exact matching second, and trailing-closing-punctuation extension before retry/fallback; it retries once when a non-empty unit boundary is unresolved, falls back to a deterministic cursor boundary when needed, and produces the accepted `PreparedSourceUnit`
+  - Ingest contract failures, including missing or empty final `unit` fields, stop at the LLM-call contract boundary and are reported as explicit LLM problems instead of becoming fallback `PreparedSourceUnit` records
   - `Reading Runner` executes Unit Memory retrieval for the accepted unit when recalls are present, selects prompt-facing Understanding memory, and records `unit_memory_retrieval_trace.jsonl`
   - mandatory `Digest` call with bounded `ReadingMemory`
   - `Digest` directly surfaces zero-to-many reading-time reactions and emits bounded Recent Reading Memory
@@ -244,12 +244,12 @@ Use `docs/backend-reading-mechanism.md` for shared platform boundaries. Use `doc
 - The current live forward-settlement baseline now runs:
   - build an adaptive paragraph-offset preview from the current `SourceCursor`
   - call `Ingest`
-    - the single Ingest call chooses a forward source unit by returning `end_anchor_text`
+    - the single Ingest call chooses a forward source unit by returning `unit.end_paragraph_n` plus `unit.end_at`
     - the current interface exposes no non-mainline routing or source-skill action
-  - deterministically resolve `end_anchor_text` against the preview and map it to an end-exclusive `end_cursor`
-    - if the anchor cannot be resolved, retry Ingest once with the failed resolution as source evidence
-    - if a non-empty anchor still cannot be resolved, fall back conservatively to the current paragraph end or preview boundary and record the resolution status
-    - if Ingest fails its structured-output contract or submits an empty `end_anchor_text`, surface the LLM problem such as `llm_contract` instead of manufacturing an empty boundary for fallback settlement
+  - deterministically resolve the returned unit boundary against the preview and map it to an end-exclusive `end_cursor`
+    - if the boundary cannot be resolved, retry Ingest once with the failed resolution as source evidence
+    - if a non-empty boundary still cannot be resolved, fall back conservatively to the current paragraph end or preview boundary and record the resolution status
+    - if Ingest fails its structured-output contract or submits missing/empty `unit` fields, surface the LLM problem such as `llm_contract` instead of manufacturing an empty boundary for fallback settlement
   - retrieve/select prior Understanding when Ingest supplied recalls, then build a bounded prompt-facing `ReadingMemory` block from hot current-chapter Understanding plus selected long-distance Unit Memory Understanding
   - formally digest the accepted source unit through `Digest`
   - let `Digest` produce three model-facing reading outputs for that exact unit: `understanding`, `response`, and `annotations`
@@ -268,7 +268,7 @@ Use `docs/backend-reading-mechanism.md` for shared platform boundaries. Use `doc
     - appends following paragraphs to form a larger reading lookahead window for boundary selection
     - does not cross chapter boundaries
     - defaults live in `reader_policy.unitize`: `preview_soft_min_chars = 3000`, `preview_hard_max_chars = 7000`, `max_lookahead_paragraphs = 12`
-  - Ingest does not return raw offsets. It returns `end_anchor_text`, an exact quote from the visible preview near the selected unit boundary.
+  - Ingest does not return raw offsets. It returns the visible `Paragraph n` where the first unit ends and either `paragraph_end` or a paragraph-local exact tail quote.
   - Parse-time `text_role` is still available during this step, but only as an inherited block-level weak cue rather than a sentence-level truth packet.
   - Heading handling is now deliberately conservative:
     - `chapter_heading` and `section_heading` may stand alone when their visible wording already forms a complete local move
@@ -322,7 +322,8 @@ Use `docs/backend-reading-mechanism.md` for shared platform boundaries. Use `doc
 - The unitization decision carries the exact boundary evidence used on the live path:
   - source span start/end cursors
   - preview start/end cursors
-  - exact `end_anchor_text`
+  - `unit.end_paragraph_n` and `unit.end_at`
+  - derived audit `end_anchor_text` where compatibility artifacts still need a source-text tail string
   - resolver status and method
   - unit boundary type
   - unitization reason
@@ -441,8 +442,8 @@ Use `docs/backend-reading-mechanism.md` for shared platform boundaries. Use `doc
   - The reader role fragment is `reader.role`, owned by `attentional_v2/prompts/reader_role.py`.
   - Ingest reuses the same reader role and supplies its own `Instruction` fragment.
   - Ingest XML context uses top-level `ReaderRole`, `Instruction`, `BookInfo`, `CurrentView`, an empty self-closing `RetrievalSurface`, and `OutputContract`.
-  - The current Ingest output contract carries `end_anchor_text`, boundary-rationale `reason`, and bounded `memory_recalls[]`; transport is selected by the shared LLM gateway from the active profile.
-  - Ingest prompt version `attentional_v2.ingest.v13` keeps recalls reader-shaped while making them retrieval-target friendly: each recall describes what earlier understanding runtime should try to find from selected-unit cues, without requiring the model to assert that prior memory already exists; it treats `CurrentView / Content` as boundary/recall-cue preview rather than already-read memory evidence, looks backward beyond the selected unit rather than summarize the selected unit itself, avoids paragraph / line / XML identifiers, avoids mechanical noun lists, prefers one strong recall over several weak ones, uses the current source text's primary language, keeps model-side recall `basis` exactly `selected_source_unit`, asks Ingest to include terminal punctuation / attached closing marks that complete the chosen unit while not absorbing opening punctuation or markers that begin the next unit, defines `reason` as the boundary rationale for why the source unit starting at the current cursor should end at `end_anchor_text` rather than as a separate source-span selection, and removes the old model-emitted boundary classification field from the live interface.
+  - The current Ingest output contract carries `unit.end_paragraph_n`, `unit.end_at`, optional boundary-rationale `reason`, and bounded `memory_recalls[]`; transport is selected by the shared LLM gateway from the active profile.
+  - Ingest prompt version `attentional_v2.ingest.v14` / promptset `attentional_v2-phase6-v64` uses the reviewed window-partition selector: it asks Ingest to view the visible lookahead as consecutive coherent reading units, commit only the first unit, treat paragraph boundaries as cues rather than defaults, allow paragraph-internal or multi-paragraph units when the semantic boundary calls for them, and express the boundary through a visible paragraph `n` plus `paragraph_end` or a paragraph-local exact tail quote. Recall wording and Unit Memory retrieval semantics remain the established live contract.
   - The same-language / basis recall contract is enforced in code as well as in prompt text: final-output validation receives the current source text, and `retrieve_unit_memory` action-tool preflight rejects clear cross-language model-side recalls or non-`selected_source_unit` basis values before retrieval execution.
   - If Ingest calls `retrieve_unit_memory`, final-output validation requires the submitted `memory_recalls[]` to match the action-tool recalls, so runtime does not retrieve on one recall set while auditing or settling another.
   - Digest XML renders `ReaderRole` and `Instruction` as separate top-level blocks; all fixed non-role Digest directions live under `Instruction`, while runtime context/data blocks remain separate.
@@ -489,7 +490,7 @@ Use `docs/backend-reading-mechanism.md` for shared platform boundaries. Use `doc
 - Mainline unitization preview is intentionally source-local and deterministic.
   - It previews from the exact paragraph-offset cursor, not from a precomputed sentence index.
   - It always includes the current paragraph remainder and may append following paragraphs to provide a bounded reading lookahead window for a natural unit-boundary decision.
-  - The semantic choice of where to stop inside that preview is prompt-led through `end_anchor_text`.
+  - The semantic choice of where to stop inside that preview is prompt-led through the returned `unit.end_paragraph_n` / `unit.end_at` boundary.
   - Runtime imposes deterministic guardrails through `reader_policy.unitize.preview_soft_min_chars`, `preview_hard_max_chars`, and `max_lookahead_paragraphs`.
 - Search posture is separate from prior-knowledge posture.
   - Version-one search states are:

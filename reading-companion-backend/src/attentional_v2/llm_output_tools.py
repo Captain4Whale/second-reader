@@ -27,10 +27,16 @@ def final_output_tool(name: str, description: str, input_schema: Mapping[str, An
 
 INGEST_RESULT_TOOL = final_output_tool(
     "submit_ingest_result",
-    "Submit the final Ingest boundary and prior-reading recall result. Use this tool exactly once as the final answer.",
+    "Submit the final Ingest unit boundary and prior-reading recall result. Use this tool exactly once as the final answer.",
     _object_schema(
         {
-            "end_anchor_text": {"type": "string"},
+            "unit": _object_schema(
+                {
+                    "end_paragraph_n": {"type": ["string", "number"]},
+                    "end_at": {"type": "string"},
+                },
+                required=["end_paragraph_n", "end_at"],
+            ),
             "reason": {"type": "string"},
             "memory_recalls": {
                 "type": "array",
@@ -45,7 +51,7 @@ INGEST_RESULT_TOOL = final_output_tool(
                 ),
             },
         },
-        required=["end_anchor_text", "memory_recalls"],
+        required=["unit", "memory_recalls"],
     ),
 )
 
@@ -194,10 +200,22 @@ def validate_ingest_result(
     tool_results: list[dict[str, Any]] | None = None,
     *,
     current_source_texts: list[str] | None = None,
+    current_visible_paragraph_ns: list[str] | None = None,
 ) -> list[str]:
     errors: list[str] = []
-    if not str(payload.get("end_anchor_text") or "").strip():
-        errors.append("end_anchor_text must be a non-empty exact source quote")
+    unit = payload.get("unit")
+    if not isinstance(unit, Mapping):
+        errors.append("unit must be an object")
+    else:
+        end_paragraph_n = str(unit.get("end_paragraph_n") or "").strip()
+        end_at = str(unit.get("end_at") or "").strip()
+        if not end_paragraph_n:
+            errors.append("unit.end_paragraph_n must be non-empty")
+        if not end_at:
+            errors.append("unit.end_at must be non-empty")
+        visible_ns = {str(item or "").strip() for item in current_visible_paragraph_ns or [] if str(item or "").strip()}
+        if visible_ns and end_paragraph_n and end_paragraph_n not in visible_ns:
+            errors.append("unit.end_paragraph_n must match a visible Paragraph n")
     recalls = payload.get("memory_recalls")
     if not isinstance(recalls, list):
         errors.append("memory_recalls must be an array")

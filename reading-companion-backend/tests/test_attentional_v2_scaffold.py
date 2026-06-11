@@ -1224,13 +1224,13 @@ def test_attentional_v2_prompt_registry_projects_current_bundle() -> None:
     ingest = ATTENTIONAL_V2_PROMPT_REGISTRY.get("attentional_v2.ingest")
     chapter = ATTENTIONAL_V2_PROMPT_REGISTRY.get("attentional_v2.chapter_consolidation")
 
-    assert ATTENTIONAL_V2_PROMPTSET_VERSION == "attentional_v2-phase6-v63"
+    assert ATTENTIONAL_V2_PROMPTSET_VERSION == "attentional_v2-phase6-v64"
     assert ATTENTIONAL_V2_PROMPTS.promptset_version == ATTENTIONAL_V2_PROMPTSET_VERSION
     assert digest.version == DIGEST_PROMPT_VERSION == "attentional_v2.digest.v9"
     assert ATTENTIONAL_V2_PROMPTS.digest_version == digest.version
     assert ATTENTIONAL_V2_PROMPTS.digest_system == digest.system_prompt
     assert ATTENTIONAL_V2_PROMPTS.digest_prompt == digest.user_prompt_template
-    assert ingest.version == INGEST_PROMPT_VERSION == "attentional_v2.ingest.v13"
+    assert ingest.version == INGEST_PROMPT_VERSION == "attentional_v2.ingest.v14"
     assert ATTENTIONAL_V2_PROMPTS.ingest_version == ingest.version
     assert ATTENTIONAL_V2_PROMPTS.ingest_system == ingest.system_prompt
     assert ATTENTIONAL_V2_PROMPTS.chapter_consolidation_prompt == chapter.user_prompt_template
@@ -1859,6 +1859,11 @@ def _fake_single_sentence_ingest_boundary(**kwargs):
     """Return one small source-anchor boundary for runner smoke tests."""
 
     preview = kwargs.get("current_view_content", {})
+    paragraph_n = "1"
+    if isinstance(preview, dict):
+        paragraph_slices = preview.get("paragraph_slices", [])
+        if isinstance(paragraph_slices, list) and paragraph_slices and isinstance(paragraph_slices[0], dict):
+            paragraph_n = str(paragraph_slices[0].get("paragraph_index") or "1")
     source_text = str(preview.get("source_text", "") if isinstance(preview, dict) else "")
     if not source_text and isinstance(preview, dict):
         source_text = "\n".join(
@@ -1872,7 +1877,7 @@ def _fake_single_sentence_ingest_boundary(**kwargs):
     else:
         end_anchor_text = stripped
     return {
-        "end_anchor_text": end_anchor_text,
+        "unit": {"end_paragraph_n": paragraph_n, "end_at": end_anchor_text},
         "reason": "test_choose_source_anchor_unit",
     }
 
@@ -1911,7 +1916,7 @@ def test_prepare_next_source_unit_for_read_selects_mainline_unit(tmp_path, monke
 
 
 def test_prepare_next_source_unit_for_read_retries_unresolved_boundary(tmp_path, monkeypatch):
-    """Runtime boundary governance should retry an unresolved Ingest anchor before fallback."""
+    """Runtime boundary governance should retry an unresolved Ingest unit boundary before fallback."""
 
     provisioned = _provisioned_two_chapter_book()
     document = provisioned.book_document
@@ -1923,11 +1928,11 @@ def test_prepare_next_source_unit_for_read_retries_unresolved_boundary(tmp_path,
         calls.append(dict(current_view_position) if isinstance(current_view_position, dict) else {})
         if len(calls) == 1:
             return {
-                "end_anchor_text": "This anchor is not visible.",
+                "unit": {"end_paragraph_n": "99", "end_at": "paragraph_end"},
                 "reason": "test_unresolved_anchor",
             }
         return {
-            "end_anchor_text": "Closing line.",
+            "unit": {"end_paragraph_n": "1", "end_at": "Closing line."},
             "reason": "test_retry_anchor",
         }
 
@@ -1951,8 +1956,9 @@ def test_prepare_next_source_unit_for_read_retries_unresolved_boundary(tmp_path,
 
     assert len(calls) == 2
     assert calls[1]["retry"] is True
-    assert calls[1]["previous_end_anchor_text"] == "This anchor is not visible."
+    assert calls[1]["previous_unit"] == {"end_paragraph_n": "99", "end_at": "paragraph_end"}
     assert [sentence["sentence_id"] for sentence in result["selected_unit_sentences"]] == ["c2-s1", "c2-s2"]
+    assert result["unitize_decision"]["unit"] == {"end_paragraph_n": "1", "end_at": "Closing line."}
     assert result["unitize_decision"]["end_anchor_text"] == "Closing line."
     assert result["ingest_trace"][1]["resolution"]["status"] == "matched"
 

@@ -6,6 +6,7 @@ from src.attentional_v2.source_spans import (
     build_paragraph_offset_preview,
     first_cursor_for_chapter,
     resolve_end_anchor_text,
+    resolve_ingest_unit_boundary,
     source_ref_from_unit,
     source_unit_from_span,
 )
@@ -222,6 +223,128 @@ def test_resolver_reports_ambiguous_and_missing_anchor() -> None:
 
     assert resolve_end_anchor_text(preview=preview, end_anchor_text="echo")["status"] == "ambiguous"
     assert resolve_end_anchor_text(preview=preview, end_anchor_text="missing")["status"] == "not_found"
+
+
+def test_ingest_unit_boundary_resolves_visible_paragraph_end() -> None:
+    chapter = _chapter()
+    preview = build_paragraph_offset_preview(
+        chapter=chapter,
+        current_cursor={"chapter_id": 1, "chapter_ref": "Chapter 1", "paragraph_index": 2, "char_offset": 0},
+        reader_policy={"unitize": {"preview_soft_min_chars": 50, "preview_hard_max_chars": 200, "max_lookahead_paragraphs": 4}},
+    )
+
+    resolution = resolve_ingest_unit_boundary(
+        preview=preview,
+        unit={"end_paragraph_n": "2", "end_at": "paragraph_end"},
+    )
+
+    assert resolution["status"] == "matched"
+    assert resolution["method"] == "paragraph_end"
+    assert resolution["end_cursor"]["paragraph_index"] == 2
+    assert resolution["end_cursor"]["char_offset"] == len("Beta bridge.")
+    assert resolution["matched_text"] == "Beta bridge."
+    assert resolution["matched_text_is_derived"] is True
+
+
+def test_ingest_unit_boundary_resolves_paragraph_local_tail_quote() -> None:
+    chapter = {
+        "id": 1,
+        "title": "Chapter 1",
+        "paragraphs": [
+            {"paragraph_index": 1, "text": "Alpha opens. Beta closes. Gamma starts.", "text_role": "body"},
+        ],
+    }
+    preview = build_paragraph_offset_preview(
+        chapter=chapter,
+        current_cursor={"chapter_id": 1, "chapter_ref": "Chapter 1", "paragraph_index": 1, "char_offset": 0},
+        reader_policy={"unitize": {"preview_soft_min_chars": 1, "preview_hard_max_chars": 200, "max_lookahead_paragraphs": 1}},
+    )
+
+    resolution = resolve_ingest_unit_boundary(
+        preview=preview,
+        unit={"end_paragraph_n": 1, "end_at": "Beta closes."},
+    )
+
+    assert resolution["status"] == "matched"
+    assert resolution["method"] == "paragraph_tail_quote"
+    assert resolution["matched_text"] == "Beta closes."
+    assert resolution["end_cursor"]["char_offset"] == len("Alpha opens. Beta closes.")
+
+
+def test_ingest_unit_boundary_uses_quote_normalized_paragraph_match() -> None:
+    chapter = {
+        "id": 1,
+        "title": "Chapter 1",
+        "paragraphs": [
+            {"paragraph_index": 1, "text": "“看！”悉达多轻声道，“此人就是佛陀。”", "text_role": "body"},
+        ],
+    }
+    preview = build_paragraph_offset_preview(
+        chapter=chapter,
+        current_cursor={"chapter_id": 1, "chapter_ref": "Chapter 1", "paragraph_index": 1, "char_offset": 0},
+        reader_policy={"unitize": {"preview_soft_min_chars": 1, "preview_hard_max_chars": 200, "max_lookahead_paragraphs": 1}},
+    )
+
+    resolution = resolve_ingest_unit_boundary(
+        preview=preview,
+        unit={"end_paragraph_n": "1", "end_at": '"看！"悉达多轻声道，"此人就是佛陀。"'},
+    )
+
+    assert resolution["status"] == "matched"
+    assert resolution["method"] == "normalized_paragraph_tail_quote"
+    assert resolution["normalization"] == "quote_equivalence"
+    assert resolution["matched_text"] == "“看！”悉达多轻声道，“此人就是佛陀。”"
+
+
+def test_ingest_unit_boundary_extends_adjacent_trailing_closer() -> None:
+    chapter = {
+        "id": 1,
+        "title": "Chapter 1",
+        "paragraphs": [
+            {"paragraph_index": 1, "text": "“在水面行走并不是我的追求。”", "text_role": "body"},
+        ],
+    }
+    preview = build_paragraph_offset_preview(
+        chapter=chapter,
+        current_cursor={"chapter_id": 1, "chapter_ref": "Chapter 1", "paragraph_index": 1, "char_offset": 0},
+        reader_policy={"unitize": {"preview_soft_min_chars": 1, "preview_hard_max_chars": 200, "max_lookahead_paragraphs": 1}},
+    )
+
+    resolution = resolve_ingest_unit_boundary(
+        preview=preview,
+        unit={"end_paragraph_n": "1", "end_at": "在水面行走并不是我的追求。"},
+    )
+
+    assert resolution["status"] == "matched"
+    assert resolution["matched_text"] == "在水面行走并不是我的追求。”"
+    assert resolution["end_cursor_extension"] == {
+        "kind": "trailing_closing_punctuation",
+        "text": "”",
+    }
+
+
+def test_ingest_unit_boundary_reports_ambiguous_missing_and_invisible_boundaries() -> None:
+    preview = {
+        "chapter_id": 1,
+        "chapter_ref": "Chapter 1",
+        "preview_start_cursor": {"chapter_id": 1, "chapter_ref": "Chapter 1", "paragraph_index": 1, "char_offset": 0},
+        "preview_end_cursor": {"chapter_id": 1, "chapter_ref": "Chapter 1", "paragraph_index": 1, "char_offset": 10},
+        "source_text": "echo echo",
+        "paragraph_slices": [{"paragraph_index": 1, "start_char": 0, "end_char": 9, "text": "echo echo"}],
+    }
+
+    assert resolve_ingest_unit_boundary(
+        preview=preview,
+        unit={"end_paragraph_n": "1", "end_at": "echo"},
+    )["status"] == "ambiguous"
+    assert resolve_ingest_unit_boundary(
+        preview=preview,
+        unit={"end_paragraph_n": "1", "end_at": "missing"},
+    )["status"] == "not_found"
+    assert resolve_ingest_unit_boundary(
+        preview=preview,
+        unit={"end_paragraph_n": "2", "end_at": "paragraph_end"},
+    )["reason"] == "unit.end_paragraph_n does not match a visible Paragraph n"
 
 
 def test_unit_span_ledger_records_core_runtime_fact(tmp_path) -> None:

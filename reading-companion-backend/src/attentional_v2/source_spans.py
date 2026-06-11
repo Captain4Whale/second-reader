@@ -768,6 +768,149 @@ def _extend_flat_offset_over_trailing_closers(source_text: str, flat_offset: int
     return cursor, source_text[flat_offset:cursor]
 
 
+def _visible_paragraph_slice(preview: Mapping[str, object], paragraph_n: str) -> dict[str, object] | None:
+    for item in preview.get("paragraph_slices", []):
+        if not isinstance(item, Mapping):
+            continue
+        if _clean_text(item.get("paragraph_index")) == paragraph_n:
+            return dict(item)
+    return None
+
+
+def _tail_audit_text(text: str, *, limit: int = 160) -> str:
+    clean = str(text or "").strip()
+    if len(clean) <= limit:
+        return clean
+    return clean[-limit:]
+
+
+def resolve_ingest_unit_boundary(
+    *,
+    preview: Mapping[str, object],
+    unit: Mapping[str, object],
+) -> AnchorResolution:
+    """Resolve the live Ingest unit-boundary object into an end cursor."""
+
+    paragraph_n = _clean_text(unit.get("end_paragraph_n"))
+    end_at = _clean_text(unit.get("end_at"))
+    base: dict[str, object] = {
+        "status": "not_found",
+        "method": "unit_boundary",
+        "end_paragraph_n": paragraph_n,
+        "end_at": end_at,
+    }
+    if not paragraph_n:
+        return {**base, "reason": "unit.end_paragraph_n is empty"}
+    if not end_at:
+        return {**base, "reason": "unit.end_at is empty"}
+
+    paragraph = _visible_paragraph_slice(preview, paragraph_n)
+    if paragraph is None:
+        return {**base, "reason": "unit.end_paragraph_n does not match a visible Paragraph n"}
+
+    chapter_id = _int(preview.get("chapter_id"))
+    chapter_ref = _clean_text(preview.get("chapter_ref"))
+    paragraph_index = _int(paragraph.get("paragraph_index"))
+    start_char = _int(paragraph.get("start_char"))
+    end_char = _int(paragraph.get("end_char"))
+    text = str(paragraph.get("text", "") or "")
+
+    if end_at == "paragraph_end":
+        end_cursor = source_cursor(
+            chapter_id=chapter_id,
+            chapter_ref=chapter_ref,
+            paragraph_index=paragraph_index,
+            char_offset=end_char,
+        )
+        return {
+            **base,
+            "status": "matched",
+            "method": "paragraph_end",
+            "end_cursor": end_cursor,
+            "matched_text": _tail_audit_text(text),
+            "matched_text_is_derived": True,
+        }
+
+    matches = _find_all(text, end_at)
+    if len(matches) == 1:
+        original_start = matches[0]
+        original_end = original_start + len(end_at)
+        extended_end, trailing_closers = _extend_flat_offset_over_trailing_closers(text, original_end)
+        end_cursor = source_cursor(
+            chapter_id=chapter_id,
+            chapter_ref=chapter_ref,
+            paragraph_index=paragraph_index,
+            char_offset=start_char + extended_end,
+        )
+        result: dict[str, object] = {
+            **base,
+            "status": "matched",
+            "method": "paragraph_tail_quote",
+            "end_cursor": end_cursor,
+            "matched_text": text[original_start:extended_end],
+            "match_count": 1,
+        }
+        if trailing_closers:
+            result["end_cursor_extension"] = {
+                "kind": "trailing_closing_punctuation",
+                "text": trailing_closers,
+            }
+        return result
+    if len(matches) > 1:
+        return {
+            **base,
+            "status": "ambiguous",
+            "method": "paragraph_tail_quote",
+            "matched_text": end_at,
+            "match_count": len(matches),
+            "reason": "unit.end_at matched more than once inside unit.end_paragraph_n",
+        }
+
+    normalized_status, normalized_count, original_start, original_end = _find_unique_normalized_anchor_match(text, end_at)
+    if normalized_status == "matched":
+        extended_end, trailing_closers = _extend_flat_offset_over_trailing_closers(text, original_end)
+        end_cursor = source_cursor(
+            chapter_id=chapter_id,
+            chapter_ref=chapter_ref,
+            paragraph_index=paragraph_index,
+            char_offset=start_char + extended_end,
+        )
+        result = {
+            **base,
+            "status": "matched",
+            "method": "normalized_paragraph_tail_quote",
+            "end_cursor": end_cursor,
+            "matched_text": text[original_start:extended_end],
+            "match_count": 1,
+            "normalization": "quote_equivalence",
+            "anchor_text": end_at,
+        }
+        if trailing_closers:
+            result["end_cursor_extension"] = {
+                "kind": "trailing_closing_punctuation",
+                "text": trailing_closers,
+            }
+        return result
+    if normalized_status == "ambiguous":
+        return {
+            **base,
+            "status": "ambiguous",
+            "method": "normalized_paragraph_tail_quote",
+            "matched_text": end_at,
+            "match_count": normalized_count,
+            "normalization": "quote_equivalence",
+            "reason": "unit.end_at matched more than once inside unit.end_paragraph_n after quote normalization",
+        }
+    return {
+        **base,
+        "status": "not_found",
+        "method": "paragraph_tail_quote",
+        "matched_text": end_at,
+        "match_count": 0,
+        "reason": "unit.end_at was not found inside unit.end_paragraph_n",
+    }
+
+
 def resolve_end_anchor_text(
     *,
     preview: Mapping[str, object],
