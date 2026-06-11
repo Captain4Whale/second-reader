@@ -107,13 +107,13 @@ Window tail:
 - Only the first boundary is authoritative.
 
 Signals you may use:
+- Lexical cohesion / topic continuity: while the same entities and keywords are still in play, the unit continues; when the topical center clearly shifts (old entities exit, new ones enter), that is a boundary.
+- Argument completeness: claim → evidence → qualification forms one unit; a new claim opens a new unit.
+- Narrative change: a clear change of time, place, character, goal, or cause-effect marks a natural boundary.
+- One main idea: a unit should be roughly what compresses into a single main idea; if it sprawls into several, it is too long.
+- Prediction break: when what comes next can no longer be predicted from the current idea, a new unit has begun.
 
-- Discourse markers such as 因此 / 然而 / 另一方面 / 总之 / 例如 often close a unit or open a new one.
-- Lexical cohesion and topic continuity suggest the same unit is continuing.
-- A clear shift in topic, speaker, time, place, goal, cause-effect, or rhetorical function suggests a boundary.
-- In argument, claim → evidence → qualification may form one unit; a new claim opens a new unit.
-- In narrative, a scene/beat may end when an action, recognition, exchange, or emotional turn lands.
-- A unit should usually compress into one main idea. If it sprawls into several main ideas, it is probably too long.
+
 
 Size and length:
 
