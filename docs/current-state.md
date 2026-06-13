@@ -7,7 +7,7 @@ Update when: the current objective, active tasks, blockers, active jobs, open de
 
 This file is authoritative for durable current status. Do not keep unique active-state information only in `docs/agent-handoff.md`.
 
-Last verified: `2026-06-13T21:10:11+08:00`
+Last verified: `2026-06-13T21:27:54+08:00`
 
 ## Current Objective
 - The `Ingest -> Digest -> Reading Runner settlement` mechanism reframe is implemented; current work is fact alignment, smoke/diagnostic review, and calibration before any formal evaluation promotion.
@@ -71,6 +71,17 @@ Last verified: `2026-06-13T21:10:11+08:00`
     - the current implementation now structurally verifies the live path `Ingest recalls -> runtime Unit Memory retrieval/selection -> Digest ReadingMemory -> Digest output mapping -> settlement -> Unit Memory writeback`
     - report: `docs/implementation/new-reading-mechanism/codex/reports/Ingest-Digest-UnitMemory-Conformance-Smoke-Post-run-Report v0.md`
     - no formal eval was run and no evidence catalog entry was created
+  - active Source Normalization validation:
+    - run id: `source_normalization_v1_1_multibook_validation_20260613`
+    - job id: `bgjob_source_normalization_v1_1_multibook_validation_20260613`
+    - status: running as of `2026-06-13T21:27:54+08:00`
+    - lane: mechanism runtime validation, not formal A/B evaluation
+    - purpose: validate Source Normalization v1.1 on ten books through the live `attentional_v2.parse_book` path without running Ingest/Digest read loops
+    - smoke: `zh/beiying_public_v2.epub` completed with status `completed`, `7` LLM calls all `ok`, and no automatic critical failures
+    - run dir: `reading-companion-backend/state/source_normalization_probe/source_normalization_v1_1_multibook_validation_20260613`
+    - runner: `reading-companion-backend/scripts/run_source_normalization_v1_1_multibook_validation.py`
+    - expected outputs: `status.json`, `results.json`, `aggregate_review.md`, and one per-book `source_normalization_v1_1_review.md`
+    - next check: `cd reading-companion-backend && .venv/bin/python scripts/check_background_jobs.py --job-id bgjob_source_normalization_v1_1_multibook_validation_20260613 --archive-terminal`
   - active diagnostic evaluation:
     - run id: `attentional_v2_ingest_digest_unit_memory_full_diagnostic_20260603_parallel5`
     - job id: `bgjob_ingest_digest_unit_memory_full_diagnostic_20260603_parallel5`
@@ -221,7 +232,7 @@ Last verified: `2026-06-13T21:10:11+08:00`
     - use `docs/implementation/new-reading-mechanism/digest-understanding-response-annotation-design.md` as the implemented reference for the Digest prompt/output semantic refactor
     - use `docs/implementation/new-reading-mechanism/unit-memory-hybrid-retrieval-design.md` as the implemented reference for the Unit Memory storage/index/retrieval trace bottom framework
     - use `docs/implementation/new-reading-mechanism/ingest-recall-and-digest-memory-context-design.md` as the implemented reference for bounded multi-recall Ingest output, Anthropic-style `retrieve_unit_memory` tool loop, multi-recall retrieval aggregation, and Digest `ReadingMemory` packaging
-    - use `docs/implementation/new-reading-mechanism/source-normalization-design.md`, `docs/implementation/new-reading-mechanism/mechanism-pattern-ledger.md` entry 19, `DEC-116`, `DEC-117`, `DEC-118`, `DEC-120`, `DEC-121`, `DEC-122`, and `DEC-123` for the accepted design explanation of why window-partition Ingest improves next-unit selection, why live Ingest records `preview_partition[]` titles as mechanism-private audit metadata, why runtime first moved away from paragraph-count previews, why live preview capacity is token-bounded, why the current v16 token window is larger than the initial live v16 value, why footnotes/noise should be handled by upstream source normalization rather than Ingest skip behavior, and how Source Normalization v1 now applies only to newly parsed books
+    - use `docs/implementation/new-reading-mechanism/source-normalization-design.md`, `docs/implementation/new-reading-mechanism/mechanism-pattern-ledger.md` entry 19, `DEC-116`, `DEC-117`, `DEC-118`, `DEC-120`, `DEC-121`, `DEC-122`, `DEC-123`, and `DEC-124` for the accepted design explanation of why window-partition Ingest improves next-unit selection, why live Ingest records `preview_partition[]` titles as mechanism-private audit metadata, why runtime first moved away from paragraph-count previews, why live preview capacity is token-bounded, why the current v16 token window is larger than the initial live v16 value, why footnotes/noise should be handled by upstream source normalization rather than Ingest skip behavior, how Source Normalization applies only to newly parsed books, and why v1.1 preserves markup context while protecting literary body text
     - use `docs/implementation/new-reading-mechanism/ingest-digest-unit-memory-conformance-goal.md` as the completed structural conformance contract; it treated the mechanism design docs as a locked baseline and permitted fixing implementation/tests/stable docs only
     - use `docs/implementation/new-reading-mechanism/unit-memory-retrieval-repair-validation-plan.md` as the active repair/validation plan for making Unit Memory retrieval actually select relevant prior Understanding and render it into Digest `ReadingMemory`
     - the no-judge hybrid smoke `attentional_v2_unit_memory_hybrid_smoke_nawaer_20260602` completed as a diagnostic only; it should not be treated as formal evidence or evidence-catalog material

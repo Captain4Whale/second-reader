@@ -7,7 +7,7 @@ Update when: task status, priority, blockers, decision refs, job refs, evidence 
 
 This document is the human-readable companion to `docs/tasks/registry.json`.
 
-Last updated: `2026-06-13T21:10:11+08:00`
+Last updated: `2026-06-13T21:27:54+08:00`
 
 ## Status Values
 - `active`
@@ -25,7 +25,7 @@ Last updated: `2026-06-13T21:10:11+08:00`
 - Lane: `mechanism_runtime`
 - Priority: `high`
 - Detail: `docs/current-state.md`
-- Next: Five-window Long Span vNext judged diagnostic remains review_pending in the run ledger, and Unit Memory retrieval repair now has diagnostic proof for both text_only and live hybrid mechanics. Current live Ingest prompt `attentional_v2.ingest.v16` / promptset `attentional_v2-phase6-v66` uses the reviewed bounded-lookahead window-partition selector plus the live `preview_partition[]` audit map: final output returns `unit.end_paragraph_n` / `unit.end_at`, `preview_partition[]`, optional first-unit boundary `reason`, and bounded `memory_recalls[]`; `preview_partition[0]` must match `unit`, while later entries are compact future-source planning/audit metadata only. Runtime now builds the visible Ingest preview with token-bounded, paragraph-aligned assembly: `preview_soft_min_tokens=1600`, `preview_target_max_tokens=3000`, `preview_hard_max_tokens=4200`, `emergency_max_preview_paragraphs=200`, and old char-budget / paragraph-count snapshots ignored as normal stopping rules. Runtime derives `preview_partition_audit[]` in `UnitizeDecision`, `unitization_audit.jsonl`, and compact ingest traces where partition boundaries resolve; later unresolved or non-advancing partitions mark audit partial and do not affect the accepted Digest unit. `retrieve_unit_memory` remains the only live action tool, keeps its prior input schema and recall matching semantics, and does not require `preview_partition[]` during tool preflight. `DEC-116` records why bounded lookahead improves first-unit selection, `DEC-117` records the live preview-partition audit contract, `DEC-118` records the paragraph-count to character-bound repair, `DEC-120` records the live token-bounded preview plus v16 output-discipline change, `DEC-121` records the larger v16 preview-capacity calibration, `DEC-122` records Source Normalization as the upstream design for keeping footnotes/noise out of Ingest without allowing model-emitted skip behavior, `DEC-123` records the live v1 implementation for newly parsed books, and `DEC-124` records the markup-aware v1.1 guardrails for explicit note markup and blockquote/poetry正文 protection. No formal A/B rerun or historical report-package regeneration has been done for v16 / DEC-124. Next action: review Source Normalization v1.1 on additional real EPUBs or add reviewer-facing source-normalization audit reports, or review retrieved-memory usefulness/relevance if staying on Unit Memory.
+- Next: Five-window Long Span vNext judged diagnostic remains review_pending in the run ledger, and Unit Memory retrieval repair now has diagnostic proof for both text_only and live hybrid mechanics. Current live Ingest prompt `attentional_v2.ingest.v16` / promptset `attentional_v2-phase6-v66` uses the reviewed bounded-lookahead window-partition selector plus the live `preview_partition[]` audit map: final output returns `unit.end_paragraph_n` / `unit.end_at`, `preview_partition[]`, optional first-unit boundary `reason`, and bounded `memory_recalls[]`; `preview_partition[0]` must match `unit`, while later entries are compact future-source planning/audit metadata only. Runtime now builds the visible Ingest preview with token-bounded, paragraph-aligned assembly: `preview_soft_min_tokens=1600`, `preview_target_max_tokens=3000`, `preview_hard_max_tokens=4200`, `emergency_max_preview_paragraphs=200`, and old char-budget / paragraph-count snapshots ignored as normal stopping rules. Runtime derives `preview_partition_audit[]` in `UnitizeDecision`, `unitization_audit.jsonl`, and compact ingest traces where partition boundaries resolve; later unresolved or non-advancing partitions mark audit partial and do not affect the accepted Digest unit. `retrieve_unit_memory` remains the only live action tool, keeps its prior input schema and recall matching semantics, and does not require `preview_partition[]` during tool preflight. `DEC-116` records why bounded lookahead improves first-unit selection, `DEC-117` records the live preview-partition audit contract, `DEC-118` records the paragraph-count to character-bound repair, `DEC-120` records the live token-bounded preview plus v16 output-discipline change, `DEC-121` records the larger v16 preview-capacity calibration, `DEC-122` records Source Normalization as the upstream design for keeping footnotes/noise out of Ingest without allowing model-emitted skip behavior, `DEC-123` records the live v1 implementation for newly parsed books, and `DEC-124` records the markup-aware v1.1 guardrails for explicit note markup and blockquote/poetry正文 protection. A 10-book Source Normalization v1.1 validation job is running under `bgjob_source_normalization_v1_1_multibook_validation_20260613` after a successful `zh/beiying_public_v2.epub` smoke; no formal A/B rerun or historical report-package regeneration has been done for v16 / DEC-124. Next action: refresh that job, inspect `aggregate_review.md`, and then decide whether additional source-normalization audit reports or broader rollout gates are needed.
 - Jobs:
   - `bgjob_ingest_digest_unit_memory_full_diagnostic_20260603_parallel5`
   - `bgjob_unit_memory_text_only_smoke_value_20260606`
@@ -42,6 +42,7 @@ Last updated: `2026-06-13T21:10:11+08:00`
   - `bgjob_unit_memory_text_only_smoke_xidaduo_post_r15_mature_20260606`
   - `bgjob_unit_memory_text_only_smoke_xidaduo_post_ingest_v6_20260606`
   - `bgjob_ingest_live_v16_token_preview_larger_to_old_unit13_20260613`
+  - `bgjob_source_normalization_v1_1_multibook_validation_20260613`
 - Evidence:
   - `DEC-103`
   - `DEC-104`
@@ -76,6 +77,7 @@ Last updated: `2026-06-13T21:10:11+08:00`
   - `reading-companion-backend/src/reading_runtime/source_normalization.py`
   - `reading-companion-backend/src/reading_core/book_document.py`
   - `reading-companion-backend/src/iterator_reader/parse.py`
+  - `reading-companion-backend/scripts/run_source_normalization_v1_1_multibook_validation.py`
   - `reading-companion-backend/tests/test_iterator_parse.py`
   - `reading-companion-backend/tests/test_attentional_v2_source_spans.py`
   - `docs/implementation/new-reading-mechanism/mechanism-pattern-ledger.md`
