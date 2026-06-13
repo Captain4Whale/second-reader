@@ -9,9 +9,10 @@ Memory retrieval policy.
 Update when: a new Ingest next-unit optimization point is accepted for design,
 implemented, rejected, or superseded.
 
-Status: implemented design note. This document is organized by optimization
-point so one accepted point can be reviewed or extended without reopening every
-later idea.
+Status: living design note. This document is organized by optimization point so
+one accepted point can be reviewed or extended without reopening every later
+idea. Individual points below may be candidate, implemented, rejected, or
+superseded.
 
 Current live baseline:
 - Ingest prompt: `attentional_v2.ingest.v15`
@@ -544,3 +545,197 @@ Targeted probe:
 
 Implementation should not regenerate or edit historical A/B report packages;
 new probe artifacts should be written as a new run or scratch analysis package.
+
+## Optimization Point 3: Token-Bounded Preview Capacity
+
+### Status
+
+Candidate design as of `2026-06-13`. Not yet implemented in live runtime.
+
+This point supersedes the live `7000` source-character hard budget as the
+preferred next preview-capacity policy, but it does not change the authoritative
+runtime coordinate system. Ingest should still expose paragraph-local
+coordinates and runtime should still accept boundaries as paragraph-char
+`SourceSpan` / `source_span_id`.
+
+### Source Insight
+
+The focused Siddhartha probe after Optimization Point 2 showed that the old
+`12`-paragraph cap had been overcorrected in the opposite direction.
+
+The character-bounded preview solved the original `Unit 008` through `Unit 013`
+over-splitting problem: the father-son confrontation was visible as one larger
+scene arc instead of many short dialogue beats. However, every reviewed preview
+then ran close to the `7000` character hard cap:
+
+- preview source characters: `6884` to `6984`
+- preview paragraphs: `81` to `100`
+- preview end reason: `hard_max` for every sampled unit
+- `o200k_base` estimate for raw preview text: roughly `6300` tokens
+- `o200k_base` estimate with Paragraph XML wrappers: roughly `8200-8600`
+  tokens
+- `cl100k_base` estimate for raw preview text: roughly `9100-9300` tokens
+- `cl100k_base` estimate with Paragraph XML wrappers: roughly `10900-11400`
+  tokens
+
+That is much larger than the intended Ingest task. The model is not merely
+checking whether the next paragraph continues the current unit; with v15 it also
+has to form and output a whole-preview `preview_partition[]` audit map. A
+`7000`-character Chinese preview therefore becomes a heavy multi-page planning
+task rather than a bounded lookahead.
+
+The lesson is:
+
+```text
+Model context capacity is not the right default preview capacity.
+Ingest needs enough lookahead to see the first unit and the next-unit turn,
+not a maximal scan of many future pages.
+```
+
+### Design Goal
+
+Use token budget as the primary preview capacity rule while preserving
+paragraph-char coordinates as the precise source boundary contract.
+
+Principle:
+
+```text
+Tokens decide how far Ingest may look.
+Paragraph-char coordinates decide where the accepted unit ends.
+```
+
+This keeps the preview budget closer to the model's actual workload across
+Chinese, English, and mixed-language sources, while avoiding a migration away
+from stable source coordinates.
+
+### Proposed Runtime Policy
+
+Build the Ingest preview by adding visible paragraph slices in source order from
+the current cursor, as today. Before adding the next complete paragraph slice,
+estimate the token count of the candidate preview.
+
+Recommended first live values:
+
+```text
+preview_soft_min_tokens = 1000
+preview_target_max_tokens = 1800
+preview_hard_max_tokens = 2600
+emergency_max_preview_paragraphs = 200
+```
+
+The three token values have distinct roles:
+
+- `preview_soft_min_tokens`: minimum useful lookahead. Before this floor is
+  reached, runtime should keep adding paragraphs when doing so stays within the
+  hard max.
+- `preview_target_max_tokens`: normal stopping line. After the soft minimum is
+  satisfied, runtime should stop before adding a paragraph that would exceed the
+  target.
+- `preview_hard_max_tokens`: absolute safety line. Runtime should not include a
+  candidate preview beyond this value. If the current paragraph remainder alone
+  exceeds this value, include only a prefix and mark the preview truncated.
+
+Stopping order:
+
+1. If the source reaches the chapter or visible corpus tail, stop with
+   `preview_end_reason = "source_tail"`.
+2. If `emergency_max_preview_paragraphs` would be exceeded, stop with
+   `preview_end_reason = "emergency_paragraph_guard"`.
+3. If adding the next complete paragraph would exceed
+   `preview_hard_max_tokens`, stop with
+   `preview_end_reason = "hard_max"`.
+4. If the current preview is still below `preview_soft_min_tokens`, keep adding
+   paragraphs as long as the hard max is respected, even if the candidate would
+   exceed `preview_target_max_tokens`.
+5. If the current preview has reached `preview_soft_min_tokens`, stop before
+   adding a paragraph that would exceed `preview_target_max_tokens`; use
+   `preview_end_reason = "target_max"`.
+6. Otherwise, add the paragraph and continue.
+
+Examples with `1000 / 1800 / 2600`:
+
+```text
+current=700, candidate=1200  -> add; the preview is still below soft min
+current=900, candidate=1900  -> add; soft min takes priority over target
+current=1300, candidate=1700 -> add; candidate stays below target
+current=1600, candidate=1950 -> stop at target_max
+current=900, candidate=2800  -> stop at hard_max
+```
+
+This should make normal previews land around `1000-1800` estimated tokens, with
+occasional larger previews only when needed to satisfy the soft minimum or to
+handle coarse paragraph granularity.
+
+### Token Estimation
+
+The implementation should use a deterministic local estimator rather than
+provider-side billing data, because preview construction happens before an LLM
+request is sent.
+
+Preferred order:
+
+1. Use a known local tokenizer for the selected model family if one is already
+   available and stable in the backend runtime.
+2. Otherwise use a conservative local approximation, such as a bundled
+   `tiktoken` encoding, and record the estimator name in private preview
+   metadata.
+3. Keep `char_count`, `paragraph_count`, and `preview_end_reason`; add
+   `estimated_token_count` and `preview_token_estimator`.
+
+The estimator should count the model-facing preview shape, not only the raw
+paragraph text, because `CurrentView / Content` includes Paragraph wrappers and
+attributes. If implementation cost makes exact prompt-fragment counting awkward,
+the first version may count raw preview text plus a conservative per-paragraph
+overhead, but the metadata must name that approximation.
+
+### Prompt / Contract Interaction
+
+No Ingest prompt change is required for this capacity adjustment.
+
+The model-facing contract remains:
+
+- `unit.end_paragraph_n`
+- `unit.end_at`
+- `preview_partition[]`
+- `memory_recalls[]`
+- optional normalized `reason`
+
+Unit Memory retrieval remains based on the selected first unit and required
+recalls, not later preview partitions.
+
+### Non-Goals
+
+- Do not change `unit` or `preview_partition[]` schema in this slice.
+- Do not change Digest unit boundaries directly.
+- Do not create memory entries, Digest units, or cursor movement from later
+  preview partitions.
+- Do not expose preview-token policy through a frontend/public API.
+- Do not rerun or edit historical A/B report packages as part of the runtime
+  change.
+
+### Test / Probe Plan
+
+Runtime tests:
+
+- short dialogue paragraphs continue past a small paragraph count when still
+  below `preview_soft_min_tokens`
+- normal prose stops around `preview_target_max_tokens` after the soft minimum
+  has been satisfied
+- adding a next paragraph that would exceed `preview_hard_max_tokens` stops with
+  `preview_end_reason = "hard_max"`
+- a current paragraph remainder longer than `preview_hard_max_tokens` truncates
+  inside the current paragraph and preserves paragraph-char coordinates
+- old `max_lookahead_paragraphs` snapshots still do not reintroduce the old
+  short-dialogue bug
+- preview metadata includes `estimated_token_count` and
+  `preview_token_estimator`
+
+Targeted probes:
+
+- rerun the Siddhartha `Unit 008` region to confirm the father-son scene still
+  stays visible enough to avoid the old over-splitting
+- compare opening-window behavior against the current `7000`-character preview,
+  because the latest focused report suggested that the very long preview may
+  encourage overly global first-unit partitioning near the chapter opening
+- inspect prompt token usage and `preview_partition[]` length to confirm the
+  model's planning burden shrinks materially
