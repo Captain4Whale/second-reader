@@ -703,6 +703,21 @@ The model-facing contract remains:
 Unit Memory retrieval remains based on the selected first unit and required
 recalls, not later preview partitions.
 
+Output burden should stay proportional to Ingest's job:
+
+- `reason` should explain only the committed first unit boundary.
+- Later `preview_partition[]` entries should remain short audit/planning
+  records: title, boundary, and status only.
+- Do not ask for rationale, summary, or interpretive commentary for
+  non-first partitions.
+- Do not let later partition titles become miniature Digest outputs. They
+  should name the visible semantic move, not explain or evaluate it.
+
+This is not a schema change. It is a prompt/output-discipline constraint to
+prevent token-bounded previews from regrowing through verbose reasoning. If a
+future prompt edit is needed, prefer tightening this wording before increasing
+runtime `max_output_tokens`.
+
 ### Non-Goals
 
 - Do not change `unit` or `preview_partition[]` schema in this slice.
@@ -739,3 +754,5 @@ Targeted probes:
   encourage overly global first-unit partitioning near the chapter opening
 - inspect prompt token usage and `preview_partition[]` length to confirm the
   model's planning burden shrinks materially
+- inspect final output size to confirm later partitions stay as short titles and
+  boundaries rather than growing into rationales for non-first units
