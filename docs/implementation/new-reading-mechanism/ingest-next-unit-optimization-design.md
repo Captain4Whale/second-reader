@@ -373,3 +373,160 @@ Deferred checks:
 - Formal A/B rerun of v15 against v14.
 - Any frontend/public API presentation of `preview_partition[]`.
 - Dedicated historical-report regeneration for the June 2026 rolling A/B runs.
+
+## Optimization Point 2: Character-Bounded Preview Construction
+
+### Status
+
+Candidate design point accepted for the next implementation slice. Not yet
+implemented in live runtime.
+
+This point should be implemented and probed before changing the Ingest prompt
+again, so the next review can isolate whether over-splitting came from an
+under-sized preview window or from selector behavior.
+
+### Source Insight
+
+While reviewing
+`reading-companion-backend/eval/runs/attentional_v2/ingest_select_next_unit_rolling_ab_probe_20260610/analysis/rolling_select_next_unit_ab/preview_window_review/segments/xidaduo_private_zh__segment_1/window_partition_draft_preview_units.md`,
+the `window_partition_draft` output over-split the father-son confrontation in
+`Unit 008` through `Unit 011`.
+
+The likely complete reading movement is one scene arc:
+
+- Siddhartha asks his father to leave with the Samanas.
+- The father refuses and leaves in anger.
+- Siddhartha remains standing through the night.
+- The father repeatedly observes him and tests his resolve.
+- The father finally recognizes the decision and lets him go.
+
+The model instead cut local beats such as "one hour later", "the last hour
+before dawn", and separate dialogue rounds as separate units. The strongest
+runtime cause was that the preview horizon was too short for dialogue-shaped
+paragraphs:
+
+- current default preview values are `preview_soft_min_chars=3000`,
+  `preview_hard_max_chars=7000`, and `max_lookahead_paragraphs=12`
+- in dialogue-heavy text, thirteen paragraphs can be only a few hundred source
+  characters
+- one reviewed preview stopped around `P36-P48` at roughly 186 characters,
+  before the decisive concession around `P49-P53`
+- `truncated=false` was therefore not enough evidence that the semantic horizon
+  was adequate; it only meant the hard character cap had not been reached
+
+The paragraph-count cap made the preview look structurally full while leaving
+the scene semantically incomplete.
+
+### Design Goal
+
+Make source-character budget the primary preview capacity rule while keeping
+paragraphs as the alignment and coordinate unit.
+
+Principle:
+
+```text
+Paragraphs are preview assembly boundaries, not the main preview budget.
+The preview should stop because the source-character budget is full, not
+because a dialogue or poetry passage used many short paragraphs.
+```
+
+### Proposed Runtime Policy
+
+Build the Ingest preview by adding visible paragraph slices in source order from
+the current cursor.
+
+Stop when one of these conditions is true:
+
+1. Adding the next complete paragraph slice would exceed
+   `preview_hard_max_chars`.
+2. The source reaches the chapter or visible corpus tail.
+3. An emergency paragraph guard is reached in pathological short-line material.
+
+Recommended first live values:
+
+```text
+preview_hard_max_chars = 7000
+max_lookahead_paragraphs = disabled as a normal stopping rule
+emergency_max_preview_paragraphs = 200
+```
+
+The first implementation should keep the current `preview_hard_max_chars=7000`
+unless a focused probe proves it is too small. The reviewed failure did not come
+from a 7000-character ceiling; it came from stopping after a small number of
+short paragraphs long before the character ceiling mattered.
+
+`preview_soft_min_chars` may remain as a diagnostic or target value, but it
+should not be paired with a low paragraph cap that can stop the preview below
+the soft minimum. If the implementation still keeps a soft minimum, the preview
+should normally continue until at least that many source characters are visible
+or the source tail is reached.
+
+If the current visible paragraph slice alone is longer than the hard character
+budget, keep the existing oversized-paragraph fallback behavior rather than
+inventing a new model-facing coordinate contract in this slice. Any truncation
+inside a paragraph must remain explicit in preview metadata.
+
+### Non-Goals
+
+- Do not change the Ingest prompt in the same slice unless the targeted probe
+  shows over-splitting persists after the preview horizon is repaired.
+- Do not make Ingest digest future text; the preview remains lookahead for
+  selecting the next unit only.
+- Do not change `unit.end_paragraph_n` / `unit.end_at` or
+  `preview_partition[]` output semantics.
+- Do not change Unit Memory retrieval semantics, recall validation, or
+  `retrieve_unit_memory` behavior.
+- Do not expose any preview-window policy as a frontend/public API contract.
+
+### Prompt Interaction
+
+The first follow-up should change only preview construction and run a targeted
+probe around the Siddhartha father-son scene.
+
+Expected diagnostic:
+
+- If the longer character-bounded preview causes Ingest to group the scene arc
+  naturally, the primary defect was preview horizon.
+- If Ingest still cuts each dialogue round after seeing the full concession, add
+  a separate prompt optimization for dialogue and scene-arc boundaries.
+
+The likely later prompt rule, if needed, is:
+
+```text
+In dialogue-heavy passages, do not treat every reply, pause, or small time
+advance as a complete reading unit. Repeated challenge-answer turns, silent
+tests, and delayed concessions may belong to one scene arc. Prefer a boundary
+after the decision, concession, action transfer, or thematic turn has landed.
+```
+
+That prompt change should remain separate so its effect can be measured against
+the preview-only repair.
+
+### Test / Probe Plan
+
+Runtime tests:
+
+- many short dialogue paragraphs continue beyond the old 12-paragraph lookahead
+  when still below `preview_hard_max_chars`
+- poetry or short-line text can include many short paragraphs without early
+  semantic under-windowing
+- ordinary prose still stops before adding a paragraph that would exceed
+  `preview_hard_max_chars`
+- preview metadata clearly reports whether the preview ended at source tail,
+  character budget, or emergency paragraph guard
+- existing paragraph-number and paragraph-local boundary resolution tests remain
+  valid
+
+Targeted probe:
+
+- rerun a small Ingest-only probe for `xidaduo_private_zh__segment_1` around the
+  original `Unit 008` cursor
+- verify the preview covers the father-son concession area before asking the
+  model to select the next unit
+- compare whether the accepted unit shifts from local dialogue beats toward the
+  full father-son confrontation / resolution arc
+- inspect `preview_partition[]` titles to confirm whether the model saw the
+  scene as one arc or still split it by local turns
+
+Implementation should not regenerate or edit historical A/B report packages;
+new probe artifacts should be written as a new run or scratch analysis package.
