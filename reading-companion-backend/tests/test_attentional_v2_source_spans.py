@@ -27,7 +27,7 @@ def _chapter() -> dict[str, object]:
     }
 
 
-def test_default_preview_uses_character_budget_not_paragraph_count() -> None:
+def test_default_preview_uses_token_budget_not_paragraph_count() -> None:
     chapter = {
         "id": 1,
         "title": "Chapter 1",
@@ -47,14 +47,16 @@ def test_default_preview_uses_character_budget_not_paragraph_count() -> None:
     assert preview["preview_end_cursor"]["paragraph_index"] == 19
     assert preview["truncated"] is False
     assert preview["preview_end_reason"] == "source_tail"
+    assert preview["estimated_token_count"] > 0
+    assert preview["preview_token_estimator"] == "tiktoken_o200k_base_v1_paragraph_xml_v1"
 
 
-def test_default_preview_stops_before_next_paragraph_would_exceed_hard_max() -> None:
+def test_preview_stops_at_target_max_after_soft_min_is_satisfied() -> None:
     chapter = {
         "id": 1,
         "title": "Chapter 1",
         "paragraphs": [
-            {"paragraph_index": index, "text": f"{index}".ljust(500, "x"), "text_role": "body"}
+            {"paragraph_index": index, "text": "汉" * 50, "text_role": "body"}
             for index in range(1, 20)
         ],
     }
@@ -62,26 +64,70 @@ def test_default_preview_stops_before_next_paragraph_would_exceed_hard_max() -> 
     preview = build_paragraph_offset_preview(
         chapter=chapter,
         current_cursor={"chapter_id": 1, "chapter_ref": "Chapter 1", "paragraph_index": 1, "char_offset": 0},
+        reader_policy={
+            "unitize": {
+                "preview_soft_min_tokens": 80,
+                "preview_target_max_tokens": 140,
+                "preview_hard_max_tokens": 220,
+            }
+        },
     )
 
-    assert preview["paragraph_count"] == 14
-    assert preview["char_count"] == 7000
+    assert preview["paragraph_count"] == 1
+    assert preview["estimated_token_count"] >= 80
+    assert preview["estimated_token_count"] <= 140
     assert preview["preview_end_cursor"] == {
         "chapter_id": 1,
         "chapter_ref": "Chapter 1",
-        "paragraph_index": 14,
-        "char_offset": 500,
+        "paragraph_index": 1,
+        "char_offset": 50,
     }
     assert preview["truncated"] is False
-    assert preview["preview_end_reason"] == "hard_max"
+    assert preview["preview_end_reason"] == "target_max"
 
 
-def test_default_preview_truncates_at_larger_hard_max() -> None:
+def test_preview_stops_at_hard_max_before_candidate_paragraph_would_exceed_it() -> None:
     chapter = {
         "id": 1,
         "title": "Chapter 1",
         "paragraphs": [
-            {"paragraph_index": 1, "text": "x" * 8000, "text_role": "body"},
+            {"paragraph_index": index, "text": "汉" * 80, "text_role": "body"}
+            for index in range(1, 5)
+        ],
+    }
+
+    preview = build_paragraph_offset_preview(
+        chapter=chapter,
+        current_cursor={"chapter_id": 1, "chapter_ref": "Chapter 1", "paragraph_index": 1, "char_offset": 0},
+        reader_policy={
+            "unitize": {
+                "preview_soft_min_tokens": 80,
+                "preview_target_max_tokens": 140,
+                "preview_hard_max_tokens": 220,
+            }
+        },
+    )
+
+    assert preview["paragraph_count"] == 1
+    assert preview["char_count"] == 80
+    assert preview["source_text"] == "汉" * 80
+    assert preview["preview_end_cursor"] == {
+        "chapter_id": 1,
+        "chapter_ref": "Chapter 1",
+        "paragraph_index": 1,
+        "char_offset": 80,
+    }
+    assert preview["truncated"] is False
+    assert preview["preview_end_reason"] == "hard_max"
+    assert preview["estimated_token_count"] <= 220
+
+
+def test_preview_truncates_current_paragraph_at_hard_token_max() -> None:
+    chapter = {
+        "id": 1,
+        "title": "Chapter 1",
+        "paragraphs": [
+            {"paragraph_index": 1, "text": "汉" * 8000, "text_role": "body"},
             {"paragraph_index": 2, "text": "Next paragraph.", "text_role": "body"},
         ],
     }
@@ -92,24 +138,25 @@ def test_default_preview_truncates_at_larger_hard_max() -> None:
     )
 
     assert preview["paragraph_count"] == 1
-    assert preview["char_count"] == 7000
-    assert preview["source_text"] == "x" * 7000
+    assert 0 < preview["char_count"] < 8000
+    assert preview["source_text"] == "汉" * int(preview["char_count"])
     assert preview["preview_end_cursor"] == {
         "chapter_id": 1,
         "chapter_ref": "Chapter 1",
         "paragraph_index": 1,
-        "char_offset": 7000,
+        "char_offset": preview["char_count"],
     }
     assert preview["truncated"] is True
     assert preview["preview_end_reason"] == "hard_max"
+    assert preview["estimated_token_count"] <= 2600
 
 
-def test_preview_ignores_deprecated_max_lookahead_when_under_hard_max() -> None:
+def test_preview_ignores_deprecated_max_lookahead_and_char_limits() -> None:
     chapter = _chapter()
     preview = build_paragraph_offset_preview(
         chapter=chapter,
         current_cursor={"chapter_id": 1, "chapter_ref": "Chapter 1", "paragraph_index": 1, "char_offset": 0},
-        reader_policy={"unitize": {"preview_soft_min_chars": 20, "preview_hard_max_chars": 200, "max_lookahead_paragraphs": 1}},
+        reader_policy={"unitize": {"preview_soft_min_chars": 1, "preview_hard_max_chars": 10, "max_lookahead_paragraphs": 1}},
     )
 
     assert preview["paragraph_count"] == 3
@@ -132,18 +179,53 @@ def test_preview_appends_following_paragraphs_when_current_remainder_is_short() 
     assert preview["preview_end_reason"] == "source_tail"
 
 
-def test_preview_truncates_at_hard_max_with_end_exclusive_cursor() -> None:
+def test_preview_soft_min_takes_priority_over_target_max() -> None:
+    chapter = {
+        "id": 1,
+        "title": "Chapter 1",
+        "paragraphs": [
+            {"paragraph_index": index, "text": "汉" * 30, "text_role": "body"}
+            for index in range(1, 10)
+        ],
+    }
+    preview = build_paragraph_offset_preview(
+        chapter=chapter,
+        current_cursor=first_cursor_for_chapter(chapter),
+        reader_policy={
+            "unitize": {
+                "preview_soft_min_tokens": 100,
+                "preview_target_max_tokens": 120,
+                "preview_hard_max_tokens": 220,
+            }
+        },
+    )
+
+    assert preview["paragraph_count"] == 2
+    assert preview["estimated_token_count"] > 120
+    assert preview["estimated_token_count"] <= 220
+    assert preview["truncated"] is False
+    assert preview["preview_end_reason"] == "target_max"
+
+
+def test_preview_truncates_at_hard_token_max_with_end_exclusive_cursor() -> None:
     chapter = _chapter()
     preview = build_paragraph_offset_preview(
         chapter=chapter,
         current_cursor=first_cursor_for_chapter(chapter),
-        reader_policy={"unitize": {"preview_soft_min_chars": 1, "preview_hard_max_chars": 10, "max_lookahead_paragraphs": 4}},
+        reader_policy={
+            "unitize": {
+                "preview_soft_min_tokens": 1,
+                "preview_target_max_tokens": 5,
+                "preview_hard_max_tokens": 40,
+            }
+        },
     )
 
-    assert preview["source_text"] == "Alpha Alph"
-    assert preview["preview_end_cursor"]["char_offset"] == 10
+    assert preview["source_text"]
+    assert preview["preview_end_cursor"]["char_offset"] < len("Alpha " * 20)
     assert preview["truncated"] is True
     assert preview["preview_end_reason"] == "hard_max"
+    assert preview["estimated_token_count"] <= 40
 
 
 def test_preview_emergency_paragraph_guard_stops_pathological_short_lines() -> None:
@@ -534,6 +616,8 @@ def test_unit_span_ledger_records_core_runtime_fact(tmp_path) -> None:
     assert record["end_cursor"] == span["end_cursor"]
     assert record["source_span_id"].startswith("src:c1:p2@0-p2@")
     assert record["preview_end_reason"] == "source_tail"
+    assert record["preview_estimated_token_count"] > 0
+    assert record["preview_token_estimator"] == "tiktoken_o200k_base_v1_paragraph_xml_v1"
 
 
 def test_source_ref_from_unit_resolves_single_paragraph_quote() -> None:

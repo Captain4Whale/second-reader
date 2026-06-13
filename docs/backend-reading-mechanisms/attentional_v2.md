@@ -270,10 +270,11 @@ Use `docs/backend-reading-mechanism.md` for shared platform boundaries. Use `doc
     - always starts at the exact current cursor
     - includes at least the current paragraph remainder
     - appends following paragraphs to form a larger reading lookahead window for boundary selection
-    - treats source-character budget, not paragraph count, as the normal preview capacity rule
+    - treats estimated model-facing token budget, not paragraph count or source-character count, as the normal preview capacity rule
     - does not cross chapter boundaries
-    - defaults live in `reader_policy.unitize`: `preview_soft_min_chars = 3000`, `preview_hard_max_chars = 7000`, `emergency_max_preview_paragraphs = 200`
-    - old `max_lookahead_paragraphs` policy snapshots are deprecated and ignored as a normal stopping rule; the emergency paragraph guard exists only for pathological short-line material
+    - defaults live in `reader_policy.unitize`: `preview_soft_min_tokens = 1000`, `preview_target_max_tokens = 1800`, `preview_hard_max_tokens = 2600`, `emergency_max_preview_paragraphs = 200`
+    - old `preview_*_chars` and `max_lookahead_paragraphs` policy snapshots are deprecated and ignored as normal stopping rules; the emergency paragraph guard exists only for pathological short-line material
+    - preview metadata carries `estimated_token_count` and `preview_token_estimator` alongside existing char/paragraph counts and `preview_end_reason`
   - Ingest does not return raw offsets. It returns the visible `Paragraph n` where the first unit ends and either `paragraph_end` or a paragraph-local exact tail quote.
   - Parse-time `text_role` is still available during this step, but only as an inherited block-level weak cue rather than a sentence-level truth packet.
   - Heading handling is now deliberately conservative:
@@ -449,7 +450,7 @@ Use `docs/backend-reading-mechanism.md` for shared platform boundaries. Use `doc
   - Ingest reuses the same reader role and supplies its own `Instruction` fragment.
   - Ingest XML context uses top-level `ReaderRole`, `Instruction`, `BookInfo`, `CurrentView`, an empty self-closing `RetrievalSurface`, and `OutputContract`.
   - The current Ingest output contract carries `unit.end_paragraph_n`, `unit.end_at`, `preview_partition[]`, optional boundary-rationale `reason`, and bounded `memory_recalls[]`; transport is selected by the shared LLM gateway from the active profile.
-  - Ingest prompt version `attentional_v2.ingest.v15` / promptset `attentional_v2-phase6-v65` uses the reviewed window-partition selector plus a preview-partition audit map: it asks Ingest to view the visible lookahead as consecutive coherent reading units, title each provisional unit, commit only the first unit, treat paragraph boundaries as cues rather than defaults, allow paragraph-internal or multi-paragraph units when the semantic boundary calls for them, and express boundaries through a visible paragraph `n` plus `paragraph_end` or a paragraph-local exact tail quote. Recall wording and Unit Memory retrieval semantics remain the established live contract.
+  - Ingest prompt version `attentional_v2.ingest.v16` / promptset `attentional_v2-phase6-v66` uses the reviewed window-partition selector plus a preview-partition audit map: it asks Ingest to view the visible lookahead as consecutive coherent reading units, title each provisional unit, commit only the first unit, treat paragraph boundaries as cues rather than defaults, allow paragraph-internal or multi-paragraph units when the semantic boundary calls for them, and express boundaries through a visible paragraph `n` plus `paragraph_end` or a paragraph-local exact tail quote. Only the committed first unit receives the optional top-level boundary `reason`; later preview partitions remain compact audit entries. Recall wording and Unit Memory retrieval semantics remain the established live contract.
   - `preview_partition[0]` must exactly match `unit`; later `preview_partition[]` entries are mechanism-private planning/audit metadata only. Runtime derives `preview_partition_audit[]` with paragraph-char `source_span` / `source_span_id` where boundaries resolve, and later unresolved or non-advancing partitions mark the audit as partial without changing the accepted Digest unit.
   - The same-language / basis recall contract is enforced in code as well as in prompt text: final-output validation receives the current source text, and `retrieve_unit_memory` action-tool preflight rejects clear cross-language model-side recalls or non-`selected_source_unit` basis values before retrieval execution.
   - If Ingest calls `retrieve_unit_memory`, final-output validation requires the submitted `memory_recalls[]` to match the action-tool recalls, so runtime does not retrieve on one recall set while auditing or settling another.
@@ -498,7 +499,7 @@ Use `docs/backend-reading-mechanism.md` for shared platform boundaries. Use `doc
   - It previews from the exact paragraph-offset cursor, not from a precomputed sentence index.
   - It always includes the current paragraph remainder and may append following paragraphs to provide a bounded reading lookahead window for a natural unit-boundary decision.
   - The semantic choice of where to stop inside that preview is prompt-led through the returned `unit.end_paragraph_n` / `unit.end_at` boundary.
-  - Runtime imposes deterministic guardrails through `reader_policy.unitize.preview_soft_min_chars`, `preview_hard_max_chars`, and `emergency_max_preview_paragraphs`; normal preview stopping is character-bounded and paragraph-aligned rather than capped by a small lookahead paragraph count.
+  - Runtime imposes deterministic guardrails through `reader_policy.unitize.preview_soft_min_tokens`, `preview_target_max_tokens`, `preview_hard_max_tokens`, and `emergency_max_preview_paragraphs`; normal preview stopping is token-bounded and paragraph-aligned rather than capped by a small lookahead paragraph count or the interim 7000-character budget.
 - Search posture is separate from prior-knowledge posture.
   - Version-one search states are:
     - `no_search`

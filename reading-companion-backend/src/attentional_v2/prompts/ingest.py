@@ -15,9 +15,9 @@ from .reader_role import READER_ROLE_FRAGMENT
 from .types import PromptDefinition
 
 
-INGEST_PROMPT_VERSION = "attentional_v2.ingest.v15"
-INGEST_XML_PROMPT_ASSEMBLY_SPEC_ID = "attentional_v2.ingest.xml.v15"
-INGEST_XML_PROMPTSET_VERSION = "attentional_v2-phase6-v65"
+INGEST_PROMPT_VERSION = "attentional_v2.ingest.v16"
+INGEST_XML_PROMPT_ASSEMBLY_SPEC_ID = "attentional_v2.ingest.xml.v16"
+INGEST_XML_PROMPTSET_VERSION = "attentional_v2-phase6-v66"
 INGEST_TRANSPORT_SYSTEM_PROMPT = "Follow the structured Ingest prompt in the user message. Use the required submit_ingest_result tool as the final output channel."
 
 
@@ -33,7 +33,9 @@ You are shown a bounded forward reading lookahead window from the current readin
 2. Commit only the FIRST mapped unit as the next source unit Digest should read closely.
 3. After committing that first unit, briefly name any earlier reading that this unit makes you want to remember before Digest reads it closely.
 
-The rest of the window is lookahead context only. Its provisional map helps you place the first boundary and lets reviewers audit what you saw; it is not itself being read by Digest yet.""",
+The rest of the window is lookahead context only. Its provisional map helps you place the first boundary and lets reviewers audit what you saw; it is not itself being read by Digest yet.
+
+The later provisional units should stay lightweight: title, boundary, and status only. Only the committed first unit gets a boundary rationale.""",
 )
 
 
@@ -48,7 +50,7 @@ INGEST_CONTEXT_USE_GUIDE_FRAGMENT = PromptFragment(
 
 INGEST_SELECT_NEXT_UNIT_FRAGMENT = PromptFragment(
     fragment_id="ingest.select_next_unit",
-    text="""Partition the forward window into coherent reading units, give each provisional unit a short title, then commit the first one. The first unit starts at the current reading cursor.
+    text="""Partition the forward window into coherent reading units, give each provisional unit a compact title, then commit the first one. The first unit starts at the current reading cursor.
 
 What a semantic unit is — a continuous span of source text that satisfies all of:
 
@@ -61,8 +63,9 @@ How to choose the boundary:
 
 - Consider the whole visible window first. Do not commit a boundary the moment you reach the first plausible stopping point.
 - Conceptually divide the window into consecutive reading units in order, with no gaps. Use that whole-window view to place the first boundary well and to expose your preview map for audit.
-- Give each provisional unit a short local-function title that names what that unit is doing in the reading. The title is not a summary and not a Digest result.
+- Give each provisional unit a compact local-function title that names what that unit is doing in the reading. The title is not a summary, not commentary, and not a Digest result.
 - Commit only the FIRST unit. Anything after it is provisional lookahead context.
+- Do not write reasons, explanations, summaries, or interpretive comments for later provisional units. Later units exist only to expose the audit map that helped you choose the first boundary.
 - The first unit always starts at the current source cursor in `CurrentView / Position`. Do not invent or output a start position.
 - A boundary falls on a sentence edge and never inside a sentence.
 - A boundary may fall inside a paragraph when one long paragraph contains more than one complete move.
@@ -228,11 +231,12 @@ Rules:
 - The exact tail quote must be copied character-for-character from `end_paragraph_n` and must uniquely identify the unit end within that paragraph.
 - `preview_partition` must be a non-empty ordered map of the visible preview from the current cursor through the visible tail.
 - `preview_partition[0]` must exactly match `unit.end_paragraph_n` and `unit.end_at`.
-- Each `preview_partition` title should be brief and should name the local reading function of that provisional unit.
+- Each `preview_partition` title should be brief and should name the local reading function of that provisional unit; it must not summarize, evaluate, or explain that unit.
 - Each `preview_partition` entry uses the same `end_paragraph_n` / `end_at` boundary syntax as `unit`.
 - Set `status` to `"complete"` when the provisional unit closes inside the visible preview.
 - Set `status` to `"open_tail"` only for the final partition when the visible preview ends in the middle of a larger move.
-- `reason` explains why the unit starting at the current cursor should end at this boundary. It is a boundary rationale, not a summary and not a second source span.
+- `reason` explains why the committed first unit, also represented by `preview_partition[0]`, should end at `unit.end_paragraph_n` / `unit.end_at`. It is a boundary rationale for the first unit only, not a summary and not a second source span.
+- Do not include rationale, summary, commentary, explanation, or extra fields inside any `preview_partition` item. Later partition entries must stay to `title`, `end_paragraph_n`, `end_at`, and `status`.
 - `memory_recalls` contains zero to three entries. Use an empty list if the selected unit does not call for prior memory.
 - Every recall `basis` must be exactly `"selected_source_unit"`.
 - Do not output markdown, commentary, or extra fields.""",
@@ -412,7 +416,7 @@ def build_ingest_prompt_assembly_spec(
             "current_view_position",
             "current_view_content",
         ),
-        output_contract="ingest_unit_boundary_preview_partition_memory_recalls_json_v1",
+        output_contract="ingest_unit_boundary_preview_partition_memory_recalls_json_v2",
     )
 
 
@@ -449,5 +453,5 @@ INGEST_PROMPT = PromptDefinition(
     system_prompt=INGEST_TRANSPORT_SYSTEM_PROMPT,
     user_prompt_template="<IngestPrompt assembled by render_ingest_prompt_xml>",
     required_inputs=("book_identity", "current_view_position", "current_view_content"),
-    output_contract="ingest_unit_boundary_preview_partition_memory_recalls_json_v1",
+    output_contract="ingest_unit_boundary_preview_partition_memory_recalls_json_v2",
 )

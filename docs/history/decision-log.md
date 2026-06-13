@@ -3420,3 +3420,30 @@ This new direction is design frozen but not yet implemented as a formal benchmar
 - `reading-companion-backend/config/llm_profile_bindings.local.example.json`
 - `reading-companion-backend/config/llm_registry.example.json`
 - `reading-companion-backend/src/config.py`
+
+## Entry 117
+**ID**: DEC-120
+**Status**: active
+
+**Decision / Inflection**: Make live Ingest preview capacity token-bounded and constrain non-first preview-partition output burden.
+
+**Period**: June 13, 2026, after the character-bounded preview repair fixed the Siddhartha dialogue under-preview but made later previews too long and output-heavy.
+
+**Decision**: Live `attentional_v2` now builds the Ingest lookahead preview with token-bounded, paragraph-aligned assembly. The default policy is `preview_soft_min_tokens=1000`, `preview_target_max_tokens=1800`, `preview_hard_max_tokens=2600`, and `emergency_max_preview_paragraphs=200`; old char-budget and paragraph-count policy snapshots no longer control normal preview stopping. Preview metadata records `estimated_token_count` and `preview_token_estimator`. Ingest prompt v16 / promptset v66 keeps the same output schema, but states that only the committed first unit gets the optional top-level boundary `reason`; later `preview_partition[]` entries stay compact audit records with title, boundary, and status.
+
+**Boundary**: This is an Ingest runtime/prompt-discipline change, not a Digest behavior change, Unit Memory retrieval change, frontend/public API change, or historical A/B report regeneration. Paragraph-char `SourceSpan` / `source_span_id` remain the authoritative accepted-unit coordinates.
+
+**Why this path won**: The interim 7000-character preview solved the short-dialogue under-preview defect but pushed Ingest into multi-page planning windows, especially for Chinese text with many short paragraphs. Token budget better tracks the model's real workload while keeping the lookahead large enough to see the first unit and the next-unit turn. Constraining later partitions keeps the audit map useful without letting non-authoritative future units consume output budget.
+
+**Primary evidence**:
+- `docs/implementation/new-reading-mechanism/ingest-next-unit-optimization-design.md`
+- `docs/backend-reading-mechanisms/attentional_v2.md`
+- `docs/current-state.md`
+- `reading-companion-backend/src/attentional_v2/source_spans.py`
+- `reading-companion-backend/src/attentional_v2/prompts/ingest.py`
+- `reading-companion-backend/src/attentional_v2/schemas.py`
+- `reading-companion-backend/src/attentional_v2/runner.py`
+- `reading-companion-backend/src/attentional_v2/unit_span_ledger.py`
+- `reading-companion-backend/tests/test_attentional_v2_source_spans.py`
+- `reading-companion-backend/tests/test_attentional_v2_llm_calls.py`
+- `reading-companion-backend/tests/test_attentional_v2_scaffold.py`

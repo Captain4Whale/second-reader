@@ -170,6 +170,8 @@ class PreviewRange(TypedDict, total=False):
     start_cursor: dict[str, object]
     end_cursor: dict[str, object]
     preview_end_reason: str
+    estimated_token_count: int
+    preview_token_estimator: str
 
 
 class UnitizeDecision(TypedDict, total=False):
@@ -1081,8 +1083,9 @@ def build_default_reader_policy(
         "updated_at": _timestamp(),
         "unitize": {
             "max_coverage_unit_sentences": 12,
-            "preview_soft_min_chars": 3000,
-            "preview_hard_max_chars": 7000,
+            "preview_soft_min_tokens": 1000,
+            "preview_target_max_tokens": 1800,
+            "preview_hard_max_tokens": 2600,
             "emergency_max_preview_paragraphs": 200,
         },
         "knowledge": {

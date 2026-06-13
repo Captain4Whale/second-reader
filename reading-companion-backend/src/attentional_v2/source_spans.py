@@ -5,6 +5,7 @@ from __future__ import annotations
 import re
 from typing import Mapping, TypedDict
 
+from .memory_tokens import TOKEN_ESTIMATOR_ID, token_estimate_payload
 from .schemas import ReaderPolicy, SourceRef
 
 
@@ -49,6 +50,8 @@ class ParagraphOffsetPreview(TypedDict, total=False):
     char_count: int
     paragraph_count: int
     preview_end_reason: str
+    estimated_token_count: int
+    preview_token_estimator: str
 
 
 class AnchorResolution(TypedDict, total=False):
@@ -527,12 +530,102 @@ def _unitize_policy(reader_policy: ReaderPolicy | Mapping[str, object] | None) -
     return unitize if isinstance(unitize, Mapping) else {}
 
 
-def _preview_limits(reader_policy: ReaderPolicy | Mapping[str, object] | None) -> tuple[int, int, int]:
+_PREVIEW_TOKEN_ESTIMATOR = f"{TOKEN_ESTIMATOR_ID}_paragraph_xml_v1"
+
+
+def _preview_limits(reader_policy: ReaderPolicy | Mapping[str, object] | None) -> tuple[int, int, int, int]:
     policy = _unitize_policy(reader_policy)
-    soft_min = max(1, _int(policy.get("preview_soft_min_chars"), 3000))
-    hard_max = max(soft_min, _int(policy.get("preview_hard_max_chars"), 7000))
+    soft_min = max(1, _int(policy.get("preview_soft_min_tokens"), 1000))
+    target_max = max(soft_min, _int(policy.get("preview_target_max_tokens"), 1800))
+    hard_max = max(target_max, _int(policy.get("preview_hard_max_tokens"), 2600))
     emergency_max_paragraphs = max(1, _int(policy.get("emergency_max_preview_paragraphs"), 200))
-    return soft_min, hard_max, emergency_max_paragraphs
+    return soft_min, target_max, hard_max, emergency_max_paragraphs
+
+
+def _preview_slice_token_text(slices: list[PreviewParagraphSlice]) -> str:
+    lines = ["<Content>"]
+    for item in slices:
+        lines.append(
+            (
+                f'<Paragraph n="{item.get("paragraph_index", "")}" '
+                f'role="{item.get("text_role", "")}" '
+                f'start_char="{item.get("start_char", "")}" '
+                f'end_char="{item.get("end_char", "")}">'
+            )
+        )
+        lines.append(str(item.get("text", "") or ""))
+        lines.append("</Paragraph>")
+    lines.append("</Content>")
+    return "\n".join(lines)
+
+
+def _estimate_preview_tokens(slices: list[PreviewParagraphSlice]) -> int:
+    if not slices:
+        return 0
+    payload = token_estimate_payload(_preview_slice_token_text(slices))
+    return max(0, _int(payload.get("tokens")))
+
+
+def _slice_for_paragraph(
+    *,
+    paragraph_index: int,
+    text_role: str,
+    start_char: int,
+    end_char: int,
+    text: str,
+    flat_start: int,
+) -> PreviewParagraphSlice:
+    piece = text[start_char:end_char]
+    return {
+        "paragraph_index": paragraph_index,
+        "text_role": text_role,
+        "start_char": start_char,
+        "end_char": end_char,
+        "text": piece,
+        "flat_start": flat_start,
+        "flat_end": flat_start + len(piece),
+    }
+
+
+def _largest_prefix_slice_within_token_budget(
+    *,
+    existing_slices: list[PreviewParagraphSlice],
+    paragraph_index: int,
+    text_role: str,
+    text: str,
+    start_char: int,
+    flat_start: int,
+    hard_max_tokens: int,
+) -> tuple[PreviewParagraphSlice | None, int]:
+    """Return the longest paragraph prefix whose model-facing preview fits the hard token budget."""
+
+    available = max(0, len(text) - start_char)
+    if available <= 0:
+        return None, _estimate_preview_tokens(existing_slices)
+
+    best_slice: PreviewParagraphSlice | None = None
+    best_tokens = _estimate_preview_tokens(existing_slices)
+    low = 0
+    high = available
+    while low < high:
+        length = (low + high + 1) // 2
+        candidate = _slice_for_paragraph(
+            paragraph_index=paragraph_index,
+            text_role=text_role,
+            start_char=start_char,
+            end_char=start_char + length,
+            text=text,
+            flat_start=flat_start,
+        )
+        candidate_tokens = _estimate_preview_tokens([*existing_slices, candidate])
+        if candidate_tokens <= hard_max_tokens:
+            low = length
+            best_slice = candidate
+            best_tokens = candidate_tokens
+        else:
+            high = length - 1
+
+    return best_slice, best_tokens
 
 
 def build_paragraph_offset_preview(
@@ -546,7 +639,7 @@ def build_paragraph_offset_preview(
     start_cursor = normalize_cursor_for_chapter(chapter, current_cursor)
     chapter_id = _chapter_id(chapter)
     chapter_ref = _chapter_ref(chapter)
-    _soft_min, hard_max, emergency_max_paragraphs = _preview_limits(reader_policy)
+    soft_min_tokens, target_max_tokens, hard_max_tokens, emergency_max_paragraphs = _preview_limits(reader_policy)
     paragraphs = readable_paragraphs(chapter)
     if not paragraphs:
         return {
@@ -560,6 +653,8 @@ def build_paragraph_offset_preview(
             "char_count": 0,
             "paragraph_count": 0,
             "preview_end_reason": "empty",
+            "estimated_token_count": 0,
+            "preview_token_estimator": _PREVIEW_TOKEN_ESTIMATOR,
         }
 
     start_position = next(
@@ -576,6 +671,7 @@ def build_paragraph_offset_preview(
     flat_cursor = 0
     truncated = False
     preview_end_reason = "source_tail"
+    estimated_tokens = 0
 
     for paragraph_position in range(start_position, len(paragraphs)):
         if len(slices) >= emergency_max_paragraphs:
@@ -588,39 +684,59 @@ def build_paragraph_offset_preview(
         start_char = min(max(0, start_char), len(text))
         if start_char >= len(text):
             continue
-        paragraph_remainder_chars = len(text) - start_char
-        if content_chars > 0 and content_chars + paragraph_remainder_chars > hard_max:
+        separator_width = 2 if pieces else 0
+        flat_start = flat_cursor + separator_width
+        text_role = _clean_text(paragraph.get("text_role")) or "body"
+        candidate = _slice_for_paragraph(
+            paragraph_index=paragraph_index,
+            text_role=text_role,
+            start_char=start_char,
+            end_char=len(text),
+            text=text,
+            flat_start=flat_start,
+        )
+        candidate_tokens = _estimate_preview_tokens([*slices, candidate])
+
+        if candidate_tokens > hard_max_tokens:
+            if slices:
+                preview_end_reason = "hard_max"
+                break
+            prefix_slice, prefix_tokens = _largest_prefix_slice_within_token_budget(
+                existing_slices=slices,
+                paragraph_index=paragraph_index,
+                text_role=text_role,
+                text=text,
+                start_char=start_char,
+                flat_start=flat_start,
+                hard_max_tokens=hard_max_tokens,
+            )
+            if prefix_slice is None:
+                preview_end_reason = "hard_max"
+                break
+            if pieces:
+                pieces.append("\n\n")
+                flat_cursor += 2
+            pieces.append(str(prefix_slice.get("text", "") or ""))
+            flat_cursor += len(str(prefix_slice.get("text", "") or ""))
+            slices.append(prefix_slice)
+            content_chars += len(str(prefix_slice.get("text", "") or ""))
+            estimated_tokens = prefix_tokens
             preview_end_reason = "hard_max"
-            break
-        remaining_budget = hard_max - content_chars
-        if remaining_budget <= 0:
             truncated = True
-            preview_end_reason = "hard_max"
             break
-        end_char = min(len(text), start_char + remaining_budget)
-        piece = text[start_char:end_char]
+
+        if slices and estimated_tokens >= soft_min_tokens and candidate_tokens > target_max_tokens:
+            preview_end_reason = "target_max"
+            break
+
         if pieces:
             pieces.append("\n\n")
             flat_cursor += 2
-        flat_start = flat_cursor
-        pieces.append(piece)
-        flat_cursor += len(piece)
-        slices.append(
-            {
-                "paragraph_index": paragraph_index,
-                "text_role": _clean_text(paragraph.get("text_role")) or "body",
-                "start_char": start_char,
-                "end_char": end_char,
-                "text": piece,
-                "flat_start": flat_start,
-                "flat_end": flat_cursor,
-            }
-        )
-        content_chars += len(piece)
-        if end_char < len(text):
-            truncated = True
-            preview_end_reason = "hard_max"
-            break
+        pieces.append(str(candidate.get("text", "") or ""))
+        flat_cursor += len(str(candidate.get("text", "") or ""))
+        slices.append(candidate)
+        content_chars += len(str(candidate.get("text", "") or ""))
+        estimated_tokens = candidate_tokens
 
     if not slices:
         return {
@@ -634,6 +750,8 @@ def build_paragraph_offset_preview(
             "char_count": 0,
             "paragraph_count": 0,
             "preview_end_reason": preview_end_reason if preview_end_reason != "source_tail" else "empty",
+            "estimated_token_count": 0,
+            "preview_token_estimator": _PREVIEW_TOKEN_ESTIMATOR,
         }
 
     last_slice = slices[-1]
@@ -654,6 +772,8 @@ def build_paragraph_offset_preview(
         "char_count": content_chars,
         "paragraph_count": len(slices),
         "preview_end_reason": preview_end_reason,
+        "estimated_token_count": estimated_tokens,
+        "preview_token_estimator": _PREVIEW_TOKEN_ESTIMATOR,
     }
 
 

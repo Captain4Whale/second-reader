@@ -15,14 +15,14 @@ idea. Individual points below may be candidate, implemented, rejected, or
 superseded.
 
 Current live baseline:
-- Ingest prompt: `attentional_v2.ingest.v15`
-- Promptset: `attentional_v2-phase6-v65`
+- Ingest prompt: `attentional_v2.ingest.v16`
+- Promptset: `attentional_v2-phase6-v66`
 - Live boundary contract: `unit.end_paragraph_n` + `unit.end_at`
 - Live audit contract: `preview_partition[]`, with `preview_partition[0]`
   matching `unit`
 - Authoritative runtime coordinate: paragraph-char `SourceSpan` /
   `source_span_id`, derived by runtime after resolving the model boundary
-- Related decisions: `DEC-116`, `DEC-117`, `DEC-118`
+- Related decisions: `DEC-116`, `DEC-117`, `DEC-118`, `DEC-120`
 - Related living pattern: `docs/implementation/new-reading-mechanism/mechanism-pattern-ledger.md` entry 19
 
 ## Optimization Point 1: Preview Partition Audit Map
@@ -550,13 +550,15 @@ new probe artifacts should be written as a new run or scratch analysis package.
 
 ### Status
 
-Candidate design as of `2026-06-13`. Not yet implemented in live runtime.
+Implemented as live runtime preview construction and Ingest v16 output-discipline
+wording on `2026-06-13`. Historical A/B report packages were not regenerated in
+this slice.
 
-This point supersedes the live `7000` source-character hard budget as the
-preferred next preview-capacity policy, but it does not change the authoritative
-runtime coordinate system. Ingest should still expose paragraph-local
-coordinates and runtime should still accept boundaries as paragraph-char
-`SourceSpan` / `source_span_id`.
+This point supersedes the prior live `7000` source-character hard budget as the
+current preview-capacity policy, but it does not change the authoritative
+runtime coordinate system. Ingest still exposes paragraph-local coordinates and
+runtime still accepts boundaries as paragraph-char `SourceSpan` /
+`source_span_id`.
 
 ### Source Insight
 
@@ -608,7 +610,7 @@ This keeps the preview budget closer to the model's actual workload across
 Chinese, English, and mixed-language sources, while avoiding a migration away
 from stable source coordinates.
 
-### Proposed Runtime Policy
+### Implemented Runtime Policy
 
 Build the Ingest preview by adding visible paragraph slices in source order from
 the current cursor, as today. Before adding the next complete paragraph slice,
@@ -690,7 +692,9 @@ overhead, but the metadata must name that approximation.
 
 ### Prompt / Contract Interaction
 
-No Ingest prompt change is required for this capacity adjustment.
+No output schema change is required for this capacity adjustment. The live v16
+prompt now tightens output discipline so the shorter preview does not regrow
+through verbose planning output.
 
 The model-facing contract remains:
 
@@ -714,9 +718,9 @@ Output burden should stay proportional to Ingest's job:
   should name the visible semantic move, not explain or evaluate it.
 
 This is not a schema change. It is a prompt/output-discipline constraint to
-prevent token-bounded previews from regrowing through verbose reasoning. If a
-future prompt edit is needed, prefer tightening this wording before increasing
-runtime `max_output_tokens`.
+prevent token-bounded previews from regrowing through verbose reasoning. If the
+model still produces oversized output after this change, prefer inspecting the
+live output shape before increasing runtime `max_output_tokens`.
 
 ### Non-Goals
 

@@ -84,6 +84,8 @@ def append_unit_span_record(
         if isinstance(preview.get("preview_end_cursor"), Mapping)
         else {},
         "preview_end_reason": _clean_text(preview.get("preview_end_reason")),
+        "preview_estimated_token_count": int(preview.get("estimated_token_count", 0) or 0),
+        "preview_token_estimator": _clean_text(preview.get("preview_token_estimator")),
         "char_count": int(source_unit.get("char_count", 0) or 0),
         "paragraph_count": int(source_unit.get("paragraph_count", 0) or 0),
         "end_anchor_text": _clean_text(end_anchor_text),

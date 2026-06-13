@@ -1224,13 +1224,13 @@ def test_attentional_v2_prompt_registry_projects_current_bundle() -> None:
     ingest = ATTENTIONAL_V2_PROMPT_REGISTRY.get("attentional_v2.ingest")
     chapter = ATTENTIONAL_V2_PROMPT_REGISTRY.get("attentional_v2.chapter_consolidation")
 
-    assert ATTENTIONAL_V2_PROMPTSET_VERSION == "attentional_v2-phase6-v65"
+    assert ATTENTIONAL_V2_PROMPTSET_VERSION == "attentional_v2-phase6-v66"
     assert ATTENTIONAL_V2_PROMPTS.promptset_version == ATTENTIONAL_V2_PROMPTSET_VERSION
     assert digest.version == DIGEST_PROMPT_VERSION == "attentional_v2.digest.v9"
     assert ATTENTIONAL_V2_PROMPTS.digest_version == digest.version
     assert ATTENTIONAL_V2_PROMPTS.digest_system == digest.system_prompt
     assert ATTENTIONAL_V2_PROMPTS.digest_prompt == digest.user_prompt_template
-    assert ingest.version == INGEST_PROMPT_VERSION == "attentional_v2.ingest.v15"
+    assert ingest.version == INGEST_PROMPT_VERSION == "attentional_v2.ingest.v16"
     assert ATTENTIONAL_V2_PROMPTS.ingest_version == ingest.version
     assert ATTENTIONAL_V2_PROMPTS.ingest_system == ingest.system_prompt
     assert ATTENTIONAL_V2_PROMPTS.chapter_consolidation_prompt == chapter.user_prompt_template
@@ -1689,8 +1689,11 @@ def test_attentional_v2_initialization_writes_mechanism_artifacts(tmp_path):
     policy = json.loads(reader_policy_file(output_dir).read_text(encoding="utf-8"))
     assert policy["policy_version"] == ATTENTIONAL_V2_POLICY_VERSION
     assert policy["unitize"]["max_coverage_unit_sentences"] == 12
-    assert policy["unitize"]["preview_hard_max_chars"] == 7000
+    assert policy["unitize"]["preview_soft_min_tokens"] == 1000
+    assert policy["unitize"]["preview_target_max_tokens"] == 1800
+    assert policy["unitize"]["preview_hard_max_tokens"] == 2600
     assert policy["unitize"]["emergency_max_preview_paragraphs"] == 200
+    assert "preview_hard_max_chars" not in policy["unitize"]
     assert "max_lookahead_paragraphs" not in policy["unitize"]
     assert policy["bridge"]["enabled"] is False
     assert policy["bridge"]["source_ref_required"] is True
@@ -1934,12 +1937,16 @@ def test_prepare_next_source_unit_for_read_selects_mainline_unit(tmp_path, monke
     assert result["unitize_decision"]["preview_partition"][0]["title"] == "Test first move"
     assert result["unitize_decision"]["preview_partition_audit_status"] == "ok"
     assert result["unitize_decision"]["preview_range"]["preview_end_reason"] == "source_tail"
+    assert result["unitize_decision"]["preview_range"]["estimated_token_count"] > 0
+    assert result["unitize_decision"]["preview_range"]["preview_token_estimator"] == "tiktoken_o200k_base_v1_paragraph_xml_v1"
     assert result["ingest_trace"][0]["preview_partition_audit_status"] == "ok"
     current_view_content = calls[0]["current_view_content"]
     assert isinstance(current_view_content, dict)
     assert current_view_content["preview_end_reason"] == "source_tail"
     assert current_view_content["char_count"] > 0
     assert current_view_content["paragraph_count"] > 0
+    assert current_view_content["estimated_token_count"] > 0
+    assert current_view_content["preview_token_estimator"] == "tiktoken_o200k_base_v1_paragraph_xml_v1"
 
 
 def test_prepare_next_source_unit_for_read_retries_unresolved_boundary(tmp_path, monkeypatch):
