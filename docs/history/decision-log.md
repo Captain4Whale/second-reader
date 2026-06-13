@@ -3469,3 +3469,25 @@ This new direction is design frozen but not yet implemented as a formal benchmar
 - `reading-companion-backend/src/attentional_v2/source_spans.py`
 - `reading-companion-backend/src/attentional_v2/schemas.py`
 - `reading-companion-backend/tests/test_attentional_v2_scaffold.py`
+
+## Entry 119
+**ID**: DEC-122
+**Status**: active
+
+**Decision / Inflection**: Define Source Normalization as the upstream solution for footnote/noise text entering Ingest.
+
+**Period**: June 13, 2026, after reviewing Siddhartha report units where translator/endnote paragraphs were parsed as body text and Ingest correctly selected them as standalone units.
+
+**Decision**: Treat source cleanup as an import-time Source Normalization layer over original paragraph/block records. The design classifies records into mainline, heading, auxiliary-note, reference-like, front/back-matter, layout-noise, caption/table-support, or uncertain-keep-mainline roles before Ingest/Digest run. Ingest must not emit arbitrary skip operations; it reads only the normalized mainline stream. Raw paragraph coordinates remain canonical, and v1 does not introduce persistent `reading_blocks[]`.
+
+**Boundary**: This is a design direction and documentation update, not a live parser/runtime change, not an Ingest prompt/schema change, not a Digest behavior change, and not a frontend highlight-contract change. Current live behavior still filters only paragraphs already marked `text_role == "auxiliary"`.
+
+**Why this path won**: The problematic Siddhartha units were not caused by bad next-unit reasoning; the source stream told Ingest that translator notes were body paragraphs. A separate source-normalization layer can use deterministic structure evidence plus conservative LLM classification to keep footnotes, note clusters, layout noise, and reference apparatus out of the mainline reader while preserving original coordinates for highlights and support-context retrieval.
+
+**Primary evidence**:
+- `docs/implementation/new-reading-mechanism/source-normalization-design.md`
+- `docs/backend-reading-mechanism.md`
+- `docs/backend-reading-mechanisms/attentional_v2.md`
+- `docs/current-state.md`
+- `reading-companion-backend/src/iterator_reader/parse.py`
+- `reading-companion-backend/src/attentional_v2/source_spans.py`

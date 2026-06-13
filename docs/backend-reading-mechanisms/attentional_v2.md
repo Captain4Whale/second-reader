@@ -612,6 +612,7 @@ Use `docs/backend-reading-mechanism.md` for shared platform boundaries. Use `doc
   - The shared substrate includes canonical chapter order and paragraph records. Those paragraphs are the current `attentional_v2` mainline substrate.
   - Parse-time sentence records with stable ids and locators may still exist in the same document, but for this mechanism they are compatibility and historical-evidence handles, not the mainline reading lattice.
   - `text_role` on paragraph records is a weak structure cue. `auxiliary` paragraphs are filtered before mainline preview construction, so footnote-like or apparatus-like content that survives only as `auxiliary` never reaches `Ingest` on the live mainline path.
+  - `Source Normalization` is the accepted upstream design direction for improving those paragraph roles before Ingest/Digest run. In v1 it should attach richer `source_normalization` metadata to existing paragraph records rather than introducing persistent `reading_blocks[]`; raw paragraph coordinates remain the highlight/source-reference authority. This design is documented in `docs/implementation/new-reading-mechanism/source-normalization-design.md` and is not yet a live parser/runtime change.
 - Current scaffolded mechanism-private derived artifacts
   - `_mechanisms/attentional_v2/derived/survey_map.json`
     - now includes:

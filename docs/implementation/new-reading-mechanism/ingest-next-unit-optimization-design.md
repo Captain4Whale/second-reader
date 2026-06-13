@@ -24,6 +24,17 @@ Current live baseline:
   `source_span_id`, derived by runtime after resolving the model boundary
 - Related decisions: `DEC-116`, `DEC-117`, `DEC-118`, `DEC-120`, `DEC-121`
 - Related living pattern: `docs/implementation/new-reading-mechanism/mechanism-pattern-ledger.md` entry 19
+- Related upstream source-substrate design: `docs/implementation/new-reading-mechanism/source-normalization-design.md`
+
+## Upstream Source Normalization Boundary
+
+Some next-unit failures are caused by source-stream hygiene rather than by
+Ingest boundary selection. Footnote/endnote clusters, layout noise, and repeated
+source artifacts should be handled by import-time Source Normalization before
+Ingest runs. The accepted design keeps raw paragraph coordinates canonical,
+attaches richer normalization metadata to existing paragraph records, and lets
+Ingest read only the normalized mainline stream. This is not an Ingest prompt
+change and is not implemented in the live parser/runtime yet.
 
 ## Optimization Point 1: Preview Partition Audit Map
 
