@@ -61,6 +61,14 @@ class ParagraphRecord(TypedDict, total=False):
     html_class: str
     epub_type: str
     role: str
+    ancestor_tags: list[str]
+    ancestor_html_ids: list[str]
+    ancestor_html_classes: list[str]
+    ancestor_epub_types: list[str]
+    ancestor_roles: list[str]
+    inline_anchor_ids: list[str]
+    inline_anchor_hrefs: list[str]
+    inline_anchor_texts: list[str]
     source_normalization: SourceNormalizationMetadata
 
 

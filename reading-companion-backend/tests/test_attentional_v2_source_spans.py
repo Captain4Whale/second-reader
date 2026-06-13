@@ -81,6 +81,52 @@ def test_preview_excludes_source_normalized_auxiliary_paragraphs() -> None:
     assert [item["paragraph_index"] for item in preview["paragraph_slices"]] == [1, 3]
 
 
+def test_preview_excludes_footnotes_but_keeps_literary_blockquote_lines() -> None:
+    chapter = {
+        "id": 1,
+        "title": "Chapter 1",
+        "paragraphs": [
+            {"paragraph_index": 1, "text": "Mainline starts.[1]", "text_role": "body"},
+            {
+                "paragraph_index": 2,
+                "text": "[1] Translator note.",
+                "text_role": "auxiliary",
+                "source_normalization": {
+                    "normalized_role": "auxiliary_note",
+                    "method": "deterministic_markup",
+                },
+            },
+            {
+                "paragraph_index": 3,
+                "text": "Line one of a poem.",
+                "text_role": "body",
+                "ancestor_tags": ["blockquote"],
+                "source_normalization": {
+                    "normalized_role": "mainline_body",
+                    "method": "deterministic_baseline_llm_rejected",
+                },
+            },
+            {
+                "paragraph_index": 4,
+                "text": "Line two of a poem.",
+                "text_role": "body",
+                "ancestor_tags": ["blockquote"],
+            },
+        ],
+    }
+
+    preview = build_paragraph_offset_preview(
+        chapter=chapter,
+        current_cursor={"chapter_id": 1, "chapter_ref": "Chapter 1", "paragraph_index": 1, "char_offset": 0},
+    )
+
+    assert [paragraph["paragraph_index"] for paragraph in readable_paragraphs(chapter)] == [1, 3, 4]
+    assert "[1] Translator note." not in preview["source_text"]
+    assert "Line one of a poem." in preview["source_text"]
+    assert "Line two of a poem." in preview["source_text"]
+    assert [item["paragraph_index"] for item in preview["paragraph_slices"]] == [1, 3, 4]
+
+
 def test_preview_stops_at_target_max_after_soft_min_is_satisfied() -> None:
     chapter = {
         "id": 1,

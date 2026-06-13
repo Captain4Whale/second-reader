@@ -228,6 +228,81 @@ def _has_textual_block_children(element: ET.Element) -> bool:
     return False
 
 
+def _bounded_unique(items: list[str], *, limit: int = 8) -> list[str]:
+    """Return compact, order-preserving, non-empty unique strings."""
+
+    result: list[str] = []
+    seen: set[str] = set()
+    for item in items:
+        normalized = _normalize_block_text(item)
+        if not normalized or normalized in seen:
+            continue
+        seen.add(normalized)
+        result.append(normalized)
+        if len(result) >= limit:
+            break
+    return result
+
+
+def _split_class_tokens(value: str) -> list[str]:
+    """Return normalized HTML class tokens."""
+
+    return [token.strip() for token in re.split(r"\s+", value or "") if token.strip()]
+
+
+def _inline_anchor_metadata(element: ET.Element, *, limit: int = 6) -> dict[str, list[str]]:
+    """Return compact metadata for anchors contained inside one source block."""
+
+    ids: list[str] = []
+    hrefs: list[str] = []
+    texts: list[str] = []
+    for descendant in element.iter():
+        if not isinstance(descendant.tag, str) or _local_tag(str(descendant.tag)) != "a":
+            continue
+        ids.append(_element_attr(descendant, "id"))
+        hrefs.append(_element_attr(descendant, "href"))
+        texts.append(_normalize_block_text("".join(descendant.itertext())))
+    return {
+        "inline_anchor_ids": _bounded_unique(ids, limit=limit),
+        "inline_anchor_hrefs": _bounded_unique(hrefs, limit=limit),
+        "inline_anchor_texts": _bounded_unique(texts, limit=limit),
+    }
+
+
+def _ancestor_context_for_child(
+    element: ET.Element,
+    current_context: dict[str, list[str]],
+    *,
+    limit: int = 12,
+) -> dict[str, list[str]]:
+    """Return the source-structure context that descendants inherit from this element."""
+
+    tag = _local_tag(str(element.tag))
+    html_id = _element_attr(element, "id")
+    html_class = _element_attr(element, "class")
+    epub_type = _element_attr(element, "type")
+    role = _element_attr(element, "role")
+    return {
+        "ancestor_tags": _bounded_unique(
+            [
+                *current_context.get("ancestor_tags", []),
+                *([] if tag in {"html", "body"} else [tag]),
+            ],
+            limit=limit,
+        ),
+        "ancestor_html_ids": _bounded_unique([*current_context.get("ancestor_html_ids", []), html_id], limit=limit),
+        "ancestor_html_classes": _bounded_unique(
+            [*current_context.get("ancestor_html_classes", []), *_split_class_tokens(html_class)],
+            limit=limit,
+        ),
+        "ancestor_epub_types": _bounded_unique(
+            [*current_context.get("ancestor_epub_types", []), epub_type],
+            limit=limit,
+        ),
+        "ancestor_roles": _bounded_unique([*current_context.get("ancestor_roles", []), role], limit=limit),
+    }
+
+
 def _looks_like_sentence(text: str) -> bool:
     """Heuristic: return whether one text block behaves like running prose."""
     normalized = _normalize_block_text(text)
@@ -326,12 +401,20 @@ def _extract_epub_paragraph_records(
 
     records: list[dict[str, object]] = []
 
-    def walk(element: ET.Element, path_steps: list[int]) -> None:
+    empty_context: dict[str, list[str]] = {
+        "ancestor_tags": [],
+        "ancestor_html_ids": [],
+        "ancestor_html_classes": [],
+        "ancestor_epub_types": [],
+        "ancestor_roles": [],
+    }
+
+    def walk(element: ET.Element, path_steps: list[int], ancestor_context: dict[str, list[str]]) -> None:
         tag = _local_tag(str(element.tag))
         text = _normalize_block_text("".join(element.itertext()))
         own_text = _direct_text_content(element)
         duplicate_container = (
-            tag == "div"
+            tag not in HEADING_TAGS
             and text
             and _has_textual_block_children(element)
             and not own_text
@@ -347,18 +430,23 @@ def _extract_epub_paragraph_records(
                     "paragraph_index": len(records) + 1,
                     "block_tag": tag,
                     "heading_level": _heading_level_for_tag(tag),
+                    "item_id": item_id,
+                    "spine_index": spine_index,
                     "html_id": _element_attr(element, "id"),
                     "html_class": _element_attr(element, "class"),
                     "epub_type": _element_attr(element, "type"),
                     "role": _element_attr(element, "role"),
+                    **ancestor_context,
+                    **_inline_anchor_metadata(element),
                 }
             )
 
+        child_context = _ancestor_context_for_child(element, ancestor_context)
         children = [child for child in list(element) if isinstance(child.tag, str)]
         for index, child in enumerate(children, start=1):
-            walk(child, [*path_steps, index * 2])
+            walk(child, [*path_steps, index * 2], child_context)
 
-    walk(root, [])
+    walk(root, [], empty_context)
     return records
 
 
@@ -392,6 +480,14 @@ def _paragraph_records(chapter: dict[str, object]) -> list[dict[str, object]]:
             "html_class": "",
             "epub_type": "",
             "role": "",
+            "ancestor_tags": [],
+            "ancestor_html_ids": [],
+            "ancestor_html_classes": [],
+            "ancestor_epub_types": [],
+            "ancestor_roles": [],
+            "inline_anchor_ids": [],
+            "inline_anchor_hrefs": [],
+            "inline_anchor_texts": [],
         }
         for index, paragraph in enumerate(split_into_paragraphs(extract_plain_text(content)), start=1)
     ]

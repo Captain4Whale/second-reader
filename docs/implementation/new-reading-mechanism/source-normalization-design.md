@@ -10,7 +10,7 @@ policy, or frontend highlight rendering details.
 Update when: source-normalization roles, confidence policy, metadata shape, or
 mainline/auxiliary routing changes.
 
-Status: implemented-live v1 for newly created parsed-book documents.
+Status: implemented-live v1.1 for newly created parsed-book documents.
 Current live behavior classifies new canonical paragraph records with
 Source Normalization before `Ingest` / `Digest` run, then keeps the existing
 runtime gate: paragraphs whose `text_role` is `auxiliary` are excluded from the
@@ -146,15 +146,24 @@ that complexity until real examples require it.
    - tag name
    - class/id attributes
    - `epub:type`, `role`, `aria-*` attributes when available
+   - ancestor tags/classes/ids/roles/types for source containers such as
+     footnote wrappers or blockquotes
+   - bounded inline anchor ids/hrefs/texts for note-definition links
    - `href` / CFI locator data
    - chapter title and chapter position
+   - pure parent containers with textual child blocks should not also become
+     paragraph records; for example `blockquote > p` keeps the child paragraph
+     records and avoids a duplicated parent aggregate
 3. Run deterministic evidence collection:
    - explicit footnote/endnote/reference HTML markers
+   - inline note-definition anchors and body-marker links
    - chapter titles such as `Notes`, `Footnotes`, `Endnotes`, `注释`, `译注`
    - consecutive note-definition patterns like `[1]`, `[2]`, `[3]`
    - local clusters of short definition/citation blocks
    - repeated running headers or duplicate headings
    - URL / publication / bibliography patterns
+   - literary containers such as `blockquote`, poem, verse, stanza, or letter
+     wrappers that protect unusual mainline forms from false exclusion
    - mainline markers that link body text to later notes
 4. Use a whole-book LLM classifier over all original paragraph/block records.
    The implementation may chunk the book only for prompt/output safety. The LLM
@@ -195,6 +204,12 @@ Be conservative:
   numbered, poetic, quoted, foreign-language, or formatted oddly.
 - Do not mark letters, poems, dialogue, fictional documents, or author-intended
   note-like prose as auxiliary unless source-flow evidence clearly supports it.
+- Treat source markup as evidence: footnote/endnote/reference containers are
+  exclusion evidence, while blockquote/poem/verse containers usually protect
+  mainline literary text.
+- Never mark blockquote, poem, verse, letter, dialogue, or fictional-document
+  text as layout_noise merely because it is line-broken, repeated nearby, or
+  stylistically unusual.
 - Footnote/endnote/translator-note clusters may be auxiliary even if each note
   is meaningful.
 - Layout artifacts and repeated running headers should not enter mainline
@@ -213,6 +228,10 @@ Input should include block ids and evidence, not only raw text:
       "text": "[1]Brahmanen，婆罗门...",
       "current_text_role": "body",
       "block_tag": "p",
+      "ancestor_html_classes": ["fnote"],
+      "inline_anchor_ids": ["f1"],
+      "inline_anchor_hrefs": ["part0005.xhtml#s1"],
+      "inline_anchor_texts": ["[1]"],
       "position_hint": "after_main_scene_before_next_section",
       "nearby_markers_seen_in_body": ["[1]"]
     }
@@ -253,6 +272,17 @@ next mainline body region. It should not read P58-P68 as separate units. Those
 notes remain available as support context for Digest when matching body markers
 such as `[1]` or terms such as `Brahmanen`.
 
+The v1.1 probe repair adds two concrete guardrails from the real Siddhartha
+parse:
+
+- `div.fnote > p > a` note definitions preserve their ancestor class/type/role
+  and inline anchor metadata, so single notes such as `[1]Magadha...` can be
+  excluded as `auxiliary_note` even when the LLM confidence field is malformed.
+- `blockquote > p` literary lines keep only the child paragraph records and
+  carry `ancestor_tags=["blockquote"]`; the parent aggregate is not emitted, and
+  the LLM cannot exclude poem/verse lines as `layout_noise` without independent
+  structural layout-noise evidence.
+
 ## False-Positive Guardrails
 
 The normalizer must avoid removing author-intended content. Keep mainline when:
@@ -267,9 +297,9 @@ The normalizer must avoid removing author-intended content. Keep mainline when:
 
 The safe default is `uncertain_keep_mainline`.
 
-## Implemented Live V1
+## Implemented Live V1.1
 
-The first implementation is live for newly parsed books:
+The implementation is live for newly parsed books:
 
 - `reading-companion-backend/src/reading_runtime/source_normalization.py`
   contains the source-flow prompt, whole-book chunking, conservative label
@@ -278,8 +308,22 @@ The first implementation is live for newly parsed books:
   Normalization only when creating a new `public/book_document.json`.
 - Existing parsed books are not migrated or rewashed automatically; they retain
   their stored paragraph roles except for the existing sentence-layer backfill.
-- EPUB/HTML extraction now retains lightweight evidence fields such as
-  `html_id`, `html_class`, `epub_type`, and `role` on paragraph records.
+- EPUB/HTML extraction retains lightweight evidence fields such as `html_id`,
+  `html_class`, `epub_type`, and `role` on paragraph records.
+- v1.1 also retains compact source-structure context on paragraph records:
+  `ancestor_tags`, `ancestor_html_ids`, `ancestor_html_classes`,
+  `ancestor_epub_types`, `ancestor_roles`, `inline_anchor_ids`,
+  `inline_anchor_hrefs`, and `inline_anchor_texts`.
+- v1.1 skips pure parent containers that only aggregate textual child blocks,
+  avoiding duplicated blockquote/poem正文 while preserving child paragraph
+  coordinates.
+- v1.1 adds deterministic markup exclusion for explicit footnote/endnote
+  containers, linked note definitions, and numbered note clusters, while
+  tightening `layout_noise` so duplicate/repeated LLM reasons need deterministic
+  layout-noise evidence before they can hide text.
+- v1.1 protects literary containers such as blockquote/poem/verse/letter from
+  false auxiliary/noise exclusion unless explicit auxiliary/reference evidence
+  is also present.
 - Runtime `Ingest` and `Digest` remain unchanged. They still rely on the
   shared paragraph stream and the coarse `text_role == "auxiliary"` gate.
 - Parse diagnostics write Source Normalization status/counts under
@@ -303,3 +347,5 @@ The first implementation is live for newly parsed books:
   body/auxiliary paragraphs require it.
 - Decide later whether auxiliary notes should become explicit support-context
   retrieval material for Digest when mainline markers refer to them.
+- Reduce whole-book Source Normalization cost/chunk count once the quality
+  guardrails are stable on more real EPUBs.

@@ -3516,3 +3516,27 @@ This new direction is design frozen but not yet implemented as a formal benchmar
 - `reading-companion-backend/src/reading_core/book_document.py`
 - `reading-companion-backend/tests/test_iterator_parse.py`
 - `reading-companion-backend/tests/test_attentional_v2_source_spans.py`
+
+## Entry 121
+**ID**: DEC-124
+**Status**: active
+
+**Decision / Inflection**: Upgrade Source Normalization to markup-aware v1.1 guardrails for new parses.
+
+**Period**: June 13, 2026, after a real Siddhartha Source Normalization probe showed that v1 solved clustered footnotes but still missed single footnotes without enough retained markup evidence, and could falsely exclude blockquote poem lines when the parser emitted both a parent aggregate and child paragraphs.
+
+**Decision**: New parses now preserve source-structure metadata on paragraph records: ancestor tags/classes/ids/EPUB types/roles plus bounded inline anchor ids/hrefs/texts. The EPUB parser skips pure parent containers that only aggregate textual child blocks, so `blockquote > p` keeps the child paragraph records without emitting a duplicate parent paragraph. Source Normalization v1.1 uses explicit footnote/endnote/note-definition markup as deterministic exclusion evidence, keeps linked note/numbered-note cluster guardrails, tightens `layout_noise` so duplicate/repeated LLM reasons need deterministic layout-noise evidence, and protects blockquote/poem/verse/letter正文 from false auxiliary/noise exclusion unless explicit auxiliary/reference evidence is also present.
+
+**Boundary**: This remains a parser/source-substrate change for newly created `book_document.json` files only. Existing parsed artifacts are not migrated or rewashed. It does not change Ingest/Digest prompts or schemas, Unit Memory retrieval, accepted `SourceSpan` coordinates, frontend/public API payloads, or historical eval/report packages.
+
+**Why this path won**: The failures were source-substrate failures, not Ingest reasoning failures. The raw EPUB already had useful structure such as `div.fnote` and `blockquote > p`, but v1 did not carry enough of that structure into paragraph records and allowed the classifier to treat short literary lines as duplicate noise. Markup-aware deterministic evidence gives the normalizer a simple, auditable way to remove source apparatus while preserving unusual author-intended literary forms and original highlight coordinates.
+
+**Primary evidence**:
+- `docs/implementation/new-reading-mechanism/source-normalization-design.md`
+- `docs/backend-reading-mechanisms/attentional_v2.md`
+- `docs/current-state.md`
+- `reading-companion-backend/src/iterator_reader/parse.py`
+- `reading-companion-backend/src/reading_core/book_document.py`
+- `reading-companion-backend/src/reading_runtime/source_normalization.py`
+- `reading-companion-backend/tests/test_iterator_parse.py`
+- `reading-companion-backend/tests/test_attentional_v2_source_spans.py`

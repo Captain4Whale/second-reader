@@ -13,7 +13,7 @@ from src.reading_core.sentences import build_sentence_records
 from src.reading_runtime.llm_gateway import LLMTraceContext, invoke_json, llm_invocation_scope, runtime_trace_context
 
 
-SOURCE_NORMALIZATION_VERSION = "source_normalization.v1"
+SOURCE_NORMALIZATION_VERSION = "source_normalization.v1.1"
 SOURCE_NORMALIZATION_METHOD = "llm_with_rule_evidence"
 SOURCE_NORMALIZATION_CHUNK_MAX_BLOCKS = 80
 SOURCE_NORMALIZATION_CHUNK_MAX_CHARS = 12000
@@ -59,6 +59,8 @@ Be conservative:
 - If unsure, choose uncertain_keep_mainline.
 - Do not mark unusual literary form as auxiliary merely because it is short, numbered, poetic, quoted, foreign-language, or formatted oddly.
 - Do not mark letters, poems, dialogue, fictional documents, numbered main-body aphorisms, or author-intended note-like prose as auxiliary unless source-flow evidence clearly supports it.
+- Treat source markup as evidence: blockquote/poem/verse containers usually protect mainline literary text, while footnote/endnote/reference containers may identify auxiliary source apparatus.
+- Never mark blockquote, poem, verse, letter, dialogue, or fictional-document text as layout_noise merely because it is line-broken, repeated nearby, or stylistically unusual.
 - Footnote, endnote, translator-note, reference, and note clusters may be auxiliary even if each note is meaningful.
 - Layout artifacts, repeated running headers, duplicated titles, and isolated source-conversion symbols should not enter mainline reading.
 
@@ -247,6 +249,14 @@ def _collect_source_blocks(document: Mapping[str, object]) -> list[dict[str, obj
                     "html_class": _clean(paragraph.get("html_class")),
                     "epub_type": _clean(paragraph.get("epub_type")),
                     "role": _clean(paragraph.get("role")),
+                    "ancestor_tags": _string_list(paragraph.get("ancestor_tags")),
+                    "ancestor_html_ids": _string_list(paragraph.get("ancestor_html_ids")),
+                    "ancestor_html_classes": _string_list(paragraph.get("ancestor_html_classes")),
+                    "ancestor_epub_types": _string_list(paragraph.get("ancestor_epub_types")),
+                    "ancestor_roles": _string_list(paragraph.get("ancestor_roles")),
+                    "inline_anchor_ids": _string_list(paragraph.get("inline_anchor_ids")),
+                    "inline_anchor_hrefs": _string_list(paragraph.get("inline_anchor_hrefs")),
+                    "inline_anchor_texts": _string_list(paragraph.get("inline_anchor_texts")),
                     "href": _clean(paragraph.get("href")),
                     "evidence": evidence,
                 }
@@ -418,6 +428,12 @@ def _normalized_paragraph_metadata(
         "linked_markers": _string_list(evidence.get("linked_markers")),
         "evidence": evidence,
     }
+    deterministic_exclusion = _deterministic_exclusion_metadata(paragraph, evidence, label)
+    if deterministic_exclusion and (label is not None or deterministic_exclusion.get("source") == "explicit_markup"):
+        deterministic_exclusion.pop("source", None)
+        metadata.update(deterministic_exclusion)
+        return metadata, "auxiliary", baseline_text_role != "auxiliary"
+
     if label is None:
         return metadata, baseline_text_role, False
 
@@ -478,6 +494,8 @@ def _should_apply_exclusion_label(
         return False
     evidence = block.get("evidence")
     evidence = evidence if isinstance(evidence, Mapping) else {}
+    if role == "layout_noise":
+        return _has_structural_layout_noise_evidence(evidence)
     if _protected_mainline_candidate(paragraph, evidence):
         return False
     if _has_structural_exclusion_evidence(evidence):
@@ -489,11 +507,50 @@ def _should_apply_exclusion_label(
     return _clean(paragraph.get("text_role")) == "auxiliary"
 
 
+def _deterministic_exclusion_metadata(
+    paragraph: Mapping[str, object],
+    evidence: Mapping[str, object],
+    label: Mapping[str, object] | None,
+) -> dict[str, object] | None:
+    """Return a high-confidence deterministic auxiliary label from source markup."""
+
+    signals = set(_string_list(evidence.get("signals")))
+    label_role = _normalize_role(label.get("normalized_role")) if isinstance(label, Mapping) else ""
+    label_is_auxiliary = label_role in SOURCE_NORMALIZATION_EXCLUSION_ROLES
+    linked_markers = (
+        _string_list(label.get("linked_markers")) if isinstance(label, Mapping) else []
+    ) or _string_list(evidence.get("linked_markers"))
+    if "html_auxiliary_marker" in signals:
+        return {
+            "normalized_role": "auxiliary_note",
+            "kind": "translator_note",
+            "confidence": max(0.94, _confidence(label.get("confidence")) if isinstance(label, Mapping) else 0.0),
+            "method": "deterministic_markup",
+            "reason_code": "html_auxiliary_marker",
+            "linked_markers": linked_markers,
+            "source": "explicit_markup",
+        }
+    if label_is_auxiliary and {"numbered_note_cluster", "linked_note_definition"}.intersection(signals):
+        return {
+            "normalized_role": "auxiliary_note",
+            "kind": _clean(label.get("kind")) if isinstance(label, Mapping) else "note",
+            "confidence": max(0.90, _confidence(label.get("confidence")) if isinstance(label, Mapping) else 0.0),
+            "method": "deterministic_markup",
+            "reason_code": "linked_note_definition" if "linked_note_definition" in signals else "numbered_note_cluster",
+            "linked_markers": linked_markers,
+            "source": "label_supported",
+        }
+    return None
+
+
 def _protected_mainline_candidate(paragraph: Mapping[str, object], evidence: Mapping[str, object]) -> bool:
     """Return whether a block looks like content that should remain mainline absent strong structure evidence."""
 
     if _has_structural_exclusion_evidence(evidence):
         return False
+    signals = set(_string_list(evidence.get("signals")))
+    if "literary_container" in signals:
+        return True
     text = _clean(paragraph.get("text"))
     if not text:
         return False
@@ -519,8 +576,17 @@ def _has_structural_exclusion_evidence(evidence: Mapping[str, object]) -> bool:
         "short_layout_noise_candidate",
         "duplicate_heading_candidate",
         "caption_or_table_marker",
+        "inline_note_definition_anchor",
+        "linked_note_definition",
     }
     return bool(strong.intersection(signals))
+
+
+def _has_structural_layout_noise_evidence(evidence: Mapping[str, object]) -> bool:
+    """Return whether deterministic evidence supports layout-noise exclusion."""
+
+    signals = set(_string_list(evidence.get("signals")))
+    return bool({"short_layout_noise_candidate", "duplicate_heading_candidate"}.intersection(signals))
 
 
 def _source_evidence(
@@ -535,14 +601,41 @@ def _source_evidence(
     """Build deterministic source-flow evidence for one paragraph."""
 
     text = _clean(paragraph.get("text"))
-    attrs = " ".join(
+    own_attrs = [
         _clean(paragraph.get(key))
         for key in ("html_id", "html_class", "epub_type", "role", "href", "block_tag")
         if _clean(paragraph.get(key))
+    ]
+    ancestor_tags = _string_list(paragraph.get("ancestor_tags"))
+    ancestor_classes = _string_list(paragraph.get("ancestor_html_classes"))
+    ancestor_ids = _string_list(paragraph.get("ancestor_html_ids"))
+    ancestor_epub_types = _string_list(paragraph.get("ancestor_epub_types"))
+    ancestor_roles = _string_list(paragraph.get("ancestor_roles"))
+    inline_anchor_ids = _string_list(paragraph.get("inline_anchor_ids"))
+    inline_anchor_hrefs = _string_list(paragraph.get("inline_anchor_hrefs"))
+    inline_anchor_texts = _string_list(paragraph.get("inline_anchor_texts"))
+    attrs = " ".join(
+        [
+            *own_attrs,
+            *ancestor_tags,
+            *ancestor_classes,
+            *ancestor_ids,
+            *ancestor_epub_types,
+            *ancestor_roles,
+            *inline_anchor_ids,
+            *inline_anchor_hrefs,
+            *inline_anchor_texts,
+        ]
     ).lower()
     signals: list[str] = []
     reason_fragments: list[str] = []
     markers = _leading_note_markers(text)
+    inline_note_anchor = _inline_anchor_looks_like_note_definition(
+        markers=markers,
+        inline_anchor_ids=inline_anchor_ids,
+        inline_anchor_hrefs=inline_anchor_hrefs,
+        inline_anchor_texts=inline_anchor_texts,
+    )
 
     if markers and any(marker in linked_markers for marker in markers):
         signals.append("linked_note_marker")
@@ -550,8 +643,16 @@ def _source_evidence(
         signals.append("numbered_note_cluster")
         start, end = cluster_ranges[paragraph_position]
         reason_fragments.append(f"note_cluster_p{start}_p{end}")
-    if re.search(r"footnote|endnote|note|noteref|fn|reference|bibliograph|annotation|译注|注释|尾注", attrs):
+    if _attrs_have_auxiliary_marker(attrs):
         signals.append("html_auxiliary_marker")
+    if inline_note_anchor:
+        signals.append("inline_note_definition_anchor")
+    if markers and any(marker in linked_markers for marker in markers) and (
+        inline_note_anchor or paragraph_position >= max(1, paragraph_count - 2)
+    ):
+        signals.append("linked_note_definition")
+    if _literary_container(paragraph, ancestor_tags, ancestor_classes, ancestor_epub_types, ancestor_roles):
+        signals.append("literary_container")
     if re.search(r"figcaption|caption|table|figure", attrs):
         signals.append("caption_or_table_marker")
     if re.search(r"https?://|www\.|[a-z0-9.-]+\.(com|org|net|edu|gov|pdf)\b", text.lower()):
@@ -567,9 +668,67 @@ def _source_evidence(
         "signals": sorted(set(signals)),
         "linked_markers": sorted(set(markers).intersection(linked_markers)),
         "leading_markers": markers,
+        "ancestor_tags": ancestor_tags,
+        "ancestor_html_classes": ancestor_classes,
+        "ancestor_epub_types": ancestor_epub_types,
+        "ancestor_roles": ancestor_roles,
+        "inline_anchor_ids": inline_anchor_ids,
+        "inline_anchor_hrefs": inline_anchor_hrefs,
+        "inline_anchor_texts": inline_anchor_texts,
         "position": _position_hint(paragraph_position, paragraph_count),
         "reason_fragments": reason_fragments,
     }
+
+
+def _inline_anchor_looks_like_note_definition(
+    *,
+    markers: list[str],
+    inline_anchor_ids: list[str],
+    inline_anchor_hrefs: list[str],
+    inline_anchor_texts: list[str],
+) -> bool:
+    """Return whether inline anchors look like a footnote/endnote definition marker."""
+
+    if not markers:
+        return False
+    marker_set = set(markers)
+    normalized_anchor_texts = {
+        _normalize_marker(text.strip("[]［］()（） "))
+        for text in inline_anchor_texts
+        if text
+    }
+    if marker_set.intersection(normalized_anchor_texts):
+        return True
+    joined = " ".join([*inline_anchor_ids, *inline_anchor_hrefs]).lower()
+    return bool(re.search(r"(?:^|[#/_-])(f|fn|footnote|endnote|note)[-_]?[0-9ivxlcdm]+\b", joined, flags=re.IGNORECASE))
+
+
+def _attrs_have_auxiliary_marker(attrs: str) -> bool:
+    """Return whether structural attributes explicitly identify auxiliary apparatus."""
+
+    if re.search(r"译注|注释|尾注", attrs):
+        return True
+    pattern = (
+        r"(?:^|[\s#._:/-])"
+        r"(?:footnote|endnote|noteref|fnote|doc-footnote|doc-endnote|"
+        r"translator-note|reference|bibliography|bibliographic|annotation|fn)"
+        r"(?:$|[\s#._:/-])"
+    )
+    return bool(re.search(pattern, attrs, flags=re.IGNORECASE))
+
+
+def _literary_container(
+    paragraph: Mapping[str, object],
+    ancestor_tags: list[str],
+    ancestor_classes: list[str],
+    ancestor_epub_types: list[str],
+    ancestor_roles: list[str],
+) -> bool:
+    """Return whether source markup identifies this block as literary body form."""
+
+    block_tag = _clean(paragraph.get("block_tag")).lower()
+    values = " ".join([block_tag, *ancestor_tags, *ancestor_classes, *ancestor_epub_types, *ancestor_roles]).lower()
+    return bool(re.search(r"blockquote|poem|poetry|verse|stanza|letter", values))
 
 
 def _body_note_markers(paragraphs: list[Mapping[str, object]]) -> set[str]:
@@ -715,4 +874,3 @@ def _write_diagnostics(path: Path | None, diagnostics: Mapping[str, object]) -> 
     payload["source_normalization"] = dict(diagnostics)
     path.parent.mkdir(parents=True, exist_ok=True)
     path.write_text(json.dumps(payload, ensure_ascii=False, indent=2), encoding="utf-8")
-

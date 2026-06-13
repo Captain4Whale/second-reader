@@ -7,7 +7,7 @@ Update when: the current objective, active tasks, blockers, active jobs, open de
 
 This file is authoritative for durable current status. Do not keep unique active-state information only in `docs/agent-handoff.md`.
 
-Last verified: `2026-06-13T19:25:00+08:00`
+Last verified: `2026-06-13T21:10:11+08:00`
 
 ## Current Objective
 - The `Ingest -> Digest -> Reading Runner settlement` mechanism reframe is implemented; current work is fact alignment, smoke/diagnostic review, and calibration before any formal evaluation promotion.
@@ -41,6 +41,7 @@ Last verified: `2026-06-13T19:25:00+08:00`
     - `DEC-121` calibrates the live v16 token-bounded preview upward from `1000 / 1800 / 2600` to `1600 / 3000 / 4200`, preserving the same v16 prompt/schema while giving Ingest more planning context after the first focused Siddhartha report suggested the initial token window was slightly narrow
     - `DEC-122` records Source Normalization as the accepted upstream design direction for classifying original paragraph/block records into mainline, heading, auxiliary, and noise roles before Ingest/Digest run
     - `DEC-123` implements Source Normalization v1 for newly created parsed-book documents: parse extracts lightweight HTML/EPUB evidence, runs a whole-book LLM source-flow classifier in bounded chunks, conservatively applies only high-confidence auxiliary/reference/noise/front-back/caption-support labels with structural evidence to the coarse `text_role == "auxiliary"` gate, persists `source_normalization` paragraph metadata, rebuilds sentences, writes parse diagnostics, and degrades to deterministic roles if the classifier fails; existing parsed artifacts are not auto-migrated
+    - `DEC-124` upgrades Source Normalization to markup-aware v1.1 for newly parsed books: paragraph records now retain ancestor container and inline-anchor metadata, pure parent containers such as `blockquote > p` aggregates no longer duplicate child正文, deterministic markup evidence can exclude explicit footnote/endnote/note-definition records even when LLM confidence is malformed, and blockquote/poem/verse/letter正文 is protected from unbacked `layout_noise` labels
     - current `llm_calls.ingest(...)` is the forward-only XML LLM boundary call: `unit.end_paragraph_n`, `unit.end_at`, `preview_partition[]`, optional boundary-rationale `reason`, and bounded `memory_recalls[]`
     - current LLM-call code now lives in `reading-companion-backend/src/attentional_v2/llm_calls.py`; the old ambiguous active module name is removed
     - current `attentional_v2` LLM calls keep project schemas/tools protocol-neutral; Anthropic-compatible profiles submit structured results through mechanism-private final-output tools such as `submit_ingest_result` and `submit_digest_result`, while OpenAI-compatible JSON-object profiles use JSON object plus validator/repair for Ingest/Digest final output; `retrieve_unit_memory` remains the only live action tool and is left to model `auto` choice; OpenAI-compatible DeepSeek/OpenCode JSON-object calls do not force final-output `tool_choice`

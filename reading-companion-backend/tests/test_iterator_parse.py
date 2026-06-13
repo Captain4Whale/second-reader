@@ -199,7 +199,9 @@ def test_extract_epub_paragraph_records_preserves_source_normalization_evidence(
     content = """
 <html xmlns="http://www.w3.org/1999/xhtml" xmlns:epub="http://www.idpf.org/2007/ops">
   <body>
-    <p id="fn1" class="footnote translator-note" epub:type="footnote" role="doc-footnote">[1] Translator note.</p>
+    <div class="fnote" epub:type="footnote" role="doc-footnote">
+      <p><a id="f1" href="chapter.xhtml#s1">[1]</a> Translator note.</p>
+    </div>
   </body>
 </html>
 """
@@ -211,11 +213,49 @@ def test_extract_epub_paragraph_records_preserves_source_normalization_evidence(
         spine_index=3,
     )
 
-    assert records[0]["html_id"] == "fn1"
-    assert records[0]["html_class"] == "footnote translator-note"
-    assert records[0]["epub_type"] == "footnote"
-    assert records[0]["role"] == "doc-footnote"
+    assert len(records) == 1
     assert records[0]["paragraph_index"] == 1
+    assert records[0]["text"] == "[1] Translator note."
+    assert records[0]["ancestor_tags"] == ["div"]
+    assert records[0]["ancestor_html_classes"] == ["fnote"]
+    assert records[0]["ancestor_epub_types"] == ["footnote"]
+    assert records[0]["ancestor_roles"] == ["doc-footnote"]
+    assert records[0]["inline_anchor_ids"] == ["f1"]
+    assert records[0]["inline_anchor_hrefs"] == ["chapter.xhtml#s1"]
+    assert records[0]["inline_anchor_texts"] == ["[1]"]
+
+
+def test_extract_epub_paragraph_records_skips_blockquote_container_and_preserves_literary_ancestor():
+    """Blockquote wrappers should not duplicate child paragraph text."""
+    content = """
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <body>
+    <p>Before the poem.</p>
+    <blockquote>
+      <p>Line one of the poem.</p>
+      <p>Line two of the poem.</p>
+    </blockquote>
+    <p>After the poem.</p>
+  </body>
+</html>
+"""
+
+    records = parse_module._extract_epub_paragraph_records(
+        content,
+        href="chapter.xhtml",
+        item_id="chapter",
+        spine_index=1,
+    )
+
+    assert [record["text"] for record in records] == [
+        "Before the poem.",
+        "Line one of the poem.",
+        "Line two of the poem.",
+        "After the poem.",
+    ]
+    assert [record["block_tag"] for record in records] == ["p", "p", "p", "p"]
+    assert records[1]["ancestor_tags"] == ["blockquote"]
+    assert records[2]["ancestor_tags"] == ["blockquote"]
 
 
 def test_extract_epub_chapters_from_toc_handles_nested_children_and_non_string_href():
@@ -313,6 +353,8 @@ def test_source_normalization_prompt_contract_mentions_source_flow_and_false_pos
     assert "not importance judgment" in system_prompt
     assert "letters, poems, dialogue, fictional documents" in system_prompt
     assert "numbered main-body aphorisms" in system_prompt
+    assert "source markup as evidence" in system_prompt
+    assert "Never mark blockquote, poem, verse" in system_prompt
 
 
 def test_source_normalization_marks_note_cluster_auxiliary_and_rebuilds_sentences(tmp_path):
@@ -404,6 +446,134 @@ def test_source_normalization_marks_note_cluster_auxiliary_and_rebuilds_sentence
     assert diagnostics["applied_exclusion_count"] == 3
     assert diagnostics["normalized_role_counts"]["auxiliary_note"] == 2
     assert json.loads(diagnostics_path.read_text(encoding="utf-8"))["source_normalization"]["status"] == "completed"
+
+
+def test_source_normalization_applies_single_linked_note_with_malformed_confidence():
+    """Explicit footnote markup should survive malformed LLM confidence."""
+    document = {
+        "metadata": {"book": "悉达多", "book_language": "zh", "output_language": "zh"},
+        "chapters": [
+            {
+                "id": 4,
+                "title": "乔文达",
+                "paragraphs": [
+                    {"paragraph_index": 1, "text": "摩揭陀[1]的消息传到了行旅者耳中。", "text_role": "body", "block_tag": "p"},
+                    {
+                        "paragraph_index": 2,
+                        "text": "[1]Magadha，古印度王国名。",
+                        "text_role": "body",
+                        "block_tag": "p",
+                        "ancestor_tags": ["div"],
+                        "ancestor_html_classes": ["fnote"],
+                        "ancestor_epub_types": ["footnote"],
+                        "ancestor_roles": ["doc-footnote"],
+                        "inline_anchor_ids": ["f1"],
+                        "inline_anchor_hrefs": ["part0005.xhtml#s1"],
+                        "inline_anchor_texts": ["[1]"],
+                    },
+                    {"paragraph_index": 3, "text": "正文随后继续。", "text_role": "body", "block_tag": "p"},
+                ],
+            }
+        ],
+    }
+
+    def _fake_classifier(_blocks, _context):
+        return {
+            "classifications": [
+                {
+                    "chapter_id": 4,
+                    "paragraph_index": 2,
+                    "normalized_role": "auxiliary_note",
+                    "kind": "translator_note",
+                    "confidence": "definitely",
+                    "reason_code": "linked_note_definition",
+                    "linked_markers": ["1"],
+                }
+            ]
+        }
+
+    normalized, diagnostics = source_normalization_module.normalize_book_document_source(
+        document,
+        classifier=_fake_classifier,
+    )
+
+    paragraphs = normalized["chapters"][0]["paragraphs"]
+    assert [paragraph["text_role"] for paragraph in paragraphs] == ["body", "auxiliary", "body"]
+    note_metadata = paragraphs[1]["source_normalization"]
+    assert note_metadata["normalized_role"] == "auxiliary_note"
+    assert note_metadata["method"] == "deterministic_markup"
+    assert note_metadata["reason_code"] == "html_auxiliary_marker"
+    assert "html_auxiliary_marker" in note_metadata["evidence"]["signals"]
+    assert "inline_note_definition_anchor" in note_metadata["evidence"]["signals"]
+    assert [sentence["paragraph_index"] for sentence in normalized["chapters"][0]["sentences"]] == [1, 3]
+    assert diagnostics["applied_exclusion_count"] == 1
+
+
+def test_source_normalization_keeps_blockquote_poem_lines_against_duplicate_noise_label():
+    """Literary containers protect body lines from unbacked layout-noise suggestions."""
+    document = {
+        "metadata": {"book": "悉达多", "book_language": "zh", "output_language": "zh"},
+        "chapters": [
+            {
+                "id": 8,
+                "title": "河边",
+                "paragraphs": [
+                    {"paragraph_index": 1, "text": "他听见了河水。", "text_role": "body", "block_tag": "p"},
+                    {
+                        "paragraph_index": 2,
+                        "text": "我愿在此停留。",
+                        "text_role": "body",
+                        "block_tag": "p",
+                        "ancestor_tags": ["blockquote"],
+                    },
+                    {
+                        "paragraph_index": 3,
+                        "text": "我愿倾听河流。",
+                        "text_role": "body",
+                        "block_tag": "p",
+                        "ancestor_tags": ["blockquote"],
+                    },
+                    {"paragraph_index": 4, "text": "于是他留了下来。", "text_role": "body", "block_tag": "p"},
+                ],
+            }
+        ],
+    }
+
+    def _fake_classifier(_blocks, _context):
+        return {
+            "classifications": [
+                {
+                    "chapter_id": 8,
+                    "paragraph_index": 2,
+                    "normalized_role": "layout_noise",
+                    "kind": "duplicate_poem_line",
+                    "confidence": 0.99,
+                    "reason_code": "duplicate_poem_line",
+                },
+                {
+                    "chapter_id": 8,
+                    "paragraph_index": 3,
+                    "normalized_role": "layout_noise",
+                    "kind": "duplicate_poem_line",
+                    "confidence": 0.99,
+                    "reason_code": "duplicate_poem_line",
+                },
+            ]
+        }
+
+    normalized, diagnostics = source_normalization_module.normalize_book_document_source(
+        document,
+        classifier=_fake_classifier,
+    )
+
+    paragraphs = normalized["chapters"][0]["paragraphs"]
+    assert [paragraph["text_role"] for paragraph in paragraphs] == ["body", "body", "body", "body"]
+    poem_metadata = paragraphs[1]["source_normalization"]
+    assert "literary_container" in poem_metadata["evidence"]["signals"]
+    assert poem_metadata["method"] == "deterministic_baseline_llm_rejected"
+    assert poem_metadata["evidence"]["rejected_llm_suggestion"]["kind"] == "duplicate_poem_line"
+    assert [sentence["paragraph_index"] for sentence in normalized["chapters"][0]["sentences"]] == [1, 2, 3, 4]
+    assert diagnostics["applied_exclusion_count"] == 0
 
 
 def test_source_normalization_rejects_unbacked_auxiliary_label_for_numbered_body_text():
