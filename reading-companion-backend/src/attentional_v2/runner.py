@@ -52,6 +52,7 @@ from .source_spans import (
     normalize_cursor_for_chapter,
     readable_paragraphs,
     resolve_ingest_unit_boundary,
+    resolve_preview_partition_audit,
     source_locus_from_unit,
     source_ref_from_span,
     source_ref_from_unit,
@@ -1061,6 +1062,21 @@ def _ingest_trace_entry(
     entry: IngestTraceEntry = {
         "reason": _clean_text(boundary_result.get("reason")),
         "unit": dict(boundary_result.get("unit", {})) if isinstance(boundary_result.get("unit"), dict) else {},
+        "preview_partition": [
+            dict(item)
+            for item in boundary_result.get("preview_partition", [])
+            if isinstance(item, dict)
+        ]
+        if isinstance(boundary_result.get("preview_partition"), list)
+        else [],
+        "preview_partition_audit": [
+            dict(item)
+            for item in boundary_result.get("preview_partition_audit", [])
+            if isinstance(item, dict)
+        ]
+        if isinstance(boundary_result.get("preview_partition_audit"), list)
+        else [],
+        "preview_partition_audit_status": _clean_text(boundary_result.get("preview_partition_audit_status")),
         "end_anchor_text": _clean_text(boundary_result.get("end_anchor_text")),
         "memory_recalls": [
             dict(item)
@@ -1095,6 +1111,9 @@ def _compact_ingest_trace(ingest_trace: object) -> list[dict[str, object]]:
         for key in (
             "reason",
             "unit",
+            "preview_partition",
+            "preview_partition_audit",
+            "preview_partition_audit_status",
             "end_anchor_text",
             "memory_recalls",
             "memory_recalls_status",
@@ -1490,6 +1509,11 @@ def _resolve_ingest_boundary(
 
     selected_result = dict(retry_boundary_result or boundary_result)
     unit = dict(selected_result.get("unit", {})) if isinstance(selected_result.get("unit"), dict) else {}
+    preview_partition = [
+        dict(item)
+        for item in selected_result.get("preview_partition", [])
+        if isinstance(item, dict)
+    ] if isinstance(selected_result.get("preview_partition"), list) else []
     resolution = resolve_ingest_unit_boundary(
         preview=preview,
         unit=unit,
@@ -1526,8 +1550,21 @@ def _resolve_ingest_boundary(
     end_anchor_text = _clean_text(resolution.get("matched_text"))
     if not end_anchor_text:
         end_anchor_text = _clean_text(unit.get("end_at"))
+    preview_partition_audit_result = resolve_preview_partition_audit(
+        preview=preview,
+        start_cursor=start_cursor,
+        preview_partition=preview_partition,
+    ) if preview_partition else {"status": "missing", "partitions": []}
+    preview_partition_audit = [
+        dict(item)
+        for item in preview_partition_audit_result.get("partitions", [])
+        if isinstance(item, dict)
+    ] if isinstance(preview_partition_audit_result.get("partitions"), list) else []
     unitize_decision: UnitizeDecision = {
         "unit": unit,
+        "preview_partition": preview_partition,
+        "preview_partition_audit": preview_partition_audit,
+        "preview_partition_audit_status": _clean_text(preview_partition_audit_result.get("status")) or "missing",
         "end_anchor_text": end_anchor_text,
         "source_span": source_span,
         "source_span_id": source_id,
@@ -1568,6 +1605,14 @@ def _accept_ingest_boundary(
     selected_boundary["source_span_id"] = _clean_text(unitize_decision.get("source_span_id"))
     selected_boundary["source_span"] = dict(unitize_decision.get("source_span", {}))
     selected_boundary["resolution"] = dict(unitize_decision.get("resolution", {}))
+    selected_boundary["preview_partition_audit"] = [
+        dict(item)
+        for item in unitize_decision.get("preview_partition_audit", [])
+        if isinstance(item, dict)
+    ] if isinstance(unitize_decision.get("preview_partition_audit"), list) else []
+    selected_boundary["preview_partition_audit_status"] = _clean_text(
+        unitize_decision.get("preview_partition_audit_status")
+    )
     ingest_trace = [_ingest_trace_entry(boundary_result)]
     if retry_boundary_result is not None:
         ingest_trace.append(_ingest_trace_entry(retry_boundary_result))
@@ -1624,6 +1669,7 @@ def prepare_next_source_unit_for_read(
             tool_results=[{"status": "preflight"}],
             current_source_texts=current_source_texts,
             current_visible_paragraph_ns=current_visible_paragraph_ns,
+            require_preview_partition=False,
         )
         if preflight_errors:
             return {
@@ -1762,7 +1808,9 @@ def prepare_next_source_unit_for_read(
                 "previous_resolution": dict(resolution),
                 "retry_instruction": (
                     "Return a visible unit boundary object: set unit.end_paragraph_n to a visible Paragraph n "
-                    "and unit.end_at to paragraph_end or a longer unique exact tail quote inside that paragraph."
+                    "and unit.end_at to paragraph_end or a longer unique exact tail quote inside that paragraph. "
+                    "Also return preview_partition as the whole visible preview map, with preview_partition[0] "
+                    "matching the corrected unit boundary exactly."
                 ),
             }
         )

@@ -749,6 +749,31 @@ def _normalize_ingest_boundary_result(
             "Ingest result unit.end_paragraph_n and unit.end_at must be non-empty.",
             problem_code="llm_contract",
         )
+    raw_preview_partition = value.get("preview_partition")
+    if not isinstance(raw_preview_partition, list) or not raw_preview_partition:
+        raise ReaderLLMError(
+            "Ingest result preview_partition must be a non-empty array.",
+            problem_code="llm_contract",
+        )
+    preview_partition: list[dict[str, object]] = []
+    for index, item in enumerate(raw_preview_partition):
+        if not isinstance(item, Mapping):
+            raise ReaderLLMError(
+                f"Ingest result preview_partition[{index}] must be an object.",
+                problem_code="llm_contract",
+            )
+        partition = {
+            "title": _clean_text(item.get("title")),
+            "end_paragraph_n": _clean_text(item.get("end_paragraph_n")),
+            "end_at": _clean_text(item.get("end_at")),
+            "status": _clean_text(item.get("status")),
+        }
+        if not partition["title"] or not partition["end_paragraph_n"] or not partition["end_at"] or not partition["status"]:
+            raise ReaderLLMError(
+                "Ingest result preview_partition entries must include title, end_paragraph_n, end_at, and status.",
+                problem_code="llm_contract",
+            )
+        preview_partition.append(partition)
     raw_recalls = value.get("memory_recalls")
     normalized_recalls = normalize_unit_memory_recalls(raw_recalls)
     if "memory_recalls" not in value:
@@ -762,6 +787,7 @@ def _normalize_ingest_boundary_result(
     result: IngestBoundaryResult = {
         "reason": _clean_text(value.get("reason")),
         "unit": unit,
+        "preview_partition": preview_partition,
         "memory_recalls": normalized_recalls,
         "memory_recalls_status": recalls_status,
     }

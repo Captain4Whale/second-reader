@@ -3,25 +3,27 @@
 Purpose: hold the reviewed draft prompt used by the `window_partition_draft`
 Ingest A/B probes.
 
-Use when: reviewing the prompt text that became the live
-`attentional_v2.ingest.v14` Ingest unit-boundary selector.
+Use when: reviewing the prompt text that became the live v14
+window-partition Ingest unit-boundary selector.
 
 Not for: editing live runtime behavior, evaluation scoring, or Unit Memory
 retrieval policy.
 
 Status: promoted to live Ingest prompt `attentional_v2.ingest.v14` /
-promptset `attentional_v2-phase6-v64` on `2026-06-11`. The production source
-of truth is now
+promptset `attentional_v2-phase6-v64` on `2026-06-11`, then superseded as the
+latest live baseline by `attentional_v2.ingest.v15` / promptset
+`attentional_v2-phase6-v65` on `2026-06-13`. The production source of truth is
+now
 `reading-companion-backend/src/attentional_v2/prompts/ingest.py`.
 
 Last synchronized: `2026-06-13`
 
-Follow-up candidate: the promoted prompt already asks the model to
+Follow-up disposition: the promoted v14 prompt already asked the model to
 conceptually partition the whole visible preview before committing only the
-first unit. It does not currently require a structured `preview_partition[]`
-with per-partition titles. That remains a future v15/evaluation candidate for
-making the model's provisional whole-window segmentation auditable, while
-keeping `preview_partition[0]` as the only authoritative runtime boundary.
+first unit. The v15 live prompt/output contract now requires structured
+`preview_partition[]` entries with per-partition titles for mechanism-private
+audit, while keeping `preview_partition[0]` as the only authoritative runtime
+boundary.
 
 ## Source
 

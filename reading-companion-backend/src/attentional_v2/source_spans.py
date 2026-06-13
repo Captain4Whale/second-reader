@@ -911,6 +911,85 @@ def resolve_ingest_unit_boundary(
     }
 
 
+def resolve_preview_partition_audit(
+    *,
+    preview: Mapping[str, object],
+    start_cursor: Mapping[str, object],
+    preview_partition: list[Mapping[str, object]],
+) -> dict[str, object]:
+    """Resolve the model's whole-preview partition map as audit metadata."""
+
+    audits: list[dict[str, object]] = []
+    current_start = dict(start_cursor)
+    overall_status = "ok"
+    skip_reason = ""
+    for index, item in enumerate(preview_partition):
+        title = _clean_text(item.get("title"))
+        partition_status = _clean_text(item.get("status")) or "complete"
+        boundary = {
+            "end_paragraph_n": _clean_text(item.get("end_paragraph_n")),
+            "end_at": _clean_text(item.get("end_at")),
+        }
+        audit: dict[str, object] = {
+            "index": index,
+            "title": title,
+            "boundary": boundary,
+            "partition_status": partition_status,
+        }
+        if skip_reason:
+            audits.append(
+                {
+                    **audit,
+                    "resolution_status": "skipped",
+                    "resolution": {
+                        "status": "skipped",
+                        "reason": skip_reason,
+                    },
+                }
+            )
+            continue
+
+        resolution = resolve_ingest_unit_boundary(
+            preview=preview,
+            unit=boundary,
+        )
+        audit["resolution"] = dict(resolution)
+        if _clean_text(resolution.get("status")) != "matched":
+            overall_status = "partial"
+            audit["resolution_status"] = _clean_text(resolution.get("status")) or "unresolved"
+            skip_reason = f"previous_partition_{index}_unresolved"
+            audits.append(audit)
+            continue
+
+        end_cursor = dict(resolution.get("end_cursor", {})) if isinstance(resolution.get("end_cursor"), Mapping) else {}
+        if not cursor_less_than(current_start, end_cursor):
+            overall_status = "partial"
+            audit["resolution_status"] = "non_advancing"
+            audit["resolution"] = {
+                **dict(resolution),
+                "status": "non_advancing",
+                "reason": "partition end cursor did not advance from the previous partition start",
+            }
+            skip_reason = f"previous_partition_{index}_non_advancing"
+            audits.append(audit)
+            continue
+
+        source_span = {
+            "start_cursor": dict(current_start),
+            "end_cursor": dict(end_cursor),
+        }
+        audit["resolution_status"] = "resolved"
+        audit["source_span"] = source_span
+        audit["source_span_id"] = source_span_id(source_span)
+        audits.append(audit)
+        current_start = dict(end_cursor)
+
+    return {
+        "status": overall_status if audits else "missing",
+        "partitions": audits,
+    }
+
+
 def resolve_end_anchor_text(
     *,
     preview: Mapping[str, object],

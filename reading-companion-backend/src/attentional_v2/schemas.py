@@ -177,6 +177,9 @@ class UnitizeDecision(TypedDict, total=False):
     start_sentence_id: str
     end_sentence_id: str
     unit: dict[str, object]
+    preview_partition: list[dict[str, object]]
+    preview_partition_audit: list[dict[str, object]]
+    preview_partition_audit_status: str
     end_anchor_text: str
     source_span: dict[str, object]
     source_span_id: str
@@ -352,6 +355,9 @@ class IngestBoundaryResult(TypedDict, total=False):
 
     reason: str
     unit: dict[str, object]
+    preview_partition: list[dict[str, object]]
+    preview_partition_audit: list[dict[str, object]]
+    preview_partition_audit_status: str
     end_anchor_text: str
     memory_recalls: list["UnitMemoryRecall"]
     memory_recalls_status: str
@@ -364,6 +370,9 @@ class IngestTraceEntry(TypedDict, total=False):
 
     reason: str
     unit: dict[str, object]
+    preview_partition: list[dict[str, object]]
+    preview_partition_audit: list[dict[str, object]]
+    preview_partition_audit_status: str
     end_anchor_text: str
     memory_recalls: list["UnitMemoryRecall"]
     memory_recalls_status: str

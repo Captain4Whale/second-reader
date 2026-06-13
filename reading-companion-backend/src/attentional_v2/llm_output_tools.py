@@ -27,7 +27,7 @@ def final_output_tool(name: str, description: str, input_schema: Mapping[str, An
 
 INGEST_RESULT_TOOL = final_output_tool(
     "submit_ingest_result",
-    "Submit the final Ingest unit boundary and prior-reading recall result. Use this tool exactly once as the final answer.",
+    "Submit the final Ingest unit boundary, preview partition audit map, and prior-reading recall result. Use this tool exactly once as the final answer.",
     _object_schema(
         {
             "unit": _object_schema(
@@ -37,6 +37,19 @@ INGEST_RESULT_TOOL = final_output_tool(
                 },
                 required=["end_paragraph_n", "end_at"],
             ),
+            "preview_partition": {
+                "type": "array",
+                "minItems": 1,
+                "items": _object_schema(
+                    {
+                        "title": {"type": "string"},
+                        "end_paragraph_n": {"type": ["string", "number"]},
+                        "end_at": {"type": "string"},
+                        "status": {"type": "string", "enum": ["complete", "open_tail"]},
+                    },
+                    required=["title", "end_paragraph_n", "end_at", "status"],
+                ),
+            },
             "reason": {"type": "string"},
             "memory_recalls": {
                 "type": "array",
@@ -51,7 +64,7 @@ INGEST_RESULT_TOOL = final_output_tool(
                 ),
             },
         },
-        required=["unit", "memory_recalls"],
+        required=["unit", "preview_partition", "memory_recalls"],
     ),
 )
 
@@ -201,21 +214,59 @@ def validate_ingest_result(
     *,
     current_source_texts: list[str] | None = None,
     current_visible_paragraph_ns: list[str] | None = None,
+    require_preview_partition: bool = True,
 ) -> list[str]:
     errors: list[str] = []
     unit = payload.get("unit")
+    unit_end_paragraph_n = ""
+    unit_end_at = ""
+    visible_ns = {str(item or "").strip() for item in current_visible_paragraph_ns or [] if str(item or "").strip()}
     if not isinstance(unit, Mapping):
         errors.append("unit must be an object")
     else:
-        end_paragraph_n = str(unit.get("end_paragraph_n") or "").strip()
-        end_at = str(unit.get("end_at") or "").strip()
-        if not end_paragraph_n:
+        unit_end_paragraph_n = str(unit.get("end_paragraph_n") or "").strip()
+        unit_end_at = str(unit.get("end_at") or "").strip()
+        if not unit_end_paragraph_n:
             errors.append("unit.end_paragraph_n must be non-empty")
-        if not end_at:
+        if not unit_end_at:
             errors.append("unit.end_at must be non-empty")
-        visible_ns = {str(item or "").strip() for item in current_visible_paragraph_ns or [] if str(item or "").strip()}
-        if visible_ns and end_paragraph_n and end_paragraph_n not in visible_ns:
+        if visible_ns and unit_end_paragraph_n and unit_end_paragraph_n not in visible_ns:
             errors.append("unit.end_paragraph_n must match a visible Paragraph n")
+
+    preview_partition = payload.get("preview_partition")
+    if require_preview_partition and not isinstance(preview_partition, list):
+        errors.append("preview_partition must be a non-empty array")
+    elif isinstance(preview_partition, list):
+        if require_preview_partition and not preview_partition:
+            errors.append("preview_partition must be a non-empty array")
+        for index, item in enumerate(preview_partition):
+            if not isinstance(item, Mapping):
+                errors.append(f"preview_partition[{index}] must be an object")
+                continue
+            title = str(item.get("title") or "").strip()
+            end_paragraph_n = str(item.get("end_paragraph_n") or "").strip()
+            end_at = str(item.get("end_at") or "").strip()
+            status = str(item.get("status") or "").strip()
+            if not title:
+                errors.append(f"preview_partition[{index}].title must be non-empty")
+            if not end_paragraph_n:
+                errors.append(f"preview_partition[{index}].end_paragraph_n must be non-empty")
+            if not end_at:
+                errors.append(f"preview_partition[{index}].end_at must be non-empty")
+            if visible_ns and end_paragraph_n and end_paragraph_n not in visible_ns:
+                errors.append(f"preview_partition[{index}].end_paragraph_n must match a visible Paragraph n")
+            if status not in {"complete", "open_tail"}:
+                errors.append(f"preview_partition[{index}].status must be complete or open_tail")
+            elif status == "open_tail" and index != len(preview_partition) - 1:
+                errors.append("preview_partition open_tail is allowed only on the final partition")
+        if preview_partition and isinstance(preview_partition[0], Mapping) and isinstance(unit, Mapping):
+            first_end_paragraph_n = str(preview_partition[0].get("end_paragraph_n") or "").strip()
+            first_end_at = str(preview_partition[0].get("end_at") or "").strip()
+            if unit_end_paragraph_n and unit_end_at and (
+                first_end_paragraph_n != unit_end_paragraph_n or first_end_at != unit_end_at
+            ):
+                errors.append("preview_partition[0] must match unit")
+
     recalls = payload.get("memory_recalls")
     if not isinstance(recalls, list):
         errors.append("memory_recalls must be an array")

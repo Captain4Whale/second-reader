@@ -7,6 +7,7 @@ from src.attentional_v2.source_spans import (
     first_cursor_for_chapter,
     resolve_end_anchor_text,
     resolve_ingest_unit_boundary,
+    resolve_preview_partition_audit,
     source_ref_from_unit,
     source_unit_from_span,
 )
@@ -345,6 +346,131 @@ def test_ingest_unit_boundary_reports_ambiguous_missing_and_invisible_boundaries
         preview=preview,
         unit={"end_paragraph_n": "2", "end_at": "paragraph_end"},
     )["reason"] == "unit.end_paragraph_n does not match a visible Paragraph n"
+
+
+def test_preview_partition_audit_resolves_ordered_spans() -> None:
+    chapter = {
+        "id": 1,
+        "title": "Chapter 1",
+        "paragraphs": [
+            {"paragraph_index": 1, "text": "Alpha opens. Beta closes.", "text_role": "body"},
+            {"paragraph_index": 2, "text": "Gamma starts.", "text_role": "body"},
+        ],
+    }
+    start_cursor = {"chapter_id": 1, "chapter_ref": "Chapter 1", "paragraph_index": 1, "char_offset": 0}
+    preview = build_paragraph_offset_preview(
+        chapter=chapter,
+        current_cursor=start_cursor,
+        reader_policy={"unitize": {"preview_soft_min_chars": 30, "preview_hard_max_chars": 200, "max_lookahead_paragraphs": 2}},
+    )
+
+    audit = resolve_preview_partition_audit(
+        preview=preview,
+        start_cursor=start_cursor,
+        preview_partition=[
+            {
+                "title": "Opening claim",
+                "end_paragraph_n": "1",
+                "end_at": "Beta closes.",
+                "status": "complete",
+            },
+            {
+                "title": "Next move",
+                "end_paragraph_n": "2",
+                "end_at": "paragraph_end",
+                "status": "complete",
+            },
+        ],
+    )
+
+    assert audit["status"] == "ok"
+    partitions = audit["partitions"]
+    assert partitions[0]["resolution_status"] == "resolved"
+    assert partitions[0]["source_span_id"] == "src:c1:p1@0-p1@25"
+    assert partitions[1]["source_span_id"] == "src:c1:p1@25-p2@13"
+
+
+def test_preview_partition_audit_uses_quote_normalization_and_trailing_closer() -> None:
+    chapter = {
+        "id": 1,
+        "title": "Chapter 1",
+        "paragraphs": [
+            {"paragraph_index": 1, "text": "“在水面行走并不是我的追求。”", "text_role": "body"},
+        ],
+    }
+    start_cursor = {"chapter_id": 1, "chapter_ref": "Chapter 1", "paragraph_index": 1, "char_offset": 0}
+    preview = build_paragraph_offset_preview(
+        chapter=chapter,
+        current_cursor=start_cursor,
+        reader_policy={"unitize": {"preview_soft_min_chars": 1, "preview_hard_max_chars": 200, "max_lookahead_paragraphs": 1}},
+    )
+
+    audit = resolve_preview_partition_audit(
+        preview=preview,
+        start_cursor=start_cursor,
+        preview_partition=[
+            {
+                "title": "Refused miracle",
+                "end_paragraph_n": "1",
+                "end_at": '"在水面行走并不是我的追求。',
+                "status": "complete",
+            }
+        ],
+    )
+
+    assert audit["status"] == "ok"
+    partition = audit["partitions"][0]
+    assert partition["resolution_status"] == "resolved"
+    assert partition["resolution"]["method"] == "normalized_paragraph_tail_quote"
+    assert partition["resolution"]["end_cursor_extension"] == {
+        "kind": "trailing_closing_punctuation",
+        "text": "”",
+    }
+
+
+def test_preview_partition_audit_marks_later_unresolved_partition_partial() -> None:
+    chapter = _chapter()
+    start_cursor = {"chapter_id": 1, "chapter_ref": "Chapter 1", "paragraph_index": 2, "char_offset": 0}
+    preview = build_paragraph_offset_preview(
+        chapter=chapter,
+        current_cursor=start_cursor,
+        reader_policy={"unitize": {"preview_soft_min_chars": 50, "preview_hard_max_chars": 200, "max_lookahead_paragraphs": 4}},
+    )
+
+    audit = resolve_preview_partition_audit(
+        preview=preview,
+        start_cursor=start_cursor,
+        preview_partition=[
+            {"title": "Beta unit", "end_paragraph_n": "2", "end_at": "paragraph_end", "status": "complete"},
+            {"title": "Missing quote", "end_paragraph_n": "3", "end_at": "missing", "status": "complete"},
+        ],
+    )
+
+    assert audit["status"] == "partial"
+    assert audit["partitions"][0]["resolution_status"] == "resolved"
+    assert audit["partitions"][1]["resolution_status"] == "not_found"
+
+
+def test_preview_partition_audit_marks_non_advancing_partition_partial() -> None:
+    chapter = _chapter()
+    start_cursor = {"chapter_id": 1, "chapter_ref": "Chapter 1", "paragraph_index": 2, "char_offset": 0}
+    preview = build_paragraph_offset_preview(
+        chapter=chapter,
+        current_cursor=start_cursor,
+        reader_policy={"unitize": {"preview_soft_min_chars": 50, "preview_hard_max_chars": 200, "max_lookahead_paragraphs": 4}},
+    )
+
+    audit = resolve_preview_partition_audit(
+        preview=preview,
+        start_cursor=start_cursor,
+        preview_partition=[
+            {"title": "Beta unit", "end_paragraph_n": "2", "end_at": "paragraph_end", "status": "complete"},
+            {"title": "Duplicate beta boundary", "end_paragraph_n": "2", "end_at": "paragraph_end", "status": "complete"},
+        ],
+    )
+
+    assert audit["status"] == "partial"
+    assert audit["partitions"][1]["resolution_status"] == "non_advancing"
 
 
 def test_unit_span_ledger_records_core_runtime_fact(tmp_path) -> None:

@@ -1224,13 +1224,13 @@ def test_attentional_v2_prompt_registry_projects_current_bundle() -> None:
     ingest = ATTENTIONAL_V2_PROMPT_REGISTRY.get("attentional_v2.ingest")
     chapter = ATTENTIONAL_V2_PROMPT_REGISTRY.get("attentional_v2.chapter_consolidation")
 
-    assert ATTENTIONAL_V2_PROMPTSET_VERSION == "attentional_v2-phase6-v64"
+    assert ATTENTIONAL_V2_PROMPTSET_VERSION == "attentional_v2-phase6-v65"
     assert ATTENTIONAL_V2_PROMPTS.promptset_version == ATTENTIONAL_V2_PROMPTSET_VERSION
     assert digest.version == DIGEST_PROMPT_VERSION == "attentional_v2.digest.v9"
     assert ATTENTIONAL_V2_PROMPTS.digest_version == digest.version
     assert ATTENTIONAL_V2_PROMPTS.digest_system == digest.system_prompt
     assert ATTENTIONAL_V2_PROMPTS.digest_prompt == digest.user_prompt_template
-    assert ingest.version == INGEST_PROMPT_VERSION == "attentional_v2.ingest.v14"
+    assert ingest.version == INGEST_PROMPT_VERSION == "attentional_v2.ingest.v15"
     assert ATTENTIONAL_V2_PROMPTS.ingest_version == ingest.version
     assert ATTENTIONAL_V2_PROMPTS.ingest_system == ingest.system_prompt
     assert ATTENTIONAL_V2_PROMPTS.chapter_consolidation_prompt == chapter.user_prompt_template
@@ -1878,7 +1878,17 @@ def _fake_single_sentence_ingest_boundary(**kwargs):
         end_anchor_text = stripped
     return {
         "unit": {"end_paragraph_n": paragraph_n, "end_at": end_anchor_text},
+        "preview_partition": [
+            {
+                "title": "Test first move",
+                "end_paragraph_n": paragraph_n,
+                "end_at": end_anchor_text,
+                "status": "complete",
+            }
+        ],
         "reason": "test_choose_source_anchor_unit",
+        "memory_recalls": [],
+        "memory_recalls_status": "provided",
     }
 
 
@@ -1913,6 +1923,9 @@ def test_prepare_next_source_unit_for_read_selects_mainline_unit(tmp_path, monke
     assert result["ingest_trace"]
     assert result["chapter_id"] == 2
     assert [sentence["sentence_id"] for sentence in result["selected_unit_sentences"]] == ["c2-s1"]
+    assert result["unitize_decision"]["preview_partition"][0]["title"] == "Test first move"
+    assert result["unitize_decision"]["preview_partition_audit_status"] == "ok"
+    assert result["ingest_trace"][0]["preview_partition_audit_status"] == "ok"
 
 
 def test_prepare_next_source_unit_for_read_retries_unresolved_boundary(tmp_path, monkeypatch):
@@ -1929,11 +1942,31 @@ def test_prepare_next_source_unit_for_read_retries_unresolved_boundary(tmp_path,
         if len(calls) == 1:
             return {
                 "unit": {"end_paragraph_n": "99", "end_at": "paragraph_end"},
+                "preview_partition": [
+                    {
+                        "title": "Bad first move",
+                        "end_paragraph_n": "99",
+                        "end_at": "paragraph_end",
+                        "status": "complete",
+                    }
+                ],
                 "reason": "test_unresolved_anchor",
+                "memory_recalls": [],
+                "memory_recalls_status": "provided",
             }
         return {
             "unit": {"end_paragraph_n": "1", "end_at": "Closing line."},
+            "preview_partition": [
+                {
+                    "title": "Retry first move",
+                    "end_paragraph_n": "1",
+                    "end_at": "Closing line.",
+                    "status": "complete",
+                }
+            ],
             "reason": "test_retry_anchor",
+            "memory_recalls": [],
+            "memory_recalls_status": "provided",
         }
 
     monkeypatch.setattr(runner_module, "_call_ingest", fake_ingest_boundary)
@@ -1957,8 +1990,11 @@ def test_prepare_next_source_unit_for_read_retries_unresolved_boundary(tmp_path,
     assert len(calls) == 2
     assert calls[1]["retry"] is True
     assert calls[1]["previous_unit"] == {"end_paragraph_n": "99", "end_at": "paragraph_end"}
+    assert "preview_partition[0]" in calls[1]["retry_instruction"]
     assert [sentence["sentence_id"] for sentence in result["selected_unit_sentences"]] == ["c2-s1", "c2-s2"]
     assert result["unitize_decision"]["unit"] == {"end_paragraph_n": "1", "end_at": "Closing line."}
+    assert result["unitize_decision"]["preview_partition"][0]["title"] == "Retry first move"
+    assert result["unitize_decision"]["preview_partition_audit_status"] == "ok"
     assert result["unitize_decision"]["end_anchor_text"] == "Closing line."
     assert result["ingest_trace"][1]["resolution"]["status"] == "matched"
 
@@ -2052,6 +2088,7 @@ def test_attentional_v2_read_book_runs_live_loop_and_persists_compatibility_resu
     read_audit_lines = read_audit_file(result.output_dir).read_text(encoding="utf-8").strip().splitlines()
     settlement_audit_lines = settlement_audit_file(result.output_dir).read_text(encoding="utf-8").strip().splitlines()
     unit_span_lines = unit_span_ledger_file(result.output_dir).read_text(encoding="utf-8").strip().splitlines()
+    unitize_audits = [json.loads(line) for line in unitize_lines]
     read_audits = [json.loads(line) for line in read_audit_lines]
     settlement_audits = [json.loads(line) for line in settlement_audit_lines]
     unit_spans = [json.loads(line) for line in unit_span_lines]
@@ -2065,6 +2102,13 @@ def test_attentional_v2_read_book_runs_live_loop_and_persists_compatibility_resu
     assert len(read_audit_lines) == 2
     assert len(settlement_audit_lines) == 2
     assert len(unit_span_lines) == 2
+    assert all(
+        audit["unitize_decision"]["preview_partition_audit_status"] == "ok"
+        for audit in unitize_audits
+    )
+    assert unitize_audits[0]["unitize_decision"]["preview_partition"][0]["title"] == "Test first move"
+    assert read_audits[0]["ingest_trace"][0]["preview_partition_audit_status"] == "ok"
+    assert read_audits[0]["ingest_trace"][0]["preview_partition_audit"][0]["source_span_id"]
     assert [record["start_cursor"]["char_offset"] for record in unit_spans] == [0, 15]
     assert [record["end_cursor"]["char_offset"] for record in unit_spans] == [15, 30]
     paragraph_text = result.book_document["chapters"][0]["paragraphs"][0]["text"]

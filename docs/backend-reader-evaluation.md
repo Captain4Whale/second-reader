@@ -33,7 +33,7 @@ The old Memory / Planning / Evaluation implementation guidance chain at `docs/im
 - This rule is especially important when comparing old local selectors against a window-partition selector.
   - useful evidence includes cases where the old selector stopped at a local paragraph or subtopic while the window-partition selector captured one complete semantic move before the next real transition
   - examples from the June 2026 rolling A/B review include `xidaduo_private_zh__segment_1` opening paragraphs, where the draft selector kept the external portrait of Siddhartha together before the `可是` turn, and `value_of_others_private_en__segment_1`, where several adjacent claim/support/refinement pairs were kept as complete local moves
-- Whole-preview partition metadata, such as provisional later-unit titles, may be useful for review and future prompt candidates because it makes the model's planning frame auditable.
+- Whole-preview partition metadata, such as live v15 `preview_partition[]` titles, is useful for review because it makes the model's planning frame auditable.
   - but the accepted runtime boundary remains the first committed source unit
   - future evaluations should distinguish "planning metadata helped boundary choice" from "later units have been formally digested"
 

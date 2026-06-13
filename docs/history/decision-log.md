@@ -3331,7 +3331,7 @@ This new direction is design frozen but not yet implemented as a formal benchmar
 
 **Decision**: The current `attentional_v2` Ingest design should be understood as a bounded-lookahead planner. It receives a forward preview window, conceptually partitions that window into consecutive coherent reading units, and commits only the first unit through `unit.end_paragraph_n` / `unit.end_at`. Later preview text may be used as boundary evidence because the first unit's end is often clarified by where the second unit begins, but later preview text is not treated as read or digested. Digest remains the focused reader/interpreter for the single accepted source span.
 
-**Boundary**: This decision does not change the live prompt or runtime contract beyond the already-promoted `attentional_v2.ingest.v14` / `attentional_v2-phase6-v64` baseline. It does not rerun formal evaluation and does not update evidence-catalog authority. A future `preview_partition[]` output with per-partition titles may be tested as a candidate v15 prompt/evaluation contract because it could make the model's whole-window segmentation more explicit and auditable; until then, only the first committed unit is authoritative runtime input for Digest.
+**Boundary**: This decision did not change the live prompt or runtime contract beyond the already-promoted `attentional_v2.ingest.v14` / `attentional_v2-phase6-v64` baseline at the time it was recorded. It did not rerun formal evaluation and did not update evidence-catalog authority. The `preview_partition[]` follow-up named here was later implemented as the live v15 mechanism-private audit contract in `DEC-117`; only the first committed unit remains authoritative runtime input for Digest.
 
 **Why this path won**: The reviewed A/B examples showed the strongest quality lift when the selector avoided a first-plausible paragraph stop and instead used the rest of the preview to see whether following paragraphs still belonged to the same local move. In `xidaduo_private_zh__segment_1`, the draft kept Siddhartha's external portrait together through the natural `可是` turn; in other windows it similarly preserved claim/support/refinement or principle/action pairs that the older selector split. This is a reader-control decision, not just prompt wording: Ingest looks ahead to choose the next work unit, while Digest stays centered on the chosen unit so future source text is not consumed early.
 
@@ -3344,3 +3344,29 @@ This new direction is design frozen but not yet implemented as a formal benchmar
 - `reading-companion-backend/src/attentional_v2/prompts/ingest.py`
 - `reading-companion-backend/eval/runs/attentional_v2/ingest_select_next_unit_rolling_ab_probe_20260610/analysis/rolling_select_next_unit_ab/README.md`
 - `reading-companion-backend/eval/runs/attentional_v2/ingest_select_next_unit_rolling_ab_probe_20260610/analysis/rolling_select_next_unit_ab/segments/xidaduo_private_zh__segment_1/window_partition_draft_units.md`
+
+## Entry 114
+**ID**: DEC-117
+**Status**: active
+
+**Decision / Inflection**: Promote Ingest `preview_partition[]` from a follow-up candidate into the live v15 mechanism-private audit contract.
+
+**Period**: June 13, 2026, after accepting the bounded-lookahead explanation in `DEC-116` and deciding to make Ingest's whole-preview map explicit for audit.
+
+**Decision**: Live `attentional_v2` Ingest now requires a structured `preview_partition[]` alongside the authoritative `unit`. `preview_partition[0]` must match `unit.end_paragraph_n` / `unit.end_at`; later entries title provisional future units and expose the model's whole-window semantic map. Runtime still accepts only the first unit for Digest, resolves it to the authoritative `source_span` / `source_span_id`, and records later partition resolution only as audit metadata.
+
+**Boundary**: This is a mechanism-private prompt/schema/runtime artifact change, not a frontend/public API change and not a Unit Memory retrieval change. `retrieve_unit_memory` action-tool inputs and recall matching semantics remain unchanged, and tool preflight does not require `preview_partition[]`. No formal A/B evaluation was rerun and historical June 2026 A/B report packages were not regenerated.
+
+**Why this path won**: The prior review showed that seeing the whole preview helps choose the first semantic unit. Requiring `preview_partition[]` makes that planning frame explicit, improves auditability, and gives future reviewers a way to see whether Ingest over-split, over-merged, or understood the second unit boundary that justified the first boundary.
+
+**Primary evidence**:
+- `docs/implementation/new-reading-mechanism/ingest-next-unit-optimization-design.md`
+- `docs/backend-reading-mechanisms/attentional_v2.md`
+- `docs/current-state.md`
+- `reading-companion-backend/src/attentional_v2/prompts/ingest.py`
+- `reading-companion-backend/src/attentional_v2/llm_output_tools.py`
+- `reading-companion-backend/src/attentional_v2/source_spans.py`
+- `reading-companion-backend/src/attentional_v2/runner.py`
+- `reading-companion-backend/tests/test_attentional_v2_llm_calls.py`
+- `reading-companion-backend/tests/test_attentional_v2_source_spans.py`
+- `reading-companion-backend/tests/test_attentional_v2_scaffold.py`

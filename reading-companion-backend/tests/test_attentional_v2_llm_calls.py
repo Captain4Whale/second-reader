@@ -40,12 +40,27 @@ def _unit(end_paragraph_n: object = 1, end_at: str = "paragraph_end") -> dict[st
     return {"end_paragraph_n": end_paragraph_n, "end_at": end_at}
 
 
+def _partition(
+    title: str = "First local move",
+    end_paragraph_n: object = 1,
+    end_at: str = "paragraph_end",
+    status: str = "complete",
+) -> dict[str, object]:
+    return {
+        "title": title,
+        "end_paragraph_n": end_paragraph_n,
+        "end_at": end_at,
+        "status": status,
+    }
+
+
 def test_ingest_boundary_contract_has_only_boundary_fields() -> None:
     """Ingest should expose only current model fields plus internal recall status."""
 
     payload = llm_calls_module._normalize_ingest_boundary_result(  # noqa: SLF001
         {
             "unit": _unit(2, "paragraph_end"),
+            "preview_partition": [_partition("First move", 2, "paragraph_end")],
             "end_anchor_text": "Beta.",
             "boundary_type": "paragraph_end",
             "reason": "Done.",
@@ -59,6 +74,14 @@ def test_ingest_boundary_contract_has_only_boundary_fields() -> None:
     assert "continuation" + "_pressure" not in payload
     assert "end_anchor_text" not in payload
     assert payload["unit"] == {"end_paragraph_n": "2", "end_at": "paragraph_end"}
+    assert payload["preview_partition"] == [
+        {
+            "title": "First move",
+            "end_paragraph_n": "2",
+            "end_at": "paragraph_end",
+            "status": "complete",
+        }
+    ]
     assert payload["memory_recalls"] == []
     assert payload["memory_recalls_status"] == "missing"
 
@@ -70,6 +93,7 @@ def test_ingest_normalizer_rejects_empty_unit_boundary() -> None:
         llm_calls_module._normalize_ingest_boundary_result(  # noqa: SLF001
             {
                 "unit": {"end_paragraph_n": "", "end_at": ""},
+                "preview_partition": [_partition()],
                 "reason": "missing anchor",
                 "memory_recalls": [],
             }
@@ -82,6 +106,7 @@ def test_ingest_recall_status_distinguishes_empty_from_malformed() -> None:
     provided_empty = llm_calls_module._normalize_ingest_boundary_result(  # noqa: SLF001
         {
             "unit": _unit(),
+            "preview_partition": [_partition()],
             "reason": "Done.",
             "memory_recalls": [],
         }
@@ -89,6 +114,7 @@ def test_ingest_recall_status_distinguishes_empty_from_malformed() -> None:
     malformed = llm_calls_module._normalize_ingest_boundary_result(  # noqa: SLF001
         {
             "unit": _unit(),
+            "preview_partition": [_partition()],
             "reason": "Done.",
             "memory_recalls": {"recall_text": "not a list"},
         }
@@ -104,6 +130,7 @@ def test_ingest_result_validator_requires_selected_source_unit_basis() -> None:
     errors = validate_ingest_result(
         {
             "unit": _unit(),
+            "preview_partition": [_partition()],
             "memory_recalls": [
                 {
                     "recall_id": "r1",
@@ -122,6 +149,7 @@ def test_ingest_result_validator_requires_recall_language_to_match_source() -> N
     errors = validate_ingest_result(
         {
             "unit": _unit(1, "他继续向前走。"),
+            "preview_partition": [_partition("继续前行", 1, "他继续向前走。")],
             "memory_recalls": [
                 {
                     "recall_id": "r1",
@@ -141,6 +169,7 @@ def test_ingest_result_validator_requires_recall_language_to_match_source() -> N
     valid_errors = validate_ingest_result(
         {
             "unit": _unit(1, "他继续向前走。"),
+            "preview_partition": [_partition("继续前行", 1, "他继续向前走。")],
             "memory_recalls": [
                 {
                     "recall_id": "r1",
@@ -162,6 +191,7 @@ def test_ingest_result_validator_rejects_contract_violating_tool_result() -> Non
     errors = validate_ingest_result(
         {
             "unit": _unit(1, "他继续向前走。"),
+            "preview_partition": [_partition("继续前行", 1, "他继续向前走。")],
             "memory_recalls": [
                 {
                     "recall_id": "r1",
@@ -183,6 +213,7 @@ def test_ingest_result_validator_requires_final_recalls_to_match_tool_call() -> 
     errors = validate_ingest_result(
         {
             "unit": _unit(1, "他继续向前走。"),
+            "preview_partition": [_partition("继续前行", 1, "他继续向前走。")],
             "memory_recalls": [],
         },
         tool_results=[
@@ -210,6 +241,7 @@ def test_ingest_result_validator_rejects_invisible_paragraph_boundary() -> None:
     errors = validate_ingest_result(
         {
             "unit": _unit(99, "paragraph_end"),
+            "preview_partition": [_partition("Invisible", 99, "paragraph_end")],
             "memory_recalls": [],
         },
         tool_results=[],
@@ -217,6 +249,83 @@ def test_ingest_result_validator_rejects_invisible_paragraph_boundary() -> None:
     )
 
     assert "unit.end_paragraph_n must match a visible Paragraph n" in errors
+
+
+def test_ingest_result_validator_requires_preview_partition() -> None:
+    errors = validate_ingest_result(
+        {
+            "unit": _unit(),
+            "memory_recalls": [],
+        },
+        tool_results=[],
+    )
+
+    assert "preview_partition must be a non-empty array" in errors
+
+    empty_errors = validate_ingest_result(
+        {
+            "unit": _unit(),
+            "preview_partition": [],
+            "memory_recalls": [],
+        },
+        tool_results=[],
+    )
+
+    assert "preview_partition must be a non-empty array" in empty_errors
+
+
+def test_ingest_result_validator_rejects_invalid_preview_partition_fields() -> None:
+    errors = validate_ingest_result(
+        {
+            "unit": _unit(1, "paragraph_end"),
+            "preview_partition": [
+                _partition("", 1, "paragraph_end"),
+                _partition("Second move", 2, "paragraph_end", "open_tail"),
+                _partition("Third move", 3, "", "bogus"),
+            ],
+            "memory_recalls": [],
+        },
+        tool_results=[],
+        current_visible_paragraph_ns=["1", "2"],
+    )
+
+    assert "preview_partition[0].title must be non-empty" in errors
+    assert "preview_partition open_tail is allowed only on the final partition" in errors
+    assert "preview_partition[2].end_at must be non-empty" in errors
+    assert "preview_partition[2].end_paragraph_n must match a visible Paragraph n" in errors
+    assert "preview_partition[2].status must be complete or open_tail" in errors
+
+
+def test_ingest_result_validator_requires_first_partition_to_match_unit() -> None:
+    errors = validate_ingest_result(
+        {
+            "unit": _unit(2, "paragraph_end"),
+            "preview_partition": [_partition("First move", 1, "paragraph_end")],
+            "memory_recalls": [],
+        },
+        tool_results=[],
+    )
+
+    assert "preview_partition[0] must match unit" in errors
+
+
+def test_ingest_result_validator_allows_tool_preflight_without_preview_partition() -> None:
+    errors = validate_ingest_result(
+        {
+            "unit": _unit(1, "paragraph_end"),
+            "memory_recalls": [
+                {
+                    "recall_id": "r1",
+                    "recall_text": "earlier setup",
+                    "basis": "selected_source_unit",
+                }
+            ],
+        },
+        tool_results=[{"status": "preflight"}],
+        require_preview_partition=False,
+    )
+
+    assert errors == []
 
 
 def _ingest_boundary_call(
@@ -284,6 +393,7 @@ def test_ingest_writes_manifest_and_uses_xml_unit_boundary_contract(tmp_path: Pa
         captured["prompt"] = prompt
         payload = {
             "unit": _unit(1, "Beta."),
+            "preview_partition": [_partition("Alpha and beta move", 1, "Beta.")],
             "reason": "The line clearly keeps running.",
             "memory_recalls": [],
             "continuation" + "_pressure": True,
@@ -331,6 +441,12 @@ def test_ingest_writes_manifest_and_uses_xml_unit_boundary_contract(tmp_path: Pa
     assert "continuation" + "_pressure" not in decision
     assert "end_anchor_text" not in decision
     assert decision["unit"] == {"end_paragraph_n": "1", "end_at": "Beta."}
+    assert decision["preview_partition"][0] == {
+        "title": "Alpha and beta move",
+        "end_paragraph_n": "1",
+        "end_at": "Beta.",
+        "status": "complete",
+    }
     assert decision["memory_recalls"] == []
     assert captured["system_prompt"] == "Follow the structured Ingest prompt in the user message. Use the required submit_ingest_result tool as the final output channel."
     assert "<ReaderRole>" in captured["prompt"]
@@ -351,9 +467,14 @@ def test_ingest_writes_manifest_and_uses_xml_unit_boundary_contract(tmp_path: Pa
     assert "<ReturnFormat>" in captured["prompt"]
     assert "boundary_type" not in captured["prompt"]
     assert "You are in the Ingest step of a sequential deep-reading loop." in captured["prompt"]
-    assert "Partition the forward window into coherent reading units" in captured["prompt"]
+    assert "form a provisional map of its consecutive semantic units" in captured["prompt"]
+    assert "Partition the forward window into coherent reading units, give each provisional unit a short title" in captured["prompt"]
     assert "What a semantic unit is" in captured["prompt"]
     assert "Conceptually divide the window into consecutive reading units" in captured["prompt"]
+    assert "short local-function title" in captured["prompt"]
+    assert '"preview_partition"' in captured["prompt"]
+    assert "preview_partition[0]" in captured["prompt"]
+    assert '"open_tail"' in captured["prompt"]
     assert "A boundary may fall inside a paragraph" in captured["prompt"]
     assert "The window is assembled from paragraph slices" in captured["prompt"]
     assert "Lexical cohesion / topic continuity" in captured["prompt"]
@@ -400,8 +521,8 @@ def test_ingest_writes_manifest_and_uses_xml_unit_boundary_contract(tmp_path: Pa
     assert "Set each recall `basis` exactly to `selected_source_unit`" in captured["prompt"]
     assert "Mainline preview" not in captured["prompt"]
     assert manifest["node_name"] == "ingest"
-    assert manifest["prompt_version"] == "attentional_v2.ingest.v14"
-    assert manifest["prompt_assembly"]["output_contract"] == "ingest_unit_boundary_memory_recalls_json_v4"
+    assert manifest["prompt_version"] == "attentional_v2.ingest.v15"
+    assert manifest["prompt_assembly"]["output_contract"] == "ingest_unit_boundary_preview_partition_memory_recalls_json_v1"
     assert manifest["prompt_assembly"]["owner_node"] == "ingest"
 
 
@@ -426,6 +547,7 @@ def test_ingest_tool_loop_returns_recalls_and_runtime_status(tmp_path: Path, mon
         captured["tool_result"] = tool_result
         payload = {
             "unit": _unit(1, "Beta."),
+            "preview_partition": [_partition("Beta closes", 1, "Beta.")],
             "reason": "Beta closes the local move.",
             "memory_recalls": [
                 {"recall_id": "r1", "recall_text": "the earlier beta setup", "basis": "selected_source_unit"}
@@ -461,11 +583,14 @@ def test_ingest_tool_loop_returns_recalls_and_runtime_status(tmp_path: Path, mon
     recall_basis_schema = captured["tools"][0]["input_schema"]["properties"]["memory_recalls"]["items"]["properties"]["basis"]
     assert recall_basis_schema["enum"] == ["selected_source_unit"]
     assert "unit" in captured["tools"][0]["input_schema"]["properties"]
+    assert "preview_partition" not in captured["tools"][0]["input_schema"]["properties"]
     assert "boundary_type" not in captured["tools"][0]["input_schema"]["properties"]
     assert captured["output_tool"]["name"] == "submit_ingest_result"
     output_basis_schema = captured["output_tool"]["input_schema"]["properties"]["memory_recalls"]["items"]["properties"]["basis"]
     assert output_basis_schema["enum"] == ["selected_source_unit"]
     assert "unit" in captured["output_tool"]["input_schema"]["properties"]
+    assert "preview_partition" in captured["output_tool"]["input_schema"]["properties"]
+    assert "preview_partition" in captured["output_tool"]["input_schema"]["required"]
     assert "boundary_type" not in captured["output_tool"]["input_schema"]["properties"]
     assert "memory_query" not in json.dumps(captured["tools"], ensure_ascii=False)
 
@@ -481,6 +606,7 @@ def test_ingest_tool_loop_validator_sees_current_source_language(tmp_path: Path,
         }
         bad_payload = {
             "unit": _unit(1, "乔文达仍然跟随他。"),
+            "preview_partition": [_partition("乔文达继续跟随", 1, "乔文达仍然跟随他。")],
             "reason": "The unit closes here.",
             "memory_recalls": [
                 {
@@ -556,7 +682,15 @@ def test_ingest_can_trim_leading_boundary_residue(tmp_path: Path, monkeypatch):
     def fake_structured_output(_system_prompt: str, _prompt: str, **_kwargs) -> object:
         return SimpleNamespace(payload={
             "unit": _unit(2, "运用专长，发挥杠杆效应，最终你会得到自己应得的。"),
+            "preview_partition": [
+                _partition(
+                    "杠杆效应的原则落点",
+                    2,
+                    "运用专长，发挥杠杆效应，最终你会得到自己应得的。",
+                )
+            ],
             "reason": "The divider is a structural cue, not content.",
+            "memory_recalls": [],
         })
 
     monkeypatch.setattr(llm_calls_module, "invoke_structured_output", fake_structured_output)
@@ -582,7 +716,15 @@ def test_ingest_refuses_to_trim_leading_lexical_content(tmp_path: Path, monkeypa
     def fake_structured_output(_system_prompt: str, _prompt: str, **_kwargs) -> object:
         return SimpleNamespace(payload={
             "unit": _unit(1, "Other people are typically a problem until they prove otherwise."),
+            "preview_partition": [
+                _partition(
+                    "People as a problem frame",
+                    1,
+                    "Other people are typically a problem until they prove otherwise.",
+                )
+            ],
             "reason": "The visible sentence completes the local move.",
+            "memory_recalls": [],
         })
 
     monkeypatch.setattr(llm_calls_module, "invoke_structured_output", fake_structured_output)

@@ -647,9 +647,9 @@ This file is a living working ledger. Stable rules still belong in `docs/backend
     - `nawaer_baodian_private_zh__segment_1`: the draft combined the wealth-creation principle and immediate action advice into one complete opening move rather than isolating the advice paragraph
 - Status: `adopted`
 - Next action:
-  - preserve the live `attentional_v2.ingest.v14` / `attentional_v2-phase6-v64` window-partition selector as the current baseline
-  - treat a future `preview_partition[]` contract with per-partition `title`, `end_paragraph_n`, and `end_at` as a candidate v15 prompt/evaluation change, not as a stealth edit to the current live baseline
-  - if tested, keep `preview_partition[0]` as the only authoritative runtime boundary and use later partition titles only as planning/audit metadata
+  - preserve the live `attentional_v2.ingest.v15` / `attentional_v2-phase6-v65` window-partition selector as the current baseline
+  - carry the selected follow-up through `preview_partition[]`: per-partition `title`, `end_paragraph_n`, `end_at`, and `status` are now mechanism-private audit metadata
+  - keep `preview_partition[0]` as the only authoritative runtime boundary and use later partition titles only as planning/audit metadata
 
 ## Current Selective Implementation Queue
 

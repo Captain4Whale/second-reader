@@ -395,6 +395,9 @@ def record_read(
     ingest_trace_fields = {
         "reason",
         "end_anchor_text",
+        "preview_partition",
+        "preview_partition_audit",
+        "preview_partition_audit_status",
         "memory_recalls",
         "tool_loop_status",
         "tool_result_summary",

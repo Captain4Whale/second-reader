@@ -9,24 +9,28 @@ Memory retrieval policy.
 Update when: a new Ingest next-unit optimization point is accepted for design,
 implemented, rejected, or superseded.
 
-Status: active design note. This document is organized by optimization point so
-one accepted point can be implemented without reopening every later idea.
+Status: implemented design note. This document is organized by optimization
+point so one accepted point can be reviewed or extended without reopening every
+later idea.
 
 Current live baseline:
-- Ingest prompt: `attentional_v2.ingest.v14`
-- Promptset: `attentional_v2-phase6-v64`
+- Ingest prompt: `attentional_v2.ingest.v15`
+- Promptset: `attentional_v2-phase6-v65`
 - Live boundary contract: `unit.end_paragraph_n` + `unit.end_at`
+- Live audit contract: `preview_partition[]`, with `preview_partition[0]`
+  matching `unit`
 - Authoritative runtime coordinate: paragraph-char `SourceSpan` /
   `source_span_id`, derived by runtime after resolving the model boundary
-- Related decision: `DEC-116`
+- Related decisions: `DEC-116`, `DEC-117`
 - Related living pattern: `docs/implementation/new-reading-mechanism/mechanism-pattern-ledger.md` entry 19
 
 ## Optimization Point 1: Preview Partition Audit Map
 
 ### Status
 
-Candidate for the next Ingest prompt/schema experiment. Not implemented in the
-live prompt, schemas, runner, or reports yet.
+Implemented as the live Ingest v15 prompt/schema/runtime audit contract on
+`2026-06-13`. Historical A/B report packages were not regenerated in this
+slice.
 
 ### Source Insight
 
@@ -36,16 +40,17 @@ plausible paragraph boundary. It looked across the visible preview, inferred
 where later text continued the same semantic move or began a new move, and then
 committed only the first unit.
 
-The current live prompt already asks for this whole-window conceptual partition:
+The prior v14 live prompt already asked for this whole-window conceptual
+partition:
 
 - consider the whole visible window first
 - conceptually divide the window into consecutive reading units
 - commit only the first unit
 - treat the rest of the window as lookahead context only
 
-But the live output exposes only the first committed boundary. Reviewers cannot
-see how the model provisionally divided the rest of the preview or what titles /
-local functions it assigned to later units.
+The v15 live output now exposes that provisional map through
+`preview_partition[]`, while keeping only the first committed boundary
+authoritative for runtime cursor movement and Digest.
 
 ### Design Goal
 
@@ -254,9 +259,8 @@ Recommended retry/fallback behavior:
   follow the existing Ingest retry/fallback path.
 - If only later audit partitions are malformed or unresolved, accept the first
   unit and record `preview_partition_audit_status = "partial"`.
-- If the model omits `preview_partition[]` entirely, treat that as a candidate
-  prompt/schema failure during v15 experiments; do not silently pretend the
-  audit map exists.
+- If the model omits `preview_partition[]` entirely, treat that as a live v15
+  prompt/schema contract failure; do not silently pretend the audit map exists.
 
 ### Runtime Artifact Plan
 
@@ -344,31 +348,28 @@ Runner / artifact tests:
   first unit
 - reports render committed unit separately from lookahead audit partitions
 
-### Suggested Implementation Sequence
+### Implementation Result
 
-1. Add a candidate prompt/schema behind a probe-only branch or prompt version.
-2. Update Ingest final-output schema and validator for `preview_partition[]`.
-3. Add resolver support that derives `preview_partition_audit[]` without making
-   later partitions runtime-authoritative.
-4. Update unitization/read audit artifacts and report rendering.
-5. Run targeted tests for prompt rendering, schema validation, resolver, runner,
-   and report rendering.
-6. Run a rolling A/B probe against live v14 before promoting the candidate.
+Implemented directly as the live v15 Ingest contract after the v14
+window-partition prompt had already been reviewed and promoted.
 
-### Promotion Gate
+Landed behavior:
 
-Promote only if the candidate shows at least one of:
+1. Ingest final output now requires `preview_partition[]`.
+2. `preview_partition[0]` must match the authoritative `unit`.
+3. Runtime derives `preview_partition_audit[]` with paragraph-char
+   `source_span` / `source_span_id` where boundaries resolve.
+4. Later partition resolution failures mark
+   `preview_partition_audit_status = "partial"` and do not block the accepted
+   first unit.
+5. `retrieve_unit_memory` action-tool input and recall matching semantics remain
+   unchanged; tool preflight does not require `preview_partition[]`.
+6. Historical A/B run packages are left untouched. Maintained future report
+   renderers should consume `UnitizeDecision.preview_partition_audit[]` when
+   they want to display this map.
 
-- first-unit boundaries improve or stay at least as good as v14
-- audit reports become materially easier to review
-- the additional partition titles reveal useful failure modes without increasing
-  runtime fallback / contract failure rate
+Deferred checks:
 
-Do not promote if:
-
-- the model starts over-digesting future preview text
-- later partition output causes frequent contract failures
-- titles become verbose summaries
-- the first unit gets worse because the model tries to make the whole preview
-  partition look balanced
-- Unit Memory retrieval or Digest context behavior changes accidentally
+- Formal A/B rerun of v15 against v14.
+- Any frontend/public API presentation of `preview_partition[]`.
+- Dedicated historical-report regeneration for the June 2026 rolling A/B runs.
