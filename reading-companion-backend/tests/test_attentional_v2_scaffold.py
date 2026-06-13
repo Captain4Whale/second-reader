@@ -1689,9 +1689,9 @@ def test_attentional_v2_initialization_writes_mechanism_artifacts(tmp_path):
     policy = json.loads(reader_policy_file(output_dir).read_text(encoding="utf-8"))
     assert policy["policy_version"] == ATTENTIONAL_V2_POLICY_VERSION
     assert policy["unitize"]["max_coverage_unit_sentences"] == 12
-    assert policy["unitize"]["preview_soft_min_tokens"] == 1000
-    assert policy["unitize"]["preview_target_max_tokens"] == 1800
-    assert policy["unitize"]["preview_hard_max_tokens"] == 2600
+    assert policy["unitize"]["preview_soft_min_tokens"] == 1600
+    assert policy["unitize"]["preview_target_max_tokens"] == 3000
+    assert policy["unitize"]["preview_hard_max_tokens"] == 4200
     assert policy["unitize"]["emergency_max_preview_paragraphs"] == 200
     assert "preview_hard_max_chars" not in policy["unitize"]
     assert "max_lookahead_paragraphs" not in policy["unitize"]

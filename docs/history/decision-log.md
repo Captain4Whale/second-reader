@@ -3447,3 +3447,25 @@ This new direction is design frozen but not yet implemented as a formal benchmar
 - `reading-companion-backend/tests/test_attentional_v2_source_spans.py`
 - `reading-companion-backend/tests/test_attentional_v2_llm_calls.py`
 - `reading-companion-backend/tests/test_attentional_v2_scaffold.py`
+
+## Entry 118
+**ID**: DEC-121
+**Status**: active
+
+**Decision / Inflection**: Calibrate live Ingest v16 preview capacity upward after the first token-bounded focused probe.
+
+**Period**: June 13, 2026, after reviewing the live v16 Siddhartha focused report through old Unit 013.
+
+**Decision**: Keep the token-bounded paragraph-aligned preview policy and Ingest v16 / promptset v66 contract, but raise the live default capacity from `preview_soft_min_tokens=1000`, `preview_target_max_tokens=1800`, `preview_hard_max_tokens=2600` to `preview_soft_min_tokens=1600`, `preview_target_max_tokens=3000`, `preview_hard_max_tokens=4200`; `emergency_max_preview_paragraphs` remains `200`. This is a capacity calibration only: `unit`, `preview_partition[]`, Unit Memory retrieval, Digest behavior, and frontend/public API contracts do not change.
+
+**Boundary**: This is not a formal A/B rerun, not a prompt/schema version bump, and not a historical report-package regeneration. It updates live runtime defaults and the stable docs that name those defaults.
+
+**Why this path won**: The initial v16 token-bounded preview solved the severe prompt/output burden of the interim 7000-character preview, but the focused Siddhartha report suggested the window had become slightly narrow for Ingest's planning role. Ingest benefits from enough visible future text to decide whether the current local move is a standalone unit or part of a larger scene. Expanding to roughly `1.6x-1.7x` the initial token window gives more peripheral context while staying materially lighter than the prior character-bounded windows.
+
+**Primary evidence**:
+- `docs/implementation/new-reading-mechanism/ingest-next-unit-optimization-design.md`
+- `docs/backend-reading-mechanisms/attentional_v2.md`
+- `docs/current-state.md`
+- `reading-companion-backend/src/attentional_v2/source_spans.py`
+- `reading-companion-backend/src/attentional_v2/schemas.py`
+- `reading-companion-backend/tests/test_attentional_v2_scaffold.py`

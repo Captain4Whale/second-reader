@@ -535,9 +535,9 @@ _PREVIEW_TOKEN_ESTIMATOR = f"{TOKEN_ESTIMATOR_ID}_paragraph_xml_v1"
 
 def _preview_limits(reader_policy: ReaderPolicy | Mapping[str, object] | None) -> tuple[int, int, int, int]:
     policy = _unitize_policy(reader_policy)
-    soft_min = max(1, _int(policy.get("preview_soft_min_tokens"), 1000))
-    target_max = max(soft_min, _int(policy.get("preview_target_max_tokens"), 1800))
-    hard_max = max(target_max, _int(policy.get("preview_hard_max_tokens"), 2600))
+    soft_min = max(1, _int(policy.get("preview_soft_min_tokens"), 1600))
+    target_max = max(soft_min, _int(policy.get("preview_target_max_tokens"), 3000))
+    hard_max = max(target_max, _int(policy.get("preview_hard_max_tokens"), 4200))
     emergency_max_paragraphs = max(1, _int(policy.get("emergency_max_preview_paragraphs"), 200))
     return soft_min, target_max, hard_max, emergency_max_paragraphs
 

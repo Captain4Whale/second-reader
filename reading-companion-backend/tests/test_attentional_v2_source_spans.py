@@ -148,7 +148,7 @@ def test_preview_truncates_current_paragraph_at_hard_token_max() -> None:
     }
     assert preview["truncated"] is True
     assert preview["preview_end_reason"] == "hard_max"
-    assert preview["estimated_token_count"] <= 2600
+    assert preview["estimated_token_count"] <= 4200
 
 
 def test_preview_ignores_deprecated_max_lookahead_and_char_limits() -> None:

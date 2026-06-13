@@ -22,7 +22,7 @@ Current live baseline:
   matching `unit`
 - Authoritative runtime coordinate: paragraph-char `SourceSpan` /
   `source_span_id`, derived by runtime after resolving the model boundary
-- Related decisions: `DEC-116`, `DEC-117`, `DEC-118`, `DEC-120`
+- Related decisions: `DEC-116`, `DEC-117`, `DEC-118`, `DEC-120`, `DEC-121`
 - Related living pattern: `docs/implementation/new-reading-mechanism/mechanism-pattern-ledger.md` entry 19
 
 ## Optimization Point 1: Preview Partition Audit Map
@@ -616,12 +616,12 @@ Build the Ingest preview by adding visible paragraph slices in source order from
 the current cursor, as today. Before adding the next complete paragraph slice,
 estimate the token count of the candidate preview.
 
-Recommended first live values:
+Current live calibrated values:
 
 ```text
-preview_soft_min_tokens = 1000
-preview_target_max_tokens = 1800
-preview_hard_max_tokens = 2600
+preview_soft_min_tokens = 1600
+preview_target_max_tokens = 3000
+preview_hard_max_tokens = 4200
 emergency_max_preview_paragraphs = 200
 ```
 
@@ -654,19 +654,29 @@ Stopping order:
    `preview_end_reason = "target_max"`.
 6. Otherwise, add the paragraph and continue.
 
-Examples with `1000 / 1800 / 2600`:
+Examples with `1600 / 3000 / 4200`:
 
 ```text
-current=700, candidate=1200  -> add; the preview is still below soft min
-current=900, candidate=1900  -> add; soft min takes priority over target
-current=1300, candidate=1700 -> add; candidate stays below target
-current=1600, candidate=1950 -> stop at target_max
-current=900, candidate=2800  -> stop at hard_max
+current=1200, candidate=1900 -> add; soft min takes priority over target
+current=1500, candidate=3200 -> add if it stays below hard max
+current=2200, candidate=2900 -> add; candidate stays below target
+current=2600, candidate=3300 -> stop at target_max
+current=1500, candidate=4400 -> stop at hard_max
 ```
 
-This should make normal previews land around `1000-1800` estimated tokens, with
-occasional larger previews only when needed to satisfy the soft minimum or to
-handle coarse paragraph granularity.
+This should make normal previews land around `1600-3000` estimated tokens, with
+occasional larger previews only when needed to satisfy the soft minimum, to
+handle coarse paragraph granularity, or to preserve enough planning context in
+dialogue / scene-transition material.
+
+The initial live v16 values were `1000 / 1800 / 2600`. After the first focused
+Siddhartha v16 probe, those values looked stable but slightly too narrow for
+Ingest's planning role: the model avoided the original under-preview defect, yet
+sometimes lacked enough "peripheral vision" to judge whether nearby dialogue
+moves belonged to a larger scene. The current values deliberately expand the
+window by about `1.6x-1.7x` rather than a full hard doubling, keeping the prompt
+well below the interim 7000-character-preview workload while giving Ingest more
+global context for first-unit boundary choice.
 
 ### Token Estimation
 

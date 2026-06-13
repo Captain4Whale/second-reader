@@ -272,7 +272,7 @@ Use `docs/backend-reading-mechanism.md` for shared platform boundaries. Use `doc
     - appends following paragraphs to form a larger reading lookahead window for boundary selection
     - treats estimated model-facing token budget, not paragraph count or source-character count, as the normal preview capacity rule
     - does not cross chapter boundaries
-    - defaults live in `reader_policy.unitize`: `preview_soft_min_tokens = 1000`, `preview_target_max_tokens = 1800`, `preview_hard_max_tokens = 2600`, `emergency_max_preview_paragraphs = 200`
+    - defaults live in `reader_policy.unitize`: `preview_soft_min_tokens = 1600`, `preview_target_max_tokens = 3000`, `preview_hard_max_tokens = 4200`, `emergency_max_preview_paragraphs = 200`
     - old `preview_*_chars` and `max_lookahead_paragraphs` policy snapshots are deprecated and ignored as normal stopping rules; the emergency paragraph guard exists only for pathological short-line material
     - preview metadata carries `estimated_token_count` and `preview_token_estimator` alongside existing char/paragraph counts and `preview_end_reason`
   - Ingest does not return raw offsets. It returns the visible `Paragraph n` where the first unit ends and either `paragraph_end` or a paragraph-local exact tail quote.

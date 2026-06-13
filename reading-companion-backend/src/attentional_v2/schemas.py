@@ -1083,9 +1083,9 @@ def build_default_reader_policy(
         "updated_at": _timestamp(),
         "unitize": {
             "max_coverage_unit_sentences": 12,
-            "preview_soft_min_tokens": 1000,
-            "preview_target_max_tokens": 1800,
-            "preview_hard_max_tokens": 2600,
+            "preview_soft_min_tokens": 1600,
+            "preview_target_max_tokens": 3000,
+            "preview_hard_max_tokens": 4200,
             "emergency_max_preview_paragraphs": 200,
         },
         "knowledge": {
