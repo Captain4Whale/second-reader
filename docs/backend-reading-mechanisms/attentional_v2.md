@@ -262,6 +262,10 @@ Use `docs/backend-reading-mechanism.md` for shared platform boundaries. Use `doc
   - Runtime guardrails only keep the unit from running away.
   - In the mainline case, it receives `BookInfo`, `CurrentView`, an empty `RetrievalSurface`, and `OutputContract`; it does not receive carried reading-state digests.
   - Its output may include up to three `memory_recalls[]`; runtime retrieval/selection happens after boundary acceptance and prompt-facing memory is rendered into Digest `ReadingMemory`.
+  - Its selection posture is bounded-lookahead planning rather than greedy local chunking:
+    - it may use the rest of the visible preview to decide whether following text continues the current semantic move or begins the next one
+    - it must still commit only the first unit, leaving later preview text as future source text rather than interpreting it for Digest
+    - a good boundary often becomes clear by asking where the second unit begins, not only whether the first local paragraph already looks complete
   - The current mainline preview window is paragraph-offset and adaptive:
     - always starts at the exact current cursor
     - includes at least the current paragraph remainder
@@ -444,6 +448,7 @@ Use `docs/backend-reading-mechanism.md` for shared platform boundaries. Use `doc
   - Ingest XML context uses top-level `ReaderRole`, `Instruction`, `BookInfo`, `CurrentView`, an empty self-closing `RetrievalSurface`, and `OutputContract`.
   - The current Ingest output contract carries `unit.end_paragraph_n`, `unit.end_at`, optional boundary-rationale `reason`, and bounded `memory_recalls[]`; transport is selected by the shared LLM gateway from the active profile.
   - Ingest prompt version `attentional_v2.ingest.v14` / promptset `attentional_v2-phase6-v64` uses the reviewed window-partition selector: it asks Ingest to view the visible lookahead as consecutive coherent reading units, commit only the first unit, treat paragraph boundaries as cues rather than defaults, allow paragraph-internal or multi-paragraph units when the semantic boundary calls for them, and express the boundary through a visible paragraph `n` plus `paragraph_end` or a paragraph-local exact tail quote. Recall wording and Unit Memory retrieval semantics remain the established live contract.
+  - The current prompt does not require Ingest to emit a full `preview_partition[]`; that remains a future prompt/evaluation candidate for making the model's provisional whole-window segmentation and per-unit titles auditable while preserving the first unit as the only authoritative runtime boundary.
   - The same-language / basis recall contract is enforced in code as well as in prompt text: final-output validation receives the current source text, and `retrieve_unit_memory` action-tool preflight rejects clear cross-language model-side recalls or non-`selected_source_unit` basis values before retrieval execution.
   - If Ingest calls `retrieve_unit_memory`, final-output validation requires the submitted `memory_recalls[]` to match the action-tool recalls, so runtime does not retrieve on one recall set while auditing or settling another.
   - Digest XML renders `ReaderRole` and `Instruction` as separate top-level blocks; all fixed non-role Digest directions live under `Instruction`, while runtime context/data blocks remain separate.

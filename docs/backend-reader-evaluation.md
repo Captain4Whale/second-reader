@@ -22,6 +22,21 @@ The old Memory / Planning / Evaluation implementation guidance chain at `docs/im
 - The core question is not "is the current architecture correct?"
   - The core question is "what reader mechanism best preserves the product goal?"
 
+## Semantic Unit Boundary Evaluation Rule
+- Ingest next-unit quality should be evaluated as bounded-lookahead discourse segmentation, not as fixed-size chunking or first-plausible-stop detection.
+- A strong first-unit boundary is often proven by the relationship between the first unit and the next unit:
+  - if later preview text continues the same claim, scene, image, exchange, or local move, the first unit probably has not ended yet
+  - if later preview text begins a new claim, turn, scene, contrast, or rhetorical function, that change supplies boundary evidence
+- Evaluation should therefore inspect whether Ingest used the visible forward window as boundary evidence while still committing only the first source unit.
+  - later preview text is lookahead context, not text already read by Digest
+  - downstream evaluation should not reward Ingest for interpreting future units as if they were current reading
+- This rule is especially important when comparing old local selectors against a window-partition selector.
+  - useful evidence includes cases where the old selector stopped at a local paragraph or subtopic while the window-partition selector captured one complete semantic move before the next real transition
+  - examples from the June 2026 rolling A/B review include `xidaduo_private_zh__segment_1` opening paragraphs, where the draft selector kept the external portrait of Siddhartha together before the `可是` turn, and `value_of_others_private_en__segment_1`, where several adjacent claim/support/refinement pairs were kept as complete local moves
+- Whole-preview partition metadata, such as provisional later-unit titles, may be useful for review and future prompt candidates because it makes the model's planning frame auditable.
+  - but the accepted runtime boundary remains the first committed source unit
+  - future evaluations should distinguish "planning metadata helped boundary choice" from "later units have been formally digested"
+
 ## Dataset Trust Model
 - Evaluation should distinguish between:
   - factual dataset truth

@@ -14,7 +14,14 @@ promptset `attentional_v2-phase6-v64` on `2026-06-11`. The production source
 of truth is now
 `reading-companion-backend/src/attentional_v2/prompts/ingest.py`.
 
-Last synchronized: `2026-06-11`
+Last synchronized: `2026-06-13`
+
+Follow-up candidate: the promoted prompt already asks the model to
+conceptually partition the whole visible preview before committing only the
+first unit. It does not currently require a structured `preview_partition[]`
+with per-partition titles. That remains a future v15/evaluation candidate for
+making the model's provisional whole-window segmentation auditable, while
+keeping `preview_partition[0]` as the only authoritative runtime boundary.
 
 ## Source
 

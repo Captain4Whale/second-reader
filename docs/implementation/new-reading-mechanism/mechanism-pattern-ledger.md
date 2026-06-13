@@ -621,6 +621,36 @@ This file is a living working ledger. Stable rules still belong in `docs/backend
 - Next action:
   - if the repair loop is reopened, require bridge resolution to either name a concrete earlier target or decline explicitly; do not let retrospective chapter summary count as bridge satisfaction
 
+### 19. Bounded-lookahead partitioning improves first-unit selection
+- Pattern kind: `strength`
+- Source mechanism: `attentional_v2` Ingest window-partition selector
+- Potential destination: preserve in live `attentional_v2` and use as a prompt-design rule for future readers
+- Why it matters:
+  - The unit that Digest reads should be the first complete semantic reading move, not the first paragraph or first locally plausible stop.
+  - The June 2026 rolling A/B review suggests that the new Ingest selector often improves the first unit by treating the visible preview as a bounded semantic map, then committing only the first region of that map.
+  - This changes the model's posture from local chunking to planning: later preview text is not digested, but it helps reveal whether the current move continues or whether a new move has begun.
+- Contributing causes:
+  - the prompt asks Ingest to consider the whole visible window before committing a boundary
+  - it asks the model to conceptually divide the preview into consecutive reading units with no gaps, but to commit only the first unit
+  - it treats paragraph edges as weak cues rather than defaults, reducing paragraph-local and first-plausible-stop bias
+  - it explicitly guards against over-merging, so lookahead is used for boundary evidence rather than for swallowing the whole window
+- Evidence:
+  - rolling A/B report:
+    - `reading-companion-backend/eval/runs/attentional_v2/ingest_select_next_unit_rolling_ab_probe_20260610/analysis/rolling_select_next_unit_ab/README.md`
+    - `reading-companion-backend/eval/runs/attentional_v2/ingest_select_next_unit_rolling_ab_probe_20260610/analysis/rolling_select_next_unit_ab/segments/xidaduo_private_zh__segment_1/window_partition_draft_units.md`
+    - `reading-companion-backend/eval/runs/attentional_v2/ingest_select_next_unit_rolling_ab_probe_20260610/analysis/rolling_select_next_unit_ab/segments/xidaduo_private_zh__segment_1/live_current_units.md`
+    - `reading-companion-backend/eval/runs/attentional_v2/ingest_select_next_unit_rolling_ab_probe_20260610/analysis/rolling_select_next_unit_ab/segments/value_of_others_private_en__segment_1/window_partition_draft_units.md`
+    - `reading-companion-backend/eval/runs/attentional_v2/ingest_select_next_unit_rolling_ab_probe_20260610/analysis/rolling_select_next_unit_ab/segments/nawaer_baodian_private_zh__segment_1/window_partition_draft_units.md`
+  - observed review examples:
+    - `xidaduo_private_zh__segment_1` opening: the draft kept paragraphs 1-8 as one coherent external portrait of Siddhartha before paragraph 9's `可是` turn, while the previous live selector split that portrait into smaller local paragraph groups
+    - `value_of_others_private_en__segment_1`: several draft units kept adjacent claim/support/refinement moves together where the old selector tended to split at local paragraph boundaries
+    - `nawaer_baodian_private_zh__segment_1`: the draft combined the wealth-creation principle and immediate action advice into one complete opening move rather than isolating the advice paragraph
+- Status: `adopted`
+- Next action:
+  - preserve the live `attentional_v2.ingest.v14` / `attentional_v2-phase6-v64` window-partition selector as the current baseline
+  - treat a future `preview_partition[]` contract with per-partition `title`, `end_paragraph_n`, and `end_at` as a candidate v15 prompt/evaluation change, not as a stealth edit to the current live baseline
+  - if tested, keep `preview_partition[0]` as the only authoritative runtime boundary and use later partition titles only as planning/audit metadata
+
 ## Current Selective Implementation Queue
 
 ### Priority 0. Prevent late low-pressure open spans from dragging through the chapter tail

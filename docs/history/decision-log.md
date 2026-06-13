@@ -3320,3 +3320,27 @@ This new direction is design frozen but not yet implemented as a formal benchmar
 - `reading-companion-backend/src/attentional_v2/llm_calls.py`
 - `reading-companion-backend/tests/test_llm_gateway.py`
 - `reading-companion-backend/tests/test_attentional_v2_llm_calls.py`
+
+## Entry 113
+**ID**: DEC-116
+**Status**: active
+
+**Decision / Inflection**: Treat Ingest next-unit selection as bounded-lookahead semantic planning, while keeping Digest as the focused interpreter of the accepted unit.
+
+**Period**: June 13, 2026, after reviewing the rolling A/B report for the `window_partition_draft` Ingest selector and promoting that selector into the live prompt baseline.
+
+**Decision**: The current `attentional_v2` Ingest design should be understood as a bounded-lookahead planner. It receives a forward preview window, conceptually partitions that window into consecutive coherent reading units, and commits only the first unit through `unit.end_paragraph_n` / `unit.end_at`. Later preview text may be used as boundary evidence because the first unit's end is often clarified by where the second unit begins, but later preview text is not treated as read or digested. Digest remains the focused reader/interpreter for the single accepted source span.
+
+**Boundary**: This decision does not change the live prompt or runtime contract beyond the already-promoted `attentional_v2.ingest.v14` / `attentional_v2-phase6-v64` baseline. It does not rerun formal evaluation and does not update evidence-catalog authority. A future `preview_partition[]` output with per-partition titles may be tested as a candidate v15 prompt/evaluation contract because it could make the model's whole-window segmentation more explicit and auditable; until then, only the first committed unit is authoritative runtime input for Digest.
+
+**Why this path won**: The reviewed A/B examples showed the strongest quality lift when the selector avoided a first-plausible paragraph stop and instead used the rest of the preview to see whether following paragraphs still belonged to the same local move. In `xidaduo_private_zh__segment_1`, the draft kept Siddhartha's external portrait together through the natural `可是` turn; in other windows it similarly preserved claim/support/refinement or principle/action pairs that the older selector split. This is a reader-control decision, not just prompt wording: Ingest looks ahead to choose the next work unit, while Digest stays centered on the chosen unit so future source text is not consumed early.
+
+**Primary evidence**:
+- `7475d01` `feat: promote ingest window partition prompt`
+- `docs/backend-reading-mechanisms/attentional_v2.md`
+- `docs/backend-reader-evaluation.md`
+- `docs/implementation/new-reading-mechanism/mechanism-pattern-ledger.md`
+- `docs/implementation/new-reading-mechanism/ingest-select-next-unit-window-partition-draft-prompt.md`
+- `reading-companion-backend/src/attentional_v2/prompts/ingest.py`
+- `reading-companion-backend/eval/runs/attentional_v2/ingest_select_next_unit_rolling_ab_probe_20260610/analysis/rolling_select_next_unit_ab/README.md`
+- `reading-companion-backend/eval/runs/attentional_v2/ingest_select_next_unit_rolling_ab_probe_20260610/analysis/rolling_select_next_unit_ab/segments/xidaduo_private_zh__segment_1/window_partition_draft_units.md`
