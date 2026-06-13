@@ -2513,7 +2513,7 @@ def _json_object_contract_prompt(
         f"{user_prompt}\n\n"
         "<OutputTransport>\n"
         f"Return exactly one JSON object for `{output_tool_name}`. "
-        "Return pure JSON only: no markdown, no commentary, no tool call, and no text outside the JSON object.\n"
+        "Return pure JSON only: no markdown, no commentary, and no text outside the JSON object.\n"
         "The JSON object must satisfy this schema:\n"
         f"{schema_json}\n"
         "</OutputTransport>"

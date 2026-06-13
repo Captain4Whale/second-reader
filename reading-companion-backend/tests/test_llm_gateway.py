@@ -87,6 +87,7 @@ class _RecordingAdapter:
                 "api_key": api_key,
                 "timeout_seconds": timeout_seconds,
                 "message_count": len(messages),
+                "message_contents": [str(getattr(message, "content", message)) for message in messages],
                 "invocation_options": invocation_options,
             }
         )
@@ -120,6 +121,7 @@ class _ToolLoopRecordingAdapter:
         self.calls.append(
             {
                 "message_types": [type(message).__name__ for message in messages],
+                "message_contents": [str(getattr(message, "content", message)) for message in messages],
                 "tools": tools,
                 "tool_choice": tool_choice,
                 "invocation_options": invocation_options,
@@ -167,6 +169,7 @@ class _SequencedToolAdapter:
         self.calls.append(
             {
                 "message_types": [type(message).__name__ for message in messages],
+                "message_contents": [str(getattr(message, "content", message)) for message in messages],
                 "tools": tools,
                 "tool_choice": tool_choice,
                 "message_count": len(messages),
@@ -1143,6 +1146,9 @@ def test_invoke_structured_output_uses_json_object_for_openai_profile(monkeypatc
     # JSON content, not as a forced final-output tool call.
     assert adapter.calls[0]["invocation_options"]["response_format"] == {"type": "json_object"}
     assert adapter.calls[0]["invocation_options"]["thinking"] == {"type": "enabled"}
+    final_prompt = adapter.calls[0]["message_contents"][-1]
+    assert "no tool call" not in final_prompt
+    assert "Return pure JSON only: no markdown, no commentary, and no text outside the JSON object." in final_prompt
 
 
 def test_invoke_structured_json_object_repairs_invalid_json(monkeypatch: pytest.MonkeyPatch):
@@ -1248,6 +1254,9 @@ def test_invoke_tool_loop_with_structured_output_keeps_action_tool_auto_on_json_
     assert result.payload["end_anchor_text"] == "Alpha."
     assert adapter.calls[0]["tools"][0]["name"] == "retrieve_unit_memory"
     assert adapter.calls[0]["tool_choice"] == "auto"
+    assert adapter.calls[0]["invocation_options"]["response_format"] == {"type": "json_object"}
+    first_turn_prompt = adapter.calls[0]["message_contents"][-1]
+    assert "no tool call" not in first_turn_prompt
     assert adapter.calls[1]["tools"] is None
     assert "ToolMessage" in adapter.calls[1]["message_types"]
     assert adapter.calls[1]["invocation_options"]["response_format"] == {"type": "json_object"}
