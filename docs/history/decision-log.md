@@ -3370,3 +3370,27 @@ This new direction is design frozen but not yet implemented as a formal benchmar
 - `reading-companion-backend/tests/test_attentional_v2_llm_calls.py`
 - `reading-companion-backend/tests/test_attentional_v2_source_spans.py`
 - `reading-companion-backend/tests/test_attentional_v2_scaffold.py`
+
+## Entry 115
+**ID**: DEC-118
+**Status**: active
+
+**Decision / Inflection**: Make live Ingest preview construction character-bounded instead of paragraph-count bounded.
+
+**Period**: June 13, 2026, after reviewing `window_partition_draft_preview_units.md` examples where dialogue-heavy short paragraphs caused the preview to stop before a complete scene arc was visible.
+
+**Decision**: Live `attentional_v2` now builds the Ingest lookahead preview by adding paragraph-aligned slices until source tail, the source-character hard budget, or an emergency paragraph guard. `preview_hard_max_chars` remains `7000`, `emergency_max_preview_paragraphs` defaults to `200`, and old `max_lookahead_paragraphs` policy values are ignored as normal stopping rules. Preview metadata now records `preview_end_reason` so audits can distinguish source-tail, hard-budget, emergency-guard, and empty previews.
+
+**Boundary**: This is a runtime preview-construction repair, not an Ingest prompt/schema change, not a Unit Memory retrieval change, and not a frontend/public API change. Historical A/B report packages were not regenerated, and no formal A/B rerun was launched in this slice.
+
+**Why this path won**: The reviewed Siddhartha father-son dialogue showed that a low paragraph-count cap can make a dialogue preview look structurally full while still containing only a few hundred source characters and missing the decisive scene resolution. Since modern model context is not the limiting factor for this bounded lookahead, source-character budget is the better capacity rule; paragraphs remain the coordinate and assembly boundary.
+
+**Primary evidence**:
+- `docs/implementation/new-reading-mechanism/ingest-next-unit-optimization-design.md`
+- `docs/backend-reading-mechanisms/attentional_v2.md`
+- `docs/current-state.md`
+- `reading-companion-backend/src/attentional_v2/source_spans.py`
+- `reading-companion-backend/src/attentional_v2/schemas.py`
+- `reading-companion-backend/src/attentional_v2/runner.py`
+- `reading-companion-backend/tests/test_attentional_v2_source_spans.py`
+- `reading-companion-backend/tests/test_attentional_v2_scaffold.py`

@@ -21,7 +21,7 @@ Current live baseline:
   matching `unit`
 - Authoritative runtime coordinate: paragraph-char `SourceSpan` /
   `source_span_id`, derived by runtime after resolving the model boundary
-- Related decisions: `DEC-116`, `DEC-117`
+- Related decisions: `DEC-116`, `DEC-117`, `DEC-118`
 - Related living pattern: `docs/implementation/new-reading-mechanism/mechanism-pattern-ledger.md` entry 19
 
 ## Optimization Point 1: Preview Partition Audit Map
@@ -378,12 +378,10 @@ Deferred checks:
 
 ### Status
 
-Candidate design point accepted for the next implementation slice. Not yet
-implemented in live runtime.
+Implemented as live runtime preview construction on `2026-06-13`.
 
-This point should be implemented and probed before changing the Ingest prompt
-again, so the next review can isolate whether over-splitting came from an
-under-sized preview window or from selector behavior.
+No Ingest prompt change, formal A/B rerun, or historical report-package
+regeneration was included in this slice.
 
 ### Source Insight
 
@@ -465,6 +463,22 @@ If the current visible paragraph slice alone is longer than the hard character
 budget, keep the existing oversized-paragraph fallback behavior rather than
 inventing a new model-facing coordinate contract in this slice. Any truncation
 inside a paragraph must remain explicit in preview metadata.
+
+### Implementation Result
+
+Landed behavior:
+
+1. `build_paragraph_offset_preview(...)` now assembles the visible preview by
+   adding paragraph slices until source tail, hard character budget, or the
+   emergency paragraph guard.
+2. `preview_hard_max_chars` remains `7000`.
+3. `emergency_max_preview_paragraphs` defaults to `200`.
+4. Existing `max_lookahead_paragraphs` values in old policy snapshots are
+   ignored as normal stopping rules.
+5. Preview metadata now includes `preview_end_reason` for `source_tail`,
+   `hard_max`, `emergency_paragraph_guard`, or `empty`.
+6. Oversized current paragraphs still truncate inside the current paragraph at
+   the hard character budget.
 
 ### Non-Goals
 

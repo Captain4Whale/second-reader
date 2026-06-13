@@ -169,6 +169,7 @@ class PreviewRange(TypedDict, total=False):
     end_sentence_id: str
     start_cursor: dict[str, object]
     end_cursor: dict[str, object]
+    preview_end_reason: str
 
 
 class UnitizeDecision(TypedDict, total=False):
@@ -1082,7 +1083,7 @@ def build_default_reader_policy(
             "max_coverage_unit_sentences": 12,
             "preview_soft_min_chars": 3000,
             "preview_hard_max_chars": 7000,
-            "max_lookahead_paragraphs": 12,
+            "emergency_max_preview_paragraphs": 200,
         },
         "knowledge": {
             "default_mode": "book_grounded_only",

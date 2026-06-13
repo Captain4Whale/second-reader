@@ -270,8 +270,10 @@ Use `docs/backend-reading-mechanism.md` for shared platform boundaries. Use `doc
     - always starts at the exact current cursor
     - includes at least the current paragraph remainder
     - appends following paragraphs to form a larger reading lookahead window for boundary selection
+    - treats source-character budget, not paragraph count, as the normal preview capacity rule
     - does not cross chapter boundaries
-    - defaults live in `reader_policy.unitize`: `preview_soft_min_chars = 3000`, `preview_hard_max_chars = 7000`, `max_lookahead_paragraphs = 12`
+    - defaults live in `reader_policy.unitize`: `preview_soft_min_chars = 3000`, `preview_hard_max_chars = 7000`, `emergency_max_preview_paragraphs = 200`
+    - old `max_lookahead_paragraphs` policy snapshots are deprecated and ignored as a normal stopping rule; the emergency paragraph guard exists only for pathological short-line material
   - Ingest does not return raw offsets. It returns the visible `Paragraph n` where the first unit ends and either `paragraph_end` or a paragraph-local exact tail quote.
   - Parse-time `text_role` is still available during this step, but only as an inherited block-level weak cue rather than a sentence-level truth packet.
   - Heading handling is now deliberately conservative:
@@ -496,7 +498,7 @@ Use `docs/backend-reading-mechanism.md` for shared platform boundaries. Use `doc
   - It previews from the exact paragraph-offset cursor, not from a precomputed sentence index.
   - It always includes the current paragraph remainder and may append following paragraphs to provide a bounded reading lookahead window for a natural unit-boundary decision.
   - The semantic choice of where to stop inside that preview is prompt-led through the returned `unit.end_paragraph_n` / `unit.end_at` boundary.
-  - Runtime imposes deterministic guardrails through `reader_policy.unitize.preview_soft_min_chars`, `preview_hard_max_chars`, and `max_lookahead_paragraphs`.
+  - Runtime imposes deterministic guardrails through `reader_policy.unitize.preview_soft_min_chars`, `preview_hard_max_chars`, and `emergency_max_preview_paragraphs`; normal preview stopping is character-bounded and paragraph-aligned rather than capped by a small lookahead paragraph count.
 - Search posture is separate from prior-knowledge posture.
   - Version-one search states are:
     - `no_search`

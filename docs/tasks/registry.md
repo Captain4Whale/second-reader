@@ -7,7 +7,7 @@ Update when: task status, priority, blockers, decision refs, job refs, evidence 
 
 This document is the human-readable companion to `docs/tasks/registry.json`.
 
-Last updated: `2026-06-13T10:53:06+08:00`
+Last updated: `2026-06-13T11:34:02+08:00`
 
 ## Status Values
 - `active`
@@ -25,7 +25,7 @@ Last updated: `2026-06-13T10:53:06+08:00`
 - Lane: `mechanism_runtime`
 - Priority: `high`
 - Detail: `docs/current-state.md`
-- Next: Five-window Long Span vNext judged diagnostic remains review_pending in the run ledger, and Unit Memory retrieval repair now has diagnostic proof for both text_only and live hybrid mechanics. Current live Ingest prompt `attentional_v2.ingest.v15` / promptset `attentional_v2-phase6-v65` uses the reviewed bounded-lookahead window-partition selector plus the live `preview_partition[]` audit map: final output returns `unit.end_paragraph_n` / `unit.end_at`, `preview_partition[]`, optional `reason`, and bounded `memory_recalls[]`; `preview_partition[0]` must match `unit`, while later entries are future-source planning/audit metadata only. Runtime derives `preview_partition_audit[]` in `UnitizeDecision`, `unitization_audit.jsonl`, and compact ingest traces where partition boundaries resolve; later unresolved or non-advancing partitions mark audit partial and do not affect the accepted Digest unit. `retrieve_unit_memory` remains the only live action tool, keeps its prior input schema and recall matching semantics, and does not require `preview_partition[]` during tool preflight. `DEC-116` records why bounded lookahead improves first-unit selection, and `DEC-117` records the live v15 preview-partition audit contract. No formal A/B rerun or historical report-package regeneration has been done for v15. Next action: review retrieved-memory usefulness/relevance or decide whether to launch a separately authorized formal evaluation.
+- Next: Five-window Long Span vNext judged diagnostic remains review_pending in the run ledger, and Unit Memory retrieval repair now has diagnostic proof for both text_only and live hybrid mechanics. Current live Ingest prompt `attentional_v2.ingest.v15` / promptset `attentional_v2-phase6-v65` uses the reviewed bounded-lookahead window-partition selector plus the live `preview_partition[]` audit map: final output returns `unit.end_paragraph_n` / `unit.end_at`, `preview_partition[]`, optional `reason`, and bounded `memory_recalls[]`; `preview_partition[0]` must match `unit`, while later entries are future-source planning/audit metadata only. Runtime now builds the visible Ingest preview with character-bounded, paragraph-aligned assembly: `preview_hard_max_chars=7000`, `emergency_max_preview_paragraphs=200`, and old `max_lookahead_paragraphs` snapshots ignored as normal stopping rules. Runtime derives `preview_partition_audit[]` in `UnitizeDecision`, `unitization_audit.jsonl`, and compact ingest traces where partition boundaries resolve; later unresolved or non-advancing partitions mark audit partial and do not affect the accepted Digest unit. `retrieve_unit_memory` remains the only live action tool, keeps its prior input schema and recall matching semantics, and does not require `preview_partition[]` during tool preflight. `DEC-116` records why bounded lookahead improves first-unit selection, `DEC-117` records the live v15 preview-partition audit contract, and `DEC-118` records the character-bounded preview construction repair. No formal A/B rerun or historical report-package regeneration has been done for v15 / DEC-118. Next action: review retrieved-memory usefulness/relevance or decide whether to launch a separately authorized formal evaluation.
 - Jobs:
   - `bgjob_ingest_digest_unit_memory_full_diagnostic_20260603_parallel5`
   - `bgjob_unit_memory_text_only_smoke_value_20260606`
@@ -56,6 +56,7 @@ Last updated: `2026-06-13T10:53:06+08:00`
   - `DEC-115`
   - `DEC-116`
   - `DEC-117`
+  - `DEC-118`
   - `docs/current-state.md`
   - `docs/backend-reader-evaluation.md`
   - `docs/implementation/new-reading-mechanism/ingest-context-and-navigate-mapping.md`

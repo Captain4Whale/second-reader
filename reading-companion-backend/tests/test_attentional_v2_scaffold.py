@@ -1689,6 +1689,9 @@ def test_attentional_v2_initialization_writes_mechanism_artifacts(tmp_path):
     policy = json.loads(reader_policy_file(output_dir).read_text(encoding="utf-8"))
     assert policy["policy_version"] == ATTENTIONAL_V2_POLICY_VERSION
     assert policy["unitize"]["max_coverage_unit_sentences"] == 12
+    assert policy["unitize"]["preview_hard_max_chars"] == 7000
+    assert policy["unitize"]["emergency_max_preview_paragraphs"] == 200
+    assert "max_lookahead_paragraphs" not in policy["unitize"]
     assert policy["bridge"]["enabled"] is False
     assert policy["bridge"]["source_ref_required"] is True
     assert policy["search"]["default_mode"] == "no_search"
@@ -1898,8 +1901,13 @@ def test_prepare_next_source_unit_for_read_selects_mainline_unit(tmp_path, monke
     provisioned = _provisioned_two_chapter_book()
     document = provisioned.book_document
     state = _empty_prepare_next_source_unit_state()
+    calls: list[dict[str, object]] = []
 
-    monkeypatch.setattr(runner_module, "_call_ingest", _fake_single_sentence_ingest_boundary)
+    def fake_ingest_boundary(**kwargs):
+        calls.append(dict(kwargs))
+        return _fake_single_sentence_ingest_boundary(**kwargs)
+
+    monkeypatch.setattr(runner_module, "_call_ingest", fake_ingest_boundary)
 
     assert not hasattr(runner_module, "ingest" + "_choose_next_unit")
     result = runner_module.prepare_next_source_unit_for_read(
@@ -1925,7 +1933,13 @@ def test_prepare_next_source_unit_for_read_selects_mainline_unit(tmp_path, monke
     assert [sentence["sentence_id"] for sentence in result["selected_unit_sentences"]] == ["c2-s1"]
     assert result["unitize_decision"]["preview_partition"][0]["title"] == "Test first move"
     assert result["unitize_decision"]["preview_partition_audit_status"] == "ok"
+    assert result["unitize_decision"]["preview_range"]["preview_end_reason"] == "source_tail"
     assert result["ingest_trace"][0]["preview_partition_audit_status"] == "ok"
+    current_view_content = calls[0]["current_view_content"]
+    assert isinstance(current_view_content, dict)
+    assert current_view_content["preview_end_reason"] == "source_tail"
+    assert current_view_content["char_count"] > 0
+    assert current_view_content["paragraph_count"] > 0
 
 
 def test_prepare_next_source_unit_for_read_retries_unresolved_boundary(tmp_path, monkeypatch):

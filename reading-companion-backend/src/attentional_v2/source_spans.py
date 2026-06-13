@@ -48,6 +48,7 @@ class ParagraphOffsetPreview(TypedDict, total=False):
     truncated: bool
     char_count: int
     paragraph_count: int
+    preview_end_reason: str
 
 
 class AnchorResolution(TypedDict, total=False):
@@ -530,8 +531,8 @@ def _preview_limits(reader_policy: ReaderPolicy | Mapping[str, object] | None) -
     policy = _unitize_policy(reader_policy)
     soft_min = max(1, _int(policy.get("preview_soft_min_chars"), 3000))
     hard_max = max(soft_min, _int(policy.get("preview_hard_max_chars"), 7000))
-    max_lookahead = max(0, _int(policy.get("max_lookahead_paragraphs"), 12))
-    return soft_min, hard_max, max_lookahead
+    emergency_max_paragraphs = max(1, _int(policy.get("emergency_max_preview_paragraphs"), 200))
+    return soft_min, hard_max, emergency_max_paragraphs
 
 
 def build_paragraph_offset_preview(
@@ -545,7 +546,7 @@ def build_paragraph_offset_preview(
     start_cursor = normalize_cursor_for_chapter(chapter, current_cursor)
     chapter_id = _chapter_id(chapter)
     chapter_ref = _chapter_ref(chapter)
-    soft_min, hard_max, max_lookahead = _preview_limits(reader_policy)
+    _soft_min, hard_max, emergency_max_paragraphs = _preview_limits(reader_policy)
     paragraphs = readable_paragraphs(chapter)
     if not paragraphs:
         return {
@@ -558,6 +559,7 @@ def build_paragraph_offset_preview(
             "truncated": False,
             "char_count": 0,
             "paragraph_count": 0,
+            "preview_end_reason": "empty",
         }
 
     start_position = next(
@@ -573,10 +575,11 @@ def build_paragraph_offset_preview(
     content_chars = 0
     flat_cursor = 0
     truncated = False
-    included_following = 0
+    preview_end_reason = "source_tail"
 
     for paragraph_position in range(start_position, len(paragraphs)):
-        if paragraph_position > start_position and included_following >= max_lookahead:
+        if len(slices) >= emergency_max_paragraphs:
+            preview_end_reason = "emergency_paragraph_guard"
             break
         paragraph = paragraphs[paragraph_position]
         text = _paragraph_text(paragraph)
@@ -585,9 +588,14 @@ def build_paragraph_offset_preview(
         start_char = min(max(0, start_char), len(text))
         if start_char >= len(text):
             continue
+        paragraph_remainder_chars = len(text) - start_char
+        if content_chars > 0 and content_chars + paragraph_remainder_chars > hard_max:
+            preview_end_reason = "hard_max"
+            break
         remaining_budget = hard_max - content_chars
         if remaining_budget <= 0:
             truncated = True
+            preview_end_reason = "hard_max"
             break
         end_char = min(len(text), start_char + remaining_budget)
         piece = text[start_char:end_char]
@@ -611,10 +619,7 @@ def build_paragraph_offset_preview(
         content_chars += len(piece)
         if end_char < len(text):
             truncated = True
-            break
-        if paragraph_position > start_position:
-            included_following += 1
-        if content_chars >= soft_min:
+            preview_end_reason = "hard_max"
             break
 
     if not slices:
@@ -628,6 +633,7 @@ def build_paragraph_offset_preview(
             "truncated": False,
             "char_count": 0,
             "paragraph_count": 0,
+            "preview_end_reason": preview_end_reason if preview_end_reason != "source_tail" else "empty",
         }
 
     last_slice = slices[-1]
@@ -647,6 +653,7 @@ def build_paragraph_offset_preview(
         "truncated": truncated,
         "char_count": content_chars,
         "paragraph_count": len(slices),
+        "preview_end_reason": preview_end_reason,
     }
 
 

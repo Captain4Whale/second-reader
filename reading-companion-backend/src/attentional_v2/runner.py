@@ -1015,6 +1015,7 @@ def _current_view_content_packet(preview: dict[str, object]) -> dict[str, object
         "truncated": bool(preview.get("truncated")),
         "char_count": int(preview.get("char_count", 0) or 0),
         "paragraph_count": int(preview.get("paragraph_count", 0) or 0),
+        "preview_end_reason": _clean_text(preview.get("preview_end_reason")),
     }
 
 
@@ -1575,6 +1576,7 @@ def _resolve_ingest_boundary(
             "end_cursor": dict(preview.get("preview_end_cursor", {}))
             if isinstance(preview.get("preview_end_cursor"), dict)
             else {},
+            "preview_end_reason": _clean_text(preview.get("preview_end_reason")),
         },
         "reason": _clean_text(selected_result.get("reason")),
         "resolution": resolution,

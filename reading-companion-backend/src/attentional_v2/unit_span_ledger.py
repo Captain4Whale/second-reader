@@ -83,6 +83,7 @@ def append_unit_span_record(
         "preview_end_cursor": dict(preview.get("preview_end_cursor", {}))
         if isinstance(preview.get("preview_end_cursor"), Mapping)
         else {},
+        "preview_end_reason": _clean_text(preview.get("preview_end_reason")),
         "char_count": int(source_unit.get("char_count", 0) or 0),
         "paragraph_count": int(source_unit.get("paragraph_count", 0) or 0),
         "end_anchor_text": _clean_text(end_anchor_text),
@@ -91,4 +92,3 @@ def append_unit_span_record(
     }
     append_jsonl(unit_span_ledger_file(output_dir), record)
     return record
-
