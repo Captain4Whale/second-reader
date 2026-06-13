@@ -7,7 +7,7 @@ Update when: the current objective, active tasks, blockers, active jobs, open de
 
 This file is authoritative for durable current status. Do not keep unique active-state information only in `docs/agent-handoff.md`.
 
-Last verified: `2026-06-13T10:20:54+08:00`
+Last verified: `2026-06-13T10:39:34+08:00`
 
 ## Current Objective
 - The `Ingest -> Digest -> Reading Runner settlement` mechanism reframe is implemented; current work is fact alignment, smoke/diagnostic review, and calibration before any formal evaluation promotion.
@@ -213,7 +213,7 @@ Last verified: `2026-06-13T10:20:54+08:00`
     - use `docs/implementation/new-reading-mechanism/digest-understanding-response-annotation-design.md` as the implemented reference for the Digest prompt/output semantic refactor
     - use `docs/implementation/new-reading-mechanism/unit-memory-hybrid-retrieval-design.md` as the implemented reference for the Unit Memory storage/index/retrieval trace bottom framework
     - use `docs/implementation/new-reading-mechanism/ingest-recall-and-digest-memory-context-design.md` as the implemented reference for bounded multi-recall Ingest output, Anthropic-style `retrieve_unit_memory` tool loop, multi-recall retrieval aggregation, and Digest `ReadingMemory` packaging
-    - use `docs/implementation/new-reading-mechanism/mechanism-pattern-ledger.md` entry 19 and `DEC-116` for the accepted design explanation of why window-partition Ingest improves next-unit selection; if prompt evolution resumes, test `preview_partition[]` titles as a candidate rather than editing the live v14 baseline in place
+    - use `docs/implementation/new-reading-mechanism/mechanism-pattern-ledger.md` entry 19 and `DEC-116` for the accepted design explanation of why window-partition Ingest improves next-unit selection; if prompt evolution resumes, use `docs/implementation/new-reading-mechanism/ingest-next-unit-optimization-design.md` as the working design doc and test `preview_partition[]` titles as a candidate rather than editing the live v14 baseline in place
     - use `docs/implementation/new-reading-mechanism/ingest-digest-unit-memory-conformance-goal.md` as the completed structural conformance contract; it treated the mechanism design docs as a locked baseline and permitted fixing implementation/tests/stable docs only
     - use `docs/implementation/new-reading-mechanism/unit-memory-retrieval-repair-validation-plan.md` as the active repair/validation plan for making Unit Memory retrieval actually select relevant prior Understanding and render it into Digest `ReadingMemory`
     - the no-judge hybrid smoke `attentional_v2_unit_memory_hybrid_smoke_nawaer_20260602` completed as a diagnostic only; it should not be treated as formal evidence or evidence-catalog material
