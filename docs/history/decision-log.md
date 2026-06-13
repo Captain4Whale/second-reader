@@ -3491,3 +3491,28 @@ This new direction is design frozen but not yet implemented as a formal benchmar
 - `docs/current-state.md`
 - `reading-companion-backend/src/iterator_reader/parse.py`
 - `reading-companion-backend/src/attentional_v2/source_spans.py`
+
+## Entry 120
+**ID**: DEC-123
+**Status**: active
+
+**Decision / Inflection**: Implement Source Normalization v1 for newly parsed books.
+
+**Period**: June 13, 2026, immediately after `DEC-122` established Source Normalization as the upstream answer to footnote/noise paragraphs entering Ingest.
+
+**Decision**: New parses now run import-time Source Normalization before `public/book_document.json` is persisted. The parser preserves paragraph coordinates and source text, extracts lightweight EPUB/HTML evidence, runs a whole-book LLM source-flow classifier in bounded chunks, validates conservatively, attaches `source_normalization` metadata to each paragraph, rebuilds the sentence layer, and lets existing downstream mechanisms continue to use the coarse `text_role == "auxiliary"` gate. Existing parsed artifacts are not automatically migrated or rewashed.
+
+**Boundary**: This is a parser/source-substrate change only. It does not change Ingest/Digest prompts or schemas, Unit Memory retrieval, accepted `SourceSpan` coordinates, frontend/public API payloads, historical eval packages, or old parsed outputs. If the classifier fails, parse degrades to deterministic roles and records diagnostics instead of failing the book parse.
+
+**Why this path won**: The product needs clean mainline reading input, but Ingest should not become a skip-span planner. Whole-book classification gives the model enough context to recognize source-flow apparatus, while conservative merge rules prevent the classifier from deleting unusual literary forms, numbered body aphorisms, dialogue, poems, or other author-intended text without structural evidence.
+
+**Primary evidence**:
+- `docs/implementation/new-reading-mechanism/source-normalization-design.md`
+- `docs/backend-reading-mechanism.md`
+- `docs/backend-reading-mechanisms/attentional_v2.md`
+- `docs/current-state.md`
+- `reading-companion-backend/src/reading_runtime/source_normalization.py`
+- `reading-companion-backend/src/iterator_reader/parse.py`
+- `reading-companion-backend/src/reading_core/book_document.py`
+- `reading-companion-backend/tests/test_iterator_parse.py`
+- `reading-companion-backend/tests/test_attentional_v2_source_spans.py`

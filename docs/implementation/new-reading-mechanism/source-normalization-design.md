@@ -10,9 +10,11 @@ policy, or frontend highlight rendering details.
 Update when: source-normalization roles, confidence policy, metadata shape, or
 mainline/auxiliary routing changes.
 
-Status: accepted design direction, not implemented in live parser/runtime yet.
-Current live behavior only filters paragraphs whose existing `text_role` is
-already `auxiliary`.
+Status: implemented-live v1 for newly created parsed-book documents.
+Current live behavior classifies new canonical paragraph records with
+Source Normalization before `Ingest` / `Digest` run, then keeps the existing
+runtime gate: paragraphs whose `text_role` is `auxiliary` are excluded from the
+mainline reader stream.
 
 ## Problem
 
@@ -154,17 +156,22 @@ that complexity until real examples require it.
    - repeated running headers or duplicate headings
    - URL / publication / bibliography patterns
    - mainline markers that link body text to later notes
-4. Use an LLM classifier for ambiguous or broader normalization passes. The LLM
+4. Use a whole-book LLM classifier over all original paragraph/block records.
+   The implementation may chunk the book only for prompt/output safety. The LLM
    classifies original numbered blocks; it does not rewrite text, generate
    summaries, or decide cursor movement.
 5. Validate conservatively:
-   - high-confidence auxiliary/noise may be excluded from mainline
+   - only high-confidence auxiliary/reference/noise/front-back/caption-support
+     labels with structural evidence may be excluded from mainline
    - ambiguous blocks remain `uncertain_keep_mainline`
    - every exclusion records a method, confidence, and reason code
 6. Materialize normalized paragraph records while preserving raw coordinates.
 7. Let Ingest read only the normalized mainline stream. Let Digest retrieve
    auxiliary notes only when mainline source markers or runtime policy asks for
    them.
+8. If the source-normalization LLM call fails, keep deterministic parse-time
+   roles, attach baseline metadata, write a degradation diagnostic, and do not
+   fail the whole parse.
 
 ## LLM Prompt Contract Sketch
 
@@ -260,6 +267,24 @@ The normalizer must avoid removing author-intended content. Keep mainline when:
 
 The safe default is `uncertain_keep_mainline`.
 
+## Implemented Live V1
+
+The first implementation is live for newly parsed books:
+
+- `reading-companion-backend/src/reading_runtime/source_normalization.py`
+  contains the source-flow prompt, whole-book chunking, conservative label
+  validation, metadata merge, sentence-layer rebuild, and diagnostics writer.
+- `reading-companion-backend/src/iterator_reader/parse.py` invokes Source
+  Normalization only when creating a new `public/book_document.json`.
+- Existing parsed books are not migrated or rewashed automatically; they retain
+  their stored paragraph roles except for the existing sentence-layer backfill.
+- EPUB/HTML extraction now retains lightweight evidence fields such as
+  `html_id`, `html_class`, `epub_type`, and `role` on paragraph records.
+- Runtime `Ingest` and `Digest` remain unchanged. They still rely on the
+  shared paragraph stream and the coarse `text_role == "auxiliary"` gate.
+- Parse diagnostics write Source Normalization status/counts under
+  `_mechanisms/iterator_v1/internal/diagnostics/parse.json`.
+
 ## Non-Goals For V1
 
 - Do not introduce persistent `reading_blocks[]`.
@@ -270,17 +295,11 @@ The safe default is `uncertain_keep_mainline`.
 - Do not implement paragraph-internal splitting until real mixed-block examples
   require it.
 
-## First Implementation Slice Later
+## Follow-Ups
 
-When implementation is approved, start with paragraph/block-level classification:
-
-- extend parser block metadata capture
-- add deterministic note/noise evidence collection
-- add an LLM source-normalization classifier for candidate windows or whole-book
-  chunks
-- persist `source_normalization` metadata on paragraph records
-- keep current `text_role == "auxiliary"` as the only live mainline exclusion
-  gate until tests prove the new labels are safe
-- add source-normalization audit reports that show removed mainline blocks and
-  their original coordinates
-
+- Add richer audit reports that show removed mainline blocks and their original
+  coordinates in a reviewer-friendly table.
+- Add paragraph-internal `source_normalization.spans[]` only if real mixed
+  body/auxiliary paragraphs require it.
+- Decide later whether auxiliary notes should become explicit support-context
+  retrieval material for Digest when mainline markers refer to them.

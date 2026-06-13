@@ -7,7 +7,7 @@ Update when: task status, priority, blockers, decision refs, job refs, evidence 
 
 This document is the human-readable companion to `docs/tasks/registry.json`.
 
-Last updated: `2026-06-13T19:10:00+08:00`
+Last updated: `2026-06-13T19:25:00+08:00`
 
 ## Status Values
 - `active`
@@ -25,7 +25,7 @@ Last updated: `2026-06-13T19:10:00+08:00`
 - Lane: `mechanism_runtime`
 - Priority: `high`
 - Detail: `docs/current-state.md`
-- Next: Five-window Long Span vNext judged diagnostic remains review_pending in the run ledger, and Unit Memory retrieval repair now has diagnostic proof for both text_only and live hybrid mechanics. Current live Ingest prompt `attentional_v2.ingest.v16` / promptset `attentional_v2-phase6-v66` uses the reviewed bounded-lookahead window-partition selector plus the live `preview_partition[]` audit map: final output returns `unit.end_paragraph_n` / `unit.end_at`, `preview_partition[]`, optional first-unit boundary `reason`, and bounded `memory_recalls[]`; `preview_partition[0]` must match `unit`, while later entries are compact future-source planning/audit metadata only. Runtime now builds the visible Ingest preview with token-bounded, paragraph-aligned assembly: `preview_soft_min_tokens=1600`, `preview_target_max_tokens=3000`, `preview_hard_max_tokens=4200`, `emergency_max_preview_paragraphs=200`, and old char-budget / paragraph-count snapshots ignored as normal stopping rules. Runtime derives `preview_partition_audit[]` in `UnitizeDecision`, `unitization_audit.jsonl`, and compact ingest traces where partition boundaries resolve; later unresolved or non-advancing partitions mark audit partial and do not affect the accepted Digest unit. `retrieve_unit_memory` remains the only live action tool, keeps its prior input schema and recall matching semantics, and does not require `preview_partition[]` during tool preflight. `DEC-116` records why bounded lookahead improves first-unit selection, `DEC-117` records the live preview-partition audit contract, `DEC-118` records the paragraph-count to character-bound repair, `DEC-120` records the live token-bounded preview plus v16 output-discipline change, `DEC-121` records the larger v16 preview-capacity calibration, and `DEC-122` records Source Normalization as the upstream design for keeping footnotes/noise out of Ingest without allowing model-emitted skip behavior. No formal A/B rerun or historical report-package regeneration has been done for v16 / DEC-122. Next action: implement or probe paragraph/block-level Source Normalization when the next code slice is authorized, or review retrieved-memory usefulness/relevance if staying on Unit Memory.
+- Next: Five-window Long Span vNext judged diagnostic remains review_pending in the run ledger, and Unit Memory retrieval repair now has diagnostic proof for both text_only and live hybrid mechanics. Current live Ingest prompt `attentional_v2.ingest.v16` / promptset `attentional_v2-phase6-v66` uses the reviewed bounded-lookahead window-partition selector plus the live `preview_partition[]` audit map: final output returns `unit.end_paragraph_n` / `unit.end_at`, `preview_partition[]`, optional first-unit boundary `reason`, and bounded `memory_recalls[]`; `preview_partition[0]` must match `unit`, while later entries are compact future-source planning/audit metadata only. Runtime now builds the visible Ingest preview with token-bounded, paragraph-aligned assembly: `preview_soft_min_tokens=1600`, `preview_target_max_tokens=3000`, `preview_hard_max_tokens=4200`, `emergency_max_preview_paragraphs=200`, and old char-budget / paragraph-count snapshots ignored as normal stopping rules. Runtime derives `preview_partition_audit[]` in `UnitizeDecision`, `unitization_audit.jsonl`, and compact ingest traces where partition boundaries resolve; later unresolved or non-advancing partitions mark audit partial and do not affect the accepted Digest unit. `retrieve_unit_memory` remains the only live action tool, keeps its prior input schema and recall matching semantics, and does not require `preview_partition[]` during tool preflight. `DEC-116` records why bounded lookahead improves first-unit selection, `DEC-117` records the live preview-partition audit contract, `DEC-118` records the paragraph-count to character-bound repair, `DEC-120` records the live token-bounded preview plus v16 output-discipline change, `DEC-121` records the larger v16 preview-capacity calibration, `DEC-122` records Source Normalization as the upstream design for keeping footnotes/noise out of Ingest without allowing model-emitted skip behavior, and `DEC-123` records the live v1 implementation for newly parsed books. No formal A/B rerun or historical report-package regeneration has been done for v16 / DEC-123. Next action: validate Source Normalization v1 on a real newly parsed Siddhartha/Naval slice or add reviewer-facing source-normalization audit reports, or review retrieved-memory usefulness/relevance if staying on Unit Memory.
 - Jobs:
   - `bgjob_ingest_digest_unit_memory_full_diagnostic_20260603_parallel5`
   - `bgjob_unit_memory_text_only_smoke_value_20260606`
@@ -61,6 +61,7 @@ Last updated: `2026-06-13T19:10:00+08:00`
   - `DEC-120`
   - `DEC-121`
   - `DEC-122`
+  - `DEC-123`
   - `docs/current-state.md`
   - `docs/backend-reader-evaluation.md`
   - `docs/implementation/new-reading-mechanism/ingest-context-and-navigate-mapping.md`
@@ -71,6 +72,8 @@ Last updated: `2026-06-13T19:10:00+08:00`
   - `docs/implementation/new-reading-mechanism/ingest-select-next-unit-window-partition-draft-prompt.md`
   - `docs/implementation/new-reading-mechanism/ingest-next-unit-optimization-design.md`
   - `docs/implementation/new-reading-mechanism/source-normalization-design.md`
+  - `reading-companion-backend/src/reading_runtime/source_normalization.py`
+  - `reading-companion-backend/tests/test_iterator_parse.py`
   - `docs/implementation/new-reading-mechanism/mechanism-pattern-ledger.md`
   - `docs/implementation/new-reading-mechanism/unit-memory-retrieval-repair-validation-plan.md`
   - `docs/implementation/new-reading-mechanism/llm-structured-output-protocol-note.md`

@@ -18,6 +18,7 @@ from src.parsers import parse_ebook
 from src.reading_core.book_document import BookDocument, BookMetadata
 from src.reading_core.sentences import build_sentence_records, ensure_book_document_sentence_layer
 from src.reading_core.storage import book_document_file, existing_book_document_file, load_book_document, save_book_document
+from src.reading_runtime.source_normalization import normalize_book_document_source
 
 from .language import detect_book_language, language_name, resolve_output_language
 from .llm_utils import LLMTraceContext, invoke_json, llm_invocation_scope, runtime_trace_context
@@ -58,6 +59,7 @@ from .storage import (
     existing_structure_file,
     load_structure,
     load_json,
+    parse_diagnostics_file,
     parse_state_file,
     save_structure,
     save_json,
@@ -108,7 +110,9 @@ BLOCK_TAGS = {
     "p",
     "li",
     "blockquote",
+    "caption",
     "div",
+    "figcaption",
     "h1",
     "h2",
     "h3",
@@ -181,6 +185,16 @@ def _local_tag(tag: str) -> str:
     if "}" in tag:
         return tag.rsplit("}", 1)[1]
     return tag
+
+
+def _element_attr(element: ET.Element, name: str) -> str:
+    """Return a source element attribute regardless of XML namespace prefixing."""
+
+    for key, value in element.attrib.items():
+        local_name = key.rsplit("}", 1)[-1] if "}" in key else key
+        if key == name or local_name == name:
+            return str(value or "").strip()
+    return ""
 
 
 def _heading_level_for_tag(tag: str) -> int | None:
@@ -333,6 +347,10 @@ def _extract_epub_paragraph_records(
                     "paragraph_index": len(records) + 1,
                     "block_tag": tag,
                     "heading_level": _heading_level_for_tag(tag),
+                    "html_id": _element_attr(element, "id"),
+                    "html_class": _element_attr(element, "class"),
+                    "epub_type": _element_attr(element, "type"),
+                    "role": _element_attr(element, "role"),
                 }
             )
 
@@ -370,6 +388,10 @@ def _paragraph_records(chapter: dict[str, object]) -> list[dict[str, object]]:
             "paragraph_index": index,
             "block_tag": "p",
             "heading_level": None,
+            "html_id": "",
+            "html_class": "",
+            "epub_type": "",
+            "role": "",
         }
         for index, paragraph in enumerate(split_into_paragraphs(extract_plain_text(content)), start=1)
     ]
@@ -688,8 +710,14 @@ def _load_or_build_book_document(
         output_language=output_language,
         book_path=book_path,
     )
-    save_book_document(book_document_file(output_dir), canonical)
-    return canonical
+    normalized, _normalization_diagnostics = normalize_book_document_source(
+        canonical,
+        output_dir=output_dir,
+        diagnostics_path=parse_diagnostics_file(output_dir),
+        mechanism_key="shared_parse",
+    )
+    save_book_document(book_document_file(output_dir), normalized)
+    return normalized
 
 
 def _infer_chapter_role(

@@ -5,6 +5,7 @@ import json
 from src.attentional_v2.source_spans import (
     build_paragraph_offset_preview,
     first_cursor_for_chapter,
+    readable_paragraphs,
     resolve_end_anchor_text,
     resolve_ingest_unit_boundary,
     resolve_preview_partition_audit,
@@ -49,6 +50,35 @@ def test_default_preview_uses_token_budget_not_paragraph_count() -> None:
     assert preview["preview_end_reason"] == "source_tail"
     assert preview["estimated_token_count"] > 0
     assert preview["preview_token_estimator"] == "tiktoken_o200k_base_v1_paragraph_xml_v1"
+
+
+def test_preview_excludes_source_normalized_auxiliary_paragraphs() -> None:
+    chapter = {
+        "id": 1,
+        "title": "Chapter 1",
+        "paragraphs": [
+            {"paragraph_index": 1, "text": "Mainline starts.[1]", "text_role": "body"},
+            {
+                "paragraph_index": 2,
+                "text": "[1] Translator note.",
+                "text_role": "auxiliary",
+                "source_normalization": {
+                    "normalized_role": "auxiliary_note",
+                    "method": "llm_with_rule_evidence",
+                },
+            },
+            {"paragraph_index": 3, "text": "Mainline resumes.", "text_role": "body"},
+        ],
+    }
+
+    preview = build_paragraph_offset_preview(
+        chapter=chapter,
+        current_cursor={"chapter_id": 1, "chapter_ref": "Chapter 1", "paragraph_index": 1, "char_offset": 0},
+    )
+
+    assert [paragraph["paragraph_index"] for paragraph in readable_paragraphs(chapter)] == [1, 3]
+    assert preview["source_text"] == "Mainline starts.[1]\n\nMainline resumes."
+    assert [item["paragraph_index"] for item in preview["paragraph_slices"]] == [1, 3]
 
 
 def test_preview_stops_at_target_max_after_soft_min_is_satisfied() -> None:

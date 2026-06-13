@@ -31,6 +31,19 @@ class ChapterHeadingBlock(TypedDict, total=False):
     locator: TextLocator
 
 
+class SourceNormalizationMetadata(TypedDict, total=False):
+    """Import-time source-flow classification metadata for one paragraph."""
+
+    version: str
+    normalized_role: str
+    kind: str
+    confidence: float
+    method: str
+    reason_code: str
+    linked_markers: list[str]
+    evidence: dict[str, object]
+
+
 class ParagraphRecord(TypedDict, total=False):
     """Canonical paragraph-level text record extracted from the source book."""
 
@@ -44,6 +57,11 @@ class ParagraphRecord(TypedDict, total=False):
     text_role: TextRole
     item_id: str
     spine_index: int | None
+    html_id: str
+    html_class: str
+    epub_type: str
+    role: str
+    source_normalization: SourceNormalizationMetadata
 
 
 class SentenceRecord(TypedDict, total=False):

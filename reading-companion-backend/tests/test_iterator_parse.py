@@ -14,6 +14,7 @@ from src.iterator_reader.storage import (
     chapter_result_file,
     cover_asset_file,
     load_structure,
+    parse_diagnostics_file,
     parse_state_file,
     run_state_file,
     save_json,
@@ -22,11 +23,23 @@ from src.iterator_reader.storage import (
     structure_markdown_file,
 )
 from src.reading_core.storage import book_document_file
+from src.reading_runtime import source_normalization as source_normalization_module
 from src.reading_runtime.artifacts import mechanism_manifest_file
+
+
+def _disable_source_normalization(monkeypatch):
+    """Keep legacy parser tests from invoking the live source-normalization LLM."""
+
+    monkeypatch.setattr(
+        parse_module,
+        "normalize_book_document_source",
+        lambda document, **_kwargs: (document, {"status": "disabled_in_test"}),
+    )
 
 
 def test_build_structure_persists_semantic_segments(tmp_path, monkeypatch):
     """build_structure should write structure.json plus the canonical book_document.json."""
+    _disable_source_normalization(monkeypatch)
     book_path = tmp_path / "demo.epub"
     book_path.write_text("placeholder", encoding="utf-8")
 
@@ -106,6 +119,7 @@ def test_build_structure_persists_semantic_segments(tmp_path, monkeypatch):
 
 def test_build_structure_infers_human_chapter_number(tmp_path, monkeypatch):
     """Numeric chapter titles should get a human-facing chapter number."""
+    _disable_source_normalization(monkeypatch)
     book_path = tmp_path / "demo.epub"
     book_path.write_text("placeholder", encoding="utf-8")
 
@@ -178,6 +192,30 @@ def test_extract_epub_paragraph_records_skips_duplicate_heading_wrappers():
         "People want things from other people.",
     ]
     assert [record["block_tag"] for record in records] == ["h1", "h2", "p"]
+
+
+def test_extract_epub_paragraph_records_preserves_source_normalization_evidence():
+    """EPUB block attributes should remain available for source-flow classification."""
+    content = """
+<html xmlns="http://www.w3.org/1999/xhtml" xmlns:epub="http://www.idpf.org/2007/ops">
+  <body>
+    <p id="fn1" class="footnote translator-note" epub:type="footnote" role="doc-footnote">[1] Translator note.</p>
+  </body>
+</html>
+"""
+
+    records = parse_module._extract_epub_paragraph_records(
+        content,
+        href="notes.xhtml",
+        item_id="notes",
+        spine_index=3,
+    )
+
+    assert records[0]["html_id"] == "fn1"
+    assert records[0]["html_class"] == "footnote translator-note"
+    assert records[0]["epub_type"] == "footnote"
+    assert records[0]["role"] == "doc-footnote"
+    assert records[0]["paragraph_index"] == 1
 
 
 def test_extract_epub_chapters_from_toc_handles_nested_children_and_non_string_href():
@@ -266,8 +304,212 @@ def test_classify_paragraph_records_detects_heading_roles_generically():
     ]
 
 
+def test_source_normalization_prompt_contract_mentions_source_flow_and_false_positive_rules():
+    """The live classifier prompt should frame source-flow labels, not importance judgment."""
+
+    system_prompt = source_normalization_module.SOURCE_NORMALIZATION_SYSTEM_PROMPT
+
+    assert "source-flow classification" in system_prompt
+    assert "not importance judgment" in system_prompt
+    assert "letters, poems, dialogue, fictional documents" in system_prompt
+    assert "numbered main-body aphorisms" in system_prompt
+
+
+def test_source_normalization_marks_note_cluster_auxiliary_and_rebuilds_sentences(tmp_path):
+    """High-confidence note/noise labels should leave coordinates intact but exit the mainline stream."""
+    document = {
+        "metadata": {
+            "book": "悉达多",
+            "author": "Hermann Hesse",
+            "book_language": "zh",
+            "output_language": "zh",
+            "source_file": str(tmp_path / "xidaduo.epub"),
+        },
+        "chapters": [
+            {
+                "id": 1,
+                "title": "沙门",
+                "chapter_number": 1,
+                "level": 1,
+                "paragraphs": [
+                    {"paragraph_index": 1, "text": "他离开了家门，走向沙门的道路。", "text_role": "body", "block_tag": "p"},
+                    {"paragraph_index": 2, "text": "朋友跟着他，在清晨的光里沉默前行。", "text_role": "body", "block_tag": "p"},
+                    {"paragraph_index": 3, "text": "[1]Brahmanen，婆罗门，印度社会阶级制度中的阶级之一。", "text_role": "body", "block_tag": "p"},
+                    {"paragraph_index": 4, "text": "[2]Om，印度宗教传统中的神圣音节。", "text_role": "body", "block_tag": "p"},
+                    {"paragraph_index": 5, "text": "沙门", "text_role": "body", "block_tag": "p"},
+                    {"paragraph_index": 6, "text": "在沙门那里，悉达多学会了忍耐。", "text_role": "body", "block_tag": "p"},
+                ],
+            }
+        ],
+    }
+
+    def _fake_classifier(blocks, _context):
+        assert {block["paragraph_index"] for block in blocks} == {1, 2, 3, 4, 5, 6}
+        return {
+            "classifications": [
+                {
+                    "chapter_id": 1,
+                    "paragraph_index": 3,
+                    "normalized_role": "auxiliary_note",
+                    "text_role": "auxiliary",
+                    "kind": "translator_note",
+                    "confidence": 0.96,
+                    "reason_code": "numbered_endnote_cluster",
+                    "linked_markers": ["1"],
+                },
+                {
+                    "chapter_id": 1,
+                    "paragraph_index": 4,
+                    "normalized_role": "auxiliary_note",
+                    "text_role": "auxiliary",
+                    "kind": "translator_note",
+                    "confidence": 0.94,
+                    "reason_code": "numbered_endnote_cluster",
+                    "linked_markers": ["2"],
+                },
+                {
+                    "chapter_id": 1,
+                    "paragraph_index": 5,
+                    "normalized_role": "layout_noise",
+                    "text_role": "auxiliary",
+                    "kind": "duplicate_heading",
+                    "confidence": 0.91,
+                    "reason_code": "duplicate_heading",
+                },
+            ]
+        }
+
+    diagnostics_path = parse_diagnostics_file(tmp_path / "output" / "xidaduo")
+    normalized, diagnostics = source_normalization_module.normalize_book_document_source(
+        document,
+        diagnostics_path=diagnostics_path,
+        classifier=_fake_classifier,
+    )
+
+    paragraphs = normalized["chapters"][0]["paragraphs"]
+    assert [paragraph["paragraph_index"] for paragraph in paragraphs] == [1, 2, 3, 4, 5, 6]
+    assert [paragraph["text_role"] for paragraph in paragraphs] == [
+        "body",
+        "body",
+        "auxiliary",
+        "auxiliary",
+        "auxiliary",
+        "body",
+    ]
+    assert paragraphs[2]["source_normalization"]["normalized_role"] == "auxiliary_note"
+    assert paragraphs[2]["source_normalization"]["kind"] == "translator_note"
+    assert paragraphs[2]["source_normalization"]["linked_markers"] == ["1"]
+    assert paragraphs[4]["source_normalization"]["normalized_role"] == "layout_noise"
+    assert list(dict.fromkeys(sentence["paragraph_index"] for sentence in normalized["chapters"][0]["sentences"])) == [1, 2, 6]
+    assert diagnostics["applied_exclusion_count"] == 3
+    assert diagnostics["normalized_role_counts"]["auxiliary_note"] == 2
+    assert json.loads(diagnostics_path.read_text(encoding="utf-8"))["source_normalization"]["status"] == "completed"
+
+
+def test_source_normalization_rejects_unbacked_auxiliary_label_for_numbered_body_text():
+    """The conservative merge must not hide numbered正文 without structural evidence."""
+    document = {
+        "metadata": {"book": "Naval", "book_language": "zh", "output_language": "zh"},
+        "chapters": [
+            {
+                "id": 1,
+                "title": "原则",
+                "paragraphs": [
+                    {"paragraph_index": 1, "text": "1. 追求财富，而不是金钱或地位。", "text_role": "body", "block_tag": "p"},
+                    {"paragraph_index": 2, "text": "这句话开启了整章的论点。", "text_role": "body", "block_tag": "p"},
+                ],
+            }
+        ],
+    }
+
+    def _fake_classifier(_blocks, _context):
+        return {
+            "classifications": [
+                {
+                    "chapter_id": 1,
+                    "paragraph_index": 1,
+                    "normalized_role": "auxiliary_note",
+                    "kind": "numbered_note",
+                    "confidence": 0.99,
+                    "reason_code": "numbered_note",
+                }
+            ]
+        }
+
+    normalized, diagnostics = source_normalization_module.normalize_book_document_source(
+        document,
+        classifier=_fake_classifier,
+    )
+
+    paragraph = normalized["chapters"][0]["paragraphs"][0]
+    assert paragraph["text_role"] == "body"
+    assert paragraph["source_normalization"]["method"] == "deterministic_baseline_llm_rejected"
+    assert "rejected_llm_suggestion" in paragraph["source_normalization"]["evidence"]
+    assert diagnostics["applied_exclusion_count"] == 0
+    assert list(dict.fromkeys(sentence["paragraph_index"] for sentence in normalized["chapters"][0]["sentences"])) == [1, 2]
+
+
+def test_source_normalization_degrades_without_hiding_text_when_classifier_fails(tmp_path):
+    """LLM failures should keep the deterministic source stream readable."""
+    document = {
+        "metadata": {"book": "Demo", "book_language": "en", "output_language": "en"},
+        "chapters": [
+            {
+                "id": 1,
+                "title": "Chapter",
+                "paragraphs": [
+                    {"paragraph_index": 1, "text": "Body remains.", "text_role": "body", "block_tag": "p"},
+                    {"paragraph_index": 2, "text": "[1] Note-looking text remains visible on degradation.", "text_role": "body", "block_tag": "p"},
+                ],
+            }
+        ],
+    }
+
+    def _failing_classifier(_blocks, _context):
+        raise RuntimeError("classifier unavailable")
+
+    diagnostics_path = parse_diagnostics_file(tmp_path / "output" / "demo")
+    normalized, diagnostics = source_normalization_module.normalize_book_document_source(
+        document,
+        diagnostics_path=diagnostics_path,
+        classifier=_failing_classifier,
+    )
+
+    assert diagnostics["status"] == "degraded"
+    assert "classifier unavailable" in diagnostics["errors"][0]
+    assert [paragraph["text_role"] for paragraph in normalized["chapters"][0]["paragraphs"]] == ["body", "body"]
+    assert json.loads(diagnostics_path.read_text(encoding="utf-8"))["source_normalization"]["status"] == "degraded"
+
+
+def test_source_normalization_ignores_malformed_classifier_payload_without_hiding_text():
+    """Malformed classifier output should become warnings, not source deletion."""
+    document = {
+        "metadata": {"book": "Demo", "book_language": "en", "output_language": "en"},
+        "chapters": [
+            {
+                "id": 1,
+                "title": "Chapter",
+                "paragraphs": [
+                    {"paragraph_index": 1, "text": "Mainline remains.", "text_role": "body", "block_tag": "p"},
+                ],
+            }
+        ],
+    }
+
+    normalized, diagnostics = source_normalization_module.normalize_book_document_source(
+        document,
+        classifier=lambda _blocks, _context: {"classifications": [{"paragraph_index": 1, "normalized_role": "layout_noise"}]},
+    )
+
+    assert diagnostics["status"] == "completed_with_validation_warnings"
+    assert diagnostics["classification_count"] == 0
+    assert normalized["chapters"][0]["paragraphs"][0]["text_role"] == "body"
+    assert normalized["chapters"][0]["paragraphs"][0]["source_normalization"]["method"] == "deterministic_baseline"
+
+
 def test_build_structure_keeps_chapter_heading_outside_first_body_segment(tmp_path, monkeypatch):
     """Chapter heading stacks should be preserved as chapter metadata, not merged into section text."""
+    _disable_source_normalization(monkeypatch)
     book_path = tmp_path / "demo.epub"
     book_path.write_text("placeholder", encoding="utf-8")
 
@@ -360,6 +602,114 @@ def test_build_structure_keeps_chapter_heading_outside_first_body_segment(tmp_pa
     )
     assert chapter["segments"][0]["summary"] == "Body thesis only"
     assert chapter["segments"][0]["section_heading"] == ""
+
+
+def test_build_structure_source_normalization_filters_notes_before_segmentation(tmp_path, monkeypatch):
+    """New parses should normalize auxiliary notes before iterator segmentation sees the body stream."""
+    book_path = tmp_path / "xidaduo.epub"
+    book_path.write_text("placeholder", encoding="utf-8")
+    output_dir = tmp_path / "output" / "xidaduo"
+    captured_calls: list[dict[str, object]] = []
+
+    monkeypatch.setattr(parse_module, "extract_book_metadata", lambda _: ("悉达多", "Hermann Hesse"))
+    monkeypatch.setattr(parse_module, "detect_book_language", lambda *_args, **_kwargs: "zh")
+    monkeypatch.setattr(
+        parse_module,
+        "parse_ebook",
+        lambda _: [
+            {
+                "title": "沙门",
+                "content": """
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <body>
+    <p>他离开了家门，走向沙门的道路。</p>
+    <p>朋友跟着他，在清晨的光里沉默前行。</p>
+    <p>[1]Brahmanen，婆罗门，印度社会阶级制度中的阶级之一。</p>
+    <p>[2]Om，印度宗教传统中的神圣音节。</p>
+    <p>在沙门那里，悉达多学会了忍耐。</p>
+  </body>
+</html>
+""",
+                "level": 1,
+                "href": "chapter-1.xhtml",
+                "item_id": "chapter-1",
+                "spine_index": 1,
+            }
+        ],
+    )
+    monkeypatch.setattr(parse_module, "resolve_output_dir", lambda *_args, **_kwargs: output_dir)
+    monkeypatch.setattr(parse_module, "ensure_source_asset", lambda *_args, **_kwargs: None)
+    monkeypatch.setattr(parse_module, "_extract_epub_cover", lambda *_args, **_kwargs: None)
+
+    def _fake_classifier(_blocks, _context):
+        return {
+            "classifications": [
+                {
+                    "chapter_id": 1,
+                    "paragraph_index": 3,
+                    "normalized_role": "auxiliary_note",
+                    "kind": "translator_note",
+                    "confidence": 0.96,
+                    "reason_code": "numbered_endnote_cluster",
+                    "linked_markers": ["1"],
+                },
+                {
+                    "chapter_id": 1,
+                    "paragraph_index": 4,
+                    "normalized_role": "auxiliary_note",
+                    "kind": "translator_note",
+                    "confidence": 0.93,
+                    "reason_code": "numbered_endnote_cluster",
+                    "linked_markers": ["2"],
+                },
+            ]
+        }
+
+    def _fake_segment(*args, **kwargs):
+        captured_calls.append({"paragraphs": list(kwargs["paragraphs"])})
+        return [
+            {
+                "id": "1.1",
+                "summary": "Mainline only",
+                "tokens": 12,
+                "text": "\n\n".join(kwargs["paragraphs"]),
+                "paragraph_start": 1,
+                "paragraph_end": len(kwargs["paragraphs"]),
+                "status": "pending",
+            }
+        ]
+
+    monkeypatch.setattr(source_normalization_module, "_invoke_source_normalization_classifier", _fake_classifier)
+    monkeypatch.setattr(parse_module, "segment_chapter_semantically", _fake_segment)
+
+    structure, _resolved_output_dir = parse_module.build_structure(book_path, language_mode="auto")
+
+    captured_paragraphs = [
+        paragraph
+        for call in captured_calls
+        for paragraph in call["paragraphs"]
+    ]
+    assert captured_paragraphs == [
+        "他离开了家门，走向沙门的道路。",
+        "朋友跟着他，在清晨的光里沉默前行。",
+        "在沙门那里，悉达多学会了忍耐。",
+    ]
+    persisted_book_document = json.loads(book_document_file(output_dir).read_text(encoding="utf-8"))
+    assert [paragraph["text_role"] for paragraph in persisted_book_document["chapters"][0]["paragraphs"]] == [
+        "body",
+        "body",
+        "auxiliary",
+        "auxiliary",
+        "body",
+    ]
+    assert persisted_book_document["chapters"][0]["paragraphs"][2]["source_normalization"]["kind"] == "translator_note"
+    assert [sentence["paragraph_index"] for sentence in persisted_book_document["chapters"][0]["sentences"]] == [1, 2, 5]
+    diagnostics = json.loads(parse_diagnostics_file(output_dir).read_text(encoding="utf-8"))
+    assert diagnostics["source_normalization"]["applied_exclusion_count"] == 2
+    assert structure["chapters"][0]["segments"][0]["paragraph_start"] == 1
+    assert structure["chapters"][0]["segments"][0]["paragraph_end"] == 2
+    assert structure["chapters"][0]["segments"][1]["paragraph_start"] == 5
+    assert structure["chapters"][0]["segments"][1]["paragraph_end"] == 5
 
 
 def test_chapter_contexts_infer_soft_roles_for_overview_and_back_matter():
@@ -508,6 +858,7 @@ def test_ensure_structure_for_book_rehydrates_segments_after_outline_only_parse(
 
 def test_ensure_structure_for_book_backfills_missing_book_document_for_legacy_structure(tmp_path, monkeypatch):
     """Legacy output dirs with only structure.json should gain book_document.json on load."""
+    _disable_source_normalization(monkeypatch)
 
     book_path = tmp_path / "demo.epub"
     book_path.write_text("placeholder", encoding="utf-8")
@@ -567,7 +918,7 @@ def test_ensure_structure_for_book_backfills_missing_book_document_for_legacy_st
     ]
 
 
-def test_load_or_build_book_document_upgrades_existing_paragraph_only_payload(tmp_path):
+def test_load_or_build_book_document_upgrades_existing_paragraph_only_payload(tmp_path, monkeypatch):
     """Existing paragraph-only book documents should gain the shared sentence layer on reload."""
 
     output_dir = tmp_path / "output" / "demo-book"
@@ -603,6 +954,11 @@ def test_load_or_build_book_document_upgrades_existing_paragraph_only_payload(tm
     }
     book_document_file(output_dir).parent.mkdir(parents=True, exist_ok=True)
     book_document_file(output_dir).write_text(json.dumps(existing_document, ensure_ascii=False, indent=2), encoding="utf-8")
+    monkeypatch.setattr(
+        parse_module,
+        "normalize_book_document_source",
+        lambda *_args, **_kwargs: (_ for _ in ()).throw(AssertionError("existing documents must not be normalized")),
+    )
 
     loaded = parse_module._load_or_build_book_document(
         tmp_path / "demo.epub",
