@@ -39,7 +39,7 @@ RUNS_ROOT = BACKEND_ROOT / "eval" / "runs" / "attentional_v2"
 FROZEN_MANIFEST_PATH = (
     BACKEND_ROOT / "eval" / "manifests" / "splits" / "attentional_v2_accumulation_benchmark_v2_frozen.json"
 )
-DEFAULT_TARGET_IDS = ("MiniMax-M2.7-personal-2",)
+DEFAULT_TARGET_IDS = ("opencode_deepseek_v4_flash",)
 RETRYABLE_ERROR_MARKERS = (
     "ReaderLLMError",
     "timed out or interrupted",

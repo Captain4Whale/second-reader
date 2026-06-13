@@ -41,16 +41,16 @@ def get_llm_config() -> dict:
         Dictionary with base_url, api_key, model
     """
     return {
-        "base_url": os.getenv("LLM_BASE_URL", "https://api.minimaxi.chat/v1"),
+        "base_url": os.getenv("LLM_BASE_URL", "https://opencode.ai/zen/go/v1"),
         "api_key": os.getenv("LLM_API_KEY", ""),
-        "model": os.getenv("LLM_MODEL", "default-model"),
+        "model": os.getenv("LLM_MODEL", "deepseek-v4-flash"),
     }
 
 
 def get_llm_provider_contract() -> str:
     """Return the legacy provider contract for fallback registry generation."""
 
-    return os.getenv("LLM_PROVIDER_CONTRACT", "anthropic").strip().lower() or "anthropic"
+    return os.getenv("LLM_PROVIDER_CONTRACT", "openai_compatible").strip().lower() or "openai_compatible"
 
 
 def get_llm_registry_path() -> str:

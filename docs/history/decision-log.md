@@ -3394,3 +3394,29 @@ This new direction is design frozen but not yet implemented as a formal benchmar
 - `reading-companion-backend/src/attentional_v2/runner.py`
 - `reading-companion-backend/tests/test_attentional_v2_source_spans.py`
 - `reading-companion-backend/tests/test_attentional_v2_scaffold.py`
+
+## Entry 116
+**ID**: DEC-119
+**Status**: active
+
+**Decision / Inflection**: Retire MiniMax official-key targets from the current local LLM posture and use OpenCode Go as the active key path.
+
+**Period**: June 13, 2026, after confirming the available MiniMax official keys were no longer usable and the current runnable provider path was OpenCode Go.
+
+**Decision**: Active local profiles should route through `LLM_TARGETS_PATH` / `LLM_PROFILE_BINDINGS_PATH` to OpenCode Go targets using `OPENCODE_GO_API_KEY`, with `opencode_deepseek_v4_flash` as the primary local target. MiniMax official-key registry examples and script defaults are removed from the current path; historical MiniMax protocol behavior remains documented only as compatibility evidence.
+
+**Boundary**: This is an operational LLM provider-posture cleanup, not an Ingest/Digest prompt/schema change, not a Unit Memory semantic change, and not a frontend/public API change. The shared gateway still supports multiple provider contracts and legacy env/registry surfaces when explicitly configured, but the current checkout no longer recommends or defaults to MiniMax official-key routing.
+
+**Why this path won**: Keeping dead MiniMax targets in examples and default script arguments made later diagnostics ambiguous: failures could be caused by stale credentials instead of the actual Ingest prompt, preview sizing, or JSON-object tool-loop behavior under review. Moving active defaults to the only currently usable key path keeps future probes reproducible and makes remaining LLM-call issues easier to diagnose.
+
+**Primary evidence**:
+- `README.md`
+- `docs/current-state.md`
+- `docs/backend-reading-mechanism.md`
+- `docs/backend-reading-mechanisms/attentional_v2.md`
+- `docs/implementation/new-reading-mechanism/llm-structured-output-protocol-note.md`
+- `reading-companion-backend/.env.example`
+- `reading-companion-backend/config/llm_targets.local.example.json`
+- `reading-companion-backend/config/llm_profile_bindings.local.example.json`
+- `reading-companion-backend/config/llm_registry.example.json`
+- `reading-companion-backend/src/config.py`

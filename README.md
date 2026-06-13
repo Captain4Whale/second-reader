@@ -43,6 +43,7 @@ Backend environment lives in `reading-companion-backend/.env`.
 Important backend variables:
 - `LLM_TARGETS_PATH`
 - `LLM_PROFILE_BINDINGS_PATH`
+- `OPENCODE_GO_API_KEY`
 - optional `LLM_TARGETS_JSON`
 - optional `LLM_PROFILE_BINDINGS_JSON`
 - optional operator overrides: `LLM_FORCE_TARGET_ID`, `LLM_FORCE_TIER_ID`
@@ -64,8 +65,9 @@ Recommended local LLM setup:
   - `LLM_TARGETS_PATH=config/llm_targets.local.json`
   - `LLM_PROFILE_BINDINGS_PATH=config/llm_profile_bindings.local.json`
 - edit `reading-companion-backend/config/llm_targets.local.json` to define named runtime targets
-  - write the provider `contract`, `base_url`, `model`, and one or more credentials there
-  - this is the file where you put URL, model name, and API key information
+  - current local operation uses OpenCode Go targets with `OPENCODE_GO_API_KEY`
+  - write the provider `contract`, `base_url`, `model`, and credential env-var reference there
+  - keep the real API key in `reading-companion-backend/.env`, not in tracked JSON
   - supported provider contracts include `anthropic`, `google_genai`, and `openai_compatible`
   - `openai_compatible` targets require the backend dependencies `langchain-openai`, `openai`, and `instructor`; Instructor is used only as an optional structure/validation aid and does not replace project validators
   - `provider_options` may be set on a target for provider-specific request options such as `response_format`, `thinking`, or `reasoning_effort`
@@ -94,20 +96,16 @@ Recommended tiered binding shape:
       "target_tiers": [
         {
           "tier_id": "primary",
-          "target_ids": ["minimax_m27_highspeed"],
-          "min_required_stable_concurrency": 4
-        },
-        {
-          "tier_id": "backup",
-          "target_ids": ["minimax_m27_standard"]
+          "target_ids": ["opencode_deepseek_v4_flash"],
+          "min_required_stable_concurrency": 1
         }
       ],
       "temperature": 0.2,
       "max_output_tokens": 4096,
       "timeout_seconds": 120,
       "retry_attempts": 3,
-      "max_concurrency": 12,
-      "default_burst_concurrency": 12,
+      "max_concurrency": 24,
+      "default_burst_concurrency": 24,
       "quota_retry_attempts": 2,
       "quota_wait_budget_seconds": 25
     }
@@ -115,7 +113,7 @@ Recommended tiered binding shape:
 }
 ```
 
-Pooled primary-tier shape for dual-target parallelism:
+Optional pooled primary-tier shape for explicit OpenCode model fanout:
 ```json
 {
   "profiles": [
@@ -124,7 +122,7 @@ Pooled primary-tier shape for dual-target parallelism:
       "target_tiers": [
         {
           "tier_id": "primary",
-          "target_ids": ["MiniMax-M2.7-highspeed", "MiniMax-M2.7-personal"],
+          "target_ids": ["opencode_deepseek_v4_flash", "opencode_mimo_v25"],
           "min_required_stable_concurrency": 1
         }
       ],
@@ -134,7 +132,7 @@ Pooled primary-tier shape for dual-target parallelism:
   ]
 }
 ```
-- in this pooled shape, the tier's total budget comes from the combined stable capacity of its targets
+- in this pooled shape, the tier dispatches across target ids for explicit experiments; it does not create extra provider quota when those targets share the same OpenCode key
 - if you want a true backup target instead of same-priority fanout, keep it in a later tier such as `backup`
 
 Tracked templates for the new local setup:
@@ -166,7 +164,7 @@ OpenAI-compatible JSON-object targets:
 - thinking-enabled target/profile options default to a larger `max_output_tokens` budget when the profile does not set one explicitly; use `8192` for Ingest probes that need visible reasoning plus final JSON
 - `retrieve_unit_memory` remains a normal `tool_choice="auto"` action tool; it is not forced merely to carry final structured output
 - standard runtime artifacts and traces should not store raw reasoning/thinking content; keep only normal content, usage, and metadata unless a debug trace explicitly opts in
-- the verified MiniMax / DeepSeek transport matrix and default policy live in `docs/implementation/new-reading-mechanism/llm-structured-output-protocol-note.md`
+- the current OpenCode / DeepSeek JSON-object policy and historical MiniMax transport notes live in `docs/implementation/new-reading-mechanism/llm-structured-output-protocol-note.md`
 
 Compatibility and fallback modes:
 - `BACKEND_READING_MECHANISM`
@@ -192,8 +190,7 @@ Compatibility and fallback modes:
 Reference and compatibility files:
 - shared provider/profile registry example:
   - `reading-companion-backend/config/llm_registry.example.json`
-- Minimax-focused compatibility-mode registry:
-  - `reading-companion-backend/config/llm_registry.minimax_legacy_compatible.json`
+- the older MiniMax official-key local registry has been retired from the current checkout; use OpenCode Go targets for active local work
 
 The shared LLM layer still supports:
 - provider contracts such as `anthropic`, `google_genai`, and `openai_compatible`

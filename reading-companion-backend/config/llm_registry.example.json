@@ -1,40 +1,15 @@
 {
   "providers": [
     {
-      "provider_id": "runtime_minimax",
+      "provider_id": "runtime_opencode_go",
       "contract": "openai_compatible",
-      "base_url": "https://api.minimaxi.chat/v1",
-      "api_key_env": "MINIMAX_API_KEY",
-      "supported_models": ["MiniMax-M1-80k", "MiniMax-Text-01"],
-      "timeout_seconds": 120,
-      "retry_attempts": 2,
-      "max_concurrency": 12,
-      "initial_max_concurrency": 6,
-      "probe_max_concurrency": 12,
-      "min_stable_concurrency": 2,
-      "backoff_window_seconds": 10,
-      "recover_window_seconds": 20
-    },
-    {
-      "provider_id": "judge_claude_primary",
-      "contract": "anthropic",
-      "api_key_env": "ANTHROPIC_API_KEY_PRIMARY",
-      "key_pool_envs": ["ANTHROPIC_API_KEY_SECONDARY"],
-      "supported_models": ["claude-opus-4-6"],
-      "timeout_seconds": 120,
-      "retry_attempts": 2,
-      "max_concurrency": 12,
-      "initial_max_concurrency": 6,
-      "probe_max_concurrency": 12,
-      "min_stable_concurrency": 2,
-      "backoff_window_seconds": 10,
-      "recover_window_seconds": 20
-    },
-    {
-      "provider_id": "judge_gemini_primary",
-      "contract": "google_genai",
-      "api_key_env": "GOOGLE_GENAI_API_KEY",
-      "supported_models": ["gemini-3.1-pro"],
+      "base_url": "https://opencode.ai/zen/go/v1",
+      "api_key_env": "OPENCODE_GO_API_KEY",
+      "supported_models": ["deepseek-v4-flash"],
+      "provider_options": {
+        "response_format": {"type": "json_object"},
+        "thinking": {"type": "enabled"}
+      },
       "timeout_seconds": 120,
       "retry_attempts": 2,
       "max_concurrency": 12,
@@ -48,8 +23,8 @@
   "profiles": [
     {
       "profile_id": "runtime_reader_default",
-      "provider_id": "runtime_minimax",
-      "model": "MiniMax-M1-80k",
+      "provider_id": "runtime_opencode_go",
+      "model": "deepseek-v4-flash",
       "temperature": 0.2,
       "max_output_tokens": 4096,
       "timeout_seconds": 120,
@@ -59,8 +34,8 @@
     },
     {
       "profile_id": "dataset_review_high_trust",
-      "provider_id": "judge_claude_primary",
-      "model": "claude-opus-4-6",
+      "provider_id": "runtime_opencode_go",
+      "model": "deepseek-v4-flash",
       "temperature": 0.2,
       "max_output_tokens": 4096,
       "timeout_seconds": 120,
@@ -70,8 +45,8 @@
     },
     {
       "profile_id": "eval_judge_high_trust",
-      "provider_id": "judge_claude_primary",
-      "model": "claude-opus-4-6",
+      "provider_id": "runtime_opencode_go",
+      "model": "deepseek-v4-flash",
       "temperature": 0.2,
       "max_output_tokens": 4096,
       "timeout_seconds": 120,

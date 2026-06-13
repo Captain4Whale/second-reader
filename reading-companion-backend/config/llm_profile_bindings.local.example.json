@@ -5,20 +5,16 @@
       "target_tiers": [
         {
           "tier_id": "primary",
-          "target_ids": ["minimax_m27_highspeed"],
-          "min_required_stable_concurrency": 4
-        },
-        {
-          "tier_id": "backup",
-          "target_ids": ["minimax_m27_standard"]
+          "target_ids": ["opencode_deepseek_v4_flash"],
+          "min_required_stable_concurrency": 1
         }
       ],
       "temperature": 0.2,
       "max_output_tokens": 4096,
       "timeout_seconds": 120,
       "retry_attempts": 3,
-      "max_concurrency": 12,
-      "default_burst_concurrency": 12,
+      "max_concurrency": 24,
+      "default_burst_concurrency": 24,
       "quota_retry_attempts": 2,
       "quota_wait_budget_seconds": 25
     },
@@ -27,12 +23,8 @@
       "target_tiers": [
         {
           "tier_id": "primary",
-          "target_ids": ["minimax_m27_highspeed"],
-          "min_required_stable_concurrency": 4
-        },
-        {
-          "tier_id": "backup",
-          "target_ids": ["minimax_m27_standard"]
+          "target_ids": ["opencode_deepseek_v4_flash"],
+          "min_required_stable_concurrency": 1
         }
       ],
       "temperature": 0.2,
@@ -49,12 +41,8 @@
       "target_tiers": [
         {
           "tier_id": "primary",
-          "target_ids": ["minimax_m27_highspeed"],
-          "min_required_stable_concurrency": 4
-        },
-        {
-          "tier_id": "backup",
-          "target_ids": ["minimax_m27_standard"]
+          "target_ids": ["opencode_deepseek_v4_flash"],
+          "min_required_stable_concurrency": 1
         }
       ],
       "temperature": 0.2,

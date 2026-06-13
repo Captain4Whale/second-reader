@@ -7,7 +7,7 @@ Update when: the current objective, active tasks, blockers, active jobs, open de
 
 This file is authoritative for durable current status. Do not keep unique active-state information only in `docs/agent-handoff.md`.
 
-Last verified: `2026-06-13T11:34:02+08:00`
+Last verified: `2026-06-13T15:09:07+08:00`
 
 ## Current Objective
 - The `Ingest -> Digest -> Reading Runner settlement` mechanism reframe is implemented; current work is fact alignment, smoke/diagnostic review, and calibration before any formal evaluation promotion.
@@ -33,13 +33,14 @@ Last verified: `2026-06-13T11:34:02+08:00`
     - `DEC-112` records that subject continuity should be carried through Digest Understanding and `ReadingMemory`, not through raw-source backfill or Ingest-side reference-resolution fields
     - `DEC-113` migrates current `attentional_v2` structured LLM outputs from text JSON parsing to forced final-output tool use, with public `llm_contract` problem reporting for output-contract failures
     - `DEC-114` removes the inherited content-classification field from current Digest / Recent Reading Memory / Unit Memory live surfaces
-    - `DEC-115` adds protocol-neutral LLM structured-output transport: Anthropic-compatible profiles keep forced final-output tools, while OpenAI-compatible profiles configured with JSON-object response format can use JSON object plus validator/repair without redefining prompts or tools; the verified MiniMax / DeepSeek protocol matrix now lives in `docs/implementation/new-reading-mechanism/llm-structured-output-protocol-note.md`
+    - `DEC-115` adds protocol-neutral LLM structured-output transport: Anthropic-compatible profiles keep forced final-output tools, while OpenAI-compatible profiles configured with JSON-object response format can use JSON object plus validator/repair without redefining prompts or tools; the current OpenCode / DeepSeek JSON-object policy and historical MiniMax transport note live in `docs/implementation/new-reading-mechanism/llm-structured-output-protocol-note.md`
     - `DEC-116` records the live Ingest selector as bounded-lookahead semantic planning: it uses the visible preview to infer where the first unit ends by seeing how later text continues or starts a second unit, while committing only that first unit for Digest
     - `DEC-117` promotes the preview-partition audit map into the live Ingest contract: `preview_partition[]` exposes the model's whole-window semantic map for mechanism-private audit while `preview_partition[0]` / `unit` remain the only authoritative next-unit boundary
     - `DEC-118` switches live Ingest preview construction from paragraph-count bounded lookahead to character-bounded, paragraph-aligned assembly, so short dialogue / poetry paragraphs no longer exhaust the preview before the source-character budget is reached
     - current `llm_calls.ingest(...)` is the forward-only XML LLM boundary call: `unit.end_paragraph_n`, `unit.end_at`, `preview_partition[]`, optional boundary-rationale `reason`, and bounded `memory_recalls[]`
     - current LLM-call code now lives in `reading-companion-backend/src/attentional_v2/llm_calls.py`; the old ambiguous active module name is removed
     - current `attentional_v2` LLM calls keep project schemas/tools protocol-neutral; Anthropic-compatible profiles submit structured results through mechanism-private final-output tools such as `submit_ingest_result` and `submit_digest_result`, while OpenAI-compatible JSON-object profiles use JSON object plus validator/repair for Ingest/Digest final output; `retrieve_unit_memory` remains the only live action tool and is left to model `auto` choice; OpenAI-compatible DeepSeek/OpenCode JSON-object calls do not force final-output `tool_choice`
+    - current local LLM operation uses the OpenCode Go key path: `LLM_TARGETS_PATH=config/llm_targets.local.json`, `LLM_PROFILE_BINDINGS_PATH=config/llm_profile_bindings.local.json`, and `OPENCODE_GO_API_KEY`; MiniMax official-key targets are no longer an active local routing path
     - runtime next-unit preparation lives outside `Ingest` as `prepare_next_source_unit_for_read`: it prepares source preview/context, calls `Ingest`, resolves `paragraph_end` or paragraph-local exact / quote-normalized tail quotes, applies trailing-closing-punctuation boundary extension, retry/fallback boundary governance, and hands the accepted source unit to `Digest`
     - Runtime builds a character-bounded paragraph-offset reading lookahead window for Ingest: default `reader_policy.unitize` preview values are `preview_soft_min_chars=3000`, `preview_hard_max_chars=7000`, and `emergency_max_preview_paragraphs=200`; old `max_lookahead_paragraphs` snapshots are ignored as normal stopping rules, preview metadata carries `preview_end_reason`, and the live output contract expresses the chosen boundary as `unit.end_paragraph_n` plus `unit.end_at` while storing `preview_partition_audit[]` as derived audit metadata
     - `Ingest` uses `ReaderRole`, `Instruction`, `BookInfo`, `CurrentView`, empty `RetrievalSurface`, and `OutputContract`; it may express up to three prior-reading recalls, while actual retrieval execution and prompt-facing memory selection remain Reading Runner runtime work
@@ -1880,7 +1881,7 @@ Last verified: `2026-06-13T11:34:02+08:00`
       - ZH `7 keep`, `1 unclear`
     - operator posture retained:
       - all completed reserve/primary review waves still used serial packet workers
-      - current live local posture is now a single usable primary target: `MiniMax-M2.7-personal-2`
+      - current live local posture is now the OpenCode Go target `opencode_deepseek_v4_flash`; MiniMax official-key targets are retired from active local routing
 - The older formal benchmark-v1 freeze remains historical evidence only:
   - historical manifest:
     - `reading-companion-backend/eval/manifests/splits/attentional_v2_formal_benchmark_v1_draft.json`
@@ -2059,9 +2060,9 @@ Last verified: `2026-06-13T11:34:02+08:00`
     - explicit `LLM_FORCE_TARGET_ID` is still the process-level selector when we want deterministic routing
     - because `LLM_FORCE_TARGET_ID` is process-wide and cached in-process, retargeting requires a fresh launch rather than editing config mid-run
   - the current local LLM posture is now:
-    - `reading-companion-backend/config/llm_targets.local.json` now keeps one usable local MiniMax M2.7 target: `MiniMax-M2.7-personal-2`
-    - `reading-companion-backend/config/llm_profile_bindings.local.json` binds `runtime_reader_default`, `dataset_review_high_trust`, and `eval_judge_high_trust` to one `primary` tier containing only `MiniMax-M2.7-personal-2`
-    - `MiniMax-M2.7-personal` returned `429 usage limit exceeded (2056)` on `2026-06-06` and is no longer part of the local active target pool
+    - `reading-companion-backend/config/llm_targets.local.json` keeps OpenCode Go OpenAI-compatible targets that use `OPENCODE_GO_API_KEY`, with `opencode_deepseek_v4_flash` as the active primary target
+    - `reading-companion-backend/config/llm_profile_bindings.local.json` binds `runtime_reader_default`, `dataset_review_high_trust`, and `eval_judge_high_trust` to one `primary` tier containing `opencode_deepseek_v4_flash`
+    - MiniMax official-key targets are retired from active local routing; older MiniMax quota/plan failures are historical evidence, not the current default provider posture
     - the gateway now persists a shared pooled-tier `next_index` cursor under `BACKEND_RUNTIME_ROOT/state/llm_gateway/tier_dispatch/`, so future sibling Python processes do not all restart from target index `0`
     - because each long reading scope still pins one concrete target for its lifetime, already-running jobs launched before that repair can remain visibly skewed until they are relaunched
     - current operator policy is:
@@ -3327,7 +3328,7 @@ Last verified: `2026-06-13T11:34:02+08:00`
 - Pre-fix parallel comparison artifacts can misassign case-to-output mappings, so partial outputs from the earlier round-3 reruns must be sanity-checked before they are treated as evidence.
 - Malformed-JSON handling in the reading path can still terminate a bounded rerun after substantial partial output has already been written.
 - Launching `run_registered_job.py` from a transient agent shell without the detached launcher can leave long-running jobs looking `abandoned` even when the wrapped command itself never raised a Python traceback.
-- The current live local posture is one usable primary target, `MiniMax-M2.7-personal-2`; `MiniMax-M2.7-personal` is removed from active local routing after a `429 usage limit exceeded (2056)` live check on `2026-06-06`.
+- The current live local posture is one OpenCode Go primary target, `opencode_deepseek_v4_flash`, using `OPENCODE_GO_API_KEY`; MiniMax official-key targets are retired from active local routing after the available MiniMax keys became unusable.
 - The shared cross-process pooled-tier dispatch fix is now landed for future launches, but the already-completed long-span judged lane was launched before that code was loaded, so its visible `by_target` skew should be treated as historical launch posture rather than as the current default.
 - `excerpt surface v1.1` now has one explicit documented `5`-case exception on `nawaer_baodian_private_zh__22`; treat that as a known surface constraint for later ROI retune, not as a blocker on interpreting the completed formal run.
 - The new v1.1 reuse pass showed that `value_of_others_private_en__8` only supports `8` real unique-span cases after duplicate-control pruning, so older apparent `14`-row density numbers should no longer be used for ROI estimates.

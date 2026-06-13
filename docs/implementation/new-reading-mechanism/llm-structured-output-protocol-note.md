@@ -1,18 +1,18 @@
 # LLM Structured Output Protocol Note
 
-Purpose: record the verified MiniMax / DeepSeek transport matrix and the default backend calling policy for current `attentional_v2` structured outputs.
+Purpose: record the current OpenCode / DeepSeek structured-output calling policy and historical MiniMax transport compatibility notes for `attentional_v2`.
 Use when: configuring LLM targets, changing `src/reading_runtime/llm_gateway.py`, or testing provider thinking / structured-output behavior.
 Not for: mechanism prompt wording, Unit Memory retrieval semantics, or product-facing evaluation criteria.
 Update when: a provider contract is re-tested and the default transport policy changes.
 
-Status: current implementation note after `DEC-115`.
+Status: current implementation note after `DEC-115`; local active operation now uses OpenCode Go only.
 
 ## Summary
 
 Current project-owned prompts and tools stay protocol-neutral. The active profile decides the transport:
 
-- Anthropic-compatible MiniMax uses thinking plus forced final-output tools.
-- OpenAI-compatible DeepSeek / OpenCode JSON-object profiles use thinking plus JSON-object final output and project validator / repair.
+- Current local profiles use OpenCode Go OpenAI-compatible targets with DeepSeek / OpenCode models, thinking, JSON-object final output, and project validator / repair.
+- Anthropic-compatible MiniMax transport remains a historical compatibility note, but MiniMax official-key targets are no longer an active local routing path.
 - `retrieve_unit_memory` remains an action tool. It is never forced merely to transport final structured output.
 - Standard runtime traces do not store raw thinking or reasoning content. Debug/probe code must opt in explicitly before preserving raw reasoning.
 
@@ -20,14 +20,14 @@ Current project-owned prompts and tools stay protocol-neutral. The active profil
 
 | Provider path | Verified model / endpoint | Thinking request | Final structured output | Reasoning location | Notes |
 | --- | --- | --- | --- | --- | --- |
-| MiniMax Anthropic-compatible | `MiniMax-M2.7` at `https://api.minimaxi.com/anthropic` | `thinking={"type":"enabled","budget_tokens":N}` | forced final-output tool, such as `submit_ingest_result` | `response.content[]` block with `type == "thinking"` | Keep final-output tools as the default Anthropic transport. |
-| DeepSeek OpenAI-compatible | `deepseek-v4-flash` at `https://opencode.ai/zen/go/v1` | `extra_body={"thinking":{"type":"enabled"}}` | `response_format={"type":"json_object"}` plus local validator / repair | `message.reasoning_content` | Auto action tools can be used with thinking; do not force final-output `tool_choice` while thinking is enabled. |
+| OpenCode Go / DeepSeek OpenAI-compatible | `deepseek-v4-flash` at `https://opencode.ai/zen/go/v1` | `extra_body={"thinking":{"type":"enabled"}}` | `response_format={"type":"json_object"}` plus local validator / repair | `message.reasoning_content` | Current local active path. Auto action tools can be used with thinking; do not force final-output `tool_choice` while thinking is enabled. |
+| MiniMax Anthropic-compatible | `MiniMax-M2.7` at `https://api.minimaxi.com/anthropic` | `thinking={"type":"enabled","budget_tokens":N}` | forced final-output tool, such as `submit_ingest_result` | `response.content[]` block with `type == "thinking"` | Historical compatibility evidence only; do not route active local profiles to MiniMax official-key targets. |
 
 OpenCode Go requires a normal OpenAI-like `User-Agent`; the shared OpenAI-compatible adapter sends `User-Agent: OpenAI/Python 1.0` by default.
 
 ## Default Calling Policy
 
-### MiniMax / Anthropic-Compatible
+### Historical MiniMax / Anthropic-Compatible
 
 - Use the shared gateway Anthropic contract.
 - Preserve provider thinking options from target/profile configuration when present.
@@ -40,8 +40,9 @@ OpenCode Go requires a normal OpenAI-like `User-Agent`; the shared OpenAI-compat
   - `submit_chapter_consolidation_result`
   - `submit_survey_chapter_zone_result`
 - Let action tools run separately before final submission. For current `attentional_v2`, the live action tool is `retrieve_unit_memory`.
+- MiniMax official-key profiles are no longer current local operation. Reintroducing one requires an explicit new target/profile and a fresh live health check.
 
-### DeepSeek / OpenAI-Compatible JSON Object
+### Current OpenCode / DeepSeek JSON Object
 
 - Configure the selected target or profile with:
 
@@ -81,4 +82,5 @@ OpenCode Go requires a normal OpenAI-like `User-Agent`; the shared OpenAI-compat
   - `reading-companion-backend/config/llm_targets.local.example.json`
   - `reading-companion-backend/config/llm_profile_bindings.local.example.json`
   - untracked local `llm_targets.local.json` / `llm_profile_bindings.local.json`
+- Current local secrets are carried by `OPENCODE_GO_API_KEY`; MiniMax official keys are not part of the active local config.
 - `attentional_v2` schemas and final-output tool definitions remain mechanism-private, while the shared gateway translates tool shape at the provider boundary.

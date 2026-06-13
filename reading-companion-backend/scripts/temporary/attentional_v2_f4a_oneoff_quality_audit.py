@@ -38,7 +38,7 @@ from src.reading_runtime.provisioning import ensure_canonical_parse  # noqa: E40
 
 DEFAULT_RUNS_ROOT = ROOT / "eval" / "runs" / "attentional_v2"
 DEFAULT_TARGET_IDS = (
-    "MiniMax-M2.7-personal-2",
+    "opencode_deepseek_v4_flash",
 )
 DEFAULT_MAX_UNITS = 8
 DEFAULT_USER_INTENT = (
@@ -56,9 +56,9 @@ CASE_TARGET_ASSIGNMENTS = {
     "supremacy_private_en__chapter_13": DEFAULT_TARGET_IDS[0],
     "huochu_shengming_de_yiyi_private_zh__segment_1": DEFAULT_TARGET_IDS[0],
     "nawaer_baodian_private_zh__segment_1": DEFAULT_TARGET_IDS[0],
-    "value_of_others_private_en__8_10": DEFAULT_TARGET_IDS[1],
-    "xidaduo_private_zh__segment_1": DEFAULT_TARGET_IDS[1],
-    "mangge_zhi_dao_private_zh__segment_1": DEFAULT_TARGET_IDS[1],
+    "value_of_others_private_en__8_10": DEFAULT_TARGET_IDS[0],
+    "xidaduo_private_zh__segment_1": DEFAULT_TARGET_IDS[0],
+    "mangge_zhi_dao_private_zh__segment_1": DEFAULT_TARGET_IDS[0],
 }
 CASE_GOALS = {
     "supremacy_private_en__chapter_13": "Reaction-density regression against the old low-expression problem.",
