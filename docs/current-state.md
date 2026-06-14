@@ -7,7 +7,7 @@ Update when: the current objective, active tasks, blockers, active jobs, open de
 
 This file is authoritative for durable current status. Do not keep unique active-state information only in `docs/agent-handoff.md`.
 
-Last verified: `2026-06-14T17:25:00+08:00`
+Last verified: `2026-06-14T18:58:20+08:00`
 
 ## Current Objective
 - The `Ingest -> Digest -> Reading Runner settlement` mechanism reframe is implemented; current work is fact alignment, smoke/diagnostic review, and calibration before any formal evaluation promotion.
@@ -104,9 +104,10 @@ Last verified: `2026-06-14T17:25:00+08:00`
   - focused Ingest v17 source-normalized dataset-window probe retry:
     - run id: `ingest_live_v17_source_norm_token_preview_to_chapter1_retry1_20260614`
     - job id: `bgjob_ingest_live_v17_source_norm_token_preview_to_chapter1_retry1_20260614`
-    - status: `running`
+    - status: completed; run ledger status is `review_pending`
     - scope: same `xidaduo_private_zh__segment_1` source-normalized v1.2 dataset window through `P57@2`, after runtime changed empty `retrieve_unit_memory(memory_recalls=[])` calls into `empty_tool_noop` events
-    - expected report: `reading-companion-backend/eval/runs/attentional_v2/ingest_live_v17_source_norm_token_preview_to_chapter1_retry1_20260614/analysis/live_v17_source_norm_token_preview_to_chapter1_retry1/preview_window_review/segments/xidaduo_private_zh__segment_1/live_v17_source_norm_token_preview_to_chapter1_retry1_preview_units.md`
+    - outcome: completed with `stop_reason=target_reached`, `unit_count=10`, prompt `attentional_v2.ingest.v17`, promptset `attentional_v2-phase6-v67`
+    - report: `reading-companion-backend/eval/runs/attentional_v2/ingest_live_v17_source_norm_token_preview_to_chapter1_retry1_20260614/analysis/live_v17_source_norm_token_preview_to_chapter1_retry1/preview_window_review/segments/xidaduo_private_zh__segment_1/live_v17_source_norm_token_preview_to_chapter1_retry1_preview_units.md`
   - active diagnostic evaluation:
     - run id: `attentional_v2_ingest_digest_unit_memory_full_diagnostic_20260603_parallel5`
     - job id: `bgjob_ingest_digest_unit_memory_full_diagnostic_20260603_parallel5`
