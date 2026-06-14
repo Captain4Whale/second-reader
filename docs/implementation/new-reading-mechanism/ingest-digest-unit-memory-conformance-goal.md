@@ -188,7 +188,7 @@ Must not:
 ### REQ-INGEST-002 Output Contract
 
 Requirement:
-The final Ingest JSON must contain boundary fields and bounded `memory_recalls[]`.
+The final Ingest JSON must contain boundary fields, while bounded Unit Memory recall intent must be carried only by `retrieve_unit_memory` action-tool args.
 
 Observable evidence:
 - Ingest output normalizer tests
@@ -196,9 +196,10 @@ Observable evidence:
 - read audit `ingest_trace`
 
 Pass condition:
-- output includes `end_anchor_text`, `boundary_type`, `reason`, and `memory_recalls`
-- `memory_recalls` is an array with zero to three items
-- each recall has `recall_id`, `recall_text`, and `basis="selected_source_unit"`
+- final output includes the live unit-boundary fields, `preview_partition[]`, and optional `reason`
+- final output does not require or author `memory_recalls[]`
+- when the action tool is called, its `memory_recalls[]` array has one to three items
+- each tool recall has `recall_id`, `recall_text`, and `basis="selected_source_unit"`
 - old `memory_query` output is absent or ignored
 
 Allowed fix:
@@ -213,7 +214,7 @@ Must not:
 ### REQ-INGEST-003 Tool Loop
 
 Requirement:
-If Ingest emits non-empty recalls, it must use the `retrieve_unit_memory` tool loop or trigger a traceable contract-violation repair path.
+If Ingest needs non-empty recalls, it must submit them through the `retrieve_unit_memory` tool loop or trigger a traceable contract-violation repair path.
 
 Observable evidence:
 - LLM gateway tool-loop tests

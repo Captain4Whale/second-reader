@@ -803,7 +803,7 @@ def test_runner_falls_back_to_source_text_when_recalls_are_malformed(tmp_path: P
     assert trace["accepted_source_span_id"] == "src:c1:p3@0-p3@20"
 
 
-def test_runner_respects_intentional_empty_recalls_without_fallback(tmp_path: Path) -> None:
+def test_runner_respects_not_requested_recalls_without_fallback(tmp_path: Path) -> None:
     output_dir = tmp_path / "output" / "demo-book"
     result = runner_module._retrieve_unit_memory_for_prepared_source_unit(
         output_dir=output_dir,
@@ -815,7 +815,7 @@ def test_runner_respects_intentional_empty_recalls_without_fallback(tmp_path: Pa
                 "source_text": "火车站台上的告别重新出现。",
             },
             "memory_recalls": [],
-            "memory_recalls_status": "provided",
+            "memory_recalls_status": "not_requested",
         },
         recent_reading_memory={"entries": []},
         memory_retrieval_config={"mode": "text_only"},
@@ -1224,13 +1224,13 @@ def test_attentional_v2_prompt_registry_projects_current_bundle() -> None:
     ingest = ATTENTIONAL_V2_PROMPT_REGISTRY.get("attentional_v2.ingest")
     chapter = ATTENTIONAL_V2_PROMPT_REGISTRY.get("attentional_v2.chapter_consolidation")
 
-    assert ATTENTIONAL_V2_PROMPTSET_VERSION == "attentional_v2-phase6-v66"
+    assert ATTENTIONAL_V2_PROMPTSET_VERSION == "attentional_v2-phase6-v67"
     assert ATTENTIONAL_V2_PROMPTS.promptset_version == ATTENTIONAL_V2_PROMPTSET_VERSION
     assert digest.version == DIGEST_PROMPT_VERSION == "attentional_v2.digest.v9"
     assert ATTENTIONAL_V2_PROMPTS.digest_version == digest.version
     assert ATTENTIONAL_V2_PROMPTS.digest_system == digest.system_prompt
     assert ATTENTIONAL_V2_PROMPTS.digest_prompt == digest.user_prompt_template
-    assert ingest.version == INGEST_PROMPT_VERSION == "attentional_v2.ingest.v16"
+    assert ingest.version == INGEST_PROMPT_VERSION == "attentional_v2.ingest.v17"
     assert ATTENTIONAL_V2_PROMPTS.ingest_version == ingest.version
     assert ATTENTIONAL_V2_PROMPTS.ingest_system == ingest.system_prompt
     assert ATTENTIONAL_V2_PROMPTS.chapter_consolidation_prompt == chapter.user_prompt_template
@@ -1894,7 +1894,7 @@ def _fake_single_sentence_ingest_boundary(**kwargs):
         ],
         "reason": "test_choose_source_anchor_unit",
         "memory_recalls": [],
-        "memory_recalls_status": "provided",
+        "memory_recalls_status": "not_requested",
     }
 
 
@@ -1973,7 +1973,7 @@ def test_prepare_next_source_unit_for_read_retries_unresolved_boundary(tmp_path,
                 ],
                 "reason": "test_unresolved_anchor",
                 "memory_recalls": [],
-                "memory_recalls_status": "provided",
+                "memory_recalls_status": "not_requested",
             }
         return {
             "unit": {"end_paragraph_n": "1", "end_at": "Closing line."},
@@ -1987,7 +1987,7 @@ def test_prepare_next_source_unit_for_read_retries_unresolved_boundary(tmp_path,
             ],
             "reason": "test_retry_anchor",
             "memory_recalls": [],
-            "memory_recalls_status": "provided",
+            "memory_recalls_status": "not_requested",
         }
 
     monkeypatch.setattr(runner_module, "_call_ingest", fake_ingest_boundary)

@@ -33,7 +33,7 @@ from .llm_calls import (
     ingest as _call_ingest,
     digest as _call_digest,
 )
-from .llm_output_tools import validate_ingest_result
+from .llm_output_tools import validate_ingest_unit_memory_tool_args
 from .observability import (
     maybe_capture_memory_quality_probe,
     memory_quality_probe_observability_settings,
@@ -1670,12 +1670,10 @@ def prepare_next_source_unit_for_read(
     tool_retrieval_results: list[dict[str, object]] = []
 
     def _unit_memory_tool_handler(args: Mapping[str, object]) -> Mapping[str, object]:
-        preflight_errors = validate_ingest_result(
+        preflight_errors = validate_ingest_unit_memory_tool_args(
             dict(args),
-            tool_results=[{"status": "preflight"}],
             current_source_texts=current_source_texts,
             current_visible_paragraph_ns=current_visible_paragraph_ns,
-            require_preview_partition=False,
         )
         if preflight_errors:
             return {

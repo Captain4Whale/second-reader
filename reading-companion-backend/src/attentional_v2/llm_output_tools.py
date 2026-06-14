@@ -27,7 +27,7 @@ def final_output_tool(name: str, description: str, input_schema: Mapping[str, An
 
 INGEST_RESULT_TOOL = final_output_tool(
     "submit_ingest_result",
-    "Submit the final Ingest unit boundary, preview partition audit map, and prior-reading recall result. Use this tool exactly once as the final answer.",
+    "Submit the final Ingest unit boundary and preview partition audit map. Use this tool exactly once as the final answer.",
     _object_schema(
         {
             "unit": _object_schema(
@@ -51,20 +51,8 @@ INGEST_RESULT_TOOL = final_output_tool(
                 ),
             },
             "reason": {"type": "string"},
-            "memory_recalls": {
-                "type": "array",
-                "maxItems": 3,
-                "items": _object_schema(
-                    {
-                        "recall_id": {"type": "string"},
-                        "recall_text": {"type": "string"},
-                        "basis": {"type": "string", "enum": ["selected_source_unit"]},
-                    },
-                    required=["recall_id", "recall_text"],
-                ),
-            },
         },
-        required=["unit", "preview_partition", "memory_recalls"],
+        required=["unit", "preview_partition"],
     ),
 )
 
@@ -267,64 +255,57 @@ def validate_ingest_result(
             ):
                 errors.append("preview_partition[0] must match unit")
 
-    recalls = payload.get("memory_recalls")
-    if not isinstance(recalls, list):
-        errors.append("memory_recalls must be an array")
-    elif len(recalls) > 3:
-        errors.append("memory_recalls must contain no more than three entries")
-    elif recalls and not tool_results:
-        errors.append("memory_recalls is non-empty but retrieve_unit_memory was not called")
-    action_recalls: list[Any] = []
     for tool_result in tool_results or []:
-        tool_args = tool_result.get("args") if isinstance(tool_result, Mapping) else None
-        if isinstance(tool_args, Mapping):
-            supplied_recalls = tool_args.get("memory_recalls")
-            if isinstance(supplied_recalls, list) and supplied_recalls:
-                action_recalls = supplied_recalls
         result = tool_result.get("result") if isinstance(tool_result, Mapping) else None
         if isinstance(result, Mapping) and str(result.get("status") or "").strip() == "contract_violation":
             reason = str(result.get("degradation_reason") or "retrieve_unit_memory tool call contract violation").strip()
             errors.append(reason)
-    if action_recalls:
-        if not isinstance(recalls, list) or _recall_signature(recalls) != _recall_signature(action_recalls):
-            errors.append("memory_recalls must match the retrieve_unit_memory tool call recalls")
-    if isinstance(recalls, list):
-        source_language = _primary_text_language(list(current_source_texts or []))
-        for index, item in enumerate(recalls):
-            if not isinstance(item, Mapping):
-                errors.append(f"memory_recalls[{index}] must be an object")
-                continue
-            if not str(item.get("recall_id") or "").strip():
-                errors.append(f"memory_recalls[{index}].recall_id must be non-empty")
-            if not str(item.get("recall_text") or "").strip():
-                errors.append(f"memory_recalls[{index}].recall_text must be non-empty")
-            basis = str(item.get("basis") or "selected_source_unit").strip()
-            if basis != "selected_source_unit":
-                errors.append(f"memory_recalls[{index}].basis must be selected_source_unit")
-            language_error = _recall_language_error(
-                str(item.get("recall_text") or ""),
-                source_language=source_language,
-                index=index,
-            )
-            if language_error:
-                errors.append(language_error)
     return errors
 
 
-def _recall_signature(recalls: list[Any]) -> list[tuple[str, str, str]]:
-    signature: list[tuple[str, str, str]] = []
-    for item in recalls:
+def validate_ingest_unit_memory_tool_args(
+    payload: Mapping[str, Any],
+    *,
+    current_source_texts: list[str] | None = None,
+    current_visible_paragraph_ns: list[str] | None = None,
+) -> list[str]:
+    """Validate retrieve_unit_memory action-tool args before runtime retrieval."""
+
+    errors = validate_ingest_result(
+        payload,
+        tool_results=[],
+        current_visible_paragraph_ns=current_visible_paragraph_ns,
+        require_preview_partition=False,
+    )
+    recalls = payload.get("memory_recalls")
+    if not isinstance(recalls, list):
+        errors.append("memory_recalls must be a non-empty array for retrieve_unit_memory")
+        return errors
+    if not recalls:
+        errors.append("memory_recalls must be a non-empty array for retrieve_unit_memory")
+        return errors
+    if len(recalls) > 3:
+        errors.append("memory_recalls must contain no more than three entries")
+    source_language = _primary_text_language(list(current_source_texts or []))
+    for index, item in enumerate(recalls):
         if not isinstance(item, Mapping):
-            signature.append(("", "", ""))
+            errors.append(f"memory_recalls[{index}] must be an object")
             continue
-        signature.append(
-            (
-                str(item.get("recall_id") or "").strip(),
-                str(item.get("recall_text") or "").strip(),
-                str(item.get("basis") or "selected_source_unit").strip(),
-            )
+        if not str(item.get("recall_id") or "").strip():
+            errors.append(f"memory_recalls[{index}].recall_id must be non-empty")
+        if not str(item.get("recall_text") or "").strip():
+            errors.append(f"memory_recalls[{index}].recall_text must be non-empty")
+        basis = str(item.get("basis") or "selected_source_unit").strip()
+        if basis != "selected_source_unit":
+            errors.append(f"memory_recalls[{index}].basis must be selected_source_unit")
+        language_error = _recall_language_error(
+            str(item.get("recall_text") or ""),
+            source_language=source_language,
+            index=index,
         )
-    return signature
+        if language_error:
+            errors.append(language_error)
+    return errors
 
 
 def _is_content_bearing_text(texts: list[str]) -> bool:

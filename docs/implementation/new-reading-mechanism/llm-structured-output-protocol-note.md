@@ -14,6 +14,7 @@ Current project-owned prompts and tools stay protocol-neutral. The active profil
 - Current local profiles use OpenCode Go OpenAI-compatible targets with DeepSeek / OpenCode models, thinking, JSON-object final output, and project validator / repair.
 - Anthropic-compatible MiniMax transport remains a historical compatibility note, but MiniMax official-key targets are no longer an active local routing path.
 - `retrieve_unit_memory` remains an action tool. It is never forced merely to transport final structured output.
+- For Ingest, `retrieve_unit_memory` action-tool args are the only model-authored Unit Memory recall-intent surface; final structured output must not echo `memory_recalls[]`.
 - Standard runtime traces do not store raw thinking or reasoning content. Debug/probe code must opt in explicitly before preserving raw reasoning.
 
 ## Verified Matrix
@@ -66,6 +67,7 @@ OpenCode Go requires a normal OpenAI-like `User-Agent`; the shared OpenAI-compat
 - If `retrieve_unit_memory` is available, expose it as an auto action tool.
 - The first action-tool turn may use `tool_choice="auto"` with provider thinking enabled; the June 9 Ingest reasoning probe confirmed that DeepSeek returns both `reasoning_content` and an auto `retrieve_unit_memory` tool call.
 - After action tool results, request final JSON object output with no final-output `tool_choice`.
+- Ingest final JSON is limited to the boundary / preview-partition result; runtime derives private/audit `memory_recalls[]` from the action-tool args. Legacy final `memory_recalls[]` echoes are ignored, not matched as a second authority.
 - The restriction is on forced final-output tool choice under thinking, not on auto action-tool use.
 
 ## Trace And Artifact Policy

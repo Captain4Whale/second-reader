@@ -18,7 +18,7 @@ Update when: Unit Memory entry shape, indexed fields, retrieval ranking, query g
   - `DEC-110` makes Unit Memory ledger + hybrid retrieval the current long-distance memory substrate for `attentional_v2`.
   - Digest now emits model-facing `understanding`, `response`, and `annotations`, with the single `understanding` text stored internally through the existing `recent_reading_memory` path.
 - Follow-up implementation reference:
-  - `docs/implementation/new-reading-mechanism/ingest-recall-and-digest-memory-context-design.md` records the implemented slice that replaces the single model-facing `memory_query` with bounded `memory_recalls[]`, adds the Anthropic-style `retrieve_unit_memory` tool loop, aggregates multi-recall retrieval, and renders Digest `ReadingMemory`.
+  - `docs/implementation/new-reading-mechanism/ingest-recall-and-digest-memory-context-design.md` records the implemented slice that replaces the single model-facing `memory_query` with bounded `retrieve_unit_memory` recall args, aggregates multi-recall retrieval, and renders Digest `ReadingMemory`.
 
 ## Design Claim
 
@@ -42,16 +42,16 @@ This document anchors the implemented bottom retrieval framework:
 - sqlite-vec dense index
 - embedding policy
 - hybrid retrieval, fusion, aggregation, and rebuild boundaries
-- Ingest bounded recall output and runtime fallback query behavior
+- Ingest bounded recall action-tool args and runtime fallback query behavior
 - retrieval-mode configuration and trace ownership
 
 The original bottom-framework slice deferred prompt packaging, but the follow-through slice now implements:
 
-- bounded `memory_recalls[]` in the same Ingest call that chooses the forward unit boundary
+- bounded `memory_recalls[]` inside the `retrieve_unit_memory` action-tool args in the same Ingest business call that chooses the forward unit boundary
 - a mechanism-private `retrieve_unit_memory` tool loop
 - runtime-owned multi-recall retrieval aggregation, selected-Understanding rendering, and Digest `ReadingMemory` context
 
-One boundary remains: query/recall generation should not require a separate LLM call. `Ingest` expresses prior-reading recalls inside the same LLM call that chooses the forward unit boundary. If recall data is malformed or boundary fallback changes the accepted source unit, runtime may derive a fallback query from the accepted source unit text, but an intentional `memory_recalls: []` skips long-distance retrieval for that cycle.
+One boundary remains: query/recall generation should not require a separate LLM call. `Ingest` expresses prior-reading recalls inside the same LLM call cycle that chooses the forward unit boundary, but the action-tool args are the only recall-intent authority after `DEC-127`. If recall data is malformed or boundary fallback changes the accepted source unit, runtime may derive a fallback query from the accepted source unit text; if no action tool is called, long-distance retrieval is skipped for that cycle.
 
 Another boundary remains: reading must be able to choose its memory retrieval mode before starting a book / read session. The user or operator should be able to run long-distance memory as text-only lexical retrieval, or as hybrid lexical + vector retrieval. This mode controls read-time retrieval behavior, not the Unit Memory ledger shape. The V1 default is `hybrid`.
 
@@ -73,7 +73,7 @@ Implemented now:
   - supported explicit modes are `hybrid` and `text_only`
 - `unit_memory_retrieval_trace.jsonl`
   - records Ingest recalls or fallback query source, per-recall candidate counts, channel availability, degradation, selected/suppressed units, latency, and ReadingMemory token accounting
-- `Ingest` output now includes bounded `memory_recalls[]`
+- `Ingest` now calls `retrieve_unit_memory` with bounded `memory_recalls[]` when prior memory is needed
   - zero to three recalls
   - generated in the same LLM call as boundary selection
   - no separate query-generation LLM call
@@ -758,11 +758,11 @@ Current Ingest recall contract:
 
 Rules:
 
-- Ingest emits zero to three recalls.
+- Ingest may call `retrieve_unit_memory` with one to three recalls; zero recalls means no tool call.
 - `recall_text` should be a concise reader-facing description of earlier reading that the selected unit naturally asks the Reader to remember.
 - `recall_text` is not a question-answer prompt for Digest and should not ask for a full summary.
 - `basis` is `selected_source_unit` in v1.
-- If recalls are empty intentionally, runtime skips long-distance Unit Memory retrieval for that cycle.
+- If no recall tool call is made intentionally, runtime skips long-distance Unit Memory retrieval for that cycle.
 - If recall data is missing/malformed or boundary fallback changes the accepted unit, runtime may derive a fallback query from the accepted source unit text.
 - Fallback query text should be a clipped, whitespace-normalized source-unit excerpt, capped at roughly `1200` characters.
 - Retrieval trace should record whether retrieval came from `tool_retrieve_unit_memory`, `ingest_recall`, `retry_ingest_recall`, or `runtime_source_text_fallback`.

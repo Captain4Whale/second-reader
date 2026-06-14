@@ -1,7 +1,7 @@
 # Ingest Recall And Digest Memory Context Design
 
 Purpose: define the implemented Unit Memory recall/context slice after the bottom hybrid retrieval framework: how Ingest expresses prior-reading recalls, how the Ingest LLM call invokes retrieval through tools, and how runtime-selected Unit Memory enters Digest context.
-Use when: designing or implementing bounded multi-recall Ingest output, the `retrieve_unit_memory` tool loop, retrieval aggregation across recalls, runtime-owned memory selection, or Digest retrieved-memory XML context.
+Use when: designing or implementing bounded multi-recall Ingest action-tool args, the `retrieve_unit_memory` tool loop, retrieval aggregation across recalls, runtime-owned memory selection, or Digest retrieved-memory XML context.
 Not for: the already-landed Unit Memory ledger / FTS5 / sqlite-vec bottom framework, evaluation claims, or evidence-catalog updates.
 Update when: Ingest recall wording, tool schema, recall output schema, retrieval aggregation, memory-selection ownership, retrieved-memory brief shape, or Digest context rules change.
 
@@ -11,12 +11,12 @@ Update when: Ingest recall wording, tool schema, recall output schema, retrieval
 - Status: implemented in the current `attentional_v2` live path.
 - Implemented live baseline:
   - `DEC-110` implemented the Unit Memory ledger, FTS5 text retrieval, optional sqlite-vec vector retrieval, retrieval mode config, and trace.
-  - Ingest now emits bounded `memory_recalls[]` instead of model-facing `memory_query`.
+  - Ingest now expresses bounded recall intent through `retrieve_unit_memory` action-tool args instead of model-facing `memory_query` or final-output `memory_recalls[]`.
   - The Ingest LLM call can invoke Unit Memory retrieval through an Anthropic-style `retrieve_unit_memory` tool loop.
   - Model-side recalls are contract-validated against the current source text before retrieval execution: recall text must use the current source text's primary language when that language is clear, and model-side `basis` must remain `selected_source_unit`.
   - `retrieve_unit_memory` action-tool preflight uses the same validator and returns `contract_violation` metadata when the action payload violates the recall contract, allowing the final-output repair path to correct the result without exposing retrieved memory back to Ingest.
   - Reading Runner/runtime keeps actual retrieval execution, score fusion, source-unit resolution, artifact writing, result selection, dedupe, budget trimming, and Digest `ReadingMemory` rendering.
-  - Ingest does not see, choose, or return retrieved memory brief ids; Ingest only expresses recall intentions and receives compact status/count tool results.
+  - Ingest does not see, choose, return retrieved memory brief ids, or echo recall targets in final JSON; Ingest only expresses recall intentions through the action tool and receives compact status/count tool results.
   - Digest now receives one top-level `ReadingMemory` block assembled from hot current-chapter Understanding plus runtime-selected long-distance Unit Memory Understanding.
 - Subject-continuity implementation:
   - Digest prompt `attentional_v2.digest.v9` carries subject continuity through prior Understanding in `ReadingMemory`, not by adding raw-source backfill or a new Ingest-side reference-resolution surface.
@@ -575,7 +575,7 @@ explain what this paragraph means
 
 ### Recalls As Tool Retrieval Inputs
 
-The model-facing shape is `memory_recalls[]`.
+The model-facing recall shape is `memory_recalls[]` inside the `retrieve_unit_memory` action-tool args.
 
 For Ingest, each item is a prior-reading recall intention: what the selected unit makes the Reader want to remember before Digest reads carefully.
 
@@ -598,11 +598,11 @@ The term `query` remains runtime/internal. Prompt wording stays with "recall".
 
 ### Empty Recall Semantics
 
-An empty `memory_recalls` list is meaningful.
+An omitted `retrieve_unit_memory` call is meaningful.
 
-If Ingest returns `memory_recalls: []`, it should not call `retrieve_unit_memory`. Runtime should skip long-distance Unit Memory retrieval for that cycle rather than manufacturing a fallback query.
+If Ingest has no recall need, it should not call `retrieve_unit_memory`. Runtime should skip long-distance Unit Memory retrieval for that cycle rather than manufacturing a fallback query.
 
-If Ingest returns one or more valid recalls, retrieval is mandatory for that attempt. The intended contract is simple: recall need means retrieve; no recall need means do not retrieve.
+If Ingest submits one or more valid recalls through `retrieve_unit_memory`, retrieval is mandatory for that attempt. The intended contract is simple: recall need means retrieve; no recall need means do not retrieve.
 
 Fallback should be used only when:
 
@@ -946,10 +946,10 @@ Suppress:
 
 ## Implemented Recommendation
 
-The implemented slice moves the live path from single model-facing `memory_query` to bounded model-facing `memory_recalls[]` plus a mechanism-private `retrieve_unit_memory` tool loop.
+The implemented slice moves the live path from single model-facing `memory_query` to bounded `memory_recalls[]` inside the mechanism-private `retrieve_unit_memory` action-tool args.
 
 Prompt Ingest as a reader noticing what the selected unit asks it to remember, not as a query generator. Allow zero to three recalls. When recalls exist, Ingest calls `retrieve_unit_memory`; runtime resolves the selected boundary, maps each recall to internal retrieval queries, retrieves per recall, fuses across recall/channel lists, aggregates by Unit Memory Entry, dedupes against direct recent memory, selects the prior Understanding entries under budget, and returns only a compact retrieval-status summary to Ingest.
 
 Ingest should not see compact Understanding briefs or return memory-selection fields. For Digest, introduce a top-level `ReadingMemory` block, not `ReadingState`, `RecentMemory`, or `RetrievedUnitMemory`. Runtime should merge direct recent Understanding and runtime-selected retrieved Understanding into simple position-sorted text lines. Raw prior Unit source text, Response, and Annotation remain retrieval surfaces / audit material and should not be replayed into Digest context.
 
-The implementation should enforce the recall/tool boundary rather than treating it as a soft model preference: `memory_recalls[]` is the Reader's recall intention, and runtime retrieval is the required operational consequence of that intention.
+The implementation should enforce the recall/tool boundary rather than treating it as a soft model preference: `retrieve_unit_memory.memory_recalls[]` is the Reader's recall intention, and runtime retrieval is the required operational consequence of that intention.

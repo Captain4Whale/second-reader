@@ -15,9 +15,9 @@ from .reader_role import READER_ROLE_FRAGMENT
 from .types import PromptDefinition
 
 
-INGEST_PROMPT_VERSION = "attentional_v2.ingest.v16"
-INGEST_XML_PROMPT_ASSEMBLY_SPEC_ID = "attentional_v2.ingest.xml.v16"
-INGEST_XML_PROMPTSET_VERSION = "attentional_v2-phase6-v66"
+INGEST_PROMPT_VERSION = "attentional_v2.ingest.v17"
+INGEST_XML_PROMPT_ASSEMBLY_SPEC_ID = "attentional_v2.ingest.xml.v17"
+INGEST_XML_PROMPTSET_VERSION = "attentional_v2-phase6-v67"
 INGEST_TRANSPORT_SYSTEM_PROMPT = "Follow the structured Ingest prompt in the user message. Use the required submit_ingest_result tool as the final output channel."
 
 
@@ -31,7 +31,7 @@ You are shown a bounded forward reading lookahead window from the current readin
 
 1. Browse the whole visible preview as a reader and form a provisional map of its consecutive semantic units.
 2. Commit only the FIRST mapped unit as the next source unit Digest should read closely.
-3. After committing that first unit, briefly name any earlier reading that this unit makes you want to remember before Digest reads it closely.
+3. After committing that first unit, decide whether Digest would benefit from prior-reading memory; if yes, express those recall targets only through the Unit Memory retrieval tool.
 
 The rest of the window is lookahead context only. Its provisional map helps you place the first boundary and lets reviewers audit what you saw; it is not itself being read by Digest yet.
 
@@ -120,13 +120,13 @@ Use `CurrentView / Content` to choose the boundary and to notice cues for recall
 
 After you choose the boundary, the selected unit is current source text and any remaining preview text is future source text. Neither should be written as the prior memory content.
 
-If a recall would merely retrieve the same idea already stated in the selected unit, return no recall or describe a broader prior-memory target without copying that current-unit content.
+If a recall would merely retrieve the same idea already stated in the selected unit, do not call the tool, or describe a broader prior-memory target without copying that current-unit content.
 
 # When to recall
 
 Write a recall when the selected unit returns to, develops, contrasts with, or depends on something already read: a person, relationship, concept, question, object, image, scene, argument, choice, conflict, method, term, or unresolved pressure.
 
-If the selected unit is purely structural, too thin to benefit from prior memory, or only invites generic background, return an empty list.
+If the selected unit is purely structural, too thin to benefit from prior memory, or only invites generic background, do not call the Unit Memory retrieval tool.
 
 # Retrieval-friendly content
 
@@ -163,7 +163,9 @@ Set each recall `basis` exactly to `selected_source_unit`.
 
 # Number of recalls
 
-Return zero to three recalls.
+Use zero to three recalls.
+
+Zero recalls means no Unit Memory tool call.
 
 Prefer one strong focused recall over several weak recalls.
 
@@ -171,7 +173,9 @@ Create separate recalls only when the selected unit contains distinct continuity
 
 # Tool use
 
-If you write one or more recalls, call the Unit Memory retrieval tool with those recalls so runtime can retrieve, select, and prepare the prior understanding that may support Digest.""",
+If you write one or more recalls, call the Unit Memory retrieval tool with those recalls so runtime can retrieve, select, and prepare the prior understanding that may support Digest.
+
+The Unit Memory retrieval tool call is the only place to submit recall targets. Do not include `memory_recalls` in the final structured result.""",
 )
 
 
@@ -212,14 +216,7 @@ INGEST_RETURN_FORMAT_FRAGMENT = PromptFragment(
       "status": "complete | open_tail"
     }
   ],
-  "reason": "<boundary rationale>",
-  "memory_recalls": [
-    {
-      "recall_id": "r1",
-      "recall_text": "<concise prior-reading memory target>",
-      "basis": "selected_source_unit"
-    }
-  ]
+  "reason": "<boundary rationale>"
 }
 
 Rules:
@@ -237,8 +234,7 @@ Rules:
 - Set `status` to `"open_tail"` only for the final partition when the visible preview ends in the middle of a larger move.
 - `reason` explains why the committed first unit, also represented by `preview_partition[0]`, should end at `unit.end_paragraph_n` / `unit.end_at`. It is a boundary rationale for the first unit only, not a summary and not a second source span.
 - Do not include rationale, summary, commentary, explanation, or extra fields inside any `preview_partition` item. Later partition entries must stay to `title`, `end_paragraph_n`, `end_at`, and `status`.
-- `memory_recalls` contains zero to three entries. Use an empty list if the selected unit does not call for prior memory.
-- Every recall `basis` must be exactly `"selected_source_unit"`.
+- Do not include `memory_recalls` in this final result. If prior-reading memory is needed, express those recalls only by calling `retrieve_unit_memory`.
 - Do not output markdown, commentary, or extra fields.""",
 )
 
@@ -416,7 +412,7 @@ def build_ingest_prompt_assembly_spec(
             "current_view_position",
             "current_view_content",
         ),
-        output_contract="ingest_unit_boundary_preview_partition_memory_recalls_json_v2",
+        output_contract="ingest_unit_boundary_preview_partition_json_v3",
     )
 
 
@@ -453,5 +449,5 @@ INGEST_PROMPT = PromptDefinition(
     system_prompt=INGEST_TRANSPORT_SYSTEM_PROMPT,
     user_prompt_template="<IngestPrompt assembled by render_ingest_prompt_xml>",
     required_inputs=("book_identity", "current_view_position", "current_view_content"),
-    output_contract="ingest_unit_boundary_preview_partition_memory_recalls_json_v2",
+    output_contract="ingest_unit_boundary_preview_partition_json_v3",
 )

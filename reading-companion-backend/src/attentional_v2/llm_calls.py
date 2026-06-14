@@ -87,6 +87,7 @@ _INGEST_UNIT_MEMORY_TOOL = {
                     "required": ["recall_id", "recall_text"],
                 },
                 "maxItems": 3,
+                "minItems": 1,
             },
         },
         "required": ["unit", "memory_recalls"],
@@ -774,24 +775,32 @@ def _normalize_ingest_boundary_result(
                 problem_code="llm_contract",
             )
         preview_partition.append(partition)
-    raw_recalls = value.get("memory_recalls")
-    normalized_recalls = normalize_unit_memory_recalls(raw_recalls)
-    if "memory_recalls" not in value:
-        recalls_status = "missing"
-    elif not isinstance(raw_recalls, list):
-        recalls_status = "malformed"
-    elif raw_recalls and not normalized_recalls:
-        recalls_status = "malformed"
-    else:
-        recalls_status = "provided"
     result: IngestBoundaryResult = {
         "reason": _clean_text(value.get("reason")),
         "unit": unit,
         "preview_partition": preview_partition,
-        "memory_recalls": normalized_recalls,
-        "memory_recalls_status": recalls_status,
+        "memory_recalls": [],
+        "memory_recalls_status": "not_requested",
     }
     return result
+
+
+def _memory_recalls_from_tool_results(tool_results: list[dict[str, object]]) -> tuple[list[dict[str, object]], str]:
+    """Return runtime-owned recalls from retrieve_unit_memory action-tool args."""
+
+    if not tool_results:
+        return [], "not_requested"
+    for tool_result in tool_results:
+        if _clean_text(tool_result.get("name")) != "retrieve_unit_memory":
+            continue
+        args = tool_result.get("args")
+        if not isinstance(args, Mapping):
+            return [], "tool_args_malformed"
+        recalls = normalize_unit_memory_recalls(args.get("memory_recalls"))
+        if recalls:
+            return [dict(item) for item in recalls], "action_tool_args"
+        return [], "tool_args_malformed"
+    return [], "not_requested"
 
 
 def _current_view_source_texts(current_view_content: Mapping[str, object]) -> list[str]:
@@ -902,6 +911,9 @@ def ingest(
         )
         result = _normalize_ingest_boundary_result(tool_loop.payload)
         result["tool_loop_status"] = "tool_called" if tool_loop.tool_results else "final_without_tool"
+        recalls, recalls_status = _memory_recalls_from_tool_results(tool_loop.tool_results)
+        result["memory_recalls"] = recalls
+        result["memory_recalls_status"] = recalls_status
         if tool_loop.tool_results:
             first_result = tool_loop.tool_results[0].get("result")
             if isinstance(first_result, Mapping):

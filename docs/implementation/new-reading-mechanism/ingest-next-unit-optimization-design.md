@@ -15,14 +15,18 @@ idea. Individual points below may be candidate, implemented, rejected, or
 superseded.
 
 Current live baseline:
-- Ingest prompt: `attentional_v2.ingest.v16`
-- Promptset: `attentional_v2-phase6-v66`
+- Ingest prompt: `attentional_v2.ingest.v17`
+- Promptset: `attentional_v2-phase6-v67`
 - Live boundary contract: `unit.end_paragraph_n` + `unit.end_at`
 - Live audit contract: `preview_partition[]`, with `preview_partition[0]`
   matching `unit`
+- Live recall contract: prior-reading recall intent is expressed only through
+  `retrieve_unit_memory` action-tool args; final Ingest output does not carry
+  `memory_recalls[]`
 - Authoritative runtime coordinate: paragraph-char `SourceSpan` /
   `source_span_id`, derived by runtime after resolving the model boundary
-- Related decisions: `DEC-116`, `DEC-117`, `DEC-118`, `DEC-120`, `DEC-121`
+- Related decisions: `DEC-116`, `DEC-117`, `DEC-118`, `DEC-120`, `DEC-121`,
+  `DEC-127`
 - Related living pattern: `docs/implementation/new-reading-mechanism/mechanism-pattern-ledger.md` entry 19
 - Related upstream source-substrate design: `docs/implementation/new-reading-mechanism/source-normalization-design.md`
 
@@ -339,7 +343,7 @@ Schema / validator tests:
 - invalid visible paragraph n
 - `open_tail` on non-final partition
 - optional `reason` remains accepted
-- `memory_recalls[]` matching rule with `retrieve_unit_memory` remains unchanged
+- `retrieve_unit_memory` action-tool preflight remains unchanged for recall language / basis validation; final output no longer carries a matching `memory_recalls[]` echo
 
 Resolver / audit tests:
 
@@ -722,7 +726,7 @@ The model-facing contract remains:
 - `unit.end_paragraph_n`
 - `unit.end_at`
 - `preview_partition[]`
-- `memory_recalls[]`
+- `retrieve_unit_memory.memory_recalls[]` when prior-reading recall is needed
 - optional normalized `reason`
 
 Unit Memory retrieval remains based on the selected first unit and required

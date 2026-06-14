@@ -3588,3 +3588,29 @@ This new direction is design frozen but not yet implemented as a formal benchmar
 - `docs/backend-reader-evaluation.md`
 - `docs/current-state.md`
 - `docs/tasks/registry.md`
+
+## Entry 124
+**ID**: DEC-127
+**Status**: active
+
+**Decision / Inflection**: Make `retrieve_unit_memory` action-tool args the only model-authored Ingest Unit Memory recall-intent surface.
+
+**Period**: June 14, 2026, after the focused larger-preview Siddhartha v16 probe failed at unit 7 with an `llm_contract` caused by final `memory_recalls[]` language/tool-call mismatch even though provider calls returned `ok`.
+
+**Decision**: Live Ingest is bumped to `attentional_v2.ingest.v17` / promptset `attentional_v2-phase6-v67`. The final Ingest result now carries only the accepted boundary contract and audit map: `unit.end_paragraph_n`, `unit.end_at`, `preview_partition[]`, and optional first-unit boundary `reason`. Prior-reading recall intent is submitted only through the `retrieve_unit_memory` action tool. Runtime derives private/audit `memory_recalls[]` from the action-tool args, and final-output validation ignores any legacy final `memory_recalls[]` echo rather than requiring it to match the tool call.
+
+**Boundary**: This does not change Ingest into two business nodes, does not change Unit Memory retrieval semantics, retrieval indexes, Digest `ReadingMemory`, frontend/public APIs, source coordinates, or historical eval/report artifacts. The provider-level tool loop may still have an action-tool turn, final JSON turn, and repair turn; those remain one Ingest business call cycle.
+
+**Why this path won**: The failure was not an OpenAI-compatible JSON-object / action-tool incompatibility. The real problem was duplicated authorship: the model had to express the same recall intent once as an action-tool call and again as final structured output. Keeping the action tool as the single recall-intent channel preserves strict preflight validation while removing a brittle final/tool signature match that could stop otherwise valid boundary selection.
+
+**Primary evidence**:
+- `reading-companion-backend/src/attentional_v2/prompts/ingest.py`
+- `reading-companion-backend/src/attentional_v2/llm_output_tools.py`
+- `reading-companion-backend/src/attentional_v2/llm_calls.py`
+- `reading-companion-backend/src/attentional_v2/runner.py`
+- `reading-companion-backend/tests/test_attentional_v2_llm_calls.py`
+- `reading-companion-backend/tests/test_attentional_v2_scaffold.py`
+- `docs/backend-reading-mechanisms/attentional_v2.md`
+- `docs/implementation/new-reading-mechanism/llm-structured-output-protocol-note.md`
+- `docs/current-state.md`
+- `docs/tasks/registry.md`
