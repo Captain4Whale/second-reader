@@ -7,7 +7,7 @@ Update when: the current objective, active tasks, blockers, active jobs, open de
 
 This file is authoritative for durable current status. Do not keep unique active-state information only in `docs/agent-handoff.md`.
 
-Last verified: `2026-06-13T21:27:54+08:00`
+Last verified: `2026-06-14T15:06:15+08:00`
 
 ## Current Objective
 - The `Ingest -> Digest -> Reading Runner settlement` mechanism reframe is implemented; current work is fact alignment, smoke/diagnostic review, and calibration before any formal evaluation promotion.
@@ -42,6 +42,7 @@ Last verified: `2026-06-13T21:27:54+08:00`
     - `DEC-122` records Source Normalization as the accepted upstream design direction for classifying original paragraph/block records into mainline, heading, auxiliary, and noise roles before Ingest/Digest run
     - `DEC-123` implements Source Normalization v1 for newly created parsed-book documents: parse extracts lightweight HTML/EPUB evidence, runs a whole-book LLM source-flow classifier in bounded chunks, conservatively applies only high-confidence auxiliary/reference/noise/front-back/caption-support labels with structural evidence to the coarse `text_role == "auxiliary"` gate, persists `source_normalization` paragraph metadata, rebuilds sentences, writes parse diagnostics, and degrades to deterministic roles if the classifier fails; existing parsed artifacts are not auto-migrated
     - `DEC-124` upgrades Source Normalization to markup-aware v1.1 for newly parsed books: paragraph records now retain ancestor container and inline-anchor metadata, pure parent containers such as `blockquote > p` aggregates no longer duplicate child正文, deterministic markup evidence can exclude explicit footnote/endnote/note-definition records even when LLM confidence is malformed, and blockquote/poem/verse/letter正文 is protected from unbacked `layout_noise` labels
+    - `DEC-125` switches live Source Normalization to deterministic-only v1.2 for new parses: default import no longer calls a whole-book LLM classifier, only strong structural evidence such as explicit footnote/endnote/reference containers or note-definition anchors can change `text_role` to `auxiliary`, inline note references remain mainline, malformed orphan-note candidates are audit-only, and uncertain cases preserve正文
     - current `llm_calls.ingest(...)` is the forward-only XML LLM boundary call: `unit.end_paragraph_n`, `unit.end_at`, `preview_partition[]`, optional boundary-rationale `reason`, and bounded `memory_recalls[]`
     - current LLM-call code now lives in `reading-companion-backend/src/attentional_v2/llm_calls.py`; the old ambiguous active module name is removed
     - current `attentional_v2` LLM calls keep project schemas/tools protocol-neutral; Anthropic-compatible profiles submit structured results through mechanism-private final-output tools such as `submit_ingest_result` and `submit_digest_result`, while OpenAI-compatible JSON-object profiles use JSON object plus validator/repair for Ingest/Digest final output; `retrieve_unit_memory` remains the only live action tool and is left to model `auto` choice; OpenAI-compatible DeepSeek/OpenCode JSON-object calls do not force final-output `tool_choice`
@@ -71,17 +72,16 @@ Last verified: `2026-06-13T21:27:54+08:00`
     - the current implementation now structurally verifies the live path `Ingest recalls -> runtime Unit Memory retrieval/selection -> Digest ReadingMemory -> Digest output mapping -> settlement -> Unit Memory writeback`
     - report: `docs/implementation/new-reading-mechanism/codex/reports/Ingest-Digest-UnitMemory-Conformance-Smoke-Post-run-Report v0.md`
     - no formal eval was run and no evidence catalog entry was created
-  - active Source Normalization validation:
+  - stopped Source Normalization validation:
     - run id: `source_normalization_v1_1_multibook_validation_20260613`
     - job id: `bgjob_source_normalization_v1_1_multibook_validation_20260613`
-    - status: running as of `2026-06-13T21:27:54+08:00`
+    - status: manually stopped; job registry reports `failed` because the suite wrapper received SIGTERM, not because parse/provider failure was accepted as a product result
     - lane: mechanism runtime validation, not formal A/B evaluation
     - purpose: validate Source Normalization v1.1 on ten books through the live `attentional_v2.parse_book` path without running Ingest/Digest read loops
     - smoke: `zh/beiying_public_v2.epub` completed with status `completed`, `7` LLM calls all `ok`, and no automatic critical failures
     - run dir: `reading-companion-backend/state/source_normalization_probe/source_normalization_v1_1_multibook_validation_20260613`
     - runner: `reading-companion-backend/scripts/run_source_normalization_v1_1_multibook_validation.py`
-    - expected outputs: `status.json`, `results.json`, `aggregate_review.md`, and one per-book `source_normalization_v1_1_review.md`
-    - next check: `cd reading-companion-backend && .venv/bin/python scripts/check_background_jobs.py --job-id bgjob_source_normalization_v1_1_multibook_validation_20260613 --archive-terminal`
+    - outcome: the partial multi-book review exposed unacceptable false-positive risk from LLM-backed source-flow classification, especially confusing inline note references with note definitions; current live direction is deterministic-only v1.2, not broad LLM source cleaning
   - active diagnostic evaluation:
     - run id: `attentional_v2_ingest_digest_unit_memory_full_diagnostic_20260603_parallel5`
     - job id: `bgjob_ingest_digest_unit_memory_full_diagnostic_20260603_parallel5`
@@ -232,7 +232,7 @@ Last verified: `2026-06-13T21:27:54+08:00`
     - use `docs/implementation/new-reading-mechanism/digest-understanding-response-annotation-design.md` as the implemented reference for the Digest prompt/output semantic refactor
     - use `docs/implementation/new-reading-mechanism/unit-memory-hybrid-retrieval-design.md` as the implemented reference for the Unit Memory storage/index/retrieval trace bottom framework
     - use `docs/implementation/new-reading-mechanism/ingest-recall-and-digest-memory-context-design.md` as the implemented reference for bounded multi-recall Ingest output, Anthropic-style `retrieve_unit_memory` tool loop, multi-recall retrieval aggregation, and Digest `ReadingMemory` packaging
-    - use `docs/implementation/new-reading-mechanism/source-normalization-design.md`, `docs/implementation/new-reading-mechanism/mechanism-pattern-ledger.md` entry 19, `DEC-116`, `DEC-117`, `DEC-118`, `DEC-120`, `DEC-121`, `DEC-122`, `DEC-123`, and `DEC-124` for the accepted design explanation of why window-partition Ingest improves next-unit selection, why live Ingest records `preview_partition[]` titles as mechanism-private audit metadata, why runtime first moved away from paragraph-count previews, why live preview capacity is token-bounded, why the current v16 token window is larger than the initial live v16 value, why footnotes/noise should be handled by upstream source normalization rather than Ingest skip behavior, how Source Normalization applies only to newly parsed books, and why v1.1 preserves markup context while protecting literary body text
+    - use `docs/implementation/new-reading-mechanism/source-normalization-design.md`, `docs/implementation/new-reading-mechanism/mechanism-pattern-ledger.md` entry 19, `DEC-116`, `DEC-117`, `DEC-118`, `DEC-120`, `DEC-121`, `DEC-122`, `DEC-123`, `DEC-124`, and `DEC-125` for the accepted design explanation of why window-partition Ingest improves next-unit selection, why live Ingest records `preview_partition[]` titles as mechanism-private audit metadata, why runtime first moved away from paragraph-count previews, why live preview capacity is token-bounded, why the current v16 token window is larger than the initial live v16 value, why footnotes/noise should be handled by upstream source normalization rather than Ingest skip behavior, how Source Normalization applies only to newly parsed books, why v1.1 preserves markup context while protecting literary body text, and why v1.2 no longer uses live whole-book LLM source-flow classification
     - use `docs/implementation/new-reading-mechanism/ingest-digest-unit-memory-conformance-goal.md` as the completed structural conformance contract; it treated the mechanism design docs as a locked baseline and permitted fixing implementation/tests/stable docs only
     - use `docs/implementation/new-reading-mechanism/unit-memory-retrieval-repair-validation-plan.md` as the active repair/validation plan for making Unit Memory retrieval actually select relevant prior Understanding and render it into Digest `ReadingMemory`
     - the no-judge hybrid smoke `attentional_v2_unit_memory_hybrid_smoke_nawaer_20260602` completed as a diagnostic only; it should not be treated as formal evidence or evidence-catalog material

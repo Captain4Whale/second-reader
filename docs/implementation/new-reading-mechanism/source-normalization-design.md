@@ -10,11 +10,12 @@ policy, or frontend highlight rendering details.
 Update when: source-normalization roles, confidence policy, metadata shape, or
 mainline/auxiliary routing changes.
 
-Status: implemented-live v1.1 for newly created parsed-book documents.
+Status: implemented-live v1.2 for newly created parsed-book documents.
 Current live behavior classifies new canonical paragraph records with
 Source Normalization before `Ingest` / `Digest` run, then keeps the existing
 runtime gate: paragraphs whose `text_role` is `auxiliary` are excluded from the
-mainline reader stream.
+mainline reader stream. The live default is deterministic-only: it does not call
+a whole-book LLM classifier during product parse.
 
 ## Problem
 
@@ -122,8 +123,8 @@ example:
     "normalized_role": "auxiliary_note",
     "kind": "translator_note",
     "confidence": 0.96,
-    "method": "llm_with_rule_evidence",
-    "reason_code": "numbered_endnote_cluster",
+    "method": "deterministic_markup",
+    "reason_code": "html_auxiliary_marker",
     "linked_markers": ["[1]"],
     "evidence": {
       "cluster_start_paragraph_index": 58,
@@ -165,27 +166,30 @@ that complexity until real examples require it.
    - literary containers such as `blockquote`, poem, verse, stanza, or letter
      wrappers that protect unusual mainline forms from false exclusion
    - mainline markers that link body text to later notes
-4. Use a whole-book LLM classifier over all original paragraph/block records.
-   The implementation may chunk the book only for prompt/output safety. The LLM
-   classifies original numbered blocks; it does not rewrite text, generate
-   summaries, or decide cursor movement.
+4. Apply deterministic exclusion only when the original source structure proves
+   the block is apparatus:
+   - explicit footnote/endnote/translator-note containers
+   - note-definition anchors such as `f1 -> #s1` with leading `[1]`
+   - explicit reference/bibliography containers
+   - baseline parser `text_role == "auxiliary"` records
 5. Validate conservatively:
-   - only high-confidence auxiliary/reference/noise/front-back/caption-support
-     labels with structural evidence may be excluded from mainline
-   - ambiguous blocks remain `uncertain_keep_mainline`
+   - inline note references such as `s1 -> #f1` or `noteref-1 -> #note-1`
+     remain mainline body text
+   - malformed orphan note-like text without structural proof is audit-only
+   - ambiguous blocks remain mainline
    - every exclusion records a method, confidence, and reason code
 6. Materialize normalized paragraph records while preserving raw coordinates.
 7. Let Ingest read only the normalized mainline stream. Let Digest retrieve
    auxiliary notes only when mainline source markers or runtime policy asks for
    them.
-8. If the source-normalization LLM call fails, keep deterministic parse-time
-   roles, attach baseline metadata, write a degradation diagnostic, and do not
-   fail the whole parse.
+8. Optional offline classifier hooks may be used in tests or audit tools, but
+   they are not the live default parse gate.
 
-## LLM Prompt Contract Sketch
+## Optional Offline Classifier Prompt Sketch
 
-The classifier prompt should be framed as source-flow classification, not
-importance judgment.
+This prompt is retained as an offline/audit sketch only. It is not the live
+default Source Normalization path. If reused later, classifier output must not
+hide正文 without independent deterministic structure evidence.
 
 ```text
 You are classifying original book blocks before reading begins.
@@ -262,9 +266,11 @@ Output should be structured labels:
 The desired normalization for the reviewed Siddhartha region is:
 
 - P55-P57: `mainline_body`
-- P58-P68: `auxiliary_note`, likely `translator_note` / `endnote`
-- P69-P70: duplicate or heading-like `layout_noise` / `heading` candidate,
-  depending on source structure evidence
+- P58-P68: `auxiliary_note`, likely `translator_note` / `endnote`, because the
+  raw XHTML places them under `div.fnote` and each note definition uses an
+  anchor such as `f1 -> #s1`
+- any duplicate or heading-like fragments without strong structure evidence:
+  preserve mainline or heading visibility rather than guessing
 - P71 onward: `mainline_body`
 
 After normalization, Ingest should move from the P55-P57 departure unit to the
@@ -272,16 +278,17 @@ next mainline body region. It should not read P58-P68 as separate units. Those
 notes remain available as support context for Digest when matching body markers
 such as `[1]` or terms such as `Brahmanen`.
 
-The v1.1 probe repair adds two concrete guardrails from the real Siddhartha
-parse:
+The v1.1/v1.2 repair adds concrete guardrails from the real Siddhartha parse:
 
 - `div.fnote > p > a` note definitions preserve their ancestor class/type/role
   and inline anchor metadata, so single notes such as `[1]Magadha...` can be
-  excluded as `auxiliary_note` even when the LLM confidence field is malformed.
+  excluded as `auxiliary_note` without a classifier.
+- body note references such as `sup > a id="s1" href="#f1"` are evidence of a
+  mainline reference, not evidence that the body paragraph is auxiliary.
 - `blockquote > p` literary lines keep only the child paragraph records and
-  carry `ancestor_tags=["blockquote"]`; the parent aggregate is not emitted, and
-  the LLM cannot exclude poem/verse lines as `layout_noise` without independent
-  structural layout-noise evidence.
+  carry `ancestor_tags=["blockquote"]`; the parent aggregate is not emitted.
+- malformed orphan-note candidates such as `1《爱经》...` are retained as body
+  unless a later, narrower rule gains enough structure evidence to exclude them.
 
 ## False-Positive Guardrails
 
@@ -297,13 +304,14 @@ The normalizer must avoid removing author-intended content. Keep mainline when:
 
 The safe default is `uncertain_keep_mainline`.
 
-## Implemented Live V1.1
+## Implemented Live V1.2
 
 The implementation is live for newly parsed books:
 
 - `reading-companion-backend/src/reading_runtime/source_normalization.py`
-  contains the source-flow prompt, whole-book chunking, conservative label
-  validation, metadata merge, sentence-layer rebuild, and diagnostics writer.
+  contains deterministic evidence collection, metadata merge, sentence-layer
+  rebuild, and diagnostics writer. Product parse defaults to
+  `method=deterministic_only` and does not call the LLM classifier.
 - `reading-companion-backend/src/iterator_reader/parse.py` invokes Source
   Normalization only when creating a new `public/book_document.json`.
 - Existing parsed books are not migrated or rewashed automatically; they retain
@@ -317,13 +325,13 @@ The implementation is live for newly parsed books:
 - v1.1 skips pure parent containers that only aggregate textual child blocks,
   avoiding duplicated blockquote/poem正文 while preserving child paragraph
   coordinates.
-- v1.1 adds deterministic markup exclusion for explicit footnote/endnote
-  containers, linked note definitions, and numbered note clusters, while
-  tightening `layout_noise` so duplicate/repeated LLM reasons need deterministic
-  layout-noise evidence before they can hide text.
-- v1.1 protects literary containers such as blockquote/poem/verse/letter from
-  false auxiliary/noise exclusion unless explicit auxiliary/reference evidence
-  is also present.
+- v1.2 separates inline note references from note definitions: `noteref` and
+  `sN -> fN` stay mainline, while `fN -> sN` plus leading marker and/or explicit
+  note containers can become auxiliary.
+- v1.2 excludes explicit footnote/endnote/translator-note/reference containers
+  but treats note-like damaged text without structure as audit metadata only.
+- v1.2 preserves literary containers such as blockquote/poem/verse/letter unless
+  explicit auxiliary/reference structure is also present.
 - Runtime `Ingest` and `Digest` remain unchanged. They still rely on the
   shared paragraph stream and the coarse `text_role == "auxiliary"` gate.
 - Parse diagnostics write Source Normalization status/counts under
@@ -336,6 +344,7 @@ The implementation is live for newly parsed books:
 - Do not let Ingest emit skip operations.
 - Do not change frontend highlight coordinates.
 - Do not require a formal A/B rerun before documenting this design.
+- Do not use a live whole-book LLM classifier as the default parse gate.
 - Do not implement paragraph-internal splitting until real mixed-block examples
   require it.
 
@@ -347,5 +356,5 @@ The implementation is live for newly parsed books:
   body/auxiliary paragraphs require it.
 - Decide later whether auxiliary notes should become explicit support-context
   retrieval material for Digest when mainline markers refer to them.
-- Reduce whole-book Source Normalization cost/chunk count once the quality
-  guardrails are stable on more real EPUBs.
+- Design a review-only report for orphan-note candidates and other suspicious
+  blocks that deterministic-only v1.2 deliberately keeps in mainline.

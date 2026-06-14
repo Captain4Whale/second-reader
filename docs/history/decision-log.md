@@ -3540,3 +3540,26 @@ This new direction is design frozen but not yet implemented as a formal benchmar
 - `reading-companion-backend/src/reading_runtime/source_normalization.py`
 - `reading-companion-backend/tests/test_iterator_parse.py`
 - `reading-companion-backend/tests/test_attentional_v2_source_spans.py`
+
+## Entry 122
+**ID**: DEC-125
+**Status**: active
+
+**Decision / Inflection**: Switch live Source Normalization to deterministic-only v1.2.
+
+**Period**: June 14, 2026, after partial multi-book validation showed that broad LLM source-flow classification could falsely exclude real正文, especially when inline note references were confused with note definitions.
+
+**Decision**: New parses still run Source Normalization before `public/book_document.json` is persisted, but the live default no longer calls a whole-book LLM classifier. Source Normalization v1.2 uses deterministic source-structure evidence only: explicit footnote/endnote/translator-note/reference containers and note-definition anchors can set `text_role="auxiliary"`, while inline body note references such as `s1 -> #f1` or `noteref-1 -> #note-1` remain mainline. Malformed orphan-note-like paragraphs without structural proof are recorded as audit candidates but stay `body`. Existing paragraph coordinates, source text, locators, and frontend highlight compatibility remain unchanged.
+
+**Boundary**: This is a parser/source-substrate change for newly created parsed-book documents only. It does not change Ingest/Digest prompts or schemas, Unit Memory retrieval, accepted `SourceSpan` coordinates, frontend/public API payloads, historical eval/report packages, or existing parsed artifacts. Optional classifier hooks may remain for tests or offline audit, but they are not live visibility authority.
+
+**Why this path won**: The original Siddhartha footnote failure can be solved by simple EPUB/HTML structure such as `div.fnote` and `f1 -> #s1` note-definition anchors. A broad LLM classifier added cost and false-positive risk that conflicts with the stronger product rule: never remove author-intended正文 unless the source itself provides strong apparatus evidence.
+
+**Primary evidence**:
+- `docs/implementation/new-reading-mechanism/source-normalization-design.md`
+- `docs/backend-reading-mechanisms/attentional_v2.md`
+- `docs/current-state.md`
+- `reading-companion-backend/src/reading_runtime/source_normalization.py`
+- `reading-companion-backend/tests/test_iterator_parse.py`
+- `reading-companion-backend/tests/test_reading_core_sentences.py`
+- `reading-companion-backend/tests/test_attentional_v2_source_spans.py`

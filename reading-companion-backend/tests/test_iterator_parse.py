@@ -28,7 +28,7 @@ from src.reading_runtime.artifacts import mechanism_manifest_file
 
 
 def _disable_source_normalization(monkeypatch):
-    """Keep legacy parser tests from invoking the live source-normalization LLM."""
+    """Keep legacy parser tests from invoking live source normalization."""
 
     monkeypatch.setattr(
         parse_module,
@@ -344,8 +344,8 @@ def test_classify_paragraph_records_detects_heading_roles_generically():
     ]
 
 
-def test_source_normalization_prompt_contract_mentions_source_flow_and_false_positive_rules():
-    """The live classifier prompt should frame source-flow labels, not importance judgment."""
+def test_source_normalization_offline_prompt_mentions_source_flow_and_false_positive_rules():
+    """The optional classifier prompt should frame source-flow labels, not importance judgment."""
 
     system_prompt = source_normalization_module.SOURCE_NORMALIZATION_SYSTEM_PROMPT
 
@@ -357,8 +357,8 @@ def test_source_normalization_prompt_contract_mentions_source_flow_and_false_pos
     assert "Never mark blockquote, poem, verse" in system_prompt
 
 
-def test_source_normalization_marks_note_cluster_auxiliary_and_rebuilds_sentences(tmp_path):
-    """High-confidence note/noise labels should leave coordinates intact but exit the mainline stream."""
+def test_source_normalization_marks_explicit_note_definitions_auxiliary_and_rebuilds_sentences(tmp_path):
+    """Explicit note-definition markup should leave coordinates intact but exit the mainline stream."""
     document = {
         "metadata": {
             "book": "悉达多",
@@ -374,66 +374,47 @@ def test_source_normalization_marks_note_cluster_auxiliary_and_rebuilds_sentence
                 "chapter_number": 1,
                 "level": 1,
                 "paragraphs": [
-                    {"paragraph_index": 1, "text": "他离开了家门，走向沙门的道路。", "text_role": "body", "block_tag": "p"},
-                    {"paragraph_index": 2, "text": "朋友跟着他，在清晨的光里沉默前行。", "text_role": "body", "block_tag": "p"},
-                    {"paragraph_index": 3, "text": "[1]Brahmanen，婆罗门，印度社会阶级制度中的阶级之一。", "text_role": "body", "block_tag": "p"},
-                    {"paragraph_index": 4, "text": "[2]Om，印度宗教传统中的神圣音节。", "text_role": "body", "block_tag": "p"},
-                    {"paragraph_index": 5, "text": "沙门", "text_role": "body", "block_tag": "p"},
-                    {"paragraph_index": 6, "text": "在沙门那里，悉达多学会了忍耐。", "text_role": "body", "block_tag": "p"},
+                    {"paragraph_index": 1, "text": "他离开了家门，想起Brahmanen[1]。", "text_role": "body", "block_tag": "p"},
+                    {"paragraph_index": 2, "text": "朋友跟着他，在清晨念诵Om[2]。", "text_role": "body", "block_tag": "p"},
+                    {
+                        "paragraph_index": 3,
+                        "text": "[1]Brahmanen，婆罗门，印度社会阶级制度中的阶级之一。",
+                        "text_role": "body",
+                        "block_tag": "p",
+                        "ancestor_tags": ["div"],
+                        "ancestor_html_classes": ["fnote"],
+                        "inline_anchor_ids": ["f1"],
+                        "inline_anchor_hrefs": ["part0005.xhtml#s1"],
+                        "inline_anchor_texts": ["[1]"],
+                    },
+                    {
+                        "paragraph_index": 4,
+                        "text": "[2]Om，印度宗教传统中的神圣音节。",
+                        "text_role": "body",
+                        "block_tag": "p",
+                        "ancestor_tags": ["div"],
+                        "ancestor_html_classes": ["fnote"],
+                        "inline_anchor_ids": ["f2"],
+                        "inline_anchor_hrefs": ["part0005.xhtml#s2"],
+                        "inline_anchor_texts": ["[2]"],
+                    },
+                    {"paragraph_index": 5, "text": "在沙门那里，悉达多学会了忍耐。", "text_role": "body", "block_tag": "p"},
                 ],
             }
         ],
     }
 
-    def _fake_classifier(blocks, _context):
-        assert {block["paragraph_index"] for block in blocks} == {1, 2, 3, 4, 5, 6}
-        return {
-            "classifications": [
-                {
-                    "chapter_id": 1,
-                    "paragraph_index": 3,
-                    "normalized_role": "auxiliary_note",
-                    "text_role": "auxiliary",
-                    "kind": "translator_note",
-                    "confidence": 0.96,
-                    "reason_code": "numbered_endnote_cluster",
-                    "linked_markers": ["1"],
-                },
-                {
-                    "chapter_id": 1,
-                    "paragraph_index": 4,
-                    "normalized_role": "auxiliary_note",
-                    "text_role": "auxiliary",
-                    "kind": "translator_note",
-                    "confidence": 0.94,
-                    "reason_code": "numbered_endnote_cluster",
-                    "linked_markers": ["2"],
-                },
-                {
-                    "chapter_id": 1,
-                    "paragraph_index": 5,
-                    "normalized_role": "layout_noise",
-                    "text_role": "auxiliary",
-                    "kind": "duplicate_heading",
-                    "confidence": 0.91,
-                    "reason_code": "duplicate_heading",
-                },
-            ]
-        }
-
     diagnostics_path = parse_diagnostics_file(tmp_path / "output" / "xidaduo")
     normalized, diagnostics = source_normalization_module.normalize_book_document_source(
         document,
         diagnostics_path=diagnostics_path,
-        classifier=_fake_classifier,
     )
 
     paragraphs = normalized["chapters"][0]["paragraphs"]
-    assert [paragraph["paragraph_index"] for paragraph in paragraphs] == [1, 2, 3, 4, 5, 6]
+    assert [paragraph["paragraph_index"] for paragraph in paragraphs] == [1, 2, 3, 4, 5]
     assert [paragraph["text_role"] for paragraph in paragraphs] == [
         "body",
         "body",
-        "auxiliary",
         "auxiliary",
         "auxiliary",
         "body",
@@ -441,15 +422,17 @@ def test_source_normalization_marks_note_cluster_auxiliary_and_rebuilds_sentence
     assert paragraphs[2]["source_normalization"]["normalized_role"] == "auxiliary_note"
     assert paragraphs[2]["source_normalization"]["kind"] == "translator_note"
     assert paragraphs[2]["source_normalization"]["linked_markers"] == ["1"]
-    assert paragraphs[4]["source_normalization"]["normalized_role"] == "layout_noise"
-    assert list(dict.fromkeys(sentence["paragraph_index"] for sentence in normalized["chapters"][0]["sentences"])) == [1, 2, 6]
-    assert diagnostics["applied_exclusion_count"] == 3
+    assert "html_auxiliary_marker" in paragraphs[2]["source_normalization"]["evidence"]["signals"]
+    assert list(dict.fromkeys(sentence["paragraph_index"] for sentence in normalized["chapters"][0]["sentences"])) == [1, 2, 5]
+    assert diagnostics["method"] == "deterministic_only"
+    assert diagnostics["chunk_count"] == 0
+    assert diagnostics["applied_exclusion_count"] == 2
     assert diagnostics["normalized_role_counts"]["auxiliary_note"] == 2
     assert json.loads(diagnostics_path.read_text(encoding="utf-8"))["source_normalization"]["status"] == "completed"
 
 
-def test_source_normalization_applies_single_linked_note_with_malformed_confidence():
-    """Explicit footnote markup should survive malformed LLM confidence."""
+def test_source_normalization_applies_single_linked_note_without_classifier():
+    """Explicit footnote markup should be enough without classifier support."""
     document = {
         "metadata": {"book": "悉达多", "book_language": "zh", "output_language": "zh"},
         "chapters": [
@@ -477,24 +460,8 @@ def test_source_normalization_applies_single_linked_note_with_malformed_confiden
         ],
     }
 
-    def _fake_classifier(_blocks, _context):
-        return {
-            "classifications": [
-                {
-                    "chapter_id": 4,
-                    "paragraph_index": 2,
-                    "normalized_role": "auxiliary_note",
-                    "kind": "translator_note",
-                    "confidence": "definitely",
-                    "reason_code": "linked_note_definition",
-                    "linked_markers": ["1"],
-                }
-            ]
-        }
-
     normalized, diagnostics = source_normalization_module.normalize_book_document_source(
         document,
-        classifier=_fake_classifier,
     )
 
     paragraphs = normalized["chapters"][0]["paragraphs"]
@@ -506,6 +473,73 @@ def test_source_normalization_applies_single_linked_note_with_malformed_confiden
     assert "html_auxiliary_marker" in note_metadata["evidence"]["signals"]
     assert "inline_note_definition_anchor" in note_metadata["evidence"]["signals"]
     assert [sentence["paragraph_index"] for sentence in normalized["chapters"][0]["sentences"]] == [1, 3]
+    assert diagnostics["applied_exclusion_count"] == 1
+
+
+def test_source_normalization_keeps_body_note_references_mainline():
+    """Inline noteref anchors are body references, not footnote definitions."""
+    document = {
+        "metadata": {"book": "Reference Demo", "book_language": "en", "output_language": "en"},
+        "chapters": [
+            {
+                "id": 1,
+                "title": "Chapter",
+                "paragraphs": [
+                    {
+                        "paragraph_index": 1,
+                        "text": "Mainline with a cited idea [1] continues as prose.",
+                        "text_role": "body",
+                        "block_tag": "p",
+                        "html_class": "content",
+                        "inline_anchor_ids": ["noteref-1"],
+                        "inline_anchor_hrefs": ["endnotes.xhtml#note-1"],
+                        "inline_anchor_texts": ["[1]"],
+                    }
+                ],
+            }
+        ],
+    }
+
+    normalized, diagnostics = source_normalization_module.normalize_book_document_source(document)
+
+    paragraph = normalized["chapters"][0]["paragraphs"][0]
+    assert paragraph["text_role"] == "body"
+    assert "inline_note_reference_anchor" in paragraph["source_normalization"]["evidence"]["signals"]
+    assert "html_auxiliary_marker" not in paragraph["source_normalization"]["evidence"]["signals"]
+    assert diagnostics["applied_exclusion_count"] == 0
+
+
+def test_source_normalization_marks_doc_endnote_container_auxiliary():
+    """EPUB/ARIA note containers are strong deterministic exclusion evidence."""
+    document = {
+        "metadata": {"book": "Reference Demo", "book_language": "en", "output_language": "en"},
+        "chapters": [
+            {
+                "id": 1,
+                "title": "Endnotes",
+                "paragraphs": [
+                    {
+                        "paragraph_index": 1,
+                        "text": "[1] A note definition.",
+                        "text_role": "body",
+                        "block_tag": "p",
+                        "ancestor_epub_types": ["endnote"],
+                        "ancestor_roles": ["doc-endnote"],
+                        "inline_anchor_ids": ["note-1"],
+                        "inline_anchor_hrefs": ["chapter.xhtml#noteref-1"],
+                        "inline_anchor_texts": ["[1]"],
+                    }
+                ],
+            }
+        ],
+    }
+
+    normalized, diagnostics = source_normalization_module.normalize_book_document_source(document)
+
+    paragraph = normalized["chapters"][0]["paragraphs"][0]
+    assert paragraph["text_role"] == "auxiliary"
+    assert paragraph["source_normalization"]["normalized_role"] == "auxiliary_note"
+    assert paragraph["source_normalization"]["reason_code"] == "html_auxiliary_marker"
     assert diagnostics["applied_exclusion_count"] == 1
 
 
@@ -570,8 +604,8 @@ def test_source_normalization_keeps_blockquote_poem_lines_against_duplicate_nois
     assert [paragraph["text_role"] for paragraph in paragraphs] == ["body", "body", "body", "body"]
     poem_metadata = paragraphs[1]["source_normalization"]
     assert "literary_container" in poem_metadata["evidence"]["signals"]
-    assert poem_metadata["method"] == "deterministic_baseline_llm_rejected"
-    assert poem_metadata["evidence"]["rejected_llm_suggestion"]["kind"] == "duplicate_poem_line"
+    assert poem_metadata["method"] == "deterministic_baseline_classifier_rejected"
+    assert poem_metadata["evidence"]["rejected_classifier_suggestion"]["kind"] == "duplicate_poem_line"
     assert [sentence["paragraph_index"] for sentence in normalized["chapters"][0]["sentences"]] == [1, 2, 3, 4]
     assert diagnostics["applied_exclusion_count"] == 0
 
@@ -613,14 +647,73 @@ def test_source_normalization_rejects_unbacked_auxiliary_label_for_numbered_body
 
     paragraph = normalized["chapters"][0]["paragraphs"][0]
     assert paragraph["text_role"] == "body"
-    assert paragraph["source_normalization"]["method"] == "deterministic_baseline_llm_rejected"
-    assert "rejected_llm_suggestion" in paragraph["source_normalization"]["evidence"]
+    assert paragraph["source_normalization"]["method"] == "deterministic_baseline_classifier_rejected"
+    assert "rejected_classifier_suggestion" in paragraph["source_normalization"]["evidence"]
     assert diagnostics["applied_exclusion_count"] == 0
     assert list(dict.fromkeys(sentence["paragraph_index"] for sentence in normalized["chapters"][0]["sentences"])) == [1, 2]
 
 
-def test_source_normalization_degrades_without_hiding_text_when_classifier_fails(tmp_path):
-    """LLM failures should keep the deterministic source stream readable."""
+def test_source_normalization_keeps_malformed_orphan_note_candidate_body():
+    """Note-like tail text without structural proof is audit-only, not deletion."""
+    document = {
+        "metadata": {"book": "悉达多", "book_language": "zh", "output_language": "zh"},
+        "chapters": [
+            {
+                "id": 8,
+                "title": "迦摩罗",
+                "paragraphs": [
+                    {
+                        "paragraph_index": 1,
+                        "text": "她做出《爱经》[1]中称为“爬树”的动作。",
+                        "text_role": "body",
+                        "block_tag": "p",
+                        "inline_anchor_ids": ["s1"],
+                        "inline_anchor_hrefs": ["XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX"],
+                        "inline_anchor_texts": ["[1]"],
+                    },
+                    {"paragraph_index": 2, "text": "正文随后继续。", "text_role": "body", "block_tag": "p"},
+                    {"paragraph_index": 3, "text": "1《爱经》是古印度一本关于性爱的经典书籍。", "text_role": "body", "block_tag": "p"},
+                ],
+            }
+        ],
+    }
+
+    normalized, diagnostics = source_normalization_module.normalize_book_document_source(document)
+
+    paragraphs = normalized["chapters"][0]["paragraphs"]
+    assert [paragraph["text_role"] for paragraph in paragraphs] == ["body", "body", "body"]
+    assert "orphan_note_like_candidate" in paragraphs[2]["source_normalization"]["evidence"]["signals"]
+    assert diagnostics["applied_exclusion_count"] == 0
+
+
+def test_source_normalization_keeps_tail_bracketed_note_without_structure_body():
+    """A tail marker and matching body reference are not enough to hide source text."""
+    document = {
+        "metadata": {"book": "Demo", "book_language": "zh", "output_language": "zh"},
+        "chapters": [
+            {
+                "id": 1,
+                "title": "Chapter",
+                "paragraphs": [
+                    {"paragraph_index": 1, "text": "正文提到了某个术语[1]。", "text_role": "body", "block_tag": "p"},
+                    {"paragraph_index": 2, "text": "正文继续。", "text_role": "body", "block_tag": "p"},
+                    {"paragraph_index": 3, "text": "[1] 一个看起来像注释但缺少结构证据的段落。", "text_role": "body", "block_tag": "p"},
+                ],
+            }
+        ],
+    }
+
+    normalized, diagnostics = source_normalization_module.normalize_book_document_source(document)
+
+    paragraphs = normalized["chapters"][0]["paragraphs"]
+    assert [paragraph["text_role"] for paragraph in paragraphs] == ["body", "body", "body"]
+    assert "orphan_note_like_candidate" in paragraphs[2]["source_normalization"]["evidence"]["signals"]
+    assert "linked_note_definition" not in paragraphs[2]["source_normalization"]["evidence"]["signals"]
+    assert diagnostics["applied_exclusion_count"] == 0
+
+
+def test_source_normalization_degrades_without_hiding_text_when_explicit_classifier_fails(tmp_path):
+    """Explicit audit classifier failures should keep the deterministic source stream readable."""
     document = {
         "metadata": {"book": "Demo", "book_language": "en", "output_language": "en"},
         "chapters": [
@@ -793,9 +886,8 @@ def test_build_structure_source_normalization_filters_notes_before_segmentation(
 <html xmlns="http://www.w3.org/1999/xhtml">
   <body>
     <p>他离开了家门，走向沙门的道路。</p>
-    <p>朋友跟着他，在清晨的光里沉默前行。</p>
-    <p>[1]Brahmanen，婆罗门，印度社会阶级制度中的阶级之一。</p>
-    <p>[2]Om，印度宗教传统中的神圣音节。</p>
+    <p>朋友跟着他，在清晨的光里念诵“唵”<sup><a id="s1" href="chapter-1.xhtml#f1">[1]</a></sup>。</p>
+    <div class="fnote"><p><a id="f1" href="chapter-1.xhtml#s1">[1]</a>Om，印度宗教传统中的神圣音节。</p></div>
     <p>在沙门那里，悉达多学会了忍耐。</p>
   </body>
 </html>
@@ -811,30 +903,6 @@ def test_build_structure_source_normalization_filters_notes_before_segmentation(
     monkeypatch.setattr(parse_module, "ensure_source_asset", lambda *_args, **_kwargs: None)
     monkeypatch.setattr(parse_module, "_extract_epub_cover", lambda *_args, **_kwargs: None)
 
-    def _fake_classifier(_blocks, _context):
-        return {
-            "classifications": [
-                {
-                    "chapter_id": 1,
-                    "paragraph_index": 3,
-                    "normalized_role": "auxiliary_note",
-                    "kind": "translator_note",
-                    "confidence": 0.96,
-                    "reason_code": "numbered_endnote_cluster",
-                    "linked_markers": ["1"],
-                },
-                {
-                    "chapter_id": 1,
-                    "paragraph_index": 4,
-                    "normalized_role": "auxiliary_note",
-                    "kind": "translator_note",
-                    "confidence": 0.93,
-                    "reason_code": "numbered_endnote_cluster",
-                    "linked_markers": ["2"],
-                },
-            ]
-        }
-
     def _fake_segment(*args, **kwargs):
         captured_calls.append({"paragraphs": list(kwargs["paragraphs"])})
         return [
@@ -849,7 +917,6 @@ def test_build_structure_source_normalization_filters_notes_before_segmentation(
             }
         ]
 
-    monkeypatch.setattr(source_normalization_module, "_invoke_source_normalization_classifier", _fake_classifier)
     monkeypatch.setattr(parse_module, "segment_chapter_semantically", _fake_segment)
 
     structure, _resolved_output_dir = parse_module.build_structure(book_path, language_mode="auto")
@@ -861,7 +928,7 @@ def test_build_structure_source_normalization_filters_notes_before_segmentation(
     ]
     assert captured_paragraphs == [
         "他离开了家门，走向沙门的道路。",
-        "朋友跟着他，在清晨的光里沉默前行。",
+        "朋友跟着他，在清晨的光里念诵“唵”[1]。",
         "在沙门那里，悉达多学会了忍耐。",
     ]
     persisted_book_document = json.loads(book_document_file(output_dir).read_text(encoding="utf-8"))
@@ -869,17 +936,18 @@ def test_build_structure_source_normalization_filters_notes_before_segmentation(
         "body",
         "body",
         "auxiliary",
-        "auxiliary",
         "body",
     ]
     assert persisted_book_document["chapters"][0]["paragraphs"][2]["source_normalization"]["kind"] == "translator_note"
-    assert [sentence["paragraph_index"] for sentence in persisted_book_document["chapters"][0]["sentences"]] == [1, 2, 5]
+    assert "inline_note_reference_anchor" in persisted_book_document["chapters"][0]["paragraphs"][1]["source_normalization"]["evidence"]["signals"]
+    assert [sentence["paragraph_index"] for sentence in persisted_book_document["chapters"][0]["sentences"]] == [1, 2, 4]
     diagnostics = json.loads(parse_diagnostics_file(output_dir).read_text(encoding="utf-8"))
-    assert diagnostics["source_normalization"]["applied_exclusion_count"] == 2
+    assert diagnostics["source_normalization"]["method"] == "deterministic_only"
+    assert diagnostics["source_normalization"]["applied_exclusion_count"] == 1
     assert structure["chapters"][0]["segments"][0]["paragraph_start"] == 1
     assert structure["chapters"][0]["segments"][0]["paragraph_end"] == 2
-    assert structure["chapters"][0]["segments"][1]["paragraph_start"] == 5
-    assert structure["chapters"][0]["segments"][1]["paragraph_end"] == 5
+    assert structure["chapters"][0]["segments"][1]["paragraph_start"] == 4
+    assert structure["chapters"][0]["segments"][1]["paragraph_end"] == 4
 
 
 def test_chapter_contexts_infer_soft_roles_for_overview_and_back_matter():

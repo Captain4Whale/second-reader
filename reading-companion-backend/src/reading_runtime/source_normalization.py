@@ -13,8 +13,8 @@ from src.reading_core.sentences import build_sentence_records
 from src.reading_runtime.llm_gateway import LLMTraceContext, invoke_json, llm_invocation_scope, runtime_trace_context
 
 
-SOURCE_NORMALIZATION_VERSION = "source_normalization.v1.1"
-SOURCE_NORMALIZATION_METHOD = "llm_with_rule_evidence"
+SOURCE_NORMALIZATION_VERSION = "source_normalization.v1.2"
+SOURCE_NORMALIZATION_METHOD = "deterministic_only"
 SOURCE_NORMALIZATION_CHUNK_MAX_BLOCKS = 80
 SOURCE_NORMALIZATION_CHUNK_MAX_CHARS = 12000
 SOURCE_NORMALIZATION_MIN_EXCLUSION_CONFIDENCE = 0.80
@@ -127,37 +127,35 @@ def normalize_book_document_source(
         _write_diagnostics(diagnostics_path, diagnostics)
         return normalized, diagnostics
 
-    chunks = list(_chunk_blocks(blocks))
-    diagnostics["chunk_count"] = len(chunks)
     classification_rows: list[dict[str, object]] = []
     errors: list[str] = []
     fatal_error = False
 
-    try:
-        trace_context = (
-            runtime_trace_context(
-                output_dir,
-                mechanism_key=mechanism_key,
-                stage="parse",
-                node="source_normalization",
-            )
-            if output_dir is not None
-            else LLMTraceContext(stage="parse", node="source_normalization")
-        )
-        with llm_invocation_scope(trace_context=trace_context):
-            for index, chunk in enumerate(chunks, start=1):
-                context = _classifier_context(document, chunk_index=index, chunk_count=len(chunks))
-                payload = (
-                    classifier(chunk, context)
-                    if classifier is not None
-                    else _invoke_source_normalization_classifier(chunk, context)
+    if classifier is not None:
+        chunks = list(_chunk_blocks(blocks))
+        diagnostics["chunk_count"] = len(chunks)
+        diagnostics["classifier_mode"] = "explicit_audit"
+        try:
+            trace_context = (
+                runtime_trace_context(
+                    output_dir,
+                    mechanism_key=mechanism_key,
+                    stage="parse",
+                    node="source_normalization",
                 )
-                rows, row_errors = _classification_rows(payload)
-                classification_rows.extend(rows)
-                errors.extend(f"chunk {index}: {error}" for error in row_errors)
-    except Exception as exc:  # pragma: no cover - exercised by tests through fake classifiers
-        fatal_error = True
-        errors.append(f"{type(exc).__name__}: {exc}")
+                if output_dir is not None
+                else LLMTraceContext(stage="parse", node="source_normalization")
+            )
+            with llm_invocation_scope(trace_context=trace_context):
+                for index, chunk in enumerate(chunks, start=1):
+                    context = _classifier_context(document, chunk_index=index, chunk_count=len(chunks))
+                    payload = classifier(chunk, context)
+                    rows, row_errors = _classification_rows(payload)
+                    classification_rows.extend(rows)
+                    errors.extend(f"chunk {index}: {error}" for error in row_errors)
+        except Exception as exc:  # pragma: no cover - exercised by tests through fake classifiers
+            fatal_error = True
+            errors.append(f"{type(exc).__name__}: {exc}")
 
     if fatal_error:
         classification_rows = []
@@ -429,7 +427,7 @@ def _normalized_paragraph_metadata(
         "evidence": evidence,
     }
     deterministic_exclusion = _deterministic_exclusion_metadata(paragraph, evidence, label)
-    if deterministic_exclusion and (label is not None or deterministic_exclusion.get("source") == "explicit_markup"):
+    if deterministic_exclusion:
         deterministic_exclusion.pop("source", None)
         metadata.update(deterministic_exclusion)
         return metadata, "auxiliary", baseline_text_role != "auxiliary"
@@ -453,7 +451,7 @@ def _normalized_paragraph_metadata(
                 "normalized_role": role,
                 "kind": _clean(label.get("kind")) or _baseline_kind(role, evidence),
                 "confidence": confidence,
-                "method": SOURCE_NORMALIZATION_METHOD,
+                "method": "classifier_audit",
                 "reason_code": _clean(label.get("reason_code")) or role,
                 "linked_markers": _string_list(label.get("linked_markers")) or metadata["linked_markers"],
             }
@@ -466,7 +464,7 @@ def _normalized_paragraph_metadata(
                 "normalized_role": role,
                 "kind": _clean(label.get("kind")) or _baseline_kind(role, evidence),
                 "confidence": confidence,
-                "method": SOURCE_NORMALIZATION_METHOD,
+                "method": "classifier_audit",
                 "reason_code": _clean(label.get("reason_code")) or role,
                 "linked_markers": _string_list(label.get("linked_markers")) or metadata["linked_markers"],
             }
@@ -474,9 +472,9 @@ def _normalized_paragraph_metadata(
         return metadata, "auxiliary", baseline_text_role != "auxiliary"
 
     next_evidence = dict(evidence)
-    next_evidence["rejected_llm_suggestion"] = suggestion
+    next_evidence["rejected_classifier_suggestion"] = suggestion
     metadata["evidence"] = next_evidence
-    metadata["method"] = "deterministic_baseline_llm_rejected"
+    metadata["method"] = "deterministic_baseline_classifier_rejected"
     return metadata, baseline_text_role, False
 
 
@@ -485,7 +483,7 @@ def _should_apply_exclusion_label(
     block: Mapping[str, object],
     label: Mapping[str, object],
 ) -> bool:
-    """Conservatively decide whether one LLM label may hide a paragraph from mainline."""
+    """Conservatively decide whether one explicit audit label may hide a paragraph from mainline."""
 
     role = _normalize_role(label.get("normalized_role"))
     if role not in SOURCE_NORMALIZATION_EXCLUSION_ROLES:
@@ -500,10 +498,6 @@ def _should_apply_exclusion_label(
         return False
     if _has_structural_exclusion_evidence(evidence):
         return True
-    reason_code = _clean(label.get("reason_code")).lower()
-    kind = _clean(label.get("kind")).lower()
-    if re.search(r"footnote|endnote|translator|note_cluster|numbered_note|reference|bibliography|index|copyright|toc|layout|running_header|duplicate|caption|table|figure|front|back|noise", f"{reason_code} {kind}"):
-        return True
     return _clean(paragraph.get("text_role")) == "auxiliary"
 
 
@@ -515,8 +509,6 @@ def _deterministic_exclusion_metadata(
     """Return a high-confidence deterministic auxiliary label from source markup."""
 
     signals = set(_string_list(evidence.get("signals")))
-    label_role = _normalize_role(label.get("normalized_role")) if isinstance(label, Mapping) else ""
-    label_is_auxiliary = label_role in SOURCE_NORMALIZATION_EXCLUSION_ROLES
     linked_markers = (
         _string_list(label.get("linked_markers")) if isinstance(label, Mapping) else []
     ) or _string_list(evidence.get("linked_markers"))
@@ -530,15 +522,25 @@ def _deterministic_exclusion_metadata(
             "linked_markers": linked_markers,
             "source": "explicit_markup",
         }
-    if label_is_auxiliary and {"numbered_note_cluster", "linked_note_definition"}.intersection(signals):
+    if "reference_container" in signals:
+        return {
+            "normalized_role": "reference_like",
+            "kind": "reference",
+            "confidence": max(0.94, _confidence(label.get("confidence")) if isinstance(label, Mapping) else 0.0),
+            "method": "deterministic_markup",
+            "reason_code": "reference_container",
+            "linked_markers": linked_markers,
+            "source": "explicit_markup",
+        }
+    if "linked_note_definition" in signals:
         return {
             "normalized_role": "auxiliary_note",
             "kind": _clean(label.get("kind")) if isinstance(label, Mapping) else "note",
             "confidence": max(0.90, _confidence(label.get("confidence")) if isinstance(label, Mapping) else 0.0),
             "method": "deterministic_markup",
-            "reason_code": "linked_note_definition" if "linked_note_definition" in signals else "numbered_note_cluster",
+            "reason_code": "linked_note_definition",
             "linked_markers": linked_markers,
-            "source": "label_supported",
+            "source": "explicit_markup",
         }
     return None
 
@@ -569,14 +571,7 @@ def _has_structural_exclusion_evidence(evidence: Mapping[str, object]) -> bool:
     signals = _string_list(evidence.get("signals"))
     strong = {
         "html_auxiliary_marker",
-        "numbered_note_cluster",
-        "linked_note_marker",
-        "reference_like",
-        "front_back_matter_title",
-        "short_layout_noise_candidate",
-        "duplicate_heading_candidate",
-        "caption_or_table_marker",
-        "inline_note_definition_anchor",
+        "reference_container",
         "linked_note_definition",
     }
     return bool(strong.intersection(signals))
@@ -614,7 +609,7 @@ def _source_evidence(
     inline_anchor_ids = _string_list(paragraph.get("inline_anchor_ids"))
     inline_anchor_hrefs = _string_list(paragraph.get("inline_anchor_hrefs"))
     inline_anchor_texts = _string_list(paragraph.get("inline_anchor_texts"))
-    attrs = " ".join(
+    structural_attrs = " ".join(
         [
             *own_attrs,
             *ancestor_tags,
@@ -622,9 +617,6 @@ def _source_evidence(
             *ancestor_ids,
             *ancestor_epub_types,
             *ancestor_roles,
-            *inline_anchor_ids,
-            *inline_anchor_hrefs,
-            *inline_anchor_texts,
         ]
     ).lower()
     signals: list[str] = []
@@ -636,6 +628,10 @@ def _source_evidence(
         inline_anchor_hrefs=inline_anchor_hrefs,
         inline_anchor_texts=inline_anchor_texts,
     )
+    inline_note_reference = _inline_anchor_looks_like_note_reference(
+        inline_anchor_ids=inline_anchor_ids,
+        inline_anchor_hrefs=inline_anchor_hrefs,
+    )
 
     if markers and any(marker in linked_markers for marker in markers):
         signals.append("linked_note_marker")
@@ -643,17 +639,23 @@ def _source_evidence(
         signals.append("numbered_note_cluster")
         start, end = cluster_ranges[paragraph_position]
         reason_fragments.append(f"note_cluster_p{start}_p{end}")
-    if _attrs_have_auxiliary_marker(attrs):
+    if _structural_attrs_have_auxiliary_marker(structural_attrs):
         signals.append("html_auxiliary_marker")
+    if _structural_attrs_have_reference_marker(structural_attrs):
+        signals.append("reference_container")
     if inline_note_anchor:
         signals.append("inline_note_definition_anchor")
-    if markers and any(marker in linked_markers for marker in markers) and (
-        inline_note_anchor or paragraph_position >= max(1, paragraph_count - 2)
-    ):
+    if inline_note_reference:
+        signals.append("inline_note_reference_anchor")
+    if markers and inline_note_anchor:
         signals.append("linked_note_definition")
+    elif markers and any(marker in linked_markers for marker in markers) and paragraph_position >= max(1, paragraph_count - 2):
+        signals.append("orphan_note_like_candidate")
     if _literary_container(paragraph, ancestor_tags, ancestor_classes, ancestor_epub_types, ancestor_roles):
         signals.append("literary_container")
-    if re.search(r"figcaption|caption|table|figure", attrs):
+    if _orphan_note_like_candidate(text, paragraph_position=paragraph_position, paragraph_count=paragraph_count, linked_markers=linked_markers):
+        signals.append("orphan_note_like_candidate")
+    if re.search(r"figcaption|caption|table|figure", structural_attrs):
         signals.append("caption_or_table_marker")
     if re.search(r"https?://|www\.|[a-z0-9.-]+\.(com|org|net|edu|gov|pdf)\b", text.lower()):
         signals.append("reference_like")
@@ -697,24 +699,81 @@ def _inline_anchor_looks_like_note_definition(
         for text in inline_anchor_texts
         if text
     }
-    if marker_set.intersection(normalized_anchor_texts):
-        return True
-    joined = " ".join([*inline_anchor_ids, *inline_anchor_hrefs]).lower()
-    return bool(re.search(r"(?:^|[#/_-])(f|fn|footnote|endnote|note)[-_]?[0-9ivxlcdm]+\b", joined, flags=re.IGNORECASE))
+    has_definition_id = bool(
+        re.search(
+            r"(?:^|[\s#/_-])(f|fn|footnote|endnote|note)[-_]?[0-9ivxlcdm０-９]+\b",
+            " ".join(inline_anchor_ids).lower(),
+            flags=re.IGNORECASE,
+        )
+    ) and not bool(re.search(r"(?:^|[\s#/_-])noteref[-_]?", " ".join(inline_anchor_ids).lower(), flags=re.IGNORECASE))
+    has_reference_href = bool(
+        re.search(r"#(?:s|src|source|ref|noteref)[-_]?[0-9ivxlcdm０-９]+\b", " ".join(inline_anchor_hrefs).lower(), flags=re.IGNORECASE)
+    )
+    return bool(marker_set.intersection(normalized_anchor_texts) and (has_definition_id or has_reference_href))
 
 
-def _attrs_have_auxiliary_marker(attrs: str) -> bool:
+def _inline_anchor_looks_like_note_reference(
+    *,
+    inline_anchor_ids: list[str],
+    inline_anchor_hrefs: list[str],
+) -> bool:
+    """Return whether inline anchors look like mainline note references."""
+
+    ids = " ".join(inline_anchor_ids).lower()
+    hrefs = " ".join(inline_anchor_hrefs).lower()
+    has_reference_id = bool(
+        re.search(
+            r"(?:^|[\s#/_-])(?:s|src|source|noteref|note-ref)[-_]?[0-9ivxlcdm０-９]+\b",
+            ids,
+            flags=re.IGNORECASE,
+        )
+    )
+    has_definition_href = bool(
+        re.search(r"#(?:f|fn|footnote|endnote|note)[-_]?[0-9ivxlcdm０-９]+\b", hrefs, flags=re.IGNORECASE)
+    )
+    return has_reference_id or has_definition_href
+
+
+def _structural_attrs_have_auxiliary_marker(attrs: str) -> bool:
     """Return whether structural attributes explicitly identify auxiliary apparatus."""
 
     if re.search(r"译注|注释|尾注", attrs):
         return True
     pattern = (
         r"(?:^|[\s#._:/-])"
-        r"(?:footnote|endnote|noteref|fnote|doc-footnote|doc-endnote|"
-        r"translator-note|reference|bibliography|bibliographic|annotation|fn)"
+        r"(?:footnote|footnotes|endnote|endnotes|fnote|fnotes|doc-footnote|doc-endnote|"
+        r"translator-note|annotation|fn)"
         r"(?:$|[\s#._:/-])"
     )
     return bool(re.search(pattern, attrs, flags=re.IGNORECASE))
+
+
+def _structural_attrs_have_reference_marker(attrs: str) -> bool:
+    """Return whether structural attributes explicitly identify reference apparatus."""
+
+    pattern = (
+        r"(?:^|[\s#._:/-])"
+        r"(?:references|bibliography|bibliographic|doc-bibliography|doc-biblioentry)"
+        r"(?:$|[\s#._:/-])"
+    )
+    return bool(re.search(pattern, attrs, flags=re.IGNORECASE))
+
+
+def _orphan_note_like_candidate(
+    text: str,
+    *,
+    paragraph_position: int,
+    paragraph_count: int,
+    linked_markers: set[str],
+) -> bool:
+    """Return whether one unstructured block is suspicious note apparatus but not excluded."""
+
+    if paragraph_position < max(1, paragraph_count - 3):
+        return False
+    match = re.match(r"^\s*([0-9０-９]{1,3})[《“\"A-Za-z\u4e00-\u9fff]", text)
+    if not match:
+        return False
+    return _normalize_marker(match.group(1)) in linked_markers
 
 
 def _literary_container(
