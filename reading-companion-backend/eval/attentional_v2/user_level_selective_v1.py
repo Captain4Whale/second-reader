@@ -20,6 +20,8 @@ from typing import Any
 import unicodedata
 
 from eval.attentional_v2.corpus_builder import ROOT, chapter_title, is_front_matter, write_json, write_jsonl
+from src.iterator_reader.storage import parse_diagnostics_file
+from src.reading_runtime.output_dir_overrides import override_output_dir
 from src.reading_runtime.provisioning import ensure_canonical_parse
 
 
@@ -33,6 +35,8 @@ SEGMENT_SOURCE_DIRNAME = "segment_sources"
 DEFAULT_VERSION = "2026-04-22"
 DEFAULT_TARGET_NOTE_COUNT = 20
 DEFAULT_HARD_SENTENCE_CAP = 350
+DEFAULT_CANDIDATE_VALIDATION_REPORT_JSON = "candidate_validation_report.json"
+DEFAULT_CANDIDATE_VALIDATION_REPORT_MD = "candidate_validation_report.md"
 
 DEFAULT_NOTES_LOCAL_REF_MANIFEST = (
     ROOT
@@ -54,6 +58,25 @@ REGISTERED_NOTES_SOURCE_IDS = (
 )
 BODY_START_CHAPTER_OVERRIDES = {
     "nawaer_baodian_private_zh": 13,
+}
+SOURCE_MARKER_CHECKS = {
+    "xidaduo_private_zh": {
+        "must_be_absent": [
+            "Brahmanen",
+            "Magadha",
+            "[2]Vishnus",
+            "[3]Lakschmi",
+        ],
+        "must_be_present": [
+            "婆罗门[1]",
+            "摩揭陀[1]",
+            "毗湿奴[2]",
+            "女神[3]",
+        ],
+        "known_conservative_residue": [
+            "1《爱经》",
+        ],
+    },
 }
 FRONT_MATTER_EXTRA_TITLE_PATTERNS_ZH = tuple(
     re.compile(pattern)
@@ -445,6 +468,40 @@ def _note_source_span(
     start_index = sentence_index[note.start_sentence_id]
     end_index = sentence_index[note.end_sentence_id]
     span_sentences = flat_sentences[start_index : end_index + 1]
+    try:
+        return _note_source_span_from_sentences(
+            note=note,
+            span_sentences=span_sentences,
+            language_track=language_track,
+            segment_sentence_spans=segment_sentence_spans,
+            segment_paragraph_texts=segment_paragraph_texts,
+            segment_id=segment_id,
+            relocated=False,
+        )
+    except ValueError:
+        relocated = _relocate_note_source_span(
+            note=note,
+            flat_sentences=flat_sentences,
+            language_track=language_track,
+            segment_sentence_spans=segment_sentence_spans,
+            segment_paragraph_texts=segment_paragraph_texts,
+            segment_id=segment_id,
+        )
+        if relocated is not None:
+            return relocated
+        raise
+
+
+def _note_source_span_from_sentences(
+    *,
+    note: AlignedNote,
+    span_sentences: list[dict[str, Any]],
+    language_track: str,
+    segment_sentence_spans: dict[str, dict[str, Any]],
+    segment_paragraph_texts: dict[int, str],
+    segment_id: str,
+    relocated: bool,
+) -> tuple[str, list[str], list[dict[str, Any]]]:
     normalized_parts: list[str] = []
     normalized_offsets: list[tuple[int, int] | None] = []
     previous_normalized = ""
@@ -482,6 +539,8 @@ def _note_source_span(
             match_start = candidate_start
             normalized_note = normalized_candidate
             matched_source_text_kind = "note_text" if match_text == note.note_text else "aligned_text"
+            if relocated:
+                matched_source_text_kind = f"{matched_source_text_kind}_relocated_by_text"
             break
     if match_start < 0:
         raise ValueError(
@@ -518,6 +577,61 @@ def _note_source_span(
         )
     source_span_text = "\n\n".join(slice_payload["text"] for slice_payload in slices if slice_payload["text"])
     return source_span_text, source_sentence_ids, slices
+
+
+def _relocate_note_source_span(
+    *,
+    note: AlignedNote,
+    flat_sentences: list[dict[str, Any]],
+    language_track: str,
+    segment_sentence_spans: dict[str, dict[str, Any]],
+    segment_paragraph_texts: dict[int, str],
+    segment_id: str,
+) -> tuple[str, list[str], list[dict[str, Any]]] | None:
+    matches: list[tuple[str, list[str], list[dict[str, Any]]]] = []
+    current_key: tuple[int, int] | None = None
+    current_sentences: list[dict[str, Any]] = []
+
+    def flush() -> None:
+        nonlocal current_sentences
+        if not current_sentences:
+            return
+        try:
+            matches.append(
+                _note_source_span_from_sentences(
+                    note=note,
+                    span_sentences=current_sentences,
+                    language_track=language_track,
+                    segment_sentence_spans=segment_sentence_spans,
+                    segment_paragraph_texts=segment_paragraph_texts,
+                    segment_id=segment_id,
+                    relocated=True,
+                )
+            )
+        except ValueError:
+            pass
+        current_sentences = []
+
+    for sentence in flat_sentences:
+        if int(sentence.get("chapter_id", 0) or 0) != note.source_chapter_id:
+            continue
+        sentence_id = _clean_text(sentence.get("sentence_id"))
+        if sentence_id not in segment_sentence_spans:
+            continue
+        key = (int(sentence.get("chapter_id", 0) or 0), int(sentence.get("paragraph_index", 0) or 0))
+        if current_key is not None and key != current_key:
+            flush()
+        current_key = key
+        current_sentences.append(sentence)
+    flush()
+
+    if len(matches) == 1:
+        return matches[0]
+    if len(matches) > 1:
+        raise ValueError(
+            f"Aligned note {note.note_id} has ambiguous relocated exact matches in chapter {note.source_chapter_id}."
+        )
+    return None
 
 
 def _render_segment_text(
@@ -600,6 +714,347 @@ def _catalog_asset_by_source_id(catalog: dict[str, Any]) -> dict[str, dict[str, 
     return index
 
 
+def _source_output_dir(root: Path, source_id: str) -> Path:
+    safe_source_id = re.sub(r"[^A-Za-z0-9_.-]+", "_", source_id).strip("_") or "source"
+    return root / safe_source_id
+
+
+def _load_jsonl_file(path: Path) -> list[dict[str, Any]]:
+    if not path.exists():
+        return []
+    rows: list[dict[str, Any]] = []
+    with path.open(encoding="utf-8") as handle:
+        for line in handle:
+            if not line.strip():
+                continue
+            row = json.loads(line)
+            if isinstance(row, dict):
+                rows.append(row)
+    return rows
+
+
+def _source_normalization_diagnostics(parse_output_dir: Path) -> dict[str, Any]:
+    diagnostics_path = parse_diagnostics_file(parse_output_dir)
+    if not diagnostics_path.exists():
+        return {
+            "status": "missing",
+            "path": _relative_to_root(diagnostics_path),
+        }
+    payload = _load_json(diagnostics_path)
+    source_normalization = payload.get("source_normalization")
+    if not isinstance(source_normalization, dict):
+        return {
+            "status": "missing_source_normalization",
+            "path": _relative_to_root(diagnostics_path),
+        }
+    result = dict(source_normalization)
+    result["path"] = _relative_to_root(diagnostics_path)
+    return result
+
+
+def _book_document_path(parse_output_dir: Path) -> Path:
+    return parse_output_dir / "public" / "book_document.json"
+
+
+def _collect_source_normalization_examples(parse_output_dir: Path) -> dict[str, Any]:
+    book_document_path = _book_document_path(parse_output_dir)
+    if not book_document_path.exists():
+        return {
+            "book_document_path": _relative_to_root(book_document_path),
+            "auxiliary_examples": [],
+            "orphan_note_like_candidates": [],
+        }
+    document = _load_json(book_document_path)
+    auxiliary_examples: list[dict[str, Any]] = []
+    orphan_candidates: list[dict[str, Any]] = []
+    for chapter in document.get("chapters") or []:
+        if not isinstance(chapter, dict):
+            continue
+        chapter_id = int(chapter.get("id", 0) or 0)
+        chapter_title_value = _clean_text(chapter.get("title"))
+        for paragraph in chapter.get("paragraphs") or []:
+            if not isinstance(paragraph, dict):
+                continue
+            source_normalization = paragraph.get("source_normalization") or {}
+            if not isinstance(source_normalization, dict):
+                source_normalization = {}
+            evidence = source_normalization.get("evidence") or {}
+            signals = evidence.get("signals") if isinstance(evidence, dict) else []
+            if not isinstance(signals, list):
+                signals = []
+            record = {
+                "chapter_id": chapter_id,
+                "chapter_title": chapter_title_value,
+                "paragraph_index": int(paragraph.get("paragraph_index", 0) or 0),
+                "text_role": _clean_text(paragraph.get("text_role")),
+                "normalized_role": _clean_text(source_normalization.get("normalized_role")),
+                "method": _clean_text(source_normalization.get("method")),
+                "reason_code": _clean_text(source_normalization.get("reason_code")),
+                "signals": [str(item) for item in signals],
+                "text": _clean_text(paragraph.get("text"))[:240],
+            }
+            if record["text_role"] == "auxiliary" and len(auxiliary_examples) < 20:
+                auxiliary_examples.append(record)
+            if "orphan_note_like_candidate" in record["signals"] and len(orphan_candidates) < 20:
+                orphan_candidates.append(record)
+    return {
+        "book_document_path": _relative_to_root(book_document_path),
+        "auxiliary_examples": auxiliary_examples,
+        "orphan_note_like_candidates": orphan_candidates,
+    }
+
+
+def _slice_int_field(item: dict[str, Any], key: str) -> int:
+    value = item.get(key, -1)
+    if value is None or value == "":
+        return -1
+    return int(value)
+
+
+def _first_slice_key(row: dict[str, Any]) -> tuple[int, int, int] | None:
+    slices = row.get("source_span_slices")
+    if not isinstance(slices, list):
+        return None
+    for item in slices:
+        if not isinstance(item, dict):
+            continue
+        return (
+            _slice_int_field(item, "paragraph_index"),
+            _slice_int_field(item, "char_start"),
+            _slice_int_field(item, "char_end"),
+        )
+    return None
+
+
+def _coordinate_remap_summary(dataset_root: Path, baseline_dataset_dir: Path | None) -> dict[str, Any]:
+    candidate_rows = _load_jsonl_file(dataset_root / NOTE_CASES_FILE)
+    candidate_by_id = {str(row.get("note_case_id") or ""): row for row in candidate_rows}
+    candidate_empty = [
+        note_case_id
+        for note_case_id, row in candidate_by_id.items()
+        if not isinstance(row.get("source_span_slices"), list) or not row.get("source_span_slices")
+    ]
+    summary: dict[str, Any] = {
+        "candidate_note_case_count": len(candidate_rows),
+        "candidate_empty_source_span_slice_count": len(candidate_empty),
+        "candidate_empty_source_span_slice_ids": candidate_empty[:20],
+    }
+    if baseline_dataset_dir is None or not (baseline_dataset_dir / NOTE_CASES_FILE).exists():
+        summary["baseline_status"] = "missing"
+        return summary
+
+    baseline_rows = _load_jsonl_file(baseline_dataset_dir / NOTE_CASES_FILE)
+    baseline_by_id = {str(row.get("note_case_id") or ""): row for row in baseline_rows}
+    changed: list[dict[str, Any]] = []
+    unchanged_count = 0
+    for note_case_id, candidate in sorted(candidate_by_id.items()):
+        baseline = baseline_by_id.get(note_case_id)
+        if baseline is None:
+            continue
+        old_key = _first_slice_key(baseline)
+        new_key = _first_slice_key(candidate)
+        if old_key == new_key:
+            unchanged_count += 1
+            continue
+        if len(changed) < 30:
+            changed.append(
+                {
+                    "note_case_id": note_case_id,
+                    "old_first_slice": old_key,
+                    "new_first_slice": new_key,
+                    "source_span_text": _clean_text(candidate.get("source_span_text"))[:160],
+                }
+            )
+    summary.update(
+        {
+            "baseline_status": "loaded",
+            "baseline_dataset_dir": _relative_to_root(baseline_dataset_dir),
+            "baseline_note_case_count": len(baseline_rows),
+            "missing_from_candidate_count": len(set(baseline_by_id) - set(candidate_by_id)),
+            "missing_from_baseline_count": len(set(candidate_by_id) - set(baseline_by_id)),
+            "unchanged_first_slice_count": unchanged_count,
+            "changed_first_slice_count": sum(
+                1
+                for note_case_id, candidate in candidate_by_id.items()
+                if note_case_id in baseline_by_id and _first_slice_key(candidate) != _first_slice_key(baseline_by_id[note_case_id])
+            ),
+            "changed_first_slice_examples": changed,
+        }
+    )
+    return summary
+
+
+def _marker_checks_for_segment(dataset_root: Path, segment: dict[str, Any]) -> dict[str, Any]:
+    source_id = _clean_text(segment.get("source_id"))
+    checks = SOURCE_MARKER_CHECKS.get(source_id)
+    source_path = dataset_root / _clean_text(segment.get("segment_source_path"))
+    text = source_path.read_text(encoding="utf-8") if source_path.exists() else ""
+    if checks is None:
+        return {
+            "source_id": source_id,
+            "segment_id": _clean_text(segment.get("segment_id")),
+            "status": "no_known_marker_checks",
+        }
+    absent_results = {
+        marker: text.find(marker)
+        for marker in checks.get("must_be_absent", [])
+    }
+    present_results = {
+        marker: text.find(marker)
+        for marker in checks.get("must_be_present", [])
+    }
+    residue_results = {
+        marker: text.find(marker)
+        for marker in checks.get("known_conservative_residue", [])
+    }
+    failed_absent = [marker for marker, index in absent_results.items() if index >= 0]
+    failed_present = [marker for marker, index in present_results.items() if index < 0]
+    return {
+        "source_id": source_id,
+        "segment_id": _clean_text(segment.get("segment_id")),
+        "source_path": _relative_to_root(source_path),
+        "status": "pass" if not failed_absent and not failed_present else "fail",
+        "must_be_absent": absent_results,
+        "must_be_present": present_results,
+        "known_conservative_residue": residue_results,
+        "failed_absent_markers": failed_absent,
+        "failed_present_markers": failed_present,
+    }
+
+
+def _old_canonical_output_violation(source_id: str, parse_output_dir: Path | None) -> bool:
+    if parse_output_dir is None:
+        return False
+    relative = _relative_to_root(parse_output_dir)
+    return source_id == "xidaduo_private_zh" and relative == "output/悉达多"
+
+
+def write_candidate_validation_report(
+    *,
+    dataset_root: Path,
+    source_parse_output_dirs: dict[str, Path],
+    baseline_dataset_dir: Path | None,
+) -> dict[str, Any]:
+    manifest = _load_json(dataset_root / "manifest.json")
+    segments = _load_jsonl_file(dataset_root / SEGMENTS_FILE)
+    note_cases = _load_jsonl_file(dataset_root / NOTE_CASES_FILE)
+    note_cases_by_segment: dict[str, int] = defaultdict(int)
+    for note_case in note_cases:
+        note_cases_by_segment[_clean_text(note_case.get("segment_id"))] += 1
+
+    parse_sources: dict[str, Any] = {}
+    old_output_violations: list[str] = []
+    for source_id, parse_output_dir in sorted(source_parse_output_dirs.items()):
+        if _old_canonical_output_violation(source_id, parse_output_dir):
+            old_output_violations.append(source_id)
+        parse_sources[source_id] = {
+            "parse_output_dir": _relative_to_root(parse_output_dir),
+            "diagnostics": _source_normalization_diagnostics(parse_output_dir),
+            **_collect_source_normalization_examples(parse_output_dir),
+        }
+
+    marker_checks = [_marker_checks_for_segment(dataset_root, segment) for segment in segments]
+    coordinate_remap = _coordinate_remap_summary(dataset_root, baseline_dataset_dir)
+    report = {
+        "generated_at": utc_now(),
+        "dataset_id": manifest.get("dataset_id"),
+        "dataset_dir": _relative_to_root(dataset_root),
+        "segment_count": len(segments),
+        "note_case_count": len(note_cases),
+        "note_case_count_by_segment": dict(sorted(note_cases_by_segment.items())),
+        "parse_mode": manifest.get("parse_mode", "canonical_existing"),
+        "parse_sources": parse_sources,
+        "marker_checks": marker_checks,
+        "coordinate_remap": coordinate_remap,
+        "old_canonical_output_violations": old_output_violations,
+        "acceptance_gate_status": "pass"
+        if not old_output_violations
+        and not any(item.get("status") == "fail" for item in marker_checks)
+        and not coordinate_remap.get("candidate_empty_source_span_slice_count")
+        else "review_required",
+    }
+    write_json(dataset_root / DEFAULT_CANDIDATE_VALIDATION_REPORT_JSON, report)
+    _write_candidate_validation_markdown(dataset_root / DEFAULT_CANDIDATE_VALIDATION_REPORT_MD, report)
+    return report
+
+
+def _write_candidate_validation_markdown(path: Path, report: dict[str, Any]) -> None:
+    lines = [
+        "# User-Level Selective Candidate Validation",
+        "",
+        f"- generated_at: `{report.get('generated_at')}`",
+        f"- dataset_id: `{report.get('dataset_id')}`",
+        f"- dataset_dir: `{report.get('dataset_dir')}`",
+        f"- parse_mode: `{report.get('parse_mode')}`",
+        f"- segment_count: `{report.get('segment_count')}`",
+        f"- note_case_count: `{report.get('note_case_count')}`",
+        f"- acceptance_gate_status: `{report.get('acceptance_gate_status')}`",
+        "",
+        "## Marker Checks",
+        "",
+    ]
+    for item in report.get("marker_checks") or []:
+        if not isinstance(item, dict):
+            continue
+        lines.extend(
+            [
+                f"### `{item.get('segment_id')}`",
+                "",
+                f"- status: `{item.get('status')}`",
+                f"- source_path: `{item.get('source_path', '')}`",
+                f"- failed_absent_markers: `{item.get('failed_absent_markers', [])}`",
+                f"- failed_present_markers: `{item.get('failed_present_markers', [])}`",
+                f"- known_conservative_residue: `{item.get('known_conservative_residue', {})}`",
+                "",
+            ]
+        )
+    lines.extend(["## Parse Sources", ""])
+    for source_id, source_payload in sorted((report.get("parse_sources") or {}).items()):
+        if not isinstance(source_payload, dict):
+            continue
+        diagnostics = source_payload.get("diagnostics") if isinstance(source_payload.get("diagnostics"), dict) else {}
+        lines.extend(
+            [
+                f"### `{source_id}`",
+                "",
+                f"- parse_output_dir: `{source_payload.get('parse_output_dir')}`",
+                f"- diagnostics_path: `{diagnostics.get('path', '')}`",
+                f"- source_normalization_version: `{diagnostics.get('version', '')}`",
+                f"- source_normalization_method: `{diagnostics.get('method', '')}`",
+                f"- chunk_count: `{diagnostics.get('chunk_count', '')}`",
+                f"- classification_count: `{diagnostics.get('classification_count', '')}`",
+                f"- applied_exclusion_count: `{diagnostics.get('applied_exclusion_count', '')}`",
+                f"- auxiliary_examples: `{len(source_payload.get('auxiliary_examples') or [])}`",
+                f"- orphan_note_like_candidates: `{len(source_payload.get('orphan_note_like_candidates') or [])}`",
+                "",
+            ]
+        )
+        for example in (source_payload.get("orphan_note_like_candidates") or [])[:5]:
+            if not isinstance(example, dict):
+                continue
+            lines.append(
+                f"  - orphan candidate C{example.get('chapter_id')} P{example.get('paragraph_index')}: "
+                f"{_clean_text(example.get('text'))[:120]}"
+            )
+        if source_payload.get("orphan_note_like_candidates"):
+            lines.append("")
+    coordinate_remap = report.get("coordinate_remap") if isinstance(report.get("coordinate_remap"), dict) else {}
+    lines.extend(
+        [
+            "## Coordinate Remap",
+            "",
+            f"- candidate_note_case_count: `{coordinate_remap.get('candidate_note_case_count')}`",
+            f"- candidate_empty_source_span_slice_count: `{coordinate_remap.get('candidate_empty_source_span_slice_count')}`",
+            f"- baseline_status: `{coordinate_remap.get('baseline_status')}`",
+            f"- baseline_note_case_count: `{coordinate_remap.get('baseline_note_case_count', '')}`",
+            f"- changed_first_slice_count: `{coordinate_remap.get('changed_first_slice_count', '')}`",
+            "",
+        ]
+    )
+    path.parent.mkdir(parents=True, exist_ok=True)
+    path.write_text("\n".join(lines).rstrip() + "\n", encoding="utf-8")
+
+
 def build_user_level_selective_v1(
     *,
     dataset_dir: Path | None = None,
@@ -608,6 +1063,9 @@ def build_user_level_selective_v1(
     split_manifest_path: Path | None = None,
     target_note_count: int = DEFAULT_TARGET_NOTE_COUNT,
     hard_sentence_cap: int = DEFAULT_HARD_SENTENCE_CAP,
+    source_ids: tuple[str, ...] | None = None,
+    fresh_parse_output_root: Path | None = None,
+    validation_baseline_dataset_dir: Path | None = None,
 ) -> dict[str, Any]:
     catalog = _load_notes_catalog()
     asset_index = _catalog_asset_by_source_id(catalog)
@@ -628,8 +1086,23 @@ def build_user_level_selective_v1(
     note_case_rows: list[dict[str, Any]] = []
     selected_source_ids: list[str] = []
     skipped_sources: list[dict[str, str]] = []
+    source_filter = {source_id for source_id in (source_ids or ()) if source_id}
+    source_parse_output_dirs: dict[str, Path] = {}
+    source_parse_mode = "fresh_isolated" if fresh_parse_output_root is not None else "canonical_existing"
+    candidate_metadata_enabled = bool(
+        source_filter
+        or fresh_parse_output_root is not None
+        or validation_baseline_dataset_dir is not None
+    )
+    selected_registered_source_ids = [
+        source_id
+        for source_id in REGISTERED_NOTES_SOURCE_IDS
+        if not source_filter or source_id in source_filter
+    ]
+    for unknown_source_id in sorted(source_filter - set(REGISTERED_NOTES_SOURCE_IDS)):
+        skipped_sources.append({"source_id": unknown_source_id, "reason": "source_filter_not_registered"})
 
-    for source_id in REGISTERED_NOTES_SOURCE_IDS:
+    for source_id in selected_registered_source_ids:
         asset = asset_index.get(source_id)
         source_record = source_index.get(source_id)
         if asset is None:
@@ -650,7 +1123,17 @@ def build_user_level_selective_v1(
             continue
 
         book_path = ROOT / _clean_text(source_record["relative_local_path"])
-        provisioned = ensure_canonical_parse(book_path)
+        if fresh_parse_output_root is not None:
+            parse_output_dir = _source_output_dir(Path(fresh_parse_output_root).resolve(), source_id)
+            shutil.rmtree(parse_output_dir, ignore_errors=True)
+            with override_output_dir(parse_output_dir):
+                provisioned = ensure_canonical_parse(book_path)
+            source_parse_output_dirs[source_id] = parse_output_dir
+        else:
+            provisioned = ensure_canonical_parse(book_path)
+            output_dir = getattr(provisioned, "output_dir", None)
+            if isinstance(output_dir, Path):
+                source_parse_output_dirs[source_id] = output_dir
         document = provisioned.book_document or {}
         chapters = [chapter for chapter in document.get("chapters") or [] if isinstance(chapter, dict)]
         body_start_index = _find_body_start_index(
@@ -779,7 +1262,7 @@ def build_user_level_selective_v1(
         "description": "Active user-level selective benchmark built directly from aligned human note spans and continuous reading segments.",
         "segments_file": SEGMENTS_FILE,
         "note_cases_file": NOTE_CASES_FILE,
-        "registered_source_ids": list(REGISTERED_NOTES_SOURCE_IDS),
+        "registered_source_ids": list(selected_registered_source_ids),
         "eligible_source_ids": selected_source_ids,
         "skipped_sources": skipped_sources,
         "target_note_count": target_note_count,
@@ -796,6 +1279,18 @@ def build_user_level_selective_v1(
             "state/eval_local_datasets/excerpt_cases/attentional_v2_excerpt_surface_v1_1_excerpt_zh",
         ],
     }
+    if candidate_metadata_enabled:
+        manifest_payload.update(
+            {
+                "parse_mode": source_parse_mode,
+                "source_filter": sorted(source_filter),
+                "fresh_parse_output_root": _relative_to_root(Path(fresh_parse_output_root).resolve()) if fresh_parse_output_root is not None else "",
+                "source_parse_outputs": {
+                    source_id: _relative_to_root(output_dir)
+                    for source_id, output_dir in sorted(source_parse_output_dirs.items())
+                },
+            }
+        )
     write_json(dataset_root / "manifest.json", manifest_payload)
     write_jsonl(dataset_root / SEGMENTS_FILE, segments_rows)
     write_jsonl(dataset_root / NOTE_CASES_FILE, note_case_rows)
@@ -841,7 +1336,7 @@ def build_user_level_selective_v1(
         "skipped_sources": skipped_sources,
         "quota_status": {
             "reading_segments": {
-                "registered_sources": len(REGISTERED_NOTES_SOURCE_IDS),
+                "registered_sources": len(selected_registered_source_ids),
                 "ready_now": len(segments_rows),
                 "skipped": len(skipped_sources),
             },
@@ -865,6 +1360,17 @@ def build_user_level_selective_v1(
     }
     if split_manifest_path is not None:
         write_json(resolved_split_manifest_path, split_payload)
+    if candidate_metadata_enabled:
+        baseline_dataset_dir = (
+            Path(validation_baseline_dataset_dir).resolve()
+            if validation_baseline_dataset_dir is not None
+            else (Path(DATASET_DIR).resolve() if Path(DATASET_DIR).resolve() != dataset_root else None)
+        )
+        write_candidate_validation_report(
+            dataset_root=dataset_root,
+            source_parse_output_dirs=source_parse_output_dirs,
+            baseline_dataset_dir=baseline_dataset_dir,
+        )
     return split_payload
 
 
@@ -877,6 +1383,19 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--skip-split-manifest", action="store_true")
     parser.add_argument("--target-note-count", type=int, default=DEFAULT_TARGET_NOTE_COUNT)
     parser.add_argument("--hard-sentence-cap", type=int, default=DEFAULT_HARD_SENTENCE_CAP)
+    parser.add_argument("--source-id", action="append", default=None, help="Build only this registered source id; repeatable.")
+    parser.add_argument(
+        "--fresh-parse-output-root",
+        type=Path,
+        default=None,
+        help="Force fresh per-source parses under this ignored output root.",
+    )
+    parser.add_argument(
+        "--validation-baseline-dataset-dir",
+        type=Path,
+        default=None,
+        help="Optional baseline dataset root for coordinate remap reporting.",
+    )
     return parser.parse_args()
 
 
@@ -889,6 +1408,11 @@ def main() -> int:
         split_manifest_path=None if args.skip_split_manifest else Path(args.split_manifest_path),
         target_note_count=int(args.target_note_count),
         hard_sentence_cap=int(args.hard_sentence_cap),
+        source_ids=tuple(str(source_id) for source_id in (args.source_id or [])) or None,
+        fresh_parse_output_root=Path(args.fresh_parse_output_root) if args.fresh_parse_output_root else None,
+        validation_baseline_dataset_dir=(
+            Path(args.validation_baseline_dataset_dir) if args.validation_baseline_dataset_dir else None
+        ),
     )
     return 0
 
