@@ -380,18 +380,21 @@ The old Memory / Planning / Evaluation implementation guidance chain at `docs/im
 - Stable docs may name one active benchmark pointer while keeping earlier benchmark packages as historical evidence.
 - An active benchmark does not need to maximize breadth if the current project constraint is iteration speed under real token and time pressure.
 - The active local/user-level benchmark pointer now belongs to the note-aligned `user-level selective v1` package rather than to `excerpt surface v1.1`.
-- The active local/user-level dataset root now belongs to the repaired `202`-case package `attentional_v2_user_level_selective_v1_repaired_20260422`.
-  - this April 22 repair keeps `nawaer_baodian_private_zh` on the agreed body-start rule:
+- The active local/user-level dataset root now belongs to the source-normalized deterministic v1.2 `202`-case package `attentional_v2_user_level_selective_v1_repaired_20260614_source_norm_v1_2`.
+  - this June 14 source-substrate promotion keeps all `202` note cases from the previous active package, preserves non-empty `source_span_slices`, removes structurally marked Siddhartha footnote definitions from the active window, and keeps body note references visible
+  - the conservative Siddhartha orphan residue `1《爱经》...` remains body-visible because deterministic v1.2 does not guess away正文 without structural apparatus evidence
+  - the earlier April 22 repair remains part of the active package lineage and kept `nawaer_baodian_private_zh` on the agreed body-start rule:
     - start at `c13-s1`
     - stop at `c13-s168`
     - keep only the `23` `c13` body notes
     - remove the old preface-side case `e0056`
+  - the previous active `202`-case package `attentional_v2_user_level_selective_v1_repaired_20260422` remains preserved as the direct comparison baseline for this source-normalized rebuild
   - the prior repaired `203`-case package `attentional_v2_user_level_selective_v1_repaired_20260416` remains preserved as superseded prior evidence
   - the earlier `202`-case `attentional_v2_user_level_selective_v1` package remains preserved as superseded historical evidence
 - If the active benchmark pointer moves after a formal run, stable docs should preserve both truths explicitly:
   - which dataset package is active now
   - which dataset package a completed formal evidence bundle actually used
-  - for the current local/user-level surface, the active pointer is now `20260422 / 202` cases, while the April 19 formal rerun still reflects the then-active `20260416 / 203`-case package
+  - for the current local/user-level surface, the active pointer is now `20260614_source_norm_v1_2 / 202` cases, while the April 19 formal rerun still reflects the then-active `20260416 / 203`-case package
 - Older excerpt-surface freezes and their judged reports should remain readable as historical evidence, but they should be labeled `historical` / `superseded` once the active pointer moves.
 - The durable long-span run evidence from bounded accumulation benchmark v1 remains historical mechanism evidence rather than active methodology authority.
   - preserve:

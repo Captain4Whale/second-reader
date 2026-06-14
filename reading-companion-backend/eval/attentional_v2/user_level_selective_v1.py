@@ -27,12 +27,12 @@ from src.reading_runtime.provisioning import ensure_canonical_parse
 
 MANIFEST_ID = "attentional_v2_user_level_selective_v1_draft"
 MANIFEST_PATH = ROOT / "eval" / "manifests" / "splits" / f"{MANIFEST_ID}.json"
-DATASET_ID = "attentional_v2_user_level_selective_v1_repaired_20260422"
+DATASET_ID = "attentional_v2_user_level_selective_v1_repaired_20260614_source_norm_v1_2"
 DATASET_DIR = ROOT / "state" / "eval_local_datasets" / "user_level_benchmarks" / DATASET_ID
 SEGMENTS_FILE = "segments.jsonl"
 NOTE_CASES_FILE = "note_cases.jsonl"
 SEGMENT_SOURCE_DIRNAME = "segment_sources"
-DEFAULT_VERSION = "2026-04-22"
+DEFAULT_VERSION = "2026-06-14-source-normalization-v1.2"
 DEFAULT_TARGET_NOTE_COUNT = 20
 DEFAULT_HARD_SENTENCE_CAP = 350
 DEFAULT_CANDIDATE_VALIDATION_REPORT_JSON = "candidate_validation_report.json"

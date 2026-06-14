@@ -20,11 +20,11 @@
       "metric_family": "user_level_selective_legibility",
       "metric_summary": "Note recall over aligned human notes with strict source-span overlap.",
       "active_dataset_pointer": {
-        "dataset_id": "attentional_v2_user_level_selective_v1_repaired_20260422",
-        "workspace_path": "reading-companion-backend/state/eval_local_datasets/user_level_benchmarks/attentional_v2_user_level_selective_v1_repaired_20260422/manifest.json",
+        "dataset_id": "attentional_v2_user_level_selective_v1_repaired_20260614_source_norm_v1_2",
+        "workspace_path": "reading-companion-backend/state/eval_local_datasets/user_level_benchmarks/attentional_v2_user_level_selective_v1_repaired_20260614_source_norm_v1_2/manifest.json",
         "path_status": "local_only",
         "role": "current_active_dataset_pointer",
-        "note": "This is the current active dataset pointer with 202 note cases."
+        "note": "This is the current active dataset pointer with 202 note cases, promoted after the Source Normalization v1.2 deterministic-only rebuild."
       },
       "current_formal_evidence": {
         "run_id": "attentional_v2_user_level_selective_v1_active_rerun_20260419",

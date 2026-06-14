@@ -3563,3 +3563,28 @@ This new direction is design frozen but not yet implemented as a formal benchmar
 - `reading-companion-backend/tests/test_iterator_parse.py`
 - `reading-companion-backend/tests/test_reading_core_sentences.py`
 - `reading-companion-backend/tests/test_attentional_v2_source_spans.py`
+
+## Entry 123
+**ID**: DEC-126
+**Status**: active
+
+**Decision / Inflection**: Promote the source-normalized deterministic v1.2 user-level selective dataset package as the active local/user-level pointer.
+
+**Period**: June 14, 2026, after the source-normalized candidate rebuild preserved all user-level note cases while removing structurally marked Siddhartha footnotes from the active source window.
+
+**Decision**: The active `user-level selective v1` split manifest now points to `attentional_v2_user_level_selective_v1_repaired_20260614_source_norm_v1_2`. The package keeps `5` reading segments and `202` note cases, was rebuilt from fresh isolated Source Normalization v1.2 deterministic-only parses, and preserves non-empty `source_span_slices` for every note case. Relative to the previous active `20260422` package, `source_span_text` remains stable while paragraph indexes may move after auxiliary / duplicate source records are removed. In `xidaduo_private_zh__segment_1`, structural footnote definitions such as `Brahmanen`, `Magadha`, `[2]Vishnus`, and `[3]Lakschmi` are removed from the active source window; body note references remain visible. The malformed orphan residue `1《爱经》...` remains body-visible under the conservative deterministic policy.
+
+**Boundary**: This promotes the local dataset pointer and default dataset builder target only. It does not mutate historical dataset packages, historical eval runs, the evidence catalog, or the April 19 formal rerun result, which still reflects `attentional_v2_user_level_selective_v1_repaired_20260416`. It does not change Ingest, Digest, Unit Memory, frontend/public APIs, or source-coordinate contracts.
+
+**Why this path won**: The source-normalized candidate fixed the concrete Siddhartha footnote-window pollution that motivated the rebuild while keeping the benchmark's scoring surface stable: all note cases remain, source-span text remains unchanged, and the previous active package remains available as a comparison baseline. Promoting a new active pointer preserves historical evidence integrity better than rewriting the old package in place.
+
+**Primary evidence**:
+- `reading-companion-backend/eval/manifests/splits/attentional_v2_user_level_selective_v1_draft.json`
+- `reading-companion-backend/eval/attentional_v2/user_level_selective_v1.py`
+- `reading-companion-backend/state/eval_local_datasets/user_level_benchmarks/attentional_v2_user_level_selective_v1_repaired_20260614_source_norm_v1_2/manifest.json`
+- `reading-companion-backend/state/eval_local_datasets/user_level_benchmarks/attentional_v2_user_level_selective_v1_repaired_20260614_source_norm_v1_2/candidate_validation_report.md`
+- `reading-companion-backend/state/eval_local_datasets/user_level_benchmarks/attentional_v2_user_level_selective_v1_repaired_20260614_source_norm_v1_2/source_normalized_window_review_against_20260422.md`
+- `reading-companion-backend/docs/evaluation/user_level/README.md`
+- `docs/backend-reader-evaluation.md`
+- `docs/current-state.md`
+- `docs/tasks/registry.md`

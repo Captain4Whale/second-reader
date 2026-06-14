@@ -7,7 +7,7 @@ Update when: task status, priority, blockers, decision refs, job refs, evidence 
 
 This document is the human-readable companion to `docs/tasks/registry.json`.
 
-Last updated: `2026-06-14T15:06:15+08:00`
+Last updated: `2026-06-14T16:19:58+08:00`
 
 ## Status Values
 - `active`
@@ -25,7 +25,7 @@ Last updated: `2026-06-14T15:06:15+08:00`
 - Lane: `mechanism_runtime`
 - Priority: `high`
 - Detail: `docs/current-state.md`
-- Next: Five-window Long Span vNext judged diagnostic remains review_pending in the run ledger, and Unit Memory retrieval repair now has diagnostic proof for both text_only and live hybrid mechanics. Current live Ingest prompt `attentional_v2.ingest.v16` / promptset `attentional_v2-phase6-v66` uses the reviewed bounded-lookahead window-partition selector plus the live `preview_partition[]` audit map: final output returns `unit.end_paragraph_n` / `unit.end_at`, `preview_partition[]`, optional first-unit boundary `reason`, and bounded `memory_recalls[]`; `preview_partition[0]` must match `unit`, while later entries are compact future-source planning/audit metadata only. Runtime now builds the visible Ingest preview with token-bounded, paragraph-aligned assembly: `preview_soft_min_tokens=1600`, `preview_target_max_tokens=3000`, `preview_hard_max_tokens=4200`, `emergency_max_preview_paragraphs=200`, and old char-budget / paragraph-count snapshots ignored as normal stopping rules. Runtime derives `preview_partition_audit[]` in `UnitizeDecision`, `unitization_audit.jsonl`, and compact ingest traces where partition boundaries resolve; later unresolved or non-advancing partitions mark audit partial and do not affect the accepted Digest unit. `retrieve_unit_memory` remains the only live action tool, keeps its prior input schema and recall matching semantics, and does not require `preview_partition[]` during tool preflight. `DEC-116` records why bounded lookahead improves first-unit selection, `DEC-117` records the live preview-partition audit contract, `DEC-118` records the paragraph-count to character-bound repair, `DEC-120` records the live token-bounded preview plus v16 output-discipline change, `DEC-121` records the larger v16 preview-capacity calibration, `DEC-122` records Source Normalization as the upstream design for keeping footnotes/noise out of Ingest without allowing model-emitted skip behavior, `DEC-123` records the live v1 implementation for newly parsed books, `DEC-124` records the markup-aware v1.1 guardrails for explicit note markup and blockquote/poetry正文 protection, and `DEC-125` records deterministic-only v1.2: default parse no longer calls the whole-book LLM classifier, only strong structural apparatus evidence may set `text_role=auxiliary`, inline note references stay mainline, and malformed orphan-note candidates are audit-only. The 10-book Source Normalization v1.1 validation job was manually stopped after partial review exposed unacceptable false-positive risk from broad LLM source-flow classification; no formal A/B rerun or historical report-package regeneration has been done for v16 / DEC-125. Next action: use deterministic-only v1.2 for new parses and design a review report for suspicious orphan-note candidates before considering any broader cleanup.
+- Next: Five-window Long Span vNext judged diagnostic remains review_pending in the run ledger, and Unit Memory retrieval repair now has diagnostic proof for both text_only and live hybrid mechanics. Current live Ingest prompt `attentional_v2.ingest.v16` / promptset `attentional_v2-phase6-v66` uses the reviewed bounded-lookahead window-partition selector plus the live `preview_partition[]` audit map: final output returns `unit.end_paragraph_n` / `unit.end_at`, `preview_partition[]`, optional first-unit boundary `reason`, and bounded `memory_recalls[]`; `preview_partition[0]` must match `unit`, while later entries are compact future-source planning/audit metadata only. Runtime now builds the visible Ingest preview with token-bounded, paragraph-aligned assembly: `preview_soft_min_tokens=1600`, `preview_target_max_tokens=3000`, `preview_hard_max_tokens=4200`, `emergency_max_preview_paragraphs=200`, and old char-budget / paragraph-count snapshots ignored as normal stopping rules. Runtime derives `preview_partition_audit[]` in `UnitizeDecision`, `unitization_audit.jsonl`, and compact ingest traces where partition boundaries resolve; later unresolved or non-advancing partitions mark audit partial and do not affect the accepted Digest unit. `retrieve_unit_memory` remains the only live action tool, keeps its prior input schema and recall matching semantics, and does not require `preview_partition[]` during tool preflight. `DEC-116` records why bounded lookahead improves first-unit selection, `DEC-117` records the live preview-partition audit contract, `DEC-118` records the paragraph-count to character-bound repair, `DEC-120` records the live token-bounded preview plus v16 output-discipline change, `DEC-121` records the larger v16 preview-capacity calibration, `DEC-122` records Source Normalization as the upstream design for keeping footnotes/noise out of Ingest without allowing model-emitted skip behavior, `DEC-123` records the live v1 implementation for newly parsed books, `DEC-124` records the markup-aware v1.1 guardrails for explicit note markup and blockquote/poetry正文 protection, and `DEC-125` records deterministic-only v1.2: default parse no longer calls the whole-book LLM classifier, only strong structural apparatus evidence may set `text_role=auxiliary`, inline note references stay mainline, and malformed orphan-note candidates are audit-only. The larger-preview focused Siddhartha probe `bgjob_ingest_live_v16_token_preview_larger_to_old_unit13_20260613` failed at unit 7 with `llm_contract` after provider calls returned ok; the failure was final `memory_recalls` language/tool-call mismatch, not network/quota/provider instability. The 10-book Source Normalization v1.1 validation job was manually stopped after partial review exposed unacceptable false-positive risk from broad LLM source-flow classification; no formal A/B rerun or historical report-package regeneration has been done for v16 / DEC-125. Next action: use deterministic-only v1.2 for new parses and design a review report for suspicious orphan-note candidates before considering any broader cleanup.
 - Jobs:
   - `bgjob_ingest_digest_unit_memory_full_diagnostic_20260603_parallel5`
   - `bgjob_unit_memory_text_only_smoke_value_20260606`
@@ -489,13 +489,21 @@ Last updated: `2026-06-14T15:06:15+08:00`
     - `reading-companion-backend/eval/manifests/splits/attentional_v2_user_level_selective_v1_draft.json`
   - active dataset package truth:
     - dataset root:
-      - `reading-companion-backend/state/eval_local_datasets/user_level_benchmarks/attentional_v2_user_level_selective_v1_repaired_20260422`
+      - `reading-companion-backend/state/eval_local_datasets/user_level_benchmarks/attentional_v2_user_level_selective_v1_repaired_20260614_source_norm_v1_2`
     - `5` reading segments
     - `202` note cases
+    - current active source substrate was rebuilt from fresh isolated parses with Source Normalization v1.2 deterministic-only metadata
+    - the June 14 source-normalized rebuild preserves every note case and non-empty `source_span_slices`; source-span text remains unchanged relative to the previous active package even when paragraph indexes moved
+    - `xidaduo_private_zh__segment_1` no longer contains structural footnote definitions such as `Brahmanen`, `Magadha`, `[2]Vishnus`, and `[3]Lakschmi`, while body note references remain visible
+    - conservative orphan residue `1《爱经》...` remains body-visible and tracked as follow-up residue rather than excluded without structural proof
     - reading segments start at the first real body unit rather than the absolute beginning of the source file
     - front matter such as disclaimers, recommendation / preface material, book-about-book notes, timeline pages, and part/chapter stubs is skipped before segment construction
     - `nawaer_baodian_private_zh` now uses a benchmark-local body-start override at `c13`, with the active window repaired to `c13-s1 -> c13-s168` and the old preface-side case `e0056` removed
     - every note case now has `segment_source_v1` char-span slices; this is the strict matching coordinate for `Selective Legibility`
+  - superseded previous active package:
+    - `reading-companion-backend/state/eval_local_datasets/user_level_benchmarks/attentional_v2_user_level_selective_v1_repaired_20260422`
+    - `5` reading segments
+    - `202` note cases
   - superseded prior repaired package:
     - `reading-companion-backend/state/eval_local_datasets/user_level_benchmarks/attentional_v2_user_level_selective_v1_repaired_20260416`
     - `5` reading segments
@@ -522,7 +530,7 @@ Last updated: `2026-06-14T15:06:15+08:00`
       - `iterator_v1 note_recall = 0.1232`
     - evidence boundary:
       - this formal rerun still used the then-active prior repaired package `attentional_v2_user_level_selective_v1_repaired_20260416`
-      - the current active pointer has since moved to `attentional_v2_user_level_selective_v1_repaired_20260422` with `202` note cases
+      - the current active pointer has since moved to `attentional_v2_user_level_selective_v1_repaired_20260614_source_norm_v1_2` with `202` note cases
     - April 21 repair note:
       - a shard-filtered recovery command had overwritten the root summary with a partial one-shard aggregate
       - the root summary/report are now regenerated from all completed shards

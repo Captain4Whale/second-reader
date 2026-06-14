@@ -22,7 +22,7 @@
     ],
     "notes_catalog": "state/dataset_build/library_notes_catalog.json",
     "user_level_dataset_roots": [
-      "state/eval_local_datasets/user_level_benchmarks/attentional_v2_user_level_selective_v1_repaired_20260422"
+      "state/eval_local_datasets/user_level_benchmarks/attentional_v2_user_level_selective_v1_repaired_20260614_source_norm_v1_2"
     ]
   },
   "selected_segments": [

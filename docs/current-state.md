@@ -7,7 +7,7 @@ Update when: the current objective, active tasks, blockers, active jobs, open de
 
 This file is authoritative for durable current status. Do not keep unique active-state information only in `docs/agent-handoff.md`.
 
-Last verified: `2026-06-14T15:06:15+08:00`
+Last verified: `2026-06-14T16:19:58+08:00`
 
 ## Current Objective
 - The `Ingest -> Digest -> Reading Runner settlement` mechanism reframe is implemented; current work is fact alignment, smoke/diagnostic review, and calibration before any formal evaluation promotion.
@@ -43,6 +43,7 @@ Last verified: `2026-06-14T15:06:15+08:00`
     - `DEC-123` implements Source Normalization v1 for newly created parsed-book documents: parse extracts lightweight HTML/EPUB evidence, runs a whole-book LLM source-flow classifier in bounded chunks, conservatively applies only high-confidence auxiliary/reference/noise/front-back/caption-support labels with structural evidence to the coarse `text_role == "auxiliary"` gate, persists `source_normalization` paragraph metadata, rebuilds sentences, writes parse diagnostics, and degrades to deterministic roles if the classifier fails; existing parsed artifacts are not auto-migrated
     - `DEC-124` upgrades Source Normalization to markup-aware v1.1 for newly parsed books: paragraph records now retain ancestor container and inline-anchor metadata, pure parent containers such as `blockquote > p` aggregates no longer duplicate child正文, deterministic markup evidence can exclude explicit footnote/endnote/note-definition records even when LLM confidence is malformed, and blockquote/poem/verse/letter正文 is protected from unbacked `layout_noise` labels
     - `DEC-125` switches live Source Normalization to deterministic-only v1.2 for new parses: default import no longer calls a whole-book LLM classifier, only strong structural evidence such as explicit footnote/endnote/reference containers or note-definition anchors can change `text_role` to `auxiliary`, inline note references remain mainline, malformed orphan-note candidates are audit-only, and uncertain cases preserve正文
+    - `DEC-126` promotes the source-normalized deterministic v1.2 user-level selective dataset package as the active local/user-level pointer: the active split manifest now points to `attentional_v2_user_level_selective_v1_repaired_20260614_source_norm_v1_2`, with `5` segments and `202` note cases preserved; historical formal evidence remains attached to its original dataset packages
     - current `llm_calls.ingest(...)` is the forward-only XML LLM boundary call: `unit.end_paragraph_n`, `unit.end_at`, `preview_partition[]`, optional boundary-rationale `reason`, and bounded `memory_recalls[]`
     - current LLM-call code now lives in `reading-companion-backend/src/attentional_v2/llm_calls.py`; the old ambiguous active module name is removed
     - current `attentional_v2` LLM calls keep project schemas/tools protocol-neutral; Anthropic-compatible profiles submit structured results through mechanism-private final-output tools such as `submit_ingest_result` and `submit_digest_result`, while OpenAI-compatible JSON-object profiles use JSON object plus validator/repair for Ingest/Digest final output; `retrieve_unit_memory` remains the only live action tool and is left to model `auto` choice; OpenAI-compatible DeepSeek/OpenCode JSON-object calls do not force final-output `tool_choice`
@@ -82,6 +83,15 @@ Last verified: `2026-06-14T15:06:15+08:00`
     - run dir: `reading-companion-backend/state/source_normalization_probe/source_normalization_v1_1_multibook_validation_20260613`
     - runner: `reading-companion-backend/scripts/run_source_normalization_v1_1_multibook_validation.py`
     - outcome: the partial multi-book review exposed unacceptable false-positive risk from LLM-backed source-flow classification, especially confusing inline note references with note definitions; current live direction is deterministic-only v1.2, not broad LLM source cleaning
+  - focused Ingest v16 larger-preview probe:
+    - run id: `ingest_live_v16_token_preview_larger_to_old_unit13_20260613`
+    - job id: `bgjob_ingest_live_v16_token_preview_larger_to_old_unit13_20260613`
+    - status: `failed`
+    - stop reason: `llm_contract`
+    - failure point: `xidaduo_private_zh__segment_1` unit `7`, start cursor `P26@0`
+    - failure class: provider calls returned `ok`; final Ingest JSON failed local validation because `memory_recalls[0].recall_text` did not use the current Chinese source's primary language and final `memory_recalls[]` did not match the `retrieve_unit_memory` tool-call recalls
+    - partial report: `reading-companion-backend/eval/runs/attentional_v2/ingest_live_v16_token_preview_larger_to_old_unit13_20260613/analysis/live_v16_token_preview_larger_to_old_unit13/preview_window_review/segments/xidaduo_private_zh__segment_1/live_v16_token_preview_larger_to_old_unit13_preview_units.md`
+    - interpretation: the OpenCode Go / JSON-object tool loop was operational; the observed failure is output-discipline / recall-contract fragility under the larger preview, not a network, quota, WAF, or provider-protocol failure
   - active diagnostic evaluation:
     - run id: `attentional_v2_ingest_digest_unit_memory_full_diagnostic_20260603_parallel5`
     - job id: `bgjob_ingest_digest_unit_memory_full_diagnostic_20260603_parallel5`
@@ -634,11 +644,11 @@ Last verified: `2026-06-14T15:06:15+08:00`
       - `attentional_v2_accumulation_benchmark_v2_frozen_active_rerun_20260419`
     - bounded long-span v1 remains older historical evidence:
       - `attentional_v2_accumulation_benchmark_v1_judged_rerun_20260407`
-- Keep the note-aligned `user-level selective v1` package as the active local/user-level benchmark, now promoted onto the repaired `202`-case package.
+- Keep the note-aligned `user-level selective v1` package as the active local/user-level benchmark, now promoted onto the source-normalized deterministic v1.2 `202`-case package.
   - active split manifest:
     - `reading-companion-backend/eval/manifests/splits/attentional_v2_user_level_selective_v1_draft.json`
   - active dataset package:
-    - `reading-companion-backend/state/eval_local_datasets/user_level_benchmarks/attentional_v2_user_level_selective_v1_repaired_20260422`
+    - `reading-companion-backend/state/eval_local_datasets/user_level_benchmarks/attentional_v2_user_level_selective_v1_repaired_20260614_source_norm_v1_2`
   - active runner:
     - `reading-companion-backend/eval/attentional_v2/run_user_level_selective_comparison.py`
   - active scope:
@@ -653,6 +663,12 @@ Last verified: `2026-06-14T15:06:15+08:00`
       - `nawaer_baodian_private_zh` now uses a benchmark-local body-start override at `c13` (`认识财富创造的原理`)
       - its active window is now exactly `c13-s1 -> c13-s168`
       - its old preface-side note at `c6` (`e0056`) is no longer part of the active package
+    - the active pointer moved on June 14 from the previous `20260422` package to a fresh Source Normalization v1.2 deterministic-only rebuild:
+      - all `202` note cases remain present
+      - every active note case still has non-empty `source_span_slices`
+      - source-span text is unchanged relative to the previous active package even where paragraph indexes moved
+      - `xidaduo_private_zh__segment_1` no longer includes structural footnote definitions such as `Brahmanen`, `Magadha`, `[2]Vishnus`, and `[3]Lakschmi`
+      - body note references remain visible, while the malformed orphan residue `1《爱经》...` remains body-visible by conservative deterministic policy
     - active package now contains:
       - `5` reading segments
       - `202` note cases
@@ -660,7 +676,15 @@ Last verified: `2026-06-14T15:06:15+08:00`
       - this is the source-coordinate system used for `Selective Legibility` candidate retrieval, because the mechanisms read the rendered `segment_sources/*.txt` substrate
       - original parsed-book sentence ids remain as provenance for audit, not as the primary matching coordinate
     - active audit index:
-      - `reading-companion-backend/state/eval_local_datasets/user_level_benchmarks/attentional_v2_user_level_selective_v1_repaired_20260422/audit_human_readable/index.md`
+      - `reading-companion-backend/state/eval_local_datasets/user_level_benchmarks/attentional_v2_user_level_selective_v1_repaired_20260614_source_norm_v1_2/audit_human_readable/index.md`
+    - superseded previous active package:
+      - dataset package:
+        - `reading-companion-backend/state/eval_local_datasets/user_level_benchmarks/attentional_v2_user_level_selective_v1_repaired_20260422`
+      - package truth:
+        - `5` reading segments
+        - `202` note cases
+      - status:
+        - `superseded by source-normalized deterministic v1.2 package`
     - superseded prior repaired package:
       - dataset package:
         - `reading-companion-backend/state/eval_local_datasets/user_level_benchmarks/attentional_v2_user_level_selective_v1_repaired_20260416`
@@ -744,7 +768,7 @@ Last verified: `2026-06-14T15:06:15+08:00`
         - `iterator_v1 note_recall = 0.1232`
       - current pointer boundary:
         - the formal April 19 evidence still reflects `attentional_v2_user_level_selective_v1_repaired_20260416`
-        - the active local/user-level pointer has since moved to `attentional_v2_user_level_selective_v1_repaired_20260422` with `202` note cases
+        - the active local/user-level pointer has since moved to `attentional_v2_user_level_selective_v1_repaired_20260614_source_norm_v1_2` with `202` note cases
       - parent report:
         - `reading-companion-backend/eval/runs/attentional_v2/attentional_v2_active_benchmark_rerun_20260419/summary/report.md`
       - excerpt report:
