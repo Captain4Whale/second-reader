@@ -1,6 +1,6 @@
 {
   "schema_version": 1,
-  "updated_at": "2026-06-06T23:51:56.697580Z",
+  "updated_at": "2026-06-14T09:03:35.978485Z",
   "entries": [
     {
       "run_id": "attentional_v2_excerpt_surface_v1_1_judged_20260406",
@@ -2769,6 +2769,37 @@
       "local_missing_allowed": [],
       "metadata": {},
       "updated_at": "2026-06-06T10:21:26.416312Z"
+    },
+    {
+      "run_id": "ingest_live_v17_source_norm_token_preview_to_chapter1_20260614",
+      "date": "2026-06-14",
+      "surface": "ingest_live_focus_probe",
+      "lane": "mechanism_runtime",
+      "status": "running",
+      "mechanisms": [
+        "attentional_v2"
+      ],
+      "dataset_or_manifest": [
+        "state/eval_local_datasets/user_level_benchmarks/attentional_v2_user_level_selective_v1_repaired_20260614_source_norm_v1_2"
+      ],
+      "run_dir": "reading-companion-backend/eval/runs/attentional_v2/ingest_live_v17_source_norm_token_preview_to_chapter1_20260614",
+      "summary_paths": {},
+      "job_ids": [
+        "bgjob_ingest_live_v17_source_norm_token_preview_to_chapter1_20260614"
+      ],
+      "report_paths": [
+        "reading-companion-backend/eval/runs/attentional_v2/ingest_live_v17_source_norm_token_preview_to_chapter1_20260614/analysis/live_v17_source_norm_token_preview_to_chapter1/preview_window_review/segments/xidaduo_private_zh__segment_1/live_v17_source_norm_token_preview_to_chapter1_preview_units.md"
+      ],
+      "catalog_status": "not_cataloged",
+      "notes": "Running diagnostic-only live Ingest v17 source-normalized dataset-window focused probe on xidaduo_private_zh__segment_1 through P57@2. Uses active source-normalized v1.2 user-level selective dataset window and current token preview policy 1600/3000/4200. Foreground smoke passed with v17/v67 and provider ok; first unit ended P3@277. No Digest, judge, evidence catalog update, or product-quality claim.",
+      "parent_run_id": "",
+      "child_run_ids": [],
+      "synthetic": false,
+      "local_missing_allowed": [
+        "reading-companion-backend/eval/runs/attentional_v2/ingest_live_v17_source_norm_token_preview_to_chapter1_20260614/analysis/live_v17_source_norm_token_preview_to_chapter1/preview_window_review/segments/xidaduo_private_zh__segment_1/live_v17_source_norm_token_preview_to_chapter1_preview_units.md"
+      ],
+      "metadata": {},
+      "updated_at": "2026-06-14T09:03:35.976438Z"
     }
   ]
 }

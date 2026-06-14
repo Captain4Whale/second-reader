@@ -32,6 +32,13 @@ DEFAULT_SEGMENT_ID = "xidaduo_private_zh__segment_1"
 DEFAULT_PROFILE_ID = "dataset_review_high_trust"
 DEFAULT_STOP_PARAGRAPH = 57
 DEFAULT_STOP_CHAR_OFFSET = 11
+DEFAULT_DATASET_ROOT = (
+    BACKEND_ROOT
+    / "state"
+    / "eval_local_datasets"
+    / "user_level_benchmarks"
+    / "attentional_v2_user_level_selective_v1_repaired_20260614_source_norm_v1_2"
+)
 
 
 def _load_backend_env() -> None:
@@ -93,6 +100,11 @@ def _json_load(path: Path) -> dict[str, Any]:
     return json.loads(path.read_text(encoding="utf-8"))
 
 
+def _resolve_backend_path(value: str | os.PathLike[str]) -> Path:
+    path = Path(value)
+    return path if path.is_absolute() else BACKEND_ROOT / path
+
+
 def _json_dump(path: Path, value: object) -> None:
     path.parent.mkdir(parents=True, exist_ok=True)
     path.write_text(json.dumps(value, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
@@ -144,6 +156,83 @@ def _load_segment(source_run_id: str, segment_id: str) -> dict[str, object]:
         "manifest": manifest,
         "chapter": chapters[0],
     }
+
+
+def _load_dataset_segment(dataset_root: Path, segment_id: str) -> dict[str, object]:
+    segments_path = dataset_root / "segments.jsonl"
+    segment_row: dict[str, object] | None = None
+    for raw_line in segments_path.read_text(encoding="utf-8").splitlines():
+        if not raw_line.strip():
+            continue
+        row = json.loads(raw_line)
+        if isinstance(row, dict) and _clean_text(row.get("segment_id")) == segment_id:
+            segment_row = row
+            break
+    if segment_row is None:
+        raise RuntimeError(f"Dataset segment not found: {segment_id} in {segments_path}")
+
+    source_rel = _clean_text(segment_row.get("segment_source_path"))
+    if not source_rel:
+        raise RuntimeError(f"Dataset segment has no segment_source_path: {segment_id}")
+    source_path = dataset_root / source_rel
+    source_text = source_path.read_text(encoding="utf-8")
+    raw_paragraphs = [item.strip() for item in re.split(r"\n\s*\n+", source_text) if item.strip()]
+    if not raw_paragraphs:
+        raise RuntimeError(f"Dataset segment has no readable paragraphs: {source_path}")
+
+    title_set = {
+        _clean_text(item)
+        for item in segment_row.get("chapter_titles", [])
+        if _clean_text(item)
+    } if isinstance(segment_row.get("chapter_titles"), list) else set()
+    paragraphs = []
+    for index, text in enumerate(raw_paragraphs, start=1):
+        role = "chapter_heading" if _clean_text(text) in title_set else "body"
+        paragraphs.append(
+            {
+                "paragraph_index": index,
+                "text": text,
+                "text_role": role,
+            }
+        )
+
+    chapter_title = " / ".join(str(item) for item in segment_row.get("chapter_titles", []) if str(item).strip()) if isinstance(segment_row.get("chapter_titles"), list) else segment_id
+    language_track = _clean_text(segment_row.get("language_track")) or "zh"
+    return {
+        "segment_id": segment_id,
+        "book_title": _clean_text(segment_row.get("book_title")) or segment_id,
+        "author": _clean_text(segment_row.get("author")) or "Unknown",
+        "output_language": "en" if language_track == "en" else "zh",
+        "input_mode": "dataset-segment",
+        "dataset_root": str(dataset_root),
+        "segment_source_path": str(source_path),
+        "manifest": {
+            "book": _clean_text(segment_row.get("book_title")) or segment_id,
+            "author": _clean_text(segment_row.get("author")) or "Unknown",
+            "dataset_root": str(dataset_root),
+            "segment_source_path": str(source_path),
+        },
+        "chapter": {
+            "id": 1,
+            "ref": f"dataset_segment:{segment_id}",
+            "title": chapter_title or segment_id,
+            "paragraphs": paragraphs,
+        },
+    }
+
+
+def _load_probe_segment(args: argparse.Namespace) -> dict[str, object]:
+    if args.input_mode == "dataset-segment":
+        return _load_dataset_segment(_resolve_backend_path(args.dataset_root), args.segment_id)
+    return _load_segment(args.source_run_id, args.segment_id)
+
+
+def _load_segment_from_sequence(sequence: Mapping[str, object]) -> dict[str, object]:
+    input_mode = _clean_text(sequence.get("input_mode")) or "source-run"
+    segment_id = _clean_text(sequence.get("segment_id"))
+    if input_mode == "dataset-segment":
+        return _load_dataset_segment(_resolve_backend_path(_clean_text(sequence.get("dataset_root"))), segment_id)
+    return _load_segment(_clean_text(sequence.get("source_run_id")), segment_id)
 
 
 def _cursor_str(cursor: Mapping[str, object] | None) -> str:
@@ -304,7 +393,7 @@ def _run_one_unit(
             reaction_records=state["reaction_records"],  # type: ignore[arg-type]
             local_continuity=state["local_continuity"],  # type: ignore[arg-type]
             reader_policy=reader_policy,
-            output_language="zh",
+            output_language=_clean_text(segment.get("output_language")) or "zh",
             output_dir=analysis_root,
             book_title=_clean_text(segment.get("book_title")),
             author=_clean_text(segment.get("author")),
@@ -376,7 +465,7 @@ def _error_result(
 
 def _run_sequence(args: argparse.Namespace) -> dict[str, object]:
     analysis_root = _run_root(args.run_id, args.analysis_id)
-    segment = _load_segment(args.source_run_id, args.segment_id)
+    segment = _load_probe_segment(args)
     chapter = dict(segment["chapter"]) if isinstance(segment.get("chapter"), Mapping) else {}
     target = _target_cursor(chapter, args.stop_paragraph, args.stop_char_offset)
     cursor = first_cursor_for_chapter(chapter)
@@ -456,7 +545,10 @@ def _run_sequence(args: argparse.Namespace) -> dict[str, object]:
         "run_id": args.run_id,
         "analysis_id": args.analysis_id,
         "job_id": args.job_id,
+        "input_mode": args.input_mode,
         "source_run_id": args.source_run_id,
+        "dataset_root": str(_resolve_backend_path(args.dataset_root)) if args.input_mode == "dataset-segment" else "",
+        "segment_source_path": _clean_text(segment.get("segment_source_path")),
         "segment_id": args.segment_id,
         "book_title": segment.get("book_title"),
         "author": segment.get("author"),
@@ -612,14 +704,17 @@ def _write_report(sequence: Mapping[str, object], analysis_root: Path) -> Path:
     report_dir = analysis_root / "preview_window_review" / "segments" / segment_id
     report_dir.mkdir(parents=True, exist_ok=True)
     report_path = report_dir / f"{sequence.get('analysis_id')}_preview_units.md"
-    segment = _load_segment(_clean_text(sequence.get("source_run_id")), segment_id)
+    segment = _load_segment_from_sequence(sequence)
     chapter = dict(segment["chapter"]) if isinstance(segment.get("chapter"), Mapping) else {}
     units = [dict(item) for item in sequence.get("units", []) if isinstance(item, Mapping)] if isinstance(sequence.get("units"), list) else []
     lines = [
         f"# {segment_id} - {sequence.get('analysis_id')} - Preview Window Review",
         "",
         f"- run_id: `{sequence.get('run_id')}`",
+        f"- input_mode: `{sequence.get('input_mode')}`",
         f"- source_run_id: `{sequence.get('source_run_id')}`",
+        f"- dataset_root: `{sequence.get('dataset_root')}`",
+        f"- segment_source_path: `{sequence.get('segment_source_path')}`",
         f"- profile_id: `{sequence.get('profile_id')}`",
         f"- complete: `{sequence.get('complete')}`",
         f"- stop_reason: `{sequence.get('stop_reason')}`",
@@ -724,6 +819,8 @@ def build_parser() -> argparse.ArgumentParser:
     parser.add_argument("--analysis-id", default=DEFAULT_ANALYSIS_ID)
     parser.add_argument("--job-id", default=DEFAULT_JOB_ID)
     parser.add_argument("--source-run-id", default=DEFAULT_SOURCE_RUN_ID)
+    parser.add_argument("--input-mode", choices=["source-run", "dataset-segment"], default="source-run")
+    parser.add_argument("--dataset-root", default=str(DEFAULT_DATASET_ROOT.relative_to(BACKEND_ROOT)))
     parser.add_argument("--segment-id", default=DEFAULT_SEGMENT_ID)
     parser.add_argument("--profile-id", default=DEFAULT_PROFILE_ID)
     parser.add_argument("--run-mode", choices=["smoke", "full"], default="full")

@@ -93,6 +93,13 @@ Last verified: `2026-06-14T16:45:38+08:00`
     - failure class: provider calls returned `ok`; final Ingest JSON failed local validation because `memory_recalls[0].recall_text` did not use the current Chinese source's primary language and final `memory_recalls[]` did not match the `retrieve_unit_memory` tool-call recalls
     - partial report: `reading-companion-backend/eval/runs/attentional_v2/ingest_live_v16_token_preview_larger_to_old_unit13_20260613/analysis/live_v16_token_preview_larger_to_old_unit13/preview_window_review/segments/xidaduo_private_zh__segment_1/live_v16_token_preview_larger_to_old_unit13_preview_units.md`
     - interpretation: the OpenCode Go / JSON-object tool loop was operational; the observed failure is output-discipline / recall-contract fragility under the larger preview, not a network, quota, WAF, or provider-protocol failure
+  - focused Ingest v17 source-normalized dataset-window probe:
+    - run id: `ingest_live_v17_source_norm_token_preview_to_chapter1_20260614`
+    - job id: `bgjob_ingest_live_v17_source_norm_token_preview_to_chapter1_20260614`
+    - status: `running`
+    - scope: local diagnostic-only live Ingest report on active source-normalized v1.2 `xidaduo_private_zh__segment_1`, using the current `1600 / 3000 / 4200` token-bounded preview policy, stopping at dataset-window cursor `P57@2`
+    - foreground smoke: completed with `attentional_v2.ingest.v17` / `attentional_v2-phase6-v67`, provider `ok`, first selected unit `P1@0 -> P3@277`, preview estimate `2889` tokens, and `memory_recalls_status=not_requested`
+    - expected report: `reading-companion-backend/eval/runs/attentional_v2/ingest_live_v17_source_norm_token_preview_to_chapter1_20260614/analysis/live_v17_source_norm_token_preview_to_chapter1/preview_window_review/segments/xidaduo_private_zh__segment_1/live_v17_source_norm_token_preview_to_chapter1_preview_units.md`
   - active diagnostic evaluation:
     - run id: `attentional_v2_ingest_digest_unit_memory_full_diagnostic_20260603_parallel5`
     - job id: `bgjob_ingest_digest_unit_memory_full_diagnostic_20260603_parallel5`
