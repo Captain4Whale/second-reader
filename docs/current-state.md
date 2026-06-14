@@ -7,7 +7,7 @@ Update when: the current objective, active tasks, blockers, active jobs, open de
 
 This file is authoritative for durable current status. Do not keep unique active-state information only in `docs/agent-handoff.md`.
 
-Last verified: `2026-06-14T16:45:38+08:00`
+Last verified: `2026-06-14T17:25:00+08:00`
 
 ## Current Objective
 - The `Ingest -> Digest -> Reading Runner settlement` mechanism reframe is implemented; current work is fact alignment, smoke/diagnostic review, and calibration before any formal evaluation promotion.
@@ -54,7 +54,7 @@ Last verified: `2026-06-14T16:45:38+08:00`
     - `Ingest` uses `ReaderRole`, `Instruction`, `BookInfo`, `CurrentView`, empty `RetrievalSurface`, and `OutputContract`; it may express up to three prior-reading recalls only by calling `retrieve_unit_memory`, while actual retrieval execution and prompt-facing memory selection remain Reading Runner runtime work
     - Ingest prompt `attentional_v2.ingest.v17` / promptset `attentional_v2-phase6-v67` keeps the reviewed window-partition selector plus preview-partition audit map, and tightens recall ownership: final output no longer includes `memory_recalls[]`; only `unit` / `preview_partition[0]` receives the optional top-level boundary `reason`; later `preview_partition[]` entries must stay to compact titles, boundaries, and status
     - `preview_partition[0]` must match `unit`; later `preview_partition[]` entries are future-source audit/planning metadata and do not affect Digest input, Unit Memory retrieval, Recent Reading Memory, or public API payloads
-    - Ingest tool-loop validation now treats `retrieve_unit_memory` action-tool args as the only recall authority: tool preflight enforces visible unit boundary, same-language recall text, and `basis == selected_source_unit`; final output validation ignores legacy final `memory_recalls[]` echoes and only checks boundary / preview-partition plus tool-result contract violations. Structured-output / LLM failures propagate as explicit LLM problem codes such as `llm_contract` instead of being normalized into an empty boundary; runtime does not broadly auto-absorb opening punctuation or next-unit markers
+    - Ingest tool-loop validation now treats `retrieve_unit_memory` action-tool args as the only recall authority: non-empty tool calls enforce visible unit boundary, same-language recall text, and `basis == selected_source_unit`; empty optional recall tool calls are treated as no-op / not-requested events; final output validation ignores legacy final `memory_recalls[]` echoes and only checks boundary / preview-partition plus tool-result contract violations. Structured-output / LLM failures propagate as explicit LLM problem codes such as `llm_contract` instead of being normalized into an empty boundary; runtime does not broadly auto-absorb opening punctuation or next-unit markers
     - Digest semantic refactor is implemented: model-facing `understanding / response / annotations` are three peer outputs, with one holistic `understanding` string per unit mapped into `recent_reading_memory`
     - Digest Understanding prompt `attentional_v2.digest.v9` now frames `understanding` as concise source-established content from the current source text, with light section headings, text-type compression guidance, grammatical-subject guidance, source-established-content calibration, subject-continuity rules, and approved examples to avoid unit/commentary-shaped, passage-effect, source-copying, floating-pronoun memory text, or content-type classification; the active promptset bundle is `attentional_v2-phase6-v67`
     - subject-continuity / standalone Understanding follow-up remains implemented in Digest prompt `attentional_v2.digest.v9`: prior Understanding in `ReadingMemory` carries narrator / speaker / actor / concept continuity; Digest establishes new subjects, continues known subjects when supported, or explicitly preserves meaningful ambiguity without adding raw prior-source backfill, Ingest reference-resolution fields, or a durable referent store
@@ -96,10 +96,17 @@ Last verified: `2026-06-14T16:45:38+08:00`
   - focused Ingest v17 source-normalized dataset-window probe:
     - run id: `ingest_live_v17_source_norm_token_preview_to_chapter1_20260614`
     - job id: `bgjob_ingest_live_v17_source_norm_token_preview_to_chapter1_20260614`
-    - status: `running`
+    - status: `failed`
     - scope: local diagnostic-only live Ingest report on active source-normalized v1.2 `xidaduo_private_zh__segment_1`, using the current `1600 / 3000 / 4200` token-bounded preview policy, stopping at dataset-window cursor `P57@2`
     - foreground smoke: completed with `attentional_v2.ingest.v17` / `attentional_v2-phase6-v67`, provider `ok`, first selected unit `P1@0 -> P3@277`, preview estimate `2889` tokens, and `memory_recalls_status=not_requested`
-    - expected report: `reading-companion-backend/eval/runs/attentional_v2/ingest_live_v17_source_norm_token_preview_to_chapter1_20260614/analysis/live_v17_source_norm_token_preview_to_chapter1/preview_window_review/segments/xidaduo_private_zh__segment_1/live_v17_source_norm_token_preview_to_chapter1_preview_units.md`
+    - failure: unit `2` stopped with `llm_contract` after the model made an empty `retrieve_unit_memory(memory_recalls=[])` action-tool call and runtime treated it as a fatal recall contract violation; provider calls were `ok`
+    - partial report: `reading-companion-backend/eval/runs/attentional_v2/ingest_live_v17_source_norm_token_preview_to_chapter1_20260614/analysis/live_v17_source_norm_token_preview_to_chapter1/preview_window_review/segments/xidaduo_private_zh__segment_1/live_v17_source_norm_token_preview_to_chapter1_preview_units.md`
+  - focused Ingest v17 source-normalized dataset-window probe retry:
+    - run id: `ingest_live_v17_source_norm_token_preview_to_chapter1_retry1_20260614`
+    - job id: `bgjob_ingest_live_v17_source_norm_token_preview_to_chapter1_retry1_20260614`
+    - status: `running`
+    - scope: same `xidaduo_private_zh__segment_1` source-normalized v1.2 dataset window through `P57@2`, after runtime changed empty `retrieve_unit_memory(memory_recalls=[])` calls into `empty_tool_noop` events
+    - expected report: `reading-companion-backend/eval/runs/attentional_v2/ingest_live_v17_source_norm_token_preview_to_chapter1_retry1_20260614/analysis/live_v17_source_norm_token_preview_to_chapter1_retry1/preview_window_review/segments/xidaduo_private_zh__segment_1/live_v17_source_norm_token_preview_to_chapter1_retry1_preview_units.md`
   - active diagnostic evaluation:
     - run id: `attentional_v2_ingest_digest_unit_memory_full_diagnostic_20260603_parallel5`
     - job id: `bgjob_ingest_digest_unit_memory_full_diagnostic_20260603_parallel5`

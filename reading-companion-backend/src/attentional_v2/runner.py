@@ -1670,6 +1670,15 @@ def prepare_next_source_unit_for_read(
     tool_retrieval_results: list[dict[str, object]] = []
 
     def _unit_memory_tool_handler(args: Mapping[str, object]) -> Mapping[str, object]:
+        raw_recalls = args.get("memory_recalls")
+        if raw_recalls is None or (isinstance(raw_recalls, list) and not raw_recalls):
+            return {
+                "status": "empty_tool_noop",
+                "effective_mode": _clean_text((memory_retrieval_config or {}).get("mode")) or "hybrid",
+                "retrieval_summary": {"recall_count": 0, "candidate_unit_count": 0, "selected_unit_count": 0},
+                "degradation_reason": "empty_memory_recalls_noop",
+                "tool_call_id": _clean_text(args.get("_tool_call_id")),
+            }
         preflight_errors = validate_ingest_unit_memory_tool_args(
             dict(args),
             current_source_texts=current_source_texts,

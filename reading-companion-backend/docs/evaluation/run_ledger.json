@@ -1,6 +1,6 @@
 {
   "schema_version": 1,
-  "updated_at": "2026-06-14T09:03:35.978485Z",
+  "updated_at": "2026-06-14T09:24:48.968455Z",
   "entries": [
     {
       "run_id": "attentional_v2_excerpt_surface_v1_1_judged_20260406",
@@ -2775,7 +2775,7 @@
       "date": "2026-06-14",
       "surface": "ingest_live_focus_probe",
       "lane": "mechanism_runtime",
-      "status": "running",
+      "status": "failed",
       "mechanisms": [
         "attentional_v2"
       ],
@@ -2791,15 +2791,44 @@
         "reading-companion-backend/eval/runs/attentional_v2/ingest_live_v17_source_norm_token_preview_to_chapter1_20260614/analysis/live_v17_source_norm_token_preview_to_chapter1/preview_window_review/segments/xidaduo_private_zh__segment_1/live_v17_source_norm_token_preview_to_chapter1_preview_units.md"
       ],
       "catalog_status": "not_cataloged",
-      "notes": "Running diagnostic-only live Ingest v17 source-normalized dataset-window focused probe on xidaduo_private_zh__segment_1 through P57@2. Uses active source-normalized v1.2 user-level selective dataset window and current token preview policy 1600/3000/4200. Foreground smoke passed with v17/v67 and provider ok; first unit ended P3@277. No Digest, judge, evidence catalog update, or product-quality claim.",
+      "notes": "Failed diagnostic-only live Ingest v17 source-normalized dataset-window focused probe on xidaduo_private_zh__segment_1 through P57@2. Provider calls were ok, but unit 2 failed with llm_contract because the model made an empty retrieve_unit_memory(memory_recalls=[]) action-tool call and runtime treated it as a fatal recall contract violation. This failure motivated the empty-tool-call no-op runtime repair; no Digest, judge, evidence catalog update, or product-quality claim.",
+      "parent_run_id": "",
+      "child_run_ids": [],
+      "synthetic": false,
+      "local_missing_allowed": [],
+      "metadata": {},
+      "updated_at": "2026-06-14T09:24:48.954025Z"
+    },
+    {
+      "run_id": "ingest_live_v17_source_norm_token_preview_to_chapter1_retry1_20260614",
+      "date": "2026-06-14",
+      "surface": "ingest_live_focus_probe",
+      "lane": "mechanism_runtime",
+      "status": "running",
+      "mechanisms": [
+        "attentional_v2"
+      ],
+      "dataset_or_manifest": [
+        "state/eval_local_datasets/user_level_benchmarks/attentional_v2_user_level_selective_v1_repaired_20260614_source_norm_v1_2"
+      ],
+      "run_dir": "reading-companion-backend/eval/runs/attentional_v2/ingest_live_v17_source_norm_token_preview_to_chapter1_retry1_20260614",
+      "summary_paths": {},
+      "job_ids": [
+        "bgjob_ingest_live_v17_source_norm_token_preview_to_chapter1_retry1_20260614"
+      ],
+      "report_paths": [
+        "reading-companion-backend/eval/runs/attentional_v2/ingest_live_v17_source_norm_token_preview_to_chapter1_retry1_20260614/analysis/live_v17_source_norm_token_preview_to_chapter1_retry1/preview_window_review/segments/xidaduo_private_zh__segment_1/live_v17_source_norm_token_preview_to_chapter1_retry1_preview_units.md"
+      ],
+      "catalog_status": "not_cataloged",
+      "notes": "Running retry diagnostic-only live Ingest v17 source-normalized dataset-window focused probe after runtime changed empty retrieve_unit_memory(memory_recalls=[]) calls into no-op empty_tool_noop events. Scope remains xidaduo_private_zh__segment_1 through P57@2 with active source-normalized v1.2 dataset window and token preview policy 1600/3000/4200. No Digest, judge, evidence catalog update, or product-quality claim.",
       "parent_run_id": "",
       "child_run_ids": [],
       "synthetic": false,
       "local_missing_allowed": [
-        "reading-companion-backend/eval/runs/attentional_v2/ingest_live_v17_source_norm_token_preview_to_chapter1_20260614/analysis/live_v17_source_norm_token_preview_to_chapter1/preview_window_review/segments/xidaduo_private_zh__segment_1/live_v17_source_norm_token_preview_to_chapter1_preview_units.md"
+        "reading-companion-backend/eval/runs/attentional_v2/ingest_live_v17_source_norm_token_preview_to_chapter1_retry1_20260614/analysis/live_v17_source_norm_token_preview_to_chapter1_retry1/preview_window_review/segments/xidaduo_private_zh__segment_1/live_v17_source_norm_token_preview_to_chapter1_retry1_preview_units.md"
       ],
       "metadata": {},
-      "updated_at": "2026-06-14T09:03:35.976438Z"
+      "updated_at": "2026-06-14T09:24:48.967290Z"
     }
   ]
 }

@@ -595,6 +595,50 @@ def test_ingest_tool_loop_returns_recalls_and_runtime_status(tmp_path: Path, mon
     assert "memory_query" not in json.dumps(captured["tools"], ensure_ascii=False)
 
 
+def test_ingest_empty_recall_tool_call_is_runtime_noop(tmp_path: Path, monkeypatch):
+    captured: dict[str, object] = {"retrieval_handler_called": False}
+
+    def fake_tool_loop(system_prompt, prompt, *, action_tools, output_tool, tool_handler, validator, max_tool_calls):
+        tool_args = {"unit": _unit(1, "Beta."), "memory_recalls": []}
+        tool_result = tool_handler(
+            "retrieve_unit_memory",
+            tool_args,
+            "tool-empty",
+        )
+        captured["tool_result"] = tool_result
+        payload = {
+            "unit": _unit(1, "Beta."),
+            "preview_partition": [_partition("Beta closes", 1, "Beta.")],
+            "reason": "Beta closes the local move.",
+        }
+        assert validator(payload, [{"name": "retrieve_unit_memory", "args": tool_args, "result": tool_result}]) == []
+        return SimpleNamespace(
+            payload=payload,
+            status="action_tool_called",
+            tool_results=[{"name": "retrieve_unit_memory", "args": tool_args, "result": tool_result}],
+        )
+
+    def unexpected_retrieval_handler(_args):
+        captured["retrieval_handler_called"] = True
+        return {"status": "contract_violation", "degradation_reason": "should_not_run"}
+
+    monkeypatch.setattr(llm_calls_module, "invoke_tool_loop_with_structured_output", fake_tool_loop)
+
+    result = ingest(
+        current_view_position={"current_chapter_id": 1, "current_cursor": {"paragraph_index": 1, "char_offset": 0}},
+        current_view_content={"paragraph_slices": [{"paragraph_index": 1, "text": "Beta."}]},
+        output_dir=tmp_path,
+        unit_memory_tool_handler=unexpected_retrieval_handler,
+    )
+
+    assert captured["retrieval_handler_called"] is False
+    assert captured["tool_result"]["status"] == "empty_tool_noop"
+    assert result["memory_recalls"] == []
+    assert result["memory_recalls_status"] == "empty_tool_noop"
+    assert result["tool_loop_status"] == "tool_called"
+    assert result["tool_result_summary"]["degradation_reason"] == "empty_memory_recalls_noop"
+
+
 def test_ingest_derives_recalls_from_tool_args_and_ignores_bad_final_echo(tmp_path: Path, monkeypatch):
     captured: dict[str, object] = {}
 

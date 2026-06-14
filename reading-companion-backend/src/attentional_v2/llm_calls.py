@@ -793,9 +793,15 @@ def _memory_recalls_from_tool_results(tool_results: list[dict[str, object]]) -> 
     for tool_result in tool_results:
         if _clean_text(tool_result.get("name")) != "retrieve_unit_memory":
             continue
+        result = tool_result.get("result")
+        if isinstance(result, Mapping) and _clean_text(result.get("status")) in {"empty_tool_noop", "no_recall"}:
+            return [], "empty_tool_noop"
         args = tool_result.get("args")
         if not isinstance(args, Mapping):
             return [], "tool_args_malformed"
+        raw_recalls = args.get("memory_recalls")
+        if raw_recalls is None or (isinstance(raw_recalls, list) and not raw_recalls):
+            return [], "empty_tool_noop"
         recalls = normalize_unit_memory_recalls(args.get("memory_recalls"))
         if recalls:
             return [dict(item) for item in recalls], "action_tool_args"
@@ -889,6 +895,15 @@ def ingest(
                 return {
                     "status": "error",
                     "degradation_reason": f"unsupported_tool:{tool_name}",
+                    "tool_call_id": tool_call_id,
+                }
+            raw_recalls = args.get("memory_recalls")
+            if raw_recalls is None or (isinstance(raw_recalls, list) and not raw_recalls):
+                return {
+                    "status": "empty_tool_noop",
+                    "effective_mode": "not_requested",
+                    "retrieval_summary": {"recall_count": 0, "candidate_unit_count": 0, "selected_unit_count": 0},
+                    "degradation_reason": "empty_memory_recalls_noop",
                     "tool_call_id": tool_call_id,
                 }
             tool_args = dict(args)
