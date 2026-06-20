@@ -277,11 +277,13 @@ Current role:
 - Prohibit model-authored coordinates.
 - Let runtime resolve source quotes to `SourceRef`.
 
-Potential review questions:
+Current working answer:
 
-- Should highlight-only items follow the same exact-quote rule? Expected answer: yes.
-- Should note-bearing items require the note to return to the quote's wording, syntax, structure, or fact?
-- Should source quote length guidance move here or remain in Marginalia?
+- Highlight-only and note-bearing Marginalia follow the same exact-quote rule.
+- `source_quote` must be an exact contiguous span copied from the current source unit, with no ellipses, stitched fragments, paraphrase, translation, paragraph number, or coordinate-like token.
+- Source quote length guidance should remain primarily in the Marginalia instruction block: choose the smallest exact quote that can honestly support the item.
+- Note-bearing `content` should be able to return the reader to a specific word, syntax, image, structure, claim, or fact in `source_quote`.
+- Runtime remains responsible for resolving the quote into `SourceRef`; the model must not output source coordinates.
 
 ### 9. Instruction / ResponseDiscipline
 
@@ -296,6 +298,8 @@ Current working answer:
 
 - ResponseDiscipline should forbid hidden calibration fields such as `decision`, `hook`, `intent`, `evidence_status`, `calibration`, `rejected_output`, and `source` in final output.
 - The live output should distinguish user-visible text from implementation metadata by excluding implementation metadata from the model-facing Marginalia item.
+- It should also forbid inherited optional metadata fields from the normal model-facing Marginalia item: `prior_link`, `outside_link`, and `search_intent`.
+- It should remind the model that final Digest output still goes through the full `understanding` / `response` / `marginalia` contract; Marginalia examples are field-shape calibration only.
 
 ### 10. BookInfo
 
@@ -304,10 +308,11 @@ Current role:
 - Stable book identity: title and author.
 - Not source text.
 
-Potential review questions:
+Current working answer:
 
-- Should author/title influence Marginalia style or only factual orientation?
-- Should the prompt warn not to infer author biography from BookInfo alone?
+- BookInfo should remain orientation only.
+- Do not infer author biography, historical intention, edition facts, or allusion sources from BookInfo alone.
+- No large Marginalia-specific BookInfo prompt change is needed in this slice.
 
 ### 11. ReadingMemory
 
@@ -332,10 +337,11 @@ Current role:
 - Provides the source unit as paragraph text.
 - Provides reading intent: `read_current_source_unit_in_sequence`.
 
-Potential review questions:
+Current working answer:
 
-- Should Marginalia prompt text mention paragraph boundaries? Expected answer: probably no; source quote exactness is enough.
-- Should quote anchors be paragraph-local or unit-local? Current runtime accepts exact quote from the current unit.
+- Marginalia prompt text should not mention paragraph boundaries or source coordinates.
+- `source_quote` is unit-local from the model's point of view; current runtime resolves it inside the current source unit.
+- CurrentFocus should remain the current source substrate and reading-position carrier, not a Marginalia-specific instruction surface.
 
 ### 13. OutputContract / ReturnFormat
 
@@ -370,10 +376,12 @@ Current role:
 
 - Define `understanding` as one self-contained string for ReadingMemory / Unit Memory.
 
-Potential review questions:
+Current working answer:
 
-- Should it explicitly say that Marginalia-worthy local close reading should not be duplicated into Understanding?
-- Should it remain unchanged until Marginalia output format is settled?
+- No large Understanding rewrite is needed in this slice.
+- Keep Understanding focused on compact source-established content for continued reading.
+- Add at most one narrow boundary sentence if needed: quote-level close reading, margin questions, and local source-anchored reader notes belong in `marginalia`, not in `understanding`.
+- Do not turn Understanding into a list of possible Marginalia.
 
 ### 15. OutputContract / ResponseField
 
@@ -382,10 +390,12 @@ Current role:
 - Define `response` as immediate reader expression after the unit.
 - Keep it distinct from Understanding and Marginalia.
 
-Potential review questions:
+Current working answer:
 
-- Should it instruct the model to keep Response shorter when Marginalia already captures local thoughts?
-- Should it remain unchanged in the first Marginalia revision slice?
+- No large Response rewrite is needed in this slice.
+- Keep Response as whole-unit reader aftertaste, pressure, feeling, or question.
+- Response may naturally resonate with a local trigger, but source-anchored local thoughts should be expressed in `marginalia`.
+- Do not require Response to shrink mechanically when Marginalia is rich; rely on the existing distinctness rule.
 
 ### 16. OutputContract / MarginaliaField
 
@@ -407,11 +417,14 @@ Current role:
 - Requires top-level `understanding`, `response`, and `marginalia`.
 - Allows each Marginalia item to include `source_quote` and `content`.
 
-Potential review questions:
+Current working answer:
 
-- Does the schema need `content` to be optional for highlight-only?
-- Should legacy `prior_link`, `outside_link`, and `search_intent` continue to be accepted by the normalizer for old artifacts or malformed model outputs without appearing in the live tool schema?
-- Should a future schema add `mode`, or should highlight-only remain runtime-derived from empty `content`?
+- The live final-output tool schema should expose only `source_quote` and `content` for each Marginalia item.
+- `source_quote` should be required.
+- `content` should be optional and nullable / empty-string tolerant.
+- The schema should not expose `prior_link`, `outside_link`, or `search_intent` as normal live output fields.
+- Backward-compatible normalizers may continue to read legacy metadata from older artifacts or malformed outputs, but those fields are not a current model-facing contract.
+- Do not add `mode` / `kind` in this slice; highlight-only remains runtime-derived from empty, null, or omitted `content`.
 
 ### 18. Runtime Normalization And Settlement
 
@@ -423,11 +436,14 @@ Current role:
 - Store Marginalia in runtime/audit and Unit Memory surfaces.
 - Preserve legacy annotation/reaction aliases for compatibility.
 
-Potential review questions:
+Current working answer:
 
-- Should highlight-only items be stored as Marginalia with empty content?
-- Should the frontend display highlight-only items through the same marks/marginalia surface?
-- Should legacy aliases preserve highlight-only semantics after the contract changes?
+- Runtime normalization should accept Marginalia items with exact `source_quote` and empty, null, or omitted `content`.
+- Missing or unresolved `source_quote` remains invalid / dropped according to existing source-grounding rules.
+- Highlight-only items should be stored as canonical Marginalia records with empty note content, so they can travel through the same mark / Marginalia surface as note-bearing items.
+- Runtime/frontend can derive highlight-only vs note-bearing from normalized `content`.
+- Legacy annotation/reaction aliases should preserve highlight-only semantics where compatibility surfaces need them, but new runtime/audit rows should use canonical Marginalia vocabulary.
+- Legacy `prior_link`, `outside_link`, and `search_intent` may remain compatibility-read fields; they should not be required or emitted for new live Marginalia.
 
 ## Open Output-Contract Direction
 
@@ -448,6 +464,26 @@ Interpretation:
 - No explicit `mode` / `kind` / `decision` field is needed in this slice.
 - `prior_link`, `outside_link`, and `search_intent` should not be part of the normal model-facing Marginalia item. They may remain backward-compatible backend fields for older reaction / annotation / Marginalia artifacts, but should not appear in the live prompt ReturnFormat, final-output tool schema, or few-shot examples.
 - Future source-backlink, external-reference, or research-intent behavior should be redesigned as an explicit product/runtime feature rather than hidden inside ordinary Marginalia item metadata.
+
+## Accepted Implementation Slice
+
+When this design is implemented, the slice should update the following surfaces together:
+
+- Digest prompt version / XML spec / promptset / output-contract id.
+- `Instruction / Marginalia` with the current candidate prompt text.
+- `Instruction / SourceGrounding` to align exact-quote wording with highlight-only and note-bearing Marginalia.
+- `Instruction / ResponseDiscipline` to forbid calibration fields and inherited metadata fields in final output.
+- `OutputContract / ReturnFormat` and `OutputFields / MarginaliaField` to show only `source_quote` plus optional `content`.
+- Final-output tool schema so `marginalia[].content` is not required.
+- Digest output validator and normalizer so highlight-only items are accepted when `source_quote` resolves and `content` is empty / null / omitted.
+- Runtime/audit/unit-memory persistence so new records use canonical `marginalia` vocabulary and preserve highlight-only vs note-bearing semantics.
+
+Non-goals for this slice:
+
+- Do not redesign `ReadingMemory`, Unit Memory retrieval, Ingest, or Digest `understanding` semantics.
+- Do not reintroduce `prior_link`, `outside_link`, or `search_intent` into the live Marginalia output contract.
+- Do not add explicit `mode`, `kind`, or `decision` fields.
+- Do not modify frontend presentation beyond whatever minimal compatibility is required to carry highlight-only Marginalia through existing mark surfaces.
 
 ## Review Order
 
