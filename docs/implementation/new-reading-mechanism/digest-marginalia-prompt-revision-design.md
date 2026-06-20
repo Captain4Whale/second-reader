@@ -24,6 +24,12 @@ Created: `2026-06-20`
   - The live schema exposes `marginalia[].source_quote` and `marginalia[].content`.
   - The current runtime normalizer requires both `source_quote` and `content` to be non-empty.
   - A pure highlight-only Marginalia item therefore needs an output-contract/runtime revision before it can be represented cleanly as `source_quote` without note content.
+- Working output-contract direction:
+  - The next model-facing Marginalia item should contain only `source_quote` and `content`.
+  - `source_quote` is required.
+  - `content` may be omitted or empty; omitted / empty `content` means highlight-only.
+  - Non-empty `content` means note-bearing Marginalia.
+  - Do not add `mode`, `kind`, `decision`, or inherited optional metadata to the normal model-facing Marginalia item unless a later product/runtime design explicitly reintroduces it.
 
 ## Design Goal
 
@@ -83,11 +89,12 @@ Current role:
 - Distinguish BookInfo, ReadingMemory, CurrentFocus, and OutputContract.
 - Tell the model how prior ReadingMemory may support continuity without becoming current source text.
 
-Potential review questions:
+Current working answer:
 
-- Should Marginalia be allowed to callback to ReadingMemory?
-- If callbacks are allowed, should they appear only in `content` / `prior_link`, never as hidden internal ids?
-- Should prior-memory use be forbidden for highlight-only items?
+- Note-bearing Marginalia may naturally callback to ReadingMemory when that genuinely helps the reader understand why the quoted span matters.
+- Any callback should appear in visible `content`, written as normal reader-facing prose.
+- Do not expose hidden internal ids, source span ids, memory ids, reaction ids, or coordinate-like tokens.
+- Highlight-only items should not carry hidden prior-memory metadata; if a prior connection needs to be visible, the item should become note-bearing Marginalia with non-empty `content`.
 
 ### 5. Instruction / Understanding
 
@@ -125,34 +132,22 @@ Current role:
 - Keep source quotes exact and local.
 - Allow zero or multiple Marginalia items.
 
-Potential review questions:
+Current working answer:
 
-- How should the prompt distinguish highlight-only from note-bearing Marginalia?
-- Should the model output an explicit `kind` / `mode`, or should runtime derive highlight vs note from whether `content` is present?
-- Should Marginalia have a quantity cap, a soft density guide, or no cap?
-- Should research-needed items use `search_intent`, or should they become note content with an uncertainty phrase?
-- How much theory belongs in live prompt versus design/sourcebook reference?
+- Distinguish highlight-only from note-bearing Marginalia by `content`: empty / omitted `content` is highlight-only; non-empty `content` is note-bearing.
+- Do not output an explicit `kind` / `mode` field in this slice.
+- Use a soft density guide rather than a hard cap: emit zero items when nothing is worth marking, and avoid manufacturing notes to fill space.
+- Research-needed material should become visible note content only when the uncertainty itself is valuable to preserve for the reader. Do not use `search_intent` in the normal live output contract.
+- Keep most theory in this design/sourcebook layer. The live prompt should carry only the compact decision rules that help the model choose and write better Marginalia.
 
 The current user-provided Marginalia draft is preserved verbatim below for review.
 
 #### User Draft: Marginalia Prompt Source Text
 
 ```markdown
-After reading and understanding this section, you may mark the high-quality content within it, and you may also write your own marginalia.
-# I. The Value and Significance of Marginalia
-## Characteristics of Reading
-1. For the book being read:
-1) No book is entirely self-sufficient. Classic works especially tend to bury the author's hidden intentions, the subtext of their era, and meanings that can be reactivated by different eras.
-2) No book is entirely independent. A work may, together with other works and information, form a theoretical framework, a body of knowledge, or a thread of inquiry.
-1. For the reader, **purely individual reading is severely limited when facing complex texts**.
-We do not live in a vacuum. We are bounded by our era, our cultural background, and our personal experience. Zhiyanzhai could perceive much of Cao Xueqin's "real story" (*benshi*) because he lived in the same cultural context as the author; Nabokov could analyze structure so precisely because he was himself a top-tier literary craftsman; and other readers on WeChat Read may, drawing on contemporary life experience similar to ours, offer interpretations that resonate strongly with you or spark insight.
-## The Significance of Marginalia
-1. For the marginalia writer
-Writing marginalia forces (or guides) us into "active, structured thinking."
-1. For other readers
-When others read your marginalia, they are essentially **borrowing your cognitive resources to extend the boundaries of their own understanding**.
-## The Essence of Marginalia
-**Underlining and highlighting are markers of attention, whereas marginalia are the traces of thought.**
+**A highlight marks attention; a note records thought. If the quote itself preserves the value, produce highlight-only. If the value requires explanation, question, connection, or judgment, add note content.**
+You may also write your own marginalia.These marginalia helps others borrowing your cognitive resources to extend the boundaries of their own understanding.
+
 # II. Conditions for Marginalia
 **Within the flow of reading, attention is snagged somewhere by the text, producing a "cognitive change" worth preserving or expressing.**
 ## 1. Resistance: this passage cannot be smoothly absorbed — what cannot be stably understood right now?
@@ -265,117 +260,174 @@ The final threshold can be written as a conceptual formula:
 > **Only add marginalia when the expected cognitive increment exceeds the cost of interrupting reading.**
 >
 # Few-shot Calibration Examples
-These examples are for learning the decision boundary; you are not required to imitate their subject matter, wording, or structure.
-In formal output, produce the specified content according to the output contract.
-- case: 1
-purpose: "Sparse marginalia; grasping the main thread of the text"
-text: "下面分别讨论这三个方面。"
-output:
-decision: SKIP
-calibration:
-reason: "Merely a structural transition; no independent recall value, and no cognitive increment that needs to be externalized and preserved."
-- case: 2A
-purpose: "Collecting text and imagery worth rereading"
-density: "sparse"
-text: "庭下如积水空明，水中藻荇交横，盖竹柏影也。"
-output:
-decision: HIGHLIGHT
-anchor: "庭下如积水空明，水中藻荇交横，盖竹柏影也。"
-calibration:
-reason: "The text itself already completes its expression; the current purpose only requires being able to find it again later."
-- case: 2B
-purpose: "Studying how prose creates visual effects"
-density: "balanced"
-text: "庭下如积水空明，水中藻荇交横，盖竹柏影也。"
-output:
-decision: NOTE
-hook: "Leverage"
-intent: "Unpack how the illusion of the water scene is formed"
-anchor: "盖竹柏影也"
-note: >
-The first two clauses render the moonlight and tree shadows as "still water" and "waterweeds";
-only the final clause, with "盖" (it turns out), reveals the truth. The scene is not a static display
-but a perceptual process of "misrecognition—correction."
-evidence_status: "textual interpretation"
-calibration:
-reason: "The same original text shifts from an object of recall to an object of analysis as the reading purpose changes."
-- case: 3
-purpose: "Close reading of a fictional character and narrative technique"
-context: "Earlier text explains that the short-coated crowd drink standing up, while customers in long gowns go inside to sit and drink."
-text: "孔乙己是站着喝酒而穿长衫的唯一的人。"
-output:
-decision: NOTE
-hook: "Leverage"
-intent: "Reveal how two identity markers jointly shape the character"
-anchor: "站着喝酒而穿长衫"
-note: >
-"Standing" and "the long gown" originally belong to two different classes of customer;
-two mutually conflicting identity markers fall on Kong Yiji at once,
-compressing his suspended class status into a single bodily posture.
-evidence_status: "textual interpretation"
-rejected_output:
-note: "This sentence vividly portrays Kong Yiji's tragic fate."
-reason: "Only evaluation, with no account of which textual mechanism produces the effect."
-- case: 4
-purpose: "Understanding a philosophical text and preventing quotation out of context"
-text: "吾生也有涯，而知也无涯。以有涯随无涯，殆已。"
-output:
-decision: NOTE
-hook: "Resistance"
-intent: "Use the latter clause to correct an isolated reading of the former"
-anchor: "以有涯随无涯，殆已"
-note: >
-Quoting only the first clause makes it easy to read as a simple exhortation to study;
-the latter clause, however, turns the momentum toward a warning: if a finite life endlessly
-pursues infinite knowledge, it instead falls into danger. The leverage of understanding lies in
-the latter clause's constraint on the former.
-evidence_status: "textual observation + textual interpretation"
-- case: 5
-purpose: "Analyzing argumentative structure rather than simply agreeing or disagreeing"
-text: >
-今人乍见孺子将入于井，皆有怵惕恻隐之心……
-由是观之，无恻隐之心，非人也。
-output:
-decision: NOTE
-hook: "Leverage"
-intent: "Reconstruct the inference from a concrete reaction to universal human nature"
-anchor: "由是观之"
-note: >
-The argument first excludes interested motives such as social ties and reputation,
-then interprets the compassionate reaction in a sudden situation as the beginning of a universal moral capacity.
-The reasoning bridge worth testing is:
-can a reaction in one extreme moment sufficiently support a conclusion about "everyone"?
-evidence_status: "textual interpretation"
-- case: 6A
-purpose: "Identifying an allusion and its function in the novel"
-retrieval_available: false
-text: "什么'君子固穷'，什么'者乎'之类……"
-output:
-decision: RESEARCH
-hook: "Resistance"
-intent: "Verify the allusion's source and judge whether the character has altered its original meaning"
-anchor: "君子固穷"
-note: >
-This is clearly invoking established classical language, but the current material is insufficient to confirm the source,
-the original context, and its contrast with Kong Yiji's situation.
-evidence_status: "to be verified"
-- case: 6B
-purpose: "Identifying an allusion and its function in the novel"
-retrieval_available: true
-text: "什么'君子固穷'，什么'者乎'之类……"
-verified_source: "《论语·卫灵公》：君子固穷，小人穷斯滥矣。"
-output:
-decision: NOTE
-hook: "Growth"
-intent: "Explain the ironic appropriation of the allusion in the new context"
-anchor: "君子固穷"
-note: >
-In the original classic, "qiong" (being in dire straits) means holding to one's principles even in hardship.
-Kong Yiji, however, invokes this line while justifying his own behavior,
-turning moral self-restraint into self-exoneration; the gap between the allusion's original meaning and the character's use of it
-deepens the irony.
-evidence_status: "external fact + textual interpretation"
-source: "《论语·卫灵公》"
+These examples are for learning the boundary between skip, highlight-only, and note-bearing Marginalia. In formal output, use only the fields allowed by the output contract.
+
+- Case 1: structural transition
+Text: "下面分别讨论这三个方面。"
+Why: This is only a transition. It does not need to be found later, and there is no local cognitive increment worth preserving.
+Output: {"marginalia": []}
+
+- Case 2A: same text, highlight-only
+Text: "庭下如积水空明，水中藻荇交横，盖竹柏影也。"
+Why: If the reading purpose is simply to preserve beautiful imagery for later return, the quote itself carries the value.
+Output: {"marginalia": [{"source_quote": "庭下如积水空明，水中藻荇交横，盖竹柏影也。", "content": ""}]}
+
+- Case 2B: same text, note-bearing
+Text: "庭下如积水空明，水中藻荇交横，盖竹柏影也。"
+Why: If the reading purpose is to study how the visual effect is produced, the note should explain the local mechanism.
+Output: {"marginalia": [{"source_quote": "盖竹柏影也", "content": "The first two clauses make moonlight and tree shadows look like water and waterweeds; only the final clause, with \"盖\", reveals the misrecognition. The sentence works as a small process of perception and correction."}]}
+
+- Case 3: close reading without generic praise
+Text: "孔乙己是站着喝酒而穿长衫的唯一的人。"
+Why: The useful note is not "this vividly portrays Kong Yiji," but the specific contradiction between two social markers.
+Output: {"marginalia": [{"source_quote": "站着喝酒而穿长衫", "content": "\"Standing\" and the long gown normally belong to different kinds of customers; putting them together compresses Kong Yiji's suspended class position into one bodily posture."}]}
+
+- Case 4: quote selection that corrects a common misreading
+Text: "吾生也有涯，而知也无涯。以有涯随无涯，殆已。"
+Why: The note should anchor on the latter clause, because it changes the first clause from an exhortation to study into a warning about finite life chasing infinite knowledge.
+Output: {"marginalia": [{"source_quote": "以有涯随无涯，殆已", "content": "The latter clause restrains an isolated reading of the first: this is not simply praising endless learning, but warning that finite life can be endangered by pursuing the infinite without limit."}]}
+
+- Case 5: argumentative structure
+Text: "今人乍见孺子将入于井，皆有怵惕恻隐之心……由是观之，无恻隐之心，非人也。"
+Why: The useful note preserves the reasoning bridge from a concrete sudden reaction to a universal claim about human nature.
+Output: {"marginalia": [{"source_quote": "由是观之", "content": "The argument moves from a spontaneous reaction in one extreme scene to a universal claim about human nature. The hinge worth testing is whether that one reaction can support the conclusion about everyone."}]}
+
+- Case 6A: research-needed note without verified context
+Text: "什么'君子固穷'，什么'者乎'之类……"
+Why: The phrase clearly invokes established classical language, but without verified source context the note should preserve the uncertainty rather than inventing the allusion's function.
+Output: {"marginalia": [{"source_quote": "君子固穷", "content": "This appears to invoke classical language, but the current text is not enough to confirm the source, original context, or how Kong Yiji may be altering it."}]}
+
+- Case 6B: research context available
+Text: "什么'君子固穷'，什么'者乎'之类……"
+Why: If the source context is verified as 《论语·卫灵公》, the note can explain how the allusion is being ironized in the new scene.
+Output: {"marginalia": [{"source_quote": "君子固穷", "content": "In the original saying, being \"qiong\" means holding to one's principles in hardship. Kong Yiji invokes it while excusing himself, turning moral self-restraint into self-exoneration and deepening the irony."}]}
+```
+
+#### Assistant Draft: Marginalia Prompt Candidate
+
+```markdown
+# Marginalia
+
+After reading and understanding the current source unit, decide whether any exact quote from this unit should be preserved in the margin.
+
+Marginalia are source-anchored reading marks. They are not passage summaries, generic annotations, metadata labels, or a place to prove cleverness. A good Marginalia item helps the reader notice, remember, question, or return to something specific at the exact quoted words.
+
+## Two Forms
+
+Marginalia can be either highlight-only or note-bearing.
+
+- Highlight-only: use this when the quote itself is worth finding again, and adding a note would only repeat or dilute its value. Output an exact `source_quote`; leave `content` empty or omit it according to the output contract.
+- Note-bearing: use this when a relationship, explanation, question, connection, or judgment must be written down for the value to survive. Output an exact `source_quote` plus concise reader-visible `content`.
+
+Do not create Marginalia just to fill the field. It is normal to emit zero items when nothing in the current unit is worth marking.
+
+## What Makes A Quote Worth Marking
+
+Use the following lenses silently. Do not output these labels.
+
+1. Resistance: the quote creates friction in understanding.
+   It may contain ambiguity, a compressed concept, an argumentative leap, a hard-to-place stance, an allusion, a translation issue, or a factual claim that needs verification.
+
+2. Leverage: the quote changes the meaning of the current unit or the larger reading.
+   It may be a key definition, a hinge in the argument or scene, a turn in character relation, a repeated image, a foreshadowing, an irony, a shift of perspective, or a sentence that rereads earlier material.
+
+3. Growth: the quote opens something worth carrying forward.
+   It may lead to a useful question, a comparison with another work or idea, a research lead, an ethical or emotional pressure, a transferable insight, a hypothesis, or a recognition of the reader's own assumption.
+
+A quote does not need to satisfy all three lenses. One real trigger is enough; a vague sense that the passage is "important" is not enough.
+
+## Minimal Intervention
+
+Before producing each candidate Marginalia item, ask:
+
+1. Should this source span be marked at all?
+   If it is only a transition, filler, repeated information, or a detail with no return value, skip it.
+
+2. Would a highlight already be enough?
+   If the quote is beautiful, forceful, memorable, or worth finding later, but its meaning is already self-evident, use highlight-only.
+
+3. If writing a note, what would the reader miss without it?
+   The answer must be specific: a mechanism, relation, tension, inference, uncertainty, callback, or question.
+
+4. Can the note send the reader back to exact words in the quote?
+   If the note cannot return to a word, syntax, image, structure, claim, or fact in the source quote, delete it or choose a better quote.
+
+Choose the smallest exact contiguous `source_quote` that can honestly support the item. Do not use ellipses, stitched fragments, paraphrases, translations, source coordinates, or paragraph numbers as the quote.
+
+## Writing Note Content
+
+For note-bearing Marginalia, write the content as a compact margin note for the reader. The note may:
+
+- unpack how a local effect is produced;
+- name a distinction, tension, turn, or inference;
+- connect this quote to prior ReadingMemory when the connection is genuinely useful and source-supported;
+- raise a precise question or uncertainty;
+- mark a research lead without pretending it has been verified;
+- record an emotional, aesthetic, or ethical response when the response is anchored in the quote itself.
+
+Use a silent "verb + object" intention if it helps you think, such as "unpack how this sentence delays the reveal" or "question the inference from one case to everyone." Do not output that intention unless the output contract explicitly asks for it.
+
+## Evidence And Honesty
+
+Add evidence, not just attitude. Show the reason for the note, not just the conclusion.
+
+- In-text interpretation is the safest: base the note on the current source quote and current unit.
+- ReadingMemory may be used for continuity or callback, but only when it directly clarifies why this quote matters. Do not expose internal ids or coordinate-like tokens.
+- Common literary or narrative knowledge may be used cautiously, but do not turn it into unsupported certainty.
+- If a historical fact, edition issue, biography claim, allusion source, or translation claim needs verification and the verified context is not present in CurrentFocus or ReadingMemory, do not state it as fact. Mark the uncertainty as uncertainty, or skip the note.
+- It is better to leave a note unwritten than to fabricate hidden background, authorial intent, or a "real story" behind the text.
+
+Avoid empty praise. A note like "this passage is tense," "this sentence is beautiful," or "this character is vivid" is not enough. Explain what in the quote creates the effect, or use highlight-only.
+
+## Output Discipline
+
+This section explains only the `marginalia` field. The final Digest output must still follow the full OutputContract for `understanding`, `response`, and `marginalia`.
+
+For each Marginalia item:
+
+- `source_quote` must be an exact contiguous quote from the current source unit.
+- Empty or omitted `content` means highlight-only.
+- Non-empty `content` means note-bearing Marginalia.
+- Do not output `mode`, `kind`, `decision`, `hook`, `intent`, `evidence_status`, `calibration`, `rejected_output`, `source`, `prior_link`, `outside_link`, or `search_intent` unless a later output contract explicitly asks for them.
+
+## Calibration Examples
+
+These examples show only the `marginalia` field shape.
+
+Case 1: skip a structural transition
+Text: "下面分别讨论这三个方面。"
+Output:
+{"marginalia": []}
+
+Case 2: highlight-only
+Text: "庭下如积水空明，水中藻荇交横，盖竹柏影也。"
+Why: the image itself is worth finding again, and no note is needed for the current purpose.
+Output:
+{"marginalia": [{"source_quote": "庭下如积水空明，水中藻荇交横，盖竹柏影也。", "content": ""}]}
+
+Case 3: note-bearing close reading
+Text: "庭下如积水空明，水中藻荇交横，盖竹柏影也。"
+Why: the note explains how the sentence produces its visual effect.
+Output:
+{"marginalia": [{"source_quote": "盖竹柏影也", "content": "The first two clauses let moonlight and tree shadows appear as water and waterweeds; only this final phrase reveals the misrecognition. The sentence works as a small movement from perception to correction."}]}
+
+Case 4: avoid generic praise
+Text: "孔乙己是站着喝酒而穿长衫的唯一的人。"
+Why: the valuable note is not that the sentence is vivid, but how two social markers collide.
+Output:
+{"marginalia": [{"source_quote": "站着喝酒而穿长衫", "content": "\"Standing\" and the long gown usually belong to different social positions; placing both on Kong Yiji compresses his suspended class status into one bodily posture."}]}
+
+Case 5: note a reasoning hinge
+Text: "今人乍见孺子将入于井，皆有怵惕恻隐之心……由是观之，无恻隐之心，非人也。"
+Why: the quote marks the bridge from one sudden reaction to a universal claim.
+Output:
+{"marginalia": [{"source_quote": "由是观之", "content": "This is the argument's hinge: it moves from a concrete spontaneous reaction to a general claim about human nature. The point worth testing is whether that one reaction can support the conclusion about everyone."}]}
+
+Case 6: preserve uncertainty without inventing context
+Text: "什么'君子固穷'，什么'者乎'之类……"
+Why: the phrase appears to invoke classical language, but if verified context is not present in CurrentFocus or ReadingMemory, do not invent the allusion's source or function.
+Output:
+{"marginalia": [{"source_quote": "君子固穷", "content": "This appears to invoke established classical language, but the current material is not enough to confirm the source, original context, or how Kong Yiji may be altering it."}]}
 ```
 
 ### 8. Instruction / SourceGrounding
@@ -401,10 +453,10 @@ Current role:
 - Avoid route decisions.
 - Submit final output through the required final-output channel.
 
-Potential review questions:
+Current working answer:
 
-- Should this block forbid hidden calibration fields such as `decision`, `hook`, `intent`, `evidence_status`, and `calibration` unless the output contract explicitly asks for them?
-- Should it distinguish visible user text from metadata fields?
+- ResponseDiscipline should forbid hidden calibration fields such as `decision`, `hook`, `intent`, `evidence_status`, `calibration`, `rejected_output`, and `source` in final output.
+- The live output should distinguish user-visible text from implementation metadata by excluding implementation metadata from the model-facing Marginalia item.
 
 ### 10. BookInfo
 
@@ -426,11 +478,11 @@ Current role:
 - Used for continuity, callback, contrast, and unresolved pressure.
 - Does not include raw prior source, prior Response, or prior Marginalia in the live prompt.
 
-Potential review questions:
+Current working answer:
 
-- Should Marginalia content be allowed to reference prior Understanding?
-- Should `prior_link` point to prior memory ids or be derived by runtime?
-- Should highlight-only items avoid prior links?
+- Marginalia `content` may reference prior Understanding in reader-facing prose when the connection is useful and source-supported.
+- Do not ask the model to output `prior_link` in the normal Marginalia contract.
+- Highlight-only items should avoid hidden prior-link semantics; if a prior callback matters, write a note.
 
 ### 12. CurrentFocus
 
@@ -457,21 +509,21 @@ Current role:
   "marginalia": [
     {
       "source_quote": "...",
-      "content": "...",
-      "prior_link": null,
-      "outside_link": null,
-      "search_intent": null
+      "content": "..."
     }
   ]
 }
 ```
 
-Potential review questions:
+Current working answer:
 
-- Should `content` become optional or nullable to represent highlight-only Marginalia?
-- Should the model output an explicit `mode` such as `highlight` / `note`, or should runtime derive mode from `content`?
-- Are `prior_link`, `outside_link`, and `search_intent` still model-authored fields, runtime-derived fields, or future-only metadata?
-- Should `marginalia[]` item validation require exact quote presence but allow empty content?
+- `source_quote` should be the only required Marginalia item field.
+- `content` should be optional or nullable / empty-string tolerant.
+- Omitted, `null`, or empty `content` means highlight-only.
+- Non-empty `content` means note-bearing Marginalia.
+- Do not add an explicit `mode` / `kind` field in this slice. Runtime and frontend can derive highlight-only vs note-bearing from `content`.
+- Do not include `prior_link`, `outside_link`, or `search_intent` in the normal model-facing Marginalia output contract. These fields entered as inherited visible-reaction metadata during the older Phase E / Express path; keep backward-compatible normalization/persistence if needed, but do not teach the live Marginalia prompt to emit them as ordinary output.
+- `marginalia[]` validation should require exact quote presence and tolerate empty content.
 
 ### 14. OutputContract / UnderstandingField
 
@@ -503,24 +555,24 @@ Current role:
 - Define item shape.
 - Point detailed selection and source-quote behavior back to Instruction.
 
-Potential review questions:
+Current working answer:
 
-- Should this field become the canonical place for highlight-only vs note-bearing output rules?
-- Should metadata fields be described as rare and optional?
-- Should the contract say "do not output calibration fields"?
+- This field should define the minimal item shape and the highlight-only / note-bearing interpretation of `content`.
+- Do not describe inherited metadata fields as normal optional fields in the live contract.
+- The contract should explicitly say not to output calibration or decision-boundary fields.
 
 ### 17. Final-Output Tool Schema
 
 Current role:
 
 - Requires top-level `understanding`, `response`, and `marginalia`.
-- Allows each Marginalia item to include `source_quote`, `content`, `prior_link`, `outside_link`, and `search_intent`.
+- Allows each Marginalia item to include `source_quote` and `content`.
 
 Potential review questions:
 
 - Does the schema need `content` to be optional for highlight-only?
-- Should `prior_link`, `outside_link`, and `search_intent` stay as object/null fields or move into a more compact metadata object?
-- Should a future schema add `mode`, or should that remain runtime-derived?
+- Should legacy `prior_link`, `outside_link`, and `search_intent` continue to be accepted by the normalizer for old artifacts or malformed model outputs without appearing in the live tool schema?
+- Should a future schema add `mode`, or should highlight-only remain runtime-derived from empty `content`?
 
 ### 18. Runtime Normalization And Settlement
 
@@ -540,7 +592,7 @@ Potential review questions:
 
 ## Open Output-Contract Direction
 
-This document does not settle the output contract yet. The current working direction to review is:
+Current working decision for the next reviewed Digest Marginalia contract:
 
 ```json
 {
@@ -552,10 +604,11 @@ This document does not settle the output contract yet. The current working direc
 Interpretation:
 
 - `source_quote` is required.
-- Empty or omitted `content` means highlight-only.
+- Empty, `null`, or omitted `content` means highlight-only.
 - Non-empty `content` means note-bearing Marginalia.
-- `prior_link`, `outside_link`, and `search_intent` remain candidate optional metadata, but should not burden normal Marginalia output.
-- A separate `mode` field is optional and should be added only if runtime/frontend ambiguity requires it.
+- No explicit `mode` / `kind` / `decision` field is needed in this slice.
+- `prior_link`, `outside_link`, and `search_intent` should not be part of the normal model-facing Marginalia item. They may remain backward-compatible backend fields for older reaction / annotation / Marginalia artifacts, but should not appear in the live prompt ReturnFormat, final-output tool schema, or few-shot examples.
+- Future source-backlink, external-reference, or research-intent behavior should be redesigned as an explicit product/runtime feature rather than hidden inside ordinary Marginalia item metadata.
 
 ## Review Order
 
