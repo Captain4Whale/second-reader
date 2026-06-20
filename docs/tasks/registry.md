@@ -7,7 +7,7 @@ Update when: task status, priority, blockers, decision refs, job refs, evidence 
 
 This document is the human-readable companion to `docs/tasks/registry.json`.
 
-Last updated: `2026-06-20T16:50:20+08:00`
+Last updated: `2026-06-20T20:08:40+08:00`
 
 ## Status Values
 - `active`
@@ -75,6 +75,7 @@ Last updated: `2026-06-20T16:50:20+08:00`
   - `docs/implementation/new-reading-mechanism/ingest-context-and-navigate-mapping.md`
   - `docs/implementation/new-reading-mechanism/digest-understanding-response-marginalia-design.md`
   - `docs/implementation/new-reading-mechanism/digest-marginalia-quality-sourcebook.md`
+  - `docs/implementation/new-reading-mechanism/digest-marginalia-prompt-revision-design.md`
   - `docs/implementation/new-reading-mechanism/unit-memory-hybrid-retrieval-design.md`
   - `docs/implementation/new-reading-mechanism/ingest-recall-and-digest-memory-context-design.md`
   - `docs/implementation/new-reading-mechanism/ingest-digest-unit-memory-conformance-goal.md`
