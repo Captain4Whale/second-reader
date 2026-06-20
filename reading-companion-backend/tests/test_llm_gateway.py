@@ -914,7 +914,7 @@ def test_invoke_structured_output_tool_forces_submit_tool(monkeypatch: pytest.Mo
                         "args": {
                             "understanding": "Alpha happens.",
                             "response": "A brief response.",
-                            "annotations": [],
+                            "marginalia": [],
                         },
                     }
                 ],
@@ -957,7 +957,7 @@ def test_invoke_structured_output_tool_repairs_invalid_payload(monkeypatch: pyte
                         "args": {
                             "understanding": "Alpha happens.",
                             "response": "A brief response.",
-                            "annotations": [],
+                            "marginalia": [],
                         },
                     }
                 ],
@@ -1006,7 +1006,7 @@ def test_invoke_structured_output_tool_repairs_tool_contract_errors(
                         "args": {
                             "understanding": "Alpha happens.",
                             "response": "A brief response.",
-                            "annotations": [],
+                            "marginalia": [],
                         },
                     }
                 ],
@@ -1123,7 +1123,7 @@ def test_invoke_structured_output_uses_json_object_for_openai_profile(monkeypatc
             {
                 "understanding": "Alpha happens.",
                 "response": "A brief response.",
-                "annotations": [],
+                "marginalia": [],
             }
         )
     )
@@ -1162,7 +1162,7 @@ def test_invoke_structured_json_object_repairs_invalid_json(monkeypatch: pytest.
                     {
                         "understanding": "Alpha happens.",
                         "response": "A brief response.",
-                        "annotations": [],
+                        "marginalia": [],
                     }
                 ),
             ),
@@ -2217,7 +2217,7 @@ def test_attentional_node_uses_shared_runtime_trace(tmp_path: Path, monkeypatch:
                     "args": {
                         "understanding": "The alpha hinge line becomes the current unit's focus.",
                         "response": "Focused on the hinge.",
-                        "annotations": [],
+                        "marginalia": [],
                     },
                 }
             ],

@@ -224,6 +224,7 @@ def test_record_read_writes_compact_ingest_trace(tmp_path: Path) -> None:
 
     assert audit_line["digest_result"] == {
         "reading_impression": "A mainline unit lands.",
+        "marginalia": [],
         "surfaced_reactions": [],
         "memory_uptake_ops": [],
         "memory_uptake_admission_events": [],

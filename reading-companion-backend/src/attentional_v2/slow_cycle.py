@@ -804,6 +804,7 @@ def project_chapter_result_compatibility(
                 "quality_status": "kept",
                 "reflection_summary": "",
                 "reflection_reason_codes": [],
+                "marginalia": [],
                 "reactions": [],
             }
             paragraph_locator = _paragraph_locator(paragraph)
@@ -838,6 +839,7 @@ def project_chapter_result_compatibility(
         }
         if target_locator is not None:
             reaction_card["target_locator"] = target_locator
+        section["marginalia"].append(reaction_card)
         section["reactions"].append(reaction_card)
         reaction_counts[reaction_type] += 1
         featured_candidates.append(
@@ -882,12 +884,16 @@ def project_chapter_result_compatibility(
         "generated_at": _timestamp(),
         "sections": sections,
         "chapter_reflection": {},
+        "featured_marginalia": featured,
         "featured_reactions": featured,
+        "visible_marginalia_count": sum(len(section.get("marginalia", section.get("reactions", []))) for section in sections),
         "visible_reaction_count": sum(len(section.get("reactions", [])) for section in sections),
+        "marginalia_type_diversity": len(reaction_counts),
         "reaction_type_diversity": len(reaction_counts),
         "ui_summary": {
             "kept_section_count": len(sections),
             "skipped_section_count": 0,
+            "marginalia_counts": dict(sorted(reaction_counts.items())),
             "reaction_counts": dict(sorted(reaction_counts.items())),
         },
     }

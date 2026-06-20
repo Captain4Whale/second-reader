@@ -1,7 +1,7 @@
-import type { ReactionType } from "./contract";
+import type { MarginaliaType, ReactionType } from "./contract";
 import { term } from "../config/product-lexicon";
 
-type ReactionMeta = {
+type MarginaliaMeta = {
   label: string;
   description: string;
   accentClass: string;
@@ -9,10 +9,10 @@ type ReactionMeta = {
   surfaceHex: string;
 };
 
-export const reactionMeta: Record<ReactionType, ReactionMeta> = {
+export const marginaliaMeta: Record<MarginaliaType, MarginaliaMeta> = {
   highlight: {
     label: term("reaction.highlight"),
-    description: "Passages the agent thinks are worth carrying forward.",
+    description: "Passages the reader thinks are worth carrying into the margin.",
     accentClass: "text-[var(--amber-accent)]",
     surfaceClass: "bg-[var(--highlight-color)]",
     surfaceHex: "#FFF3CD",
@@ -47,6 +47,12 @@ export const reactionMeta: Record<ReactionType, ReactionMeta> = {
   },
 };
 
+export const reactionMeta = marginaliaMeta;
+
+export function marginaliaLabel(type: MarginaliaType | string): string {
+  return marginaliaMeta[type]?.label ?? type;
+}
+
 export function reactionLabel(type: ReactionType | string): string {
-  return reactionMeta[type]?.label ?? type;
+  return marginaliaLabel(type);
 }

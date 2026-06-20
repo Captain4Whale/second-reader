@@ -92,7 +92,7 @@ export function GlobalMarksPage() {
                         </span>
                         <span className="text-[var(--warm-300)]">·</span>
                         <span className="text-[var(--warm-700)]" style={uiTypography.chip}>
-                          {reactionLabel(mark.reaction_type)}
+                          {reactionLabel(mark.marginalia_type ?? mark.reaction_type)}
                         </span>
                         <span className="text-[var(--warm-300)]">·</span>
                         <span className="text-[var(--amber-accent)]" style={uiTypography.chip}>
@@ -106,7 +106,7 @@ export function GlobalMarksPage() {
                         </blockquote>
                       ) : null}
                       <p className="text-[var(--warm-800)]" style={uiTypography.meta}>
-                        {mark.reaction_excerpt}
+                        {mark.marginalia_excerpt ?? mark.reaction_excerpt}
                       </p>
 
                       <Link

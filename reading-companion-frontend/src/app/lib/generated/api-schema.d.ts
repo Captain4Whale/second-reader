@@ -164,6 +164,26 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/books/{book_id}/chapters/{chapter_id}/marginalia": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Book Chapter Marginalia
+         * @description Return a flattened paginated Marginalia list for one chapter.
+         */
+        get: operations["book_chapter_marginalia_api_books__book_id__chapters__chapter_id__marginalia_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/books/{book_id}/chapters/{chapter_id}/outline": {
         parameters: {
             query?: never;
@@ -378,6 +398,11 @@ export interface components {
          */
         ActivityEvent: {
             /**
+             * Active Marginalia Id
+             * @description Public Marginalia id of the active durable note referenced by the event when available.
+             */
+            active_marginalia_id?: number | null;
+            /**
              * Active Reaction Id
              * @description Public reaction id of the active durable thought referenced by the event when available.
              */
@@ -408,6 +433,11 @@ export interface components {
              */
             event_id: string;
             /**
+             * Featured Marginalia
+             * @description Featured Marginalia attached to the event when applicable.
+             */
+            featured_marginalia: components["schemas"]["FeaturedReactionPreview"][];
+            /**
              * Featured Reactions
              * @description Featured reactions attached to the event when applicable.
              */
@@ -423,6 +453,11 @@ export interface components {
              * @enum {string}
              */
             kind: "position" | "thought" | "search" | "segment_complete" | "chapter_complete" | "parse" | "checkpoint" | "waiting" | "error" | "transition";
+            /**
+             * Marginalia Types
+             * @description Marginalia types represented in this event.
+             */
+            marginalia_types: ("highlight" | "association" | "discern" | "retrospect" | "curious")[];
             /**
              * Message
              * @description User-facing message shown in the activity stream.
@@ -478,6 +513,16 @@ export interface components {
              */
             visibility: "default" | "collapsed" | "hidden";
             /**
+             * Visible Marginalia
+             * @description Visible Marginalia grouped under the same sentence-level mindstream event.
+             */
+            visible_marginalia: components["schemas"]["ActivityReactionPreview"][];
+            /**
+             * Visible Marginalia Count
+             * @description Visible Marginalia count attached to the event when applicable.
+             */
+            visible_marginalia_count?: number | null;
+            /**
              * Visible Reaction Count
              * @description Visible reaction count attached to the event when applicable.
              */
@@ -503,7 +548,7 @@ export interface components {
         };
         /**
          * ActivityReactionPreview
-         * @description Compact reaction payload used inside one sentence-level mindstream event.
+         * @description Compact Marginalia payload used inside one sentence-level mindstream event.
          */
         ActivityReactionPreview: {
             /**
@@ -516,6 +561,17 @@ export interface components {
              * @description AI-authored reaction text shown to the user.
              */
             content: string;
+            /**
+             * Marginalia Id
+             * @description Stable public integer identifier for the Marginalia item.
+             */
+            marginalia_id: number;
+            /**
+             * Marginalia Type
+             * @description Marginalia type key.
+             * @enum {string}
+             */
+            marginalia_type: "highlight" | "association" | "discern" | "retrospect" | "curious";
             /** @description Mechanism-authored primary source reference for this visible reaction when available. */
             primary_source_ref?: components["schemas"]["SourceRef"] | null;
             /**
@@ -828,6 +884,13 @@ export interface components {
              */
             cover_image_url?: string | null;
             /**
+             * Marginalia Counts
+             * @description Counts grouped by the five canonical Marginalia types.
+             */
+            marginalia_counts: {
+                [key: string]: number;
+            };
+            /**
              * My Mark Count
              * @description Number of user marks attached to this book.
              */
@@ -1021,6 +1084,11 @@ export interface components {
              */
             chapter_ref: string;
             /**
+             * Featured Marginalia
+             * @description Small set of featured Marginalia used for the completion card.
+             */
+            featured_marginalia: components["schemas"]["FeaturedReactionPreview"][];
+            /**
              * Featured Reactions
              * @description Small set of featured reactions used for the completion card.
              */
@@ -1035,6 +1103,11 @@ export interface components {
              * @description Title of the completed chapter.
              */
             title: string;
+            /**
+             * Visible Marginalia Count
+             * @description Number of visible Marginalia items in the chapter.
+             */
+            visible_marginalia_count: number;
             /**
              * Visible Reaction Count
              * @description Number of visible reactions in the chapter.
@@ -1051,6 +1124,11 @@ export interface components {
              * @description Reaction filters available to the frontend.
              */
             available_filters: ("all" | "highlight" | "association" | "discern" | "retrospect" | "curious")[];
+            /**
+             * Available Marginalia Filters
+             * @description Marginalia filters available to the frontend.
+             */
+            available_marginalia_filters: ("all" | "highlight" | "association" | "discern" | "retrospect" | "curious")[];
             /**
              * Book Id
              * @description Stable public integer identifier of the book.
@@ -1079,10 +1157,20 @@ export interface components {
              */
             chapter_reflection: string[];
             /**
+             * Featured Marginalia
+             * @description Featured Marginalia used for summary and teaser areas.
+             */
+            featured_marginalia: components["schemas"]["FeaturedReactionPreview"][];
+            /**
              * Featured Reactions
              * @description Featured reactions used for summary and teaser areas.
              */
             featured_reactions: components["schemas"]["FeaturedReactionPreview"][];
+            /**
+             * Marginalia Type Diversity
+             * @description Number of distinct Marginalia types in the chapter.
+             */
+            marginalia_type_diversity: number;
             /**
              * Output Language
              * @description Language used for the AI-generated chapter result.
@@ -1113,6 +1201,11 @@ export interface components {
              * @description Chapter title.
              */
             title: string;
+            /**
+             * Visible Marginalia Count
+             * @description Number of visible Marginalia items in the chapter.
+             */
+            visible_marginalia_count: number;
             /**
              * Visible Reaction Count
              * @description Number of visible reactions in the chapter.
@@ -1168,6 +1261,11 @@ export interface components {
              */
             chapter_ref: string;
             /**
+             * Marginalia Type Diversity
+             * @description Count of distinct Marginalia types in the chapter.
+             */
+            marginalia_type_diversity: number;
+            /**
              * Reaction Type Diversity
              * @description Count of distinct reaction types in the chapter.
              */
@@ -1193,6 +1291,11 @@ export interface components {
              * @description Chapter title.
              */
             title: string;
+            /**
+             * Visible Marginalia Count
+             * @description Number of visible Marginalia items in the chapter.
+             */
+            visible_marginalia_count: number;
             /**
              * Visible Reaction Count
              * @description Number of visible reactions in the chapter.
@@ -1334,6 +1437,11 @@ export interface components {
          */
         CurrentReadingActivity: {
             /**
+             * Active Marginalia Id
+             * @description Public Marginalia id of the currently active durable note when the mechanism exposes one.
+             */
+            active_marginalia_id?: number | null;
+            /**
              * Active Reaction Id
              * @description Public reaction id of the currently active durable thought when the mechanism exposes one.
              */
@@ -1432,6 +1540,13 @@ export interface components {
              */
             current_section_ref?: string | null;
             /**
+             * Marginalia Counts
+             * @description Visible Marginalia counts grouped by Marginalia type.
+             */
+            marginalia_counts: {
+                [key: string]: number;
+            };
+            /**
              * Pulse Message
              * @description Single-line runtime pulse shown near the mindstream while the run is active.
              */
@@ -1443,6 +1558,11 @@ export interface components {
             reaction_counts: {
                 [key: string]: number;
             };
+            /**
+             * Recent Marginalia
+             * @description Small set of recently surfaced Marginalia for quick feedback.
+             */
+            recent_marginalia: components["schemas"]["FeaturedReactionPreview"][];
             /**
              * Recent Reactions
              * @description Small set of recently surfaced reactions for quick feedback.
@@ -1464,6 +1584,11 @@ export interface components {
              * @description Whether a persisted mark was deleted.
              */
             deleted: boolean;
+            /**
+             * Marginalia Id
+             * @description Public integer Marginalia identifier targeted by the delete request.
+             */
+            marginalia_id: number;
             /**
              * Reaction Id
              * @description Public integer reaction identifier targeted by the delete request.
@@ -1510,7 +1635,7 @@ export interface components {
         };
         /**
          * FeaturedReactionPreview
-         * @description Compact reaction payload used in teasers, cards, and realtime summaries.
+         * @description Compact Marginalia payload used in teasers, cards, and realtime summaries.
          */
         FeaturedReactionPreview: {
             /**
@@ -1543,6 +1668,17 @@ export interface components {
              * @description AI-authored reaction text shown to the user.
              */
             content: string;
+            /**
+             * Marginalia Id
+             * @description Stable public integer identifier for the Marginalia item.
+             */
+            marginalia_id: number;
+            /**
+             * Marginalia Type
+             * @description Marginalia type key.
+             * @enum {string}
+             */
+            marginalia_type: "highlight" | "association" | "discern" | "retrospect" | "curious";
             /** @description Mechanism-authored primary source reference projected upward without rewriting the original thought object. */
             primary_source_ref?: components["schemas"]["SourceRef"] | null;
             /**
@@ -1754,6 +1890,26 @@ export interface components {
             ws_url: string;
         };
         /**
+         * MarginaliaPageResponse
+         * @description Paginated flattened Marginalia response.
+         */
+        MarginaliaPageResponse: {
+            /**
+             * Applied Filters
+             * @description Echoed filter values applied to the query.
+             */
+            applied_filters: {
+                [key: string]: unknown;
+            };
+            /**
+             * Items
+             * @description Flattened Marginalia items for the current page.
+             */
+            items: components["schemas"]["ReactionCard"][];
+            /** @description Pagination metadata for the Marginalia query. */
+            page_info: components["schemas"]["PageInfo"];
+        };
+        /**
          * MarkRecord
          * @description Persisted user mark record.
          */
@@ -1794,6 +1950,22 @@ export interface components {
              */
             created_at: string;
             /**
+             * Marginalia Excerpt
+             * @description Short excerpt of the Marginalia content used in marks views.
+             */
+            marginalia_excerpt: string;
+            /**
+             * Marginalia Id
+             * @description Public integer Marginalia identifier that owns this mark.
+             */
+            marginalia_id: number;
+            /**
+             * Marginalia Type
+             * @description Marginalia type key for the marked note.
+             * @enum {string}
+             */
+            marginalia_type: "highlight" | "association" | "discern" | "retrospect" | "curious";
+            /**
              * Mark Id
              * @description Stable public integer identifier of the mark.
              */
@@ -1832,6 +2004,11 @@ export interface components {
              * @description Source quote used to recall the marked passage.
              */
             source_quote: string;
+            /**
+             * Supersedes Marginalia Id
+             * @description Public Marginalia id of the earlier note this marked Marginalia supersedes when reconsolidation has occurred.
+             */
+            supersedes_marginalia_id?: number | null;
             /**
              * Supersedes Reaction Id
              * @description Public reaction id of the earlier thought this marked reaction supersedes when reconsolidation has occurred.
@@ -1879,7 +2056,7 @@ export interface components {
         };
         /**
          * ReactionCard
-         * @description Visible reaction card rendered in result views.
+         * @description Visible Marginalia card rendered in result views.
          */
         ReactionCard: {
             /**
@@ -1892,6 +2069,17 @@ export interface components {
              * @description Full AI reaction content.
              */
             content: string;
+            /**
+             * Marginalia Id
+             * @description Stable public integer Marginalia identifier.
+             */
+            marginalia_id: number;
+            /**
+             * Marginalia Type
+             * @description Marginalia type key.
+             * @enum {string}
+             */
+            marginalia_type: "highlight" | "association" | "discern" | "retrospect" | "curious";
             /**
              * Mark Type
              * @description Current user mark attached to the reaction, if any.
@@ -2081,6 +2269,11 @@ export interface components {
         SectionCard: {
             /** @description Section-level locator for the EPUB reader. */
             locator?: components["schemas"]["SegmentLocator"] | null;
+            /**
+             * Marginalia
+             * @description Visible Marginalia attached to the section.
+             */
+            marginalia: components["schemas"]["ReactionCard"][];
             /**
              * Quality Status
              * @description Quality label assigned to the section.
@@ -2926,6 +3119,89 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["ChapterDetailResponse"];
+                };
+            };
+            /** @description Bad Request */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Not Found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Conflict */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Request Entity Too Large */
+            413: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Unprocessable Entity */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Internal Server Error */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+        };
+    };
+    book_chapter_marginalia_api_books__book_id__chapters__chapter_id__marginalia_get: {
+        parameters: {
+            query?: {
+                limit?: number;
+                cursor?: string | null;
+                type?: string | null;
+                section_ref?: string | null;
+                mark_type?: string | null;
+            };
+            header?: never;
+            path: {
+                book_id: number;
+                chapter_id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["MarginaliaPageResponse"];
                 };
             };
             /** @description Bad Request */

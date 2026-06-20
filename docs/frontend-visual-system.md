@@ -50,7 +50,7 @@ Update when: typography roles, reader-scale behavior, token usage rules, or docu
 - Rule: these are UI chrome and must stay on fixed application typography.
 
 ### 7. Reader Content
-- Purpose: reaction text, quotes, inline supporting reading text, source-book text.
+- Purpose: Marginalia text, quotes, inline supporting reading text, source-book text.
 - Rule: this is the only class that may follow the shared reader font-scale control.
 
 ## Typography Ramp
@@ -81,8 +81,8 @@ The theme token source of truth is `reading-companion-frontend/src/styles/theme.
 
 ## Reader Scale Policy
 - The reader scale is shared across:
-  - reaction body text
-  - reaction quotes and anchored excerpts
+  - Marginalia body text
+  - Marginalia quotes and anchored excerpts
   - source-book text in the EPUB reader
   - reading-adjacent supporting text that behaves like content, not controls
 - The reader scale must not affect:

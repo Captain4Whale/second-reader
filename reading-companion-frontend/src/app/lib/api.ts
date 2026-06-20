@@ -1,6 +1,7 @@
 import {
   type BookId,
   type ChapterId,
+  type MarginaliaId,
   type MarkType,
   type ReactionId,
   CANONICAL_ROUTE_PATTERNS,
@@ -24,6 +25,7 @@ import type {
   ErrorPayload,
   JobStatusResponse,
   MarkRecord,
+  MarginaliaPageResponse,
   MarksPageResponse,
   SetMarkRequest,
   UploadAcceptedResponse,
@@ -276,6 +278,30 @@ export function fetchChapterOutline(bookId: BookId, chapterId: ChapterId) {
   return request<ChapterOutlineResponse>(`/api/books/${bookId}/chapters/${chapterId}/outline`);
 }
 
+export function fetchChapterMarginalia(
+  bookId: BookId,
+  chapterId: ChapterId,
+  options: { limit?: number; type?: string; sectionRef?: string; markType?: string } = {},
+) {
+  const params = new URLSearchParams();
+  if (options.limit != null) {
+    params.set("limit", String(options.limit));
+  }
+  if (options.type) {
+    params.set("type", options.type);
+  }
+  if (options.sectionRef) {
+    params.set("section_ref", options.sectionRef);
+  }
+  if (options.markType) {
+    params.set("mark_type", options.markType);
+  }
+  const search = params.toString();
+  return request<MarginaliaPageResponse>(
+    `/api/books/${bookId}/chapters/${chapterId}/marginalia${search ? `?${search}` : ""}`,
+  );
+}
+
 export function fetchGlobalMarks() {
   return request<MarksPageResponse>("/api/marks");
 }
@@ -319,8 +345,16 @@ export function putReactionMark(reactionId: ReactionId, bookId: BookId, markType
   });
 }
 
+export function putMarginaliaMark(marginaliaId: MarginaliaId, bookId: BookId, markType: MarkType) {
+  return putReactionMark(marginaliaId, bookId, markType);
+}
+
 export function deleteReactionMark(reactionId: ReactionId) {
   return request<DeleteMarkResponse>(`/api/marks/${reactionId}`, {
     method: "DELETE",
   });
+}
+
+export function deleteMarginaliaMark(marginaliaId: MarginaliaId) {
+  return deleteReactionMark(marginaliaId);
 }

@@ -15,10 +15,10 @@ This document is the current single source of truth for frontend and backend API
 
 If this file and the code diverge, treat that as a defect. Do not silently "pick one side". Verify both sides and fix the mismatch.
 
-## Reaction Taxonomy
+## Marginalia Taxonomy
 
-### Canonical Reaction Types
-The public UI and API expose exactly five reaction types:
+### Canonical Marginalia Types
+The public UI and API expose exactly five Marginalia types:
 
 - `highlight`
 - `association`
@@ -26,9 +26,9 @@ The public UI and API expose exactly five reaction types:
 - `retrospect`
 - `curious`
 
-These are public/API-facing compatibility labels.
+These are public/API-facing display and filter labels. Deprecated `reaction_type` fields expose the same values as compatibility aliases.
 
-For `attentional_v2`, the internal native visible-reaction truth is surfaced semantics such as:
+For `attentional_v2`, the native visible-note truth is Marginalia semantics such as:
 - `source_quote`
 - optional `primary_source_ref`
 - optional `related_source_refs`
@@ -37,9 +37,9 @@ For `attentional_v2`, the internal native visible-reaction truth is surfaced sem
 - optional `outside_link`
 - optional `search_intent`
 
-Public `reaction_type` is therefore a compatibility-facing projection for filtering and display, not the native `attentional_v2` prompt-time ontology.
+Public `marginalia_type` is therefore a display/filter projection, not the native `attentional_v2` prompt-time ontology. Public `reaction_type` remains as a deprecated alias during the compatibility window.
 
-No other public reaction type should appear in:
+No other public Marginalia / reaction type should appear in:
 - REST responses
 - WebSocket event payloads
 - frontend filters
@@ -47,7 +47,7 @@ No other public reaction type should appear in:
 - page labels or route-derived state
 
 ### Compatibility Mapping
-Some older code and artifacts still use legacy names internally. Public responses must normalize them to the canonical taxonomy above.
+Some older code and artifacts still use legacy reaction names internally. Public responses must normalize them to the canonical Marginalia taxonomy above.
 
 Current compatibility mappings:
 - legacy frontend `critique` -> `discern`
@@ -80,6 +80,7 @@ These are the primary routes the frontend should render and the backend should r
 - `/books` -> Books
 - `/books/:id` -> Book overview
 - `/books/:id/chapters/:chapterId` -> Chapter deep read
+- `/books/:id/chapters/:chapterId/marginalia` -> Chapter Marginalia list
 - `/marks` -> Global My Marks
 
 ### Compatibility Routes
@@ -100,7 +101,8 @@ All public identifiers exposed to the frontend are integers:
 
 - Book ID: integer
 - Chapter ID: integer
-- Reaction ID: integer
+- Marginalia ID: integer
+- Reaction ID: integer compatibility alias for Marginalia ID
 - Mark ID: integer
 
 This applies to:
@@ -109,7 +111,7 @@ This applies to:
 - route params used by the frontend
 - frontend API adapter types
 
-Internal runtime storage may still use string artifact identifiers. That is an implementation detail. Public handlers must translate internal identifiers into stable public integer IDs before returning them.
+Internal runtime storage may still use string artifact identifiers. That is an implementation detail. Public handlers must translate internal identifiers into stable public integer IDs before returning them. When both `marginalia_id` and deprecated `reaction_id` appear, they must identify the same visible note.
 
 Additive substrate and locator fields are allowed to carry source-substrate references when needed, for example:
 - `reading_locus.sentence_start_id`
@@ -163,12 +165,13 @@ This is a product implementation choice, not a general backend capability promis
 ### Backend-Owned Fields
 The backend is responsible for providing these book-overview fields:
 
-- `reaction_counts`
+- `marginalia_counts`
+- deprecated alias `reaction_counts`
 - `chapter_count`
 - `completed_chapter_count`
 - `segment_count`
 
-`reaction_counts` must be keyed by the five canonical reaction types only.
+`marginalia_counts` and its deprecated `reaction_counts` alias must be keyed by the five canonical Marginalia types only.
 
 Naming guidance:
 - `chapter_count` and `completed_chapter_count` are chapter-level counts.
@@ -178,7 +181,7 @@ Naming guidance:
 ### Frontend-Derived Metrics
 The frontend may derive factual display summaries from backend counts when needed, such as:
 
-- total reactions across a book
+- total Marginalia across a book
 - completed chapters out of total chapters
 
 Do not add backend-only convenience fields for opinionated or evaluative frontend metrics unless the current implementation has a concrete dependency that cannot be simplified.
@@ -199,19 +202,21 @@ Do not add backend-only convenience fields for opinionated or evaluative fronten
 Every returned mark must include at least:
 
 - `mark_id`
-- `reaction_id`
+- `marginalia_id`
+- deprecated alias `reaction_id`
 - `book_id`
 - `chapter_id`
 - optional additive `chapter_number`
 - `mark_type`
-- `reaction_type`
+- `marginalia_type`
+- deprecated alias `reaction_type`
 - `source_quote`
 - optional `primary_source_ref`
 - `created_at`
 
 ### Mark Value Rules
 - `mark_type` only allows `resonance`, `blindspot`, or `bookmark`
-- `reaction_type` must always come from the canonical reaction taxonomy
+- `marginalia_type` and deprecated `reaction_type` must always come from the canonical Marginalia taxonomy
 - UI copy and contract language should consistently use `resonance`, `blindspot`, and `bookmark`
 
 Avoid reintroducing older presentation-only phrases such as:
@@ -246,11 +251,13 @@ except as migration compatibility text where the underlying value remains in the
   - optional `thought_family`
   - optional `reconstructed_hot_state`
   - optional `last_resume_kind`
-  - optional `active_reaction_id`
+  - optional `active_marginalia_id`
+  - deprecated alias `active_reaction_id`
   - optional `problem_code`
     - allowed machine-readable values are `llm_timeout`, `llm_quota`, `llm_auth`, `llm_contract`, `search_timeout`, `search_quota`, `search_auth`, and `network_blocked`
     - `llm_contract` means the active reader could not obtain a valid required structured model output after its repair attempt
-- `current_state_panel.reaction_counts` keyed only by the five canonical reaction types
+- `current_state_panel.marginalia_counts` keyed only by the five canonical Marginalia types
+- deprecated alias `current_state_panel.reaction_counts`
 - optional additive `current_chapter_number`
 - `recent_completed_chapters[].result_url` pointing to canonical frontend routes
 
@@ -309,30 +316,34 @@ REST failures use the shared error envelope:
 ### Activity And WebSocket Events
 Activity and realtime payloads must continue to normalize into the public contract:
 
-- activity events use canonical `reaction_types`
+- activity events use canonical `marginalia_types`
+- deprecated alias `reaction_types` may remain in compatibility payloads
 - activity `result_url` values use canonical frontend routes
 - WebSocket envelopes use integer `book_id` when present
-- WebSocket event payloads should not expose legacy route names or legacy reaction taxonomy values
+- WebSocket event payloads should not expose legacy route names or non-canonical Marginalia / reaction taxonomy values
 
 Activity events may now additively expose:
 - `reading_locus`
-- `active_reaction_id`
+- `active_marginalia_id`
+- deprecated alias `active_reaction_id`
 
 These fields are additive and compatibility-preserving. Current routed frontend surfaces may ignore them until a later migration is ready.
 
 `route_action`, `move_type`, and values such as `commit`, `continue`, `bridge_back`, `reframe`, `advance`, `dwell`, or `bridge` are historical runtime vocabulary and must not be emitted by new public payloads.
 
-### Additive Reaction And Mark Fields
-Reaction previews, reaction cards, and mark payloads may now additively expose richer mechanism-authored fields:
+### Additive Marginalia And Mark Fields
+Marginalia previews, Marginalia cards, and mark payloads may now expose richer mechanism-authored fields:
 
 - `primary_source_ref`
 - `related_source_refs`
-- `supersedes_reaction_id`
+- `supersedes_marginalia_id`
+- deprecated alias `supersedes_reaction_id`
 
 Current section-era fields such as `section_ref` remain valid compatibility fields for now. They are not the long-term primary model for newer non-section mechanisms.
 
 ## Compatibility Notes
 - Backend no longer exposes landing/sample compatibility endpoints. Landing remains frontend-only by contract.
+- `reaction_id`, `reaction_type`, `visible_reactions`, `featured_reactions`, and the existing `/api/marks/{reaction_id}` routes remain compatibility aliases for the new Marginalia concept. New API/code/docs should prefer `marginalia_id`, `marginalia_type`, `visible_marginalia`, `featured_marginalia`, and `/api/books/{book_id}/chapters/{chapter_id}/marginalia`.
 - Backend internal artifacts may still store `connect_back`; public API payloads must normalize that to `retrospect`, and new runtime outputs should emit `retrospect`.
 - Old mock data is not authoritative. If a mock file disagrees with this document, update or remove the mock rather than preserving conflicting terminology.
 - Legacy redirect routes are allowed, but new UI code, docs, and backend-returned frontend URLs should use canonical routes only.
@@ -355,6 +366,13 @@ The JSON block below is the machine-readable appendix used by the root contract 
 
 ```json
 {
+  "marginalia_types": [
+    "highlight",
+    "association",
+    "discern",
+    "retrospect",
+    "curious"
+  ],
   "reaction_types": [
     "highlight",
     "association",
@@ -372,6 +390,7 @@ The JSON block below is the machine-readable appendix used by the root contract 
     "books": "/books",
     "book": "/books/:id",
     "chapter": "/books/:id/chapters/:chapterId",
+    "chapterMarginalia": "/books/:id/chapters/:chapterId/marginalia",
     "marks": "/marks"
   },
   "compat_routes": [

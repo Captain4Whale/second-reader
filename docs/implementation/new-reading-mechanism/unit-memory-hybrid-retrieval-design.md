@@ -16,7 +16,7 @@ Update when: Unit Memory entry shape, indexed fields, retrieval ranking, query g
   - `DEC-108` makes `Digest` the concrete per-unit interpretation LLM call.
   - `DEC-109` removes content-typed concept/thread long-memory stores from the current live surface.
   - `DEC-110` makes Unit Memory ledger + hybrid retrieval the current long-distance memory substrate for `attentional_v2`.
-  - Digest now emits model-facing `understanding`, `response`, and `annotations`, with the single `understanding` text stored internally through the existing `recent_reading_memory` path.
+  - Digest now emits model-facing `understanding`, `response`, and `marginalia`, with the single `understanding` text stored internally through the existing `recent_reading_memory` path.
 - Follow-up implementation reference:
   - `docs/implementation/new-reading-mechanism/ingest-recall-and-digest-memory-context-design.md` records the implemented slice that replaces the single model-facing `memory_query` with bounded `retrieve_unit_memory` recall args, aggregates multi-recall retrieval, and renders Digest `ReadingMemory`.
 
@@ -79,7 +79,7 @@ Implemented now:
   - no separate query-generation LLM call
   - when recalls are non-empty, the Ingest call must use the `retrieve_unit_memory` tool loop
 - Current retrieval calibration:
-  - lexical ranking prioritizes `unit_understanding` over source / annotation / response auxiliary surfaces
+  - lexical ranking prioritizes `unit_understanding` over source / Marginalia / response auxiliary surfaces
   - dense retrieval uses only `unit_understanding` vector rows
   - dense sqlite-vec candidates are filtered by `dense_max_distance` before unit aggregation
   - selection caps prompt-visible candidates per recall with `max_units_per_recall_to_digest_context`
@@ -88,7 +88,7 @@ Implemented now:
   - runtime selects Understanding memory, dedupes against hot current-chapter memory, and renders top-level Digest `ReadingMemory`
   - tool results exposed back to Ingest are status/count summaries only, never retrieved Understanding text or selected memory ids
 - settlement writes one Unit Memory Entry per accepted source unit after `Digest` output has been accepted
-  - source, understanding, response, and annotation retrieval documents are derived from the entry
+  - source, understanding, response, and Marginalia retrieval documents are derived from the entry
   - valid documents are always FTS-indexed
   - vector indexing is attempted only for `unit_understanding` documents in `hybrid` mode and may remain pending when sqlite-vec or Ollama is unavailable
 
@@ -361,10 +361,10 @@ Initial surface / channel weights:
 | --- | ---: | ---: | --- |
 | `unit_understanding` | `1.35` | `1.35` | primary semantic memory surface and prompt-facing long-distance memory substance |
 | `unit_source` | `0.80` | none | auxiliary exact wording, names, quote callbacks, and source recurrence |
-| `unit_annotation` | `0.65` | none | auxiliary exact quote / note wording signal; not prompt-facing memory |
+| `unit_marginalia` | `0.65` | none | auxiliary exact quote / margin-note wording signal; not prompt-facing memory |
 | `unit_response` | `0.35` | none | weak readerly aftertaste signal; not prompt-facing memory |
 
-These weights are deliberately modest. They should express surface posture without overpowering rank evidence. `unit_understanding` now has the highest lexical weight because current Digest `ReadingMemory` is Understanding-only; source, annotation, and response remain useful lexical cues, but they should not outrank a direct Understanding match. Dense weights apply only to vector-eligible `unit_understanding` documents.
+These weights are deliberately modest. They should express surface posture without overpowering rank evidence. `unit_understanding` now has the highest lexical weight because current Digest `ReadingMemory` is Understanding-only; source, Marginalia, and response remain useful lexical cues, but they should not outrank a direct Understanding match. Dense weights apply only to vector-eligible `unit_understanding` documents. Legacy `unit_annotation` documents remain readable as compatibility aliases for older artifacts.
 
 Why not weighted sum first:
 
@@ -472,7 +472,7 @@ It does not replace the existing runtime artifacts. These artifacts own differen
   - runtime trace and debugging facts
   - answers how an `Ingest -> Digest -> settlement` cycle ran
 - `reaction_records`
-  - UI-visible annotation / reaction facts
+  - compatibility filename for UI-visible Marginalia / historical reaction facts
   - answers what reader-facing notes should be shown or linked back to source text
 - `recent_reading_memory`
   - near-neighbor continuity facts
@@ -518,7 +518,7 @@ It should store the accepted unit and the Digest outputs as one logical record:
       }
     },
     "response": "...",
-    "annotations": [
+    "marginalia": [
       {
         "source_quote": "...",
         "content": "...",
@@ -565,7 +565,8 @@ The stored unit should preserve enough information to support retrieval and late
     - store both raw `tiktoken` count and safety-multiplied budget count when available
     - used for fast `ReadingMemory` budget assembly without re-counting every retrieved entry
   - `response`
-  - `annotations[]`
+  - `marginalia[]`
+  - legacy `annotations[]` compatibility when reading older artifacts
 - audit / lifecycle metadata:
   - prompt versions and model trace ids may be linked by reference, but should not be part of the retrieval text by default
   - index status for FTS and vector rows
@@ -581,7 +582,7 @@ Digest Understanding is content-neutral in the current live contract: it stores 
 
 Storage is unit-centered, but retrieval should index multiple field-specific surfaces.
 
-This avoids flattening source, understanding, response, and annotations into one undifferentiated blob while keeping `understanding` as the primary long-distance memory surface. In V1, all valid retrieval documents participate in lexical recall, but only `unit_understanding` participates in dense vector recall.
+This avoids flattening source, understanding, response, and Marginalia into one undifferentiated blob while keeping `understanding` as the primary long-distance memory surface. In V1, all valid retrieval documents participate in lexical recall, but only `unit_understanding` participates in dense vector recall.
 
 ### Source Surface
 
@@ -589,7 +590,7 @@ Index:
 
 - accepted source text
 - text from `accepted_source_unit.paragraph_slices`
-- annotation `source_quote` may also be included as exact source evidence
+- Marginalia `source_quote` may also be included as exact source evidence
 
 Use:
 
@@ -620,12 +621,13 @@ Default channel posture:
 
 Digest produces one holistic Understanding per accepted source unit. The `unit_understanding` retrieval document should therefore be one document per Unit Memory Entry, not one document per sentence, paragraph, topic, or future-use split.
 
-### Annotation Surface
+### Marginalia Surface
 
 Index:
 
-- `annotations[].source_quote`
-- `annotations[].content`
+- `marginalia[].source_quote`
+- `marginalia[].content`
+- legacy `annotations[].source_quote` / `annotations[].content` when reading older artifacts
 
 Use:
 
@@ -637,7 +639,7 @@ Default channel posture:
 - medium-low to medium lexical weight
 - no dense vector weight in V1
 
-Each annotation should produce one retrieval document. Its retrieval text should combine the exact source quote and the annotation content, for example `source_quote + "\n" + content`, because the quote gives source footing while the note content gives readerly meaning. Do not split quote and note into separate v1 documents.
+Each Marginalia item should produce one retrieval document. Its retrieval text should combine the exact source quote and the Marginalia content, for example `source_quote + "\n" + content`, because the quote gives source footing while the note content gives readerly meaning. Do not split quote and note into separate v1 documents.
 
 ### Response Surface
 
@@ -678,7 +680,7 @@ Every valid retrieval document is eligible for lexical retrieval. Dense retrieva
 - FTS5 indexes `retrieval_docs.text` for lexical / BM25 candidate ranks.
 - sqlite-vec embeds only `unit_understanding` documents for dense candidate ranks.
 
-This is an intentional performance and context-discipline choice. Source, response, and annotation text can still help recall through FTS5, but they are not treated as dense semantic memory. Understanding is the only surface expected to carry the durable semantic memory that future reading should recall.
+This is an intentional performance and context-discipline choice. Source, response, and Marginalia text can still help recall through FTS5, but they are not treated as dense semantic memory. Understanding is the only surface expected to carry the durable semantic memory that future reading should recall.
 
 Surface differences should instead be expressed through channel weights and later unit aggregation:
 
@@ -686,7 +688,7 @@ Surface differences should instead be expressed through channel weights and late
 | --- | --- | --- | --- |
 | `unit_source` | high | none | exact wording, names, quotes, source-near lexical recall |
 | `unit_understanding` | medium | high | primary semantic memory of what the unit established |
-| `unit_annotation` | medium-low to medium | none | auxiliary recall through marked quote / note wording |
+| `unit_marginalia` | medium-low to medium | none | auxiliary recall through marked quote / note wording |
 | `unit_response` | low | none | auxiliary recall through readerly aftertaste / pressure wording |
 
 The implementation may store these as a `weight_profile` value on `retrieval_docs` and resolve concrete numeric weights in retrieval config. Empty or invalid material should not create a retrieval document at all. Once a retrieval document exists, it should always be FTS-indexed. Vector indexing is expected only for `unit_understanding` in `hybrid` mode and may be pending / absent while a book is being read in `text_only` mode.
@@ -707,12 +709,13 @@ Use surface-specific document granularity:
   - text: `digest.understanding.content`
   - metadata: `source_span_id`
   - purpose: primary semantic recall of what the unit established for continued reading
-- `unit_annotation`
-  - one retrieval document per annotation
-  - retrieval doc id pattern: `unit:{id}#annotation:{index}`
+- `unit_marginalia`
+  - one retrieval document per Marginalia item
+  - retrieval doc id pattern: `unit:{id}#marginalia:{index}`
   - text: `source_quote + "\n" + content`
-  - metadata: annotation index, `source_quote`, resolved source ref if available
+  - metadata: Marginalia index, `source_quote`, resolved source ref if available
   - purpose: auxiliary lexical recall of visible notes and exact lines that were previously marked
+  - legacy `unit_annotation` / `#annotation:{index}` docs remain readable from older artifacts
 - `unit_response`
   - zero or one retrieval document per Unit Memory Entry
   - retrieval doc id pattern: `unit:{id}#response`
@@ -725,8 +728,8 @@ Do not create these documents in v1:
 - no sentence-level source documents
 - no whole-paragraph documents unless the accepted paragraph slice is itself whole
 - no multiple understanding documents for one unit
-- no separate source-quote-only and annotation-note-only documents
-- no default `unit_all_text` blob that flattens source, understanding, response, and annotations together
+- no separate source-quote-only and Marginalia-note-only documents
+- no default `unit_all_text` blob that flattens source, understanding, response, and Marginalia together
 
 If later retrieval review shows that an additional whole-unit semantic surface is needed, add it as a low-weight `unit_brief` surface. Do not add it as a default v1 document, because `unit_understanding` already carries the primary whole-unit semantic memory.
 
@@ -936,7 +939,7 @@ Rendering rules:
 - no recent-vs-retrieved labels in the prompt
 - no prior source excerpt
 - no prior Response text
-- no prior Annotation text
+- no prior Marginalia text
 - retrieval reason, matched recall id, matched surface, source, score, and suppression reason stay in audit / trace
 
 Digest context packaging is now implemented as the live Digest prompt path. Remaining work is calibration, not initial packaging:
@@ -959,7 +962,7 @@ Review dimensions:
 
 - relevance: the retrieved unit is genuinely related to the current unit
 - continuity helpfulness: the memory helps the current reading remain continuous without forcing a callback
-- source grounding: the match can point back to source, Understanding, Annotation, or Response evidence in trace, while Digest receives Understanding only
+- source grounding: the match can point back to source, Understanding, Marginalia, or Response evidence in trace, while Digest receives Understanding only
 - non-redundancy: the result is not merely repeating recent-neighbor memory already carried directly
 - non-dominance: the retrieved memory supports the current source unit without becoming the main object of reading
 - coverage: important prior dependencies are not missing from the top briefs
@@ -1038,9 +1041,10 @@ Create retrieval documents from all four memory surfaces. Every valid retrieval 
 - accepted source unit
 - `understanding`
 - `response`
-- `annotations[]`
+- `marginalia[]`
+- legacy `annotations[]` compatibility
 
-This keeps retrieval broad while making the semantic memory spine explicit. Source, response, and annotation documents may recall Entries through lexical evidence, but `understanding` has the highest authority and is the only dense-vector surface.
+This keeps retrieval broad while making the semantic memory spine explicit. Source, response, and Marginalia documents may recall Entries through lexical evidence, but `understanding` has the highest authority and is the only dense-vector surface.
 
 Use the initial conservative retrieval parameters in this document: per-recall top `40` lexical docs across all FTS surfaces, per-recall top `40` dense docs from `unit_understanding`, `dense_max_distance = 0.80`, `rrf_k = 60`, Understanding-prioritized surface / channel weights, unit aggregation led by the best matching retrieval document, and MMR disabled unless review shows repeated near-duplicate briefs.
 

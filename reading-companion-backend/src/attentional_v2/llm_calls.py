@@ -29,6 +29,7 @@ from .schemas import (
     BridgeCandidate,
     CarryForwardContext,
     KnowledgeActivationsState,
+    MarginaliaItem,
     MemoryUptakeAdmissionEvent,
     IngestBoundaryResult,
     OutsideLink,
@@ -39,7 +40,6 @@ from .schemas import (
     DigestResult,
     SearchIntent,
     StateOperation,
-    SurfacedReaction,
 )
 from .storage import prompt_manifest_file, save_json
 from .unit_memory import normalize_unit_memory_recalls
@@ -682,13 +682,13 @@ def _normalize_search_intent(value: object) -> SearchIntent | None:
     }
 
 
-def _normalize_surfaced_reaction(
+def _normalize_marginalia_item(
     value: object,
     *,
     current_unit_texts: list[str],
     allowed_ref_ids: set[str],
-) -> SurfacedReaction | None:
-    """Normalize one surfaced Digest-owned reaction."""
+) -> MarginaliaItem | None:
+    """Normalize one Digest-owned Marginalia item."""
 
     if not isinstance(value, dict):
         return None
@@ -709,26 +709,55 @@ def _normalize_surfaced_reaction(
     }
 
 
-def _normalize_surfaced_reactions(
+def _normalize_marginalia_items(
     value: object,
     *,
     current_unit_texts: list[str],
     allowed_ref_ids: set[str],
-) -> list[SurfacedReaction]:
-    """Normalize the surfaced reactions emitted directly by Digest."""
+) -> list[MarginaliaItem]:
+    """Normalize the Marginalia items emitted directly by Digest."""
 
-    reactions: list[SurfacedReaction] = []
+    marginalia: list[MarginaliaItem] = []
     if not isinstance(value, list):
-        return reactions
+        return marginalia
     for item in value:
-        normalized = _normalize_surfaced_reaction(
+        normalized = _normalize_marginalia_item(
             item,
             current_unit_texts=current_unit_texts,
             allowed_ref_ids=allowed_ref_ids,
         )
         if normalized is not None:
-            reactions.append(normalized)
-    return reactions
+            marginalia.append(normalized)
+    return marginalia
+
+
+def _normalize_surfaced_reactions(
+    value: object,
+    *,
+    current_unit_texts: list[str],
+    allowed_ref_ids: set[str],
+) -> list[MarginaliaItem]:
+    """Compatibility wrapper for old surfaced-reaction terminology."""
+
+    return _normalize_marginalia_items(
+        value,
+        current_unit_texts=current_unit_texts,
+        allowed_ref_ids=allowed_ref_ids,
+    )
+
+
+def _digest_marginalia_payload(payload: object) -> object:
+    """Return canonical Marginalia payload with legacy annotation fallback."""
+
+    if not isinstance(payload, Mapping):
+        return None
+    marginalia = payload.get("marginalia")
+    if isinstance(marginalia, list):
+        return marginalia
+    annotations = payload.get("annotations")
+    if isinstance(annotations, list):
+        return annotations
+    return None
 
 
 def _normalize_ingest_boundary_result(
@@ -1060,8 +1089,8 @@ def digest(
         if isinstance(ref, dict) and _clean_text(ref.get("ref_id"))
     }
 
-    surfaced_reactions = _normalize_surfaced_reactions(
-        payload.get("annotations") if isinstance(payload, dict) else None,
+    marginalia = _normalize_marginalia_items(
+        _digest_marginalia_payload(payload),
         current_unit_texts=current_unit_texts,
         allowed_ref_ids=allowed_ref_ids,
     )
@@ -1073,7 +1102,8 @@ def digest(
     )
     result: DigestResult = {
         "reading_impression": reading_impression,
-        "surfaced_reactions": surfaced_reactions,
+        "marginalia": marginalia,
+        "surfaced_reactions": marginalia,
         "memory_uptake_ops": memory_uptake_ops,
         "memory_uptake_admission_events": memory_uptake_admission_events,
     }

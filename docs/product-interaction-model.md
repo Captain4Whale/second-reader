@@ -60,7 +60,7 @@ Update when: the primary product path, page responsibilities, or interaction mod
 
 ### 7. Global Marks
 - Canonical route: `/marks`
-- Role: provide a cross-book saved-reaction list for things the user chose to keep.
+- Role: provide a cross-book saved-Marginalia list for things the user chose to keep.
 - This page is a recall-and-jump surface into books and chapters, not the primary reading scene.
 
 ## Page Responsibilities
@@ -82,7 +82,7 @@ Update when: the primary product path, page responsibilities, or interaction mod
   - act as the main chapter reading scene for deep-read output, later review, and return-to-context
   - be the default destination when the user wants to get back to "where the reading happened"
 - Marks page:
-  - act as the global saved-reaction list and cross-book recall surface
+  - act as the global saved-Marginalia list and cross-book recall surface
   - link users back into the relevant chapter scene without replacing it
 - Compatibility analysis routes:
   - preserve legacy deep-reading entry and resume behavior

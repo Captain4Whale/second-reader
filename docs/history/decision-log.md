@@ -3236,7 +3236,7 @@ This new direction is design frozen but not yet implemented as a formal benchmar
 - `docs/tasks/registry.md`
 - `docs/backend-reading-mechanisms/attentional_v2.md`
 - `docs/implementation/new-reading-mechanism/ingest-recall-and-digest-memory-context-design.md`
-- `docs/implementation/new-reading-mechanism/digest-understanding-response-annotation-design.md`
+- `docs/implementation/new-reading-mechanism/digest-understanding-response-marginalia-design.md`
 
 ## Entry 110
 **ID**: DEC-113
@@ -3285,7 +3285,7 @@ This new direction is design frozen but not yet implemented as a formal benchmar
 - `docs/current-state.md`
 - `docs/tasks/registry.md`
 - `docs/backend-reading-mechanisms/attentional_v2.md`
-- `docs/implementation/new-reading-mechanism/digest-understanding-response-annotation-design.md`
+- `docs/implementation/new-reading-mechanism/digest-understanding-response-marginalia-design.md`
 - `docs/implementation/new-reading-mechanism/unit-memory-hybrid-retrieval-design.md`
 - `docs/implementation/new-reading-mechanism/ingest-recall-and-digest-memory-context-design.md`
 - `reading-companion-backend/src/attentional_v2/llm_output_tools.py`
@@ -3614,3 +3614,34 @@ This new direction is design frozen but not yet implemented as a formal benchmar
 - `docs/implementation/new-reading-mechanism/llm-structured-output-protocol-note.md`
 - `docs/current-state.md`
 - `docs/tasks/registry.md`
+
+## Entry 125
+**ID**: DEC-128
+**Status**: active
+
+**Decision / Inflection**: Promote Marginalia as the canonical Digest visible-note concept.
+
+**Period**: June 20, 2026, after reviewing the current Digest prompt and deciding that `Annotation` was too generic for the product-visible note surface.
+
+**Decision**: Live Digest is bumped to `attentional_v2.digest.v10` / XML spec v10 / promptset `attentional_v2-phase6-v68`, with output contract `digest_understanding_response_marginalia_json_v4`. The canonical model-facing Digest outputs are now `understanding`, `response`, and `marginalia[]`. Prompt XML uses `<Marginalia>` / `<MarginaliaField>`, and the prompt frames Marginalia as page-margin reader notes anchored to exact source spans rather than generic explanatory annotations. Runtime stores canonical `DigestResult.marginalia`, Unit Memory writes `digest.marginalia`, retrieval derives `unit_marginalia`, and public/frontend surfaces expose canonical `marginalia_id`, `marginalia_type`, `visible_marginalia`, and `featured_marginalia`.
+
+**Boundary**: This is a terminology and contract migration, not a Marginalia quality-policy change. Existing historical eval artifacts, old decision entries, `reaction_records.json` filenames, old `annotations[]` payloads, `surfaced_reactions`, public `reaction_*` fields, marks routes keyed by `{reaction_id}`, and third-party EPUB.js `rendition.annotations` remain compatibility or external-library vocabulary. New code/docs should prefer Marginalia names while compatibility adapters keep older artifacts and clients working.
+
+**Why this path won**: `Marginalia` better names the product value: a reader-visible note in the margin, grounded in a source quote, carrying the companion's live reading attention. `Annotation` sounded like a generic labeling/explanation task, and `reaction` carried old mechanism-family baggage. The migration lets the main product surface use the right concept without breaking old data or old public fields in the same slice.
+
+**Primary evidence**:
+- `reading-companion-backend/src/attentional_v2/prompts/digest.py`
+- `reading-companion-backend/src/attentional_v2/llm_output_tools.py`
+- `reading-companion-backend/src/attentional_v2/llm_calls.py`
+- `reading-companion-backend/src/attentional_v2/unit_memory.py`
+- `reading-companion-backend/src/api/schemas.py`
+- `reading-companion-backend/src/api/app.py`
+- `reading-companion-backend/src/library/catalog.py`
+- `reading-companion-frontend/src/app/lib/api.ts`
+- `reading-companion-frontend/src/app/lib/contract.ts`
+- `docs/backend-reading-mechanisms/attentional_v2.md`
+- `docs/api-contract.md`
+- `docs/api-integration.md`
+- `docs/backend-state-aggregation.md`
+- `docs/implementation/new-reading-mechanism/digest-understanding-response-marginalia-design.md`
+- `docs/implementation/new-reading-mechanism/digest-marginalia-quality-sourcebook.md`

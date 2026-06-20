@@ -19,6 +19,7 @@ Use `docs/backend-reading-mechanism.md` for shared platform boundaries. Use `doc
 - `DEC-105` hard-purges the retired Detour / source-backread / source-skill compatibility interfaces from current code, prompts, schemas, audits, and tests. Old artifacts and reports are historical only, not a supported live compatibility target.
 - `DEC-107` replaces the old `Navigate` LLM-call identity with `Ingest`.
 - `DEC-110` lands the Unit Memory ledger + hybrid retrieval bottom framework. The follow-through recall/tool slice now lets Ingest emit bounded prior-reading recalls, lets Reading Runner execute runtime-owned Unit Memory retrieval/selection, and renders selected Understanding lines into Digest `ReadingMemory`.
+- `DEC-128` promotes Marginalia as the canonical Digest visible-note concept. Live Digest now emits `marginalia[]`; legacy `annotations[]`, `surfaced_reactions`, `reaction_records`, and public `reaction_*` names remain compatibility/audit aliases unless a later cleanup retires them explicitly.
 - Stable live behavior remains defined here and should be updated only when implementation lands.
 
 ## Mechanism-Internal Reading Runner Boundary
@@ -125,13 +126,13 @@ Use `docs/backend-reading-mechanism.md` for shared platform boundaries. Use `doc
   - `Working State` was the historical name for this hot layer; later runs used `Active Attention`, then ActiveTension semantics. Those names now describe deprecated artifacts rather than the forward architecture.
   - `recent_reading_memory` is now the current first-half near-term memory layer: Digest can append compact semantic memory from each unit so later read cycles do not behave as if earlier units vanished.
   - The implementation currently covers Digest-time formation, append-only persistence, prompt projection, checkpoint / resume carriage, settlement audit visibility, and evaluation snapshot inclusion.
-  - Long-distance Unit Memory now has a live recall/retrieval/context framework: settlement writes one ledger entry per accepted source unit, derives retrieval documents from source / understanding / response / annotation surfaces, builds FTS5 lexical retrieval, attempts optional sqlite-vec vector indexing in `hybrid` mode, records retrieval traces between `Ingest` and `Digest`, and renders runtime-selected Understanding lines into Digest `ReadingMemory`.
+  - Long-distance Unit Memory now has a live recall/retrieval/context framework: settlement writes one ledger entry per accepted source unit, derives retrieval documents from source / understanding / response / Marginalia surfaces, builds FTS5 lexical retrieval, attempts optional sqlite-vec vector indexing in `hybrid` mode, records retrieval traces between `Ingest` and `Digest`, and renders runtime-selected Understanding lines into Digest `ReadingMemory`.
   - Unit Memory selection now has per-recall prompt-visible discipline: one recall can select at most `max_units_per_recall_to_digest_context` entries toward Digest `ReadingMemory` before traceable suppression with `per_recall_selection_limit_exceeded`; the broader total long-distance budget still covers multiple specific recalls.
-  - Unit Memory selection also applies a content-neutral quality gate after aggregation and renderability checks: candidates need strong enough `unit_understanding` evidence before they can occupy long-distance `ReadingMemory` slots. Auxiliary `unit_source` / `unit_response` / `unit_annotation` matches may help search and aggregation, but they cannot by themselves select a prompt-facing memory unless the same unit also has enough Understanding backing. Weak candidates are suppressed with `candidate_below_selection_quality_threshold` instead of filling remaining budget by default.
+  - Unit Memory selection also applies a content-neutral quality gate after aggregation and renderability checks: candidates need strong enough `unit_understanding` evidence before they can occupy long-distance `ReadingMemory` slots. Auxiliary `unit_source` / `unit_response` / `unit_marginalia` matches may help search and aggregation, but they cannot by themselves select a prompt-facing memory unless the same unit also has enough Understanding backing. Legacy `unit_annotation` docs remain readable as compatibility aliases. Weak candidates are suppressed with `candidate_below_selection_quality_threshold` instead of filling remaining budget by default.
   - Unit Memory retrieval excludes only hot current-chapter spans that are already prompt-visible in Digest `ReadingMemory`; it does not exclude the whole active Recent Reading Memory store. Retrieval traces record the prompt-visible hot span exclusion count so long-distance selection slots are not silently spent on hot-memory duplicates.
   - Dense Unit Memory retrieval now filters sqlite-vec candidates through `dense_max_distance` before aggregation, so `dense_top_k` does not automatically admit semantically distant vector neighbors.
-  - Digest prompt-facing memory is now one top-level `ReadingMemory` text block assembled from hot current-chapter Understanding plus selected long-distance Unit Memory Understanding; raw prior source text, prior Response, and prior Annotation remain retrieval/audit surfaces rather than prompt-visible memory.
-  - The next long-memory direction should be content-neutral unit-level memory, not content-typed concept/thread schemas; visible reactions belong in `reaction_records`.
+  - Digest prompt-facing memory is now one top-level `ReadingMemory` text block assembled from hot current-chapter Understanding plus selected long-distance Unit Memory Understanding; raw prior source text, prior Response, and prior Marginalia remain retrieval/audit surfaces rather than prompt-visible memory.
+  - The next long-memory direction should be content-neutral unit-level memory, not content-typed concept/thread schemas; visible Marginalia belong in Marginalia / reaction-compatible records.
   - Do not expand ActiveTension to cover these needs. Keep its existing fields (`tension_from`, `tension_focus`, `working_interpretation`, `source_refs`, `development_source_refs`, terminal reasons / coordinates, `status`, and legacy inputs) only as deprecated data until cleanup.
   - `question_from`, `driving_question`, `working_answer`, `answer_source_refs`, `answer_boundary`, and `statement` are old artifact inputs only.
   - `local_hypotheses` / `live_hypotheses` are historical names only. Hypothesis-like material should become unit-level memory depending on its future retrieval value, not another ActiveTension expansion.
@@ -230,7 +231,7 @@ Use `docs/backend-reading-mechanism.md` for shared platform boundaries. Use `doc
   - It uses the shared `book document` to build a rough structural map of chapters, headings, likely pivots, and a narrow `chapter_zone` classification for scheduling.
   - That survey pass remains an orientation layer rather than hidden full-book reading:
     - it classifies structural role only
-    - it does not produce user-visible reactions
+    - it does not produce user-visible Marginalia
     - it does not write durable reading memory
   - It now also emits a machine-readable `reading_plan` whose default mode is `body_first`.
 - It then reads through scheduled chapters by paragraph-offset source cursor.
@@ -252,8 +253,8 @@ Use `docs/backend-reading-mechanism.md` for shared platform boundaries. Use `doc
     - if Ingest fails its structured-output contract or submits missing/empty `unit` fields, surface the LLM problem such as `llm_contract` instead of manufacturing an empty boundary for fallback settlement
   - retrieve/select prior Understanding when Ingest supplied recalls, then build a bounded prompt-facing `ReadingMemory` block from hot current-chapter Understanding plus selected long-distance Unit Memory Understanding
   - formally digest the accepted source unit through `Digest`
-  - let `Digest` produce three model-facing reading outputs for that exact unit: `understanding`, `response`, and `annotations`
-  - runtime maps those outputs into internal `memory_uptake_ops`, `reading_impression`, and `surfaced_reactions` for existing settlement/audit surfaces
+  - let `Digest` produce three model-facing reading outputs for that exact unit: `understanding`, `response`, and `marginalia`
+  - runtime maps those outputs into internal `memory_uptake_ops`, `reading_impression`, and canonical `marginalia`, with deprecated `surfaced_reactions` aliases for existing settlement/audit compatibility
   - `Reading Runner` post-Digest settlement closes the exact source unit, appends it to the Unit Span Ledger, and advances the cursor to `end_cursor`
 - Current capture/resume writes only the current forward continuity schema; old non-mainline checkpoint/artifact shapes are not a compatibility target after `DEC-105`.
 - `Ingest` memory retrieval is now a Unit Memory recall/tool path and is separate from the retired source-skill loop.
@@ -294,32 +295,32 @@ Use `docs/backend-reading-mechanism.md` for shared platform boundaries. Use `doc
     - `Reading Runner` then reads them after the `main_body` queue drains
     - explicit chapter-targeted runs may still select them directly
 - `Digest` is the current formal unit interpretation LLM call, with a reader-first prompt role rather than a node-first role.
-  - On the current live baseline, its model-facing output fields are `understanding`, `response`, and `annotations`.
+  - On the current live baseline, its model-facing output fields are `understanding`, `response`, and `marginalia`.
   - The runtime converts the single `understanding` object into zero or one internal `memory_uptake_ops[]` before settlement.
-  - The runtime maps `response` to internal `DigestResult.reading_impression` and `annotations[]` to internal `DigestResult.surfaced_reactions`.
+  - The runtime maps `response` to internal `DigestResult.reading_impression` and `marginalia[]` to canonical `DigestResult.marginalia`, while still exposing `DigestResult.surfaced_reactions` as a deprecated alias.
   - It should not behave like a control super-node or a checklist-filling state updater.
   - Its intended order is:
     - read the current unit as a reader
     - form source-faithful `understanding`
     - express a brief natural `response`
-    - annotate any exact source spans that genuinely ask to be marked
+    - write Marginalia for any exact source spans that genuinely ask to be marked in the page margin
     - avoid route selection; the Runner will advance deterministically after settlement
   - Legacy compatibility fields such as `raw_reaction`, `move_hint`, `prior_material_use`, `express_signal`, and `context_request` are now historical territory, not the live F3 contract.
   - It now also carries an explicit proportion rule for thin structural units:
-    - a bare heading, label, or similarly slight structural cue may legitimately produce no surfaced reaction
+    - a bare heading, label, or similarly slight structural cue may legitimately produce no Marginalia
     - the mechanism should not inflate that kind of unit into review voice or manufactured gravitas unless the wording itself genuinely carries local force
 - `response` is the model-facing brief natural read-after impression; internally it is still stored as `reading_impression` for the current audit/runtime surface.
   - It exists as the immediate reader-like response after one unit, not as a new durable memory layer.
   - The LLM-facing Digest output emits one `understanding` object, not Recent Reading Memory or legacy store-targeted memory operations.
   - Runtime converts the single `understanding` object into internal `memory_uptake_ops[]` for deterministic settlement into the Recent Reading Memory store.
   - Model-emitted legacy `memory_uptake_ops[]` are ignored by the current Digest call.
-  - Visible annotations and stored Understanding come from the same reading experience, but an annotation is persisted as a reaction record and is not automatically copied into memory.
+  - Visible Marginalia and stored Understanding come from the same reading experience, but Marginalia is persisted as a visible-note record with reaction-compatible aliases and is not automatically copied into memory.
   - Author-given structures such as stage models, classifications, core definitions, named distinctions, or chapter roadmaps may enter Recent Reading Memory even when they do not produce a visible reaction.
 - `Express` is now best understood as historical intermediate compatibility-first territory rather than a live mechanism node.
   - It helped isolate visible wording while the system proved out surfaced-reaction persistence.
   - But the approved next shape no longer treats a dedicated `Express` step as the mechanism's stable center of gravity, and F1 has already removed it from the live Reading Runner path.
 - The Reading Runner now owns post-Digest settlement for that same chosen unit.
-  - It deterministically applies `memory_uptake_ops`, persists surfaced reactions, writes audit records, closes the current unit, appends the accepted mainline unit to the Unit Span Ledger, and advances the paragraph-offset cursor to the unit's `end_cursor`.
+  - It deterministically applies `memory_uptake_ops`, persists Marginalia with reaction-compatible aliases, writes audit records, closes the current unit, appends the accepted mainline unit to the Unit Span Ledger, and advances the paragraph-offset cursor to the unit's `end_cursor`.
   - It does not ask an LLM whether ordinary forward reading should continue.
   - It does not record a replacement `forward` action; forward progression is the default program behavior.
 - Span visibility and authority are now aligned.
@@ -356,11 +357,11 @@ Use `docs/backend-reading-mechanism.md` for shared platform boundaries. Use `doc
   - `Ingest` decides the next coverage unit before formal reading begins
   - forward source-unit choice normally uses one Ingest LLM call and cannot request skills
   - `Digest` is now the only steady-state per-unit interpretation call
-  - surfaced reactions now come from that same Digest call rather than from a follow-on wording node
+  - Marginalia now come from that same Digest call rather than from a follow-on wording node
   - ordinary forward progression is deterministic Reading Runner settlement rather than a route action
 - Under the approved current shape:
   - `Ingest` owns forward next-unit selection and the LLM-side prior-reading recall intention through bounded `retrieve_unit_memory` action-tool args
-  - `Digest` owns model-facing `understanding`, `response`, and `annotations`
+  - `Digest` owns model-facing `understanding`, `response`, and `marginalia`
   - `Reading Runner` owns anchor governance, Unit Memory retrieval/selection, Digest `ReadingMemory` rendering, post-Digest settlement, and cursor advance
   - `slow cycle` owns chapter-end consolidation and promotion
 
@@ -374,34 +375,34 @@ Use `docs/backend-reading-mechanism.md` for shared platform boundaries. Use `doc
   - `response`
     - the temporary natural-language response left by the current unit
     - this is intentionally compact; it is the reader's immediate feeling, thought, pressure, question, or aftertaste after understanding the unit
-  - `annotations`
-    - zero to many visible reading-time annotations surfaced directly by `Digest`
-    - each annotation should carry:
+  - `marginalia`
+    - zero to many visible page-margin reading notes surfaced directly by `Digest`
+    - each Marginalia item should carry:
       - `source_quote`
       - `content`
       - optional `prior_link`
       - optional `outside_link`
       - optional `search_intent`
-    - `Digest` still understands the whole `unit`, but each `source_quote` should be chosen as the smallest self-sufficient span that can honestly carry that annotation
-      - if one sentence already stands on its own, it may anchor an annotation by itself
+    - `Digest` still understands the whole `unit`, but each `source_quote` should be chosen as the smallest self-sufficient span that can honestly carry that Marginalia note
+      - if one sentence already stands on its own, it may anchor a Marginalia item by itself
       - if a sentence would lose meaning when isolated, `Digest` should use the smallest multi-sentence span that keeps the meaning intact
       - a larger paragraph-sized anchor is allowed only when that larger span is genuinely the smallest complete footing, not as a lazy default
-    - one `unit` may legitimately yield more than one native annotation when it contains multiple independently complete local triggers
+    - one `unit` may legitimately yield more than one Marginalia item when it contains multiple independently complete local triggers
       - a sharper later sentence should not automatically swallow an earlier framing line, premise line, or hinge line that also stands on its own
-      - `Digest` should do a final swallowed-line check before it settles on one annotation: if an earlier line independently frames the later move, it should not be left stranded inside `response` merely because a later line sounds more dramatic
+      - `Digest` should do a final swallowed-line check before it settles on one Marginalia item: if an earlier line independently frames the later move, it should not be left stranded inside `response` merely because a later line sounds more dramatic
       - this applies especially to premise-plus-sharpening pairs: when the earlier line states the premise and the later line cashes it out, `Digest` should not default to surfacing only the later line if both independently stand
-      - this is bounded plurality, not pressure to spray annotations everywhere; the default density still stays low unless the unit honestly contains multiple independently valuable spans
-    - the native annotation shape does not carry a `type`
+      - this is bounded plurality, not pressure to spray Marginalia everywhere; the default density still stays low unless the unit honestly contains multiple independently valuable spans
+    - the native Marginalia shape does not carry a `type`
     - `content` must stay reader-facing and natural-language.
       - it may refer back to earlier material, but it must not expose system handles such as sentence ids, `ref_ids`, anchor ids, thread ids, concept ids, or reaction ids
       - `prior_link.ref_ids` remain internal structured linkage for the runtime and audits, not wording that should leak into visible text
-      - if visible wording briefly quotes earlier material, it should do so sparingly with a short fragment rather than pasting a whole earlier sentence back into the annotation
-- Internal `DigestResult` still exposes `reading_impression`, `surfaced_reactions`, and normalized `memory_uptake_ops` so existing settlement, reaction persistence, and read-audit surfaces remain stable.
-- Model-emitted legacy `reading_impression`, `surfaced_reactions`, `recent_reading_memory`, and `memory_uptake_ops` are not part of the current Digest LLM contract.
-- surfaced reactions are now the primary visible-reaction truth in the approved contract.
-  - for `attentional_v2`, native visible-reaction truth is the surfaced semantic payload itself, not a reaction-family label.
+      - if visible wording briefly quotes earlier material, it should do so sparingly with a short fragment rather than pasting a whole earlier sentence back into the Marginalia note
+- Internal `DigestResult` exposes canonical `marginalia` plus deprecated `surfaced_reactions`, along with `reading_impression` and normalized `memory_uptake_ops`, so existing settlement, reaction persistence, and read-audit surfaces remain stable during migration.
+- Model-emitted legacy `reading_impression`, `surfaced_reactions`, `annotations`, `recent_reading_memory`, and `memory_uptake_ops` are not part of the current Digest LLM contract, except that runtime may accept legacy `annotations[]` as a compatibility fallback when a malformed/old payload is normalized.
+- Marginalia are now the primary visible-note truth in the approved contract.
+  - for `attentional_v2`, native visible-note truth is the Marginalia semantic payload itself, not a reaction-family label.
   - old family labels remain compatibility projections only.
-  - the current E3 persisted surfaced fields remain useful evidence and may be reused during migration.
+  - the current persisted surfaced fields remain useful evidence and may be reused through compatibility aliases during migration.
 - `silent` is no longer a primary reaction type.
   - it is simply the absence of a surfaced reaction in that unit.
 
@@ -456,9 +457,9 @@ Use `docs/backend-reading-mechanism.md` for shared platform boundaries. Use `doc
   - Empty optional `retrieve_unit_memory` calls with no recall targets are treated as no-op / not-requested events, not as fatal recall-contract failures.
   - If Ingest calls `retrieve_unit_memory` with recall targets, runtime derives audit/private `memory_recalls[]` from the tool args. Final-output `memory_recalls[]` is not a live contract field and any legacy echo is ignored rather than treated as a second recall authority.
   - Digest XML renders `ReaderRole` and `Instruction` as separate top-level blocks; all fixed non-role Digest directions live under `Instruction`, while runtime context/data blocks remain separate.
-  - Digest `Instruction` uses direct child blocks `CurrentStep`, `ContextUseGuide`, `Understanding`, `Response`, `Annotation`, `SourceGrounding`, and `ResponseDiscipline`.
-  - Digest `Understanding` prompt version `attentional_v2.digest.v9` uses content-level reading rules, text-type compression guidance, grammatical-subject guidance, source-established-content calibration, subject-continuity rules, and approved examples to keep stored Understanding memory self-contained without source-container commentary, passage-effect commentary, source copying, or content-type classification.
-  - The current Digest output contract carries `understanding`, `response`, and `annotations`; transport is selected by the shared LLM gateway from the active profile.
+  - Digest `Instruction` uses direct child blocks `CurrentStep`, `ContextUseGuide`, `Understanding`, `Response`, `Marginalia`, `SourceGrounding`, and `ResponseDiscipline`.
+  - Digest prompt version `attentional_v2.digest.v10` uses content-level Understanding rules, text-type compression guidance, grammatical-subject guidance, source-established-content calibration, subject-continuity rules, approved examples, and Marginalia-specific page-margin-note wording to keep stored Understanding memory self-contained while keeping visible notes source-anchored and reader-facing.
+  - The current Digest output contract carries `understanding`, `response`, and `marginalia`; transport is selected by the shared LLM gateway from the active profile.
 - Current `attentional_v2` structured outputs use protocol-neutral project schemas with provider-specific transport at the shared gateway boundary.
   - Anthropic-compatible and legacy callers keep the forced final-output tool path.
   - OpenAI-compatible profiles configured with `response_format: {"type": "json_object"}` use JSON-object final output plus local validation/repair for Ingest and Digest.
@@ -468,7 +469,7 @@ Use `docs/backend-reading-mechanism.md` for shared platform boundaries. Use `doc
   - Missing submit-tool calls, wrong submit-tool names, non-object tool args, malformed JSON objects, or business-validator failures are repaired once and then reported as public `llm_contract` problems if still invalid.
   - Raw provider reasoning/thinking content is not a standard runtime artifact; standard traces keep only normal content, usage, and compact metadata.
   - Current OpenCode / DeepSeek JSON-object protocol details and historical MiniMax transport notes are recorded in `docs/implementation/new-reading-mechanism/llm-structured-output-protocol-note.md`.
-- Subject continuity is implemented in Digest prompt `attentional_v2.digest.v9` and documented in `docs/implementation/new-reading-mechanism/ingest-recall-and-digest-memory-context-design.md`.
+- Subject continuity is implemented in Digest prompt `attentional_v2.digest.v10` and documented in `docs/implementation/new-reading-mechanism/ingest-recall-and-digest-memory-context-design.md`.
   - Prior Understanding in `ReadingMemory` carries narrator / speaker / actor / concept continuity forward; Digest uses that memory plus current source text to establish new subjects, continue known subjects, or explicitly preserve meaningful ambiguity.
   - Boundary: do not add raw prior-source backfill, Ingest reference-resolution fields, or a durable referent store for this slice.
   - Rule: Digest Understanding should be self-contained and memory-readable; it may use pronouns when their referent is explicit inside the same Understanding, but should not store floating pronouns.
@@ -490,7 +491,7 @@ Use `docs/backend-reading-mechanism.md` for shared platform boundaries. Use `doc
     - the accepted source unit as the immediate object of careful reading
     - reading path / position / intent metadata needed to orient that unit
   - `BookInfo` and `OutputContract`
-- `Digest` does not receive retired structured-memory digests, `active_attention`, `reflective_digest`, raw prior source text, prior Response, prior Annotation, full refs, reaction history, read-audit history, or old navigation context on the current live prompt path.
+- `Digest` does not receive retired structured-memory digests, `active_attention`, `reflective_digest`, raw prior source text, prior Response, prior Marginalia, full refs, reaction / Marginalia history, read-audit history, or old navigation context on the current live prompt path.
 - Deprecated stores such as `active_attention` may still exist in runtime, settlement, slow-cycle, or audit artifacts while cleanup remains pending; their existence is not a prompt-carry rule for Digest.
 - `slow cycle` may carry a broader chapter slice because it is the dedicated chapter-end maintenance pass.
 - Default carried context must stay small and stable.
@@ -537,15 +538,15 @@ Use `docs/backend-reading-mechanism.md` for shared platform boundaries. Use `doc
   - `unit_memory`
     - current content-neutral long-distance memory substrate after `DEC-110`
     - one Unit Memory Entry is written per accepted source unit after Digest settlement
-    - each entry preserves the accepted source unit plus the model-facing `understanding`, `response`, and `annotations`
-    - retrieval documents are derived from source, understanding, response, and annotation surfaces
+    - each entry preserves the accepted source unit plus the model-facing `understanding`, `response`, and `marginalia`
+    - retrieval documents are derived from source, understanding, response, and Marginalia surfaces
     - FTS5 text retrieval is always available when SQLite supports FTS5; sqlite-vec + local Ollama embedding is optional and degrades to text-only behavior
     - hybrid readiness can be checked without starting services through `cd reading-companion-backend && .venv/bin/python scripts/check_unit_memory_hybrid_readiness.py`; current Phase 2 live validation requires sqlite-vec load, Ollama reachability, the configured Qwen embedding model, a valid embedding dimension, dense candidates, and RRF contribution
-    - all retrieval documents may participate in FTS retrieval, but lexical ranking prioritizes `unit_understanding` over source / response / annotation auxiliary surfaces; only `unit_understanding` participates in dense vector retrieval in the current policy, and dense candidates are filtered by distance before aggregation
+    - all retrieval documents may participate in FTS retrieval, but lexical ranking prioritizes `unit_understanding` over source / response / Marginalia auxiliary surfaces; only `unit_understanding` participates in dense vector retrieval in the current policy, and dense candidates are filtered by distance before aggregation
     - selected long-distance units must pass renderability and quality gates before Digest context rendering; runtime can select fewer entries than the configured cap when candidates are weak
     - prompt-visible Digest memory is Understanding-only and rendered through one `ReadingMemory` block
   - `artifacts / history`
-    - `reaction_records`
+    - `reaction_records` / Marginalia compatibility records
     - `read_audit`
     - `knowledge_activations` as helper territory rather than primary carried memory
 - Source evidence now travels as inline `source_refs[]` on the state objects that need it.
@@ -568,7 +569,7 @@ Use `docs/backend-reading-mechanism.md` for shared platform boundaries. Use `doc
   - `Reading Runner`
     - owns `local_continuity`, cursor advancement, anchor resolution, retry/fallback, Unit Memory retrieval execution, trace writing, prompt-facing `ReadingMemory` selection/budgeting, and settlement
   - `Digest`
-    - owns model-facing `understanding`, `response`, and `annotations`
+    - owns model-facing `understanding`, `response`, and `marginalia`
     - must write `understanding` as concise, source-faithful content-level understanding from the current source text: what is said or shown, who appears, what happens, what someone thinks or claims, what is defined or distinguished, or what relationship, condition, consequence, scene, image, tone, method, or evidence boundary becomes clear
     - should normally let the grammatical subject be a person, event, concept, claim, relationship, scene, method, or condition from the source text rather than the source container itself
     - should not emit or rely on an operation-level `reason` for `understanding`; runtime stores each entry's `content` as the retained `memory_text`
@@ -657,7 +658,7 @@ Use `docs/backend-reading-mechanism.md` for shared platform boundaries. Use `doc
     - used for reading-history continuity and resume validation rather than treated as a debug-only stream
   - `_mechanisms/attentional_v2/runtime/read_audit.jsonl`
     - canonical runtime audit for each whole read cycle
-    - records carry-forward refs, `ingest_trace`, surfaced reactions, `reading_impression`, and the normalized `memory_uptake_ops` converted from Digest output
+    - records carry-forward refs, `ingest_trace`, canonical `marginalia`, deprecated `surfaced_reactions` aliases, `reading_impression`, and the normalized `memory_uptake_ops` converted from Digest output
     - also records the current source span when the read is mainline paragraph-offset reading
     - also records memory-op counts by target store so durable-memory settlement can be diagnosed without replaying raw model output
   - `_mechanisms/attentional_v2/runtime/settlement_audit.jsonl`
@@ -669,7 +670,8 @@ Use `docs/backend-reading-mechanism.md` for shared platform boundaries. Use `doc
   - `_mechanisms/attentional_v2/runtime/reflective_frames.json`
   - `_mechanisms/attentional_v2/runtime/knowledge_activations.json`
   - `_mechanisms/attentional_v2/runtime/reaction_records.json`
-    - persisted visible reactions now store native surfaced semantics first:
+    - compatibility filename for persisted visible Marginalia records
+    - new rows store native Marginalia semantics first:
       - `thought`
       - `source_quote`
       - `primary_source_ref`
@@ -773,11 +775,11 @@ Use `docs/backend-reading-mechanism.md` for shared platform boundaries. Use `doc
 - `coverage_unit_interpretation_quality`
   - Does the mechanism form strong coverage-unit interpretations instead of producing sentence-by-sentence sparks or vague paragraph blur?
 - `forward_settlement_integrity`
-  - After each read, does the Reading Runner settle the exact chosen unit, apply memory updates, persist visible reactions, and advance the cursor without inventing a second route taxonomy?
+  - After each read, does the Reading Runner settle the exact chosen unit, apply memory updates, persist visible Marginalia, and advance the cursor without inventing a second route taxonomy?
 - `prior_memory_grounding_honesty`
-  - When the mechanism refers back through surfaced reactions or Digest `ReadingMemory`, are those references source-grounded and interpretively justified rather than merely suggestive or overclaimed?
-- `reaction_selectivity_and_anchor_fidelity`
-  - When the mechanism emits visible thoughts, are they selective, worthwhile, and honestly anchored to the text?
+  - When the mechanism refers back through Marginalia or Digest `ReadingMemory`, are those references source-grounded and interpretively justified rather than merely suggestive or overclaimed?
+- `marginalia_selectivity_and_anchor_fidelity`
+  - When the mechanism emits visible Marginalia, are they selective, worthwhile, and honestly anchored to the text?
 - `reconsolidation_integrity`
   - When later reading changes earlier understanding, does the mechanism preserve historical integrity through append-and-link reconsolidation instead of silent overwrite?
 - `resume_reconstitution_honesty`

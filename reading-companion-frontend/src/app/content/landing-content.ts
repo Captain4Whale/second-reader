@@ -1,5 +1,5 @@
 import { BRAND_CONFIG } from "../config/brand";
-import { canonicalBookPath, type BookId, type ReactionId, type ReactionType } from "../lib/contract";
+import { canonicalBookPath, type BookId, type MarginaliaId, type MarginaliaType, type ReactionId, type ReactionType } from "../lib/contract";
 
 const DEFAULT_PREVIEW_BOOK_ID: BookId = 2488754074399462;
 
@@ -26,10 +26,10 @@ export const LANDING_HERO_ART = {
 } as const;
 
 export const LANDING_REACTION_SECTION = {
-  eyebrow: "Reactions That Emerge",
+  eyebrow: "Marginalia That Emerge",
   title: "A living mind that reads. Not a machine that processes.",
   description:
-    "No tasks. No pipeline. Highlights, doubts, connections — real reactions that emerge as the mind flows through the text.",
+    "No tasks. No pipeline. Highlights, doubts, connections — real Marginalia that emerge as the mind flows through the text.",
 } as const;
 
 export const LANDING_REACTION_ART = {
@@ -77,7 +77,7 @@ export const LANDING_REACTION_CARDS = [
   },
 ] as const satisfies ReadonlyArray<{
   key: string;
-  accentType: ReactionType;
+  accentType: MarginaliaType;
   title: string;
   description: string;
 }>;
@@ -108,8 +108,8 @@ export const LANDING_SAMPLE_TEASERS = [
     content: "This loops back to the opening claim and turns it into a design principle: incentives explain continuity better than stated intentions do.",
   },
 ] as const satisfies ReadonlyArray<{
-  reactionId: ReactionId;
-  type: ReactionType;
+  reactionId: MarginaliaId | ReactionId;
+  type: MarginaliaType | ReactionType;
   chapterRef: string;
   sectionRef: string;
   anchorQuote: string;
@@ -121,7 +121,7 @@ type LandingPreviewConfig = {
   api: {
     bookId: BookId;
     chapterId?: number;
-    selectedReactionIds?: readonly ReactionId[];
+    selectedReactionIds?: readonly MarginaliaId[];
     maxItems: number;
     ctaTo: string;
   };
@@ -131,8 +131,8 @@ type LandingPreviewConfig = {
     sourceLabel: string;
     ctaTo: string;
     items: readonly {
-      reactionId: ReactionId;
-      type: ReactionType;
+      reactionId: MarginaliaId | ReactionId;
+      type: MarginaliaType | ReactionType;
       chapterRef: string;
       sectionRef: string;
       anchorQuote: string;
@@ -146,7 +146,7 @@ export const LANDING_PREVIEW_CONFIG = {
   api: {
     bookId: DEFAULT_PREVIEW_BOOK_ID,
     chapterId: undefined as number | undefined,
-    // To hand-pick real preview notes, set chapterId and add public reaction IDs here.
+    // To hand-pick real preview notes, set chapterId and add public Marginalia IDs here.
     // selectedReactionIds: [4101, 4102, 4103],
     selectedReactionIds: undefined as readonly ReactionId[] | undefined,
     maxItems: 3,

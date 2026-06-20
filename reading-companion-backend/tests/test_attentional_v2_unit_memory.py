@@ -90,10 +90,10 @@ def test_unit_memory_entry_derives_weighted_surface_docs():
         "unit_source",
         "unit_understanding",
         "unit_response",
-        "unit_annotation",
+        "unit_marginalia",
     }
     assert [doc for doc in docs if doc["surface"] == "unit_understanding"][0]["text"] == "站台告别建立了旅程的起点。"
-    assert "\n" in [doc for doc in docs if doc["surface"] == "unit_annotation"][0]["text"]
+    assert "\n" in [doc for doc in docs if doc["surface"] == "unit_marginalia"][0]["text"]
 
 
 def test_fts_query_builder_quotes_phrases_and_skips_short_queries():
@@ -526,7 +526,7 @@ def test_hybrid_vector_status_only_marks_understanding_docs_pending(tmp_path):
     assert statuses["unit_understanding"] == "pending"
     assert statuses["unit_source"] == "not_requested"
     assert statuses["unit_response"] == "not_requested"
-    assert statuses["unit_annotation"] == "not_requested"
+    assert statuses["unit_marginalia"] == "not_requested"
 
 
 def test_dense_channel_weight_exists_only_for_understanding_surface():
@@ -612,7 +612,7 @@ def test_hybrid_dense_retrieval_uses_understanding_vectors_and_filters_distance(
 
 def test_lexical_surface_weights_prioritize_understanding_over_auxiliary_surfaces():
     assert SURFACE_CHANNEL_WEIGHTS["unit_understanding"]["lexical"] > SURFACE_CHANNEL_WEIGHTS["unit_source"]["lexical"]
-    assert SURFACE_CHANNEL_WEIGHTS["unit_understanding"]["lexical"] > SURFACE_CHANNEL_WEIGHTS["unit_annotation"]["lexical"]
+    assert SURFACE_CHANNEL_WEIGHTS["unit_understanding"]["lexical"] > SURFACE_CHANNEL_WEIGHTS["unit_marginalia"]["lexical"]
     assert SURFACE_CHANNEL_WEIGHTS["unit_understanding"]["lexical"] > SURFACE_CHANNEL_WEIGHTS["unit_response"]["lexical"]
 
 

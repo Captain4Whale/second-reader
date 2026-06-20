@@ -9,6 +9,7 @@ export const ACTIVE_FRONTEND_ENDPOINTS = [
   "GET /api/books/{book_id}/activity",
   "GET /api/books/{book_id}/marks",
   "GET /api/books/{book_id}/chapters/{chapter_id}",
+  "GET /api/books/{book_id}/chapters/{chapter_id}/marginalia",
   "GET /api/books/{book_id}/chapters/{chapter_id}/outline",
   "GET /api/books/{book_id}/cover",
   "GET /api/books/{book_id}/source",

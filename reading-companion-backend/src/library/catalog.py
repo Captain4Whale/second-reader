@@ -599,7 +599,13 @@ def get_book_detail(book_id: str, root: Path | None = None) -> dict:
                 "segment_count": int(chapter.get("segment_count", 0)),
                 "status": "error" if status == "error" else ("completed" if status == "completed" else "pending"),
                 "visible_reaction_count": int(chapter.get("visible_reaction_count", 0)),
+                "visible_marginalia_count": int(
+                    chapter.get("visible_marginalia_count", chapter.get("visible_reaction_count", 0)) or 0
+                ),
                 "reaction_type_diversity": int(chapter.get("reaction_type_diversity", 0)),
+                "marginalia_type_diversity": int(
+                    chapter.get("marginalia_type_diversity", chapter.get("reaction_type_diversity", 0)) or 0
+                ),
                 "result_ready": _chapter_result_ready(book_id, chapter, root=root),
             }
         )
@@ -635,6 +641,7 @@ def get_book_detail(book_id: str, root: Path | None = None) -> dict:
         "chapters": chapters,
         "my_mark_count": len(list_book_marks(book_id, root=root)),
         "reaction_counts": reaction_counts,
+        "marginalia_counts": dict(reaction_counts),
         "chapter_count": len(manifest.get("chapters", [])),
         "completed_chapter_count": _completed_chapter_count(manifest),
         "segment_count": sum(int(chapter.get("segment_count", 0)) for chapter in manifest.get("chapters", [])),
@@ -658,9 +665,13 @@ def _featured_reaction_preview(
     internal_reaction_id = str(item.get("reaction_id", ""))
     primary_source_ref = _reaction_primary_source_ref(item)
     source_quote = _reaction_source_quote(item)
+    public_id = to_api_reaction_id(book_id=book_id, reaction_id=internal_reaction_id)
+    public_type = to_api_reaction_type(str(item.get("type", "")))
     return {
-        "reaction_id": to_api_reaction_id(book_id=book_id, reaction_id=internal_reaction_id),
-        "type": to_api_reaction_type(str(item.get("type", ""))),
+        "marginalia_id": public_id,
+        "marginalia_type": public_type,
+        "reaction_id": public_id,
+        "type": public_type,
         "source_quote": source_quote,
         "anchor_quote": source_quote,
         "content": str(item.get("content", "")),
@@ -686,9 +697,13 @@ def _activity_reaction_preview(
     """Normalize one compact reaction payload embedded in an activity event."""
     raw_reaction_id = str(item.get("reaction_id", "") or "").strip() or f"{section_ref}:{index}"
     source_quote = _reaction_source_quote(item)
+    public_id = to_api_reaction_id(book_id=book_id, reaction_id=raw_reaction_id)
+    public_type = to_api_reaction_type(str(item.get("type", "")))
     return {
-        "reaction_id": to_api_reaction_id(book_id=book_id, reaction_id=raw_reaction_id),
-        "type": to_api_reaction_type(str(item.get("type", ""))),
+        "marginalia_id": public_id,
+        "marginalia_type": public_type,
+        "reaction_id": public_id,
+        "type": public_type,
         "source_quote": source_quote,
         "anchor_quote": source_quote,
         "content": str(item.get("content", "")),
@@ -769,6 +784,13 @@ def _decorate_activity_event(
         root=root,
     )
     event_source_quote = str(event.get("source_quote", event.get("anchor_quote", "")) or "") or None
+    active_marginalia_id = _public_optional_reaction_id(book_id, event.get("active_marginalia_id") or event.get("active_reaction_id"))
+    event_types = [to_api_reaction_type(str(item)) for item in event.get("marginalia_types", event.get("reaction_types", [])) if str(item).strip()]
+    visible_count = (
+        int(event.get("visible_marginalia_count", event.get("visible_reaction_count", 0)) or 0)
+        if event.get("visible_marginalia_count", event.get("visible_reaction_count")) is not None
+        else None
+    )
     return {
         "event_id": str(event.get("event_id", "") or _event_id(event)),
         "timestamp": str(event.get("timestamp", "")),
@@ -782,17 +804,20 @@ def _decorate_activity_event(
         "chapter_ref": chapter_ref,
         "section_ref": section_ref,
         "reading_locus": reading_locus,
-        "active_reaction_id": _public_optional_reaction_id(book_id, event.get("active_reaction_id")),
+        "active_marginalia_id": active_marginalia_id,
+        "active_reaction_id": active_marginalia_id,
         "source_quote": event_source_quote,
         "anchor_quote": event_source_quote,
         "highlight_quote": str(event.get("highlight_quote", "") or "") or None,
-        "reaction_types": [to_api_reaction_type(str(item)) for item in event.get("reaction_types", []) if str(item).strip()],
+        "marginalia_types": event_types,
+        "reaction_types": event_types,
         "search_query": str(event.get("search_query", "") or "") or None,
+        "visible_marginalia": visible_reactions,
         "visible_reactions": visible_reactions,
+        "featured_marginalia": featured,
         "featured_reactions": featured,
-        "visible_reaction_count": (
-            int(event.get("visible_reaction_count", 0) or 0) if event.get("visible_reaction_count") is not None else None
-        ),
+        "visible_marginalia_count": visible_count,
+        "visible_reaction_count": visible_count,
         "result_url": chapter_result_urls.get(chapter_id) if chapter_id is not None and chapter_result_urls else None,
     }
 
@@ -875,9 +900,13 @@ def _reaction_card(section: dict, reaction: dict, mark_index: dict[str, str]) ->
     reaction_id = str(reaction.get("reaction_id", ""))
     book_id = str(section.get("_book_id", ""))
     source_quote = _reaction_source_quote(reaction)
+    public_id = to_api_reaction_id(book_id=book_id, reaction_id=reaction_id)
+    public_type = to_api_reaction_type(str(reaction.get("type", "")))
     return {
-        "reaction_id": to_api_reaction_id(book_id=book_id, reaction_id=reaction_id),
-        "type": to_api_reaction_type(str(reaction.get("type", ""))),
+        "marginalia_id": public_id,
+        "marginalia_type": public_type,
+        "reaction_id": public_id,
+        "type": public_type,
         "source_quote": source_quote,
         "anchor_quote": source_quote,
         "content": str(reaction.get("content", "")),
@@ -967,6 +996,7 @@ def get_chapter_detail(
                 "quality_status": str(section.get("quality_status", "")),
                 "skip_reason": str(section.get("skip_reason", "") or "") or None,
                 "locator": section.get("locator"),
+                "marginalia": reactions,
                 "reactions": reactions,
             }
         )
@@ -986,10 +1016,21 @@ def get_chapter_detail(
         "status": "completed",
         "output_language": str(chapter_payload.get("output_language", manifest.get("output_language", ""))),
         "visible_reaction_count": int(chapter_payload.get("visible_reaction_count", 0)),
+        "visible_marginalia_count": int(
+            chapter_payload.get("visible_marginalia_count", chapter_payload.get("visible_reaction_count", 0)) or 0
+        ),
         "reaction_type_diversity": int(chapter_payload.get("reaction_type_diversity", 0)),
+        "marginalia_type_diversity": int(
+            chapter_payload.get("marginalia_type_diversity", chapter_payload.get("reaction_type_diversity", 0)) or 0
+        ),
         "featured_reactions": [
             _featured_reaction_preview(book_id, chapter_id_value, chapter_number, chapter_ref, item)
             for item in chapter_payload.get("featured_reactions", [])
+            if isinstance(item, dict)
+        ],
+        "featured_marginalia": [
+            _featured_reaction_preview(book_id, chapter_id_value, chapter_number, chapter_ref, item)
+            for item in chapter_payload.get("featured_marginalia", chapter_payload.get("featured_reactions", []))
             if isinstance(item, dict)
         ],
         "chapter_heading": _chapter_heading_payload(chapter_payload.get("chapter_heading")),
@@ -997,6 +1038,7 @@ def get_chapter_detail(
         "sections": page_sections,
         "sections_page_info": page_info,
         "available_filters": REACTION_FILTERS,
+        "available_marginalia_filters": REACTION_FILTERS,
         "source_asset": _source_asset(book_id, manifest),
     }
 
@@ -1381,6 +1423,7 @@ def _analysis_current_reading_activity(
             active_reaction_id = _clean_text(active_refs.get("reaction_id"))
     public_active_reaction_id = _public_optional_reaction_id(book_id, active_reaction_id)
     if public_active_reaction_id is not None:
+        payload["active_marginalia_id"] = public_active_reaction_id
         payload["active_reaction_id"] = public_active_reaction_id
 
     return payload
@@ -1674,8 +1717,10 @@ def get_analysis_state(book_id: str, root: Path | None = None) -> dict:
                 "chapter_number": _public_chapter_number((manifest_chapter_map.get(chapter_id) or {}).get("chapter_number")),
                 "chapter_ref": chapter_ref,
                 "title": title,
-                "visible_reaction_count": int(item.get("visible_reaction_count", 0) or 0),
-                "featured_reactions": list(item.get("featured_reactions", [])),
+                "visible_reaction_count": int(item.get("visible_reaction_count", item.get("visible_marginalia_count", 0)) or 0),
+                "visible_marginalia_count": int(item.get("visible_marginalia_count", item.get("visible_reaction_count", 0)) or 0),
+                "featured_reactions": list(item.get("featured_reactions", item.get("featured_marginalia", []))),
+                "featured_marginalia": list(item.get("featured_marginalia", item.get("featured_reactions", []))),
                 "result_url": result_url,
             }
         )
@@ -1684,7 +1729,7 @@ def get_analysis_state(book_id: str, root: Path | None = None) -> dict:
 
     recent_reactions = []
     for card in completed_cards:
-        recent_reactions.extend(card.get("featured_reactions", []))
+        recent_reactions.extend(card.get("featured_marginalia", card.get("featured_reactions", [])))
         if len(recent_reactions) >= 5:
             break
     status, stage_label_key, stage_label_params = _analysis_status(
@@ -1793,7 +1838,9 @@ def get_analysis_state(book_id: str, root: Path | None = None) -> dict:
             "pulse_message": pulse_message,
             "current_reading_activity": current_reading_activity,
             "recent_reactions": recent_reactions[:5],
+            "recent_marginalia": recent_reactions[:5],
             "reaction_counts": reaction_counts,
+            "marginalia_counts": dict(reaction_counts),
             "search_active": any(str(item.get("search_query", "") or "").strip() for item in recent_activity[:5]),
         },
         "recent_completed_chapters": completed_cards,

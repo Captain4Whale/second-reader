@@ -77,6 +77,7 @@ DEFAULT_RETRIEVAL_CONFIG: dict[str, object] = {
 SURFACE_CHANNEL_WEIGHTS: dict[str, dict[str, float]] = {
     "unit_understanding": {"lexical": 1.35, "dense": 1.35},
     "unit_source": {"lexical": 0.80},
+    "unit_marginalia": {"lexical": 0.65},
     "unit_annotation": {"lexical": 0.65},
     "unit_response": {"lexical": 0.35},
 }
@@ -370,11 +371,11 @@ def build_unit_memory_entry(
     unit_id = _clean_text(source_unit.get("unit_id"))
     unit_index = _coerce_int(source_unit.get("sequence_index"), 0)
     source_span_id = _clean_text(source_unit.get("source_span_id"))
-    annotations = [
+    marginalia = [
         dict(item)
-        for item in digest_result.get("surfaced_reactions", [])
+        for item in digest_result.get("marginalia", digest_result.get("surfaced_reactions", []))
         if isinstance(item, Mapping)
-    ] if isinstance(digest_result.get("surfaced_reactions"), list) else []
+    ] if isinstance(digest_result.get("marginalia", digest_result.get("surfaced_reactions", [])), list) else []
     return {
         "unit_id": unit_id,
         "book_id": _clean_text(book_id),
@@ -389,7 +390,8 @@ def build_unit_memory_entry(
         "digest": {
             "understanding": _understanding_from_digest_result(digest_result),
             "response": _clean_text(digest_result.get("reading_impression")),
-            "annotations": annotations,
+            "marginalia": marginalia,
+            "annotations": marginalia,
         },
         "index_status": {
             "fts": "pending",
@@ -464,23 +466,25 @@ def retrieval_docs_from_entry(entry: Mapping[str, object]) -> list[dict[str, obj
             }
         )
 
-    annotations = digest.get("annotations", [])
-    if isinstance(annotations, list):
-        for index, annotation in enumerate(annotations, start=1):
-            if not isinstance(annotation, Mapping):
+    marginalia = digest.get("marginalia")
+    if not isinstance(marginalia, list):
+        marginalia = digest.get("annotations", [])
+    if isinstance(marginalia, list):
+        for index, item in enumerate(marginalia, start=1):
+            if not isinstance(item, Mapping):
                 continue
-            quote = _doc_text(annotation.get("source_quote"))
-            content = _doc_text(annotation.get("content"))
+            quote = _doc_text(item.get("source_quote"))
+            content = _doc_text(item.get("content"))
             text = "\n".join(item for item in (quote, content) if item)
             if not text:
                 continue
             docs.append(
                 {
-                    "retrieval_doc_id": f"{unit_id}#annotation:{index}",
+                    "retrieval_doc_id": f"{unit_id}#marginalia:{index}",
                     "unit_id": unit_id,
                     "book_id": book_id,
-                    "surface": "unit_annotation",
-                    "weight_profile": "annotation_default",
+                    "surface": "unit_marginalia",
+                    "weight_profile": "marginalia_default",
                     "text": text,
                     "source_span_id": source_span_id,
                 }

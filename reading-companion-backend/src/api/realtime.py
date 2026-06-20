@@ -393,7 +393,9 @@ async def stream_job_events(
                             chapter_ref=str(event.get("chapter_ref", "")),
                             title=str(event.get("chapter_ref", "")),
                             visible_reaction_count=int(event.get("visible_reaction_count", 0) or 0),
-                            featured_reactions=event.get("featured_reactions", []),
+                            visible_marginalia_count=int(event.get("visible_marginalia_count", event.get("visible_reaction_count", 0)) or 0),
+                            featured_reactions=event.get("featured_reactions", event.get("featured_marginalia", [])),
+                            featured_marginalia=event.get("featured_marginalia", event.get("featured_reactions", [])),
                             result_url=str(
                                 event.get("result_url", "")
                                 or canonical_chapter_path(_public_book_id(current_book_id) or 0, int(event.get("chapter_id", 0) or 0))

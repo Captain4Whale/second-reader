@@ -17,7 +17,7 @@ Update when: the conformance execution policy changes, the locked design baselin
 Use this objective when starting the Codex Goal:
 
 ```text
-Verify that the current attentional_v2 Ingest / Unit Memory / Digest mechanism conforms end to end to the locked design documents. The test must check that the Second Reader can select a forward source unit, express bounded prior-reading recalls, trigger runtime-owned Unit Memory retrieval, carry selected Understanding memory into Digest ReadingMemory, digest the selected source unit into understanding / response / annotations, settle the result, and write back memory artifacts. Fix implementation, prompt-rendering, runtime, test, or stable-doc mismatches found during this conformance pass. Do not modify locked mechanism design documents, do not judge subjective reading quality, do not run formal eval, do not update the evidence catalog, and do not change mechanism direction.
+Verify that the current attentional_v2 Ingest / Unit Memory / Digest mechanism conforms end to end to the locked design documents. The test must check that the Second Reader can select a forward source unit, express bounded prior-reading recalls, trigger runtime-owned Unit Memory retrieval, carry selected Understanding memory into Digest ReadingMemory, digest the selected source unit into understanding / response / marginalia, settle the result, and write back memory artifacts. Fix implementation, prompt-rendering, runtime, test, or stable-doc mismatches found during this conformance pass. Do not modify locked mechanism design documents, do not judge subjective reading quality, do not run formal eval, do not update the evidence catalog, and do not change mechanism direction.
 ```
 
 ## Locked Baseline
@@ -28,7 +28,7 @@ The following documents are normative for this conformance pass:
 - `docs/current-state.md`
 - `docs/tasks/registry.md`
 - `docs/implementation/new-reading-mechanism/ingest-context-and-navigate-mapping.md`
-- `docs/implementation/new-reading-mechanism/digest-understanding-response-annotation-design.md`
+- `docs/implementation/new-reading-mechanism/digest-understanding-response-marginalia-design.md`
 - `docs/implementation/new-reading-mechanism/unit-memory-hybrid-retrieval-design.md`
 - `docs/implementation/new-reading-mechanism/ingest-recall-and-digest-memory-context-design.md`
 - `docs/history/decision-log.md` entries `DEC-103` through `DEC-110`
@@ -272,7 +272,7 @@ Observable evidence:
 
 Pass condition:
 - `unit_memory_entries` has one entry per settled accepted source unit
-- entry includes accepted source unit data, one holistic Digest `understanding`, `response`, `annotations`, mode, and index status
+- entry includes accepted source unit data, one holistic Digest `understanding`, `response`, `marginalia`, mode, and index status
 - empty understanding content does not create an empty recent-memory append
 
 Allowed fix:
@@ -295,10 +295,10 @@ Observable evidence:
 - Unit Memory index tests
 
 Pass condition:
-- retrieval docs are derived for `unit_source`, `unit_understanding`, `unit_response`, and `unit_annotation` when content exists
+- retrieval docs are derived for `unit_source`, `unit_understanding`, `unit_response`, and `unit_marginalia` when content exists; legacy `unit_annotation` docs remain readable as compatibility aliases
 - all valid retrieval docs participate in SQLite FTS5 text retrieval
 - only `unit_understanding` participates in dense-vector indexing
-- source, response, and annotation docs are not dense-vector surfaces
+- source, response, and Marginalia docs are not dense-vector surfaces
 
 Allowed fix:
 - retrieval document derivation
@@ -306,7 +306,7 @@ Allowed fix:
 - tests
 
 Must not:
-- embed raw source, response, or annotation docs unless the locked design changes
+- embed raw source, response, or Marginalia docs unless the locked design changes
 
 ### REQ-UNITMEM-003 Retrieval Mode And Degradation
 
@@ -359,7 +359,7 @@ Allowed fix:
 
 Must not:
 - let Ingest choose final memory entries for Digest
-- pass raw prior source, prior response, or prior annotation into Digest `ReadingMemory`
+- pass raw prior source, prior response, or prior Marginalia into Digest `ReadingMemory`
 
 ### REQ-DIGEST-001 Prompt Context
 
@@ -373,7 +373,7 @@ Observable evidence:
 
 Pass condition:
 - prompt contains `ReaderRole`, `Instruction`, `BookInfo`, `ReadingMemory`, `CurrentFocus`, and `OutputContract`
-- prompt does not contain prompt-facing `ReadingState`, `RecentMemory`, `RetrievedUnitMemory`, raw prior source text, prior Response, or prior Annotation blocks
+- prompt does not contain prompt-facing `ReadingState`, `RecentMemory`, `RetrievedUnitMemory`, raw prior source text, prior Response, or prior Marginalia blocks
 - `ReadingMemory` appears before `CurrentFocus`
 
 Allowed fix:
@@ -417,7 +417,7 @@ Must not:
 ### REQ-DIGEST-003 Output Contract
 
 Requirement:
-Digest must output three peer reading products: one holistic `understanding` object, `response`, and `annotations[]`.
+Digest must output three peer reading products: one holistic `understanding` object, `response`, and `marginalia[]`.
 
 Observable evidence:
 - Digest prompt manifest
@@ -425,10 +425,10 @@ Observable evidence:
 - read audit `digest_result`
 
 Pass condition:
-- output contract uses `understanding`, `response`, and `annotations`
+- output contract uses `understanding`, `response`, and `marginalia`
 - `understanding` is a single object, not an array
 - `understanding.content` can contain multiple meanings but must be one coherent whole
-- `annotations` are anchored to current source text when present
+- `marginalia` items are anchored to current source text when present
 - old model-facing fields `reading_impression`, `surfaced_reactions`, and `recent_reading_memory` are absent or ignored at the LLM contract boundary
 
 Allowed fix:
@@ -455,7 +455,7 @@ Observable evidence:
 Pass condition:
 - Digest `understanding.content` maps to zero or one internal append op targeting `recent_reading_memory`
 - Digest `response` maps to internal `reading_impression`
-- Digest `annotations[]` map to internal surfaced reactions
+- Digest `marginalia[]` maps to canonical runtime Marginalia and deprecated surfaced-reaction aliases
 - Unit Memory writeback happens after settlement
 - cursor advances to the accepted source unit end
 - read audit records `ingest_trace`, `digest_result`, memory ops, and settlement inputs

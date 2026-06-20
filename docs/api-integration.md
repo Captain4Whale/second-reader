@@ -27,6 +27,7 @@ Frontend defaults can be overridden with:
 - `GET /api/books/{book_id}/activity`
 - `GET /api/books/{book_id}/marks`
 - `GET /api/books/{book_id}/chapters/{chapter_id}`
+- `GET /api/books/{book_id}/chapters/{chapter_id}/marginalia`
 - `GET /api/books/{book_id}/chapters/{chapter_id}/outline`
 - `GET /api/books/{book_id}/cover`
 - `GET /api/books/{book_id}/source`
@@ -38,6 +39,8 @@ Frontend defaults can be overridden with:
 ## Integration Notes
 - In this document, public `analysis/*` routes and `analysis-state` refer to the current sequential deep-reading workflow. They do not refer to the older `book_analysis` capability, which is now a retired legacy path kept only for compatibility/debugging.
 - The current routed frontend now runs on `attentional_v2` by default through the existing compatibility-first overview/chapter/marks surfaces.
+- The current routed frontend should use Marginalia as the product-visible note concept. Backend payloads expose canonical `marginalia_*`, `visible_marginalia`, and `featured_marginalia` fields while retaining `reaction_*`, `visible_reactions`, and `featured_reactions` as compatibility aliases.
+- `GET /api/books/{book_id}/chapters/{chapter_id}/marginalia` is the canonical chapter visible-note list endpoint. The old chapter-detail embedded reaction arrays and marks routes remain compatibility surfaces during this migration.
 - `iterator_v1` remains available for explicit backend fallback launches and legacy-resumed books, but it is no longer the normal product path.
 - Upload/start/resume endpoints now accept backend-side `memory_retrieval_mode = hybrid | text_only` for `attentional_v2` Unit Memory retrieval. The frontend does not expose a mode picker in this slice; default routed product launches continue to use `hybrid`.
 - Backend images and source assets are returned as relative API paths and must be prefixed with the configured API base in the frontend.
@@ -62,13 +65,14 @@ Frontend defaults can be overridden with:
   - `analysis-state.current_reading_activity.reading_locus`
   - `analysis-state.current_reading_activity.reconstructed_hot_state`
   - `analysis-state.current_reading_activity.last_resume_kind`
-  - `analysis-state.current_reading_activity.active_reaction_id`
+  - `analysis-state.current_reading_activity.active_marginalia_id`
+  - deprecated alias `analysis-state.current_reading_activity.active_reaction_id`
   - activity-event `reading_locus`
-  - reaction/mark `primary_source_ref`, `related_source_refs`, and related lineage sidecars
+  - Marginalia/mark `primary_source_ref`, `related_source_refs`, and related lineage sidecars
 - Current routed frontend surfaces still mostly consume the section-era compatibility layer, but the first frontend truth slice now depends on some of these additive fields directly:
   - the overview breadcrumb and live quote now prefer `reading_locus.excerpt` over the older `current_excerpt` fallback when both exist
-  - the overview live chips now surface `active_reaction_id` when the active mechanism provides it
-  - the recent trail now falls back to `current_state_panel.recent_reactions` instead of falsely rendering empty when the historical mindstream feed is sparse
+  - the overview live chips now surface `active_marginalia_id` when the active mechanism provides it
+  - the recent trail now falls back to `current_state_panel.recent_marginalia` instead of falsely rendering empty when the historical mindstream feed is sparse
   - stale/interrupted paused books now use `status_reason` plus `resume_available` to switch from false-live wording to last-known wording on bookshelf and overview surfaces
 - For `attentional_v2`, chapter/detail routes now also tolerate older compatibility manifests that are missing `result_file` by resolving the mechanism-owned compatibility payloads directly; this keeps routed chapter review working during live reads and manifest rewrites.
 - The historical mindstream list still comes from `GET /api/books/{book_id}/activity` with `stream=mindstream` and remains separate from the live activity snapshot.
@@ -78,7 +82,7 @@ Frontend defaults can be overridden with:
 - The compatibility analysis page should follow the same paused/last-known semantics as the main overview when it is still routed or rendered.
 - `GET /api/books/{book_id}/analysis-log` remains available as an internal diagnostic endpoint, but it is no longer part of the routed frontend integration surface.
 - Deferred upload stops after the chapter-level structure parse; `analysis/start` and `analysis/resume` then perform semantic segmentation as the preparation phase before deep reading continues on the same long-task surface.
-- Public `book_id`, `reaction_id`, and `mark_id` values are integer IDs even when backend runtime artifacts still use internal string identifiers.
+- Public `book_id`, `marginalia_id`, deprecated `reaction_id`, and `mark_id` values are integer IDs even when backend runtime artifacts still use internal string identifiers.
 - `analysis-state.last_checkpoint_at` reflects deep-reading segment checkpoints as well as parse checkpoints, so the overview and runtime guards can point to the latest resumable point with one field.
 - Shared `_runtime/runtime_shell.json` may now contribute additive locus and active-artifact fields to analysis-state when the current mechanism is not section-first.
 - `GET /api/books/{book_id}/source` is now treated by the routed chapter reader as an honest runtime dependency rather than as an implicitly reliable asset:
@@ -87,7 +91,8 @@ Frontend defaults can be overridden with:
   - stalled or failed EPUB boot now times out into a controlled unavailable state instead of indefinite loading
 - `WS /api/ws/jobs/{job_id}` still exists in the backend API and older upload/status surfaces, but it is not part of the current routed frontend integration.
 - Future migration still planned:
-  - redesign chapter/detail and marks surfaces around chapter text plus source-referenced reactions
+  - finish retiring compatibility-only reaction naming after all routed frontend and public API consumers read Marginalia names
+  - redesign chapter/detail and marks surfaces around chapter text plus source-referenced Marginalia
   - remove section-first frontend/API requirements once the routed frontend has switched to locus/source-ref-native rendering
 
 ## Machine-Readable Appendix
@@ -106,6 +111,7 @@ The JSON block below is the machine-readable appendix used by the integration dr
     "GET /api/books/{book_id}/activity",
     "GET /api/books/{book_id}/marks",
     "GET /api/books/{book_id}/chapters/{chapter_id}",
+    "GET /api/books/{book_id}/chapters/{chapter_id}/marginalia",
     "GET /api/books/{book_id}/chapters/{chapter_id}/outline",
     "GET /api/books/{book_id}/cover",
     "GET /api/books/{book_id}/source",

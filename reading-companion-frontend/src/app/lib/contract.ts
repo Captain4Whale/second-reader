@@ -1,5 +1,6 @@
 export type BookId = number;
 export type ChapterId = number;
+export type MarginaliaId = number;
 export type ReactionId = number;
 export type MarkId = number;
 
@@ -15,7 +16,9 @@ export const MARK_TYPES = ["resonance", "blindspot", "bookmark"] as const;
 export const REACTION_FILTERS = ["all", ...REACTION_TYPES] as const;
 
 export type ReactionType = (typeof REACTION_TYPES)[number];
+export type MarginaliaType = ReactionType;
 export type ReactionFilter = (typeof REACTION_FILTERS)[number];
+export type MarginaliaFilter = ReactionFilter;
 export type MarkType = (typeof MARK_TYPES)[number];
 
 export const CANONICAL_ROUTE_PATTERNS = {
@@ -23,6 +26,7 @@ export const CANONICAL_ROUTE_PATTERNS = {
   books: "/books",
   book: "/books/:id",
   chapter: "/books/:id/chapters/:chapterId",
+  chapterMarginalia: "/books/:id/chapters/:chapterId/marginalia",
   marks: "/marks",
 } as const;
 
@@ -56,6 +60,7 @@ export const LANDING_STRATEGY = {
 } as const;
 
 export const PUBLIC_CONTRACT_SPEC = {
+  marginalia_types: [...REACTION_TYPES],
   reaction_types: [...REACTION_TYPES],
   mark_types: [...MARK_TYPES],
   canonical_routes: { ...CANONICAL_ROUTE_PATTERNS },

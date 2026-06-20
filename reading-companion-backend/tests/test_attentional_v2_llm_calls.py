@@ -864,7 +864,7 @@ def test_digest_uses_live_xml_prompt_and_filters_surface_reactions(tmp_path: Pat
         captured["prompt"] = prompt
         payload = {
             "response": "The line flips the frame.",
-            "annotations": [
+            "marginalia": [
                 {
                     "source_quote": "Alpha hinge.",
                     "content": "That phrase suddenly snaps the claim into place.",
@@ -969,10 +969,10 @@ def test_digest_uses_live_xml_prompt_and_filters_surface_reactions(tmp_path: Pat
     assert "Do not split Understanding by sentence, paragraph, theme, future use, or separate memory point." not in captured["prompt"]
     assert "Split into multiple entries" not in captured["prompt"]
     assert "<Response>" in captured["prompt"]
-    assert "<Annotation>" in captured["prompt"]
+    assert "<Marginalia>" in captured["prompt"]
     assert '"understanding": "..."' in captured["prompt"]
     assert '"response": "..."' in captured["prompt"]
-    assert '"annotations": [' in captured["prompt"]
+    assert '"marginalia": [' in captured["prompt"]
     assert '"reading_impression": "..."' not in captured["prompt"]
     assert '"surfaced_reactions": []' not in captured["prompt"]
     assert '"recent_reading_memory": []' not in captured["prompt"]
@@ -1003,9 +1003,9 @@ def test_digest_uses_live_xml_prompt_and_filters_surface_reactions(tmp_path: Pat
     }
     assert op["target_key"] != "legacy-ignored"
     assert manifest["node_name"] == "digest"
-    assert manifest["prompt_version"] == "attentional_v2.digest.v9"
-    assert manifest["prompt_assembly"]["spec_id"] == "attentional_v2.digest.xml.v9"
-    assert manifest["prompt_assembly"]["output_contract"] == "digest_understanding_response_annotation_json_v3"
+    assert manifest["prompt_version"] == "attentional_v2.digest.v10"
+    assert manifest["prompt_assembly"]["spec_id"] == "attentional_v2.digest.xml.v10"
+    assert manifest["prompt_assembly"]["output_contract"] == "digest_understanding_response_marginalia_json_v4"
     assert "mode" not in manifest["prompt_assembly"]
     assert manifest["prompt_assembly"]["rendered_blocks"] == [
         "ReaderRole",
@@ -1023,7 +1023,7 @@ def test_digest_rejects_legacy_understanding_list_payload(tmp_path: Path, monkey
     def fake_structured_output(system_prompt: str, prompt: str, *, output_tool, validator) -> object:
         payload: dict[str, object] = {
             "response": "A compact response remains valid.",
-            "annotations": [],
+            "marginalia": [],
         }
         payload["understanding"] = [
             {

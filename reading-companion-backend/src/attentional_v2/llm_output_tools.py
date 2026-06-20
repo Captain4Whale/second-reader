@@ -64,7 +64,7 @@ DIGEST_RESULT_TOOL = final_output_tool(
         {
             "understanding": {"type": "string"},
             "response": {"type": "string"},
-            "annotations": {
+            "marginalia": {
                 "type": "array",
                 "items": _object_schema(
                     {
@@ -77,7 +77,7 @@ DIGEST_RESULT_TOOL = final_output_tool(
                 ),
             },
         },
-        required=["understanding", "response", "annotations"],
+        required=["understanding", "response", "marginalia"],
     ),
 )
 
@@ -320,9 +320,10 @@ def validate_digest_result(payload: Mapping[str, Any], *, current_unit_texts: li
     understanding = payload.get("understanding")
     if not isinstance(understanding, str):
         errors.append("understanding must be a string")
-    annotations = payload.get("annotations")
-    if not isinstance(annotations, list):
-        errors.append("annotations must be an array")
+    marginalia = payload.get("marginalia")
+    legacy_annotations = payload.get("annotations")
+    if not isinstance(marginalia, list) and not isinstance(legacy_annotations, list):
+        errors.append("marginalia must be an array")
     response = payload.get("response")
     if not isinstance(response, str):
         errors.append("response must be a string")

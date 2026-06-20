@@ -16,6 +16,7 @@ ReactionType = Literal[
     REACTION_TYPES[3],
     REACTION_TYPES[4],
 ]
+MarginaliaType = ReactionType
 ReactionFilter = Literal[
     REACTION_FILTERS[0],
     REACTION_FILTERS[1],
@@ -211,8 +212,10 @@ class ReactionTargetLocator(ApiModel):
 
 
 class FeaturedReactionPreview(ApiModel):
-    """Compact reaction payload used in teasers, cards, and realtime summaries."""
+    """Compact Marginalia payload used in teasers, cards, and realtime summaries."""
 
+    marginalia_id: int = Field(description="Stable public integer identifier for the Marginalia item.")
+    marginalia_type: MarginaliaType = Field(description="Marginalia type key.")
     reaction_id: int = Field(description="Stable public integer identifier for the reaction.")
     type: ReactionType = Field(description="Reaction type key.")
     source_quote: str = Field(description="Quoted source text from the source book.")
@@ -245,8 +248,10 @@ class FeaturedReactionPreview(ApiModel):
 
 
 class ActivityReactionPreview(ApiModel):
-    """Compact reaction payload used inside one sentence-level mindstream event."""
+    """Compact Marginalia payload used inside one sentence-level mindstream event."""
 
+    marginalia_id: int = Field(description="Stable public integer identifier for the Marginalia item.")
+    marginalia_type: MarginaliaType = Field(description="Marginalia type key.")
     reaction_id: int = Field(description="Stable public integer identifier for the reaction.")
     type: ReactionType = Field(description="Reaction type key.")
     source_quote: str = Field(description="Quoted source text from the source book.")
@@ -411,6 +416,10 @@ class CurrentReadingActivity(ApiModel):
         default=None,
         description="Public reaction id of the currently active durable thought when the mechanism exposes one.",
     )
+    active_marginalia_id: Optional[int] = Field(
+        default=None,
+        description="Public Marginalia id of the currently active durable note when the mechanism exposes one.",
+    )
     started_at: str = Field(description="Timestamp marking when the current live phase began.")
     updated_at: str = Field(description="Timestamp of the latest live-activity update.")
     problem_code: Optional[
@@ -451,7 +460,9 @@ class CurrentStatePanel(ApiModel):
         description="Live snapshot of what the reader is actively doing right now.",
     )
     recent_reactions: list[FeaturedReactionPreview] = Field(description="Small set of recently surfaced reactions for quick feedback.")
+    recent_marginalia: list[FeaturedReactionPreview] = Field(description="Small set of recently surfaced Marginalia for quick feedback.")
     reaction_counts: dict[ReactionType, int] = Field(description="Visible reaction counts grouped by reaction type.")
+    marginalia_counts: dict[MarginaliaType, int] = Field(description="Visible Marginalia counts grouped by Marginalia type.")
     search_active: bool = Field(description="Whether the agent has recent active search behavior.")
 
 
@@ -466,7 +477,9 @@ class ChapterCompletionCard(ApiModel):
     chapter_ref: str = Field(description="Human-readable reference for the completed chapter.")
     title: str = Field(description="Title of the completed chapter.")
     visible_reaction_count: int = Field(description="Number of visible reactions in the chapter.")
+    visible_marginalia_count: int = Field(description="Number of visible Marginalia items in the chapter.")
     featured_reactions: list[FeaturedReactionPreview] = Field(description="Small set of featured reactions used for the completion card.")
+    featured_marginalia: list[FeaturedReactionPreview] = Field(description="Small set of featured Marginalia used for the completion card.")
     result_url: str = Field(description="Frontend route that opens the finished chapter result.")
 
 
@@ -548,6 +561,10 @@ class ActivityEvent(ApiModel):
         default=None,
         description="Additive span- or sentence-based locus carried by the event when available.",
     )
+    active_marginalia_id: Optional[int] = Field(
+        default=None,
+        description="Public Marginalia id of the active durable note referenced by the event when available.",
+    )
     active_reaction_id: Optional[int] = Field(
         default=None,
         description="Public reaction id of the active durable thought referenced by the event when available.",
@@ -555,10 +572,14 @@ class ActivityEvent(ApiModel):
     source_quote: Optional[str] = Field(default=None, description="Source quote used to group visible reactions when available.")
     anchor_quote: Optional[str] = Field(default=None, description="Compatibility alias for the source quote used to group visible reactions.")
     highlight_quote: Optional[str] = Field(default=None, description="High-signal source quote attached to the event when available.")
+    marginalia_types: list[MarginaliaType] = Field(description="Marginalia types represented in this event.")
     reaction_types: list[ReactionType] = Field(description="Reaction types represented in this event.")
     search_query: Optional[str] = Field(default=None, description="Search query attached to the event when applicable.")
+    visible_marginalia: list[ActivityReactionPreview] = Field(description="Visible Marginalia grouped under the same sentence-level mindstream event.")
     visible_reactions: list[ActivityReactionPreview] = Field(description="Visible reactions grouped under the same sentence-level mindstream event.")
+    featured_marginalia: list[FeaturedReactionPreview] = Field(description="Featured Marginalia attached to the event when applicable.")
     featured_reactions: list[FeaturedReactionPreview] = Field(description="Featured reactions attached to the event when applicable.")
+    visible_marginalia_count: Optional[int] = Field(default=None, description="Visible Marginalia count attached to the event when applicable.")
     visible_reaction_count: Optional[int] = Field(default=None, description="Visible reaction count attached to the event when applicable.")
     result_url: Optional[str] = Field(default=None, description="Frontend result route associated with the event when available.")
 
@@ -592,7 +613,9 @@ class ChapterListItem(ApiModel):
     segment_count: int = Field(description="Number of semantic sections in the chapter.")
     status: Literal["pending", "completed", "error"] = Field(description="User-facing chapter status in the result overview.")
     visible_reaction_count: int = Field(description="Number of visible reactions in the chapter.")
+    visible_marginalia_count: int = Field(description="Number of visible Marginalia items in the chapter.")
     reaction_type_diversity: int = Field(description="Count of distinct reaction types in the chapter.")
+    marginalia_type_diversity: int = Field(description="Count of distinct Marginalia types in the chapter.")
     result_ready: bool = Field(description="Whether the chapter result is ready to open.")
 
 
@@ -614,14 +637,17 @@ class BookDetailResponse(ApiModel):
     chapters: list[ChapterListItem] = Field(description="Overview list of chapters in reading order.")
     my_mark_count: int = Field(description="Number of user marks attached to this book.")
     reaction_counts: dict[ReactionType, int] = Field(description="Counts grouped by the five canonical reaction types.")
+    marginalia_counts: dict[MarginaliaType, int] = Field(description="Counts grouped by the five canonical Marginalia types.")
     chapter_count: int = Field(description="Total number of chapters in the book.")
     completed_chapter_count: int = Field(description="Number of completed chapters in the book.")
     segment_count: int = Field(description="Total number of semantic segments across the book.")
 
 
 class ReactionCard(ApiModel):
-    """Visible reaction card rendered in result views."""
+    """Visible Marginalia card rendered in result views."""
 
+    marginalia_id: int = Field(description="Stable public integer Marginalia identifier.")
+    marginalia_type: MarginaliaType = Field(description="Marginalia type key.")
     reaction_id: int = Field(description="Stable public integer reaction identifier.")
     type: ReactionType = Field(description="Reaction type key.")
     source_quote: str = Field(description="Source quote taken from the source book.")
@@ -656,6 +682,7 @@ class SectionCard(ApiModel):
     quality_status: str = Field(description="Quality label assigned to the section.")
     skip_reason: Optional[str] = Field(default=None, description="Machine-readable skip reason when the section was skipped.")
     locator: Optional[SegmentLocator] = Field(default=None, description="Section-level locator for the EPUB reader.")
+    marginalia: list[ReactionCard] = Field(description="Visible Marginalia attached to the section.")
     reactions: list[ReactionCard] = Field(description="Visible reactions attached to the section.")
 
 
@@ -673,8 +700,11 @@ class ChapterDetailResponse(ApiModel):
     status: Literal["completed", "error"] = Field(description="User-facing chapter result status.")
     output_language: str = Field(description="Language used for the AI-generated chapter result.")
     visible_reaction_count: int = Field(description="Number of visible reactions in the chapter.")
+    visible_marginalia_count: int = Field(description="Number of visible Marginalia items in the chapter.")
     reaction_type_diversity: int = Field(description="Number of distinct reaction types in the chapter.")
+    marginalia_type_diversity: int = Field(description="Number of distinct Marginalia types in the chapter.")
     featured_reactions: list[FeaturedReactionPreview] = Field(description="Featured reactions used for summary and teaser areas.")
+    featured_marginalia: list[FeaturedReactionPreview] = Field(description="Featured Marginalia used for summary and teaser areas.")
     chapter_heading: Optional[ChapterHeadingBlock] = Field(
         default=None,
         description="Optional structured chapter-heading block kept separate from body semantic sections.",
@@ -685,6 +715,7 @@ class ChapterDetailResponse(ApiModel):
     sections: list[SectionCard] = Field(description="Current page of section cards.")
     sections_page_info: PageInfo = Field(description="Pagination metadata for the section list.")
     available_filters: list[ReactionFilter] = Field(description="Reaction filters available to the frontend.")
+    available_marginalia_filters: list[ReactionFilter] = Field(description="Marginalia filters available to the frontend.")
     source_asset: SourceAsset = Field(description="Source EPUB asset configuration for the right-side reader.")
 
 
@@ -727,10 +758,19 @@ class ReactionsPageResponse(ApiModel):
     applied_filters: dict[str, Any] = Field(description="Echoed filter values applied to the query.")
 
 
+class MarginaliaPageResponse(ApiModel):
+    """Paginated flattened Marginalia response."""
+
+    items: list[ReactionCard] = Field(description="Flattened Marginalia items for the current page.")
+    page_info: PageInfo = Field(description="Pagination metadata for the Marginalia query.")
+    applied_filters: dict[str, Any] = Field(description="Echoed filter values applied to the query.")
+
+
 class MarkRecord(ApiModel):
     """Persisted user mark record."""
 
     mark_id: int = Field(description="Stable public integer identifier of the mark.")
+    marginalia_id: int = Field(description="Public integer Marginalia identifier that owns this mark.")
     reaction_id: int = Field(description="Public integer reaction identifier that owns this mark.")
     book_id: int = Field(description="Public integer book identifier for the marked reaction.")
     book_title: str = Field(description="Book title for the marked reaction.")
@@ -741,8 +781,10 @@ class MarkRecord(ApiModel):
     )
     chapter_ref: str = Field(description="Human-readable chapter reference for the marked reaction.")
     section_ref: str = Field(description="Human-readable section reference for the marked reaction.")
+    marginalia_type: MarginaliaType = Field(description="Marginalia type key for the marked note.")
     reaction_type: ReactionType = Field(description="Reaction type key for the marked reaction.")
     mark_type: MarkType = Field(description="User-selected mark value.")
+    marginalia_excerpt: str = Field(description="Short excerpt of the Marginalia content used in marks views.")
     reaction_excerpt: str = Field(description="Short excerpt of the reaction content used in marks views.")
     source_quote: str = Field(description="Source quote used to recall the marked passage.")
     anchor_quote: str = Field(description="Compatibility alias for the source quote used to recall the marked passage.")
@@ -753,6 +795,10 @@ class MarkRecord(ApiModel):
     supersedes_reaction_id: Optional[int] = Field(
         default=None,
         description="Public reaction id of the earlier thought this marked reaction supersedes when reconsolidation has occurred.",
+    )
+    supersedes_marginalia_id: Optional[int] = Field(
+        default=None,
+        description="Public Marginalia id of the earlier note this marked Marginalia supersedes when reconsolidation has occurred.",
     )
     created_at: str = Field(description="Mark creation time.")
     updated_at: str = Field(description="Mark last update time.")
@@ -794,6 +840,7 @@ class SetMarkRequest(ApiModel):
 class DeleteMarkResponse(ApiModel):
     """Response returned after deleting a mark."""
 
+    marginalia_id: int = Field(description="Public integer Marginalia identifier targeted by the delete request.")
     reaction_id: int = Field(description="Public integer reaction identifier targeted by the delete request.")
     deleted: bool = Field(description="Whether a persisted mark was deleted.")
 
@@ -892,7 +939,9 @@ class ChapterCompletedPayload(ApiModel):
     chapter_ref: str = Field(description="Human-readable reference of the completed chapter.")
     title: str = Field(description="Title of the completed chapter.")
     visible_reaction_count: int = Field(description="Number of visible reactions in the completed chapter.")
+    visible_marginalia_count: int = Field(description="Number of visible Marginalia items in the completed chapter.")
     featured_reactions: list[FeaturedReactionPreview] = Field(description="Featured reactions used to summarize the completed chapter.")
+    featured_marginalia: list[FeaturedReactionPreview] = Field(description="Featured Marginalia used to summarize the completed chapter.")
     result_url: str = Field(description="Frontend route that opens the completed chapter result.")
 
 

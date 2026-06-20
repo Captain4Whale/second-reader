@@ -5,6 +5,18 @@
         "additionalProperties": false,
         "description": "User-facing activity stream event.",
         "properties": {
+          "active_marginalia_id": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Public Marginalia id of the active durable note referenced by the event when available.",
+            "title": "Active Marginalia Id"
+          },
           "active_reaction_id": {
             "anyOf": [
               {
@@ -70,6 +82,14 @@
             "title": "Event Id",
             "type": "string"
           },
+          "featured_marginalia": {
+            "description": "Featured Marginalia attached to the event when applicable.",
+            "items": {
+              "$ref": "#/components/schemas/FeaturedReactionPreview"
+            },
+            "title": "Featured Marginalia",
+            "type": "array"
+          },
           "featured_reactions": {
             "description": "Featured reactions attached to the event when applicable.",
             "items": {
@@ -106,6 +126,21 @@
             ],
             "title": "Kind",
             "type": "string"
+          },
+          "marginalia_types": {
+            "description": "Marginalia types represented in this event.",
+            "items": {
+              "enum": [
+                "highlight",
+                "association",
+                "discern",
+                "retrospect",
+                "curious"
+              ],
+              "type": "string"
+            },
+            "title": "Marginalia Types",
+            "type": "array"
           },
           "message": {
             "description": "User-facing message shown in the activity stream.",
@@ -215,6 +250,26 @@
             "title": "Visibility",
             "type": "string"
           },
+          "visible_marginalia": {
+            "description": "Visible Marginalia grouped under the same sentence-level mindstream event.",
+            "items": {
+              "$ref": "#/components/schemas/ActivityReactionPreview"
+            },
+            "title": "Visible Marginalia",
+            "type": "array"
+          },
+          "visible_marginalia_count": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Visible Marginalia count attached to the event when applicable.",
+            "title": "Visible Marginalia Count"
+          },
           "visible_reaction_count": {
             "anyOf": [
               {
@@ -244,8 +299,11 @@
           "kind",
           "visibility",
           "message",
+          "marginalia_types",
           "reaction_types",
+          "visible_marginalia",
           "visible_reactions",
+          "featured_marginalia",
           "featured_reactions"
         ],
         "title": "ActivityEvent",
@@ -277,7 +335,7 @@
       },
       "ActivityReactionPreview": {
         "additionalProperties": false,
-        "description": "Compact reaction payload used inside one sentence-level mindstream event.",
+        "description": "Compact Marginalia payload used inside one sentence-level mindstream event.",
         "properties": {
           "anchor_quote": {
             "description": "Compatibility alias for the quoted source text from the source book.",
@@ -287,6 +345,23 @@
           "content": {
             "description": "AI-authored reaction text shown to the user.",
             "title": "Content",
+            "type": "string"
+          },
+          "marginalia_id": {
+            "description": "Stable public integer identifier for the Marginalia item.",
+            "title": "Marginalia Id",
+            "type": "integer"
+          },
+          "marginalia_type": {
+            "description": "Marginalia type key.",
+            "enum": [
+              "highlight",
+              "association",
+              "discern",
+              "retrospect",
+              "curious"
+            ],
+            "title": "Marginalia Type",
             "type": "string"
           },
           "primary_source_ref": {
@@ -353,6 +428,8 @@
           }
         },
         "required": [
+          "marginalia_id",
+          "marginalia_type",
           "reaction_id",
           "type",
           "source_quote",
@@ -880,6 +957,23 @@
             "description": "Optional API URL for the cover image.",
             "title": "Cover Image Url"
           },
+          "marginalia_counts": {
+            "additionalProperties": {
+              "type": "integer"
+            },
+            "description": "Counts grouped by the five canonical Marginalia types.",
+            "propertyNames": {
+              "enum": [
+                "highlight",
+                "association",
+                "discern",
+                "retrospect",
+                "curious"
+              ]
+            },
+            "title": "Marginalia Counts",
+            "type": "object"
+          },
           "my_mark_count": {
             "description": "Number of user marks attached to this book.",
             "title": "My Mark Count",
@@ -963,6 +1057,7 @@
           "chapters",
           "my_mark_count",
           "reaction_counts",
+          "marginalia_counts",
           "chapter_count",
           "completed_chapter_count",
           "segment_count"
@@ -1207,6 +1302,14 @@
             "title": "Chapter Ref",
             "type": "string"
           },
+          "featured_marginalia": {
+            "description": "Small set of featured Marginalia used for the completion card.",
+            "items": {
+              "$ref": "#/components/schemas/FeaturedReactionPreview"
+            },
+            "title": "Featured Marginalia",
+            "type": "array"
+          },
           "featured_reactions": {
             "description": "Small set of featured reactions used for the completion card.",
             "items": {
@@ -1225,6 +1328,11 @@
             "title": "Title",
             "type": "string"
           },
+          "visible_marginalia_count": {
+            "description": "Number of visible Marginalia items in the chapter.",
+            "title": "Visible Marginalia Count",
+            "type": "integer"
+          },
           "visible_reaction_count": {
             "description": "Number of visible reactions in the chapter.",
             "title": "Visible Reaction Count",
@@ -1236,7 +1344,9 @@
           "chapter_ref",
           "title",
           "visible_reaction_count",
+          "visible_marginalia_count",
           "featured_reactions",
+          "featured_marginalia",
           "result_url"
         ],
         "title": "ChapterCompletionCard",
@@ -1260,6 +1370,22 @@
               "type": "string"
             },
             "title": "Available Filters",
+            "type": "array"
+          },
+          "available_marginalia_filters": {
+            "description": "Marginalia filters available to the frontend.",
+            "items": {
+              "enum": [
+                "all",
+                "highlight",
+                "association",
+                "discern",
+                "retrospect",
+                "curious"
+              ],
+              "type": "string"
+            },
+            "title": "Available Marginalia Filters",
             "type": "array"
           },
           "book_id": {
@@ -1308,6 +1434,14 @@
             "title": "Chapter Reflection",
             "type": "array"
           },
+          "featured_marginalia": {
+            "description": "Featured Marginalia used for summary and teaser areas.",
+            "items": {
+              "$ref": "#/components/schemas/FeaturedReactionPreview"
+            },
+            "title": "Featured Marginalia",
+            "type": "array"
+          },
           "featured_reactions": {
             "description": "Featured reactions used for summary and teaser areas.",
             "items": {
@@ -1315,6 +1449,11 @@
             },
             "title": "Featured Reactions",
             "type": "array"
+          },
+          "marginalia_type_diversity": {
+            "description": "Number of distinct Marginalia types in the chapter.",
+            "title": "Marginalia Type Diversity",
+            "type": "integer"
           },
           "output_language": {
             "description": "Language used for the AI-generated chapter result.",
@@ -1356,6 +1495,11 @@
             "title": "Title",
             "type": "string"
           },
+          "visible_marginalia_count": {
+            "description": "Number of visible Marginalia items in the chapter.",
+            "title": "Visible Marginalia Count",
+            "type": "integer"
+          },
           "visible_reaction_count": {
             "description": "Number of visible reactions in the chapter.",
             "title": "Visible Reaction Count",
@@ -1370,12 +1514,16 @@
           "status",
           "output_language",
           "visible_reaction_count",
+          "visible_marginalia_count",
           "reaction_type_diversity",
+          "marginalia_type_diversity",
           "featured_reactions",
+          "featured_marginalia",
           "chapter_reflection",
           "sections",
           "sections_page_info",
           "available_filters",
+          "available_marginalia_filters",
           "source_asset"
         ],
         "title": "ChapterDetailResponse",
@@ -1464,6 +1612,11 @@
             "title": "Chapter Ref",
             "type": "string"
           },
+          "marginalia_type_diversity": {
+            "description": "Count of distinct Marginalia types in the chapter.",
+            "title": "Marginalia Type Diversity",
+            "type": "integer"
+          },
           "reaction_type_diversity": {
             "description": "Count of distinct reaction types in the chapter.",
             "title": "Reaction Type Diversity",
@@ -1494,6 +1647,11 @@
             "title": "Title",
             "type": "string"
           },
+          "visible_marginalia_count": {
+            "description": "Number of visible Marginalia items in the chapter.",
+            "title": "Visible Marginalia Count",
+            "type": "integer"
+          },
           "visible_reaction_count": {
             "description": "Number of visible reactions in the chapter.",
             "title": "Visible Reaction Count",
@@ -1507,7 +1665,9 @@
           "segment_count",
           "status",
           "visible_reaction_count",
+          "visible_marginalia_count",
           "reaction_type_diversity",
+          "marginalia_type_diversity",
           "result_ready"
         ],
         "title": "ChapterListItem",
@@ -1721,6 +1881,18 @@
         "additionalProperties": false,
         "description": "Ephemeral snapshot of the live reading step currently underway.",
         "properties": {
+          "active_marginalia_id": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Public Marginalia id of the currently active durable note when the mechanism exposes one.",
+            "title": "Active Marginalia Id"
+          },
           "active_reaction_id": {
             "anyOf": [
               {
@@ -1971,6 +2143,23 @@
             "description": "Human-readable reference of the current section.",
             "title": "Current Section Ref"
           },
+          "marginalia_counts": {
+            "additionalProperties": {
+              "type": "integer"
+            },
+            "description": "Visible Marginalia counts grouped by Marginalia type.",
+            "propertyNames": {
+              "enum": [
+                "highlight",
+                "association",
+                "discern",
+                "retrospect",
+                "curious"
+              ]
+            },
+            "title": "Marginalia Counts",
+            "type": "object"
+          },
           "pulse_message": {
             "anyOf": [
               {
@@ -2000,6 +2189,14 @@
             "title": "Reaction Counts",
             "type": "object"
           },
+          "recent_marginalia": {
+            "description": "Small set of recently surfaced Marginalia for quick feedback.",
+            "items": {
+              "$ref": "#/components/schemas/FeaturedReactionPreview"
+            },
+            "title": "Recent Marginalia",
+            "type": "array"
+          },
           "recent_reactions": {
             "description": "Small set of recently surfaced reactions for quick feedback.",
             "items": {
@@ -2016,7 +2213,9 @@
         },
         "required": [
           "recent_reactions",
+          "recent_marginalia",
           "reaction_counts",
+          "marginalia_counts",
           "search_active"
         ],
         "title": "CurrentStatePanel",
@@ -2031,6 +2230,11 @@
             "title": "Deleted",
             "type": "boolean"
           },
+          "marginalia_id": {
+            "description": "Public integer Marginalia identifier targeted by the delete request.",
+            "title": "Marginalia Id",
+            "type": "integer"
+          },
           "reaction_id": {
             "description": "Public integer reaction identifier targeted by the delete request.",
             "title": "Reaction Id",
@@ -2038,6 +2242,7 @@
           }
         },
         "required": [
+          "marginalia_id",
           "reaction_id",
           "deleted"
         ],
@@ -2099,7 +2304,7 @@
       },
       "FeaturedReactionPreview": {
         "additionalProperties": false,
-        "description": "Compact reaction payload used in teasers, cards, and realtime summaries.",
+        "description": "Compact Marginalia payload used in teasers, cards, and realtime summaries.",
         "properties": {
           "anchor_quote": {
             "description": "Compatibility alias for the quoted source text from the source book.",
@@ -2136,6 +2341,23 @@
           "content": {
             "description": "AI-authored reaction text shown to the user.",
             "title": "Content",
+            "type": "string"
+          },
+          "marginalia_id": {
+            "description": "Stable public integer identifier for the Marginalia item.",
+            "title": "Marginalia Id",
+            "type": "integer"
+          },
+          "marginalia_type": {
+            "description": "Marginalia type key.",
+            "enum": [
+              "highlight",
+              "association",
+              "discern",
+              "retrospect",
+              "curious"
+            ],
+            "title": "Marginalia Type",
             "type": "string"
           },
           "primary_source_ref": {
@@ -2209,6 +2431,8 @@
           }
         },
         "required": [
+          "marginalia_id",
+          "marginalia_type",
           "reaction_id",
           "type",
           "source_quote",
@@ -2572,6 +2796,37 @@
         "title": "JobStatusResponse",
         "type": "object"
       },
+      "MarginaliaPageResponse": {
+        "additionalProperties": false,
+        "description": "Paginated flattened Marginalia response.",
+        "properties": {
+          "applied_filters": {
+            "additionalProperties": true,
+            "description": "Echoed filter values applied to the query.",
+            "title": "Applied Filters",
+            "type": "object"
+          },
+          "items": {
+            "description": "Flattened Marginalia items for the current page.",
+            "items": {
+              "$ref": "#/components/schemas/ReactionCard"
+            },
+            "title": "Items",
+            "type": "array"
+          },
+          "page_info": {
+            "$ref": "#/components/schemas/PageInfo",
+            "description": "Pagination metadata for the Marginalia query."
+          }
+        },
+        "required": [
+          "items",
+          "page_info",
+          "applied_filters"
+        ],
+        "title": "MarginaliaPageResponse",
+        "type": "object"
+      },
       "MarkRecord": {
         "additionalProperties": false,
         "description": "Persisted user mark record.",
@@ -2616,6 +2871,28 @@
           "created_at": {
             "description": "Mark creation time.",
             "title": "Created At",
+            "type": "string"
+          },
+          "marginalia_excerpt": {
+            "description": "Short excerpt of the Marginalia content used in marks views.",
+            "title": "Marginalia Excerpt",
+            "type": "string"
+          },
+          "marginalia_id": {
+            "description": "Public integer Marginalia identifier that owns this mark.",
+            "title": "Marginalia Id",
+            "type": "integer"
+          },
+          "marginalia_type": {
+            "description": "Marginalia type key for the marked note.",
+            "enum": [
+              "highlight",
+              "association",
+              "discern",
+              "retrospect",
+              "curious"
+            ],
+            "title": "Marginalia Type",
             "type": "string"
           },
           "mark_id": {
@@ -2676,6 +2953,18 @@
             "title": "Source Quote",
             "type": "string"
           },
+          "supersedes_marginalia_id": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Public Marginalia id of the earlier note this marked Marginalia supersedes when reconsolidation has occurred.",
+            "title": "Supersedes Marginalia Id"
+          },
           "supersedes_reaction_id": {
             "anyOf": [
               {
@@ -2696,14 +2985,17 @@
         },
         "required": [
           "mark_id",
+          "marginalia_id",
           "reaction_id",
           "book_id",
           "book_title",
           "chapter_id",
           "chapter_ref",
           "section_ref",
+          "marginalia_type",
           "reaction_type",
           "mark_type",
+          "marginalia_excerpt",
           "reaction_excerpt",
           "source_quote",
           "anchor_quote",
@@ -2773,7 +3065,7 @@
       },
       "ReactionCard": {
         "additionalProperties": false,
-        "description": "Visible reaction card rendered in result views.",
+        "description": "Visible Marginalia card rendered in result views.",
         "properties": {
           "anchor_quote": {
             "description": "Compatibility alias for the source quote taken from the source book.",
@@ -2783,6 +3075,23 @@
           "content": {
             "description": "Full AI reaction content.",
             "title": "Content",
+            "type": "string"
+          },
+          "marginalia_id": {
+            "description": "Stable public integer Marginalia identifier.",
+            "title": "Marginalia Id",
+            "type": "integer"
+          },
+          "marginalia_type": {
+            "description": "Marginalia type key.",
+            "enum": [
+              "highlight",
+              "association",
+              "discern",
+              "retrospect",
+              "curious"
+            ],
+            "title": "Marginalia Type",
             "type": "string"
           },
           "mark_type": {
@@ -2898,6 +3207,8 @@
           }
         },
         "required": [
+          "marginalia_id",
+          "marginalia_type",
           "reaction_id",
           "type",
           "source_quote",
@@ -3181,6 +3492,14 @@
             ],
             "description": "Section-level locator for the EPUB reader."
           },
+          "marginalia": {
+            "description": "Visible Marginalia attached to the section.",
+            "items": {
+              "$ref": "#/components/schemas/ReactionCard"
+            },
+            "title": "Marginalia",
+            "type": "array"
+          },
           "quality_status": {
             "description": "Quality label assigned to the section.",
             "title": "Quality Status",
@@ -3227,6 +3546,7 @@
           "summary",
           "verdict",
           "quality_status",
+          "marginalia",
           "reactions"
         ],
         "title": "SectionCard",
@@ -4611,6 +4931,181 @@
           }
         },
         "summary": "Book Chapter"
+      }
+    },
+    "/api/books/{book_id}/chapters/{chapter_id}/marginalia": {
+      "get": {
+        "description": "Return a flattened paginated Marginalia list for one chapter.",
+        "operationId": "book_chapter_marginalia_api_books__book_id__chapters__chapter_id__marginalia_get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "book_id",
+            "required": true,
+            "schema": {
+              "title": "Book Id",
+              "type": "integer"
+            }
+          },
+          {
+            "in": "path",
+            "name": "chapter_id",
+            "required": true,
+            "schema": {
+              "title": "Chapter Id",
+              "type": "integer"
+            }
+          },
+          {
+            "in": "query",
+            "name": "limit",
+            "required": false,
+            "schema": {
+              "default": 20,
+              "maximum": 100,
+              "minimum": 1,
+              "title": "Limit",
+              "type": "integer"
+            }
+          },
+          {
+            "in": "query",
+            "name": "cursor",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Cursor"
+            }
+          },
+          {
+            "in": "query",
+            "name": "type",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Type"
+            }
+          },
+          {
+            "in": "query",
+            "name": "section_ref",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Section Ref"
+            }
+          },
+          {
+            "in": "query",
+            "name": "mark_type",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Mark Type"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/MarginaliaPageResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Bad Request"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Not Found"
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Conflict"
+          },
+          "413": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Request Entity Too Large"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Unprocessable Entity"
+          },
+          "500": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Internal Server Error"
+          }
+        },
+        "summary": "Book Chapter Marginalia"
       }
     },
     "/api/books/{book_id}/chapters/{chapter_id}/outline": {

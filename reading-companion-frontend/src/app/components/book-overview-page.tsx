@@ -46,6 +46,7 @@ type OverviewChapter = {
   title: string;
   segment_count: number;
   visible_reaction_count: number;
+  visible_marginalia_count: number;
   result_ready: boolean;
   status: string;
   is_current: boolean;
@@ -119,7 +120,7 @@ function formatTimestamp(value?: string | null) {
 }
 
 function totalBookReactionCount(detail: BookDetailResponse) {
-  return Object.values(detail.reaction_counts ?? {}).reduce((sum, count) => sum + Number(count || 0), 0);
+  return Object.values(detail.marginalia_counts ?? detail.reaction_counts ?? {}).reduce((sum, count) => sum + Number(count || 0), 0);
 }
 
 function normalizeMessageParams(
@@ -253,6 +254,7 @@ function buildOverviewChapters(detail: BookDetailResponse, analysis: AnalysisSta
       title: chapter.title,
       segment_count: analysisChapter?.segment_count ?? chapter.segment_count,
       visible_reaction_count: chapter.visible_reaction_count,
+      visible_marginalia_count: chapter.visible_marginalia_count ?? chapter.visible_reaction_count,
       result_ready: analysisChapter?.result_ready ?? chapter.result_ready,
       status: analysisChapter?.status ?? chapter.status,
       is_current: analysisChapter?.is_current ?? false,
@@ -575,7 +577,7 @@ function BookOverviewStatusBand({
   }
 
   if (detail.status === "completed") {
-    const surfacedReactions = totalBookReactionCount(detail);
+    const surfacedMarginalia = totalBookReactionCount(detail);
     return (
       <section className="mb-8 rounded-3xl border border-[var(--warm-300)]/30 bg-white p-6 shadow-sm">
         <p className="mb-3 text-[var(--amber-accent)] uppercase tracking-[0.18em]" style={OVERVIEW_SECTION_EYEBROW_STYLE}>
@@ -592,7 +594,7 @@ function BookOverviewStatusBand({
           </div>
           <div className="grid grid-cols-1 gap-3 sm:grid-cols-3 lg:w-[30rem]">
             <StatusMetric label={copy("overview.metric.completedChapters")} value={`${detail.completed_chapter_count}/${detail.chapter_count}`} />
-            <StatusMetric label={copy("overview.metric.totalReactions")} value={surfacedReactions} />
+            <StatusMetric label={copy("overview.metric.totalReactions")} value={surfacedMarginalia} />
             <StatusMetric label={copy("overview.metric.savedMarks")} value={detail.my_mark_count} />
           </div>
         </div>
@@ -672,7 +674,7 @@ function StructureChapterList({
 
               <div className="flex items-center gap-4 text-[var(--warm-600)] flex-wrap justify-end" style={{ fontSize: "0.8125rem" }}>
                 {viewMode !== "outline" && chapter.segment_count > 0 ? <span>{chapter.segment_count} sections</span> : null}
-                {viewMode === "result" ? <span>{chapter.visible_reaction_count} reactions</span> : null}
+                {viewMode === "result" ? <span>{chapter.visible_marginalia_count ?? chapter.visible_reaction_count} Marginalia</span> : null}
                 <span className="text-[var(--warm-500)]">{statusLabel}</span>
               </div>
             </div>
@@ -798,7 +800,7 @@ function ProcessingStructureNavigator({
 
             {viewMode === "result" ? (
               <div className="mt-2 flex items-center gap-3 text-[var(--warm-500)]" style={{ fontSize: "0.75rem" }}>
-                <span>{chapter.visible_reaction_count} reactions</span>
+                <span>{chapter.visible_marginalia_count ?? chapter.visible_reaction_count} Marginalia</span>
               </div>
             ) : null}
 
@@ -896,7 +898,7 @@ function CompletedBookSupportingRail({
   detail: BookDetailResponse;
   onOpenMarks: () => void;
 }) {
-  const surfacedReactions = totalBookReactionCount(detail);
+  const surfacedMarginalia = totalBookReactionCount(detail);
 
   return (
     <div className="space-y-4 lg:sticky lg:top-28">
@@ -909,7 +911,7 @@ function CompletedBookSupportingRail({
         </div>
 
         <div className="grid grid-cols-1 gap-3">
-          <StatusMetric label={copy("overview.metric.totalReactions")} value={surfacedReactions} />
+          <StatusMetric label={copy("overview.metric.totalReactions")} value={surfacedMarginalia} />
           <StatusMetric label={copy("overview.metric.savedMarks")} value={detail.my_mark_count} />
         </div>
       </section>
@@ -986,7 +988,7 @@ function BookMarksPanel({
                     </span>
                     <span className="text-[var(--warm-300)]">·</span>
                     <span className="text-[var(--warm-700)]" style={{ fontSize: "0.75rem", fontWeight: 600 }}>
-                      {reactionLabel(mark.reaction_type)}
+                      {reactionLabel(mark.marginalia_type ?? mark.reaction_type)}
                     </span>
                     <span className="text-[var(--warm-300)]">·</span>
                     <span className="text-[var(--amber-accent)]" style={{ fontSize: "0.75rem", fontWeight: 600 }}>
@@ -1002,7 +1004,7 @@ function BookMarksPanel({
                     </blockquote>
                   ) : null}
                   <p className="text-[var(--warm-800)]" style={{ fontSize: "0.875rem", lineHeight: 1.7 }}>
-                    {mark.reaction_excerpt}
+                    {mark.marginalia_excerpt ?? mark.reaction_excerpt}
                   </p>
                 </div>
               );
@@ -1118,9 +1120,9 @@ function reactionPriority(type?: string | null) {
 }
 
 function buildMindstreamEventReactions(event: ActivityEvent): MindstreamReaction[] {
-  const visibleReactions = (event.visible_reactions ?? []).map((reaction) => ({
-    reaction_id: reaction.reaction_id,
-    type: reaction.type,
+  const visibleReactions = (event.visible_marginalia ?? event.visible_reactions ?? []).map((reaction) => ({
+    reaction_id: reaction.marginalia_id ?? reaction.reaction_id,
+    type: reaction.marginalia_type ?? reaction.type,
     content: reaction.content,
     anchor_quote: reaction.anchor_quote,
     search_query: reaction.search_query ?? null,
@@ -1130,9 +1132,9 @@ function buildMindstreamEventReactions(event: ActivityEvent): MindstreamReaction
     return visibleReactions;
   }
 
-  const featuredReactions = (event.featured_reactions ?? []).map((reaction) => ({
-    reaction_id: reaction.reaction_id,
-    type: reaction.type,
+  const featuredReactions = (event.featured_marginalia ?? event.featured_reactions ?? []).map((reaction) => ({
+    reaction_id: reaction.marginalia_id ?? reaction.reaction_id,
+    type: reaction.marginalia_type ?? reaction.type,
     content: reaction.content,
     anchor_quote: reaction.anchor_quote,
     section_ref: reaction.section_ref ?? null,
@@ -1149,8 +1151,8 @@ function buildMindstreamEventReactions(event: ActivityEvent): MindstreamReaction
 
   return [
     {
-      reaction_id: event.active_reaction_id ?? event.event_id,
-      type: event.reaction_types[0] ?? "discern",
+      reaction_id: event.active_marginalia_id ?? event.active_reaction_id ?? event.event_id,
+      type: event.marginalia_types[0] ?? event.reaction_types[0] ?? "discern",
       content: synthesizedContent || synthesizedAnchor,
       anchor_quote: synthesizedAnchor,
       search_query: event.search_query ?? null,
@@ -1339,7 +1341,7 @@ function buildRecentReactionMoments(
   detail: BookDetailResponse,
   analysis: AnalysisStateResponse | null,
 ): MindstreamMoment[] {
-  const recentReactions = analysis?.current_state_panel.recent_reactions ?? [];
+  const recentReactions = analysis?.current_state_panel.recent_marginalia ?? analysis?.current_state_panel.recent_reactions ?? [];
   if (recentReactions.length === 0) {
     return [];
   }
@@ -1357,15 +1359,15 @@ function buildRecentReactionMoments(
       : reaction.chapter_ref;
 
     return {
-      momentId: `recent:${reaction.reaction_id}`,
+      momentId: `recent:${reaction.marginalia_id ?? reaction.reaction_id}`,
       timestamp: fallbackTimestamp,
       chapterRef: chapterLabel ?? null,
       sectionRef: reaction.section_ref ?? null,
       anchorQuote: reaction.anchor_quote ?? "",
       reactions: [
         {
-          reaction_id: reaction.reaction_id,
-          type: reaction.type,
+          reaction_id: reaction.marginalia_id ?? reaction.reaction_id,
+          type: reaction.marginalia_type ?? reaction.type,
           content: reaction.content,
           anchor_quote: reaction.anchor_quote,
           section_ref: reaction.section_ref ?? null,
@@ -2174,7 +2176,7 @@ function MindstreamHeroCard({
   const runtimeState = describeRuntimeState(detail, analysis, { isParsing: isAnalysisParsing(analysis) });
   const quoteText = currentActivity ? formatMindstreamQuote(currentActivity) : null;
   const liveActivity = currentReadingActivity(analysis);
-  const activeReactionId = liveActivity?.active_reaction_id ?? null;
+  const activeReactionId = liveActivity?.active_marginalia_id ?? liveActivity?.active_reaction_id ?? null;
   const activeThoughtChapterId = currentChapterId(detail, analysis);
   const activeThoughtUrl =
     activeReactionId != null && activeThoughtChapterId != null

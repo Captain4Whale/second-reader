@@ -7,20 +7,20 @@ Update when: the current objective, active tasks, blockers, active jobs, open de
 
 This file is authoritative for durable current status. Do not keep unique active-state information only in `docs/agent-handoff.md`.
 
-Last verified: `2026-06-14T18:58:20+08:00`
+Last verified: `2026-06-20T16:50:20+08:00`
 
 ## Current Objective
 - The `Ingest -> Digest -> Reading Runner settlement` mechanism reframe is implemented; current work is fact alignment, smoke/diagnostic review, and calibration before any formal evaluation promotion.
   - decision ref:
     - `DEC-103`
   - new product target:
-    - understand the currently read text and present valuable notes / highlights beside the source text
+    - understand the currently read text and present valuable Marginalia / highlights beside the source text
     - prioritize viewpoint supplement, avoiding missed important content, and a sense of reading companionship
-    - treat note type / value rating / highlight presentation as product-facing outputs, not as secondary artifacts of an internal memory ontology
+    - treat Marginalia type / value rating / highlight presentation as product-facing outputs, not as secondary artifacts of an internal memory ontology
   - landed workflow direction:
     - replace the old path-selection framing of `navigate -> read` with `Ingest -> Digest`
     - `Ingest` determines the next reading unit and may express bounded prior-reading recall intentions; runtime owns retrieval execution and selection
-    - `Digest` understands the target text and produces reader-facing `understanding / response / annotations`
+    - `Digest` understands the target text and produces reader-facing `understanding / response / marginalia`
     - prefer retrieving relevant prior memory/source objects over live "回读" path steering
   - live cleanup landed:
     - `DEC-104` retires live Detour / source-backread behavior from `attentional_v2`
@@ -45,6 +45,7 @@ Last verified: `2026-06-14T18:58:20+08:00`
     - `DEC-125` switches live Source Normalization to deterministic-only v1.2 for new parses: default import no longer calls a whole-book LLM classifier, only strong structural evidence such as explicit footnote/endnote/reference containers or note-definition anchors can change `text_role` to `auxiliary`, inline note references remain mainline, malformed orphan-note candidates are audit-only, and uncertain cases preserve正文
     - `DEC-126` promotes the source-normalized deterministic v1.2 user-level selective dataset package as the active local/user-level pointer: the active split manifest now points to `attentional_v2_user_level_selective_v1_repaired_20260614_source_norm_v1_2`, with `5` segments and `202` note cases preserved; historical formal evidence remains attached to its original dataset packages
     - `DEC-127` removes the duplicated final-output Unit Memory recall surface from Ingest: `retrieve_unit_memory` action-tool args are now the only model-authored recall intent, while runtime derives `memory_recalls[]` for traces/artifacts from that tool call
+    - `DEC-128` promotes Marginalia as the canonical Digest visible-note concept: live Digest prompt `attentional_v2.digest.v10` / promptset `attentional_v2-phase6-v68` outputs `marginalia[]`, Unit Memory stores and retrieves `unit_marginalia`, public API / frontend surfaces expose additive `marginalia_*` fields and routes, and old `annotation` / `reaction` / `surfaced_reactions` names remain compatibility aliases for historical artifacts and legacy public fields
     - current `llm_calls.ingest(...)` is the forward-only XML LLM boundary call: final output carries `unit.end_paragraph_n`, `unit.end_at`, `preview_partition[]`, and optional boundary-rationale `reason`; bounded Unit Memory recall intent is expressed only through the `retrieve_unit_memory` action tool
     - current LLM-call code now lives in `reading-companion-backend/src/attentional_v2/llm_calls.py`; the old ambiguous active module name is removed
     - current `attentional_v2` LLM calls keep project schemas/tools protocol-neutral; Anthropic-compatible profiles submit structured results through mechanism-private final-output tools such as `submit_ingest_result` and `submit_digest_result`, while OpenAI-compatible JSON-object profiles use JSON object plus validator/repair for Ingest/Digest final output; `retrieve_unit_memory` remains the only live action tool and is left to model `auto` choice; OpenAI-compatible DeepSeek/OpenCode JSON-object calls do not force final-output `tool_choice`
@@ -55,11 +56,11 @@ Last verified: `2026-06-14T18:58:20+08:00`
     - Ingest prompt `attentional_v2.ingest.v17` / promptset `attentional_v2-phase6-v67` keeps the reviewed window-partition selector plus preview-partition audit map, and tightens recall ownership: final output no longer includes `memory_recalls[]`; only `unit` / `preview_partition[0]` receives the optional top-level boundary `reason`; later `preview_partition[]` entries must stay to compact titles, boundaries, and status
     - `preview_partition[0]` must match `unit`; later `preview_partition[]` entries are future-source audit/planning metadata and do not affect Digest input, Unit Memory retrieval, Recent Reading Memory, or public API payloads
     - Ingest tool-loop validation now treats `retrieve_unit_memory` action-tool args as the only recall authority: non-empty tool calls enforce visible unit boundary, same-language recall text, and `basis == selected_source_unit`; empty optional recall tool calls are treated as no-op / not-requested events; final output validation ignores legacy final `memory_recalls[]` echoes and only checks boundary / preview-partition plus tool-result contract violations. Structured-output / LLM failures propagate as explicit LLM problem codes such as `llm_contract` instead of being normalized into an empty boundary; runtime does not broadly auto-absorb opening punctuation or next-unit markers
-    - Digest semantic refactor is implemented: model-facing `understanding / response / annotations` are three peer outputs, with one holistic `understanding` string per unit mapped into `recent_reading_memory`
-    - Digest Understanding prompt `attentional_v2.digest.v9` now frames `understanding` as concise source-established content from the current source text, with light section headings, text-type compression guidance, grammatical-subject guidance, source-established-content calibration, subject-continuity rules, and approved examples to avoid unit/commentary-shaped, passage-effect, source-copying, floating-pronoun memory text, or content-type classification; the active promptset bundle is `attentional_v2-phase6-v67`
-    - subject-continuity / standalone Understanding follow-up remains implemented in Digest prompt `attentional_v2.digest.v9`: prior Understanding in `ReadingMemory` carries narrator / speaker / actor / concept continuity; Digest establishes new subjects, continues known subjects when supported, or explicitly preserves meaningful ambiguity without adding raw prior-source backfill, Ingest reference-resolution fields, or a durable referent store
-    - Unit Memory recall/retrieval/context framework is implemented: settlement writes one unit-centered ledger entry per accepted source unit, derives source / understanding / response / annotation retrieval documents, indexes them with SQLite FTS5, optionally indexes dense vectors through sqlite-vec + local Ollama, filters dense candidates by `dense_max_distance`, lets Ingest trigger bounded prior-reading recalls through `retrieve_unit_memory`, and writes retrieval/selection traces between `Ingest` and `Digest`
-    - Digest now receives one top-level `ReadingMemory` block assembled by runtime from hot current-chapter Understanding plus selected long-distance Unit Memory Understanding; raw prior source, prior Response, and prior Annotation remain retrieval/audit surfaces only
+    - Digest semantic refactor is implemented: model-facing `understanding / response / marginalia` are three peer outputs, with one holistic `understanding` string per unit mapped into `recent_reading_memory`
+    - Digest prompt `attentional_v2.digest.v10` now frames `understanding` as concise source-established content from the current source text and frames Marginalia as page-margin reader notes anchored to exact source spans, not generic explanatory annotations; the active promptset bundle is `attentional_v2-phase6-v68`
+    - subject-continuity / standalone Understanding follow-up remains implemented in Digest prompt `attentional_v2.digest.v10`: prior Understanding in `ReadingMemory` carries narrator / speaker / actor / concept continuity; Digest establishes new subjects, continues known subjects when supported, or explicitly preserves meaningful ambiguity without adding raw prior-source backfill, Ingest reference-resolution fields, or a durable referent store
+    - Unit Memory recall/retrieval/context framework is implemented: settlement writes one unit-centered ledger entry per accepted source unit, derives source / understanding / response / marginalia retrieval documents, indexes them with SQLite FTS5, optionally indexes dense vectors through sqlite-vec + local Ollama, filters dense candidates by `dense_max_distance`, lets Ingest trigger bounded prior-reading recalls through `retrieve_unit_memory`, and writes retrieval/selection traces between `Ingest` and `Digest`
+    - Digest now receives one top-level `ReadingMemory` block assembled by runtime from hot current-chapter Understanding plus selected long-distance Unit Memory Understanding; raw prior source, prior Response, and prior Marginalia remain retrieval/audit surfaces only
     - current `Digest` has no path-redirection output contract and the Runner/audit path emits no Detour or source-backread runtime artifacts for new runs
     - current `local_continuity` contains only forward-reading continuity; old Detour-era checkpoint/artifact shapes are not a compatibility target
   - stop declaration:
@@ -128,7 +129,7 @@ Last verified: `2026-06-14T18:58:20+08:00`
   - retrieval repair status:
     - the staged retrieval repair track has proven prompt-visible retrieved Understanding lines in `text_only` diagnostic smokes, and local hybrid readiness now passes after installing the Ollama App runtime plus `qwen3-embedding:0.6b`; the goal is not complete because live hybrid dense retrieval still needs a real smoke proving dense candidates, query-embedding cache rows, vector rows, and RRF contribution in current artifacts
     - Phase 0 health packet is in place and reproduced the five-window failure from artifacts; run-local health reports are under `reading-companion-backend/eval/runs/attentional_v2/attentional_v2_ingest_digest_unit_memory_full_diagnostic_20260603_parallel5/analysis/unit_memory_retrieval_health/`
-    - Phase 1/5 deterministic trace-rendering repair now passes: retrieval suppresses candidates without renderable Understanding before final selection, health reports count retrieval-layer suppression reasons, and a runner-level known-answer case proves a selected non-empty Understanding from the real Unit Memory index renders into Digest `ReadingMemory` without prior Response / Annotation / raw source
+    - Phase 1/5 deterministic trace-rendering repair now passes: retrieval suppresses candidates without renderable Understanding before final selection, health reports count retrieval-layer suppression reasons, and a runner-level known-answer case proves a selected non-empty Understanding from the real Unit Memory index renders into Digest `ReadingMemory` without prior Response / Marginalia / raw source
     - Phase 2 is now ready for live validation: sqlite-vec adapter loading works, deterministic fake-embedder tests prove vector rows / query embedding cache / dense sqlite-vec candidates / dense distance filtering / dense-channel selection, and the local Ollama App service now exposes `qwen3-embedding:0.6b` with a `1024`-dimension embedding probe; real dense/RRF behavior still needs a live hybrid retrieval smoke
     - Phase 3 deterministic text-only repair now passes for Chinese recall-meta wording, English concept recall, and multi-recall aggregation with `matched_recalls`
     - Phase 4 deterministic boundary/horizon repair now passes: tool-stage `boundary_unresolved` no longer prevents runtime retrieval after accepted source-unit governance, and horizon gates record numeric counts rather than only labels
@@ -152,7 +153,7 @@ Last verified: `2026-06-14T18:58:20+08:00`
     - post-R9 relevance review and repair:
       - report: `docs/implementation/new-reading-mechanism/codex/reports/UnitMemory-Retrieval-TextOnly-PostR9-Relevance-Review v0.md`
       - finding: text-only retrieval now has useful continuity examples, but auxiliary FTS surfaces could still pull terminology / note-cluster units into Digest `ReadingMemory`
-      - repair: Unit Memory lexical weights now prioritize `unit_understanding` over `unit_source`, `unit_annotation`, and `unit_response`
+      - repair: Unit Memory lexical weights now prioritize `unit_understanding` over `unit_source`, `unit_marginalia` / legacy `unit_annotation`, and `unit_response`
       - repair: selection trace rows now record `rendered_retrieved_units` and `rendered_retrieved_unit_ids` so future health reports can identify exactly which retrieved Unit Memory entries became prompt-visible
     - post-R10/R11 `text_only` diagnostic smoke:
       - run id: `attentional_v2_unit_memory_text_only_smoke_xidaduo_post_r11_20260606`
@@ -255,7 +256,7 @@ Last verified: `2026-06-14T18:58:20+08:00`
     - do not rerun solely for the Ingest v6 language/basis contract unless later live artifacts show drift again; the current observed sample is sufficient for this narrow contract, while long-distance retrieval maturity was intentionally not revalidated in that early stopped run
     - do not run formal evaluation, update evidence catalog, or claim product quality from the intentionally stopped diagnostic smokes; first decide whether to do human review of retrieved-memory usefulness or launch a separately authorized formal evaluation
     - use `docs/implementation/new-reading-mechanism/ingest-context-and-navigate-mapping.md` as the implementation reference for the landed first-slice `Ingest` XML context
-    - use `docs/implementation/new-reading-mechanism/digest-understanding-response-annotation-design.md` as the implemented reference for the Digest prompt/output semantic refactor
+    - use `docs/implementation/new-reading-mechanism/digest-understanding-response-marginalia-design.md` as the implemented reference for the Digest prompt/output semantic refactor and Marginalia terminology migration
     - use `docs/implementation/new-reading-mechanism/unit-memory-hybrid-retrieval-design.md` as the implemented reference for the Unit Memory storage/index/retrieval trace bottom framework
     - use `docs/implementation/new-reading-mechanism/ingest-recall-and-digest-memory-context-design.md` as the implemented reference for bounded multi-recall Ingest output, Anthropic-style `retrieve_unit_memory` tool loop, multi-recall retrieval aggregation, and Digest `ReadingMemory` packaging
     - use `docs/implementation/new-reading-mechanism/source-normalization-design.md`, `docs/implementation/new-reading-mechanism/mechanism-pattern-ledger.md` entry 19, `DEC-116`, `DEC-117`, `DEC-118`, `DEC-120`, `DEC-121`, `DEC-122`, `DEC-123`, `DEC-124`, `DEC-125`, and `DEC-127` for the accepted design explanation of why window-partition Ingest improves next-unit selection, why live Ingest records `preview_partition[]` titles as mechanism-private audit metadata, why runtime first moved away from paragraph-count previews, why live preview capacity is token-bounded, why the current v16 token window is larger than the initial live v16 value, why footnotes/noise should be handled by upstream source normalization rather than Ingest skip behavior, how Source Normalization applies only to newly parsed books, why v1.1 preserves markup context while protecting literary body text, why v1.2 no longer uses live whole-book LLM source-flow classification, and why Unit Memory recall intent now has only one model-authored surface
@@ -893,14 +894,14 @@ Last verified: `2026-06-14T18:58:20+08:00`
     - `Digest` now directly owns the current naturalized model-facing reading contract:
       - `understanding`
       - `response`
-      - `annotations`
+      - `marginalia`
     - the dedicated live `Express` node is no longer on the live path
     - `Digest` prompt packaging now uses XML context blocks and compact carried state instead of the broader intermediate packet
   - Digest naturalization is now landed:
     - the `Digest` prompt addresses the model as a reader moving through the book, not as a field-filling node
     - the old current-field names `unit_delta` and `implicit_uptake_ops` are historical
-    - new runs use model-facing `understanding`, `response`, and `annotations`
-    - runtime `memory_uptake_ops`, `reading_impression`, and `surfaced_reactions` are mapped from Digest output for settlement/audit
+    - new runs use model-facing `understanding`, `response`, and `marginalia`
+    - runtime `memory_uptake_ops`, `reading_impression`, canonical `marginalia`, and deprecated `surfaced_reactions` aliases are mapped from Digest output for settlement/audit
   - `Phase F2` is now historical after `DEC-104`:
     - the old live Detour / source-backread path has been retired from the current runtime
     - `DEC-105` hard-purges the retired compatibility interfaces from current code, prompts, schemas, audits, and tests

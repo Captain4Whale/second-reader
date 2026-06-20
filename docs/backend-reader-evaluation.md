@@ -122,7 +122,7 @@ The old Memory / Planning / Evaluation implementation guidance chain at `docs/im
   - one continuous reading segment per book
   - the segment must begin at body start rather than dropping into a later chapter cold
   - the judged targets should be real aligned human notes rather than machine-expanded synthetic excerpt cases
-  - the main metric should be note recall over user-visible reactions
+  - the main metric should be note recall over user-visible Marginalia
   - if a repaired sibling package proves to be the durable corrected benchmark, promote it into the active pointer explicitly rather than leaving a long-lived dual-pointer posture
   - temporary dual-pointer transitions are acceptable only as short repair bridges and should be called out explicitly while they exist
 - the discontinued `reader_character.coherent_accumulation` target-centered surface is preserved only as invalidated / historical long-span evidence:
@@ -134,7 +134,7 @@ The old Memory / Planning / Evaluation implementation guidance chain at `docs/im
     - current formal evidence must include Unit Memory retrieval evidence and prompt-facing `ReadingMemory`, not only older hot-state stores
     - current probe targets are semantic-boundary selections from a versioned manifest; distance labels are only distribution-reference metadata, not fixed ratio checkpoints
   - `Mechanism Conformance`
-    - verify the actual loop produces the required structure: `Ingest` boundary and bounded recalls, runtime Unit Memory retrieval/selection, Digest top-level `ReadingMemory`, Digest `understanding / response / annotations`, and settlement/writeback artifacts
+    - verify the actual loop produces the required structure: `Ingest` boundary and bounded recalls, runtime Unit Memory retrieval/selection, Digest top-level `ReadingMemory`, Digest `understanding / response / marginalia`, and settlement/writeback artifacts
   - `Prior Memory Continuity / Safety`
     - audit visible Digest reactions only when they visibly use prior material
     - do not reward the count of prior-memory references
@@ -192,7 +192,7 @@ The old Memory / Planning / Evaluation implementation guidance chain at `docs/im
 
 ## Selective-Legibility Matching Rule
 - The active user-level selective benchmark currently scores only `reader_character.selective_legibility`.
-- The mechanism should first read the full `reading_segment`, then the benchmark should compare user-visible reactions against the aligned note cases.
+- The mechanism should first read the full `reading_segment`, then the benchmark should compare user-visible Marginalia against the aligned note cases.
 - Candidate retrieval must be source-location grounded, not text-similarity grounded.
   - the first question is whether the visible reaction's quoted source span intersects the note case's canonical source span
   - textual similarity, shared words, nearby ideas, or semantic relatedness must not admit a candidate when the source spans do not overlap
@@ -210,9 +210,9 @@ The old Memory / Planning / Evaluation implementation guidance chain at `docs/im
   - if a completed mechanism output can only be located back to an enclosing semantic segment, the normalized export should mark that resolution explicitly
   - a broad enclosing span is allowed to enter the `focused_hit / incidental_cover / miss` judge when it really overlaps the note span
   - it must not auto-count as `exact_match`, even if the broad span happens to contain the exact note text
-- A user-visible reaction without a usable source locator is a benchmark contract failure for this surface.
+- A user-visible Marginalia item without a usable source locator is a benchmark contract failure for this surface.
   - the runner should fail rather than silently falling back to quote/content string matching
-- Repeated reactions on the same source span do not strengthen the main note-recall score.
+- Repeated Marginalia on the same source span do not strengthen the main note-recall score.
   - deduplicate candidate spans before judging
   - keep duplicate reaction counts only as a diagnostic signal
 - Completed reading outputs may be reused for re-scoring only after their normalized locator contract is brought up to the current source-span standard.
@@ -254,10 +254,10 @@ The old Memory / Planning / Evaluation implementation guidance chain at `docs/im
     - do not require prespecified gold sentences
     - do not require human notes as hard-contract input
   - `Mechanism Conformance`
-    - verify the designed loop actually occurs: `Ingest` selects a forward source unit and may emit bounded recalls; runtime retrieves/selects Unit Memory; `Digest` receives top-level `ReadingMemory`; `Digest` emits `understanding / response / annotations`; settlement writes Recent Memory, Unit Memory, traces, and audits
+    - verify the designed loop actually occurs: `Ingest` selects a forward source unit and may emit bounded recalls; runtime retrieves/selects Unit Memory; `Digest` receives top-level `ReadingMemory`; `Digest` emits `understanding / response / marginalia`; settlement writes Recent Memory, Unit Memory, traces, and audits
     - do not judge subjective output beauty in this conformance axis
   - `Prior Memory Continuity / Safety`
-    - audit visible Digest reactions for grounded prior-memory use only when the reaction visibly refers to earlier material
+    - audit visible Digest Marginalia for grounded prior-memory use only when the Marginalia visibly refers to earlier material
     - keep `prior_memory_overclaim` as the negative guardrail for weak grounding, overclaim, hard-linking, theme-only similarity, or memory drift
     - do not treat prior-memory reference count as a success metric
 - These long-span goals are complementary, but they remain contract-level distinct:
@@ -271,9 +271,9 @@ The old Memory / Planning / Evaluation implementation guidance chain at `docs/im
     - current snapshots use explicit semantic `probe_targets` from `memory_quality_semantic_probe_plan_20260504.json`; missing targets fail fast instead of falling back to ratio probes
     - current semantic probe manifests may still name `target_sentence_id` / sentence ordinals as eval locator metadata, even after the paragraph-offset cursor cutover; they are not the current `attentional_v2` mainline reading coordinate
     - future Long Span reports should pair any sentence id with the available paragraph-char locator, source span, or `SourceRef` evidence so reviewers do not mistake `cN-sM` orientation handles for canonical source coordinates
-  - add full-window reaction audit for `Prior Memory Continuity / Safety`
+  - add full-window Marginalia / compatibility reaction audit for `Prior Memory Continuity / Safety`
     - phase-1 comparison scope is `attentional_v2` vs `iterator_v1`
-    - unchanged `iterator_v1` windows may reuse prior completed normalized reading outputs because reaction audit only consumes visible reactions
+    - unchanged `iterator_v1` windows may reuse prior completed normalized reading outputs because the audit only consumes visible notes / compatibility reactions
     - reuse must be refused when `segment_id / start_sentence_id / end_sentence_id / source_chapter_ids / source_text_sha256` do not match the active window
   - landed runner:
     - `reading-companion-backend/eval/attentional_v2/run_long_span_vnext.py`
@@ -282,7 +282,7 @@ The old Memory / Planning / Evaluation implementation guidance chain at `docs/im
       - runtime capture is invoked through the `attentional_v2` observability layer, so `benchmark_probes.py` remains the Memory Quality export implementation while Reading Runner does not own probe manifest or snapshot-persistence details
       - Memory Quality probe export schema v3 records source-native target/capture coordinates (`target_source_cursor`, `target_source_span`, `capture_source_cursor`, `capture_source_span`), current `unit_memory` and `reading_memory` projections, and treats sentence ids as orientation metadata / legacy fallback
       - `unit_span_ledger.jsonl`, `read_audit.jsonl`, and `settlement_audit.jsonl` are runtime evidence used to diagnose whether a run covered and settled source spans correctly; they are not new benchmark targets or score inputs by themselves
-      - new `attentional_v2` probe/context snapshots consume inline `source_refs[]` from memory and reaction state; `anchor_bank_digest` is historical and should not be used for new Memory Quality evidence
+      - new `attentional_v2` probe/context snapshots consume inline `source_refs[]` from memory and Marginalia / compatibility reaction state; `anchor_bank_digest` is historical and should not be used for new Memory Quality evidence
 - The first Phase-1 diagnostic run has been corrected in two steps:
   - corrected run:
     - `attentional_v2_long_span_vnext_phase1_memory_quality_scale_fix_rejudge_20260425`
@@ -316,7 +316,7 @@ The old Memory / Planning / Evaluation implementation guidance chain at `docs/im
     - `scoring_memory_state.reflective_frames`
     - retired concept/thread structured long-memory stores are no longer current snapshot fields after `DEC-109`; current long-memory evaluation should follow the content-neutral Unit Memory design established by `DEC-110`
     - digest fields remain auxiliary projection / compatibility evidence, not the primary scoring surface for new runs
-    - `reaction_records`, local buffer, continuity glue, and read-audit streams are not Memory Quality stores; reaction-level behavior remains covered by Selective Legibility and Prior Memory Safety
+    - `reaction_records`, local buffer, continuity glue, and read-audit streams are not Memory Quality stores; Marginalia-level behavior remains covered by Selective Legibility and Prior Memory Safety
     - old digest-only Memory Quality runs should be labeled with `memory_snapshot_basis=legacy_digest_snapshot`; incomplete current-state snapshots without Unit Memory / ReadingMemory evidence should record `memory_snapshot_basis=incomplete_probe_time_memory_state`; current formal snapshots should record `memory_snapshot_basis=unit_memory_reading_memory_state`
     - old `gate_state`, `pressure_snapshot`, and working-pressure artifacts are not current evidence fields
     - Active Attention / ActiveTension is now deprecated as a primary memory layer. Existing artifacts may still contain `active_attention` items with `tension_from`, `tension_focus`, `working_interpretation`, source evidence, and terminal `answered_reason` / `closed_reason`; reports may interpret those fields for historical or diagnostic review, but should label the store as deprecated evidence rather than the target near-term memory design.
@@ -1106,8 +1106,8 @@ The old Memory / Planning / Evaluation implementation guidance chain at `docs/im
   - the report makes the reused baseline explicit
 - Focused audit reports should expose the evidence directly.
   - show the unit text
-  - show the visible reactions
-  - show the anchor quote for each visible reaction
+  - show the visible Marginalia
+  - show the anchor quote for each visible Marginalia item
   - state the prompt or mechanism version on both sides when that is part of the comparison
 - Focused audit reports must distinguish evidence scales honestly.
   - a window-level density/style improvement is valid window-level evidence

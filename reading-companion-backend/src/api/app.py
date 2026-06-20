@@ -37,6 +37,7 @@ from src.api.schemas import (
     ErrorResponse,
     HealthResponse,
     JobStatusResponse,
+    MarginaliaPageResponse,
     MarksPageResponse,
     MarkRecord,
     ReactionsPageResponse,
@@ -442,6 +443,33 @@ def book_chapter_reactions(
     )
 
 
+@app.get("/api/books/{book_id}/chapters/{chapter_id}/marginalia", response_model=MarginaliaPageResponse, responses=ERROR_MODELS)
+def book_chapter_marginalia(
+    book_id: int,
+    chapter_id: int,
+    limit: int = Query(default=20, ge=1, le=100),
+    cursor: Optional[str] = Query(default=None),
+    type: Optional[str] = Query(default=None),
+    section_ref: Optional[str] = Query(default=None),
+    mark_type: Optional[str] = Query(default=None),
+) -> MarginaliaPageResponse:
+    """Return a flattened paginated Marginalia list for one chapter."""
+    internal_book_id = _resolve_book_id(book_id)
+    _ensure_chapter_ready(internal_book_id, chapter_id)
+    return MarginaliaPageResponse.model_validate(
+        get_chapter_reactions_page(
+            internal_book_id,
+            chapter_id,
+            root=_root(),
+            limit=limit,
+            cursor=cursor,
+            reaction_type=type,
+            section_ref=section_ref,
+            mark_type=mark_type,
+        )
+    )
+
+
 @app.put("/api/marks/{reaction_id}", response_model=MarkRecord, responses=ERROR_MODELS)
 def put_reaction_mark(reaction_id: int, request: SetMarkRequest) -> MarkRecord:
     """Create or update one resonance mark on a reaction."""
@@ -462,7 +490,7 @@ def delete_reaction_mark(reaction_id: int) -> DeleteMarkResponse:
     deleted = delete_mark(internal_reaction_id, root=_root())
     if not deleted:
         raise ApiError(status=404, code="MARK_TARGET_NOT_FOUND", message=f"Reaction '{reaction_id}' was not found.")
-    return DeleteMarkResponse(reaction_id=reaction_id, deleted=True)
+    return DeleteMarkResponse(marginalia_id=reaction_id, reaction_id=reaction_id, deleted=True)
 
 
 @app.websocket("/api/ws/jobs/{job_id}")
@@ -532,8 +560,13 @@ def _mark_record(payload: dict) -> dict:
     internal_reaction_id = str(payload.get("reaction_id", ""))
     normalized["mark_id"] = to_api_mark_id(book_id=internal_book_id, reaction_id=internal_reaction_id)
     normalized["book_id"] = to_api_book_id(internal_book_id)
-    normalized["reaction_id"] = to_api_reaction_id(book_id=internal_book_id, reaction_id=internal_reaction_id)
-    normalized["reaction_type"] = to_api_reaction_type(str(payload.get("reaction_type", "")))
+    public_reaction_id = to_api_reaction_id(book_id=internal_book_id, reaction_id=internal_reaction_id)
+    public_reaction_type = to_api_reaction_type(str(payload.get("marginalia_type", payload.get("reaction_type", ""))))
+    normalized["marginalia_id"] = public_reaction_id
+    normalized["reaction_id"] = public_reaction_id
+    normalized["marginalia_type"] = public_reaction_type
+    normalized["reaction_type"] = public_reaction_type
+    normalized["marginalia_excerpt"] = str(payload.get("marginalia_excerpt", payload.get("reaction_excerpt", "")) or "")
     normalized["mark_type"] = to_api_mark_type(str(payload.get("mark_type", "")))
     normalized["section_ref"] = str(payload.get("section_ref", payload.get("segment_ref", "")))
     normalized["anchor_quote"] = str(payload.get("anchor_quote", payload.get("source_quote", "")) or "")
@@ -543,6 +576,7 @@ def _mark_record(payload: dict) -> dict:
         if supersedes_reaction_id
         else None
     )
+    normalized["supersedes_marginalia_id"] = normalized["supersedes_reaction_id"]
     normalized.pop("segment_ref", None)
     return normalized
 

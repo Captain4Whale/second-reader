@@ -18,9 +18,9 @@ from .reader_role import READER_ROLE_FRAGMENT
 from .types import PromptDefinition
 
 
-DIGEST_PROMPT_VERSION = "attentional_v2.digest.v9"
-DIGEST_XML_PROMPT_ASSEMBLY_SPEC_ID = "attentional_v2.digest.xml.v9"
-DIGEST_XML_PROMPTSET_VERSION = "attentional_v2-phase6-v63"
+DIGEST_PROMPT_VERSION = "attentional_v2.digest.v10"
+DIGEST_XML_PROMPT_ASSEMBLY_SPEC_ID = "attentional_v2.digest.xml.v10"
+DIGEST_XML_PROMPTSET_VERSION = "attentional_v2-phase6-v68"
 DIGEST_XML_TRANSPORT_SYSTEM_PROMPT = "Follow the structured Digest prompt in the user message. Use the required submit_digest_result tool as the final output channel."
 
 
@@ -33,7 +33,7 @@ DIGEST_ROLE_AND_INSTRUCTION_FRAGMENTS = (
 
 Stay with this unit as the present moment of reading. Let the carried reading context help you remain continuous with what has already been read, but let the current source text lead.
 
-After reading, express the result in three connected ways: what you understand from the text, how you respond to it as a reader, and which exact lines, if any, are worth annotating.""",
+After reading, express the result in three connected ways: what you understand from the text, how you respond to it as a reader, and which exact lines, if any, are worth carrying into the margin as Marginalia.""",
     ),
     PromptFragment(
         fragment_id="digest.context_use_guide",
@@ -80,7 +80,7 @@ When the referent is genuinely ambiguous, do not guess. Record the ambiguity as 
 Pronouns are acceptable after the referent is clear inside the same Understanding. Avoid floating pronouns that cannot be understood after this Understanding is stored as memory.
 
 # Concision
-Compress meaning, not wording. Be brief, but do not drop the main event, claim, condition, or relationship change. Do not copy the whole source or turn the understanding into a reaction, evaluation, or annotation. The understanding should be shorter than the source text and normally no more than a few compact sentences.
+Compress meaning, not wording. Be brief, but do not drop the main event, claim, condition, or relationship change. Do not copy the whole source or turn the understanding into a reaction, evaluation, or Marginalia note. The understanding should be shorter than the source text and normally no more than a few compact sentences.
 
 # Empty-content exception
 If the source text is only a divider, empty heading, or other non-content structure, `understanding` may be empty; otherwise give a substantive understanding.
@@ -181,23 +181,23 @@ Use carried context naturally when it genuinely matters, but do not collapse the
 
 Keep Response distinct from Understanding: if the content is source-faithful meaning that should support continued reading, it belongs in Understanding.
 
-Keep Response distinct from Annotation: if the expression is tied to a specific source span and worth showing as a visible margin-note-style output, it belongs in Annotation.""",
+Keep Response distinct from Marginalia: if the expression is tied to a specific source span and worth showing as a visible page-margin reader note, it belongs in Marginalia.""",
     ),
     PromptFragment(
-        fragment_id="digest.annotation_policy",
-        text="""When a line or small span genuinely asks to be marked, annotate it.
+        fragment_id="digest.marginalia_policy",
+        text="""When a line or small span genuinely asks to live in the page margin, write Marginalia for it.
 
-An Annotation is a visible margin-note-style response anchored to exact source text from the current unit.
+Marginalia is a visible page-margin reader note anchored to exact source text from the current unit. It is not a generic explanatory annotation, passage summary, or metadata label; it is the kind of local readerly note that helps the user notice why this exact bit of text matters.
 
-It may be a line that lands with force, a margin-note thought or question, a natural connection, a distinction or turn that suddenly clarifies something, or a local trigger that feels worth marking.
+It may be a line that lands with force, a margin thought or question, a natural connection, a distinction or turn that suddenly clarifies something, or a local trigger that feels worth marking.
 
-Do not create an Annotation just to fill the field. It is acceptable to emit zero annotations. Default to 0-2.
+Do not create Marginalia just to fill the field. It is acceptable to emit zero Marginalia items.
 
-Each Annotation must stay anchored to the current unit. Each `source_quote` must be an exact quote from this unit.
+Each Marginalia item must stay anchored to the current unit. Each `source_quote` must be an exact quote from this unit.
 
-Choose each `source_quote` as the smallest self-sufficient span that can honestly stand as the annotation's footing.
+Choose each `source_quote` as the smallest self-sufficient span that can honestly stand as the Marginalia item's footing.
 
-If the unit contains multiple independently valuable local triggers, you may annotate them separately. Do not let one sharper later sentence erase an earlier framing line, premise line, or hinge line that also stands on its own.
+If the unit contains multiple independently valuable local triggers, you may write separate Marginalia items. Do not let one sharper later sentence erase an earlier framing line, premise line, or hinge line that also stands on its own.
 
 Keep V1's wide-entry, narrow-expression stance: be willing to notice and surface a real local trigger, but do not manufacture commentary just to fill space.
 
@@ -205,7 +205,7 @@ If you callback to earlier material in visible content, speak naturally to the r
     ),
     PromptFragment(
         fragment_id="digest.source_grounding_policy",
-        text="""- `annotations[].source_quote` must be a short exact contiguous span copied from the current unit: no ellipses, no stitched fragments, no paraphrase, no translation.
+        text="""- `marginalia[].source_quote` must be a short exact contiguous span copied from the current unit: no ellipses, no stitched fragments, no paraphrase, no translation.
 - Never invent source coordinates. The runner resolves source quotes to paragraph + char-offset `SourceRef` objects after Digest returns.
 - Understanding is grounded in the current source unit as a whole; it does not need exact source quotes.""",
     ),
@@ -241,7 +241,7 @@ DIGEST_READER_ROLE_AND_INSTRUCTION_FRAGMENT_REGISTRY = PromptFragmentRegistry(
         _fragment_by_id("digest.context_use_guide"),
         _fragment_by_id("digest.understanding_policy"),
         _fragment_by_id("digest.response_policy"),
-        _fragment_by_id("digest.annotation_policy"),
+        _fragment_by_id("digest.marginalia_policy"),
         PromptFragment(
             fragment_id="digest.source_grounding_policy",
             text=_target_source_grounding_text(),
@@ -276,8 +276,8 @@ DIGEST_READER_ROLE_AND_INSTRUCTION_TEMPLATE = (
                 prompt_fragment_ref="digest.response_policy",
             ),
             PromptTemplateNode(
-                element_name="Annotation",
-                prompt_fragment_ref="digest.annotation_policy",
+                element_name="Marginalia",
+                prompt_fragment_ref="digest.marginalia_policy",
             ),
             PromptTemplateNode(
                 element_name="SourceGrounding",
@@ -552,7 +552,7 @@ Top-level fields:
 {
   "understanding": "...",
   "response": "...",
-  "annotations": [
+  "marginalia": [
     {
       "source_quote": "...",
       "content": "...",
@@ -580,13 +580,13 @@ DIGEST_RESPONSE_CONTRACT_FRAGMENT = PromptFragment(
     fragment_id="digest.response_contract",
     text="""`response` is the reader's immediate expression after finishing the current unit: a brief natural impression, feeling, thought, pressure, question, or aftertaste.
 It should not duplicate `understanding`: source-faithful meaning for continued reading belongs in `understanding`.
-It should not duplicate `annotations`: span-anchored visible margin-note-style output belongs in `annotations`.""",
+It should not duplicate `marginalia`: span-anchored visible page-margin reader notes belong in `marginalia`.""",
 )
 
 
-DIGEST_ANNOTATION_CONTRACT_FRAGMENT = PromptFragment(
-    fragment_id="digest.annotation_contract",
-    text="""`annotations` contains visible margin-note-style output anchored to exact source text from the current unit.
+DIGEST_MARGINALIA_CONTRACT_FRAGMENT = PromptFragment(
+    fragment_id="digest.marginalia_contract",
+    text="""`marginalia` contains visible page-margin reader notes anchored to exact source text from the current unit.
 Shape:
 {
   "source_quote": "...",
@@ -595,7 +595,7 @@ Shape:
   "outside_link": null,
   "search_intent": null
 }
-Detailed annotation-selection and source-quote behavior live under Instruction.""",
+Detailed Marginalia-selection and source-quote behavior live under Instruction.""",
 )
 
 
@@ -605,7 +605,7 @@ DIGEST_OUTPUT_CONTRACT_FRAGMENT_REGISTRY = PromptFragmentRegistry(
         DIGEST_RETURN_FORMAT_FRAGMENT,
         DIGEST_UNDERSTANDING_CONTRACT_FRAGMENT,
         DIGEST_RESPONSE_CONTRACT_FRAGMENT,
-        DIGEST_ANNOTATION_CONTRACT_FRAGMENT,
+        DIGEST_MARGINALIA_CONTRACT_FRAGMENT,
     ]
 )
 
@@ -638,8 +638,8 @@ DIGEST_OUTPUT_CONTRACT_TEMPLATE = (
                         prompt_fragment_ref="digest.response_contract",
                     ),
                     PromptTemplateNode(
-                        element_name="AnnotationField",
-                        prompt_fragment_ref="digest.annotation_contract",
+                        element_name="MarginaliaField",
+                        prompt_fragment_ref="digest.marginalia_contract",
                     ),
                 ),
             ),
@@ -719,7 +719,7 @@ def build_digest_prompt_assembly_spec(
             "reading_intent",
             "language_contract",
         ),
-        output_contract="digest_understanding_response_annotation_json_v3",
+        output_contract="digest_understanding_response_marginalia_json_v4",
     )
 
 
@@ -787,5 +787,5 @@ DIGEST_PROMPT = PromptDefinition(
         "reading_intent",
         "language_contract",
     ),
-    output_contract="digest_understanding_response_annotation_json_v3",
+    output_contract="digest_understanding_response_marginalia_json_v4",
 )

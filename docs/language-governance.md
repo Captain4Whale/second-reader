@@ -20,7 +20,7 @@ Update when: visible-text policy, terminology ownership, locale rules, or govern
 ### 1. Content text
 - Examples:
   - source book text
-  - AI reading reactions
+  - AI reading Marginalia
   - reading notes
   - chapter summaries
   - quotes
@@ -57,7 +57,7 @@ Update when: visible-text policy, terminology ownership, locale rules, or govern
 ### 4. Fixed brand and governed terminology
 - Examples:
   - `书虫`
-  - reaction-type names
+  - Marginalia-type names
   - navigation labels
   - status words
   - mode names
@@ -108,14 +108,14 @@ Update when: visible-text policy, terminology ownership, locale rules, or govern
     - Tone: in-progress, clear, lightly lyrical
   - **History trace language**
     - Purpose: say what kind of thought just surfaced
-    - Owner: frontend trace-copy layer driven by reaction results
+    - Owner: frontend trace-copy layer driven by Marginalia results
     - Tone: soft, already-happened trace language
-  - **Reaction labels**
+  - **Marginalia labels**
     - Purpose: fixed product taxonomy (`Highlight`, `Discern`, `Association`, `Curious`, `Retrospect`)
     - Owner: product lexicon
     - Tone: purely classificatory
-- Live process language must never be derived by reusing reaction labels.
-- History trace language may be guided by reaction-type families, but it must remain separate from the fixed labels.
+- Live process language must never be derived by reusing Marginalia labels.
+- History trace language may be guided by Marginalia-type families, but it must remain separate from the fixed labels.
 
 ## Current Scope
 - Governance is mandatory for main-path UI surfaces:

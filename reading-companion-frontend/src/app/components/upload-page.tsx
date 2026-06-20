@@ -10,7 +10,7 @@ const jobStageLabels: Record<JobStatusResponse["status"], string> = {
   parsing_structure: "Reading the structure",
   ready: "Structure is ready",
   deep_reading: "Reading and annotating",
-  chapter_note_generation: "Finishing chapter reactions",
+  chapter_note_generation: "Finishing chapter Marginalia",
   paused: "Paused, ready to continue",
   completed: "Ready to open",
   error: "Needs attention",

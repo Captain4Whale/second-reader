@@ -1,7 +1,7 @@
-# Digest Understanding / Response / Annotation Design
+# Digest Understanding / Response / Marginalia Design
 
 Purpose: define the implemented Digest action semantics and prompt/output contract shift from memory-shaped output to reading-action-shaped output.
-Use when: reviewing the Digest `Understanding / Response / Annotation` prompt contract after `DEC-108` and `DEC-109`.
+Use when: reviewing the Digest `Understanding / Response / Marginalia` prompt contract after `DEC-108`, `DEC-109`, and the `DEC-128` terminology migration.
 Not for: stable runtime authority, evaluation claims, or evidence-catalog updates.
 Update when: Digest action names, output fields, XML prompt structure, or runtime mapping from Digest output to stored memory changes.
 
@@ -11,11 +11,12 @@ Update when: Digest action names, output fields, XML prompt structure, or runtim
 - Status: implemented in live Digest prompt / LLM output normalization.
 - Evaluation status: no eval run, no evidence-catalog update.
 - Supersession note:
-  - This document remains the authority for Digest's three peer model-facing outputs: `understanding`, `response`, and `annotations`.
+  - This document remains the implementation note for Digest's three peer model-facing outputs: `understanding`, `response`, and `marginalia`.
+  - `DEC-128` supersedes the earlier `Annotation` name with `Marginalia`. Historical `annotation` / `reaction` terms in old examples and artifacts remain compatibility vocabulary, not the live prompt contract.
   - Its early `ReadingState` context examples were superseded by `docs/implementation/new-reading-mechanism/ingest-recall-and-digest-memory-context-design.md`.
   - The current live Digest prompt uses top-level `ReadingMemory`, not `ReadingState`, `RecentMemory`, or `RetrievedUnitMemory`.
 - Subject-continuity note:
-  - `docs/implementation/new-reading-mechanism/ingest-recall-and-digest-memory-context-design.md` defines the subject-continuity rule now implemented in Digest prompt `attentional_v2.digest.v7`.
+  - `docs/implementation/new-reading-mechanism/ingest-recall-and-digest-memory-context-design.md` defines the subject-continuity rule now implemented in Digest prompt `attentional_v2.digest.v10`.
   - The implementation carries narrator / speaker / actor / concept continuity through prior Understanding in `ReadingMemory`; it is not a mechanical ban on every pronoun and does not add a new raw-source backfill path.
 - Current basis:
   - `DEC-108` makes `Digest` the concrete per-unit interpretation LLM call.
@@ -24,14 +25,16 @@ Update when: Digest action names, output fields, XML prompt structure, or runtim
 
 ## Implementation Status
 
-- Implemented prompt version: `attentional_v2.digest.v9`
-- Implemented XML assembly spec: `attentional_v2.digest.xml.v9`
-- Implemented promptset: `attentional_v2-phase6-v61`
-- Implemented output contract: `digest_understanding_response_annotation_json_v3`
+- Implemented prompt version: `attentional_v2.digest.v10`
+- Implemented XML assembly spec: `attentional_v2.digest.xml.v10`
+- Implemented promptset: `attentional_v2-phase6-v68`
+- Implemented output contract: `digest_understanding_response_marginalia_json_v4`
 - Runtime mapping:
   - `understanding` string -> zero or one internal `memory_uptake_ops[].payload.memory_text` targeting `recent_reading_memory`
   - `response` -> internal `DigestResult.reading_impression`
-  - `annotations[]` -> internal `DigestResult.surfaced_reactions`
+  - `marginalia[]` -> canonical `DigestResult.marginalia`
+  - legacy `annotations[]` -> accepted only as compatibility fallback when normalizing older/malformed payloads
+  - `DigestResult.surfaced_reactions` -> deprecated alias for existing settlement/audit compatibility
 - Subject-continuity mapping:
   - `ReadingMemory` is the only prompt-facing carrier of prior Understanding for subject continuity.
   - Digest should establish new subjects, continue known subjects from `ReadingMemory` when supported, and preserve genuine ambiguity instead of guessing.
@@ -39,7 +42,7 @@ Update when: Digest action names, output fields, XML prompt structure, or runtim
 - Source-established-content calibration:
   - Digest should write `understanding` as content established by the source text, not as commentary on what the passage does as a passage.
   - Readerly effects such as suspense, revelation, atmosphere, or aftertaste belong in `response` unless the source text itself states them as content.
-- Old model-facing fields `reading_impression`, `surfaced_reactions`, and `recent_reading_memory` are not accepted as current Digest LLM contract fields; internal runtime/audit names remain stable in this slice.
+- Old model-facing fields `reading_impression`, `surfaced_reactions`, `annotations`, and `recent_reading_memory` are not part of the current Digest LLM contract; internal runtime/audit names and deprecated aliases remain stable in this slice.
 
 ## Design Claim
 
@@ -47,7 +50,7 @@ Digest should be described as one coherent reading action with three peer output
 
 - `Understanding`: read the source text in; state what is understood from the text itself in concise, source-faithful content-level prose.
 - `Response`: read the source unit out; express the reader's integrated feeling, thought, pressure, question, or aftertaste after understanding it.
-- `Annotation`: produce visible margin-note-style output anchored to exact source text.
+- `Marginalia`: produce visible page-margin reader notes anchored to exact source text.
 
 This replaces the current uneven semantic split:
 
@@ -63,15 +66,15 @@ No. The main semantic work belongs in `Instruction`, but the refactor should als
 Minimum implementation scope:
 
 - `Instruction`
-  - Make `Understanding`, `Response`, and `Annotation` direct child blocks under top-level `Instruction`.
+  - Make `Understanding`, `Response`, and `Marginalia` direct child blocks under top-level `Instruction`.
   - Remove `MemoryInstruction` as a top-level action category.
   - Keep non-action support blocks such as `CurrentStep` / `TaskOverview`, `ContextUseGuide`, `SourceGrounding`, and `ResponseDiscipline`.
 - `OutputContract`
-  - Rename LLM-facing output fields from `recent_reading_memory`, `reading_impression`, and `surfaced_reactions` to `understanding`, `response`, and `annotations`.
+  - Rename LLM-facing output fields from `recent_reading_memory`, `reading_impression`, and `surfaced_reactions` to `understanding`, `response`, and `marginalia`.
   - Update field contracts so the three outputs are peers.
 - Runtime adapter
   - Convert the single `understanding` object into zero or one internal `memory_uptake_ops[]` with `target_store="recent_reading_memory"`.
-  - Normalize `annotations[]` using the existing surfaced-reaction grounding rules.
+  - Normalize `marginalia[]` using the existing source-quote grounding rules.
   - Map `response` into the current internal `reading_impression` field unless a later cleanup renames audit/runtime artifacts too.
 - Tests / docs
   - Update prompt manifest tests, Digest output-normalizer tests, read-audit tests, and stable docs that describe the current Digest output contract.
@@ -79,8 +82,8 @@ Minimum implementation scope:
 Storage can remain unchanged in the first implementation slice:
 
 - `recent_reading_memory` remains the runtime store.
-- `read_audit.jsonl` may continue to record internal `reading_impression`, `surfaced_reactions`, and normalized memory ops.
-- A later cleanup can decide whether audit keys should become `digest_understanding`, `digest_response`, and `digest_annotations`.
+- `read_audit.jsonl` may continue to record internal `reading_impression`, canonical `marginalia`, deprecated `surfaced_reactions`, and normalized memory ops.
+- A later cleanup can decide whether remaining compatibility audit keys should be retired.
 
 ## Pre-Implementation Prompt Structure
 
@@ -146,7 +149,7 @@ The current live Digest prompt shape is:
 <OutputContract>...</OutputContract>
 ```
 
-Current prompt-facing memory is one `ReadingMemory` text block. Runtime merges hot current-chapter Understanding from `recent_reading_memory` with selected long-distance Unit Memory Understanding lines before rendering it. Digest does not receive separate `ReadingState`, `RecentMemory`, `RetrievedUnitMemory`, raw prior source text, prior Response, or prior Annotation blocks.
+Current prompt-facing memory is one `ReadingMemory` text block. Runtime merges hot current-chapter Understanding from `recent_reading_memory` with selected long-distance Unit Memory Understanding lines before rendering it. Digest does not receive separate `ReadingState`, `RecentMemory`, `RetrievedUnitMemory`, raw prior source text, prior Response, or prior Marginalia blocks.
 
 ## Old Prompt Text Moved Or Rewritten
 
@@ -184,7 +187,7 @@ Assessment:
 
 ### Old Surfaced Reaction Policy
 
-Old fragment is already mostly aligned with `Annotation`. It says surfaced reactions should:
+Old fragment was already mostly aligned with the later Marginalia concept. It says surfaced reactions should:
 
 - stay proportionate around thin structural units
 - only surface naturally worth-marking material
@@ -197,9 +200,9 @@ Old fragment is already mostly aligned with `Annotation`. It says surfaced react
 Assessment:
 
 - Keep the policy substance.
-- Rename `surfaced_reactions` to `annotations` in prompt-facing text.
-- Rename `SurfacedReaction` instruction block to `Annotation`.
-- Keep callback/link hygiene under `AnnotationGroundingAndCallback`.
+- Rename `surfaced_reactions` / `annotations` to `marginalia` in prompt-facing text.
+- Rename `SurfacedReaction` / `Annotation` instruction blocks to `Marginalia`.
+- Keep callback/link hygiene under Marginalia grounding rules.
 
 ### Old Recent Reading Memory Policy
 
@@ -222,7 +225,7 @@ Assessment:
 
 ## Target Instruction Shape
 
-`Understanding`, `Response`, and `Annotation` should be direct child tags under `Instruction`.
+`Understanding`, `Response`, and `Marginalia` should be direct child tags under `Instruction`.
 
 Target shape:
 
@@ -232,7 +235,7 @@ Target shape:
   <ContextUseGuide>...</ContextUseGuide>
   <Understanding>...</Understanding>
   <Response>...</Response>
-  <Annotation>...</Annotation>
+  <Marginalia>...</Marginalia>
   <SourceGrounding>...</SourceGrounding>
   <ResponseDiscipline>...</ResponseDiscipline>
 </Instruction>
@@ -462,7 +465,7 @@ Use carried context naturally when it genuinely matters, but do not collapse the
 
 Keep Response distinct from Understanding: if the content is source-faithful meaning that should support continued reading, it belongs in Understanding.
 
-Keep Response distinct from Annotation: if the expression is tied to a specific source span and worth showing as a visible margin-note-style output, it belongs in Annotation.
+Keep Response distinct from Marginalia: if the expression is tied to a specific source span and worth showing as a visible page-margin note, it belongs in Marginalia.
 ```
 
 Mapping from old prompt:
@@ -471,22 +474,22 @@ Mapping from old prompt:
 - Removes "what you now understand" from the definition.
 - Keeps the anti-summary and anti-invention rules.
 
-### Annotation
+### Marginalia
 
 ```text
-When a line or small span genuinely asks to be marked, annotate it.
+When a line or small span genuinely asks to be marked in the margin, write Marginalia for it.
 
-An Annotation is a visible margin-note-style response anchored to exact source text from the current unit.
+Marginalia is a visible page-margin reader note anchored to exact source text from the current unit.
 
 It may be a line that lands with force, a margin-note thought or question, a natural connection, a distinction or turn that suddenly clarifies something, or a local trigger that feels worth marking.
 
-Do not create an Annotation just to fill the field. It is acceptable to emit zero annotations. Default to 0-2.
+Do not create Marginalia just to fill the field. It is acceptable to emit zero Marginalia items. Do not add long rationale, summary, or hidden rubric text to Marginalia items.
 
-Each Annotation must stay anchored to the current unit. Each `source_quote` must be an exact quote from this unit.
+Each Marginalia item must stay anchored to the current unit. Each `source_quote` must be an exact quote from this unit.
 
-Choose each `source_quote` as the smallest self-sufficient span that can honestly stand as the annotation's footing.
+Choose each `source_quote` as the smallest self-sufficient span that can honestly stand as the Marginalia note's footing.
 
-If the unit contains multiple independently valuable local triggers, you may annotate them separately. Do not let one sharper later sentence erase an earlier framing line, premise line, or hinge line that also stands on its own.
+If the unit contains multiple independently valuable local triggers, you may write them separately. Do not let one sharper later sentence erase an earlier framing line, premise line, or hinge line that also stands on its own.
 
 Keep V1's wide-entry, narrow-expression stance: be willing to notice and surface a real local trigger, but do not manufacture commentary just to fill space.
 
@@ -497,20 +500,20 @@ Mapping from old prompt:
 
 - Reuses `digest.surfaced_reaction_policy`.
 - Reuses `digest.reaction_anchor_and_callback_policy`.
-- Renames the output and instruction from reaction to annotation.
+- Renames the output and instruction from reaction/annotation to Marginalia.
 - Keeps exact-quote grounding.
 
 ### SourceGrounding
 
 ```text
-- `annotations[].source_quote` must be a short exact contiguous span copied from the current unit: no ellipses, no stitched fragments, no paraphrase, no translation.
+- `marginalia[].source_quote` must be a short exact contiguous span copied from the current unit: no ellipses, no stitched fragments, no paraphrase, no translation.
 - Never invent source coordinates. The runner resolves source quotes to paragraph + char-offset `SourceRef` objects after Digest returns.
 - Understanding is grounded in the current source unit as a whole; it does not need exact source quotes.
 ```
 
 Mapping from old prompt:
 
-- Rename `surfaced_reactions[].source_quote` to `annotations[].source_quote`.
+- Rename `surfaced_reactions[].source_quote` to `marginalia[].source_quote`.
 - Rename Recent Reading Memory grounding to Understanding grounding.
 
 ### ResponseDiscipline
@@ -532,7 +535,7 @@ Recommended LLM-facing contract:
 {
   "understanding": "...",
   "response": "...",
-  "annotations": [
+  "marginalia": [
     {
       "source_quote": "...",
       "content": "...",
@@ -548,7 +551,7 @@ Notes:
 
 - `understanding` replaces `recent_reading_memory[].memory_text` at the model-facing level.
 - `response` replaces `reading_impression`.
-- `annotations` replaces `surfaced_reactions`.
+- `marginalia` replaces `annotations` / `surfaced_reactions` as the model-facing visible-note field.
 - Digest no longer emits a content-type `kind`; Understanding remains content-neutral and retrieval should work from the text itself.
 - `understanding` may be empty only for empty or purely structural units; runtime does not append an empty recent-memory entry.
 
@@ -557,7 +560,9 @@ Runtime mapping:
 ```text
 understanding -> zero or one memory_uptake_ops[] entry -> recent_reading_memory store
 response -> DigestResult.reading_impression
-annotations[] -> DigestResult.surfaced_reactions
+marginalia[] -> DigestResult.marginalia
+legacy annotations[] -> compatibility fallback
+DigestResult.surfaced_reactions -> deprecated alias
 ```
 
 This keeps runtime state stable while making the LLM call semantically cleaner.
@@ -568,26 +573,26 @@ This keeps runtime state stable while making the LLM call semantically cleaner.
   - `digest.current_step`
   - `digest.understanding_policy`
   - `digest.response_policy`
-  - `digest.annotation_policy`
-  - `digest.annotation_grounding_and_callback_policy`
+  - `digest.marginalia_policy`
+  - `digest.marginalia_field_contract`
 - Reshape `DIGEST_READER_ROLE_AND_INSTRUCTION_TEMPLATE`:
   - remove `ReadingBehavior`
   - remove `MemoryInstruction`
-  - add direct children `Understanding`, `Response`, and `Annotation`
+  - add direct children `Understanding`, `Response`, and `Marginalia`
 - Update source-grounding text:
-  - `surfaced_reactions[].source_quote` -> `annotations[].source_quote`
+  - `surfaced_reactions[].source_quote` / `annotations[].source_quote` -> `marginalia[].source_quote`
   - `Recent Reading Memory entries` -> one holistic `Understanding`
 - Update `OutputContract`:
   - `ReturnFormat`
   - field contracts
-  - output contract name: `digest_understanding_response_annotation_json_v3`
+  - output contract name: `digest_understanding_response_marginalia_json_v4`
 - Update `llm_calls.digest(...)` normalizer:
   - parse `payload["understanding"]`
   - parse `payload["response"]`
-  - parse `payload["annotations"]`
-  - optionally ignore legacy fields rather than supporting them, depending on whether this is a hard cutover
+  - parse `payload["marginalia"]`
+  - accept legacy `payload["annotations"]` only as a compatibility fallback
 - Update tests:
-  - prompt XML structure contains direct `Understanding`, `Response`, `Annotation`
+  - prompt XML structure contains direct `Understanding`, `Response`, `Marginalia`
   - prompt XML no longer has `MemoryInstruction` or model-facing `RecentReadingMemory`
   - output contract no longer asks for `reading_impression`, `surfaced_reactions`, or `recent_reading_memory`
   - runtime still stores Understanding through `recent_reading_memory` append ops
@@ -603,7 +608,7 @@ This keeps runtime state stable while making the LLM call semantically cleaner.
   - Default recommendation: hard rename for prompt/LLM-facing fields; keep only internal runtime mapping stable.
 - Should `response` remain a single string?
   - Default recommendation: yes. It should stay compact and not compete with Understanding.
-- Should `annotations` remain 0-2 by default?
-  - Default recommendation: yes. The current density rule is working conceptually and should not be loosened in this semantic refactor.
+- Should `marginalia` keep a fixed count cap?
+  - Current recommendation after the June 2026 review: do not treat `0-2` as the canonical concept. Marginalia quality-policy and density experiments are a follow-up; this migration only establishes the name and contract.
 - Should `understanding` be a list, object, or string?
   - Resolved implementation: one string. `understanding` may contain one sentence or several compact paragraphs when needed, but the model-facing field is not a list or object.

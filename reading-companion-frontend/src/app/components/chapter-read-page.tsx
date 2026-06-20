@@ -382,7 +382,7 @@ export function ChapterReadPage() {
         activeFilter !== "all" && !sectionHasVisibleReactions(targetSection, activeFilter);
 
       if (shouldFallbackToAll) {
-        const nextHint = `This section has no ${reactionLabel(activeFilter)} reactions, showing all reactions instead.`;
+        const nextHint = `This section has no ${reactionLabel(activeFilter)} Marginalia, showing all Marginalia instead.`;
         if (typeof window !== "undefined") {
           window.sessionStorage.setItem(
             chapterSectionHintStorageKey(String(sourcePayload.book_id), sourcePayload.chapter_id),
@@ -968,7 +968,7 @@ export function ChapterReadPage() {
               {visibleSections.length === 0 ? (
                 <div className="rounded-2xl border border-[var(--warm-300)]/40 bg-white px-4 py-6">
                   <p className="text-[var(--warm-800)]" style={readerTypography.bodyStrong}>
-                    No reactions under this filter.
+                    No Marginalia under this filter.
                   </p>
                   <p className="text-[var(--warm-600)] mt-1" style={readerTypography.meta}>
                     Switch back to All to continue linked reading and jump navigation.
@@ -1322,7 +1322,7 @@ export function ChapterReadPage() {
                               className="mt-1 text-[var(--warm-600)]"
                               style={uiTypography.caption}
                             >
-                              {chapter.visible_reaction_count} reactions
+                              {(chapter.visible_marginalia_count ?? chapter.visible_reaction_count)} Marginalia
                             </p>
                           </div>
 
@@ -1518,7 +1518,7 @@ export function ChapterReadPage() {
                                   </p>
                                 ) : null}
                                 <p className="mt-1 text-[var(--warm-500)]" style={uiTypography.chip}>
-                                  {section.visible_reaction_count} reactions
+                                  {(section.visible_reaction_count)} Marginalia
                                 </p>
                               </div>
                             </div>
@@ -1681,7 +1681,7 @@ export function ChapterReadPage() {
               </div>
 
               <p className="shrink-0 text-[var(--warm-500)]" style={uiTypography.captionMedium}>
-                {payload.visible_reaction_count} reactions
+                {(payload.visible_marginalia_count ?? payload.visible_reaction_count)} Marginalia
               </p>
             </div>
 

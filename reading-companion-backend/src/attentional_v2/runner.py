@@ -2016,7 +2016,7 @@ def _normalize_memory_uptake_ops_source_refs(
     return normalized
 
 
-def _persist_surfaced_reactions(
+def _persist_marginalia(
     *,
     digest_result: DigestResult,
     chosen_unit_sentences: list[dict[str, object]],
@@ -2028,25 +2028,25 @@ def _persist_surfaced_reactions(
     output_dir: Path,
     source_unit: dict[str, object] | None = None,
 ) -> tuple[ReactionRecordsState, list[AnchoredReactionRecord], dict[str, object] | None]:
-    """Persist Digest-owned surfaced reactions through one canonical builder path."""
+    """Persist Digest-owned Marginalia through the compatibility reaction-record path."""
 
     emitted_reactions: list[AnchoredReactionRecord] = []
     current_source_ref = None
-    surfaced_reactions = [
+    marginalia = [
         dict(item)
-        for item in digest_result.get("surfaced_reactions", [])
+        for item in digest_result.get("marginalia", digest_result.get("surfaced_reactions", []))
         if isinstance(item, dict)
     ]
     chapter_reaction_count = len(reaction_records_for_chapter(reaction_records, chapter_ref=chapter_ref))
-    for index, surfaced_reaction in enumerate(surfaced_reactions, start=1):
+    for index, marginalia_item in enumerate(marginalia, start=1):
         current_source_ref = _source_ref_from_surfaced_reaction(
-            surfaced_reaction=surfaced_reaction,
+            surfaced_reaction=marginalia_item,
             source_unit=source_unit,
             reading_impression=_clean_text(digest_result.get("reading_impression")),
         )
         emitted_at = _clean_text(source_unit.get("source_span_id")) if isinstance(source_unit, dict) else ""
         emitted_reaction = build_reaction_record_from_surfaced_reaction(
-            reaction=surfaced_reaction,
+            reaction=marginalia_item,
             primary_source_ref=current_source_ref,
             chapter_id=chapter_id,
             chapter_ref=chapter_ref,
@@ -2087,6 +2087,14 @@ def _persist_surfaced_reactions(
             },
         )
     return reaction_records, emitted_reactions, current_source_ref
+
+
+def _persist_surfaced_reactions(
+    **kwargs: object,
+) -> tuple[ReactionRecordsState, list[AnchoredReactionRecord], dict[str, object] | None]:
+    """Deprecated compatibility wrapper for pre-Marginalia call sites."""
+
+    return _persist_marginalia(**kwargs)  # type: ignore[arg-type]
 
 
 def _build_runtime_continuation_capsule(
@@ -2462,7 +2470,7 @@ def _settle_next_unit(
         source_unit_span_id=source_id if has_selected_source_unit else "",
         created_at_unit_index=unit_sequence_index,
     )
-    reaction_records, emitted_reactions, current_source_ref = _persist_surfaced_reactions(
+    reaction_records, emitted_reactions, current_source_ref = _persist_marginalia(
         digest_result=digest_result,
         chosen_unit_sentences=chosen_unit_sentences,
         focal_sentence=focal_sentence,

@@ -16,6 +16,7 @@ CANONICAL_ROUTES = {
     "books": "/books",
     "book": "/books/:id",
     "chapter": "/books/:id/chapters/:chapterId",
+    "chapterMarginalia": "/books/:id/chapters/:chapterId/marginalia",
     "marks": "/marks",
 }
 
@@ -36,6 +37,7 @@ LANDING_STRATEGY = {
 }
 
 PUBLIC_CONTRACT_SPEC = {
+    "marginalia_types": list(REACTION_TYPES),
     "reaction_types": list(REACTION_TYPES),
     "mark_types": list(MARK_TYPES),
     "canonical_routes": dict(CANONICAL_ROUTES),
@@ -83,6 +85,10 @@ def to_api_reaction_type(value: str) -> str:
     return _REACTION_TO_API.get(normalized, "association")
 
 
+def to_api_marginalia_type(value: str) -> str:
+    return to_api_reaction_type(value)
+
+
 def to_internal_reaction_type(value: str) -> str:
     normalized = str(value or "").strip().lower().replace("-", "_")
     return _REACTION_TO_INTERNAL.get(normalized, normalized or "association")
@@ -104,6 +110,10 @@ def to_api_book_id(book_id: str) -> int:
 
 def to_api_reaction_id(*, book_id: str, reaction_id: str) -> int:
     return _safe_api_int("reaction", f"{book_id}:{reaction_id}")
+
+
+def to_api_marginalia_id(*, book_id: str, marginalia_id: str) -> int:
+    return to_api_reaction_id(book_id=book_id, reaction_id=marginalia_id)
 
 
 def to_api_mark_id(*, book_id: str, reaction_id: str) -> int:

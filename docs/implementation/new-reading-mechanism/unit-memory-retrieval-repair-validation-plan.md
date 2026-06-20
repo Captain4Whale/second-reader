@@ -36,7 +36,7 @@ Completed or partially landed repair evidence:
 - A first post-repair no-judge `text_only` smoke on `value_of_others_private_en__segment_1` completed the reading loop but failed the registered wrapper's strict LLM-health gate before summary generation. Its run-local retrieval health packet still showed no prompt-visible retrieved memory and exposed a new root cause: the Runner was passing the whole active Recent Reading Memory store as retrieval exclusions, which excluded all prior units by the end of the run. That exclusion bug was removed, and later post-R9/post-R11 smokes proved retrieved Understanding can become prompt-visible.
 - A post-R9 `text_only` diagnostic smoke on `xidaduo_private_zh__segment_1` was intentionally stopped after collecting retrieval-success evidence. Its run-local health packet is `ok`: `57` Unit Memory entries, `353` retrieval docs, `67` retrieval rows, `57` selection rows, `selected_unit_count=71`, `renderable_selected_unit_count=29`, `retrieved_line_total=45`, and `non_renderable_selected_unit_count=0`. This proves the non-hybrid retrieval path can select prior Understanding and render long-distance retrieved lines into Digest `ReadingMemory`.
 - The post-R9 retrieved-memory review found mixed relevance: broad Siddhartha / Govinda continuity recall works, but auxiliary surfaces can pull terminology / note-cluster units into prompt-visible `ReadingMemory`.
-- Lexical surface weights now prioritize `unit_understanding` over `unit_source`, `unit_annotation`, and `unit_response`, preserving the auxiliary surfaces while restoring Understanding as the primary selection surface.
+- Lexical surface weights now prioritize `unit_understanding` over `unit_source`, `unit_marginalia` / legacy `unit_annotation`, and `unit_response`, preserving the auxiliary surfaces while restoring Understanding as the primary selection surface.
 - `unit_memory_reading_memory_selection` trace now records `rendered_retrieved_units` and `rendered_retrieved_unit_ids`, so future health packets can identify which selected Unit Memory entries actually survived hot-memory dedupe and budget trimming into Digest.
 - A post-R10/R11 `text_only` smoke on `xidaduo_private_zh__segment_1` was intentionally stopped after collecting rendered-id evidence. Its run-local health packet is `ok`: `47` Unit Memory entries, `293` retrieval docs, `54` retrieval rows, `47` selection rows, `selected_unit_count=18`, `renderable_selected_unit_count=11`, `retrieved_line_total=6`, and `rendered_retrieved_unique_unit_count=6`. This proves the Understanding-prioritized lexical path still renders prompt-visible retrieved memory and that the new trace fields work in live artifacts.
 - Phase 6 prompt calibration is now implemented in Ingest prompt `attentional_v2.ingest.v5` / promptset `attentional_v2-phase6-v55`. The `RecallPriorReading` instruction now tells Ingest to start from the selected unit's primary semantic focus, avoid broad character/protagonist background unless the current unit hinges on it, prefer prior doctrinal/argument/concept content for doctrinal or argumentative units, and return no recall when only a generic recall would be possible.
@@ -104,11 +104,11 @@ This objective is considered satisfied when the executor can show all of the fol
 
 Goal-mode execution should not spend time on these items unless they directly block the objective above:
 
-- polishing subjective `Understanding`, `Response`, or `Annotation` quality
+- polishing subjective `Understanding`, `Response`, or `Marginalia` quality
 - optimizing isolated relevance examples after the mechanism path works
 - changing the locked Unit Memory storage/index/retrieval design
 - redesigning Ingest recall into another LLM call or making Ingest choose final memories
-- putting prior source text, prior Response, or prior Annotation into Digest `ReadingMemory`
+- putting prior source text, prior Response, or prior Marginalia into Digest `ReadingMemory`
 - running formal judged eval or updating the evidence catalog
 
 If live hybrid fails again, the executor should first decide whether the failure is:
@@ -153,7 +153,7 @@ This stage is about proving and repairing the mechanism path, not optimizing sub
   - no silent fallback to text-only when hybrid dependencies are available
 - Validate the Unit Memory write/index chain:
   - settlement writes Unit Memory entries
-  - retrieval docs are derived for source, Understanding, Response, and Annotation surfaces
+  - retrieval docs are derived for source, Understanding, Response, and Marginalia surfaces
   - only `unit_understanding` is dense-vector indexed
   - query embeddings are cached and traceable
 - Validate the retrieval chain:
@@ -169,14 +169,14 @@ This stage is about proving and repairing the mechanism path, not optimizing sub
 - Validate Digest `ReadingMemory` rendering:
   - selected renderable long-distance Understanding lines appear in the top-level Digest `ReadingMemory`
   - selected-but-not-rendered findings are separated from pending-selection-after-stop findings and each true rendering miss has precise trace evidence
-  - Digest memory remains Understanding-only, with no raw prior source, prior Response, or prior Annotation
+  - Digest memory remains Understanding-only, with no raw prior source, prior Response, or prior Marginalia
 - Validate trace and health reporting:
   - degradation reasons are explicit when hybrid falls back or fails
   - health packets explain recall, retrieval, dense, selection, rendering, suppression, and settlement outcomes
 
 ### Out Of Scope
 
-- Subjective quality tuning for `understanding`, `response`, or `annotations`, unless a prompt/contract failure prevents required output.
+- Subjective quality tuning for `understanding`, `response`, or `marginalia`, unless a prompt/contract failure prevents required output.
 - Formal judged evaluation, run-ledger promotion, or evidence-catalog update.
 - New memory-store architecture, new retrieval data model, or redesign of the locked Unit Memory documents.
 - Revival of retired Detour, source-backread, source-skill, concept registry, or thread trace mechanisms.
@@ -255,8 +255,8 @@ Goal mode should judge the mechanism by observable actions and artifacts, not by
 | Lexical retrieval | Unit Memory SQLite, FTS candidate trace | known-answer text-only recalls can retrieve expected prior units and trace candidate counts | repair FTS docs, tokenizer/query builder, ranking, or thresholds |
 | Dense retrieval | sqlite-vec/vector rows/query embedding cache/dense candidate trace | hybrid produces real dense candidates when sqlite-vec, Ollama, and Qwen embeddings are available | repair code-owned adapter/index/cache problems; otherwise mark only the dense path `deferred_environment` and continue non-hybrid checks |
 | Selection | selected/suppressed unit trace | selected units are deduped, renderable, Understanding-bearing, quality-gated, and suppressions have explicit reasons | repair aggregation, exclusion, per-recall cap, score/rank/surface-quality policy, or renderability filtering |
-| Digest ReadingMemory | Digest prompt manifest and selection trace | prompt-visible memory contains hot Understanding plus any selected long-distance Understanding, and no raw prior source/Response/Annotation | repair ReadingMemory renderer, budget accounting, or hot/retrieved trace separation |
-| Digest output | final-output tool args, read audit | Digest returns `understanding`, `response`, and `annotations`; runtime maps Understanding to recent memory | repair Digest prompt/schema/validator/runtime mapping; do not treat subjective phrasing quality as a retrieval blocker |
+| Digest ReadingMemory | Digest prompt manifest and selection trace | prompt-visible memory contains hot Understanding plus any selected long-distance Understanding, and no raw prior source/Response/Marginalia | repair ReadingMemory renderer, budget accounting, or hot/retrieved trace separation |
+| Digest output | final-output tool args, read audit | Digest returns `understanding`, `response`, and `marginalia`; runtime maps Understanding to recent memory | repair Digest prompt/schema/validator/runtime mapping; do not treat subjective phrasing quality as a retrieval blocker |
 | Settlement/writeback | Recent Reading Memory, Unit Memory ledger/index rows | the newly digested unit is written back and retrieval docs are derived for later units | repair settlement/index writeback before claiming end-to-end success |
 | Review packet | run-local report | selected retrieved Understanding lines, receiving source units, recall texts, and selection reasons are human-readable | add or repair the review packet before using the smoke as validation evidence |
 
@@ -357,7 +357,7 @@ The goal is complete only when all of these are true:
 5. Digest `ReadingMemory` remains Understanding-only:
    - no raw prior source text
    - no prior Response
-   - no prior Annotation
+   - no prior Marginalia
 6. The hybrid path itself is visible:
    - `unit_understanding` vector rows exist
    - real Qwen query embedding cache rows exist
@@ -445,7 +445,7 @@ Rationale:
 
 - Post-Ingest-v5 smoke showed that retrieval is no longer mechanically absent, but a single focused recall can still render a large broad memory pack.
 - The product goal is not to shrink long-distance memory to a few entries globally. The goal is to prevent one recall from monopolizing prompt-visible memory while allowing multiple specific recalls to cover more of the already-read book.
-- This repair does not change Ingest's responsibility, does not expose retrieved content back to Ingest, and does not put prior source / Response / Annotation into Digest.
+- This repair does not change Ingest's responsibility, does not expose retrieved content back to Ingest, and does not put prior source / Response / Marginalia into Digest.
 
 Acceptance:
 
@@ -478,7 +478,7 @@ Goal-mode repair must not:
 - restore Detour, source-backread, source-skill, `look_back`, or old source-skill loops
 - restore concept registry, thread trace, or content-typed long-memory stores
 - inject raw prior source text into Digest as a workaround
-- place prior Response or prior Annotation into Digest `ReadingMemory`
+- place prior Response or prior Marginalia into Digest `ReadingMemory`
 - expose retrieved memory content or selected memory ids back to Ingest through tool results
 - make Ingest choose final memory entries
 - count hot recent memory as long-distance retrieval success
@@ -550,7 +550,7 @@ Each phase must leave behind a concrete pass/fail result.
 | Phase 2 | `validated_live_hybrid_diagnostic` | sqlite-vec can be imported and loaded locally after the adapter fix; deterministic fake-embedder coverage proves vector rows, query embedding cache, dense candidates, dense distance filtering, and dense-channel selection work in code. `scripts/check_unit_memory_hybrid_readiness.py` now verifies readiness repeatably; latest local probe is `ok` with Ollama App + `qwen3-embedding:0.6b` and `1024`-dimension embeddings. The first live hybrid smoke exposed an embedding-timeout degradation, and the raised-timeout path now has a live no-judge smoke with `unit_understanding` vector rows, real Qwen query cache rows, dense candidates, lexical candidates, and `effective_mode=hybrid`. | No active Phase 2 repair remains; keep the health/review packet as diagnostic evidence and do not treat it as formal evaluation evidence. |
 | Phase 3 | `passed_deterministic_text_only` | Text-only FTS retrieves known Chinese and English prior Understanding; multi-recall aggregation preserves recall-match metadata; empty-Understanding candidates are suppressed. | Validate with a post-repair no-judge smoke; dense paraphrase remains Phase 2-dependent. |
 | Phase 4 | `passed_deterministic` | Runtime retrieval can continue after boundary acceptance even if the earlier tool-stage trace was `boundary_unresolved`; horizon gates now record current unit, recent exclusion, max retrievable unit, prior count, and minimum prior count. | Validate the gate counts in fresh smoke artifacts. |
-| Phase 5 | `passed_deterministic` | A selected non-empty Understanding from the real Unit Memory index renders into Digest `ReadingMemory`, and prior Response / Annotation / raw source stay out of prompt-facing memory. | Validate prompt-visible retrieved lines in a no-judge smoke. |
+| Phase 5 | `passed_deterministic` | A selected non-empty Understanding from the real Unit Memory index renders into Digest `ReadingMemory`, and prior Response / Marginalia / raw source stay out of prompt-facing memory. | Validate prompt-visible retrieved lines in a no-judge smoke. |
 | Phase 6 | `partially_validated_post_ingest_v5_text_only` | Ingest prompt `attentional_v2.ingest.v5` now asks recalls to follow the selected unit's primary semantic focus, avoid broad background recall unless needed, prefer prior doctrinal / argument / concept content for such units, and return empty when only generic recall is possible. A post-v5 text-only smoke rendered retrieved memory later in the run and avoided the post-R11 broad sermon-area recall. | Tighten selection / budget discipline so focused recalls do not expand into large broad life-history retrieved packs; then rerun a small no-judge text-only smoke. |
 | Phase 6B | `validated_text_only_diagnostic` | Per-recall selection discipline caps prompt-visible selected units per recall while preserving nonzero retrieved memory; post-selection-cap smoke selected `6` out of `15` candidate units for one recall, suppressed `8` with `per_recall_selection_limit_exceeded`, and rendered `2` retrieved Understanding lines. | Relevance calibration remains possible if reviewed recalls / rendered memories stay too broad; hybrid dense validation remains pending. |
 | Phase 6C | `validated_observed_live_contract_sample` | Ingest prompt `attentional_v2.ingest.v6`, structured-output validation, and action-tool preflight require model-side recalls to use the current source text's primary language and `basis = selected_source_unit`; runtime fallback recalls may still use `runtime_source_text_fallback`. A pre-contract smoke exposed English recall text for a Chinese source unit; a post-contract early stopped smoke observed zero language violations and only `selected_source_unit` basis values in reviewed unique recalls. | Do not treat the early stopped post-contract run as mature retrieval validation; rerun only if later artifacts show language/basis drift again or if a combined contract-plus-mature-retrieval sample is needed. |
@@ -835,12 +835,12 @@ Symptom:
 
 - Post-R9 `text_only` review showed prompt-visible retrieved memory, but some retrieved units were terminology / note-cluster units selected through auxiliary surfaces such as `unit_response`.
 - Examples included current doctrinal or selfhood passages receiving earlier Upanishad / term-note units as retrieved `ReadingMemory`.
-- The code gave `unit_source` and `unit_annotation` higher lexical weights than `unit_understanding`, which contradicted the current design that Understanding is the primary retrieval and prompt-facing memory surface.
+- The code gave `unit_source` and legacy `unit_annotation` higher lexical weights than `unit_understanding`, which contradicted the current design that Understanding is the primary retrieval and prompt-facing memory surface.
 
 Repair:
 
 - Lexical weights now prioritize `unit_understanding`.
-- `unit_source`, `unit_annotation`, and `unit_response` still participate in FTS retrieval, but as auxiliary cue surfaces.
+- `unit_source`, `unit_marginalia` / legacy `unit_annotation`, and `unit_response` still participate in FTS retrieval, but as auxiliary cue surfaces.
 - A deterministic test now verifies that when the same recall phrase matches one unit's source text and another unit's Understanding, the Understanding match ranks first.
 
 Validation:
@@ -982,7 +982,7 @@ Every repair slice should preserve these invariants:
 5. Ingest can express zero to three recalls, but does not see retrieved memory content.
 6. Runtime owns retrieval, selection, dedupe, budget trimming, and rendering.
 7. Digest receives prior memory only through top-level `ReadingMemory`.
-8. Digest `ReadingMemory` contains Understanding memory only, not raw prior source, prior Response, or prior Annotation.
+8. Digest `ReadingMemory` contains Understanding memory only, not raw prior source, prior Response, or prior Marginalia.
 9. Hot current-chapter memory and selected long-distance memory are distinguishable in trace and validation.
 10. Long-distance retrieval excludes prompt-visible hot current-chapter spans, but must not exclude the whole active Recent Reading Memory store.
 11. If selected retrieved memory does not enter Digest, the trace must say why.
@@ -1163,7 +1163,7 @@ Current evidence:
 
 - Unit Memory retrieval suppresses empty/missing Understanding before final selection.
 - Digest `ReadingMemory` rendering still records defensive suppression reasons for malformed selected-unit payloads.
-- A runner-level deterministic test writes a Unit Memory entry, retrieves it through the real index, and verifies that the selected non-empty Understanding renders as a retrieved `ReadingMemory` line while prior Response and Annotation remain excluded.
+- A runner-level deterministic test writes a Unit Memory entry, retrieves it through the real index, and verifies that the selected non-empty Understanding renders as a retrieved `ReadingMemory` line while prior Response and Marginalia remain excluded.
 
 Goal:
 
@@ -1307,7 +1307,7 @@ Goal-mode R13 validation checklist:
 3. Confirm weak suppressed candidates include `candidate_below_selection_quality_threshold`.
 4. Confirm selected/rendered retrieved lines, if any, are backed by strong enough `unit_understanding` evidence or stricter auxiliary evidence.
 5. Confirm the gate may select fewer than the cap, including zero long-distance memories for a unit, without treating that as failure.
-6. Confirm no raw prior source, prior Response, or prior Annotation enters Digest `ReadingMemory`.
+6. Confirm no raw prior source, prior Response, or prior Marginalia enters Digest `ReadingMemory`.
 7. If the smoke has no prompt-visible retrieved lines, distinguish:
    - legitimate no-fill because all candidates were weak
    - no mature long-distance retrieval horizon
@@ -1444,5 +1444,5 @@ These triggers are not terminal stop conditions by themselves. They should lead 
 - Do not treat `ReadingMemory` presence as proof of retrieval; hot memory and retrieved memory must be reported separately.
 - Do not make Ingest choose final memory entries. Ingest only expresses recalls and may call the retrieval tool.
 - Do not expose retrieved memory content back to Ingest through tool results.
-- Do not place prior Response, Annotation, or raw prior source into Digest `ReadingMemory` in this repair track.
+- Do not place prior Response, Marginalia, or raw prior source into Digest `ReadingMemory` in this repair track.
 - If a repair changes the stable mechanism contract, promote the fact into `docs/backend-reading-mechanisms/attentional_v2.md`, `docs/current-state.md`, and `docs/tasks/registry.*` in the same slice.

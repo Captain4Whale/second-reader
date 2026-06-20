@@ -1,9 +1,9 @@
-# Digest Annotation Quality Sourcebook
+# Digest Marginalia Quality Sourcebook
 
-Purpose: collect high-quality historical Agent reading annotations for future Digest / annotation prompt optimization.
-Use when: revising annotation prompts, building judge rubrics for reader-visible notes, or selecting examples for qualitative review.
+Purpose: collect high-quality historical Agent visible-note examples for future Digest / Marginalia prompt optimization.
+Use when: revising Marginalia prompts, building judge rubrics for reader-visible notes, or selecting examples for qualitative review.
 Not for: current runtime behavior, formal evidence promotion, active benchmark pointers, or proving current `attentional_v2` capability.
-Update when: a reviewed run produces reusable annotation examples, a prompt revision needs stronger examples / counterexamples, or source artifacts are recataloged.
+Update when: a reviewed run produces reusable Marginalia examples, a prompt revision needs stronger examples / counterexamples, or source artifacts are recataloged.
 
 Created: `2026-06-18`
 
@@ -11,13 +11,13 @@ Created: `2026-06-18`
 
 This sourcebook is a prompt-design reference. It does not change prompts, backend/frontend runtime, active task state, or evaluation ledgers.
 
-The main examples below favor reader-visible `reaction` / `annotation` outputs. They use short source-anchor quotes for review orientation rather than reproducing long book passages. `iterator_v1` examples are included only as `reference_only`; they are useful behaviors to study, not evidence for the current default mechanism.
+The main examples below favor reader-visible Marginalia-quality outputs. Many source artifacts predate `DEC-128` and therefore use historical `reaction` / `annotation` field names; read those as compatibility vocabulary for visible Marginalia-like notes, not as the live Digest prompt contract. Examples use short source-anchor quotes for review orientation rather than reproducing long book passages. `iterator_v1` examples are included only as `reference_only`; they are useful behaviors to study, not evidence for the current default mechanism.
 
 ## Source Priority
 
-Primary extraction surfaces:
+Primary extraction surfaces, including historical compatibility names:
 
-- `reaction_records.json` under `_mechanisms/attentional_v2/runtime/`
+- ###### `reaction_records.json` under `_mechanisms/attentional_v2/runtime/`
 - `_mechanisms/attentional_v2/exports/normalized_eval_bundle.json`
 - `_runtime/activity.jsonl` rows with `reaction_emitted`
 - `summary/reaction_audit_results.jsonl` and `summary/reaction_window_summaries.jsonl`
@@ -40,7 +40,7 @@ Explicitly skipped:
 
 ## Selection Rubric
 
-Strong annotation examples usually do at least one of these things:
+Strong Marginalia examples usually do at least one of these things:
 
 - make a precise claim from a small textual anchor instead of summarizing the surrounding paragraph
 - define or distinguish a concept in the author's own local terms
@@ -477,7 +477,7 @@ Use these as prompt-avoidance targets:
 - Manufactured tension: invents a contradiction such as "learned lesson versus not humble" when the passage does not actually place those ideas in tension.
 - Over-broad continuity: treats a whole past scene as relevant when the current note only needs one concrete prior term or image.
 - Source-backed note replaced by target note: user-level human note text must not be used as if the Agent produced it; only the Agent `best_reaction` counts.
-- Internal-memory leakage: Memory Quality snapshots can inspire mechanism analysis, but are not reader-visible annotations.
+- Internal-memory leakage: Memory Quality snapshots can inspire mechanism analysis, but are not reader-visible Marginalia.
 
 ## Appendix D: Validation Checklist
 

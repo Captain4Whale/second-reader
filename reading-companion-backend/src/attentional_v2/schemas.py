@@ -295,6 +295,7 @@ class DigestResult(TypedDict, total=False):
     """Structured record of one reader-like pass over a chosen coverage unit."""
 
     reading_impression: str
+    marginalia: list["MarginaliaItem"]
     surfaced_reactions: list["SurfacedReaction"]
     memory_uptake_ops: list["StateOperation"]
     memory_uptake_admission_events: list["MemoryUptakeAdmissionEvent"]
@@ -343,14 +344,17 @@ class StateOperation(TypedDict, total=False):
     payload: dict[str, object]
 
 
-class SurfacedReaction(TypedDict, total=False):
-    """One visible in-the-moment reaction surfaced directly by Digest."""
+class MarginaliaItem(TypedDict, total=False):
+    """One visible page-margin reader note surfaced directly by Digest."""
 
     source_quote: str
     content: str
     prior_link: "PriorLink" | None
     outside_link: "OutsideLink" | None
     search_intent: "SearchIntent" | None
+
+
+SurfacedReaction = MarginaliaItem
 
 
 class IngestBoundaryResult(TypedDict, total=False):

@@ -310,7 +310,7 @@ export function AnalysisPage() {
             </div>
 
             <div className="grid grid-cols-2 md:grid-cols-3 gap-3 mt-4">
-              {Object.entries(analysis.current_state_panel.reaction_counts).map(([type, count]) => (
+              {Object.entries(analysis.current_state_panel.marginalia_counts ?? analysis.current_state_panel.reaction_counts).map(([type, count]) => (
                 <div key={type} className="rounded-2xl bg-[var(--warm-100)] p-4">
                   <p className="text-[var(--warm-500)] mb-1" style={{ fontSize: "0.75rem" }}>
                     {reactionLabel(type)}
@@ -350,7 +350,7 @@ export function AnalysisPage() {
                       {chapter.title}
                     </p>
                     <p className="text-[var(--warm-600)] mt-2" style={{ fontSize: "0.8125rem" }}>
-                      {chapter.visible_reaction_count} reactions
+                      {(chapter.visible_marginalia_count ?? chapter.visible_reaction_count)} Marginalia
                     </p>
                   </Link>
                 ))}

@@ -104,7 +104,9 @@ def _bootstrap_fixture_book(upload_path: Path, *, root: Path) -> tuple[dict, dic
                 "markdown_file": str(chapter.get("markdown_file", "public/chapters/ch01_deep_read.md")),
                 "result_file": result_file,
                 "visible_reaction_count": 0,
+                "visible_marginalia_count": 0,
                 "reaction_type_diversity": 0,
+                "marginalia_type_diversity": 0,
             }
         ],
     }
@@ -149,7 +151,13 @@ def _complete_fixture_analysis(
         {
             "status": "done",
             "visible_reaction_count": int(chapter_result.get("visible_reaction_count", 1)),
+            "visible_marginalia_count": int(
+                chapter_result.get("visible_marginalia_count", chapter_result.get("visible_reaction_count", 1))
+            ),
             "reaction_type_diversity": int(chapter_result.get("reaction_type_diversity", 1)),
+            "marginalia_type_diversity": int(
+                chapter_result.get("marginalia_type_diversity", chapter_result.get("reaction_type_diversity", 1))
+            ),
         }
     )
     save_json(book_manifest_file(book_dir), manifest)

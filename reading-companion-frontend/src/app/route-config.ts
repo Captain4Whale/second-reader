@@ -6,6 +6,7 @@ export const APP_ROUTE_TABLE = {
     CANONICAL_ROUTE_PATTERNS.books,
     CANONICAL_ROUTE_PATTERNS.book,
     CANONICAL_ROUTE_PATTERNS.chapter,
+    CANONICAL_ROUTE_PATTERNS.chapterMarginalia,
     CANONICAL_ROUTE_PATTERNS.marks,
   ],
   compatRedirects: [

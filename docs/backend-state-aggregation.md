@@ -28,20 +28,21 @@ Use `docs/api-contract.md` for exact fields and routes. Use this file to underst
   - Carries chapter section trees, `segment_ref`, and iterator-specific traversal metadata.
   - Public aggregation still uses it where section-level backfill or iterator-era chapter structure is required.
 - `_mechanisms/attentional_v2/derived/chapter_result_compatibility/*.json`
-  - `attentional_v2`-owned compatibility chapter results derived from anchored reaction truth.
+  - `attentional_v2`-owned compatibility chapter results derived from anchored Marginalia truth.
+  - File and legacy field names may still contain `reaction`, but current aggregation treats those as compatibility aliases for Digest-authored Marginalia.
   - These are the source chapter-result artifacts for the current routed frontend when `attentional_v2` is active.
 - `public/book_manifest.json`
   - Book identity, language metadata, chapter tree, source asset pointers, and chapter result file hints.
   - Legacy flat manifests are still readable through fallback resolution, but public aggregation prefers the canonical `public/` location.
   - For non-iterator mechanisms such as `attentional_v2`, the shared manifest can now be built from `book_document.json` plus mechanism-owned compatibility chapter results instead of from `iterator_v1` structure.
-  - Aggregation now preserves chapter-level compatibility hints such as `result_file`, `visible_reaction_count`, and `reaction_type_diversity` when the shared manifest is rebuilt from the shared substrate.
+  - Aggregation now preserves chapter-level compatibility hints such as `result_file`, `visible_marginalia_count`, deprecated `visible_reaction_count`, `marginalia_type_diversity`, and deprecated `reaction_type_diversity` when the shared manifest is rebuilt from the shared substrate.
   - Aggregation also preserves optional visible chapter numbering so public chapter-shaped payloads can expose `chapter_number` without changing the stable `chapter_id` key.
 - `_runtime/run_state.json`
   - The live runtime snapshot for the sequential workflow.
   - Carries top-level stage, chapter and segment pointers, `current_phase_step`, `current_reading_activity`, checkpoint metadata, errors, and ETA-like progress hints.
 - `_runtime/runtime_shell.json`
   - Shared thin runtime envelope for cross-mechanism cursor and active-artifact references.
-  - May now contribute additive `reading_locus` and active reaction references for non-section mechanisms even when the current compatibility surfaces still expose `segment_ref`.
+  - May now contribute additive `reading_locus` and active Marginalia references for non-section mechanisms even when the current compatibility surfaces still expose `segment_ref`.
   - Phase 8 now also carries `observability_mode` so the shared shell can distinguish thin standard-mode runtime state from debug-only diagnostics.
 - `_runtime/parse_state.json`
   - Parse-stage checkpoint metadata used before the main run state fully reflects deep-reading progress.
@@ -76,9 +77,9 @@ Use `docs/api-contract.md` for exact fields and routes. Use this file to underst
   - These are not part of the primary sequential public state surface.
 - `public/chapters/*_deep_read.json`
   - Completed chapter artifacts.
-  - Each file contributes rendered chapter content, featured reactions, and `ui_summary` reaction counts.
+  - Each file contributes rendered chapter content, featured Marginalia, and `ui_summary` Marginalia counts, with old reaction names kept as compatibility aliases where older readers still expect them.
 - `state/user_marks.json`
-  - Single-user mark persistence keyed by internal reaction id.
+  - Single-user mark persistence keyed by internal Marginalia / compatibility reaction id.
   - Stores user-selected mark values and enough book/chapter metadata to render marks pages quickly.
 
 ## Surface Mapping
@@ -93,11 +94,11 @@ Use `docs/api-contract.md` for exact fields and routes. Use this file to underst
   - Uses `book_manifest` for metadata and chapter tree.
   - Uses shared runtime-truth projection instead of trusting `run_state.stage` directly.
   - Adds optional additive `status_reason` so the frontend can distinguish ordinary paused books from stale/interrupted recovery states without changing the top-level status enum.
-  - Uses completed chapter result files to build aggregate reaction counts and result readiness.
+  - Uses completed chapter result files to build aggregate Marginalia counts and result readiness.
   - Uses `user_marks` for `my_mark_count`.
 - `GET /api/books/{book_id}/analysis-state`
   - Uses `book_manifest`, `run_state`, `runtime_shell`, `parse_state`, canonical product job truth, `activity.jsonl`, and chapter result files together.
-  - Builds progress metrics, chapter tree statuses, `status_reason`, `current_reading_activity`, `resume_available`, `last_checkpoint_at`, recent completed chapters, recent reactions, and the `current_state_panel`.
+  - Builds progress metrics, chapter tree statuses, `status_reason`, `current_reading_activity`, `resume_available`, `last_checkpoint_at`, recent completed chapters, recent Marginalia, and the `current_state_panel`.
   - Keeps `chapter_id` as the stable chapter key while additively projecting `chapter_number` and `current_chapter_number` wherever manifest/runtime truth can support a reliable visible numeric ordinal.
   - `resume_available` is now projected from usable resume truth, not just from whatever older runtime files last claimed. A stale runtime shell or leftover checkpoint artifact is not enough on its own.
   - When the current public state is `paused` because of `runtime_stale` or `runtime_interrupted`, aggregation preserves the last-known chapter/section/activity pointers but treats them as last-known runtime snapshots rather than live reading claims.
@@ -107,22 +108,22 @@ Use `docs/api-contract.md` for exact fields and routes. Use this file to underst
     - shared `book_document.json`
     before any iterator-era `segment_ref` structure lookup
   - When older iterator-era runtime snapshots contain a shortened `current_reading_activity.current_excerpt`, catalog may backfill the full normalized section text from `_mechanisms/iterator_v1/derived/structure.json` by matching `segment_ref`.
-  - Current public payloads may now additively expose `reading_locus`, `reconstructed_hot_state`, `last_resume_kind`, and `active_reaction_id` while keeping `segment_ref` as a compatibility sidecar.
+  - Current public payloads may now expose `reading_locus`, `reconstructed_hot_state`, `last_resume_kind`, and `active_marginalia_id`, with deprecated `active_reaction_id` kept as a compatibility alias while keeping `segment_ref` as a compatibility sidecar.
 - `GET /api/books/{book_id}/activity`
   - Reads `activity.jsonl` and normalizes each event into the public event shape.
   - The routed frontend overview now consumes the `stream=mindstream` view; `stream=system` remains available for diagnostics.
   - Adds canonical chapter result routes where the completed result is ready.
-  - Event payloads may now also carry additive `chapter_number`, `reading_locus`, and source-ref-native reaction fields without changing the current compatibility route model.
+  - Event payloads may now also carry additive `chapter_number`, `reading_locus`, and source-ref-native Marginalia fields without changing the current compatibility route model.
 - `GET /api/books/{book_id}/analysis-log`
   - Is the main exception to the catalog-driven view model.
   - It remains an internal diagnostic endpoint and is no longer part of the user-facing overview.
   - It comes from the latest canonical product job record plus `state/jobs/<job_id>.log` via `jobs.py`, not from `catalog.py`.
 - `GET /api/books/{book_id}/chapters/{chapter_id}`
-  - Uses the chapter result file for structured sections, featured reactions, and chapter-level summaries.
-  - Uses `user_marks` to attach the current mark state to each returned reaction card.
+  - Uses the chapter result file for structured sections, featured Marginalia, and chapter-level summaries.
+  - Uses `user_marks` to attach the current mark state to each returned Marginalia card.
   - This surface no longer hard-requires `iterator_v1` structure as long as the manifest points at a valid mechanism-owned chapter result file.
   - When older compatibility manifests are missing `result_file`, aggregation now also falls back directly to `attentional_v2` chapter compatibility payloads under `_mechanisms/attentional_v2/derived/chapter_result_compatibility/`.
-  - Reaction cards and featured reaction previews may now additively expose `primary_source_ref`, `related_source_refs`, and reconsolidation lineage sidecars while the page still remains section-shaped for compatibility.
+  - Marginalia cards and featured Marginalia previews may now expose `primary_source_ref`, `related_source_refs`, and reconsolidation lineage sidecars while the page still remains section-shaped for compatibility. Deprecated reaction-shaped aliases are emitted during the migration window.
   - Chapter detail and outline payloads may now additively expose `chapter_number`, but their route key remains the stable `chapter_id`.
 - `GET /api/books/{book_id}/chapters/{chapter_id}/outline`
   - Starts from the manifest chapter tree, then enriches the outline with section previews from the chapter result file when that result exists.
@@ -145,7 +146,7 @@ Use `docs/api-contract.md` for exact fields and routes. Use this file to underst
   - Resolves public integer ids back to internal runtime ids, calls catalog/jobs/marks helpers, and normalizes returned marks into the public API field names.
 - `reading-companion-backend/src/library/user_marks.py`
   - Owns mark persistence in `state/user_marks.json`.
-  - Resolves a reaction back to chapter result artifacts before saving a mark, so marks remain tied to actual reaction payloads instead of a detached UI-only store.
+  - Resolves a Marginalia / compatibility reaction back to chapter result artifacts before saving a mark, so marks remain tied to actual visible-note payloads instead of a detached UI-only store.
 - `reading-companion-backend/src/api/realtime.py`
   - Reuses `refresh_job()` and `get_analysis_state()` to build WebSocket snapshots.
   - It does not define a separate source of truth for live state; it republishes the same aggregated state surfaces used by REST.
@@ -155,23 +156,23 @@ Use `docs/api-contract.md` for exact fields and routes. Use this file to underst
 
 ## Normalization Boundary
 - Internal ids vs public ids
-  - Runtime artifacts use internal string ids for books and reactions.
-  - Public REST and WebSocket surfaces expose integer `book_id`, `reaction_id`, and `mark_id`.
+  - Runtime artifacts use internal string ids for books and Marginalia / compatibility reactions.
+  - Public REST and WebSocket surfaces expose integer `book_id`, `marginalia_id`, deprecated `reaction_id`, and `mark_id`.
   - `src/api/contract.py` performs the stable namespace-based mapping between the two.
 - Stable chapter key vs visible chapter numbering
   - Public `chapter_id` remains the stable parsed-book chapter key.
   - Public `chapter_number` is additive and optional.
   - Aggregation must not infer `chapter_number` from `chapter_id`.
   - Human-facing displays should prefer `chapter_ref` or `title`; numeric labels are a sidecar when the source heading truly provides them.
-- Legacy taxonomy vs canonical taxonomy
+- Legacy taxonomy vs canonical Marginalia taxonomy
   - Internal artifacts may still contain legacy values such as `connect_back`, `critique`, `curiosity`, or `known`.
   - Public surfaces normalize them to the canonical taxonomy:
     - `connect_back -> retrospect`
     - `critique -> discern`
     - `curiosity -> curious`
     - `known -> resonance`
-  - For `attentional_v2`, persisted visible-reaction truth is surfaced-native reaction data rather than a native family/type field.
-  - Public `type` and filter taxonomy are aggregation-time compatibility projections from that surfaced-native record shape.
+  - For `attentional_v2`, persisted visible-note truth is Digest-authored Marginalia data rather than a native family/type field.
+  - Public `marginalia_type`, deprecated `reaction_type`, and filter taxonomy are aggregation-time projections from that Marginalia record shape.
   - Aggregation must not treat the public taxonomy as proof that the mechanism's internal prompt contract is family-first.
 - Canonical frontend routes
   - Product-facing URLs returned by the backend should come from contract helpers such as `canonical_book_path()` and `canonical_chapter_path()`.
@@ -187,9 +188,10 @@ Use `docs/api-contract.md` for exact fields and routes. Use this file to underst
   - `_mechanisms/<mechanism_key>/` contains mechanism-private derived structures, runtime memory/checkpoints, diagnostics, and optional eval exports.
   - `_mechanisms/iterator_v1/derived/structure.json` remains a current-mechanism artifact that aggregation may still consult for `iterator_v1`-shaped section views and compatibility backfill.
 - Additive locus/source-ref fields vs section compatibility
-  - Public aggregation may now expose richer additive fields such as `reading_locus`, `primary_source_ref`, `related_source_refs`, and `supersedes_reaction_id`.
+  - Public aggregation may now expose richer additive fields such as `reading_locus`, `primary_source_ref`, `related_source_refs`, and `supersedes_marginalia_id`.
   - Existing `segment_ref` / `section_ref` fields remain temporary compatibility sidecars for current frontend surfaces.
-  - The later planned migration is to redesign chapter/detail and marks around chapter text plus source-referenced reactions instead of section-first containers.
+  - Deprecated `supersedes_reaction_id` remains an alias during the migration window.
+  - The later planned migration is to redesign chapter/detail and marks around chapter text plus source-referenced Marginalia instead of section-first containers.
 - Standard observability vs debug diagnostics
   - Shared `_runtime/runtime_shell.json`, `_runtime/activity.jsonl`, and `_runtime/checkpoint_summaries/*.json` are the standard-mode observability layer.
   - Mechanism-private full checkpoints remain standard-private because they are required for honest resume and baseline evaluation, even though they are not public API surfaces.
