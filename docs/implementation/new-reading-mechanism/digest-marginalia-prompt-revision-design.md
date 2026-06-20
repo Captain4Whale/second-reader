@@ -9,23 +9,19 @@ Created: `2026-06-20`
 
 ## Status
 
-- Status: candidate design / review draft.
-- Live prompt unchanged by this document.
+- Status: implemented-live in Digest v11.
+- Live prompt now implements the reviewed candidate in `reading-companion-backend/src/attentional_v2/prompts/digest.py`.
 - Current live Digest baseline:
-  - prompt version: `attentional_v2.digest.v10`
-  - XML spec: `attentional_v2.digest.xml.v10`
-  - promptset: `attentional_v2-phase6-v68`
-  - output contract: `digest_understanding_response_marginalia_json_v4`
+  - prompt version: `attentional_v2.digest.v11`
+  - XML spec: `attentional_v2.digest.xml.v11`
+  - promptset: `attentional_v2-phase6-v69`
+  - output contract: `digest_understanding_response_marginalia_json_v5`
 - Current live model-facing outputs:
   - `understanding`
   - `response`
   - `marginalia[]`
-- Current implementation caveat:
-  - The live schema exposes `marginalia[].source_quote` and `marginalia[].content`.
-  - The current runtime normalizer requires both `source_quote` and `content` to be non-empty.
-  - A pure highlight-only Marginalia item therefore needs an output-contract/runtime revision before it can be represented cleanly as `source_quote` without note content.
-- Working output-contract direction:
-  - The next model-facing Marginalia item should contain only `source_quote` and `content`.
+- Implemented output-contract direction:
+  - The model-facing Marginalia item contains only `source_quote` and `content`.
   - `source_quote` is required.
   - `content` may be omitted or empty; omitted / empty `content` means highlight-only.
   - Non-empty `content` means note-bearing Marginalia.
@@ -467,7 +463,7 @@ Interpretation:
 
 ## Accepted Implementation Slice
 
-When this design is implemented, the slice should update the following surfaces together:
+This design is implemented by the Digest v11 slice. The implementation updated these surfaces together:
 
 - Digest prompt version / XML spec / promptset / output-contract id.
 - `Instruction / Marginalia` with the current candidate prompt text.

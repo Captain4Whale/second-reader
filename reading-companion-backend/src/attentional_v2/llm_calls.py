@@ -687,6 +687,7 @@ def _normalize_marginalia_item(
     *,
     current_unit_texts: list[str],
     allowed_ref_ids: set[str],
+    include_legacy_metadata: bool = False,
 ) -> MarginaliaItem | None:
     """Normalize one Digest-owned Marginalia item."""
 
@@ -694,19 +695,21 @@ def _normalize_marginalia_item(
         return None
     source_quote = _clean_text(value.get("source_quote") or value.get("anchor_quote"))
     content = _clean_text(value.get("content"))
-    if not source_quote or not content:
+    if not source_quote:
         return None
     if current_unit_texts and not any(source_quote in text for text in current_unit_texts):
         return None
-    if _contains_internal_reference_markup(content):
+    if content and _contains_internal_reference_markup(content):
         return None
-    return {
+    normalized: MarginaliaItem = {
         "source_quote": source_quote,
         "content": content,
-        "prior_link": _normalize_prior_link(value.get("prior_link"), allowed_ref_ids=allowed_ref_ids),
-        "outside_link": _normalize_outside_link(value.get("outside_link")),
-        "search_intent": _normalize_search_intent(value.get("search_intent")),
     }
+    if include_legacy_metadata:
+        normalized["prior_link"] = _normalize_prior_link(value.get("prior_link"), allowed_ref_ids=allowed_ref_ids)
+        normalized["outside_link"] = _normalize_outside_link(value.get("outside_link"))
+        normalized["search_intent"] = _normalize_search_intent(value.get("search_intent"))
+    return normalized
 
 
 def _normalize_marginalia_items(
@@ -714,6 +717,7 @@ def _normalize_marginalia_items(
     *,
     current_unit_texts: list[str],
     allowed_ref_ids: set[str],
+    include_legacy_metadata: bool = False,
 ) -> list[MarginaliaItem]:
     """Normalize the Marginalia items emitted directly by Digest."""
 
@@ -725,6 +729,7 @@ def _normalize_marginalia_items(
             item,
             current_unit_texts=current_unit_texts,
             allowed_ref_ids=allowed_ref_ids,
+            include_legacy_metadata=include_legacy_metadata,
         )
         if normalized is not None:
             marginalia.append(normalized)
@@ -743,6 +748,7 @@ def _normalize_surfaced_reactions(
         value,
         current_unit_texts=current_unit_texts,
         allowed_ref_ids=allowed_ref_ids,
+        include_legacy_metadata=True,
     )
 
 

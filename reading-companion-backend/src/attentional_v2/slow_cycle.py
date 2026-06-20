@@ -596,15 +596,18 @@ def build_reaction_record_from_surfaced_reaction(
 ) -> AnchoredReactionRecord | None:
     """Build one native persisted reaction record directly from Digest-owned surfaced output."""
 
-    thought = _clean_text(reaction.get("content"))
-    if not thought:
-        return None
-
     normalized_primary_source_ref = (
         build_reaction_source_ref(primary_source_ref)
         if isinstance(primary_source_ref, dict)
         else _source_ref_from_legacy_anchor(primary_anchor or {})
     )
+    thought = _clean_text(reaction.get("content"))
+    source_quote = _clean_text(reaction.get("source_quote") or reaction.get("anchor_quote")) or _clean_text(
+        normalized_primary_source_ref.get("quote")
+    )
+    if not (thought or source_quote):
+        return None
+
     normalized_related = [
         build_reaction_source_ref(ref)
         for ref in (related_source_refs or [])
@@ -621,8 +624,7 @@ def build_reaction_record_from_surfaced_reaction(
     compat_family = override_family or compat_reaction_family(
         {
             "content": thought,
-            "source_quote": _clean_text(reaction.get("source_quote") or reaction.get("anchor_quote"))
-            or _clean_text(normalized_primary_source_ref.get("quote")),
+            "source_quote": source_quote,
             "prior_link": prior_link,
             "outside_link": outside_link,
             "search_intent": search_intent,
@@ -644,8 +646,7 @@ def build_reaction_record_from_surfaced_reaction(
         "type": compat_family,  # type: ignore[typeddict-item]
         "compat_family": compat_family,  # type: ignore[typeddict-item]
         "thought": thought,
-        "source_quote": _clean_text(reaction.get("source_quote") or reaction.get("anchor_quote"))
-        or _clean_text(normalized_primary_source_ref.get("quote")),
+        "source_quote": source_quote,
         "primary_source_ref": normalized_primary_source_ref,
         "related_source_refs": normalized_related,
         "reconsolidation_record_id": _clean_text(reconsolidation_record_id),

@@ -376,13 +376,12 @@ Use `docs/backend-reading-mechanism.md` for shared platform boundaries. Use `doc
     - the temporary natural-language response left by the current unit
     - this is intentionally compact; it is the reader's immediate feeling, thought, pressure, question, or aftertaste after understanding the unit
   - `marginalia`
-    - zero to many visible page-margin reading notes surfaced directly by `Digest`
+    - zero to many visible page-margin reading marks surfaced directly by `Digest`
     - each Marginalia item should carry:
       - `source_quote`
-      - `content`
-      - optional `prior_link`
-      - optional `outside_link`
-      - optional `search_intent`
+      - optional `content`
+    - empty, null, or omitted `content` means highlight-only; non-empty `content` means note-bearing Marginalia
+    - the normal model-facing Marginalia item does not carry `prior_link`, `outside_link`, or `search_intent`; older artifacts may still be read through compatibility adapters
     - `Digest` still understands the whole `unit`, but each `source_quote` should be chosen as the smallest self-sufficient span that can honestly carry that Marginalia note
       - if one sentence already stands on its own, it may anchor a Marginalia item by itself
       - if a sentence would lose meaning when isolated, `Digest` should use the smallest multi-sentence span that keeps the meaning intact
@@ -393,9 +392,9 @@ Use `docs/backend-reading-mechanism.md` for shared platform boundaries. Use `doc
       - this applies especially to premise-plus-sharpening pairs: when the earlier line states the premise and the later line cashes it out, `Digest` should not default to surfacing only the later line if both independently stand
       - this is bounded plurality, not pressure to spray Marginalia everywhere; the default density still stays low unless the unit honestly contains multiple independently valuable spans
     - the native Marginalia shape does not carry a `type`
-    - `content` must stay reader-facing and natural-language.
+    - note-bearing `content` must stay reader-facing and natural-language.
       - it may refer back to earlier material, but it must not expose system handles such as sentence ids, `ref_ids`, anchor ids, thread ids, concept ids, or reaction ids
-      - `prior_link.ref_ids` remain internal structured linkage for the runtime and audits, not wording that should leak into visible text
+      - legacy `prior_link.ref_ids` remain internal structured linkage for compatibility runtimes and audits, not wording that should leak into visible text
       - if visible wording briefly quotes earlier material, it should do so sparingly with a short fragment rather than pasting a whole earlier sentence back into the Marginalia note
 - Internal `DigestResult` exposes canonical `marginalia` plus deprecated `surfaced_reactions`, along with `reading_impression` and normalized `memory_uptake_ops`, so existing settlement, reaction persistence, and read-audit surfaces remain stable during migration.
 - Model-emitted legacy `reading_impression`, `surfaced_reactions`, `annotations`, `recent_reading_memory`, and `memory_uptake_ops` are not part of the current Digest LLM contract, except that runtime may accept legacy `annotations[]` as a compatibility fallback when a malformed/old payload is normalized.
@@ -424,8 +423,8 @@ Use `docs/backend-reading-mechanism.md` for shared platform boundaries. Use `doc
   - `highlight / discern`
     - compatibility adapter may still use these for bounded local source-referenced reactions that remain fully inside the current unit
     - they are no longer prompt-time native generation families for `attentional_v2`
-    - `highlight` now means a compat-projected local source-referenced reaction whose surfaced payload stays inside the current unit and does not explicitly surface `prior_link`, `outside_link`, or `search_intent`
-    - `highlight` therefore may still contain real visible wording; it no longer means "only saved, nothing to say"
+    - `highlight` now means a compat-projected local source-referenced Marginalia/reaction whose surfaced payload stays inside the current unit and does not explicitly surface legacy `prior_link`, `outside_link`, or `search_intent`
+    - `highlight` may represent either quote-only highlight Marginalia or a short local visible note, depending on the normalized `content`
     - `discern` remains a compat-side split for a more interpretively explicit local source-referenced reaction, not a native Digest-time type field
 - This mapping is transitional.
   - It exists for slow-cycle aggregation, eval normalization, and UI adapter continuity.
@@ -458,8 +457,8 @@ Use `docs/backend-reading-mechanism.md` for shared platform boundaries. Use `doc
   - If Ingest calls `retrieve_unit_memory` with recall targets, runtime derives audit/private `memory_recalls[]` from the tool args. Final-output `memory_recalls[]` is not a live contract field and any legacy echo is ignored rather than treated as a second recall authority.
   - Digest XML renders `ReaderRole` and `Instruction` as separate top-level blocks; all fixed non-role Digest directions live under `Instruction`, while runtime context/data blocks remain separate.
   - Digest `Instruction` uses direct child blocks `CurrentStep`, `ContextUseGuide`, `Understanding`, `Response`, `Marginalia`, `SourceGrounding`, and `ResponseDiscipline`.
-  - Digest prompt version `attentional_v2.digest.v10` uses content-level Understanding rules, text-type compression guidance, grammatical-subject guidance, source-established-content calibration, subject-continuity rules, approved examples, and Marginalia-specific page-margin-note wording to keep stored Understanding memory self-contained while keeping visible notes source-anchored and reader-facing.
-  - The current Digest output contract carries `understanding`, `response`, and `marginalia`; transport is selected by the shared LLM gateway from the active profile.
+  - Digest prompt version `attentional_v2.digest.v11` / promptset `attentional_v2-phase6-v69` uses content-level Understanding rules, text-type compression guidance, grammatical-subject guidance, source-established-content calibration, subject-continuity rules, approved examples, and Marginalia-specific page-margin wording to keep stored Understanding memory self-contained while keeping visible marks source-anchored and reader-facing.
+  - The current Digest output contract carries `understanding`, `response`, and `marginalia[]`; each Marginalia item requires `source_quote` and accepts optional/empty `content` for highlight-only marks. Transport is selected by the shared LLM gateway from the active profile.
 - Current `attentional_v2` structured outputs use protocol-neutral project schemas with provider-specific transport at the shared gateway boundary.
   - Anthropic-compatible and legacy callers keep the forced final-output tool path.
   - OpenAI-compatible profiles configured with `response_format: {"type": "json_object"}` use JSON-object final output plus local validation/repair for Ingest and Digest.
@@ -469,7 +468,7 @@ Use `docs/backend-reading-mechanism.md` for shared platform boundaries. Use `doc
   - Missing submit-tool calls, wrong submit-tool names, non-object tool args, malformed JSON objects, or business-validator failures are repaired once and then reported as public `llm_contract` problems if still invalid.
   - Raw provider reasoning/thinking content is not a standard runtime artifact; standard traces keep only normal content, usage, and compact metadata.
   - Current OpenCode / DeepSeek JSON-object protocol details and historical MiniMax transport notes are recorded in `docs/implementation/new-reading-mechanism/llm-structured-output-protocol-note.md`.
-- Subject continuity is implemented in Digest prompt `attentional_v2.digest.v10` and documented in `docs/implementation/new-reading-mechanism/ingest-recall-and-digest-memory-context-design.md`.
+- Subject continuity is implemented in Digest prompt `attentional_v2.digest.v11` and documented in `docs/implementation/new-reading-mechanism/ingest-recall-and-digest-memory-context-design.md`.
   - Prior Understanding in `ReadingMemory` carries narrator / speaker / actor / concept continuity forward; Digest uses that memory plus current source text to establish new subjects, continue known subjects, or explicitly preserve meaningful ambiguity.
   - Boundary: do not add raw prior-source backfill, Ingest reference-resolution fields, or a durable referent store for this slice.
   - Rule: Digest Understanding should be self-contained and memory-readable; it may use pronouns when their referent is explicit inside the same Understanding, but should not store floating pronouns.
@@ -676,9 +675,7 @@ Use `docs/backend-reading-mechanism.md` for shared platform boundaries. Use `doc
       - `source_quote`
       - `primary_source_ref`
       - `related_source_refs`
-      - `prior_link`
-      - `outside_link`
-      - `search_intent`
+      - optional legacy compatibility metadata such as `prior_link`, `outside_link`, and `search_intent` when present in older/internal callers
     - legacy `type`, `compat_family`, and `search_query` remain as compatibility sidecars
   - `_mechanisms/attentional_v2/runtime/reconsolidation_records.json`
   - `_mechanisms/attentional_v2/runtime/reader_policy.json`

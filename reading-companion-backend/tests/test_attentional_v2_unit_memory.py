@@ -96,6 +96,32 @@ def test_unit_memory_entry_derives_weighted_surface_docs():
     assert "\n" in [doc for doc in docs if doc["surface"] == "unit_marginalia"][0]["text"]
 
 
+def test_unit_memory_indexes_highlight_only_marginalia():
+    entry = build_unit_memory_entry(
+        book_id="book-demo",
+        chapter_id=1,
+        chapter_ref="Chapter 1",
+        source_unit=_source_unit("u000002", 2, "庭下如积水空明。"),
+        digest_result={
+            "reading_impression": "The image stays clear.",
+            "marginalia": [{"source_quote": "庭下如积水空明", "content": ""}],
+            "memory_uptake_ops": [
+                {
+                    "op": "append",
+                    "target_store": "recent_reading_memory",
+                    "payload": {"memory_text": "月色被写成清澈积水般的视觉经验。"},
+                }
+            ],
+        },
+        memory_retrieval_mode="text_only",
+    )
+
+    docs = retrieval_docs_from_entry(entry)
+
+    marginalia_doc = [doc for doc in docs if doc["surface"] == "unit_marginalia"][0]
+    assert marginalia_doc["text"] == "庭下如积水空明"
+
+
 def test_fts_query_builder_quotes_phrases_and_skips_short_queries():
     query, reason = build_fts5_match_query("火车站台。旅程开始；人物离开")
 

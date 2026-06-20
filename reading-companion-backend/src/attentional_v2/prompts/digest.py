@@ -18,9 +18,9 @@ from .reader_role import READER_ROLE_FRAGMENT
 from .types import PromptDefinition
 
 
-DIGEST_PROMPT_VERSION = "attentional_v2.digest.v10"
-DIGEST_XML_PROMPT_ASSEMBLY_SPEC_ID = "attentional_v2.digest.xml.v10"
-DIGEST_XML_PROMPTSET_VERSION = "attentional_v2-phase6-v68"
+DIGEST_PROMPT_VERSION = "attentional_v2.digest.v11"
+DIGEST_XML_PROMPT_ASSEMBLY_SPEC_ID = "attentional_v2.digest.xml.v11"
+DIGEST_XML_PROMPTSET_VERSION = "attentional_v2-phase6-v69"
 DIGEST_XML_TRANSPORT_SYSTEM_PROMPT = "Follow the structured Digest prompt in the user message. Use the required submit_digest_result tool as the final output channel."
 
 
@@ -33,13 +33,17 @@ DIGEST_ROLE_AND_INSTRUCTION_FRAGMENTS = (
 
 Stay with this unit as the present moment of reading. Let the carried reading context help you remain continuous with what has already been read, but let the current source text lead.
 
-After reading, express the result in three connected ways: what you understand from the text, how you respond to it as a reader, and which exact lines, if any, are worth carrying into the margin as Marginalia.""",
+After reading, express the result in three connected ways: what you understand from the text, how you respond to it as a reader, and which exact quotes, if any, should become Marginalia in the page margin.
+
+Marginalia may be highlight-only or note-bearing. A highlight-only item preserves the exact quote with no added note; a note-bearing item adds compact reader-visible content.""",
     ),
     PromptFragment(
         fragment_id="digest.context_use_guide",
         text="""- Let BookInfo orient you to the stable identity of the book; it is not source text.
 - Let ReadingMemory hold prior understanding that the reading has already carried forward. Use it for continuity, contrast, callback, and unresolved pressure when it genuinely clarifies the current source unit.
 - Do not treat ReadingMemory as current source text, prior reader response to imitate, or a reason to force a connection.
+- If a Marginalia note callbacks to ReadingMemory, write the connection in visible reader-facing `content`; never hide it in metadata or expose internal ids.
+- Highlight-only Marginalia should not carry hidden prior-memory semantics. If a prior connection matters, make it a note-bearing item.
 - Let CurrentFocus show where you are and what you are reading now: path, position, object, and intent.
 - Let CurrentFocus / ReadingObject be the source text for this moment of reading.
 - Use OutputContract only for the required JSON shape and output discipline.""",
@@ -80,7 +84,7 @@ When the referent is genuinely ambiguous, do not guess. Record the ambiguity as 
 Pronouns are acceptable after the referent is clear inside the same Understanding. Avoid floating pronouns that cannot be understood after this Understanding is stored as memory.
 
 # Concision
-Compress meaning, not wording. Be brief, but do not drop the main event, claim, condition, or relationship change. Do not copy the whole source or turn the understanding into a reaction, evaluation, or Marginalia note. The understanding should be shorter than the source text and normally no more than a few compact sentences.
+Compress meaning, not wording. Be brief, but do not drop the main event, claim, condition, or relationship change. Do not copy the whole source or turn the understanding into a reaction, evaluation, Marginalia note, or list of possible Marginalia. The understanding should be shorter than the source text and normally no more than a few compact sentences.
 
 # Empty-content exception
 If the source text is only a divider, empty heading, or other non-content structure, `understanding` may be empty; otherwise give a substantive understanding.
@@ -185,27 +189,134 @@ Keep Response distinct from Marginalia: if the expression is tied to a specific 
     ),
     PromptFragment(
         fragment_id="digest.marginalia_policy",
-        text="""When a line or small span genuinely asks to live in the page margin, write Marginalia for it.
+        text="""# Marginalia
 
-Marginalia is a visible page-margin reader note anchored to exact source text from the current unit. It is not a generic explanatory annotation, passage summary, or metadata label; it is the kind of local readerly note that helps the user notice why this exact bit of text matters.
+After reading and understanding the current source unit, decide whether any exact quote from this unit should be preserved in the margin.
 
-It may be a line that lands with force, a margin thought or question, a natural connection, a distinction or turn that suddenly clarifies something, or a local trigger that feels worth marking.
+Marginalia are source-anchored reading marks. They are not passage summaries, generic annotations, metadata labels, or a place to prove cleverness. A good Marginalia item helps the reader notice, remember, question, or return to something specific at the exact quoted words.
 
-Do not create Marginalia just to fill the field. It is acceptable to emit zero Marginalia items.
+## Two Forms
 
-Each Marginalia item must stay anchored to the current unit. Each `source_quote` must be an exact quote from this unit.
+Marginalia can be either highlight-only or note-bearing.
 
-Choose each `source_quote` as the smallest self-sufficient span that can honestly stand as the Marginalia item's footing.
+- Highlight-only: use this when the quote itself is worth finding again, and adding a note would only repeat or dilute its value. Output an exact `source_quote`; leave `content` empty or omit it according to the output contract.
+- Note-bearing: use this when a relationship, explanation, question, connection, or judgment must be written down for the value to survive. Output an exact `source_quote` plus concise reader-visible `content`.
 
-If the unit contains multiple independently valuable local triggers, you may write separate Marginalia items. Do not let one sharper later sentence erase an earlier framing line, premise line, or hinge line that also stands on its own.
+Do not create Marginalia just to fill the field. It is normal to emit zero items when nothing in the current unit is worth marking.
 
-Keep V1's wide-entry, narrow-expression stance: be willing to notice and surface a real local trigger, but do not manufacture commentary just to fill space.
+## What Makes A Quote Worth Marking
 
-If you callback to earlier material in visible content, speak naturally to the reader. Never expose internal ref ids, sentence ids, source span ids, reaction ids, or coordinate-like tokens in visible content.""",
+Use the following lenses silently. Do not output these labels.
+
+1. Resistance: the quote creates friction in understanding.
+   It may contain ambiguity, a compressed concept, an argumentative leap, a hard-to-place stance, an allusion, a translation issue, or a factual claim that needs verification.
+
+2. Leverage: the quote changes the meaning of the current unit or the larger reading.
+   It may be a key definition, a hinge in the argument or scene, a turn in character relation, a repeated image, a foreshadowing, an irony, a shift of perspective, or a sentence that rereads earlier material.
+
+3. Growth: the quote opens something worth carrying forward.
+   It may lead to a useful question, a comparison with another work or idea, a research lead, an ethical or emotional pressure, a transferable insight, a hypothesis, or a recognition of the reader's own assumption.
+
+A quote does not need to satisfy all three lenses. One real trigger is enough; a vague sense that the passage is "important" is not enough.
+
+## Minimal Intervention
+
+Before producing each candidate Marginalia item, ask:
+
+1. Should this source span be marked at all?
+   If it is only a transition, filler, repeated information, or a detail with no return value, skip it.
+
+2. Would a highlight already be enough?
+   If the quote is beautiful, forceful, memorable, or worth finding later, but its meaning is already self-evident, use highlight-only.
+
+3. If writing a note, what would the reader miss without it?
+   The answer must be specific: a mechanism, relation, tension, inference, uncertainty, callback, or question.
+
+4. Can the note send the reader back to exact words in the quote?
+   If the note cannot return to a word, syntax, image, structure, claim, or fact in the source quote, delete it or choose a better quote.
+
+Choose the smallest exact contiguous `source_quote` that can honestly support the item. Do not use ellipses, stitched fragments, paraphrases, translations, source coordinates, or paragraph numbers as the quote.
+
+## Writing Note Content
+
+For note-bearing Marginalia, write the content as a compact margin note for the reader. The note may:
+
+- unpack how a local effect is produced;
+- name a distinction, tension, turn, or inference;
+- connect this quote to prior ReadingMemory when the connection is genuinely useful and source-supported;
+- raise a precise question or uncertainty;
+- mark a research lead without pretending it has been verified;
+- record an emotional, aesthetic, or ethical response when the response is anchored in the quote itself.
+
+Use a silent "verb + object" intention if it helps you think, such as "unpack how this sentence delays the reveal" or "question the inference from one case to everyone." Do not output that intention unless the output contract explicitly asks for it.
+
+## Evidence And Honesty
+
+Add evidence, not just attitude. Show the reason for the note, not just the conclusion.
+
+- In-text interpretation is the safest: base the note on the current source quote and current unit.
+- ReadingMemory may be used for continuity or callback, but only when it directly clarifies why this quote matters. Do not expose internal ids or coordinate-like tokens.
+- Common literary or narrative knowledge may be used cautiously, but do not turn it into unsupported certainty.
+- If a historical fact, edition issue, biography claim, allusion source, or translation claim needs verification and the verified context is not present in CurrentFocus or ReadingMemory, do not state it as fact. Mark the uncertainty as uncertainty, or skip the note.
+- It is better to leave a note unwritten than to fabricate hidden background, authorial intent, or a "real story" behind the text.
+
+Avoid empty praise. A note like "this passage is tense," "this sentence is beautiful," or "this character is vivid" is not enough. Explain what in the quote creates the effect, or use highlight-only.
+
+## Output Discipline
+
+This section explains only the `marginalia` field. The final Digest output must still follow the full OutputContract for `understanding`, `response`, and `marginalia`.
+
+For each Marginalia item:
+
+- `source_quote` must be an exact contiguous quote from the current source unit.
+- Empty or omitted `content` means highlight-only.
+- Non-empty `content` means note-bearing Marginalia.
+- Do not output `mode`, `kind`, `decision`, `hook`, `intent`, `evidence_status`, `calibration`, `rejected_output`, `source`, `prior_link`, `outside_link`, or `search_intent` unless a later output contract explicitly asks for them.
+
+## Calibration Examples
+
+These examples show only the `marginalia` field shape.
+
+Case 1: skip a structural transition
+Text: "下面分别讨论这三个方面。"
+Output:
+{"marginalia": []}
+
+Case 2: highlight-only
+Text: "庭下如积水空明，水中藻荇交横，盖竹柏影也。"
+Why: the image itself is worth finding again, and no note is needed for the current purpose.
+Output:
+{"marginalia": [{"source_quote": "庭下如积水空明，水中藻荇交横，盖竹柏影也。", "content": ""}]}
+
+Case 3: note-bearing close reading
+Text: "庭下如积水空明，水中藻荇交横，盖竹柏影也。"
+Why: the note explains how the sentence produces its visual effect.
+Output:
+{"marginalia": [{"source_quote": "盖竹柏影也", "content": "The first two clauses let moonlight and tree shadows appear as water and waterweeds; only this final phrase reveals the misrecognition. The sentence works as a small movement from perception to correction."}]}
+
+Case 4: avoid generic praise
+Text: "孔乙己是站着喝酒而穿长衫的唯一的人。"
+Why: the valuable note is not that the sentence is vivid, but how two social markers collide.
+Output:
+{"marginalia": [{"source_quote": "站着喝酒而穿长衫", "content": "\\"Standing\\" and the long gown usually belong to different social positions; placing both on Kong Yiji compresses his suspended class status into one bodily posture."}]}
+
+Case 5: note a reasoning hinge
+Text: "今人乍见孺子将入于井，皆有怵惕恻隐之心……由是观之，无恻隐之心，非人也。"
+Why: the quote marks the bridge from one sudden reaction to a universal claim.
+Output:
+{"marginalia": [{"source_quote": "由是观之", "content": "This is the argument's hinge: it moves from a concrete spontaneous reaction to a general claim about human nature. The point worth testing is whether that one reaction can support the conclusion about everyone."}]}
+
+Case 6: preserve uncertainty without inventing context
+Text: "什么'君子固穷'，什么'者乎'之类……"
+Why: the phrase appears to invoke classical language, but if verified context is not present in CurrentFocus or ReadingMemory, do not invent the allusion's source or function.
+Output:
+{"marginalia": [{"source_quote": "君子固穷", "content": "This appears to invoke established classical language, but the current material is not enough to confirm the source, original context, or how Kong Yiji may be altering it."}]}""",
     ),
     PromptFragment(
         fragment_id="digest.source_grounding_policy",
-        text="""- `marginalia[].source_quote` must be a short exact contiguous span copied from the current unit: no ellipses, no stitched fragments, no paraphrase, no translation.
+        text="""- `marginalia[].source_quote` must be an exact contiguous span copied from the current unit: no ellipses, no stitched fragments, no paraphrase, no translation, no paragraph number, and no coordinate-like token.
+- The same exact-quote rule applies to highlight-only and note-bearing Marginalia.
+- Note-bearing `content` should return the reader to a specific word, syntax, image, structure, claim, or fact in `source_quote`.
 - Never invent source coordinates. The runner resolves source quotes to paragraph + char-offset `SourceRef` objects after Digest returns.
 - Understanding is grounded in the current source unit as a whole; it does not need exact source quotes.""",
     ),
@@ -214,6 +325,8 @@ If you callback to earlier material in visible content, speak naturally to the r
         text="""- Do not output broad chapter summary.
 - Do not explain whether you "used prior material".
 - Do not decide or name the next route. After this read, the runner will settle the unit and advance normally.
+- Do not output calibration or hidden-planning fields such as `decision`, `hook`, `intent`, `evidence_status`, `calibration`, `rejected_output`, or `source`.
+- Do not output inherited implementation metadata fields such as `prior_link`, `outside_link`, or `search_intent` in live Marginalia.
 - Submit the final result through the required final output tool only.""",
     ),
 )
@@ -555,13 +668,11 @@ Top-level fields:
   "marginalia": [
     {
       "source_quote": "...",
-      "content": "...",
-      "prior_link": null,
-      "outside_link": null,
-      "search_intent": null
+      "content": ""
     }
   ]
-}""",
+}
+In each Marginalia item, `source_quote` is required. Omitted, null, or empty `content` means highlight-only; non-empty `content` means note-bearing.""",
 )
 
 
@@ -586,16 +697,13 @@ It should not duplicate `marginalia`: span-anchored visible page-margin reader n
 
 DIGEST_MARGINALIA_CONTRACT_FRAGMENT = PromptFragment(
     fragment_id="digest.marginalia_contract",
-    text="""`marginalia` contains visible page-margin reader notes anchored to exact source text from the current unit.
+    text="""`marginalia` contains visible page-margin reader marks anchored to exact source text from the current unit.
 Shape:
 {
   "source_quote": "...",
-  "content": "...",
-  "prior_link": null,
-  "outside_link": null,
-  "search_intent": null
+  "content": ""
 }
-Detailed Marginalia-selection and source-quote behavior live under Instruction.""",
+`source_quote` is required. Highlight-only Marginalia uses empty, null, or omitted `content`. Note-bearing Marginalia uses non-empty `content`. Do not output mode/kind labels, calibration fields, prior links, outside links, or search intent fields. Detailed Marginalia-selection and source-quote behavior live under Instruction.""",
 )
 
 
@@ -719,7 +827,7 @@ def build_digest_prompt_assembly_spec(
             "reading_intent",
             "language_contract",
         ),
-        output_contract="digest_understanding_response_marginalia_json_v4",
+        output_contract="digest_understanding_response_marginalia_json_v5",
     )
 
 
@@ -787,5 +895,5 @@ DIGEST_PROMPT = PromptDefinition(
         "reading_intent",
         "language_contract",
     ),
-    output_contract="digest_understanding_response_marginalia_json_v4",
+    output_contract="digest_understanding_response_marginalia_json_v5",
 )

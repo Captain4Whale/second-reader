@@ -69,11 +69,9 @@ DIGEST_RESULT_TOOL = final_output_tool(
                 "items": _object_schema(
                     {
                         "source_quote": {"type": "string"},
-                        "content": {"type": "string"},
-                        "prior_link": {"type": "object"},
-                        "outside_link": {"type": "object"},
-                        "search_intent": {"type": "object"},
-                    }
+                        "content": {"type": ["string", "null"]},
+                    },
+                    required=["source_quote"],
                 ),
             },
         },
@@ -322,8 +320,20 @@ def validate_digest_result(payload: Mapping[str, Any], *, current_unit_texts: li
         errors.append("understanding must be a string")
     marginalia = payload.get("marginalia")
     legacy_annotations = payload.get("annotations")
-    if not isinstance(marginalia, list) and not isinstance(legacy_annotations, list):
+    marginalia_payload = marginalia if isinstance(marginalia, list) else legacy_annotations
+    if not isinstance(marginalia_payload, list):
         errors.append("marginalia must be an array")
+    else:
+        for index, item in enumerate(marginalia_payload):
+            if not isinstance(item, Mapping):
+                errors.append(f"marginalia[{index}] must be an object")
+                continue
+            source_quote = str(item.get("source_quote") or item.get("anchor_quote") or "").strip()
+            if not source_quote:
+                errors.append(f"marginalia[{index}].source_quote must be non-empty")
+            content = item.get("content")
+            if content is not None and not isinstance(content, str):
+                errors.append(f"marginalia[{index}].content must be a string or null")
     response = payload.get("response")
     if not isinstance(response, str):
         errors.append("response must be a string")

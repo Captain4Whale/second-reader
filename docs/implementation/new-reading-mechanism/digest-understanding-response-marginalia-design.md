@@ -13,10 +13,11 @@ Update when: Digest action names, output fields, XML prompt structure, or runtim
 - Supersession note:
   - This document remains the implementation note for Digest's three peer model-facing outputs: `understanding`, `response`, and `marginalia`.
   - `DEC-128` supersedes the earlier `Annotation` name with `Marginalia`. Historical `annotation` / `reaction` terms in old examples and artifacts remain compatibility vocabulary, not the live prompt contract.
+  - `DEC-129` supersedes the first Marginalia v10 item shape with the v11 `source_quote` plus optional `content` contract. Highlight-only Marginalia is represented by empty, null, or omitted `content`; legacy `prior_link`, `outside_link`, and `search_intent` are no longer live model-facing fields.
   - Its early `ReadingState` context examples were superseded by `docs/implementation/new-reading-mechanism/ingest-recall-and-digest-memory-context-design.md`.
   - The current live Digest prompt uses top-level `ReadingMemory`, not `ReadingState`, `RecentMemory`, or `RetrievedUnitMemory`.
 - Subject-continuity note:
-  - `docs/implementation/new-reading-mechanism/ingest-recall-and-digest-memory-context-design.md` defines the subject-continuity rule now implemented in Digest prompt `attentional_v2.digest.v10`.
+  - `docs/implementation/new-reading-mechanism/ingest-recall-and-digest-memory-context-design.md` defines the subject-continuity rule now implemented in Digest prompt `attentional_v2.digest.v11`.
   - The implementation carries narrator / speaker / actor / concept continuity through prior Understanding in `ReadingMemory`; it is not a mechanical ban on every pronoun and does not add a new raw-source backfill path.
 - Current basis:
   - `DEC-108` makes `Digest` the concrete per-unit interpretation LLM call.
@@ -25,14 +26,17 @@ Update when: Digest action names, output fields, XML prompt structure, or runtim
 
 ## Implementation Status
 
-- Implemented prompt version: `attentional_v2.digest.v10`
-- Implemented XML assembly spec: `attentional_v2.digest.xml.v10`
-- Implemented promptset: `attentional_v2-phase6-v68`
-- Implemented output contract: `digest_understanding_response_marginalia_json_v4`
+- Implemented prompt version: `attentional_v2.digest.v11`
+- Implemented XML assembly spec: `attentional_v2.digest.xml.v11`
+- Implemented promptset: `attentional_v2-phase6-v69`
+- Implemented output contract: `digest_understanding_response_marginalia_json_v5`
 - Runtime mapping:
   - `understanding` string -> zero or one internal `memory_uptake_ops[].payload.memory_text` targeting `recent_reading_memory`
   - `response` -> internal `DigestResult.reading_impression`
   - `marginalia[]` -> canonical `DigestResult.marginalia`
+    - each item requires exact `source_quote`
+    - optional/empty `content` means highlight-only
+    - non-empty `content` means note-bearing
   - legacy `annotations[]` -> accepted only as compatibility fallback when normalizing older/malformed payloads
   - `DigestResult.surfaced_reactions` -> deprecated alias for existing settlement/audit compatibility
 - Subject-continuity mapping:
@@ -538,10 +542,7 @@ Recommended LLM-facing contract:
   "marginalia": [
     {
       "source_quote": "...",
-      "content": "...",
-      "prior_link": null,
-      "outside_link": null,
-      "search_intent": null
+      "content": ""
     }
   ]
 }
@@ -552,6 +553,7 @@ Notes:
 - `understanding` replaces `recent_reading_memory[].memory_text` at the model-facing level.
 - `response` replaces `reading_impression`.
 - `marginalia` replaces `annotations` / `surfaced_reactions` as the model-facing visible-note field.
+- `marginalia[].source_quote` is required; `marginalia[].content` is optional and may be empty for highlight-only Marginalia.
 - Digest no longer emits a content-type `kind`; Understanding remains content-neutral and retrieval should work from the text itself.
 - `understanding` may be empty only for empty or purely structural units; runtime does not append an empty recent-memory entry.
 
@@ -585,7 +587,7 @@ This keeps runtime state stable while making the LLM call semantically cleaner.
 - Update `OutputContract`:
   - `ReturnFormat`
   - field contracts
-  - output contract name: `digest_understanding_response_marginalia_json_v4`
+  - output contract name: `digest_understanding_response_marginalia_json_v5`
 - Update `llm_calls.digest(...)` normalizer:
   - parse `payload["understanding"]`
   - parse `payload["response"]`

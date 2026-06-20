@@ -15,7 +15,11 @@ from src.attentional_v2.llm_calls import (
     ingest,
     digest,
 )
-from src.attentional_v2.llm_output_tools import validate_ingest_result, validate_ingest_unit_memory_tool_args
+from src.attentional_v2.llm_output_tools import (
+    validate_digest_result,
+    validate_ingest_result,
+    validate_ingest_unit_memory_tool_args,
+)
 from src.attentional_v2.state_projection import STATE_PACKET_VERSION
 
 
@@ -876,7 +880,7 @@ def test_digest_uses_live_xml_prompt_and_filters_surface_reactions(tmp_path: Pat
                 },
                 {
                     "source_quote": "Beta consequence.",
-                    "content": "This pushes further than c1-s1135.",
+                    "content": "",
                 },
                 {
                     "source_quote": "Quote outside unit",
@@ -973,6 +977,11 @@ def test_digest_uses_live_xml_prompt_and_filters_surface_reactions(tmp_path: Pat
     assert '"understanding": "..."' in captured["prompt"]
     assert '"response": "..."' in captured["prompt"]
     assert '"marginalia": [' in captured["prompt"]
+    assert '"prior_link": null' not in captured["prompt"]
+    assert '"outside_link": null' not in captured["prompt"]
+    assert '"search_intent": null' not in captured["prompt"]
+    assert "Highlight-only" in captured["prompt"]
+    assert "Note-bearing" in captured["prompt"]
     assert '"reading_impression": "..."' not in captured["prompt"]
     assert '"surfaced_reactions": []' not in captured["prompt"]
     assert '"recent_reading_memory": []' not in captured["prompt"]
@@ -986,13 +995,10 @@ def test_digest_uses_live_xml_prompt_and_filters_surface_reactions(tmp_path: Pat
         {
             "source_quote": "Alpha hinge.",
             "content": "That phrase suddenly snaps the claim into place.",
-            "prior_link": {
-                "ref_ids": ["source:src:c1:p1@0-p1@12"],
-                "relation": "callback",
-                "note": "It answers the earlier thread.",
-            },
-            "outside_link": None,
-            "search_intent": None,
+        },
+        {
+            "source_quote": "Beta consequence.",
+            "content": "",
         }
     ]
     assert len(result["memory_uptake_ops"]) == 1
@@ -1003,9 +1009,9 @@ def test_digest_uses_live_xml_prompt_and_filters_surface_reactions(tmp_path: Pat
     }
     assert op["target_key"] != "legacy-ignored"
     assert manifest["node_name"] == "digest"
-    assert manifest["prompt_version"] == "attentional_v2.digest.v10"
-    assert manifest["prompt_assembly"]["spec_id"] == "attentional_v2.digest.xml.v10"
-    assert manifest["prompt_assembly"]["output_contract"] == "digest_understanding_response_marginalia_json_v4"
+    assert manifest["prompt_version"] == "attentional_v2.digest.v11"
+    assert manifest["prompt_assembly"]["spec_id"] == "attentional_v2.digest.xml.v11"
+    assert manifest["prompt_assembly"]["output_contract"] == "digest_understanding_response_marginalia_json_v5"
     assert "mode" not in manifest["prompt_assembly"]
     assert manifest["prompt_assembly"]["rendered_blocks"] == [
         "ReaderRole",
@@ -1015,6 +1021,25 @@ def test_digest_uses_live_xml_prompt_and_filters_surface_reactions(tmp_path: Pat
         "CurrentFocus",
         "OutputContract",
     ]
+
+
+def test_digest_validator_accepts_highlight_only_and_rejects_missing_quote() -> None:
+    assert validate_digest_result(
+        {
+            "understanding": "The unit establishes a clear movement.",
+            "response": "The ending lands quietly.",
+            "marginalia": [{"source_quote": "Alpha hinge.", "content": ""}],
+        },
+        current_unit_texts=["Alpha hinge."],
+    ) == []
+    assert validate_digest_result(
+        {
+            "understanding": "The unit establishes a clear movement.",
+            "response": "The ending lands quietly.",
+            "marginalia": [{"content": "Missing quote."}],
+        },
+        current_unit_texts=["Alpha hinge."],
+    ) == ["marginalia[0].source_quote must be non-empty"]
 
 
 def test_digest_rejects_legacy_understanding_list_payload(tmp_path: Path, monkeypatch):

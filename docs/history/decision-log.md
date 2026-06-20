@@ -3645,3 +3645,30 @@ This new direction is design frozen but not yet implemented as a formal benchmar
 - `docs/backend-state-aggregation.md`
 - `docs/implementation/new-reading-mechanism/digest-understanding-response-marginalia-design.md`
 - `docs/implementation/new-reading-mechanism/digest-marginalia-quality-sourcebook.md`
+
+## Entry 126
+**ID**: DEC-129
+**Status**: active
+
+**Decision / Inflection**: Simplify live Digest Marginalia output to exact quote plus optional note content.
+
+**Period**: June 20, 2026, after drafting the Marginalia quality prompt and deciding that highlight-only marks must be first-class visible notes rather than forced notes with filler content.
+
+**Decision**: Live Digest is bumped to `attentional_v2.digest.v11` / XML spec v11 / promptset `attentional_v2-phase6-v69`, with output contract `digest_understanding_response_marginalia_json_v5`. The normal model-facing Marginalia item now contains only `source_quote` and optional `content`: `source_quote` is required, empty/null/omitted `content` means highlight-only, and non-empty `content` means note-bearing Marginalia. The prompt now teaches the model to choose between no mark, highlight-only, and note-bearing Marginalia using source-grounded decision rules, minimal-intervention discipline, and evidence/honesty checks.
+
+**Boundary**: This does not change Ingest, Unit Memory retrieval semantics, Digest `Understanding` / `Response` ownership, frontend routes, or historical artifacts. Legacy `annotations[]`, `surfaced_reactions`, `reaction_*` public fields, and inherited `prior_link` / `outside_link` / `search_intent` metadata remain compatibility-read or adapter fields where older artifacts and internal callers require them, but they are no longer part of the live Digest model-facing Marginalia item.
+
+**Why this path won**: The product-visible reading surface needs both highlights and notes. Requiring `content` forced the model to manufacture marginal notes when the correct reader action was simply to preserve a strong quote. Keeping only `source_quote` plus optional `content` matches normal reading-app behavior, preserves source anchoring, reduces model output burden, and keeps future research / backlink behavior from hiding inside ordinary Marginalia metadata.
+
+**Primary evidence**:
+- `reading-companion-backend/src/attentional_v2/prompts/digest.py`
+- `reading-companion-backend/src/attentional_v2/llm_output_tools.py`
+- `reading-companion-backend/src/attentional_v2/llm_calls.py`
+- `reading-companion-backend/src/attentional_v2/slow_cycle.py`
+- `reading-companion-backend/tests/test_attentional_v2_llm_calls.py`
+- `reading-companion-backend/tests/test_attentional_v2_scaffold.py`
+- `reading-companion-backend/tests/test_attentional_v2_unit_memory.py`
+- `docs/implementation/new-reading-mechanism/digest-marginalia-prompt-revision-design.md`
+- `docs/backend-reading-mechanisms/attentional_v2.md`
+- `docs/current-state.md`
+- `docs/tasks/registry.md`

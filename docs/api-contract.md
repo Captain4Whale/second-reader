@@ -30,14 +30,11 @@ These are public/API-facing display and filter labels. Deprecated `reaction_type
 
 For `attentional_v2`, the native visible-note truth is Marginalia semantics such as:
 - `source_quote`
-- optional `primary_source_ref`
-- optional `related_source_refs`
-- `content`
-- optional `prior_link`
-- optional `outside_link`
-- optional `search_intent`
+- optional `content`
+- runtime-resolved `primary_source_ref`
+- optional runtime/audit `related_source_refs`
 
-Public `marginalia_type` is therefore a display/filter projection, not the native `attentional_v2` prompt-time ontology. Public `reaction_type` remains as a deprecated alias during the compatibility window.
+Empty or omitted `content` means highlight-only Marginalia; non-empty `content` means note-bearing Marginalia. Public `marginalia_type` is therefore a display/filter projection, not the native `attentional_v2` prompt-time ontology. Public `reaction_type` remains as a deprecated alias during the compatibility window. Legacy `prior_link`, `outside_link`, and `search_intent` metadata may appear only through compatibility/adaptation surfaces, not as the live Digest model-facing item contract.
 
 No other public Marginalia / reaction type should appear in:
 - REST responses
