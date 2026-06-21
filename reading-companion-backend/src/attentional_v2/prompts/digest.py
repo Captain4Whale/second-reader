@@ -18,9 +18,9 @@ from .reader_role import READER_ROLE_FRAGMENT
 from .types import PromptDefinition
 
 
-DIGEST_PROMPT_VERSION = "attentional_v2.digest.v14"
-DIGEST_XML_PROMPT_ASSEMBLY_SPEC_ID = "attentional_v2.digest.xml.v14"
-DIGEST_XML_PROMPTSET_VERSION = "attentional_v2-phase6-v72"
+DIGEST_PROMPT_VERSION = "attentional_v2.digest.v15"
+DIGEST_XML_PROMPT_ASSEMBLY_SPEC_ID = "attentional_v2.digest.xml.v15"
+DIGEST_XML_PROMPTSET_VERSION = "attentional_v2-phase6-v73"
 DIGEST_XML_TRANSPORT_SYSTEM_PROMPT = "Follow the structured Digest prompt in the user message. Use the required submit_digest_result tool as the final output channel."
 
 
@@ -274,61 +274,61 @@ Avoid empty praise. A note like "this passage is tense," "this sentence is beaut
 
 ## Output Discipline
 
-This section explains only the `marginalia` and private `marginalia_audit` fields. The final Digest output must still follow the full OutputContract for `understanding`, `response`, `marginalia`, and `marginalia_audit`.
+This section explains only the `marginalia` field. The final Digest output must still follow the full OutputContract for `understanding`, `response`, and `marginalia`.
 
 For each Marginalia item:
 
 - `source_quote` must be an exact contiguous quote from the current source unit.
 - Empty or omitted `content` means highlight-only.
 - Non-empty `content` means note-bearing Marginalia.
-- For each highlight-only Marginalia item, add one matching private `marginalia_audit[]` entry with the same `source_quote` and a short `selection_reason`.
-- For note-bearing Marginalia, write the explanation in visible `content`; do not add a private selection reason unless a later output contract asks for it.
+- For each highlight-only Marginalia item, include a short private `selection_reason` inside the same item.
+- For note-bearing Marginalia, write the explanation in visible `content`; `selection_reason` may be omitted or empty.
 - Do not output `mode`, `kind`, `decision`, `hook`, `intent`, `evidence_status`, `calibration`, `rejected_output`, `source`, `prior_link`, `outside_link`, or `search_intent` unless a later output contract explicitly asks for them.
 
 ## Calibration Examples
 
-These examples show only the `marginalia` and `marginalia_audit` field shapes.
+These examples show only the `marginalia` field shape.
 
 Case 1: skip a structural transition
 Text: "下面分别讨论这三个方面。"
 Output:
-{"marginalia": [], "marginalia_audit": []}
+{"marginalia": []}
 
 Case 2: skip a structural signpost
 Text: "这一章将从三个方面说明问题的来龙去脉。"
 Why: this sentence may organize the reading, but it is not a standalone excerpt worth preserving.
 Output:
-{"marginalia": [], "marginalia_audit": []}
+{"marginalia": []}
 
 Case 3: highlight-only standalone excerpt
 Text: "旧钥匙打不开新门。"
 Why: the quoted sentence is compact and self-contained; the reason for preserving it is visible in the sentence itself.
 Output:
-{"marginalia": [{"source_quote": "旧钥匙打不开新门。", "content": ""}], "marginalia_audit": [{"source_quote": "旧钥匙打不开新门。", "selection_reason": "Intrinsic excerpt value through compact metaphor and principle-like compression."}]}
+{"marginalia": [{"source_quote": "旧钥匙打不开新门。", "content": "", "selection_reason": "Intrinsic excerpt value through compact metaphor and principle-like compression."}]}
 
 Case 4: note-bearing when the value depends on explanation
 Text: "所有人都被叫成编号。"
 Why: the quoted words are important, but the cognitive value comes from naming what the replacement of names with numbers does.
 Output:
-{"marginalia": [{"source_quote": "被叫成编号", "content": "Turning names into numbers changes people into administratively handled units; the violence here is in the replacement of personal identity by a sortable label."}], "marginalia_audit": []}
+{"marginalia": [{"source_quote": "被叫成编号", "content": "Turning names into numbers changes people into administratively handled units; the violence here is in the replacement of personal identity by a sortable label."}]}
 
 Case 5: note-bearing close reading
 Text: "门开着，屋里却没有人敢进去。"
 Why: the note explains how the sentence produces its local tension.
 Output:
-{"marginalia": [{"source_quote": "门开着，屋里却没有人敢进去", "content": "The open door suggests access, but the shared refusal to enter turns openness into prohibition; the tension comes from the gap between physical possibility and social fear."}], "marginalia_audit": []}
+{"marginalia": [{"source_quote": "门开着，屋里却没有人敢进去", "content": "The open door suggests access, but the shared refusal to enter turns openness into prohibition; the tension comes from the gap between physical possibility and social fear."}]}
 
 Case 6: note a reasoning hinge
 Text: "由此可见，问题不在资源太少，而在资源被错误地锁住。"
 Why: the quote marks the bridge from preceding evidence to a claim about where the real constraint lies.
 Output:
-{"marginalia": [{"source_quote": "问题不在资源太少，而在资源被错误地锁住", "content": "The sentence shifts the diagnosis from scarcity to blocked access; the important move is not that resources are limited, but that the system prevents available resources from circulating."}], "marginalia_audit": []}
+{"marginalia": [{"source_quote": "问题不在资源太少，而在资源被错误地锁住", "content": "The sentence shifts the diagnosis from scarcity to blocked access; the important move is not that resources are limited, but that the system prevents available resources from circulating."}]}
 
 Case 7: preserve uncertainty without inventing context
 Text: "他又引用那句古话，说真正的路总要绕远。"
 Why: the phrase appears to invoke classical language, but if verified context is not present in CurrentFocus or ReadingMemory, do not invent the allusion's source or function.
 Output:
-{"marginalia": [{"source_quote": "真正的路总要绕远", "content": "This is framed as an inherited saying, but the current material is not enough to verify its source or original context; keep the uncertainty visible rather than inventing a background."}], "marginalia_audit": []}""",
+{"marginalia": [{"source_quote": "真正的路总要绕远", "content": "This is framed as an inherited saying, but the current material is not enough to verify its source or original context; keep the uncertainty visible rather than inventing a background."}]}""",
     ),
     PromptFragment(
         fragment_id="digest.source_grounding_policy",
@@ -686,18 +686,13 @@ Top-level fields:
   "marginalia": [
     {
       "source_quote": "...",
-      "content": ""
-    }
-  ],
-  "marginalia_audit": [
-    {
-      "source_quote": "...",
+      "content": "",
       "selection_reason": "..."
     }
   ]
 }
 In each Marginalia item, `source_quote` is required. Omitted, null, or empty `content` means highlight-only; non-empty `content` means note-bearing.
-`marginalia_audit` is mechanism-private audit metadata. Include one item only for each highlight-only Marginalia quote. If there are no highlight-only Marginalia items, use an empty array.""",
+For highlight-only Marginalia, include a short private `selection_reason` in the same item. For note-bearing Marginalia, leave `selection_reason` empty or omit it; the visible `content` already carries the reason.""",
 )
 
 
@@ -726,21 +721,10 @@ DIGEST_MARGINALIA_CONTRACT_FRAGMENT = PromptFragment(
 Shape:
 {
   "source_quote": "...",
-  "content": ""
-}
-`source_quote` is required. Highlight-only Marginalia uses empty, null, or omitted `content`. Note-bearing Marginalia uses non-empty `content`. Do not output mode/kind labels, calibration fields, prior links, outside links, or search intent fields. Detailed Marginalia-selection and source-quote behavior live under Instruction.""",
-)
-
-
-DIGEST_MARGINALIA_AUDIT_CONTRACT_FRAGMENT = PromptFragment(
-    fragment_id="digest.marginalia_audit_contract",
-    text="""`marginalia_audit` is private audit metadata for highlight-only Marginalia selection.
-Shape:
-{
-  "source_quote": "...",
+  "content": "",
   "selection_reason": "..."
 }
-Add exactly one audit item for each highlight-only Marginalia quote, using the same exact `source_quote`. `selection_reason` should be short and specific to the quote's intrinsic excerpt value. Do not use generic reasons such as "important", "structural", "summarizes the point", or "useful later". Do not add audit items for note-bearing Marginalia; their visible `content` already carries the reason.""",
+`source_quote` is required. Highlight-only Marginalia uses empty, null, or omitted `content`, and must include a non-empty private `selection_reason`. Note-bearing Marginalia uses non-empty `content` and may omit `selection_reason`. Do not output mode/kind labels, calibration fields, prior links, outside links, or search intent fields. Detailed Marginalia-selection and source-quote behavior live under Instruction.""",
 )
 
 
@@ -751,7 +735,6 @@ DIGEST_OUTPUT_CONTRACT_FRAGMENT_REGISTRY = PromptFragmentRegistry(
         DIGEST_UNDERSTANDING_CONTRACT_FRAGMENT,
         DIGEST_RESPONSE_CONTRACT_FRAGMENT,
         DIGEST_MARGINALIA_CONTRACT_FRAGMENT,
-        DIGEST_MARGINALIA_AUDIT_CONTRACT_FRAGMENT,
     ]
 )
 
@@ -786,10 +769,6 @@ DIGEST_OUTPUT_CONTRACT_TEMPLATE = (
                     PromptTemplateNode(
                         element_name="MarginaliaField",
                         prompt_fragment_ref="digest.marginalia_contract",
-                    ),
-                    PromptTemplateNode(
-                        element_name="MarginaliaAuditField",
-                        prompt_fragment_ref="digest.marginalia_audit_contract",
                     ),
                 ),
             ),
@@ -869,7 +848,7 @@ def build_digest_prompt_assembly_spec(
             "reading_intent",
             "language_contract",
         ),
-        output_contract="digest_understanding_response_marginalia_json_v6",
+        output_contract="digest_understanding_response_marginalia_json_v7",
     )
 
 
@@ -937,5 +916,5 @@ DIGEST_PROMPT = PromptDefinition(
         "reading_intent",
         "language_contract",
     ),
-    output_contract="digest_understanding_response_marginalia_json_v6",
+    output_contract="digest_understanding_response_marginalia_json_v7",
 )

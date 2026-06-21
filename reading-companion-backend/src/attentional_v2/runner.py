@@ -2187,7 +2187,6 @@ def _run_digest_for_source_unit(
         digest_result = {
             "reading_impression": "",
             "marginalia": [],
-            "marginalia_audit": [],
             "surfaced_reactions": [],
             "memory_uptake_ops": [],
         }

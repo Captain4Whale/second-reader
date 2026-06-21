@@ -9,24 +9,24 @@ Created: `2026-06-20`
 
 ## Status
 
-- Status: implemented-live in Digest v14.
+- Status: implemented-live in Digest v15.
 - Live prompt now implements the reviewed candidate in `reading-companion-backend/src/attentional_v2/prompts/digest.py`.
 - Current live Digest baseline:
-  - prompt version: `attentional_v2.digest.v14`
-  - XML spec: `attentional_v2.digest.xml.v14`
-  - promptset: `attentional_v2-phase6-v72`
-  - output contract: `digest_understanding_response_marginalia_json_v6`
+  - prompt version: `attentional_v2.digest.v15`
+  - XML spec: `attentional_v2.digest.xml.v15`
+  - promptset: `attentional_v2-phase6-v73`
+  - output contract: `digest_understanding_response_marginalia_json_v7`
 - Current live model-facing outputs:
   - `understanding`
   - `response`
   - `marginalia[]`
-  - private `marginalia_audit[]`
 - Implemented output-contract direction:
-  - The model-facing Marginalia item contains only `source_quote` and `content`.
+  - The model-facing Marginalia item contains `source_quote`, optional `content`, and optional private `selection_reason`.
   - `source_quote` is required.
   - `content` may be omitted or empty; omitted / empty `content` means highlight-only.
   - Non-empty `content` means note-bearing Marginalia.
-  - Private `marginalia_audit[]` contains one short `selection_reason` for each highlight-only item, keyed by the same `source_quote`.
+  - Highlight-only Marginalia must carry a short private `selection_reason` inline on the same item.
+  - Note-bearing Marginalia may omit `selection_reason` because visible `content` carries the reason.
   - Do not add `mode`, `kind`, `decision`, or inherited optional metadata to the normal model-facing Marginalia item unless a later product/runtime design explicitly reintroduces it.
 - Implemented v12 quality-policy follow-up:
   - Highlight-only now means an exact quote can stand alone as an excerpt worth preserving; another reader should be able to see the reason for marking from the quoted words themselves.
@@ -41,6 +41,11 @@ Created: `2026-06-20`
   - Highlight-only Marginalia now requires a short private `selection_reason` in `marginalia_audit[]`.
   - Note-bearing Marginalia does not get a private selection reason because the visible `content` is already the reader-facing reason.
   - Product-visible Marginalia remains only `source_quote` plus optional `content`; `marginalia_audit[]` is mechanism-private audit metadata.
+- Implemented v15 inline audit follow-up:
+  - The private highlight-selection reason moved from top-level `marginalia_audit[]` into `marginalia[].selection_reason`.
+  - Highlight-only Marginalia requires inline `selection_reason`; note-bearing Marginalia may omit it.
+  - New runtime/audit/Unit Memory artifacts do not emit a fresh top-level `marginalia_audit[]`; legacy artifacts may still be read as a compatibility fallback.
+  - Product-visible Marginalia remains only `source_quote` plus optional `content`; `selection_reason` is mechanism-private audit metadata and is not public API / frontend content.
 
 ## Design Goal
 
@@ -442,18 +447,17 @@ Current working answer:
 
 Current role:
 
-- Requires top-level `understanding`, `response`, `marginalia`, and private `marginalia_audit`.
-- Allows each Marginalia item to include `source_quote` and `content`.
-- Allows each Marginalia audit item to include `source_quote` and `selection_reason`.
+- Requires top-level `understanding`, `response`, and `marginalia`.
+- Allows each Marginalia item to include `source_quote`, optional `content`, and optional private `selection_reason`.
 
 Current working answer:
 
-- The live final-output tool schema should expose only `source_quote` and `content` for each Marginalia item.
+- The live final-output tool schema should expose `source_quote`, optional `content`, and optional private `selection_reason` for each Marginalia item.
 - `source_quote` should be required.
 - `content` should be optional and nullable / empty-string tolerant.
-- `marginalia_audit[]` should include exactly one audit item for each highlight-only Marginalia quote, using the same exact `source_quote`.
+- Highlight-only Marginalia should include non-empty inline `selection_reason`.
 - `selection_reason` should be short, private, and specific to the quote's intrinsic excerpt value.
-- Note-bearing Marginalia should not receive private audit items; their visible `content` is the selection reason.
+- Note-bearing Marginalia does not require inline `selection_reason`; its visible `content` is the selection reason.
 - The schema should not expose `prior_link`, `outside_link`, or `search_intent` as normal live output fields.
 - Backward-compatible normalizers may continue to read legacy metadata from older artifacts or malformed outputs, but those fields are not a current model-facing contract.
 - Do not add `mode` / `kind` in this slice; highlight-only remains runtime-derived from empty, null, or omitted `content`.
@@ -485,7 +489,8 @@ Current working decision for the next reviewed Digest Marginalia contract:
 ```json
 {
   "source_quote": "...",
-  "content": ""
+  "content": "",
+  "selection_reason": "..."
 }
 ```
 
@@ -494,21 +499,22 @@ Interpretation:
 - `source_quote` is required.
 - Empty, `null`, or omitted `content` means highlight-only.
 - Non-empty `content` means note-bearing Marginalia.
+- Highlight-only requires inline `selection_reason`; note-bearing may omit it.
 - No explicit `mode` / `kind` / `decision` field is needed in this slice.
 - `prior_link`, `outside_link`, and `search_intent` should not be part of the normal model-facing Marginalia item. They may remain backward-compatible backend fields for older reaction / annotation / Marginalia artifacts, but should not appear in the live prompt ReturnFormat, final-output tool schema, or few-shot examples.
 - Future source-backlink, external-reference, or research-intent behavior should be redesigned as an explicit product/runtime feature rather than hidden inside ordinary Marginalia item metadata.
 
 ## Accepted Implementation Slice
 
-This design is implemented by the Digest v11-v14 slices. The implementation updated these surfaces together:
+This design is implemented by the Digest v11-v15 slices. The implementation updated these surfaces together:
 
 - Digest prompt version / XML spec / promptset / output-contract id.
 - `Instruction / Marginalia` with the current candidate prompt text.
 - `Instruction / SourceGrounding` to align exact-quote wording with highlight-only and note-bearing Marginalia.
 - `Instruction / ResponseDiscipline` to forbid calibration fields and inherited metadata fields in final output.
-- `OutputContract / ReturnFormat`, `OutputFields / MarginaliaField`, and `OutputFields / MarginaliaAuditField` to show visible `source_quote` plus optional `content`, plus private highlight-only `selection_reason` audit metadata.
+- `OutputContract / ReturnFormat` and `OutputFields / MarginaliaField` to show visible `source_quote` plus optional `content`, plus inline private highlight-only `selection_reason` audit metadata.
 - Final-output tool schema so `marginalia[].content` is not required.
-- Digest output validator and normalizer so highlight-only items are accepted when `source_quote` resolves and `content` is empty / null / omitted, and so each highlight-only item carries one private audit reason.
+- Digest output validator and normalizer so highlight-only items are accepted when `source_quote` resolves and `content` is empty / null / omitted, and so each highlight-only item carries one private inline audit reason.
 - Runtime/audit/unit-memory persistence so new records use canonical `marginalia` vocabulary, preserve highlight-only vs note-bearing semantics, and keep private audit reasons out of reader-visible Marginalia content.
 
 Non-goals for this slice:
@@ -516,7 +522,7 @@ Non-goals for this slice:
 - Do not redesign `ReadingMemory`, Unit Memory retrieval, Ingest, or Digest `understanding` semantics.
 - Do not reintroduce `prior_link`, `outside_link`, or `search_intent` into the live Marginalia output contract.
 - Do not add explicit `mode`, `kind`, or `decision` fields.
-- Do not expose `marginalia_audit[]` as a frontend/public API field in this slice.
+- Do not expose `selection_reason` as a frontend/public API field in this slice.
 - Do not modify frontend presentation beyond whatever minimal compatibility is required to carry highlight-only Marginalia through existing mark surfaces.
 
 ## Review Order

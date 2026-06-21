@@ -376,11 +376,6 @@ def build_unit_memory_entry(
         for item in digest_result.get("marginalia", digest_result.get("surfaced_reactions", []))
         if isinstance(item, Mapping)
     ] if isinstance(digest_result.get("marginalia", digest_result.get("surfaced_reactions", [])), list) else []
-    marginalia_audit = [
-        dict(item)
-        for item in digest_result.get("marginalia_audit", [])
-        if isinstance(item, Mapping)
-    ] if isinstance(digest_result.get("marginalia_audit"), list) else []
     return {
         "unit_id": unit_id,
         "book_id": _clean_text(book_id),
@@ -396,7 +391,6 @@ def build_unit_memory_entry(
             "understanding": _understanding_from_digest_result(digest_result),
             "response": _clean_text(digest_result.get("reading_impression")),
             "marginalia": marginalia,
-            "marginalia_audit": marginalia_audit,
             "annotations": marginalia,
         },
         "index_status": {

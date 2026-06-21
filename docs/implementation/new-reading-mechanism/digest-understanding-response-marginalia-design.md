@@ -15,6 +15,7 @@ Update when: Digest action names, output fields, XML prompt structure, or runtim
   - `DEC-128` supersedes the earlier `Annotation` name with `Marginalia`. Historical `annotation` / `reaction` terms in old examples and artifacts remain compatibility vocabulary, not the live prompt contract.
   - `DEC-129` supersedes the first Marginalia v10 item shape with the v11 `source_quote` plus optional `content` contract. Highlight-only Marginalia is represented by empty, null, or omitted `content`; legacy `prior_link`, `outside_link`, and `search_intent` are no longer live model-facing fields.
   - `DEC-132` adds private `marginalia_audit[]` to the live Digest final output so each highlight-only Marginalia item carries a short audit-only `selection_reason`; note-bearing Marginalia continues to put its reason in visible `content`.
+  - `DEC-133` supersedes the v14 top-level audit array by moving the private highlight-only `selection_reason` inline to `marginalia[].selection_reason`; new live outputs no longer emit top-level `marginalia_audit[]`.
   - Its early `ReadingState` context examples were superseded by `docs/implementation/new-reading-mechanism/ingest-recall-and-digest-memory-context-design.md`.
   - The current live Digest prompt uses top-level `ReadingMemory`, not `ReadingState`, `RecentMemory`, or `RetrievedUnitMemory`.
 - Subject-continuity note:
@@ -27,10 +28,10 @@ Update when: Digest action names, output fields, XML prompt structure, or runtim
 
 ## Implementation Status
 
-- Implemented prompt version: `attentional_v2.digest.v14`
-- Implemented XML assembly spec: `attentional_v2.digest.xml.v14`
-- Implemented promptset: `attentional_v2-phase6-v72`
-- Implemented output contract: `digest_understanding_response_marginalia_json_v6`
+- Implemented prompt version: `attentional_v2.digest.v15`
+- Implemented XML assembly spec: `attentional_v2.digest.xml.v15`
+- Implemented promptset: `attentional_v2-phase6-v73`
+- Implemented output contract: `digest_understanding_response_marginalia_json_v7`
 - Runtime mapping:
   - `understanding` string -> zero or one internal `memory_uptake_ops[].payload.memory_text` targeting `recent_reading_memory`
   - `response` -> internal `DigestResult.reading_impression`
@@ -38,10 +39,9 @@ Update when: Digest action names, output fields, XML prompt structure, or runtim
     - each item requires exact `source_quote`
     - optional/empty `content` means highlight-only
     - non-empty `content` means note-bearing
-  - `marginalia_audit[]` -> private `DigestResult.marginalia_audit`
-    - one item is required for each highlight-only quote
-    - each item carries the same `source_quote` plus a short `selection_reason`
-    - audit reasons are not reader-visible Marginalia content
+    - highlight-only items require a short private inline `selection_reason`
+    - note-bearing items may omit `selection_reason`; their visible `content` carries the reason
+    - selection reasons are mechanism-private and are not reader-visible Marginalia content
   - legacy `annotations[]` -> accepted only as compatibility fallback when normalizing older/malformed payloads
   - `DigestResult.surfaced_reactions` -> deprecated alias for existing settlement/audit compatibility
 - Subject-continuity mapping:
@@ -547,12 +547,7 @@ Recommended LLM-facing contract:
   "marginalia": [
     {
       "source_quote": "...",
-      "content": ""
-    }
-  ],
-  "marginalia_audit": [
-    {
-      "source_quote": "...",
+      "content": "",
       "selection_reason": "..."
     }
   ]
@@ -565,7 +560,7 @@ Notes:
 - `response` replaces `reading_impression`.
 - `marginalia` replaces `annotations` / `surfaced_reactions` as the model-facing visible-note field.
 - `marginalia[].source_quote` is required; `marginalia[].content` is optional and may be empty for highlight-only Marginalia.
-- `marginalia_audit[]` is mechanism-private audit metadata for highlight-only Marginalia selection reasons.
+- `marginalia[].selection_reason` is mechanism-private audit metadata required only for highlight-only Marginalia.
 - Digest no longer emits a content-type `kind`; Understanding remains content-neutral and retrieval should work from the text itself.
 - `understanding` may be empty only for empty or purely structural units; runtime does not append an empty recent-memory entry.
 
@@ -575,7 +570,6 @@ Runtime mapping:
 understanding -> zero or one memory_uptake_ops[] entry -> recent_reading_memory store
 response -> DigestResult.reading_impression
 marginalia[] -> DigestResult.marginalia
-marginalia_audit[] -> DigestResult.marginalia_audit
 legacy annotations[] -> compatibility fallback
 DigestResult.surfaced_reactions -> deprecated alias
 ```
@@ -600,12 +594,13 @@ This keeps runtime state stable while making the LLM call semantically cleaner.
 - Update `OutputContract`:
   - `ReturnFormat`
   - field contracts
-  - output contract name: `digest_understanding_response_marginalia_json_v6`
+  - output contract name: `digest_understanding_response_marginalia_json_v7`
 - Update `llm_calls.digest(...)` normalizer:
   - parse `payload["understanding"]`
   - parse `payload["response"]`
   - parse `payload["marginalia"]`
-  - parse private `payload["marginalia_audit"]` for highlight-only selection reasons
+  - parse inline private `payload["marginalia"][].selection_reason` for highlight-only selection reasons
+  - read legacy `payload["marginalia_audit"]` only as a compatibility fallback
   - accept legacy `payload["annotations"]` only as a compatibility fallback
 - Update tests:
   - prompt XML structure contains direct `Understanding`, `Response`, `Marginalia`

@@ -29,7 +29,6 @@ from .schemas import (
     BridgeCandidate,
     CarryForwardContext,
     KnowledgeActivationsState,
-    MarginaliaAuditItem,
     MarginaliaItem,
     MemoryUptakeAdmissionEvent,
     IngestBoundaryResult,
@@ -688,6 +687,7 @@ def _normalize_marginalia_item(
     *,
     current_unit_texts: list[str],
     allowed_ref_ids: set[str],
+    legacy_selection_reasons: Mapping[str, str] | None = None,
     include_legacy_metadata: bool = False,
 ) -> MarginaliaItem | None:
     """Normalize one Digest-owned Marginalia item."""
@@ -696,6 +696,7 @@ def _normalize_marginalia_item(
         return None
     source_quote = _clean_text(value.get("source_quote") or value.get("anchor_quote"))
     content = _clean_text(value.get("content"))
+    selection_reason = _clean_text(value.get("selection_reason"))
     if not source_quote:
         return None
     if current_unit_texts and not any(source_quote in text for text in current_unit_texts):
@@ -706,6 +707,10 @@ def _normalize_marginalia_item(
         "source_quote": source_quote,
         "content": content,
     }
+    if not content:
+        selection_reason = selection_reason or _clean_text((legacy_selection_reasons or {}).get(source_quote))
+        if selection_reason:
+            normalized["selection_reason"] = selection_reason
     if include_legacy_metadata:
         normalized["prior_link"] = _normalize_prior_link(value.get("prior_link"), allowed_ref_ids=allowed_ref_ids)
         normalized["outside_link"] = _normalize_outside_link(value.get("outside_link"))
@@ -718,6 +723,7 @@ def _normalize_marginalia_items(
     *,
     current_unit_texts: list[str],
     allowed_ref_ids: set[str],
+    legacy_selection_reasons: Mapping[str, str] | None = None,
     include_legacy_metadata: bool = False,
 ) -> list[MarginaliaItem]:
     """Normalize the Marginalia items emitted directly by Digest."""
@@ -730,6 +736,7 @@ def _normalize_marginalia_items(
             item,
             current_unit_texts=current_unit_texts,
             allowed_ref_ids=allowed_ref_ids,
+            legacy_selection_reasons=legacy_selection_reasons,
             include_legacy_metadata=include_legacy_metadata,
         )
         if normalized is not None:
@@ -737,24 +744,12 @@ def _normalize_marginalia_items(
     return marginalia
 
 
-def _normalize_marginalia_audit_items(
-    value: object,
-    *,
-    marginalia: list[MarginaliaItem],
-) -> list[MarginaliaAuditItem]:
-    """Normalize private audit reasons for highlight-only Marginalia."""
+def _legacy_marginalia_selection_reasons(value: object) -> dict[str, str]:
+    """Return v14 top-level audit reasons keyed by source quote."""
 
+    reasons: dict[str, str] = {}
     if not isinstance(value, list):
-        return []
-    highlight_quotes = {
-        _clean_text(item.get("source_quote"))
-        for item in marginalia
-        if isinstance(item, Mapping)
-        and _clean_text(item.get("source_quote"))
-        and not _clean_text(item.get("content"))
-    }
-    audit: list[MarginaliaAuditItem] = []
-    seen: set[str] = set()
+        return reasons
     for item in value:
         if not isinstance(item, Mapping):
             continue
@@ -762,16 +757,8 @@ def _normalize_marginalia_audit_items(
         selection_reason = _clean_text(item.get("selection_reason"))
         if not source_quote or not selection_reason:
             continue
-        if source_quote not in highlight_quotes or source_quote in seen:
-            continue
-        audit.append(
-            {
-                "source_quote": source_quote,
-                "selection_reason": selection_reason,
-            }
-        )
-        seen.add(source_quote)
-    return audit
+        reasons.setdefault(source_quote, selection_reason)
+    return reasons
 
 
 def _normalize_surfaced_reactions(
@@ -786,6 +773,7 @@ def _normalize_surfaced_reactions(
         value,
         current_unit_texts=current_unit_texts,
         allowed_ref_ids=allowed_ref_ids,
+        legacy_selection_reasons=None,
         include_legacy_metadata=True,
     )
 
@@ -1135,14 +1123,14 @@ def digest(
         if isinstance(ref, dict) and _clean_text(ref.get("ref_id"))
     }
 
+    legacy_selection_reasons = _legacy_marginalia_selection_reasons(
+        payload.get("marginalia_audit") if isinstance(payload, Mapping) else None
+    )
     marginalia = _normalize_marginalia_items(
         _digest_marginalia_payload(payload),
         current_unit_texts=current_unit_texts,
         allowed_ref_ids=allowed_ref_ids,
-    )
-    marginalia_audit = _normalize_marginalia_audit_items(
-        payload.get("marginalia_audit") if isinstance(payload, Mapping) else None,
-        marginalia=marginalia,
+        legacy_selection_reasons=legacy_selection_reasons,
     )
     reading_impression = _clean_text(payload.get("response")) if isinstance(payload, dict) else ""
     raw_memory_ops = _digest_memory_ops_from_payload(payload)
@@ -1153,7 +1141,6 @@ def digest(
     result: DigestResult = {
         "reading_impression": reading_impression,
         "marginalia": marginalia,
-        "marginalia_audit": marginalia_audit,
         "surfaced_reactions": marginalia,
         "memory_uptake_ops": memory_uptake_ops,
         "memory_uptake_admission_events": memory_uptake_admission_events,

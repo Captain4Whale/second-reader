@@ -3748,3 +3748,34 @@ This new direction is design frozen but not yet implemented as a formal benchmar
 - `docs/backend-reading-mechanisms/attentional_v2.md`
 - `docs/current-state.md`
 - `docs/tasks/registry.md`
+
+## Entry 130
+**ID**: DEC-133
+**Status**: active
+
+**Decision / Inflection**: Move private highlight-selection reasons inline on Marginalia items.
+
+**Period**: June 21, 2026, after reviewing the v14 smoke report shape and deciding that a separate top-level `marginalia_audit[]` duplicated each highlight record too heavily.
+
+**Decision**: Live Digest is bumped to `attentional_v2.digest.v15` / XML spec v15 / promptset `attentional_v2-phase6-v73`, with output contract `digest_understanding_response_marginalia_json_v7`. The live final output now requires only top-level `understanding`, `response`, and `marginalia[]`. Each Marginalia item still requires `source_quote`; `content` remains optional / nullable / empty for highlight-only marks. Highlight-only Marginalia must include a short private inline `selection_reason`; note-bearing Marginalia may omit it because visible `content` already carries the reason.
+
+**Boundary**: `selection_reason` is mechanism-private audit metadata, not public/frontend Marginalia content. New live prompts, schemas, read audit, Unit Memory entries, and smoke reports do not emit a fresh top-level `marginalia_audit[]`; legacy v14 artifacts may still be read as compatibility input and merged by `source_quote` where needed. This does not change Ingest, Unit Memory retrieval semantics, source-coordinate resolution, public marks payloads, or legacy reaction aliases.
+
+**Why this path won**: The separate audit array made reports noisier and created a second structure to keep synchronized with the visible Marginalia item. Inline private `selection_reason` keeps the reason adjacent to the selected quote, preserves the prompt pressure needed for highlight-only quality, and avoids duplicating the whole Marginalia list in runtime/debug artifacts.
+
+**Primary evidence**:
+- `reading-companion-backend/src/attentional_v2/prompts/digest.py`
+- `reading-companion-backend/src/attentional_v2/llm_output_tools.py`
+- `reading-companion-backend/src/attentional_v2/llm_calls.py`
+- `reading-companion-backend/src/attentional_v2/unit_memory.py`
+- `reading-companion-backend/src/attentional_v2/observability.py`
+- `reading-companion-backend/eval/attentional_v2/run_digest_marginalia_live_smoke.py`
+- `reading-companion-backend/tests/test_attentional_v2_llm_calls.py`
+- `reading-companion-backend/tests/test_attentional_v2_scaffold.py`
+- `reading-companion-backend/tests/test_attentional_v2_unit_memory.py`
+- `reading-companion-backend/tests/test_digest_marginalia_live_smoke_runner.py`
+- `docs/implementation/new-reading-mechanism/digest-marginalia-prompt-revision-design.md`
+- `docs/implementation/new-reading-mechanism/digest-understanding-response-marginalia-design.md`
+- `docs/backend-reading-mechanisms/attentional_v2.md`
+- `docs/current-state.md`
+- `docs/tasks/registry.md`
