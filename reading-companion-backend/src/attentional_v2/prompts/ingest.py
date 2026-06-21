@@ -15,9 +15,9 @@ from .reader_role import READER_ROLE_FRAGMENT
 from .types import PromptDefinition
 
 
-INGEST_PROMPT_VERSION = "attentional_v2.ingest.v17"
-INGEST_XML_PROMPT_ASSEMBLY_SPEC_ID = "attentional_v2.ingest.xml.v17"
-INGEST_XML_PROMPTSET_VERSION = "attentional_v2-phase6-v67"
+INGEST_PROMPT_VERSION = "attentional_v2.ingest.v18"
+INGEST_XML_PROMPT_ASSEMBLY_SPEC_ID = "attentional_v2.ingest.xml.v18"
+INGEST_XML_PROMPTSET_VERSION = "attentional_v2-phase6-v75"
 INGEST_TRANSPORT_SYSTEM_PROMPT = "Follow the structured Ingest prompt in the user message. Use the required submit_ingest_result tool as the final output channel."
 
 
@@ -56,6 +56,7 @@ What a semantic unit is — a continuous span of source text that satisfies all 
 
 - Internally coherent: its sentences hang together on one topic, argument, scene, exchange, image, concept, or logical move.
 - Locally complete: it closes one forward move enough for Digest to read it as the present object of attention. For example: a claim and its immediate support, an example and its point, a scene or beat that lands, a concept introduced and initially unpacked, a turn in dialogue, or a local summary.
+- Unified in local function: adjacent paragraphs that jointly perform the same setup, character construction, scene build, argument support, example chain, or emotional turn remain one unit even when different paragraphs emphasize different sides of that function.
 - Minimal: it is the smallest span that is still locally complete. Do not greedily merge several complete moves into one large unit just because they are related.
 - Naturally bounded: it ends at a real transition, such as topic shift, argument closing, scene change, change in speaker, change in rhetorical function, or the start of a new move.
 
@@ -64,6 +65,8 @@ How to choose the boundary:
 - Consider the whole visible window first. Do not commit a boundary the moment you reach the first plausible stopping point.
 - Conceptually divide the window into consecutive reading units in order, with no gaps. Use that whole-window view to place the first boundary well and to expose your preview map for audit.
 - Give each provisional unit a compact local-function title that names what that unit is doing in the reading. The title is not a summary, not commentary, and not a Digest result.
+- Do not let the ability to title smaller aspects force an early split. A portrait, setup, scene, argument, or example can contain several namable facets while still being one reading unit.
+- Before committing a boundary, ask whether the next visible paragraphs start a genuinely new move or merely continue the same local function from another angle. If they continue the same local exposition, setup, character portrait, scene build, or claim-support movement, include them in the first unit.
 - Commit only the FIRST unit. Anything after it is provisional lookahead context.
 - Do not write reasons, explanations, summaries, or interpretive comments for later provisional units. Later units exist only to expose the audit map that helped you choose the first boundary.
 - The first unit always starts at the current source cursor in `CurrentView / Position`. Do not invent or output a start position.

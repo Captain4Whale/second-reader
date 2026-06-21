@@ -3805,3 +3805,26 @@ This new direction is design frozen but not yet implemented as a formal benchmar
 - `docs/backend-reading-mechanisms/attentional_v2.md`
 - `docs/current-state.md`
 - `docs/tasks/registry.md`
+
+## Entry 132
+**ID**: DEC-135
+**Status**: active
+
+**Decision / Inflection**: Add the same-local-function boundary rule to live Ingest unit selection.
+
+**Period**: June 21, 2026, after the five-book Digest v16 diagnostic revealed that the current live Ingest selector could split the Siddhartha opening at `P3` even though earlier reviewed Ingest reports kept the opening character/social setup together through `P8` or `P9`.
+
+**Decision**: Live Ingest is bumped to `attentional_v2.ingest.v18` / XML spec v18 / promptset `attentional_v2-phase6-v75`, while keeping output contract `ingest_unit_boundary_preview_partition_json_v3`. The prompt now states that adjacent paragraphs jointly performing the same setup, character construction, scene build, argument support, example chain, or emotional turn remain one unit even when smaller facets can be titled separately. It explicitly warns that `preview_partition[]` titles should not force an early split: before committing a boundary, the model should ask whether the next visible paragraphs start a genuinely new move or merely continue the same local function from another angle.
+
+**Boundary**: This is a prompt-selection discipline refinement only. It does not change Ingest schema, `preview_partition[]` shape, boundary resolver behavior, Unit Memory retrieval semantics, Digest behavior, Source Normalization, public API, frontend contracts, or historical eval/report artifacts.
+
+**Why this path won**: Whole-preview partitioning improved first-unit selection by making later context visible, but it also introduced a new failure mode: the model can over-trust its ability to title smaller sub-aspects and mistake those titles for true unit boundaries. The same-local-function rule preserves the global planning benefit while making it harder to split a single exposition, portrait, scene, or support chain just because it contains several namable facets.
+
+**Primary evidence**:
+- `reading-companion-backend/src/attentional_v2/prompts/ingest.py`
+- `reading-companion-backend/tests/test_attentional_v2_llm_calls.py`
+- `reading-companion-backend/tests/test_attentional_v2_scaffold.py`
+- `docs/implementation/new-reading-mechanism/ingest-next-unit-optimization-design.md`
+- `docs/backend-reading-mechanisms/attentional_v2.md`
+- `docs/current-state.md`
+- `docs/tasks/registry.md`

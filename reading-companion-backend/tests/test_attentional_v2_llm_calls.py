@@ -470,8 +470,11 @@ def test_ingest_writes_manifest_and_uses_xml_unit_boundary_contract(tmp_path: Pa
     assert "form a provisional map of its consecutive semantic units" in captured["prompt"]
     assert "Partition the forward window into coherent reading units, give each provisional unit a compact title" in captured["prompt"]
     assert "What a semantic unit is" in captured["prompt"]
+    assert "Unified in local function" in captured["prompt"]
     assert "Conceptually divide the window into consecutive reading units" in captured["prompt"]
     assert "compact local-function title" in captured["prompt"]
+    assert "Do not let the ability to title smaller aspects force an early split" in captured["prompt"]
+    assert "continue the same local function from another angle" in captured["prompt"]
     assert "Only the committed first unit gets a boundary rationale" in captured["prompt"]
     assert "Do not write reasons, explanations, summaries, or interpretive comments for later provisional units" in captured["prompt"]
     assert '"preview_partition"' in captured["prompt"]
@@ -526,7 +529,7 @@ def test_ingest_writes_manifest_and_uses_xml_unit_boundary_contract(tmp_path: Pa
     assert "Set each recall `basis` exactly to `selected_source_unit`" in captured["prompt"]
     assert "Mainline preview" not in captured["prompt"]
     assert manifest["node_name"] == "ingest"
-    assert manifest["prompt_version"] == "attentional_v2.ingest.v17"
+    assert manifest["prompt_version"] == "attentional_v2.ingest.v18"
     assert manifest["prompt_assembly"]["output_contract"] == "ingest_unit_boundary_preview_partition_json_v3"
     assert manifest["prompt_assembly"]["owner_node"] == "ingest"
 

@@ -15,8 +15,8 @@ idea. Individual points below may be candidate, implemented, rejected, or
 superseded.
 
 Current live baseline:
-- Ingest prompt: `attentional_v2.ingest.v17`
-- Promptset: `attentional_v2-phase6-v67`
+- Ingest prompt: `attentional_v2.ingest.v18`
+- Promptset: `attentional_v2-phase6-v75`
 - Live boundary contract: `unit.end_paragraph_n` + `unit.end_at`
 - Live audit contract: `preview_partition[]`, with `preview_partition[0]`
   matching `unit`
@@ -26,7 +26,7 @@ Current live baseline:
 - Authoritative runtime coordinate: paragraph-char `SourceSpan` /
   `source_span_id`, derived by runtime after resolving the model boundary
 - Related decisions: `DEC-116`, `DEC-117`, `DEC-118`, `DEC-120`, `DEC-121`,
-  `DEC-127`
+  `DEC-127`, `DEC-135`
 - Related living pattern: `docs/implementation/new-reading-mechanism/mechanism-pattern-ledger.md` entry 19
 - Related upstream source-substrate design: `docs/implementation/new-reading-mechanism/source-normalization-design.md`
 
@@ -785,3 +785,98 @@ Targeted probes:
   model's planning burden shrinks materially
 - inspect final output size to confirm later partitions stay as short titles and
   boundaries rather than growing into rationales for non-first units
+
+## Optimization Point 4: Same-Local-Function Boundary Rule
+
+### Status
+
+Implemented as live Ingest v18 prompt wording on `2026-06-21`. This is a
+prompt-selection discipline change only: the output schema, boundary resolver,
+Unit Memory retrieval, Digest behavior, public API, and historical run artifacts
+are unchanged.
+
+### Source Insight
+
+The Digest v16 five-book diagnostic reused the current live Ingest selector
+while reviewing Marginalia quality. A follow-up inspection found that the
+Siddhartha opening was split more finely than earlier reviewed Ingest reports:
+
+- June 2026 rolling A/B `window_partition_draft` chose `P1@0 -> P8@31`,
+  grouping the chapter title, Siddhartha's opening portrait, and the community's
+  love for him before the `可是` turn.
+- The later v17 source-normalized focused retry chose `P1@0 -> P9@194`, grouping
+  the external portrait with the first explicit inner-discontent turn.
+- The five-book diagnostic's live Ingest call saw a similar preview through
+  `P19`, but partitioned the opening as `P3`, `P8`, `P13`, and `P19`, committing
+  only `P1@0 -> P3@277`.
+
+The regression was not caused by an undersized preview or missing source text.
+It came from boundary drift inside the model's `preview_partition[]` map: the
+model treated smaller namable facets such as "Siddhartha's origin and training"
+and "others' love for Siddhartha" as separate units even though they jointly
+serve one opening character-construction setup.
+
+### Design Goal
+
+Keep the benefits of whole-preview planning while preventing `preview_partition`
+from over-segmenting a single local function.
+
+The rule should distinguish:
+
+- a true new move, such as a contrast, new claim, scene turn, changed goal,
+  shifted rhetorical function, or different cause-effect movement
+- a smaller facet inside the same local function, such as another angle on a
+  character portrait, another social reaction in the same setup, another example
+  supporting the same claim, or another step in one scene build
+
+### Live Prompt Rule
+
+The v18 prompt adds one semantic-unit criterion:
+
+```text
+Unified in local function: adjacent paragraphs that jointly perform the same
+setup, character construction, scene build, argument support, example chain, or
+emotional turn remain one unit even when different paragraphs emphasize
+different sides of that function.
+```
+
+It also adds boundary-choice pressure:
+
+```text
+Do not let the ability to title smaller aspects force an early split. A
+portrait, setup, scene, argument, or example can contain several namable facets
+while still being one reading unit.
+
+Before committing a boundary, ask whether the next visible paragraphs start a
+genuinely new move or merely continue the same local function from another
+angle. If they continue the same local exposition, setup, character portrait,
+scene build, or claim-support movement, include them in the first unit.
+```
+
+### Expected Effect
+
+In the Siddhartha opening, v18 should be less likely to stop at P3 just because
+P3 can be titled as "origin and training." It should see P4-P8 as continuing
+the same opening setup: establishing Siddhartha's social/spiritual perfection
+and the way he is loved. The more plausible boundaries remain around P8/P9/P10,
+depending on whether the `可是` paragraph is treated as the setup's landing turn
+or as the start of the next inner-discontent unit.
+
+For aphoristic or list-like books such as Naval, the rule should not blindly
+force long units. It should group short statements only when they jointly serve
+one conceptual movement; a genuine new principle, reversal, or topic shift can
+still form a short complete unit.
+
+### Test / Probe Plan
+
+Prompt tests should assert the new same-local-function wording is present and
+that the live prompt ids are v18 / v75.
+
+Targeted live probes should compare at least:
+
+- Siddhartha opening: expected to avoid the premature P3 stop
+- Naval opening: check whether the rule improves short aphorism clustering
+  without over-merging unrelated maxims
+
+No formal A/B rerun or evidence-catalog promotion is required for this narrow
+prompt calibration.
