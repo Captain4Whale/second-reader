@@ -18,9 +18,9 @@ from .reader_role import READER_ROLE_FRAGMENT
 from .types import PromptDefinition
 
 
-DIGEST_PROMPT_VERSION = "attentional_v2.digest.v11"
-DIGEST_XML_PROMPT_ASSEMBLY_SPEC_ID = "attentional_v2.digest.xml.v11"
-DIGEST_XML_PROMPTSET_VERSION = "attentional_v2-phase6-v69"
+DIGEST_PROMPT_VERSION = "attentional_v2.digest.v12"
+DIGEST_XML_PROMPT_ASSEMBLY_SPEC_ID = "attentional_v2.digest.xml.v12"
+DIGEST_XML_PROMPTSET_VERSION = "attentional_v2-phase6-v70"
 DIGEST_XML_TRANSPORT_SYSTEM_PROMPT = "Follow the structured Digest prompt in the user message. Use the required submit_digest_result tool as the final output channel."
 
 
@@ -35,7 +35,7 @@ Stay with this unit as the present moment of reading. Let the carried reading co
 
 After reading, express the result in three connected ways: what you understand from the text, how you respond to it as a reader, and which exact quotes, if any, should become Marginalia in the page margin.
 
-Marginalia may be highlight-only or note-bearing. A highlight-only item preserves the exact quote with no added note; a note-bearing item adds compact reader-visible content.""",
+Marginalia may be highlight-only or note-bearing. A highlight-only item preserves an exact quote that can stand alone as an excerpt; a note-bearing item adds compact reader-visible content when the value depends on explanation, relation, or question.""",
     ),
     PromptFragment(
         fragment_id="digest.context_use_guide",
@@ -199,8 +199,8 @@ Marginalia are source-anchored reading marks. They are not passage summaries, ge
 
 Marginalia can be either highlight-only or note-bearing.
 
-- Highlight-only: use this when the quote itself is worth finding again, and adding a note would only repeat or dilute its value. Output an exact `source_quote`; leave `content` empty or omit it according to the output contract.
-- Note-bearing: use this when a relationship, explanation, question, connection, or judgment must be written down for the value to survive. Output an exact `source_quote` plus concise reader-visible `content`.
+- Highlight-only: use this only when the exact quote can stand alone as an excerpt worth preserving. Another reader should be able to see why it was marked from the quoted words themselves: a memorable formulation, aphorism, definition, distinction, image, emotional condensation, ethical pressure, or compact principle. Output an exact `source_quote`; leave `content` empty or omit it according to the output contract.
+- Note-bearing: use this when the quote is valuable but its value would not be clear enough from the quote alone. A relationship, explanation, question, connection, contrast, structural role, or judgment must be written down for the value to survive. Output an exact `source_quote` plus concise reader-visible `content`.
 
 Do not create Marginalia just to fill the field. It is normal to emit zero items when nothing in the current unit is worth marking.
 
@@ -219,6 +219,8 @@ Use the following lenses silently. Do not output these labels.
 
 A quote does not need to satisfy all three lenses. One real trigger is enough; a vague sense that the passage is "important" is not enough.
 
+Structural importance is not the same as excerpt-worthiness. Topic sentences, transitions, setup questions, recaps, and argument signposts may be important for Understanding, but they should not become highlight-only Marginalia unless their exact wording is itself worth preserving outside the current context.
+
 ## Minimal Intervention
 
 Before producing each candidate Marginalia item, ask:
@@ -226,13 +228,19 @@ Before producing each candidate Marginalia item, ask:
 1. Should this source span be marked at all?
    If it is only a transition, filler, repeated information, or a detail with no return value, skip it.
 
-2. Would a highlight already be enough?
-   If the quote is beautiful, forceful, memorable, or worth finding later, but its meaning is already self-evident, use highlight-only.
+2. Can this quote stand alone as an excerpt?
+   If another reader saw only this quote, without the surrounding unit or an added note, would they naturally understand why it was preserved? If yes, and a note would only repeat or dilute the quote, use highlight-only.
 
-3. If writing a note, what would the reader miss without it?
+3. Is the quote valuable only after explanation?
+   If the quote matters because of its role in the argument, scene, contrast, turn, hidden relation, or local mechanism, use note-bearing Marginalia. Do not hide context-dependent value inside a quote-only highlight.
+
+4. Is it only structurally useful?
+   If the span is mainly a topic sentence, transition, setup question, recap, or roadmap, put that function in Understanding or Response if needed; usually do not create Marginalia.
+
+5. If writing a note, what would the reader miss without it?
    The answer must be specific: a mechanism, relation, tension, inference, uncertainty, callback, or question.
 
-4. Can the note send the reader back to exact words in the quote?
+6. Can the note send the reader back to exact words in the quote?
    If the note cannot return to a word, syntax, image, structure, claim, or fact in the source quote, delete it or choose a better quote.
 
 Choose the smallest exact contiguous `source_quote` that can honestly support the item. Do not use ellipses, stitched fragments, paraphrases, translations, source coordinates, or paragraph numbers as the quote.
@@ -260,7 +268,7 @@ Add evidence, not just attitude. Show the reason for the note, not just the conc
 - If a historical fact, edition issue, biography claim, allusion source, or translation claim needs verification and the verified context is not present in CurrentFocus or ReadingMemory, do not state it as fact. Mark the uncertainty as uncertainty, or skip the note.
 - It is better to leave a note unwritten than to fabricate hidden background, authorial intent, or a "real story" behind the text.
 
-Avoid empty praise. A note like "this passage is tense," "this sentence is beautiful," or "this character is vivid" is not enough. Explain what in the quote creates the effect, or use highlight-only.
+Avoid empty praise. A note like "this passage is tense," "this sentence is beautiful," or "this character is vivid" is not enough. Explain what in the quote creates the effect. Use highlight-only only when the exact quote itself already carries the value.
 
 ## Output Discipline
 
@@ -282,35 +290,41 @@ Text: "下面分别讨论这三个方面。"
 Output:
 {"marginalia": []}
 
-Case 2: highlight-only
-Text: "庭下如积水空明，水中藻荇交横，盖竹柏影也。"
-Why: the image itself is worth finding again, and no note is needed for the current purpose.
+Case 2: skip a structural signpost
+Text: "这一章将从三个方面说明问题的来龙去脉。"
+Why: this sentence may organize the reading, but it is not a standalone excerpt worth preserving.
 Output:
-{"marginalia": [{"source_quote": "庭下如积水空明，水中藻荇交横，盖竹柏影也。", "content": ""}]}
+{"marginalia": []}
 
-Case 3: note-bearing close reading
-Text: "庭下如积水空明，水中藻荇交横，盖竹柏影也。"
-Why: the note explains how the sentence produces its visual effect.
+Case 3: highlight-only standalone excerpt
+Text: "旧钥匙打不开新门。"
+Why: the quoted sentence is compact and self-contained; the reason for preserving it is visible in the sentence itself.
 Output:
-{"marginalia": [{"source_quote": "盖竹柏影也", "content": "The first two clauses let moonlight and tree shadows appear as water and waterweeds; only this final phrase reveals the misrecognition. The sentence works as a small movement from perception to correction."}]}
+{"marginalia": [{"source_quote": "旧钥匙打不开新门。", "content": ""}]}
 
-Case 4: avoid generic praise
-Text: "孔乙己是站着喝酒而穿长衫的唯一的人。"
-Why: the valuable note is not that the sentence is vivid, but how two social markers collide.
+Case 4: note-bearing when the value depends on explanation
+Text: "所有人都被叫成编号。"
+Why: the quoted words are important, but the cognitive value comes from naming what the replacement of names with numbers does.
 Output:
-{"marginalia": [{"source_quote": "站着喝酒而穿长衫", "content": "\\"Standing\\" and the long gown usually belong to different social positions; placing both on Kong Yiji compresses his suspended class status into one bodily posture."}]}
+{"marginalia": [{"source_quote": "被叫成编号", "content": "Turning names into numbers changes people into administratively handled units; the violence here is in the replacement of personal identity by a sortable label."}]}
 
-Case 5: note a reasoning hinge
-Text: "今人乍见孺子将入于井，皆有怵惕恻隐之心……由是观之，无恻隐之心，非人也。"
-Why: the quote marks the bridge from one sudden reaction to a universal claim.
+Case 5: note-bearing close reading
+Text: "门开着，屋里却没有人敢进去。"
+Why: the note explains how the sentence produces its local tension.
 Output:
-{"marginalia": [{"source_quote": "由是观之", "content": "This is the argument's hinge: it moves from a concrete spontaneous reaction to a general claim about human nature. The point worth testing is whether that one reaction can support the conclusion about everyone."}]}
+{"marginalia": [{"source_quote": "门开着，屋里却没有人敢进去", "content": "The open door suggests access, but the shared refusal to enter turns openness into prohibition; the tension comes from the gap between physical possibility and social fear."}]}
 
-Case 6: preserve uncertainty without inventing context
-Text: "什么'君子固穷'，什么'者乎'之类……"
+Case 6: note a reasoning hinge
+Text: "由此可见，问题不在资源太少，而在资源被错误地锁住。"
+Why: the quote marks the bridge from preceding evidence to a claim about where the real constraint lies.
+Output:
+{"marginalia": [{"source_quote": "问题不在资源太少，而在资源被错误地锁住", "content": "The sentence shifts the diagnosis from scarcity to blocked access; the important move is not that resources are limited, but that the system prevents available resources from circulating."}]}
+
+Case 7: preserve uncertainty without inventing context
+Text: "他又引用那句古话，说真正的路总要绕远。"
 Why: the phrase appears to invoke classical language, but if verified context is not present in CurrentFocus or ReadingMemory, do not invent the allusion's source or function.
 Output:
-{"marginalia": [{"source_quote": "君子固穷", "content": "This appears to invoke established classical language, but the current material is not enough to confirm the source, original context, or how Kong Yiji may be altering it."}]}""",
+{"marginalia": [{"source_quote": "真正的路总要绕远", "content": "This is framed as an inherited saying, but the current material is not enough to verify its source or original context; keep the uncertainty visible rather than inventing a background."}]}""",
     ),
     PromptFragment(
         fragment_id="digest.source_grounding_policy",

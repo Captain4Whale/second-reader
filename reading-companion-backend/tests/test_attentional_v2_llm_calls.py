@@ -982,6 +982,9 @@ def test_digest_uses_live_xml_prompt_and_filters_surface_reactions(tmp_path: Pat
     assert '"search_intent": null' not in captured["prompt"]
     assert "Highlight-only" in captured["prompt"]
     assert "Note-bearing" in captured["prompt"]
+    assert "stand alone as an excerpt" in captured["prompt"]
+    assert "Structural importance is not the same as excerpt-worthiness" in captured["prompt"]
+    assert "Do not hide context-dependent value inside a quote-only highlight" in captured["prompt"]
     assert '"reading_impression": "..."' not in captured["prompt"]
     assert '"surfaced_reactions": []' not in captured["prompt"]
     assert '"recent_reading_memory": []' not in captured["prompt"]
@@ -1009,8 +1012,8 @@ def test_digest_uses_live_xml_prompt_and_filters_surface_reactions(tmp_path: Pat
     }
     assert op["target_key"] != "legacy-ignored"
     assert manifest["node_name"] == "digest"
-    assert manifest["prompt_version"] == "attentional_v2.digest.v11"
-    assert manifest["prompt_assembly"]["spec_id"] == "attentional_v2.digest.xml.v11"
+    assert manifest["prompt_version"] == "attentional_v2.digest.v12"
+    assert manifest["prompt_assembly"]["spec_id"] == "attentional_v2.digest.xml.v12"
     assert manifest["prompt_assembly"]["output_contract"] == "digest_understanding_response_marginalia_json_v5"
     assert "mode" not in manifest["prompt_assembly"]
     assert manifest["prompt_assembly"]["rendered_blocks"] == [

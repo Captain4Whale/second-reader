@@ -3672,3 +3672,27 @@ This new direction is design frozen but not yet implemented as a formal benchmar
 - `docs/backend-reading-mechanisms/attentional_v2.md`
 - `docs/current-state.md`
 - `docs/tasks/registry.md`
+
+## Entry 127
+**ID**: DEC-130
+**Status**: active
+
+**Decision / Inflection**: Tighten highlight-only Marginalia to excerpt-worthy source quotes.
+
+**Period**: June 21, 2026, after the first Digest Marginalia v11 smoke examples showed that the prompt could treat structurally ordinary or context-dependent sentences as quote-only highlights.
+
+**Decision**: Live Digest is bumped to `attentional_v2.digest.v12` / XML spec v12 / promptset `attentional_v2-phase6-v70` while keeping output contract `digest_understanding_response_marginalia_json_v5`. The Marginalia schema remains `source_quote` plus optional `content`, but the prompt now teaches a stricter selection boundary: highlight-only Marginalia is for exact quotes that can stand alone as excerpt-worthy spans, where another reader can see the reason for preservation from the quoted words themselves. Spans whose value depends on structure, context, contrast, turn, or explanation should be skipped, represented in Understanding/Response, or emitted as note-bearing Marginalia with non-empty `content`.
+
+**Boundary**: This is a quality-policy prompt change, not a public API or runtime schema change. It does not change Ingest, Unit Memory retrieval semantics, Digest `Understanding` / `Response` ownership, source-coordinate resolution, frontend routes, or compatibility handling for legacy `annotations[]`, `surfaced_reactions`, `reaction_*`, `prior_link`, `outside_link`, or `search_intent` fields.
+
+**Why this path won**: Highlight-only marks should behave like real reader highlights: the excerpt itself carries enough meaning, force, image, distinction, or principle to be worth preserving without added commentary. Many topic sentences, roadmaps, recaps, and setup questions are important to comprehension but are not good quote-only highlights because their value disappears outside surrounding context. Separating excerpt-worthiness from structural importance should reduce bland highlights without forcing unnecessary notes.
+
+**Primary evidence**:
+- `reading-companion-backend/src/attentional_v2/prompts/digest.py`
+- `reading-companion-backend/eval/attentional_v2/run_digest_marginalia_live_smoke.py`
+- `reading-companion-backend/tests/test_attentional_v2_llm_calls.py`
+- `reading-companion-backend/tests/test_attentional_v2_scaffold.py`
+- `docs/implementation/new-reading-mechanism/digest-marginalia-prompt-revision-design.md`
+- `docs/backend-reading-mechanisms/attentional_v2.md`
+- `docs/current-state.md`
+- `docs/tasks/registry.md`
