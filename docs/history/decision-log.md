@@ -1624,6 +1624,29 @@ The old active windows `nawaer_baodian_private_zh__wealth`, `nawaer_baodian_priv
 - `reading-companion-backend/tests/test_attentional_v2_resume.py`
 - `reading-companion-backend/tests/test_attentional_v2_state_migration.py`
 
+## Entry 136
+**ID**: DEC-139
+**Status**: active
+
+**Decision / Inflection**: Recalibrate live Digest Marginalia toward durable reader value and useful note-bearing surplus.
+
+**Period**: June 21, 2026, after reviewing the five-book Digest v18 Marginalia diagnostic examples. Highlight-only output still included locally important book evidence with weak long-term reader value, while note-bearing output still overproduced ordinary close-reading / technique commentary that a thoughtful reader could infer without help.
+
+**Decision**: Live Digest is bumped to `attentional_v2.digest.v19` / XML spec v19 / promptset `attentional_v2-phase6-v79`, while keeping output contract `digest_understanding_response_marginalia_json_v7`. Highlight-only Marginalia now targets durable out-of-context excerpts with long-term reader value, not merely local facts, plot evidence, shocking scene details, topic sentences, or ordinary informative sentences. Note-bearing Marginalia now prioritizes useful knowledge, context, or non-obvious connections that a thoughtful ordinary reader may not know, notice, or infer on their own. Ordinary close-reading / technique comments are explicitly demoted unless they reveal something non-obvious and materially change the quote's value. The Resistance / Leverage / Growth framework remains as silent checks, not as a generation menu.
+
+**Boundary**: This is a prompt-quality calibration only. It does not change the Marginalia item schema, Digest runtime normalization, Unit Memory retrieval semantics, public API / frontend fields, Ingest behavior, source-coordinate resolution, or historical eval/report artifacts. Highlight-only still uses empty / omitted `content` plus private inline `selection_reason`; note-bearing still uses visible `content`.
+
+**Why this path won**: Rich conceptual frameworks such as hooks and attention directions are useful for human prompt design, but live LLM output treated them too easily as a production menu. The v19 prompt keeps those ideas as background checks while making the executable instruction more direct: preserve only highlight-only quotes with durable reader value, and write notes only when they give readers something they probably did not already know, notice, or infer.
+
+**Primary evidence**:
+- `reading-companion-backend/src/attentional_v2/prompts/digest.py`
+- `reading-companion-backend/tests/test_attentional_v2_llm_calls.py`
+- `reading-companion-backend/tests/test_attentional_v2_scaffold.py`
+- `docs/implementation/new-reading-mechanism/digest-marginalia-prompt-revision-design.md`
+- `docs/backend-reading-mechanisms/attentional_v2.md`
+- `docs/current-state.md`
+- `docs/tasks/registry.md`
+
 ## Entry 57
 **ID**: DEC-060
 **Status**: active

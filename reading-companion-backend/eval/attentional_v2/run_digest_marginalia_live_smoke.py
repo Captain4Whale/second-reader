@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Run a small live smoke for Digest v18 Marginalia.
+"""Run a small live smoke for Digest v19 Marginalia.
 
 This is a local diagnostic helper. It verifies the live Digest prompt/transport
 contract and a short Ingest -> Digest -> settlement chain over the active
@@ -29,9 +29,9 @@ BACKEND_ROOT = Path(__file__).resolve().parents[2]
 if str(BACKEND_ROOT) not in sys.path:
     sys.path.insert(0, str(BACKEND_ROOT))
 
-DEFAULT_RUN_ID = "digest_marginalia_v18_live_smoke_20260621"
-DEFAULT_ANALYSIS_ID = "digest_marginalia_v18_live_smoke"
-DEFAULT_JOB_ID = "bgjob_digest_marginalia_v18_live_smoke_20260621"
+DEFAULT_RUN_ID = "digest_marginalia_v19_live_smoke_20260621"
+DEFAULT_ANALYSIS_ID = "digest_marginalia_v19_live_smoke"
+DEFAULT_JOB_ID = "bgjob_digest_marginalia_v19_live_smoke_20260621"
 DEFAULT_PROFILE_ID = "dataset_review_high_trust"
 DEFAULT_DATASET_ROOT = (
     BACKEND_ROOT
@@ -1043,9 +1043,9 @@ def _all_marginalia_items(direct_results: list[dict[str, object]], runner_result
 def _hard_failures(direct_results: list[dict[str, object]], runner_results: list[dict[str, object]]) -> list[str]:
     failures: list[str] = []
     prompt = ATTENTIONAL_V2_PROMPTS
-    if prompt.digest_version != "attentional_v2.digest.v18":
+    if prompt.digest_version != "attentional_v2.digest.v19":
         failures.append(f"unexpected_digest_version:{prompt.digest_version}")
-    if prompt.promptset_version != "attentional_v2-phase6-v78":
+    if prompt.promptset_version != "attentional_v2-phase6-v79":
         failures.append(f"unexpected_promptset:{prompt.promptset_version}")
     for result in direct_results:
         if result.get("status") != "ok":
