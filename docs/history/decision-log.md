@@ -3855,3 +3855,26 @@ This new direction is design frozen but not yet implemented as a formal benchmar
 - `docs/backend-reading-mechanisms/attentional_v2.md`
 - `docs/current-state.md`
 - `docs/tasks/registry.md`
+
+## Entry 134
+**ID**: DEC-137
+**Status**: active
+
+**Decision / Inflection**: Tighten highlight-only Marginalia with an out-of-context completeness gate and a value gate.
+
+**Period**: June 21, 2026, after reviewing Digest v16 Marginalia examples where some quote-only highlights were locally important inside the book but lost most of their meaning or value when lifted out of context.
+
+**Decision**: Live Digest is bumped to `attentional_v2.digest.v17` / XML spec v17 / promptset `attentional_v2-phase6-v77`, while keeping output contract `digest_understanding_response_marginalia_json_v7`. Highlight-only Marginalia now has two hard gates: the quote must remain understandable when lifted out of the book, and the quote itself must carry real cognitive, knowledge, aesthetic, emotional, ethical, or expressive value. The prompt adds a context-loss test for quotes whose value depends on who says them, who is being described, where they appear in the plot, what relation they change, or why they matter in the local story. `marginalia[].selection_reason` for highlight-only items must name both out-of-context completeness and excerpt value.
+
+**Boundary**: This is a prompt-selection discipline refinement only. It does not change the Marginalia item schema, Digest runtime normalization, Unit Memory retrieval semantics, public API / frontend fields, Ingest behavior, source-coordinate resolution, or historical eval/report artifacts. Note-bearing Marginalia remains the correct route when a quote is valuable but needs visible context or explanation.
+
+**Why this path won**: The previous prompt already said highlight-only should be self-contained and intrinsically valuable, but live examples showed that the model could still confuse local narrative importance with standalone excerpt-worthiness. The new two-gate wording gives the model an operational test: if the quote's main meaning or value collapses without surrounding context, it should not be quote-only.
+
+**Primary evidence**:
+- `reading-companion-backend/src/attentional_v2/prompts/digest.py`
+- `reading-companion-backend/tests/test_attentional_v2_llm_calls.py`
+- `reading-companion-backend/tests/test_attentional_v2_scaffold.py`
+- `docs/implementation/new-reading-mechanism/digest-marginalia-prompt-revision-design.md`
+- `docs/backend-reading-mechanisms/attentional_v2.md`
+- `docs/current-state.md`
+- `docs/tasks/registry.md`

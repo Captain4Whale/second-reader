@@ -9,12 +9,12 @@ Created: `2026-06-20`
 
 ## Status
 
-- Status: implemented-live in Digest v16.
+- Status: implemented-live in Digest v17.
 - Live prompt now implements the reviewed candidate in `reading-companion-backend/src/attentional_v2/prompts/digest.py`.
 - Current live Digest baseline:
-  - prompt version: `attentional_v2.digest.v16`
-  - XML spec: `attentional_v2.digest.xml.v16`
-  - promptset: `attentional_v2-phase6-v74`
+  - prompt version: `attentional_v2.digest.v17`
+  - XML spec: `attentional_v2.digest.xml.v17`
+  - promptset: `attentional_v2-phase6-v77`
   - output contract: `digest_understanding_response_marginalia_json_v7`
 - Current live model-facing outputs:
   - `understanding`
@@ -50,6 +50,12 @@ Created: `2026-06-20`
   - `source_quote` selection now prefers the smallest complete contiguous local meaning span, not the shortest exact phrase.
   - Highlight-only Marginalia has three gates: complete local meaning, standalone readability, and intrinsic excerpt value.
   - Famous tail clauses, clipped predicates, and adjacent sentences / clauses that jointly form one coherent image, thought, contrast, or emotional movement should be expanded into one complete Marginalia item instead of split into fragments.
+- Implemented v17 highlight-only context-loss follow-up:
+  - Highlight-only Marginalia now has two hard gates: completeness and value.
+  - Completeness means the quote remains understandable and its main meaning does not collapse when lifted out of the book without surrounding scene, speaker, character relation, plot function, or prior setup.
+  - Value means the quote itself gives the reader a real cognitive, knowledge, aesthetic, emotional, ethical, or expressive gain.
+  - `selection_reason` must name both why the quote remains understandable out of context and what value it carries.
+  - Locally important but context-dependent character judgments, relationship turns, plot hinges, or referential lines should become note-bearing Marginalia or stay in Understanding rather than quote-only highlights.
 
 ## Design Goal
 
@@ -176,7 +182,7 @@ Marginalia are source-anchored reading marks. They are not passage summaries, ge
 
 Marginalia can be either highlight-only or note-bearing.
 
-- Highlight-only: use this only when the exact quote can stand alone as an excerpt worth preserving and has intrinsic excerpt value. Another reader should be able to see why it was marked from the quoted words themselves: a memorable formulation, aphorism, definition, distinction, image, emotional condensation, ethical pressure, conceptual compression, or compact principle. Output an exact `source_quote`; leave `content` empty or omit it according to the output contract.
+- Highlight-only: use this only when the exact quote passes both gates. First, the completeness gate: if lifted out of the book, the quote can still be understood and its main meaning does not collapse without the surrounding scene, speaker, character relation, plot function, or prior setup. Second, the intrinsic excerpt value gate: the quote itself gives the reader a real gain through insight, knowledge, conceptual compression, aesthetic force, emotional condensation, ethical pressure, memorable language, or a transferable way of seeing. Output an exact `source_quote`; leave `content` empty or omit it according to the output contract.
 - Note-bearing: use this when the quote is valuable but its value would not be clear enough from the quote alone. A relationship, explanation, question, connection, contrast, structural role, or judgment must be written down for the value to survive. Output an exact `source_quote` plus concise reader-visible `content`.
 
 Do not create Marginalia just to fill the field. It is normal to emit zero items when nothing in the current unit is worth marking.
@@ -196,9 +202,13 @@ Use the following lenses silently. Do not output these labels.
 
 A quote does not need to satisfy all three lenses. One real trigger is enough; a vague sense that the passage is "important" is not enough.
 
-Highlight-only has two gates: the quote must be self-contained enough to stand alone, and it must have intrinsic excerpt value. Self-contained is necessary but not sufficient. Do not mark a merely ordinary sentence just because it is complete, informative, or easy to locate.
+Highlight-only has two hard gates: completeness and value. The quote must be a complete local meaning span whose main meaning survives outside the book, and it must give the reader a real cognitive, knowledge, aesthetic, emotional, ethical, or expressive gain. Self-contained is necessary but not sufficient. Do not mark a merely ordinary sentence just because it is complete, informative, or easy to locate.
+
+A quote is not complete just because it is exact or famous. Avoid clipped clauses, isolated predicates, local terms, half-images, famous closing clauses, or explanation targets whose meaning depends on nearby words. If the candidate quote depends on an earlier subject, setup, contrast, image, or emotional build-up, expand it to include the smallest preceding span needed for the quote to stand as a complete local meaning. If two adjacent sentences jointly form one coherent image, thought, contrast, or emotional movement, quote them together as one contiguous Marginalia item instead of splitting them into separate fragments.
 
 Structural importance is not the same as excerpt-worthiness. Topic sentences, transitions, setup questions, recaps, and argument signposts may be important for Understanding, but they should not become highlight-only Marginalia unless their exact wording is itself valuable outside the current context.
+
+Context-loss test: if the quote matters mainly because of who says it, who is being described, where it appears in the plot, what relation it changes, or why it matters in this book's local situation, then it is context-dependent. Do not make it highlight-only unless the quoted words themselves still carry clear value without that context. Character judgments, relationship turns, plot hinges, and lines such as "this person...", "he...", or "she..." often belong in Understanding or note-bearing Marginalia rather than quote-only highlights.
 
 ## Minimal Intervention
 
@@ -208,7 +218,7 @@ Before producing each candidate Marginalia item, ask:
    If it is only a transition, filler, repeated information, or a detail with no return value, skip it.
 
 2. Can this quote stand alone as an intrinsically valuable excerpt?
-   If another reader saw only this quote, without the surrounding unit or an added note, would they naturally understand why it was preserved? Does the original wording, image, insight, emotional force, or conceptual compression carry value by itself? If both are yes, and a note would only repeat or dilute the quote, use highlight-only.
+   If another reader saw only this complete quote, without the surrounding unit or an added note, would they still understand the main meaning? Would they naturally see the value in the original wording, image, insight, emotional force, conceptual compression, or transferable way of seeing? If both completeness and value are present, and a note would only repeat or dilute the quote, use highlight-only.
 
 3. Is the quote valuable only after explanation?
    If the quote matters because of its role in the argument, scene, contrast, turn, hidden relation, or local mechanism, use note-bearing Marginalia. Do not hide context-dependent value inside a quote-only highlight.
@@ -255,9 +265,11 @@ This section explains only the `marginalia` field. The final Digest output must 
 
 For each Marginalia item:
 
-- `source_quote` must be an exact contiguous quote from the current source unit.
+- `source_quote` must be an exact contiguous quote from the current source unit, and it should be the smallest complete span that preserves the item.
 - Empty or omitted `content` means highlight-only.
 - Non-empty `content` means note-bearing Marginalia.
+- For each highlight-only Marginalia item, include a short private `selection_reason` inside the same item. The reason must name both why the quote remains understandable out of context and what intrinsic excerpt value it carries.
+- For note-bearing Marginalia, write the explanation in visible `content`; `selection_reason` may be omitted or empty.
 - Do not output `mode`, `kind`, `decision`, `hook`, `intent`, `evidence_status`, `calibration`, `rejected_output`, `source`, `prior_link`, `outside_link`, or `search_intent` unless a later output contract explicitly asks for them.
 
 ## Calibration Examples
@@ -279,7 +291,19 @@ Case 3: highlight-only standalone excerpt
 Text: "旧钥匙打不开新门。"
 Why: the quoted sentence is compact and self-contained; the reason for preserving it is visible in the sentence itself.
 Output:
-{"marginalia": [{"source_quote": "旧钥匙打不开新门。", "content": ""}]}
+{"marginalia": [{"source_quote": "旧钥匙打不开新门。", "content": "", "selection_reason": "Understandable out of context as a complete metaphor; valuable through principle-like compression."}]}
+
+Case 3B: reject locally important but context-dependent highlight-only
+Text: "这个人是神圣的。悉达多从未如此敬重过一个人，从未如此爱慕过一个人。"
+Why: this may be important inside the novel, but the value depends on knowing who "this person" is and what this relationship means. Do not use highlight-only.
+Output:
+{"marginalia": []}
+
+Case 3C: reject clipped or under-complete highlight-only
+Text: "在水面行走并不是我的追求。"
+Why: the sentence may matter in context, but by itself it does not preserve enough of the thought or its value. Use note-bearing Marginalia only if the local contrast is worth explaining.
+Output:
+{"marginalia": []}
 
 Case 4: note-bearing when the value depends on explanation
 Text: "所有人都被叫成编号。"
@@ -503,18 +527,19 @@ Interpretation:
 - `source_quote` is required.
 - Empty, `null`, or omitted `content` means highlight-only.
 - Non-empty `content` means note-bearing Marginalia.
-- Highlight-only requires inline `selection_reason`; note-bearing may omit it.
+- Highlight-only requires inline `selection_reason` naming both out-of-context completeness and excerpt value; note-bearing may omit it.
 - No explicit `mode` / `kind` / `decision` field is needed in this slice.
 - `prior_link`, `outside_link`, and `search_intent` should not be part of the normal model-facing Marginalia item. They may remain backward-compatible backend fields for older reaction / annotation / Marginalia artifacts, but should not appear in the live prompt ReturnFormat, final-output tool schema, or few-shot examples.
 - Future source-backlink, external-reference, or research-intent behavior should be redesigned as an explicit product/runtime feature rather than hidden inside ordinary Marginalia item metadata.
 
 ## Accepted Implementation Slice
 
-This design is implemented by the Digest v11-v16 slices. The implementation updated these surfaces together:
+This design is implemented by the Digest v11-v17 slices. The implementation updated these surfaces together:
 
 - Digest prompt version / XML spec / promptset / output-contract id.
 - `Instruction / Marginalia` with the current candidate prompt text.
 - v16 quote-span guidance so Marginalia uses the smallest complete local meaning span rather than clipped phrases, isolated terms, or partial images.
+- v17 highlight-only context-loss guidance so quote-only highlights must remain understandable out of context and carry visible excerpt value.
 - `Instruction / SourceGrounding` to align exact-quote wording with highlight-only and note-bearing Marginalia.
 - `Instruction / ResponseDiscipline` to forbid calibration fields and inherited metadata fields in final output.
 - `OutputContract / ReturnFormat` and `OutputFields / MarginaliaField` to show visible `source_quote` plus optional `content`, plus inline private highlight-only `selection_reason` audit metadata.
