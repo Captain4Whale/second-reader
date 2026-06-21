@@ -16,6 +16,7 @@ Update when: Digest action names, output fields, XML prompt structure, or runtim
   - `DEC-129` supersedes the first Marginalia v10 item shape with the v11 `source_quote` plus optional `content` contract. Highlight-only Marginalia is represented by empty, null, or omitted `content`; legacy `prior_link`, `outside_link`, and `search_intent` are no longer live model-facing fields.
   - `DEC-132` adds private `marginalia_audit[]` to the live Digest final output so each highlight-only Marginalia item carries a short audit-only `selection_reason`; note-bearing Marginalia continues to put its reason in visible `content`.
   - `DEC-133` supersedes the v14 top-level audit array by moving the private highlight-only `selection_reason` inline to `marginalia[].selection_reason`; new live outputs no longer emit top-level `marginalia_audit[]`.
+  - `DEC-134` tightens `source_quote` span selection: Marginalia should quote the smallest complete contiguous local meaning span, not clipped phrases, famous tail clauses, or isolated terms.
   - Its early `ReadingState` context examples were superseded by `docs/implementation/new-reading-mechanism/ingest-recall-and-digest-memory-context-design.md`.
   - The current live Digest prompt uses top-level `ReadingMemory`, not `ReadingState`, `RecentMemory`, or `RetrievedUnitMemory`.
 - Subject-continuity note:
@@ -28,9 +29,9 @@ Update when: Digest action names, output fields, XML prompt structure, or runtim
 
 ## Implementation Status
 
-- Implemented prompt version: `attentional_v2.digest.v15`
-- Implemented XML assembly spec: `attentional_v2.digest.xml.v15`
-- Implemented promptset: `attentional_v2-phase6-v73`
+- Implemented prompt version: `attentional_v2.digest.v16`
+- Implemented XML assembly spec: `attentional_v2.digest.xml.v16`
+- Implemented promptset: `attentional_v2-phase6-v74`
 - Implemented output contract: `digest_understanding_response_marginalia_json_v7`
 - Runtime mapping:
   - `understanding` string -> zero or one internal `memory_uptake_ops[].payload.memory_text` targeting `recent_reading_memory`
@@ -496,7 +497,7 @@ Do not create Marginalia just to fill the field. It is acceptable to emit zero M
 
 Each Marginalia item must stay anchored to the current unit. Each `source_quote` must be an exact quote from this unit.
 
-Choose each `source_quote` as the smallest self-sufficient span that can honestly stand as the Marginalia note's footing.
+Choose each `source_quote` as the smallest complete contiguous local meaning span that can honestly stand as the Marginalia note's footing.
 
 If the unit contains multiple independently valuable local triggers, you may write them separately. Do not let one sharper later sentence erase an earlier framing line, premise line, or hinge line that also stands on its own.
 
@@ -515,7 +516,7 @@ Mapping from old prompt:
 ### SourceGrounding
 
 ```text
-- `marginalia[].source_quote` must be a short exact contiguous span copied from the current unit: no ellipses, no stitched fragments, no paraphrase, no translation.
+- `marginalia[].source_quote` must be a complete exact contiguous span copied from the current unit: no clipped phrases, no isolated terms, no ellipses, no stitched fragments, no paraphrase, no translation.
 - Never invent source coordinates. The runner resolves source quotes to paragraph + char-offset `SourceRef` objects after Digest returns.
 - Understanding is grounded in the current source unit as a whole; it does not need exact source quotes.
 ```

@@ -9,12 +9,12 @@ Created: `2026-06-20`
 
 ## Status
 
-- Status: implemented-live in Digest v15.
+- Status: implemented-live in Digest v16.
 - Live prompt now implements the reviewed candidate in `reading-companion-backend/src/attentional_v2/prompts/digest.py`.
 - Current live Digest baseline:
-  - prompt version: `attentional_v2.digest.v15`
-  - XML spec: `attentional_v2.digest.xml.v15`
-  - promptset: `attentional_v2-phase6-v73`
+  - prompt version: `attentional_v2.digest.v16`
+  - XML spec: `attentional_v2.digest.xml.v16`
+  - promptset: `attentional_v2-phase6-v74`
   - output contract: `digest_understanding_response_marginalia_json_v7`
 - Current live model-facing outputs:
   - `understanding`
@@ -46,13 +46,17 @@ Created: `2026-06-20`
   - Highlight-only Marginalia requires inline `selection_reason`; note-bearing Marginalia may omit it.
   - New runtime/audit/Unit Memory artifacts do not emit a fresh top-level `marginalia_audit[]`; legacy artifacts may still be read as a compatibility fallback.
   - Product-visible Marginalia remains only `source_quote` plus optional `content`; `selection_reason` is mechanism-private audit metadata and is not public API / frontend content.
+- Implemented v16 quote-span follow-up:
+  - `source_quote` selection now prefers the smallest complete contiguous local meaning span, not the shortest exact phrase.
+  - Highlight-only Marginalia has three gates: complete local meaning, standalone readability, and intrinsic excerpt value.
+  - Famous tail clauses, clipped predicates, and adjacent sentences / clauses that jointly form one coherent image, thought, contrast, or emotional movement should be expanded into one complete Marginalia item instead of split into fragments.
 
 ## Design Goal
 
 Revise the Digest prompt so Marginalia becomes a stronger user-visible reading surface:
 
 - Marginalia should cover both highlight-only marks and note-bearing marks.
-- Highlight-only means the source quote itself is excerpt-worthy, can stand alone without surrounding context or an added note, and has intrinsic value as an excerpt.
+- Highlight-only means the source quote itself is excerpt-worthy, preserves a complete local meaning span, can stand alone without surrounding context or an added note, and has intrinsic value as an excerpt.
 - Highlight-only selection should leave a short private reason for audit, so later review can tell why the quote was selected without exposing that reason to the reader.
 - Note-bearing Marginalia means the quote needs a reader-visible thought, explanation, question, connection, or judgment to preserve its value.
 - The prompt should help the model avoid generic annotation, forced commentary, unsupported external knowledge, and note inflation.
@@ -218,7 +222,7 @@ Before producing each candidate Marginalia item, ask:
 6. Can the note send the reader back to exact words in the quote?
    If the note cannot return to a word, syntax, image, structure, claim, or fact in the source quote, delete it or choose a better quote.
 
-Choose the smallest exact contiguous `source_quote` that can honestly support the item. Do not use ellipses, stitched fragments, paraphrases, translations, source coordinates, or paragraph numbers as the quote.
+Choose the smallest complete contiguous `source_quote` that can honestly preserve the item's local meaning. "Smallest" means no unnecessary surrounding prose, not a fragmentary phrase. Prefer a complete sentence or a tightly connected pair of sentences when that is the minimal complete unit. Do not isolate a famous tail clause when its subject, setup, contrast, image, or emotional build-up is outside the quote. Do not use ellipses, stitched fragments, paraphrases, translations, source coordinates, or paragraph numbers as the quote.
 
 ## Writing Note Content
 
@@ -314,7 +318,7 @@ Current working answer:
 
 - Highlight-only and note-bearing Marginalia follow the same exact-quote rule.
 - `source_quote` must be an exact contiguous span copied from the current source unit, with no ellipses, stitched fragments, paraphrase, translation, paragraph number, or coordinate-like token.
-- Source quote length guidance should remain primarily in the Marginalia instruction block: choose the smallest exact quote that can honestly support the item.
+- Source quote length guidance should remain primarily in the Marginalia instruction block: choose the smallest complete contiguous quote that preserves the item's local meaning.
 - Note-bearing `content` should be able to return the reader to a specific word, syntax, image, structure, claim, or fact in `source_quote`.
 - Runtime remains responsible for resolving the quote into `SourceRef`; the model must not output source coordinates.
 
@@ -506,10 +510,11 @@ Interpretation:
 
 ## Accepted Implementation Slice
 
-This design is implemented by the Digest v11-v15 slices. The implementation updated these surfaces together:
+This design is implemented by the Digest v11-v16 slices. The implementation updated these surfaces together:
 
 - Digest prompt version / XML spec / promptset / output-contract id.
 - `Instruction / Marginalia` with the current candidate prompt text.
+- v16 quote-span guidance so Marginalia uses the smallest complete local meaning span rather than clipped phrases, isolated terms, or partial images.
 - `Instruction / SourceGrounding` to align exact-quote wording with highlight-only and note-bearing Marginalia.
 - `Instruction / ResponseDiscipline` to forbid calibration fields and inherited metadata fields in final output.
 - `OutputContract / ReturnFormat` and `OutputFields / MarginaliaField` to show visible `source_quote` plus optional `content`, plus inline private highlight-only `selection_reason` audit metadata.

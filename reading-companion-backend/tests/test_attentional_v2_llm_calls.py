@@ -1040,6 +1040,10 @@ def test_digest_uses_live_xml_prompt_and_filters_surface_reactions(tmp_path: Pat
     assert "stand alone as an excerpt" in captured["prompt"]
     assert "intrinsic excerpt value" in captured["prompt"]
     assert "Self-contained is necessary but not sufficient" in captured["prompt"]
+    assert "smallest complete contiguous `source_quote`" in captured["prompt"]
+    assert "not a fragmentary phrase" in captured["prompt"]
+    assert "clipped clauses, isolated predicates" in captured["prompt"]
+    assert "famous tail clause" in captured["prompt"]
     assert "Structural importance is not the same as excerpt-worthiness" in captured["prompt"]
     assert "Do not hide context-dependent value inside a quote-only highlight" in captured["prompt"]
     assert "For each highlight-only Marginalia item, include a short private `selection_reason` inside the same item." in captured["prompt"]
@@ -1073,8 +1077,8 @@ def test_digest_uses_live_xml_prompt_and_filters_surface_reactions(tmp_path: Pat
     }
     assert op["target_key"] != "legacy-ignored"
     assert manifest["node_name"] == "digest"
-    assert manifest["prompt_version"] == "attentional_v2.digest.v15"
-    assert manifest["prompt_assembly"]["spec_id"] == "attentional_v2.digest.xml.v15"
+    assert manifest["prompt_version"] == "attentional_v2.digest.v16"
+    assert manifest["prompt_assembly"]["spec_id"] == "attentional_v2.digest.xml.v16"
     assert manifest["prompt_assembly"]["output_contract"] == "digest_understanding_response_marginalia_json_v7"
     assert "mode" not in manifest["prompt_assembly"]
     assert manifest["prompt_assembly"]["rendered_blocks"] == [

@@ -3779,3 +3779,29 @@ This new direction is design frozen but not yet implemented as a formal benchmar
 - `docs/backend-reading-mechanisms/attentional_v2.md`
 - `docs/current-state.md`
 - `docs/tasks/registry.md`
+
+## Entry 131
+**ID**: DEC-134
+**Status**: active
+
+**Decision / Inflection**: Require Marginalia quotes to use the smallest complete local meaning span.
+
+**Period**: June 21, 2026, after live classic-passage smoke review showed fragmentary `source_quote` choices such as isolated clauses or terms that were exact but not meaningful enough as reader-facing Marginalia anchors.
+
+**Decision**: Live Digest is bumped to `attentional_v2.digest.v16` / XML spec v16 / promptset `attentional_v2-phase6-v74`, while keeping output contract `digest_understanding_response_marginalia_json_v7`. Marginalia `source_quote` selection now says to choose the smallest complete contiguous local meaning span, not the shortest exact phrase. Highlight-only Marginalia has three gates: complete local meaning, standalone readability, and intrinsic excerpt value. Famous tail clauses, clipped predicates, and adjacent sentences or clauses that jointly form one coherent image, thought, contrast, or emotional movement should be quoted together with the smallest needed surrounding span instead of split into fragments.
+
+**Boundary**: This is a prompt-selection discipline refinement only. It does not change the Marginalia item schema, Digest runtime normalization, Unit Memory retrieval semantics, public API / frontend fields, Ingest behavior, or source-coordinate resolution. The final output remains `understanding`, `response`, and `marginalia[]`, with inline private `selection_reason` required only for highlight-only items.
+
+**Why this path won**: Exact matching alone can push the model toward short anchors that satisfy validators but feel broken to readers. Reader-visible Marginalia should quote a complete thought, image, or local claim. The new rule keeps quotes tight without making them fragmentary, and it directly addresses highlight-only failures where the selected text was important only after surrounding context or explanation.
+
+**Primary evidence**:
+- `reading-companion-backend/src/attentional_v2/prompts/digest.py`
+- `reading-companion-backend/eval/attentional_v2/run_digest_marginalia_live_smoke.py`
+- `reading-companion-backend/tests/test_attentional_v2_llm_calls.py`
+- `reading-companion-backend/tests/test_attentional_v2_scaffold.py`
+- `reading-companion-backend/tests/test_digest_marginalia_live_smoke_runner.py`
+- `docs/implementation/new-reading-mechanism/digest-marginalia-prompt-revision-design.md`
+- `docs/implementation/new-reading-mechanism/digest-understanding-response-marginalia-design.md`
+- `docs/backend-reading-mechanisms/attentional_v2.md`
+- `docs/current-state.md`
+- `docs/tasks/registry.md`

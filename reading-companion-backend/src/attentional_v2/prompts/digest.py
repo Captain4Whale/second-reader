@@ -18,9 +18,9 @@ from .reader_role import READER_ROLE_FRAGMENT
 from .types import PromptDefinition
 
 
-DIGEST_PROMPT_VERSION = "attentional_v2.digest.v15"
-DIGEST_XML_PROMPT_ASSEMBLY_SPEC_ID = "attentional_v2.digest.xml.v15"
-DIGEST_XML_PROMPTSET_VERSION = "attentional_v2-phase6-v73"
+DIGEST_PROMPT_VERSION = "attentional_v2.digest.v16"
+DIGEST_XML_PROMPT_ASSEMBLY_SPEC_ID = "attentional_v2.digest.xml.v16"
+DIGEST_XML_PROMPTSET_VERSION = "attentional_v2-phase6-v74"
 DIGEST_XML_TRANSPORT_SYSTEM_PROMPT = "Follow the structured Digest prompt in the user message. Use the required submit_digest_result tool as the final output channel."
 
 
@@ -219,7 +219,9 @@ Use the following lenses silently. Do not output these labels.
 
 A quote does not need to satisfy all three lenses. One real trigger is enough; a vague sense that the passage is "important" is not enough.
 
-Highlight-only has two gates: the quote must be self-contained enough to stand alone, and it must have intrinsic excerpt value. Self-contained is necessary but not sufficient. Do not mark a merely ordinary sentence just because it is complete, informative, or easy to locate.
+Highlight-only has three gates: the quote must be a complete local meaning span, it must be self-contained enough to stand alone, and it must have intrinsic excerpt value. Self-contained is necessary but not sufficient. Do not mark a merely ordinary sentence just because it is complete, informative, or easy to locate.
+
+A quote is not complete just because it is exact or famous. Avoid clipped clauses, isolated predicates, local terms, half-images, famous closing clauses, or explanation targets whose meaning depends on nearby words. If the candidate quote depends on an earlier subject, setup, contrast, image, or emotional build-up, expand it to include the smallest preceding span needed for the quote to stand as a complete local meaning. If two adjacent sentences jointly form one coherent image, thought, contrast, or emotional movement, quote them together as one contiguous Marginalia item instead of splitting them into separate fragments.
 
 Structural importance is not the same as excerpt-worthiness. Topic sentences, transitions, setup questions, recaps, and argument signposts may be important for Understanding, but they should not become highlight-only Marginalia unless their exact wording is itself valuable outside the current context.
 
@@ -231,7 +233,7 @@ Before producing each candidate Marginalia item, ask:
    If it is only a transition, filler, repeated information, or a detail with no return value, skip it.
 
 2. Can this quote stand alone as an intrinsically valuable excerpt?
-   If another reader saw only this quote, without the surrounding unit or an added note, would they naturally understand why it was preserved? Does the original wording, image, insight, emotional force, or conceptual compression carry value by itself? If both are yes, and a note would only repeat or dilute the quote, use highlight-only.
+   If another reader saw only this complete quote, without the surrounding unit or an added note, would they naturally understand why it was preserved? Does the original wording, image, insight, emotional force, or conceptual compression carry value by itself? If both are yes, and a note would only repeat or dilute the quote, use highlight-only.
 
 3. Is the quote valuable only after explanation?
    If the quote matters because of its role in the argument, scene, contrast, turn, hidden relation, or local mechanism, use note-bearing Marginalia. Do not hide context-dependent value inside a quote-only highlight.
@@ -242,10 +244,10 @@ Before producing each candidate Marginalia item, ask:
 5. If writing a note, what would the reader miss without it?
    The answer must be specific: a mechanism, relation, tension, inference, uncertainty, callback, or question.
 
-6. Can the note send the reader back to exact words in the quote?
-   If the note cannot return to a word, syntax, image, structure, claim, or fact in the source quote, delete it or choose a better quote.
+6. Can the note send the reader back to complete source wording?
+   If the note cannot return to a word, syntax, image, structure, claim, or fact in the source quote, delete it or choose a better quote. If the current quote is only a local keyword, clipped phrase, famous tail clause, or predicate whose subject/setup is outside the quote, expand it to the smallest complete span that contains the needed wording.
 
-Choose the smallest exact contiguous `source_quote` that can honestly support the item. Do not use ellipses, stitched fragments, paraphrases, translations, source coordinates, or paragraph numbers as the quote.
+Choose the smallest complete contiguous `source_quote` that can honestly preserve the item's local meaning. "Smallest" means no unnecessary surrounding prose, not a fragmentary phrase. Prefer a complete sentence or a tightly connected pair of sentences when that is the minimal complete unit. Do not use ellipses, stitched fragments, paraphrases, translations, source coordinates, or paragraph numbers as the quote.
 
 ## Writing Note Content
 
@@ -278,7 +280,7 @@ This section explains only the `marginalia` field. The final Digest output must 
 
 For each Marginalia item:
 
-- `source_quote` must be an exact contiguous quote from the current source unit.
+- `source_quote` must be an exact contiguous quote from the current source unit, and it should be the smallest complete span that preserves the item.
 - Empty or omitted `content` means highlight-only.
 - Non-empty `content` means note-bearing Marginalia.
 - For each highlight-only Marginalia item, include a short private `selection_reason` inside the same item.
@@ -310,7 +312,7 @@ Case 4: note-bearing when the value depends on explanation
 Text: "所有人都被叫成编号。"
 Why: the quoted words are important, but the cognitive value comes from naming what the replacement of names with numbers does.
 Output:
-{"marginalia": [{"source_quote": "被叫成编号", "content": "Turning names into numbers changes people into administratively handled units; the violence here is in the replacement of personal identity by a sortable label."}]}
+{"marginalia": [{"source_quote": "所有人都被叫成编号。", "content": "Turning names into numbers changes people into administratively handled units; the violence here is in the replacement of personal identity by a sortable label."}]}
 
 Case 5: note-bearing close reading
 Text: "门开着，屋里却没有人敢进去。"
@@ -322,7 +324,7 @@ Case 6: note a reasoning hinge
 Text: "由此可见，问题不在资源太少，而在资源被错误地锁住。"
 Why: the quote marks the bridge from preceding evidence to a claim about where the real constraint lies.
 Output:
-{"marginalia": [{"source_quote": "问题不在资源太少，而在资源被错误地锁住", "content": "The sentence shifts the diagnosis from scarcity to blocked access; the important move is not that resources are limited, but that the system prevents available resources from circulating."}]}
+{"marginalia": [{"source_quote": "由此可见，问题不在资源太少，而在资源被错误地锁住。", "content": "The sentence shifts the diagnosis from scarcity to blocked access; the important move is not that resources are limited, but that the system prevents available resources from circulating."}]}
 
 Case 7: preserve uncertainty without inventing context
 Text: "他又引用那句古话，说真正的路总要绕远。"
@@ -332,8 +334,9 @@ Output:
     ),
     PromptFragment(
         fragment_id="digest.source_grounding_policy",
-        text="""- `marginalia[].source_quote` must be an exact contiguous span copied from the current unit: no ellipses, no stitched fragments, no paraphrase, no translation, no paragraph number, and no coordinate-like token.
+        text="""- `marginalia[].source_quote` must be an exact contiguous span copied from the current unit and should be the smallest complete local meaning span: no ellipses, no stitched fragments, no paraphrase, no translation, no paragraph number, and no coordinate-like token.
 - The same exact-quote rule applies to highlight-only and note-bearing Marginalia.
+- Do not anchor Marginalia to a clipped clause, isolated term, famous tail clause, or partial image when the adjacent sentence or clause is needed for the quote to make sense.
 - Note-bearing `content` should return the reader to a specific word, syntax, image, structure, claim, or fact in `source_quote`.
 - Never invent source coordinates. The runner resolves source quotes to paragraph + char-offset `SourceRef` objects after Digest returns.
 - Understanding is grounded in the current source unit as a whole; it does not need exact source quotes.""",
@@ -724,7 +727,7 @@ Shape:
   "content": "",
   "selection_reason": "..."
 }
-`source_quote` is required. Highlight-only Marginalia uses empty, null, or omitted `content`, and must include a non-empty private `selection_reason`. Note-bearing Marginalia uses non-empty `content` and may omit `selection_reason`. Do not output mode/kind labels, calibration fields, prior links, outside links, or search intent fields. Detailed Marginalia-selection and source-quote behavior live under Instruction.""",
+`source_quote` is required and should be the smallest complete contiguous span that preserves the item's local meaning. Highlight-only Marginalia uses empty, null, or omitted `content`, and must include a non-empty private `selection_reason`. Note-bearing Marginalia uses non-empty `content` and may omit `selection_reason`. Do not output mode/kind labels, calibration fields, prior links, outside links, or search intent fields. Detailed Marginalia-selection and source-quote behavior live under Instruction.""",
 )
 
 
