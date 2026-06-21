@@ -15,18 +15,19 @@ idea. Individual points below may be candidate, implemented, rejected, or
 superseded.
 
 Current live baseline:
-- Ingest prompt: `attentional_v2.ingest.v18`
-- Promptset: `attentional_v2-phase6-v75`
+- Ingest prompt: `attentional_v2.ingest.v19`
+- Promptset: `attentional_v2-phase6-v76`
 - Live boundary contract: `unit.end_paragraph_n` + `unit.end_at`
-- Live audit contract: `preview_partition[]`, with `preview_partition[0]`
-  matching `unit`
+- Live audit contract: `preview_partition[]` remains the fine-grained semantic
+  map; the committed `unit` covers the left prefix `preview_partition[0..k]`
+  and must end at one complete partition boundary
 - Live recall contract: prior-reading recall intent is expressed only through
   `retrieve_unit_memory` action-tool args; final Ingest output does not carry
   `memory_recalls[]`
 - Authoritative runtime coordinate: paragraph-char `SourceSpan` /
   `source_span_id`, derived by runtime after resolving the model boundary
 - Related decisions: `DEC-116`, `DEC-117`, `DEC-118`, `DEC-120`, `DEC-121`,
-  `DEC-127`, `DEC-135`
+  `DEC-127`, `DEC-135`, `DEC-136`
 - Related living pattern: `docs/implementation/new-reading-mechanism/mechanism-pattern-ledger.md` entry 19
 - Related upstream source-substrate design: `docs/implementation/new-reading-mechanism/source-normalization-design.md`
 
@@ -880,3 +881,104 @@ Targeted live probes should compare at least:
 
 No formal A/B rerun or evidence-catalog promotion is required for this narrow
 prompt calibration.
+
+## Optimization Point 5: Prefix-Grouped Digest Unit Over Fine Partitions
+
+Status: implemented-live in Ingest v19 / promptset v76.
+
+### Problem Evidence
+
+The five-book Digest v16 diagnostic showed that Naval-style aphorism and
+tweet-storm material can be over-expensive even when the fine-grained
+`preview_partition[]` map is technically reasonable. In the Naval opening, live
+v17 often saw a large preview window but selected a tiny unit such as
+`∨ + one sentence`:
+
+- Unit 13 selected `P64@0 -> P65@31` while the preview extended through `P99`.
+- Unit 14 selected `P66@0 -> P67@31` while the preview also extended through
+  `P99`.
+- Unit 15 selected `P68@0 -> P69@10` while the preview extended through `P99`.
+
+The model's fine partitions were not simply wrong: each short principle was
+often locally complete and titleable. The problem was that using every fine
+partition as a full Digest unit made reading calls too small and expensive.
+
+### Design Goal
+
+Separate two responsibilities:
+
+- `preview_partition[]` remains a fine-grained semantic map of the visible
+  preview.
+- `unit` becomes the current Digest batch: a continuous left prefix
+  `preview_partition[0..k]` chosen for both semantic cohesion and reading size.
+
+This preserves audit visibility while letting Digest read a larger coherent
+batch when the leftmost fine partitions jointly form one larger movement.
+
+### Live Contract Rule
+
+The v19 prompt and validator use this rule:
+
+```text
+The committed unit starts at the current cursor and covers preview_partition[0..k]
+for some k >= 0. unit.end_paragraph_n and unit.end_at must exactly match the
+boundary of preview_partition[k], and that partition must have status "complete".
+```
+
+Runtime derives, rather than asks the model to emit:
+
+```json
+{
+  "unit_partition_range": {"start_index": 0, "end_index": 2},
+  "unit_partition_titles": ["...", "..."],
+  "unit_estimated_token_count": 000,
+  "unit_size_policy": {"soft_min": 300, "target_max": 900, "hard_max": 1600},
+  "unit_size_status": "within_target"
+}
+```
+
+### Size Guidance
+
+The live unit-size band is guidance plus audit metadata, not a hard runtime
+contract:
+
+```text
+unit_soft_min_tokens = 300
+unit_target_max_tokens = 900
+unit_hard_max_tokens = 1600
+```
+
+- Below the soft minimum, Ingest should strongly consider merging the next
+  semantically compatible partition.
+- Around the target maximum, Ingest should prefer stopping at the next coherent
+  partition boundary.
+- Above the hard maximum, Ingest should stop unless `preview_partition[0]` is
+  already that large.
+
+Length is a guardrail, not the reason to merge. The model must still decide
+left-to-right whether the next partition belongs to the same larger semantic
+movement.
+
+### Expected Effect
+
+For Naval-style short-principle sections, v19 should allow units such as
+"learning and judgment principles" or "permissioned versus permissionless
+leverage" to contain several fine partitions. The right side of the preview is
+not pre-committed: later partitions remain future-source audit context and will
+be reconsidered when the cursor advances.
+
+For narrative prose such as Siddhartha, v19 should preserve the v18
+same-local-function improvement while adding an explicit mechanism for grouping
+fine sub-facets into one Digest unit when they are better read together.
+
+### Test / Probe Plan
+
+Implemented tests should verify:
+
+- a `unit` matching `preview_partition[0]` remains valid
+- a `unit` matching `preview_partition[k]` is valid when that partition is
+  complete
+- a `unit` matching no partition boundary or an `open_tail` partition is invalid
+- runner artifacts include derived prefix grouping and unit-size audit metadata
+- a Naval-style focused live smoke can be run afterward without regenerating
+  historical reports

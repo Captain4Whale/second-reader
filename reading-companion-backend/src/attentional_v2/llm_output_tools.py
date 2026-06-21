@@ -246,13 +246,22 @@ def validate_ingest_result(
                 errors.append(f"preview_partition[{index}].status must be complete or open_tail")
             elif status == "open_tail" and index != len(preview_partition) - 1:
                 errors.append("preview_partition open_tail is allowed only on the final partition")
-        if preview_partition and isinstance(preview_partition[0], Mapping) and isinstance(unit, Mapping):
-            first_end_paragraph_n = str(preview_partition[0].get("end_paragraph_n") or "").strip()
-            first_end_at = str(preview_partition[0].get("end_at") or "").strip()
-            if unit_end_paragraph_n and unit_end_at and (
-                first_end_paragraph_n != unit_end_paragraph_n or first_end_at != unit_end_at
-            ):
-                errors.append("preview_partition[0] must match unit")
+        if preview_partition and isinstance(unit, Mapping) and unit_end_paragraph_n and unit_end_at:
+            matched_index = -1
+            matched_status = ""
+            for index, item in enumerate(preview_partition):
+                if not isinstance(item, Mapping):
+                    continue
+                end_paragraph_n = str(item.get("end_paragraph_n") or "").strip()
+                end_at = str(item.get("end_at") or "").strip()
+                if end_paragraph_n == unit_end_paragraph_n and end_at == unit_end_at:
+                    matched_index = index
+                    matched_status = str(item.get("status") or "").strip()
+                    break
+            if matched_index < 0:
+                errors.append("unit must match the boundary of one preview_partition entry")
+            elif matched_status != "complete":
+                errors.append("unit must match a complete preview_partition boundary, not open_tail")
 
     for tool_result in tool_results or []:
         result = tool_result.get("result") if isinstance(tool_result, Mapping) else None

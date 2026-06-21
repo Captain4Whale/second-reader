@@ -157,6 +157,13 @@ def _clean_text(value: object) -> str:
     return str(value or "").strip()
 
 
+def _safe_int(value: object, default: int = 0) -> int:
+    try:
+        return int(value)
+    except (TypeError, ValueError):
+        return default
+
+
 def _chapter_ref(chapter: dict[str, object]) -> str:
     """Return the stable chapter reference for one book-document chapter."""
 
@@ -1080,6 +1087,21 @@ def _ingest_trace_entry(
         if isinstance(boundary_result.get("preview_partition_audit"), list)
         else [],
         "preview_partition_audit_status": _clean_text(boundary_result.get("preview_partition_audit_status")),
+        "unit_partition_range": dict(boundary_result.get("unit_partition_range", {}))
+        if isinstance(boundary_result.get("unit_partition_range"), dict)
+        else {},
+        "unit_partition_titles": [
+            _clean_text(item)
+            for item in boundary_result.get("unit_partition_titles", [])
+            if _clean_text(item)
+        ]
+        if isinstance(boundary_result.get("unit_partition_titles"), list)
+        else [],
+        "unit_estimated_token_count": int(boundary_result.get("unit_estimated_token_count", 0) or 0),
+        "unit_size_policy": dict(boundary_result.get("unit_size_policy", {}))
+        if isinstance(boundary_result.get("unit_size_policy"), dict)
+        else {},
+        "unit_size_status": _clean_text(boundary_result.get("unit_size_status")),
         "end_anchor_text": _clean_text(boundary_result.get("end_anchor_text")),
         "memory_recalls": [
             dict(item)
@@ -1101,6 +1123,54 @@ def _ingest_trace_entry(
     return entry
 
 
+def _unit_size_policy(reader_policy: ReaderPolicy | Mapping[str, object] | None) -> dict[str, int]:
+    unitize = reader_policy.get("unitize") if isinstance(reader_policy, Mapping) else {}
+    unitize_map = unitize if isinstance(unitize, Mapping) else {}
+    soft_min = max(1, _safe_int(unitize_map.get("unit_soft_min_tokens"), 300))
+    target_max = max(soft_min, _safe_int(unitize_map.get("unit_target_max_tokens"), 900))
+    hard_max = max(target_max, _safe_int(unitize_map.get("unit_hard_max_tokens"), 1600))
+    return {"soft_min": soft_min, "target_max": target_max, "hard_max": hard_max}
+
+
+def _matching_unit_partition_index(
+    *,
+    unit: Mapping[str, object],
+    preview_partition: list[dict[str, object]],
+) -> int:
+    unit_end_paragraph_n = _clean_text(unit.get("end_paragraph_n"))
+    unit_end_at = _clean_text(unit.get("end_at"))
+    if not unit_end_paragraph_n or not unit_end_at:
+        return -1
+    for index, item in enumerate(preview_partition):
+        if (
+            _clean_text(item.get("end_paragraph_n")) == unit_end_paragraph_n
+            and _clean_text(item.get("end_at")) == unit_end_at
+            and _clean_text(item.get("status")) == "complete"
+        ):
+            return index
+    return -1
+
+
+def _unit_size_status(
+    *,
+    estimated_tokens: int,
+    policy: Mapping[str, int],
+    unit_partition_end_index: int,
+) -> str:
+    soft_min = int(policy.get("soft_min", 300))
+    target_max = int(policy.get("target_max", 900))
+    hard_max = int(policy.get("hard_max", 1600))
+    if estimated_tokens < soft_min:
+        return "below_soft_min"
+    if estimated_tokens <= target_max:
+        return "within_target"
+    if estimated_tokens <= hard_max:
+        return "above_target"
+    if unit_partition_end_index == 0:
+        return "first_partition_exceeds_hard_max"
+    return "above_hard_max"
+
+
 def _compact_ingest_trace(ingest_trace: object) -> list[dict[str, object]]:
     """Return compact boundary trace entries safe for read-audit persistence."""
 
@@ -1117,6 +1187,11 @@ def _compact_ingest_trace(ingest_trace: object) -> list[dict[str, object]]:
             "preview_partition",
             "preview_partition_audit",
             "preview_partition_audit_status",
+            "unit_partition_range",
+            "unit_partition_titles",
+            "unit_estimated_token_count",
+            "unit_size_policy",
+            "unit_size_status",
             "end_anchor_text",
             "memory_recalls",
             "memory_recalls_status",
@@ -1506,6 +1581,7 @@ def _resolve_ingest_boundary(
     start_cursor: dict[str, object],
     preview: dict[str, object],
     boundary_result: IngestBoundaryResult,
+    reader_policy: ReaderPolicy,
     retry_boundary_result: IngestBoundaryResult | None = None,
 ) -> tuple[dict[str, object], UnitizeDecision]:
     """Resolve Ingest's unit-boundary object into an accepted unit span."""
@@ -1563,11 +1639,37 @@ def _resolve_ingest_boundary(
         for item in preview_partition_audit_result.get("partitions", [])
         if isinstance(item, dict)
     ] if isinstance(preview_partition_audit_result.get("partitions"), list) else []
+    unit_partition_end_index = _matching_unit_partition_index(
+        unit=unit,
+        preview_partition=preview_partition,
+    )
+    unit_partition_range = (
+        {"start_index": 0, "end_index": unit_partition_end_index}
+        if unit_partition_end_index >= 0
+        else {}
+    )
+    unit_partition_titles = [
+        _clean_text(item.get("title"))
+        for item in preview_partition[: unit_partition_end_index + 1]
+        if _clean_text(item.get("title"))
+    ] if unit_partition_end_index >= 0 else []
+    unit_size_policy = _unit_size_policy(reader_policy)
+    unit_estimated_token_count = estimate_tokens(source_unit.get("source_text", ""))
+    unit_size_status = _unit_size_status(
+        estimated_tokens=unit_estimated_token_count,
+        policy=unit_size_policy,
+        unit_partition_end_index=unit_partition_end_index,
+    )
     unitize_decision: UnitizeDecision = {
         "unit": unit,
         "preview_partition": preview_partition,
         "preview_partition_audit": preview_partition_audit,
         "preview_partition_audit_status": _clean_text(preview_partition_audit_result.get("status")) or "missing",
+        "unit_partition_range": unit_partition_range,
+        "unit_partition_titles": unit_partition_titles,
+        "unit_estimated_token_count": unit_estimated_token_count,
+        "unit_size_policy": unit_size_policy,
+        "unit_size_status": unit_size_status,
         "end_anchor_text": end_anchor_text,
         "source_span": source_span,
         "source_span_id": source_id,
@@ -1585,6 +1687,11 @@ def _resolve_ingest_boundary(
         "reason": _clean_text(selected_result.get("reason")),
         "resolution": resolution,
     }
+    source_unit["unit_partition_range"] = dict(unit_partition_range)
+    source_unit["unit_partition_titles"] = list(unit_partition_titles)
+    source_unit["unit_estimated_token_count"] = unit_estimated_token_count
+    source_unit["unit_size_policy"] = dict(unit_size_policy)
+    source_unit["unit_size_status"] = unit_size_status
     source_unit["unitize_decision"] = dict(unitize_decision)
     return source_unit, unitize_decision
 
@@ -1595,6 +1702,7 @@ def _accept_ingest_boundary(
     start_cursor: dict[str, object],
     preview: dict[str, object],
     boundary_result: IngestBoundaryResult,
+    reader_policy: ReaderPolicy,
     retry_boundary_result: IngestBoundaryResult | None = None,
 ) -> tuple[dict[str, object], UnitizeDecision, list[IngestTraceEntry]]:
     """Accept an Ingest boundary result as a runtime source unit."""
@@ -1604,6 +1712,7 @@ def _accept_ingest_boundary(
         start_cursor=start_cursor,
         preview=preview,
         boundary_result=boundary_result,
+        reader_policy=reader_policy,
         retry_boundary_result=retry_boundary_result,
     )
     selected_boundary = retry_boundary_result if retry_boundary_result is not None else boundary_result
@@ -1619,6 +1728,15 @@ def _accept_ingest_boundary(
     selected_boundary["preview_partition_audit_status"] = _clean_text(
         unitize_decision.get("preview_partition_audit_status")
     )
+    selected_boundary["unit_partition_range"] = dict(unitize_decision.get("unit_partition_range", {}))
+    selected_boundary["unit_partition_titles"] = [
+        _clean_text(item)
+        for item in unitize_decision.get("unit_partition_titles", [])
+        if _clean_text(item)
+    ] if isinstance(unitize_decision.get("unit_partition_titles"), list) else []
+    selected_boundary["unit_estimated_token_count"] = int(unitize_decision.get("unit_estimated_token_count", 0) or 0)
+    selected_boundary["unit_size_policy"] = dict(unitize_decision.get("unit_size_policy", {}))
+    selected_boundary["unit_size_status"] = _clean_text(unitize_decision.get("unit_size_status"))
     ingest_trace = [_ingest_trace_entry(boundary_result)]
     if retry_boundary_result is not None:
         ingest_trace.append(_ingest_trace_entry(retry_boundary_result))
@@ -1830,8 +1948,8 @@ def prepare_next_source_unit_for_read(
                 "retry_instruction": (
                     "Return a visible unit boundary object: set unit.end_paragraph_n to a visible Paragraph n "
                     "and unit.end_at to paragraph_end or a longer unique exact tail quote inside that paragraph. "
-                    "Also return preview_partition as the whole visible preview map, with preview_partition[0] "
-                    "matching the corrected unit boundary exactly."
+                    "Also return preview_partition as the whole visible preview map. The corrected unit boundary "
+                    "must match one complete preview_partition prefix boundary."
                 ),
             }
         )
@@ -1850,6 +1968,7 @@ def prepare_next_source_unit_for_read(
         start_cursor=dict(source_cursor),
         preview=dict(preview),
         boundary_result=boundary_result,
+        reader_policy=reader_policy,
         retry_boundary_result=retry_boundary_result,
     )
     compat_selected_sentences = _compat_unit_sentences_for_source_span(

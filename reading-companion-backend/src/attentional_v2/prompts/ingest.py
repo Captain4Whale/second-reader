@@ -15,9 +15,9 @@ from .reader_role import READER_ROLE_FRAGMENT
 from .types import PromptDefinition
 
 
-INGEST_PROMPT_VERSION = "attentional_v2.ingest.v18"
-INGEST_XML_PROMPT_ASSEMBLY_SPEC_ID = "attentional_v2.ingest.xml.v18"
-INGEST_XML_PROMPTSET_VERSION = "attentional_v2-phase6-v75"
+INGEST_PROMPT_VERSION = "attentional_v2.ingest.v19"
+INGEST_XML_PROMPT_ASSEMBLY_SPEC_ID = "attentional_v2.ingest.xml.v19"
+INGEST_XML_PROMPTSET_VERSION = "attentional_v2-phase6-v76"
 INGEST_TRANSPORT_SYSTEM_PROMPT = "Follow the structured Ingest prompt in the user message. Use the required submit_ingest_result tool as the final output channel."
 
 
@@ -29,13 +29,13 @@ This step happens before Digest. You are not yet reading the selected unit for i
 
 You are shown a bounded forward reading lookahead window from the current reading cursor. In this call you do three things:
 
-1. Browse the whole visible preview as a reader and form a provisional map of its consecutive semantic units.
-2. Commit only the FIRST mapped unit as the next source unit Digest should read closely.
+1. Browse the whole visible preview as a reader and form a fine-grained provisional map of its consecutive semantic partitions.
+2. Commit the current Digest unit by grouping a left prefix of that partition map: `preview_partition[0..k]`.
 3. After committing that first unit, decide whether Digest would benefit from prior-reading memory; if yes, express those recall targets only through the Unit Memory retrieval tool.
 
-The rest of the window is lookahead context only. Its provisional map helps you place the first boundary and lets reviewers audit what you saw; it is not itself being read by Digest yet.
+The rest of the window is lookahead context only. Its provisional map helps you place the current Digest-unit boundary and lets reviewers audit what you saw; it is not itself being read by Digest yet.
 
-The later provisional units should stay lightweight: title, boundary, and status only. Only the committed first unit gets a boundary rationale.""",
+The later provisional partitions should stay lightweight: title, boundary, and status only. Only the committed Digest unit gets a boundary rationale.""",
 )
 
 
@@ -50,25 +50,26 @@ INGEST_CONTEXT_USE_GUIDE_FRAGMENT = PromptFragment(
 
 INGEST_SELECT_NEXT_UNIT_FRAGMENT = PromptFragment(
     fragment_id="ingest.select_next_unit",
-    text="""Partition the forward window into coherent reading units, give each provisional unit a compact title, then commit the first one. The first unit starts at the current reading cursor.
+    text="""Partition the forward window into fine-grained coherent reading partitions, give each provisional partition a compact title, then commit the current Digest unit by grouping a left prefix of those partitions. The committed unit starts at the current reading cursor and covers `preview_partition[0..k]` for some `k >= 0`.
 
 What a semantic unit is — a continuous span of source text that satisfies all of:
 
 - Internally coherent: its sentences hang together on one topic, argument, scene, exchange, image, concept, or logical move.
 - Locally complete: it closes one forward move enough for Digest to read it as the present object of attention. For example: a claim and its immediate support, an example and its point, a scene or beat that lands, a concept introduced and initially unpacked, a turn in dialogue, or a local summary.
 - Unified in local function: adjacent paragraphs that jointly perform the same setup, character construction, scene build, argument support, example chain, or emotional turn remain one unit even when different paragraphs emphasize different sides of that function.
-- Minimal: it is the smallest span that is still locally complete. Do not greedily merge several complete moves into one large unit just because they are related.
+- Fine-grained: each `preview_partition` may be the smallest span that is still locally complete. Do not let fine-grained map boundaries automatically become Digest-unit boundaries.
 - Naturally bounded: it ends at a real transition, such as topic shift, argument closing, scene change, change in speaker, change in rhetorical function, or the start of a new move.
 
 How to choose the boundary:
 
 - Consider the whole visible window first. Do not commit a boundary the moment you reach the first plausible stopping point.
-- Conceptually divide the window into consecutive reading units in order, with no gaps. Use that whole-window view to place the first boundary well and to expose your preview map for audit.
-- Give each provisional unit a compact local-function title that names what that unit is doing in the reading. The title is not a summary, not commentary, and not a Digest result.
-- Do not let the ability to title smaller aspects force an early split. A portrait, setup, scene, argument, or example can contain several namable facets while still being one reading unit.
-- Before committing a boundary, ask whether the next visible paragraphs start a genuinely new move or merely continue the same local function from another angle. If they continue the same local exposition, setup, character portrait, scene build, or claim-support movement, include them in the first unit.
-- Commit only the FIRST unit. Anything after it is provisional lookahead context.
-- Do not write reasons, explanations, summaries, or interpretive comments for later provisional units. Later units exist only to expose the audit map that helped you choose the first boundary.
+- Conceptually divide the window into consecutive fine-grained partitions in order, with no gaps. Use that whole-window view to expose your preview map for audit.
+- Give each provisional partition a compact local-function title that names what that partition is doing in the reading. The title is not a summary, not commentary, and not a Digest result.
+- After partitioning, grow the committed Digest unit from the left: start with `preview_partition[0]`, then ask whether `preview_partition[1]`, `preview_partition[2]`, and so on still belong to the same larger semantic movement as the prefix already chosen.
+- Do not let the ability to title smaller aspects force an early Digest-unit split. A portrait, setup, scene, argument, list of principles, or example chain can contain several namable partitions while still being one Digest unit.
+- Before committing a boundary, ask whether the next partition starts a genuinely new move or merely continues the same larger local function from another angle. If it continues the same local exposition, setup, character portrait, scene build, claim-support movement, example chain, or list group, include it in the current Digest unit.
+- Commit only this left-prefix Digest unit. Anything after it is provisional lookahead context.
+- Do not write reasons, explanations, summaries, or interpretive comments for later provisional partitions. Later partitions exist only to expose the audit map that helped you choose the current boundary.
 - The first unit always starts at the current source cursor in `CurrentView / Position`. Do not invent or output a start position.
 - A boundary falls on a sentence edge and never inside a sentence.
 - A boundary may fall inside a paragraph when one long paragraph contains more than one complete move.
@@ -79,8 +80,9 @@ Window tail:
 
 - The window end is controlled by runtime budget and may fall in the middle of a move.
 - Do not over-merge the first unit just to make the later window tail look balanced or complete.
-- Mark only the final provisional unit as `open_tail` when the preview visibly stops before that unit has completed.
-- Only the first boundary is authoritative.
+- Mark only the final provisional partition as `open_tail` when the preview visibly stops before that partition has completed.
+- The committed unit must end at a complete partition boundary. Do not end the committed unit at an `open_tail` partition.
+- Only the committed unit boundary is authoritative.
 
 Signals you may use:
 - Lexical cohesion / topic continuity: while the same entities and keywords are still in play, the unit continues; when the topical center clearly shifts (old entities exit, new ones enter), that is a boundary.
@@ -96,6 +98,8 @@ Size and length:
 - It must never cross a chapter boundary.
 - The lookahead window is deliberately longer than one unit. The first unit should usually end well within it.
 - If the first unit approaches the length of the whole window, you have almost certainly merged too much. Back off to the nearest earlier locally complete move.
+- Use the Digest-unit size band as a guardrail: if the current prefix is under about 300 source tokens, strongly prefer merging the next semantically compatible partition; around 900 source tokens, prefer stopping at the next coherent partition boundary; do not exceed about 1600 source tokens unless `preview_partition[0]` alone is already that large.
+- Length is not the reason to merge. Merge only when the next partition still belongs to the same larger semantic movement; stop when the next partition opens a new topic, scene, claim, problem, or section even if the current unit is still short.
 
 Structural cues:
 
@@ -103,6 +107,7 @@ Structural cues:
 - Merge a label-like heading with the body it introduces.
 - Let a heading stand alone only if its wording itself forms a complete, meaningful move.
 - Ignore pure ornament / divider / separator lines at the boundary.
+- In aphorism, tweet-storm, bullet-list, or principle-list material, repeated separators or short standalone sentences are not automatic Digest-unit boundaries. Fine-grained partitions may be one principle each, but the committed unit should group the left prefix by a larger shared function, such as learning and judgment principles, permissioned versus permissionless leverage, or a cluster of related wealth definitions.
 - `text_role` may help orient you, but it must not decide the boundary by itself.""",
 )
 
@@ -230,12 +235,13 @@ Rules:
 - Use an exact tail quote only when the unit must end inside a long paragraph at a sentence boundary.
 - The exact tail quote must be copied character-for-character from `end_paragraph_n` and must uniquely identify the unit end within that paragraph.
 - `preview_partition` must be a non-empty ordered map of the visible preview from the current cursor through the visible tail.
-- `preview_partition[0]` must exactly match `unit.end_paragraph_n` and `unit.end_at`.
+- `unit.end_paragraph_n` and `unit.end_at` must exactly match the boundary of one complete `preview_partition[k]`.
+- The committed unit covers the left prefix `preview_partition[0..k]`; do not skip earlier partitions, and do not end the committed unit at an `open_tail` partition.
 - Each `preview_partition` title should be brief and should name the local reading function of that provisional unit; it must not summarize, evaluate, or explain that unit.
 - Each `preview_partition` entry uses the same `end_paragraph_n` / `end_at` boundary syntax as `unit`.
 - Set `status` to `"complete"` when the provisional unit closes inside the visible preview.
 - Set `status` to `"open_tail"` only for the final partition when the visible preview ends in the middle of a larger move.
-- `reason` explains why the committed first unit, also represented by `preview_partition[0]`, should end at `unit.end_paragraph_n` / `unit.end_at`. It is a boundary rationale for the first unit only, not a summary and not a second source span.
+- `reason` explains why the committed Digest unit should group `preview_partition[0..k]` and end at `unit.end_paragraph_n` / `unit.end_at`. It is a boundary rationale for the committed unit only, not a summary and not a second source span.
 - Do not include rationale, summary, commentary, explanation, or extra fields inside any `preview_partition` item. Later partition entries must stay to `title`, `end_paragraph_n`, `end_at`, and `status`.
 - Do not include `memory_recalls` in this final result. If prior-reading memory is needed, express those recalls only by calling `retrieve_unit_memory`.
 - Do not output markdown, commentary, or extra fields.""",
@@ -415,7 +421,7 @@ def build_ingest_prompt_assembly_spec(
             "current_view_position",
             "current_view_content",
         ),
-        output_contract="ingest_unit_boundary_preview_partition_json_v3",
+        output_contract="ingest_unit_boundary_preview_partition_json_v4",
     )
 
 
@@ -452,5 +458,5 @@ INGEST_PROMPT = PromptDefinition(
     system_prompt=INGEST_TRANSPORT_SYSTEM_PROMPT,
     user_prompt_template="<IngestPrompt assembled by render_ingest_prompt_xml>",
     required_inputs=("book_identity", "current_view_position", "current_view_content"),
-    output_contract="ingest_unit_boundary_preview_partition_json_v3",
+    output_contract="ingest_unit_boundary_preview_partition_json_v4",
 )

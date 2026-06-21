@@ -289,7 +289,23 @@ def test_ingest_result_validator_rejects_invalid_preview_partition_fields() -> N
     assert "preview_partition[2].status must be complete or open_tail" in errors
 
 
-def test_ingest_result_validator_requires_first_partition_to_match_unit() -> None:
+def test_ingest_result_validator_allows_unit_to_match_later_complete_partition() -> None:
+    errors = validate_ingest_result(
+        {
+            "unit": _unit(3, "paragraph_end"),
+            "preview_partition": [
+                _partition("First move", 1, "paragraph_end"),
+                _partition("Second move", 2, "paragraph_end"),
+                _partition("Third move", 3, "paragraph_end"),
+            ],
+        },
+        tool_results=[],
+    )
+
+    assert errors == []
+
+
+def test_ingest_result_validator_rejects_unit_without_partition_boundary() -> None:
     errors = validate_ingest_result(
         {
             "unit": _unit(2, "paragraph_end"),
@@ -298,7 +314,22 @@ def test_ingest_result_validator_requires_first_partition_to_match_unit() -> Non
         tool_results=[],
     )
 
-    assert "preview_partition[0] must match unit" in errors
+    assert "unit must match the boundary of one preview_partition entry" in errors
+
+
+def test_ingest_result_validator_rejects_unit_matching_open_tail_partition() -> None:
+    errors = validate_ingest_result(
+        {
+            "unit": _unit(2, "paragraph_end"),
+            "preview_partition": [
+                _partition("First move", 1, "paragraph_end"),
+                _partition("Open future move", 2, "paragraph_end", "open_tail"),
+            ],
+        },
+        tool_results=[],
+    )
+
+    assert "unit must match a complete preview_partition boundary, not open_tail" in errors
 
 
 def test_ingest_result_validator_allows_tool_preflight_without_preview_partition() -> None:
@@ -467,19 +498,26 @@ def test_ingest_writes_manifest_and_uses_xml_unit_boundary_contract(tmp_path: Pa
     assert "<ReturnFormat>" in captured["prompt"]
     assert "boundary_type" not in captured["prompt"]
     assert "You are in the Ingest step of a sequential deep-reading loop." in captured["prompt"]
-    assert "form a provisional map of its consecutive semantic units" in captured["prompt"]
-    assert "Partition the forward window into coherent reading units, give each provisional unit a compact title" in captured["prompt"]
+    assert "form a fine-grained provisional map of its consecutive semantic partitions" in captured["prompt"]
+    assert "grouping a left prefix of those partitions" in captured["prompt"]
     assert "What a semantic unit is" in captured["prompt"]
     assert "Unified in local function" in captured["prompt"]
-    assert "Conceptually divide the window into consecutive reading units" in captured["prompt"]
+    assert "Conceptually divide the window into consecutive fine-grained partitions" in captured["prompt"]
     assert "compact local-function title" in captured["prompt"]
-    assert "Do not let the ability to title smaller aspects force an early split" in captured["prompt"]
-    assert "continue the same local function from another angle" in captured["prompt"]
-    assert "Only the committed first unit gets a boundary rationale" in captured["prompt"]
-    assert "Do not write reasons, explanations, summaries, or interpretive comments for later provisional units" in captured["prompt"]
+    assert "grow the committed Digest unit from the left" in captured["prompt"]
+    assert "Do not let the ability to title smaller aspects force an early Digest-unit split" in captured["prompt"]
+    assert "continues the same larger local function from another angle" in captured["prompt"]
+    assert "Only the committed Digest unit gets a boundary rationale" in captured["prompt"]
+    assert "Do not write reasons, explanations, summaries, or interpretive comments for later provisional partitions" in captured["prompt"]
     assert '"preview_partition"' in captured["prompt"]
-    assert "preview_partition[0]" in captured["prompt"]
+    assert "preview_partition[0..k]" in captured["prompt"]
     assert '"open_tail"' in captured["prompt"]
+    assert "unit must end at a complete partition boundary" in captured["prompt"]
+    assert "under about 300 source tokens" in captured["prompt"]
+    assert "around 900 source tokens" in captured["prompt"]
+    assert "do not exceed about 1600 source tokens" in captured["prompt"]
+    assert "Length is not the reason to merge" in captured["prompt"]
+    assert "repeated separators or short standalone sentences are not automatic Digest-unit boundaries" in captured["prompt"]
     assert "A boundary may fall inside a paragraph" in captured["prompt"]
     assert "The window is assembled from paragraph slices" in captured["prompt"]
     assert "Lexical cohesion / topic continuity" in captured["prompt"]
@@ -522,15 +560,15 @@ def test_ingest_writes_manifest_and_uses_xml_unit_boundary_contract(tmp_path: Pa
     assert "Boundary closure check" not in captured["prompt"]
     assert "end_anchor_text" not in captured["prompt"]
     assert "boundary rationale" in captured["prompt"]
-    assert "boundary rationale for the first unit only" in captured["prompt"]
+    assert "boundary rationale for the committed unit only" in captured["prompt"]
     assert "Do not include rationale, summary, commentary, explanation, or extra fields inside any `preview_partition` item" in captured["prompt"]
     assert "not a second source span" in captured["prompt"]
     assert "same primary language as the current source text" in captured["prompt"]
     assert "Set each recall `basis` exactly to `selected_source_unit`" in captured["prompt"]
     assert "Mainline preview" not in captured["prompt"]
     assert manifest["node_name"] == "ingest"
-    assert manifest["prompt_version"] == "attentional_v2.ingest.v18"
-    assert manifest["prompt_assembly"]["output_contract"] == "ingest_unit_boundary_preview_partition_json_v3"
+    assert manifest["prompt_version"] == "attentional_v2.ingest.v19"
+    assert manifest["prompt_assembly"]["output_contract"] == "ingest_unit_boundary_preview_partition_json_v4"
     assert manifest["prompt_assembly"]["owner_node"] == "ingest"
 
 

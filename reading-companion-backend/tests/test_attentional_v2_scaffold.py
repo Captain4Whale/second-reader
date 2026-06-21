@@ -1259,13 +1259,13 @@ def test_attentional_v2_prompt_registry_projects_current_bundle() -> None:
     ingest = ATTENTIONAL_V2_PROMPT_REGISTRY.get("attentional_v2.ingest")
     chapter = ATTENTIONAL_V2_PROMPT_REGISTRY.get("attentional_v2.chapter_consolidation")
 
-    assert ATTENTIONAL_V2_PROMPTSET_VERSION == "attentional_v2-phase6-v75"
+    assert ATTENTIONAL_V2_PROMPTSET_VERSION == "attentional_v2-phase6-v76"
     assert ATTENTIONAL_V2_PROMPTS.promptset_version == ATTENTIONAL_V2_PROMPTSET_VERSION
     assert digest.version == DIGEST_PROMPT_VERSION == "attentional_v2.digest.v16"
     assert ATTENTIONAL_V2_PROMPTS.digest_version == digest.version
     assert ATTENTIONAL_V2_PROMPTS.digest_system == digest.system_prompt
     assert ATTENTIONAL_V2_PROMPTS.digest_prompt == digest.user_prompt_template
-    assert ingest.version == INGEST_PROMPT_VERSION == "attentional_v2.ingest.v18"
+    assert ingest.version == INGEST_PROMPT_VERSION == "attentional_v2.ingest.v19"
     assert ATTENTIONAL_V2_PROMPTS.ingest_version == ingest.version
     assert ATTENTIONAL_V2_PROMPTS.ingest_system == ingest.system_prompt
     assert ATTENTIONAL_V2_PROMPTS.chapter_consolidation_prompt == chapter.user_prompt_template
@@ -1754,6 +1754,9 @@ def test_attentional_v2_initialization_writes_mechanism_artifacts(tmp_path):
     assert policy["unitize"]["preview_soft_min_tokens"] == 1600
     assert policy["unitize"]["preview_target_max_tokens"] == 3000
     assert policy["unitize"]["preview_hard_max_tokens"] == 4200
+    assert policy["unitize"]["unit_soft_min_tokens"] == 300
+    assert policy["unitize"]["unit_target_max_tokens"] == 900
+    assert policy["unitize"]["unit_hard_max_tokens"] == 1600
     assert policy["unitize"]["emergency_max_preview_paragraphs"] == 200
     assert "preview_hard_max_chars" not in policy["unitize"]
     assert "max_lookahead_paragraphs" not in policy["unitize"]
@@ -2011,6 +2014,67 @@ def test_prepare_next_source_unit_for_read_selects_mainline_unit(tmp_path, monke
     assert current_view_content["preview_token_estimator"] == "tiktoken_o200k_base_v1_paragraph_xml_v1"
 
 
+def test_prepare_next_source_unit_for_read_accepts_prefix_grouped_partitions(tmp_path, monkeypatch):
+    """A committed unit may cover preview_partition[0..k] rather than only the first partition."""
+
+    provisioned = _provisioned_two_chapter_book()
+    document = provisioned.book_document
+    state = _empty_prepare_next_source_unit_state()
+
+    def fake_ingest_boundary(**kwargs):
+        return {
+            "unit": {"end_paragraph_n": "1", "end_at": "Closing line."},
+            "preview_partition": [
+                {
+                    "title": "Question setup",
+                    "end_paragraph_n": "1",
+                    "end_at": "Later question.",
+                    "status": "complete",
+                },
+                {
+                    "title": "Closing answer",
+                    "end_paragraph_n": "1",
+                    "end_at": "Closing line.",
+                    "status": "complete",
+                },
+            ],
+            "reason": "test_prefix_grouped_unit",
+            "memory_recalls": [],
+            "memory_recalls_status": "not_requested",
+        }
+
+    monkeypatch.setattr(runner_module, "_call_ingest", fake_ingest_boundary)
+
+    result = runner_module.prepare_next_source_unit_for_read(
+        current_chapter=document["chapters"][1],
+        current_cursor={"paragraph_index": 1, "char_offset": 0},
+        local_buffer=state["local_buffer"],  # type: ignore[arg-type]
+        continuation_capsule=state["continuation_capsule"],
+        active_attention=state["active_attention"],  # type: ignore[arg-type]
+        reflective_frames=state["reflective_frames"],  # type: ignore[arg-type]
+        reaction_records=state["reaction_records"],  # type: ignore[arg-type]
+        local_continuity=state["local_continuity"],  # type: ignore[arg-type]
+        reader_policy=runner_module.build_default_reader_policy(),
+        output_language=provisioned.output_language,
+        output_dir=tmp_path,
+        book_title=provisioned.title,
+        author=provisioned.author,
+    )
+
+    assert [sentence["sentence_id"] for sentence in result["selected_unit_sentences"]] == ["c2-s1", "c2-s2"]
+    assert result["unitize_decision"]["unit_partition_range"] == {"start_index": 0, "end_index": 1}
+    assert result["unitize_decision"]["unit_partition_titles"] == ["Question setup", "Closing answer"]
+    assert result["unitize_decision"]["unit_estimated_token_count"] > 0
+    assert result["unitize_decision"]["unit_size_policy"] == {
+        "soft_min": 300,
+        "target_max": 900,
+        "hard_max": 1600,
+    }
+    assert result["unitize_decision"]["unit_size_status"] == "below_soft_min"
+    assert result["ingest_trace"][0]["unit_partition_range"] == {"start_index": 0, "end_index": 1}
+    assert result["ingest_trace"][0]["unit_partition_titles"] == ["Question setup", "Closing answer"]
+
+
 def test_prepare_next_source_unit_for_read_retries_unresolved_boundary(tmp_path, monkeypatch):
     """Runtime boundary governance should retry an unresolved Ingest unit boundary before fallback."""
 
@@ -2073,7 +2137,7 @@ def test_prepare_next_source_unit_for_read_retries_unresolved_boundary(tmp_path,
     assert len(calls) == 2
     assert calls[1]["retry"] is True
     assert calls[1]["previous_unit"] == {"end_paragraph_n": "99", "end_at": "paragraph_end"}
-    assert "preview_partition[0]" in calls[1]["retry_instruction"]
+    assert "complete preview_partition prefix boundary" in calls[1]["retry_instruction"]
     assert [sentence["sentence_id"] for sentence in result["selected_unit_sentences"]] == ["c2-s1", "c2-s2"]
     assert result["unitize_decision"]["unit"] == {"end_paragraph_n": "1", "end_at": "Closing line."}
     assert result["unitize_decision"]["preview_partition"][0]["title"] == "Retry first move"

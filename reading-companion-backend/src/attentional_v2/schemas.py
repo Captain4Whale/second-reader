@@ -183,6 +183,11 @@ class UnitizeDecision(TypedDict, total=False):
     preview_partition: list[dict[str, object]]
     preview_partition_audit: list[dict[str, object]]
     preview_partition_audit_status: str
+    unit_partition_range: dict[str, int]
+    unit_partition_titles: list[str]
+    unit_estimated_token_count: int
+    unit_size_policy: dict[str, int]
+    unit_size_status: str
     end_anchor_text: str
     source_span: dict[str, object]
     source_span_id: str
@@ -373,6 +378,11 @@ class IngestBoundaryResult(TypedDict, total=False):
     preview_partition: list[dict[str, object]]
     preview_partition_audit: list[dict[str, object]]
     preview_partition_audit_status: str
+    unit_partition_range: dict[str, int]
+    unit_partition_titles: list[str]
+    unit_estimated_token_count: int
+    unit_size_policy: dict[str, int]
+    unit_size_status: str
     end_anchor_text: str
     memory_recalls: list["UnitMemoryRecall"]
     memory_recalls_status: str
@@ -388,6 +398,11 @@ class IngestTraceEntry(TypedDict, total=False):
     preview_partition: list[dict[str, object]]
     preview_partition_audit: list[dict[str, object]]
     preview_partition_audit_status: str
+    unit_partition_range: dict[str, int]
+    unit_partition_titles: list[str]
+    unit_estimated_token_count: int
+    unit_size_policy: dict[str, int]
+    unit_size_status: str
     end_anchor_text: str
     memory_recalls: list["UnitMemoryRecall"]
     memory_recalls_status: str
@@ -1098,6 +1113,9 @@ def build_default_reader_policy(
             "preview_soft_min_tokens": 1600,
             "preview_target_max_tokens": 3000,
             "preview_hard_max_tokens": 4200,
+            "unit_soft_min_tokens": 300,
+            "unit_target_max_tokens": 900,
+            "unit_hard_max_tokens": 1600,
             "emergency_max_preview_paragraphs": 200,
         },
         "knowledge": {

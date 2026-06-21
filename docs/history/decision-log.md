@@ -3828,3 +3828,30 @@ This new direction is design frozen but not yet implemented as a formal benchmar
 - `docs/backend-reading-mechanisms/attentional_v2.md`
 - `docs/current-state.md`
 - `docs/tasks/registry.md`
+
+## Entry 133
+**ID**: DEC-136
+**Status**: active
+
+**Decision / Inflection**: Allow live Ingest to commit a prefix-grouped Digest unit over fine-grained preview partitions.
+
+**Period**: June 21, 2026, after reviewing Naval-style short-principle units from the five-book Digest v16 diagnostic and deciding that the fine `preview_partition[]` map can be useful while individual partitions may be too small as full Digest calls.
+
+**Decision**: Live Ingest is bumped to `attentional_v2.ingest.v19` / XML spec v19 / promptset `attentional_v2-phase6-v76`, with output contract `ingest_unit_boundary_preview_partition_json_v4`. The final output still contains `unit`, `preview_partition[]`, and optional `reason`, but `unit` no longer has to equal `preview_partition[0]`. Instead, `unit.end_paragraph_n` / `unit.end_at` must match one complete partition boundary, and the committed Digest unit covers the continuous left prefix `preview_partition[0..k]`. Runtime derives `unit_partition_range`, `unit_partition_titles`, `unit_estimated_token_count`, `unit_size_policy`, and `unit_size_status` as private audit metadata. The live unit-size guidance is `unit_soft_min_tokens=300`, `unit_target_max_tokens=900`, and `unit_hard_max_tokens=1600`.
+
+**Boundary**: The model does not output a new range field; runtime derives the range from the matched partition boundary. Unit-size status is diagnostic only and does not create a new contract-failure path. This does not change preview construction, Unit Memory retrieval semantics, Digest behavior, Source Normalization, public API, frontend contracts, or historical eval/report artifacts.
+
+**Why this path won**: For aphorism, tweet-storm, or principle-list material, each short statement can be a legitimate fine-grained semantic partition, but treating each one as a full Digest unit creates unnecessary reading overhead and fragments understanding. Prefix grouping preserves the audit value of fine partitioning while letting Ingest choose a larger left-to-right coherent reading batch for Digest. It also avoids pre-committing future right-side groups; later partitions are reconsidered when the cursor advances.
+
+**Primary evidence**:
+- `reading-companion-backend/src/attentional_v2/prompts/ingest.py`
+- `reading-companion-backend/src/attentional_v2/llm_output_tools.py`
+- `reading-companion-backend/src/attentional_v2/runner.py`
+- `reading-companion-backend/src/attentional_v2/schemas.py`
+- `reading-companion-backend/src/attentional_v2/unit_span_ledger.py`
+- `reading-companion-backend/tests/test_attentional_v2_llm_calls.py`
+- `reading-companion-backend/tests/test_attentional_v2_scaffold.py`
+- `docs/implementation/new-reading-mechanism/ingest-next-unit-optimization-design.md`
+- `docs/backend-reading-mechanisms/attentional_v2.md`
+- `docs/current-state.md`
+- `docs/tasks/registry.md`

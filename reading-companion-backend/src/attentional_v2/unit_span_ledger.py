@@ -68,6 +68,11 @@ def append_unit_span_record(
     sequence_index = next_unit_sequence_index(output_dir)
     source_span = source_unit.get("source_span")
     span = dict(source_span) if isinstance(source_span, Mapping) else {}
+    unitize_decision = (
+        dict(source_unit.get("unitize_decision", {}))
+        if isinstance(source_unit.get("unitize_decision"), Mapping)
+        else {}
+    )
     unit_id = f"u{sequence_index:06d}"
     record = {
         "unit_id": unit_id,
@@ -88,6 +93,21 @@ def append_unit_span_record(
         "preview_token_estimator": _clean_text(preview.get("preview_token_estimator")),
         "char_count": int(source_unit.get("char_count", 0) or 0),
         "paragraph_count": int(source_unit.get("paragraph_count", 0) or 0),
+        "unit_partition_range": dict(unitize_decision.get("unit_partition_range", {}))
+        if isinstance(unitize_decision.get("unit_partition_range"), Mapping)
+        else {},
+        "unit_partition_titles": [
+            _clean_text(item)
+            for item in unitize_decision.get("unit_partition_titles", [])
+            if _clean_text(item)
+        ]
+        if isinstance(unitize_decision.get("unit_partition_titles"), list)
+        else [],
+        "unit_estimated_token_count": int(unitize_decision.get("unit_estimated_token_count", 0) or 0),
+        "unit_size_policy": dict(unitize_decision.get("unit_size_policy", {}))
+        if isinstance(unitize_decision.get("unit_size_policy"), Mapping)
+        else {},
+        "unit_size_status": _clean_text(unitize_decision.get("unit_size_status")),
         "end_anchor_text": _clean_text(end_anchor_text),
         "resolution": dict(resolution),
         "created_at": _timestamp(),
