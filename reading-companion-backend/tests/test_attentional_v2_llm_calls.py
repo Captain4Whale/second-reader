@@ -1087,6 +1087,12 @@ def test_digest_uses_live_xml_prompt_and_filters_surface_reactions(tmp_path: Pat
     assert "main meaning survives outside the book" in captured["prompt"]
     assert "Context-loss test" in captured["prompt"]
     assert "who says it, who is being described" in captured["prompt"]
+    assert "ordinary reader may not notice, know, or infer on their own" in captured["prompt"]
+    assert "cognitive increment beyond paraphrase" in captured["prompt"]
+    assert "What is here that I might not have known or read out by myself?" in captured["prompt"]
+    assert "Do not write a classroom paraphrase" in captured["prompt"]
+    assert "Do not begin by generating a separate intention label" in captured["prompt"]
+    assert "Use a silent \"verb + object\" intention" not in captured["prompt"]
     assert "smallest complete contiguous `source_quote`" in captured["prompt"]
     assert "not a fragmentary phrase" in captured["prompt"]
     assert "clipped clauses, isolated predicates" in captured["prompt"]
@@ -1096,6 +1102,10 @@ def test_digest_uses_live_xml_prompt_and_filters_surface_reactions(tmp_path: Pat
     assert "这个人是神圣的" in captured["prompt"]
     assert "在水面行走并不是我的追求" in captured["prompt"]
     assert "Do not hide context-dependent value inside a quote-only highlight" in captured["prompt"]
+    assert "this sentence shows that the character accepts the choice" in captured["prompt"]
+    assert "愿你将这条路走到底，愿你寻得解脱！" in captured["prompt"]
+    assert "it mostly restates the visible scene" in captured["prompt"]
+    assert "turns farewell into permission" in captured["prompt"]
     assert "The reason must name both why the quote remains understandable out of context and what intrinsic excerpt value it carries." in captured["prompt"]
     assert "For note-bearing Marginalia, write the explanation in visible `content`; `selection_reason` may be omitted or empty." in captured["prompt"]
     assert '"reading_impression": "..."' not in captured["prompt"]
@@ -1127,8 +1137,8 @@ def test_digest_uses_live_xml_prompt_and_filters_surface_reactions(tmp_path: Pat
     }
     assert op["target_key"] != "legacy-ignored"
     assert manifest["node_name"] == "digest"
-    assert manifest["prompt_version"] == "attentional_v2.digest.v17"
-    assert manifest["prompt_assembly"]["spec_id"] == "attentional_v2.digest.xml.v17"
+    assert manifest["prompt_version"] == "attentional_v2.digest.v18"
+    assert manifest["prompt_assembly"]["spec_id"] == "attentional_v2.digest.xml.v18"
     assert manifest["prompt_assembly"]["output_contract"] == "digest_understanding_response_marginalia_json_v7"
     assert "mode" not in manifest["prompt_assembly"]
     assert manifest["prompt_assembly"]["rendered_blocks"] == [

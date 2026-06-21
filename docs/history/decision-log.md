@@ -1593,6 +1593,29 @@ The old active windows `nawaer_baodian_private_zh__wealth`, `nawaer_baodian_priv
 - `docs/backend-reading-mechanisms/attentional_v2.md`
 - `docs/current-state.md`
 - `docs/tasks/registry.md`
+
+## Entry 135
+**ID**: DEC-138
+**Status**: active
+
+**Decision / Inflection**: Tighten note-bearing Marginalia around reader-visible cognitive increment instead of method-heavy intention scaffolding.
+
+**Period**: June 21, 2026, after comparing live Digest note-bearing output with simple external chatbot probes on a `Siddhartha` passage. The simple prompt "what might an ordinary reader not know or read out from this passage?" produced more valuable notes than the live prompt's more method-heavy guidance.
+
+**Decision**: Live Digest is bumped to `attentional_v2.digest.v18` / XML spec v18 / promptset `attentional_v2-phase6-v78`, while keeping output contract `digest_understanding_response_marginalia_json_v7`. Note-bearing Marginalia now asks directly what a thoughtful ordinary reader may not notice, know, or infer on their own. Note content should add cognitive value beyond paraphrase through hidden structure, literary technique, motif, cultural or historical context, translation nuance, philosophical tension, precise inference, or a question that changes how the quote is read. The prior `verb + object` intention method is removed from the live prompt, and shallow paraphrase, obvious emotion labels, and visible-action restatement are explicitly rejected.
+
+**Boundary**: This is a prompt-writing discipline refinement only. It does not change the Marginalia item schema, Digest runtime normalization, Unit Memory retrieval semantics, public API / frontend fields, Ingest behavior, source-coordinate resolution, or historical eval/report artifacts. Highlight-only v17 completeness/value gates remain active.
+
+**Why this path won**: The product value of note-bearing Marginalia is not to repeat what the source already says, but to give the reader a small piece of reading surplus beside the exact quote. A direct user-value question is simpler and better aligned with the desired behavior than asking the model to generate or internally follow abstract intention labels before writing.
+
+**Primary evidence**:
+- `reading-companion-backend/src/attentional_v2/prompts/digest.py`
+- `reading-companion-backend/tests/test_attentional_v2_llm_calls.py`
+- `reading-companion-backend/tests/test_attentional_v2_scaffold.py`
+- `docs/implementation/new-reading-mechanism/digest-marginalia-prompt-revision-design.md`
+- `docs/backend-reading-mechanisms/attentional_v2.md`
+- `docs/current-state.md`
+- `docs/tasks/registry.md`
 - `docs/implementation/new-reading-mechanism/attentional_v2_structural_rework_plan.md`
 - `reading-companion-backend/src/attentional_v2/runner.py`
 - `reading-companion-backend/src/attentional_v2/resume.py`
