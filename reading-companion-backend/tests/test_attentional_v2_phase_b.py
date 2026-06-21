@@ -185,7 +185,7 @@ def test_digest_projects_compact_packet_and_returns_f1_surface_contract(tmp_path
     assert "\"earlier_excerpts\"" not in captured["prompt"]
     assert "\"refs\": [" not in captured["prompt"]
     assert manifest["node_name"] == "digest"
-    assert manifest["prompt_version"] == "attentional_v2.digest.v12"
+    assert manifest["prompt_version"] == "attentional_v2.digest.v13"
     assert result["reading_impression"] == "The second sentence sharpens the first one."
     assert result["surfaced_reactions"][0]["source_quote"] == "Beta sentence."
     assert "prior_link" not in result["surfaced_reactions"][0]

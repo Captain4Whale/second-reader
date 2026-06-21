@@ -3696,3 +3696,26 @@ This new direction is design frozen but not yet implemented as a formal benchmar
 - `docs/backend-reading-mechanisms/attentional_v2.md`
 - `docs/current-state.md`
 - `docs/tasks/registry.md`
+
+## Entry 128
+**ID**: DEC-131
+**Status**: active
+
+**Decision / Inflection**: Add intrinsic excerpt value as a required gate for highlight-only Marginalia.
+
+**Period**: June 21, 2026, immediately after the v12 highlight-only boundary review clarified that "standing alone" is necessary but not enough: the quoted source text must itself have value as an excerpt.
+
+**Decision**: Live Digest is bumped to `attentional_v2.digest.v13` / XML spec v13 / promptset `attentional_v2-phase6-v71` while keeping output contract `digest_understanding_response_marginalia_json_v5`. The prompt now states that highlight-only Marginalia has two gates: the quote must be self-contained enough to stand alone, and it must have intrinsic excerpt value. A merely complete, informative, or easy-to-locate sentence is not enough. Quote-only highlights should target source text whose original wording, image, insight, emotional force, conceptual compression, or compact principle carries value by itself.
+
+**Boundary**: This is a prompt-selection discipline refinement only. It does not change the Marginalia item schema, Digest runtime normalization, source-quote resolution, public API, frontend routes, Unit Memory retrieval semantics, Ingest behavior, or compatibility handling for historical annotation/reaction artifacts.
+
+**Why this path won**: The product should surface highlights that feel like real reader excerpts, not just locally useful markers. The added gate makes the basic "text itself has value" condition explicit, preserving the difference between a sentence that is important for comprehension and a sentence that is worth extracting because it has its own force.
+
+**Primary evidence**:
+- `reading-companion-backend/src/attentional_v2/prompts/digest.py`
+- `reading-companion-backend/tests/test_attentional_v2_llm_calls.py`
+- `reading-companion-backend/tests/test_attentional_v2_scaffold.py`
+- `docs/implementation/new-reading-mechanism/digest-marginalia-prompt-revision-design.md`
+- `docs/backend-reading-mechanisms/attentional_v2.md`
+- `docs/current-state.md`
+- `docs/tasks/registry.md`

@@ -18,9 +18,9 @@ from .reader_role import READER_ROLE_FRAGMENT
 from .types import PromptDefinition
 
 
-DIGEST_PROMPT_VERSION = "attentional_v2.digest.v12"
-DIGEST_XML_PROMPT_ASSEMBLY_SPEC_ID = "attentional_v2.digest.xml.v12"
-DIGEST_XML_PROMPTSET_VERSION = "attentional_v2-phase6-v70"
+DIGEST_PROMPT_VERSION = "attentional_v2.digest.v13"
+DIGEST_XML_PROMPT_ASSEMBLY_SPEC_ID = "attentional_v2.digest.xml.v13"
+DIGEST_XML_PROMPTSET_VERSION = "attentional_v2-phase6-v71"
 DIGEST_XML_TRANSPORT_SYSTEM_PROMPT = "Follow the structured Digest prompt in the user message. Use the required submit_digest_result tool as the final output channel."
 
 
@@ -35,7 +35,7 @@ Stay with this unit as the present moment of reading. Let the carried reading co
 
 After reading, express the result in three connected ways: what you understand from the text, how you respond to it as a reader, and which exact quotes, if any, should become Marginalia in the page margin.
 
-Marginalia may be highlight-only or note-bearing. A highlight-only item preserves an exact quote that can stand alone as an excerpt; a note-bearing item adds compact reader-visible content when the value depends on explanation, relation, or question.""",
+Marginalia may be highlight-only or note-bearing. A highlight-only item preserves an exact quote that can stand alone as an intrinsically valuable excerpt; a note-bearing item adds compact reader-visible content when the value depends on explanation, relation, or question.""",
     ),
     PromptFragment(
         fragment_id="digest.context_use_guide",
@@ -199,7 +199,7 @@ Marginalia are source-anchored reading marks. They are not passage summaries, ge
 
 Marginalia can be either highlight-only or note-bearing.
 
-- Highlight-only: use this only when the exact quote can stand alone as an excerpt worth preserving. Another reader should be able to see why it was marked from the quoted words themselves: a memorable formulation, aphorism, definition, distinction, image, emotional condensation, ethical pressure, or compact principle. Output an exact `source_quote`; leave `content` empty or omit it according to the output contract.
+- Highlight-only: use this only when the exact quote can stand alone as an excerpt worth preserving and has intrinsic excerpt value. Another reader should be able to see why it was marked from the quoted words themselves: a memorable formulation, aphorism, definition, distinction, image, emotional condensation, ethical pressure, conceptual compression, or compact principle. Output an exact `source_quote`; leave `content` empty or omit it according to the output contract.
 - Note-bearing: use this when the quote is valuable but its value would not be clear enough from the quote alone. A relationship, explanation, question, connection, contrast, structural role, or judgment must be written down for the value to survive. Output an exact `source_quote` plus concise reader-visible `content`.
 
 Do not create Marginalia just to fill the field. It is normal to emit zero items when nothing in the current unit is worth marking.
@@ -219,7 +219,9 @@ Use the following lenses silently. Do not output these labels.
 
 A quote does not need to satisfy all three lenses. One real trigger is enough; a vague sense that the passage is "important" is not enough.
 
-Structural importance is not the same as excerpt-worthiness. Topic sentences, transitions, setup questions, recaps, and argument signposts may be important for Understanding, but they should not become highlight-only Marginalia unless their exact wording is itself worth preserving outside the current context.
+Highlight-only has two gates: the quote must be self-contained enough to stand alone, and it must have intrinsic excerpt value. Self-contained is necessary but not sufficient. Do not mark a merely ordinary sentence just because it is complete, informative, or easy to locate.
+
+Structural importance is not the same as excerpt-worthiness. Topic sentences, transitions, setup questions, recaps, and argument signposts may be important for Understanding, but they should not become highlight-only Marginalia unless their exact wording is itself valuable outside the current context.
 
 ## Minimal Intervention
 
@@ -228,8 +230,8 @@ Before producing each candidate Marginalia item, ask:
 1. Should this source span be marked at all?
    If it is only a transition, filler, repeated information, or a detail with no return value, skip it.
 
-2. Can this quote stand alone as an excerpt?
-   If another reader saw only this quote, without the surrounding unit or an added note, would they naturally understand why it was preserved? If yes, and a note would only repeat or dilute the quote, use highlight-only.
+2. Can this quote stand alone as an intrinsically valuable excerpt?
+   If another reader saw only this quote, without the surrounding unit or an added note, would they naturally understand why it was preserved? Does the original wording, image, insight, emotional force, or conceptual compression carry value by itself? If both are yes, and a note would only repeat or dilute the quote, use highlight-only.
 
 3. Is the quote valuable only after explanation?
    If the quote matters because of its role in the argument, scene, contrast, turn, hidden relation, or local mechanism, use note-bearing Marginalia. Do not hide context-dependent value inside a quote-only highlight.
