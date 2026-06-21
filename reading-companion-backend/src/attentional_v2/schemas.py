@@ -296,6 +296,7 @@ class DigestResult(TypedDict, total=False):
 
     reading_impression: str
     marginalia: list["MarginaliaItem"]
+    marginalia_audit: list["MarginaliaAuditItem"]
     surfaced_reactions: list["SurfacedReaction"]
     memory_uptake_ops: list["StateOperation"]
     memory_uptake_admission_events: list["MemoryUptakeAdmissionEvent"]
@@ -352,6 +353,13 @@ class MarginaliaItem(TypedDict, total=False):
     prior_link: "PriorLink" | None
     outside_link: "OutsideLink" | None
     search_intent: "SearchIntent" | None
+
+
+class MarginaliaAuditItem(TypedDict, total=False):
+    """Mechanism-private selection audit for highlight-only Marginalia."""
+
+    source_quote: str
+    selection_reason: str
 
 
 SurfacedReaction = MarginaliaItem

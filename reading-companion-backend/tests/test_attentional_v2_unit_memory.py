@@ -105,6 +105,12 @@ def test_unit_memory_indexes_highlight_only_marginalia():
         digest_result={
             "reading_impression": "The image stays clear.",
             "marginalia": [{"source_quote": "庭下如积水空明", "content": ""}],
+            "marginalia_audit": [
+                {
+                    "source_quote": "庭下如积水空明",
+                    "selection_reason": "The quoted image is compact and independently memorable.",
+                }
+            ],
             "memory_uptake_ops": [
                 {
                     "op": "append",
@@ -120,6 +126,12 @@ def test_unit_memory_indexes_highlight_only_marginalia():
 
     marginalia_doc = [doc for doc in docs if doc["surface"] == "unit_marginalia"][0]
     assert marginalia_doc["text"] == "庭下如积水空明"
+    assert entry["digest"]["marginalia_audit"] == [
+        {
+            "source_quote": "庭下如积水空明",
+            "selection_reason": "The quoted image is compact and independently memorable.",
+        }
+    ]
 
 
 def test_fts_query_builder_quotes_phrases_and_skips_short_queries():

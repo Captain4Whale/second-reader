@@ -29,6 +29,7 @@ from .schemas import (
     BridgeCandidate,
     CarryForwardContext,
     KnowledgeActivationsState,
+    MarginaliaAuditItem,
     MarginaliaItem,
     MemoryUptakeAdmissionEvent,
     IngestBoundaryResult,
@@ -736,6 +737,43 @@ def _normalize_marginalia_items(
     return marginalia
 
 
+def _normalize_marginalia_audit_items(
+    value: object,
+    *,
+    marginalia: list[MarginaliaItem],
+) -> list[MarginaliaAuditItem]:
+    """Normalize private audit reasons for highlight-only Marginalia."""
+
+    if not isinstance(value, list):
+        return []
+    highlight_quotes = {
+        _clean_text(item.get("source_quote"))
+        for item in marginalia
+        if isinstance(item, Mapping)
+        and _clean_text(item.get("source_quote"))
+        and not _clean_text(item.get("content"))
+    }
+    audit: list[MarginaliaAuditItem] = []
+    seen: set[str] = set()
+    for item in value:
+        if not isinstance(item, Mapping):
+            continue
+        source_quote = _clean_text(item.get("source_quote"))
+        selection_reason = _clean_text(item.get("selection_reason"))
+        if not source_quote or not selection_reason:
+            continue
+        if source_quote not in highlight_quotes or source_quote in seen:
+            continue
+        audit.append(
+            {
+                "source_quote": source_quote,
+                "selection_reason": selection_reason,
+            }
+        )
+        seen.add(source_quote)
+    return audit
+
+
 def _normalize_surfaced_reactions(
     value: object,
     *,
@@ -1100,6 +1138,10 @@ def digest(
         current_unit_texts=current_unit_texts,
         allowed_ref_ids=allowed_ref_ids,
     )
+    marginalia_audit = _normalize_marginalia_audit_items(
+        payload.get("marginalia_audit") if isinstance(payload, Mapping) else None,
+        marginalia=marginalia,
+    )
     reading_impression = _clean_text(payload.get("response")) if isinstance(payload, dict) else ""
     raw_memory_ops = _digest_memory_ops_from_payload(payload)
     memory_uptake_ops, memory_uptake_admission_events = _normalize_state_operations_with_admission(
@@ -1109,6 +1151,7 @@ def digest(
     result: DigestResult = {
         "reading_impression": reading_impression,
         "marginalia": marginalia,
+        "marginalia_audit": marginalia_audit,
         "surfaced_reactions": marginalia,
         "memory_uptake_ops": memory_uptake_ops,
         "memory_uptake_admission_events": memory_uptake_admission_events,

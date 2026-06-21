@@ -2218,6 +2218,7 @@ def test_attentional_node_uses_shared_runtime_trace(tmp_path: Path, monkeypatch:
                         "understanding": "The alpha hinge line becomes the current unit's focus.",
                         "response": "Focused on the hinge.",
                         "marginalia": [],
+                        "marginalia_audit": [],
                     },
                 }
             ],

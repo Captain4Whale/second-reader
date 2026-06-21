@@ -356,11 +356,17 @@ def record_read(
         if isinstance(digest_result.get("surfaced_reactions"), list)
         else []
     )
+    marginalia_audit = (
+        [dict(item) for item in digest_result.get("marginalia_audit", []) if isinstance(item, Mapping)]
+        if isinstance(digest_result.get("marginalia_audit"), list)
+        else []
+    )
     memory_uptake_ops = _memory_uptake_ops(digest_result)
     memory_uptake_admission_events = _memory_uptake_admission_events(digest_result)
     compact_digest_result = {
         "reading_impression": _clean_text(digest_result.get("reading_impression")),
         "marginalia": marginalia,
+        "marginalia_audit": marginalia_audit,
         "surfaced_reactions": marginalia,
         "memory_uptake_ops": memory_uptake_ops,
         "memory_uptake_admission_events": memory_uptake_admission_events,
@@ -387,6 +393,7 @@ def record_read(
         "reading_impression": _clean_text(digest_result.get("reading_impression")),
         "marginalia_count": len(marginalia),
         "marginalia": marginalia,
+        "marginalia_audit": marginalia_audit,
         "surfaced_reaction_count": len(marginalia),
         "surfaced_reactions": marginalia,
         "digest_result": compact_digest_result,

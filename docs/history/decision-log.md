@@ -3719,3 +3719,32 @@ This new direction is design frozen but not yet implemented as a formal benchmar
 - `docs/backend-reading-mechanisms/attentional_v2.md`
 - `docs/current-state.md`
 - `docs/tasks/registry.md`
+
+## Entry 129
+**ID**: DEC-132
+**Status**: active
+
+**Decision / Inflection**: Add private selection reasons for highlight-only Marginalia.
+
+**Period**: June 21, 2026, after deciding that highlight-only marks should still leave an auditable reason for why the quote was selected, while note-bearing Marginalia already carries its reason in visible note content.
+
+**Decision**: Live Digest is bumped to `attentional_v2.digest.v14` / XML spec v14 / promptset `attentional_v2-phase6-v72`, with output contract `digest_understanding_response_marginalia_json_v6`. The visible Marginalia item remains `source_quote` plus optional `content`: empty, null, or omitted `content` means highlight-only; non-empty `content` means note-bearing. A new private `marginalia_audit[]` field is required in final Digest output, and each highlight-only Marginalia item must have one matching audit item with the same exact `source_quote` and a short `selection_reason`.
+
+**Boundary**: This does not expose selection reasons as product-visible Marginalia content, does not add a public/frontend field, and does not change Ingest, Unit Memory retrieval semantics, source-coordinate resolution, or legacy annotation/reaction compatibility. Note-bearing Marginalia should not receive private audit reasons because the visible `content` is already the reader-facing reason.
+
+**Why this path won**: Highlight-only selection is deliberately stricter after DEC-130 and DEC-131, but an empty visible `content` field makes later audit harder: reviewers can see the quote, but not why the model believed it had standalone excerpt value. Adding a short private reason gives prompt pressure and reviewability without turning every highlight into a visible note or polluting Unit Memory retrieval text with internal justification.
+
+**Primary evidence**:
+- `reading-companion-backend/src/attentional_v2/prompts/digest.py`
+- `reading-companion-backend/src/attentional_v2/llm_output_tools.py`
+- `reading-companion-backend/src/attentional_v2/llm_calls.py`
+- `reading-companion-backend/src/attentional_v2/unit_memory.py`
+- `reading-companion-backend/src/attentional_v2/observability.py`
+- `reading-companion-backend/tests/test_attentional_v2_llm_calls.py`
+- `reading-companion-backend/tests/test_attentional_v2_scaffold.py`
+- `reading-companion-backend/tests/test_attentional_v2_unit_memory.py`
+- `docs/implementation/new-reading-mechanism/digest-marginalia-prompt-revision-design.md`
+- `docs/implementation/new-reading-mechanism/digest-understanding-response-marginalia-design.md`
+- `docs/backend-reading-mechanisms/attentional_v2.md`
+- `docs/current-state.md`
+- `docs/tasks/registry.md`

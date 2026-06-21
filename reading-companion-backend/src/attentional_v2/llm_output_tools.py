@@ -74,8 +74,18 @@ DIGEST_RESULT_TOOL = final_output_tool(
                     required=["source_quote"],
                 ),
             },
+            "marginalia_audit": {
+                "type": "array",
+                "items": _object_schema(
+                    {
+                        "source_quote": {"type": "string"},
+                        "selection_reason": {"type": "string"},
+                    },
+                    required=["source_quote", "selection_reason"],
+                ),
+            },
         },
-        required=["understanding", "response", "marginalia"],
+        required=["understanding", "response", "marginalia", "marginalia_audit"],
     ),
 )
 
@@ -321,6 +331,7 @@ def validate_digest_result(payload: Mapping[str, Any], *, current_unit_texts: li
     marginalia = payload.get("marginalia")
     legacy_annotations = payload.get("annotations")
     marginalia_payload = marginalia if isinstance(marginalia, list) else legacy_annotations
+    highlight_quotes: list[str] = []
     if not isinstance(marginalia_payload, list):
         errors.append("marginalia must be an array")
     else:
@@ -334,6 +345,34 @@ def validate_digest_result(payload: Mapping[str, Any], *, current_unit_texts: li
             content = item.get("content")
             if content is not None and not isinstance(content, str):
                 errors.append(f"marginalia[{index}].content must be a string or null")
+            if source_quote:
+                if not (isinstance(content, str) and content.strip()):
+                    highlight_quotes.append(source_quote)
+    marginalia_audit = payload.get("marginalia_audit")
+    audit_reason_by_quote: dict[str, str] = {}
+    if not isinstance(marginalia_audit, list):
+        errors.append("marginalia_audit must be an array")
+    else:
+        highlight_quote_set = set(highlight_quotes)
+        for index, item in enumerate(marginalia_audit):
+            if not isinstance(item, Mapping):
+                errors.append(f"marginalia_audit[{index}] must be an object")
+                continue
+            source_quote = str(item.get("source_quote") or "").strip()
+            selection_reason = str(item.get("selection_reason") or "").strip()
+            if not source_quote:
+                errors.append(f"marginalia_audit[{index}].source_quote must be non-empty")
+            if not selection_reason:
+                errors.append(f"marginalia_audit[{index}].selection_reason must be non-empty")
+            if source_quote and source_quote not in highlight_quote_set:
+                errors.append(
+                    f"marginalia_audit[{index}].source_quote must match a highlight-only marginalia source_quote"
+                )
+            if source_quote and selection_reason:
+                audit_reason_by_quote[source_quote] = selection_reason
+    for quote in highlight_quotes:
+        if quote not in audit_reason_by_quote:
+            errors.append("marginalia_audit must include selection_reason for each highlight-only marginalia item")
     response = payload.get("response")
     if not isinstance(response, str):
         errors.append("response must be a string")

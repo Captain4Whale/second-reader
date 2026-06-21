@@ -887,6 +887,12 @@ def test_digest_uses_live_xml_prompt_and_filters_surface_reactions(tmp_path: Pat
                     "content": "This one should be dropped.",
                 }
             ],
+            "marginalia_audit": [
+                {
+                    "source_quote": "Beta consequence.",
+                    "selection_reason": "Intrinsic excerpt value through compact consequence wording.",
+                }
+            ],
             "understanding": "The current unit flips the frame around Alpha hinge.",
             "reading_impression": "legacy ignored",
             "surfaced_reactions": [
@@ -977,6 +983,8 @@ def test_digest_uses_live_xml_prompt_and_filters_surface_reactions(tmp_path: Pat
     assert '"understanding": "..."' in captured["prompt"]
     assert '"response": "..."' in captured["prompt"]
     assert '"marginalia": [' in captured["prompt"]
+    assert '"marginalia_audit": [' in captured["prompt"]
+    assert '"selection_reason": "..."' in captured["prompt"]
     assert '"prior_link": null' not in captured["prompt"]
     assert '"outside_link": null' not in captured["prompt"]
     assert '"search_intent": null' not in captured["prompt"]
@@ -987,6 +995,8 @@ def test_digest_uses_live_xml_prompt_and_filters_surface_reactions(tmp_path: Pat
     assert "Self-contained is necessary but not sufficient" in captured["prompt"]
     assert "Structural importance is not the same as excerpt-worthiness" in captured["prompt"]
     assert "Do not hide context-dependent value inside a quote-only highlight" in captured["prompt"]
+    assert "marginalia_audit" in captured["prompt"]
+    assert "Do not add audit items for note-bearing Marginalia" in captured["prompt"]
     assert '"reading_impression": "..."' not in captured["prompt"]
     assert '"surfaced_reactions": []' not in captured["prompt"]
     assert '"recent_reading_memory": []' not in captured["prompt"]
@@ -1006,6 +1016,12 @@ def test_digest_uses_live_xml_prompt_and_filters_surface_reactions(tmp_path: Pat
             "content": "",
         }
     ]
+    assert result["marginalia_audit"] == [
+        {
+            "source_quote": "Beta consequence.",
+            "selection_reason": "Intrinsic excerpt value through compact consequence wording.",
+        }
+    ]
     assert len(result["memory_uptake_ops"]) == 1
     op = result["memory_uptake_ops"][0]
     assert op["target_store"] == "recent_reading_memory"
@@ -1014,9 +1030,9 @@ def test_digest_uses_live_xml_prompt_and_filters_surface_reactions(tmp_path: Pat
     }
     assert op["target_key"] != "legacy-ignored"
     assert manifest["node_name"] == "digest"
-    assert manifest["prompt_version"] == "attentional_v2.digest.v13"
-    assert manifest["prompt_assembly"]["spec_id"] == "attentional_v2.digest.xml.v13"
-    assert manifest["prompt_assembly"]["output_contract"] == "digest_understanding_response_marginalia_json_v5"
+    assert manifest["prompt_version"] == "attentional_v2.digest.v14"
+    assert manifest["prompt_assembly"]["spec_id"] == "attentional_v2.digest.xml.v14"
+    assert manifest["prompt_assembly"]["output_contract"] == "digest_understanding_response_marginalia_json_v6"
     assert "mode" not in manifest["prompt_assembly"]
     assert manifest["prompt_assembly"]["rendered_blocks"] == [
         "ReaderRole",
@@ -1034,6 +1050,12 @@ def test_digest_validator_accepts_highlight_only_and_rejects_missing_quote() -> 
             "understanding": "The unit establishes a clear movement.",
             "response": "The ending lands quietly.",
             "marginalia": [{"source_quote": "Alpha hinge.", "content": ""}],
+            "marginalia_audit": [
+                {
+                    "source_quote": "Alpha hinge.",
+                    "selection_reason": "Intrinsic excerpt value through compact hinge phrasing.",
+                }
+            ],
         },
         current_unit_texts=["Alpha hinge."],
     ) == []
@@ -1042,9 +1064,33 @@ def test_digest_validator_accepts_highlight_only_and_rejects_missing_quote() -> 
             "understanding": "The unit establishes a clear movement.",
             "response": "The ending lands quietly.",
             "marginalia": [{"content": "Missing quote."}],
+            "marginalia_audit": [],
         },
         current_unit_texts=["Alpha hinge."],
     ) == ["marginalia[0].source_quote must be non-empty"]
+    assert validate_digest_result(
+        {
+            "understanding": "The unit establishes a clear movement.",
+            "response": "The ending lands quietly.",
+            "marginalia": [{"source_quote": "Alpha hinge.", "content": ""}],
+            "marginalia_audit": [],
+        },
+        current_unit_texts=["Alpha hinge."],
+    ) == ["marginalia_audit must include selection_reason for each highlight-only marginalia item"]
+    assert validate_digest_result(
+        {
+            "understanding": "The unit establishes a clear movement.",
+            "response": "The ending lands quietly.",
+            "marginalia": [{"source_quote": "Alpha hinge.", "content": "Visible note explains it."}],
+            "marginalia_audit": [
+                {
+                    "source_quote": "Alpha hinge.",
+                    "selection_reason": "Should not be emitted for note-bearing items.",
+                }
+            ],
+        },
+        current_unit_texts=["Alpha hinge."],
+    ) == ["marginalia_audit[0].source_quote must match a highlight-only marginalia source_quote"]
 
 
 def test_digest_rejects_legacy_understanding_list_payload(tmp_path: Path, monkeypatch):
@@ -1054,6 +1100,7 @@ def test_digest_rejects_legacy_understanding_list_payload(tmp_path: Path, monkey
         payload: dict[str, object] = {
             "response": "A compact response remains valid.",
             "marginalia": [],
+            "marginalia_audit": [],
         }
         payload["understanding"] = [
             {
