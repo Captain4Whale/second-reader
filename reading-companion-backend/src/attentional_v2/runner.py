@@ -1679,6 +1679,14 @@ def prepare_next_source_unit_for_read(
                 "degradation_reason": "empty_memory_recalls_noop",
                 "tool_call_id": _clean_text(args.get("_tool_call_id")),
             }
+        if output_dir is not None and next_unit_sequence_index(output_dir) <= 1:
+            return {
+                "status": "no_prior_unit_memory",
+                "effective_mode": _clean_text((memory_retrieval_config or {}).get("mode")) or "hybrid",
+                "retrieval_summary": {"recall_count": 0, "candidate_unit_count": 0, "selected_unit_count": 0},
+                "degradation_reason": "no_prior_unit_memory",
+                "tool_call_id": _clean_text(args.get("_tool_call_id")),
+            }
         preflight_errors = validate_ingest_unit_memory_tool_args(
             dict(args),
             current_source_texts=current_source_texts,

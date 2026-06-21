@@ -3,10 +3,13 @@ from __future__ import annotations
 import json
 
 from eval.attentional_v2.run_digest_marginalia_live_smoke import (
+    DEFAULT_FOCUSED_SEGMENTS,
     _hard_failures,
+    _direct_probes_for_set,
     _load_dataset_segment,
     _summarize_marginalia,
     build_summary,
+    build_parser,
 )
 
 
@@ -38,6 +41,35 @@ def test_dataset_segment_loader_builds_one_chapter_sentence_layer(tmp_path):
     assert chapter["paragraphs"][0]["text_role"] == "chapter_heading"
     assert chapter["paragraphs"][1]["text_role"] == "body"
     assert [sentence["text"] for sentence in chapter["sentences"]] == ["标题", "第一句。", "第二句！"]
+
+
+def test_direct_probe_sets_include_classic_public_domain_examples():
+    classic = _direct_probes_for_set("classic_public_domain")
+    all_probes = _direct_probes_for_set("all")
+
+    assert len(classic) == 8
+    assert len(all_probes) > len(classic)
+    assert {probe.probe_id for probe in classic} == {
+        "classic_zh_su_shi_moonlight",
+        "classic_zh_zhuangzi_xiaoyao",
+        "classic_zh_lantingji",
+        "classic_zh_mencius_well",
+        "classic_en_pride_prejudice_opening",
+        "classic_en_moby_dick_opening",
+        "classic_en_hamlet_soliloquy",
+        "classic_en_walden_woods",
+    }
+    assert {probe.output_language for probe in classic} == {"zh", "en"}
+
+
+def test_segment_id_append_uses_defaults_only_when_unspecified():
+    parser = build_parser()
+
+    default_args = parser.parse_args([])
+    explicit_args = parser.parse_args(["--segment-id", "xidaduo_private_zh__segment_1"])
+
+    assert default_args.segment_id is None
+    assert list(explicit_args.segment_id or DEFAULT_FOCUSED_SEGMENTS) == ["xidaduo_private_zh__segment_1"]
 
 
 def test_marginalia_summary_classifies_highlight_and_flags_broad_quote():
@@ -83,6 +115,7 @@ def test_summary_treats_no_highlight_only_as_caveat_not_failure():
 
     summary = build_summary(
         mode="direct",
+        direct_probe_set="calibration",
         direct_results=direct_results,
         runner_results=[],
         run_id="run",
@@ -93,6 +126,7 @@ def test_summary_treats_no_highlight_only_as_caveat_not_failure():
     assert summary["status"] == "pass_with_caveats"
     assert summary["hard_failures"] == []
     assert summary["highlight_only_observed"] is False
+    assert summary["direct_probe_set"] == "calibration"
 
 
 def test_hard_failures_catches_legacy_field_leak_and_unresolved_quote():

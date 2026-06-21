@@ -342,7 +342,7 @@ class DirectDigestProbe:
     source_text: str
 
 
-DIRECT_PROBES = (
+CALIBRATION_DIRECT_PROBES = (
     DirectDigestProbe(
         probe_id="highlight_candidate_moonlight",
         book_title="记承天寺夜游",
@@ -362,9 +362,118 @@ DIRECT_PROBES = (
 )
 
 
+CLASSIC_PUBLIC_DOMAIN_DIRECT_PROBES = (
+    DirectDigestProbe(
+        probe_id="classic_zh_su_shi_moonlight",
+        book_title="记承天寺夜游",
+        author="苏轼",
+        chapter_title="public-domain classic passage",
+        output_language="zh",
+        source_text="庭下如积水空明，水中藻荇交横，盖竹柏影也。",
+    ),
+    DirectDigestProbe(
+        probe_id="classic_zh_zhuangzi_xiaoyao",
+        book_title="庄子",
+        author="庄周",
+        chapter_title="逍遥游",
+        output_language="zh",
+        source_text=(
+            "北冥有鱼，其名为鲲。鲲之大，不知其几千里也；化而为鸟，其名为鹏。"
+            "鹏之背，不知其几千里也；怒而飞，其翼若垂天之云。"
+        ),
+    ),
+    DirectDigestProbe(
+        probe_id="classic_zh_lantingji",
+        book_title="兰亭集序",
+        author="王羲之",
+        chapter_title="public-domain classic passage",
+        output_language="zh",
+        source_text=(
+            "夫人之相与，俯仰一世。或取诸怀抱，悟言一室之内；"
+            "或因寄所托，放浪形骸之外。虽趣舍万殊，静躁不同，"
+            "当其欣于所遇，暂得于己，快然自足，不知老之将至。"
+        ),
+    ),
+    DirectDigestProbe(
+        probe_id="classic_zh_mencius_well",
+        book_title="孟子",
+        author="孟子",
+        chapter_title="公孙丑上",
+        output_language="zh",
+        source_text=(
+            "今人乍见孺子将入于井，皆有怵惕恻隐之心；非所以内交于孺子之父母也，"
+            "非所以要誉于乡党朋友也，非恶其声而然也。由是观之，无恻隐之心，非人也。"
+        ),
+    ),
+    DirectDigestProbe(
+        probe_id="classic_en_pride_prejudice_opening",
+        book_title="Pride and Prejudice",
+        author="Jane Austen",
+        chapter_title="Chapter 1",
+        output_language="en",
+        source_text=(
+            "It is a truth universally acknowledged, that a single man in possession of a good fortune, "
+            "must be in want of a wife."
+        ),
+    ),
+    DirectDigestProbe(
+        probe_id="classic_en_moby_dick_opening",
+        book_title="Moby-Dick; or, The Whale",
+        author="Herman Melville",
+        chapter_title="Loomings",
+        output_language="en",
+        source_text=(
+            "Call me Ishmael. Some years ago--never mind how long precisely--having little or no money "
+            "in my purse, and nothing particular to interest me on shore, I thought I would sail about "
+            "a little and see the watery part of the world."
+        ),
+    ),
+    DirectDigestProbe(
+        probe_id="classic_en_hamlet_soliloquy",
+        book_title="Hamlet",
+        author="William Shakespeare",
+        chapter_title="Act III, Scene I",
+        output_language="en",
+        source_text=(
+            "To be, or not to be, that is the question: Whether 'tis nobler in the mind to suffer "
+            "the slings and arrows of outrageous fortune, or to take arms against a sea of troubles "
+            "and by opposing end them."
+        ),
+    ),
+    DirectDigestProbe(
+        probe_id="classic_en_walden_woods",
+        book_title="Walden",
+        author="Henry David Thoreau",
+        chapter_title="Where I Lived, and What I Lived For",
+        output_language="en",
+        source_text=(
+            "I went to the woods because I wished to live deliberately, to front only the essential "
+            "facts of life, and see if I could not learn what it had to teach, and not, when I came "
+            "to die, discover that I had not lived. I did not wish to live what was not life, living "
+            "is so dear; nor did I wish to practise resignation, unless it was quite necessary."
+        ),
+    ),
+)
+
+
+DIRECT_PROBE_SETS: dict[str, tuple[DirectDigestProbe, ...]] = {
+    "calibration": CALIBRATION_DIRECT_PROBES,
+    "classic_public_domain": CLASSIC_PUBLIC_DOMAIN_DIRECT_PROBES,
+    "all": CALIBRATION_DIRECT_PROBES + CLASSIC_PUBLIC_DOMAIN_DIRECT_PROBES,
+}
+
+
+def _direct_probes_for_set(probe_set: str) -> tuple[DirectDigestProbe, ...]:
+    try:
+        return DIRECT_PROBE_SETS[probe_set]
+    except KeyError as exc:
+        raise ValueError(f"Unknown direct probe set: {probe_set}") from exc
+
+
 def run_direct_digest_smoke(
     *,
     analysis_root: Path,
+    direct_probe_set: str,
     profile_id: str,
     max_output_tokens: int,
     timeout_seconds: int,
@@ -375,7 +484,7 @@ def run_direct_digest_smoke(
     results: list[dict[str, object]] = []
     direct_root = analysis_root / "direct_digest"
     direct_root.mkdir(parents=True, exist_ok=True)
-    for probe in DIRECT_PROBES:
+    for probe in _direct_probes_for_set(direct_probe_set):
         output_dir = direct_root / probe.probe_id
         output_dir.mkdir(parents=True, exist_ok=True)
         current_unit_source = {
@@ -457,6 +566,7 @@ def run_direct_digest_smoke(
         )
         result = {
             "probe_id": probe.probe_id,
+            "probe_set": direct_probe_set,
             "status": "ok",
             "started_at": started_at,
             "finished_at": _now(),
@@ -913,6 +1023,7 @@ def _hard_failures(direct_results: list[dict[str, object]], runner_results: list
 def build_summary(
     *,
     mode: str,
+    direct_probe_set: str,
     direct_results: list[dict[str, object]],
     runner_results: list[dict[str, object]],
     run_id: str,
@@ -940,6 +1051,7 @@ def build_summary(
         "analysis_id": analysis_id,
         "job_id": job_id,
         "mode": mode,
+        "direct_probe_set": direct_probe_set,
         "status": status,
         "generated_at": _now(),
         "prompt_version": ATTENTIONAL_V2_PROMPTS.digest_version,
@@ -975,6 +1087,7 @@ def render_report(
         f"- run_id: `{summary.get('run_id')}`",
         f"- prompt: `{summary.get('prompt_version')}` / `{summary.get('promptset_version')}`",
         f"- output_contract: `{summary.get('output_contract')}`",
+        f"- direct_probe_set: `{summary.get('direct_probe_set')}`",
         f"- direct probes: `{summary.get('direct_probe_count')}`",
         f"- runner segments: `{summary.get('runner_segment_count')}`",
         f"- runner units: `{summary.get('runner_unit_count')}`",
@@ -1110,6 +1223,7 @@ def _write_outputs(
     *,
     analysis_root: Path,
     mode: str,
+    direct_probe_set: str,
     run_id: str,
     analysis_id: str,
     job_id: str,
@@ -1132,6 +1246,7 @@ def _write_outputs(
     report_direct_results = direct_results or (existing_direct if isinstance(existing_direct, list) else [])
     summary = build_summary(
         mode=mode,
+        direct_probe_set=direct_probe_set,
         direct_results=report_direct_results,
         runner_results=report_runner_results,
         run_id=run_id,
@@ -1161,6 +1276,8 @@ def _status_payload(
         "analysis_id": args.analysis_id,
         "job_id": args.job_id,
         "mode": args.mode,
+        "direct_probe_set": args.direct_probe_set,
+        "segment_ids": list(args.segment_id or DEFAULT_FOCUSED_SEGMENTS),
         "updated_at": _now(),
         "analysis_root": str(_analysis_root(args.run_id, args.analysis_id).relative_to(BACKEND_ROOT)),
         "report": str((_analysis_root(args.run_id, args.analysis_id) / "marginalia_smoke_report.md").relative_to(BACKEND_ROOT)),
@@ -1184,12 +1301,13 @@ def run(args: argparse.Namespace) -> int:
         if args.mode in {"direct", "foreground-gate", "all"}:
             direct_results = run_direct_digest_smoke(
                 analysis_root=analysis_root,
+                direct_probe_set=args.direct_probe_set,
                 profile_id=args.profile_id,
                 max_output_tokens=args.max_output_tokens,
                 timeout_seconds=args.timeout_seconds,
                 retry_attempts=args.retry_attempts,
             )
-        if args.mode in {"foreground-gate", "all"}:
+        if args.mode == "foreground-gate":
             runner_results = [
                 run_segment_units(
                     analysis_root=analysis_root,
@@ -1203,6 +1321,7 @@ def run(args: argparse.Namespace) -> int:
                 )
             ]
         if args.mode in {"focused", "all"}:
+            segment_ids = list(args.segment_id or DEFAULT_FOCUSED_SEGMENTS)
             runner_results = [
                 run_segment_units(
                     analysis_root=analysis_root,
@@ -1214,11 +1333,12 @@ def run(args: argparse.Namespace) -> int:
                     timeout_seconds=args.timeout_seconds,
                     retry_attempts=args.retry_attempts,
                 )
-                for segment_id in args.segment_id
+                for segment_id in segment_ids
             ]
         summary = _write_outputs(
             analysis_root=analysis_root,
             mode=args.mode,
+            direct_probe_set=args.direct_probe_set,
             run_id=args.run_id,
             analysis_id=args.analysis_id,
             job_id=args.job_id,
@@ -1239,8 +1359,9 @@ def build_parser() -> argparse.ArgumentParser:
     parser.add_argument("--analysis-id", default=DEFAULT_ANALYSIS_ID)
     parser.add_argument("--job-id", default=DEFAULT_JOB_ID)
     parser.add_argument("--mode", choices=["direct", "foreground-gate", "focused", "all"], default="foreground-gate")
+    parser.add_argument("--direct-probe-set", choices=sorted(DIRECT_PROBE_SETS), default="calibration")
     parser.add_argument("--dataset-root", default=str(DEFAULT_DATASET_ROOT.relative_to(BACKEND_ROOT)))
-    parser.add_argument("--segment-id", action="append", default=list(DEFAULT_FOCUSED_SEGMENTS))
+    parser.add_argument("--segment-id", action="append", default=None)
     parser.add_argument("--profile-id", default=DEFAULT_PROFILE_ID)
     parser.add_argument("--foreground-units", type=int, default=1)
     parser.add_argument("--units-per-segment", type=int, default=4)

@@ -867,8 +867,10 @@ def _memory_recalls_from_tool_results(tool_results: list[dict[str, object]]) -> 
         if _clean_text(tool_result.get("name")) != "retrieve_unit_memory":
             continue
         result = tool_result.get("result")
-        if isinstance(result, Mapping) and _clean_text(result.get("status")) in {"empty_tool_noop", "no_recall"}:
-            return [], "empty_tool_noop"
+        if isinstance(result, Mapping):
+            result_status = _clean_text(result.get("status"))
+            if result_status in {"empty_tool_noop", "no_recall", "no_prior_unit_memory"}:
+                return [], result_status if result_status == "no_prior_unit_memory" else "empty_tool_noop"
         args = tool_result.get("args")
         if not isinstance(args, Mapping):
             return [], "tool_args_malformed"
