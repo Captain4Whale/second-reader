@@ -1,6 +1,6 @@
 {
   "schema_version": 1,
-  "updated_at": "2026-06-21T02:59:31.068195Z",
+  "updated_at": "2026-06-21T06:14:29.847242Z",
   "entries": [
     {
       "run_id": "attentional_v2_excerpt_surface_v1_1_judged_20260406",
@@ -2864,7 +2864,7 @@
       "date": "2026-06-21",
       "surface": "digest_marginalia_live_smoke",
       "lane": "mechanism_runtime",
-      "status": "running",
+      "status": "review_pending",
       "mechanisms": [
         "attentional_v2"
       ],
@@ -2872,7 +2872,11 @@
         "reading-companion-backend/state/eval_local_datasets/user_level_benchmarks/attentional_v2_user_level_selective_v1_repaired_20260614_source_norm_v1_2/manifest.json"
       ],
       "run_dir": "reading-companion-backend/eval/runs/attentional_v2/digest_marginalia_v16_5book_parallel_20units_20260621",
-      "summary_paths": {},
+      "summary_paths": {
+        "runner_units": "reading-companion-backend/eval/runs/attentional_v2/digest_marginalia_v16_5book_parallel_20units_20260621/analysis/digest_marginalia_v16_5book_parallel_20units/raw/runner_units.json",
+        "summary": "reading-companion-backend/eval/runs/attentional_v2/digest_marginalia_v16_5book_parallel_20units_20260621/analysis/digest_marginalia_v16_5book_parallel_20units/raw/summary.json",
+        "traces": "reading-companion-backend/eval/runs/attentional_v2/digest_marginalia_v16_5book_parallel_20units_20260621/analysis/digest_marginalia_v16_5book_parallel_20units/llm_traces/standard.jsonl"
+      },
       "job_ids": [
         "bgjob_digest_marginalia_v16_5book_parallel_20units_20260621"
       ],
@@ -2880,21 +2884,21 @@
         "reading-companion-backend/eval/runs/attentional_v2/digest_marginalia_v16_5book_parallel_20units_20260621/analysis/digest_marginalia_v16_5book_parallel_20units/marginalia_smoke_report.md"
       ],
       "catalog_status": "not_cataloged",
-      "notes": "Diagnostic-only five-book parallel Digest v16 Marginalia smoke over the active source-normalized user-level dataset. Each segment runs the live Ingest -> Digest -> settlement path for up to 20 accepted units with segment_workers=5; no formal judge or evidence catalog promotion.",
+      "notes": "Diagnostic-only five-book parallel Digest v16 Marginalia smoke over the active source-normalized user-level dataset. Completed 100 runner units across 5 segments with summary status pass_with_caveats, 123 Marginalia items, 99 highlight-only, 24 note-bearing, 13 quote_too_broad caveats, and zero hard failures. Pending human review; no formal judge or evidence catalog promotion.",
       "parent_run_id": "",
       "child_run_ids": [],
       "synthetic": false,
-      "local_missing_allowed": [
-        "reading-companion-backend/eval/runs/attentional_v2/digest_marginalia_v16_5book_parallel_20units_20260621",
-        "reading-companion-backend/eval/runs/attentional_v2/digest_marginalia_v16_5book_parallel_20units_20260621/analysis/digest_marginalia_v16_5book_parallel_20units/marginalia_smoke_report.md"
-      ],
+      "local_missing_allowed": [],
       "metadata": {
         "units_per_segment": 20,
         "segment_workers": 5,
         "mode": "focused",
-        "prompt_version": "attentional_v2.digest.v16"
+        "prompt_version": "attentional_v2.digest.v16",
+        "summary_status": "pass_with_caveats",
+        "runner_unit_count": 100,
+        "marginalia_count": 123
       },
-      "updated_at": "2026-06-21T02:59:31.066854Z"
+      "updated_at": "2026-06-21T06:14:29.846148Z"
     }
   ]
 }
