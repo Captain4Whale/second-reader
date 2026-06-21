@@ -10,6 +10,7 @@ promote any evidence catalog entry.
 from __future__ import annotations
 
 import argparse
+import concurrent.futures
 import json
 import os
 import re
@@ -966,6 +967,63 @@ def run_segment_units(
     }
 
 
+def run_focused_segments(
+    *,
+    analysis_root: Path,
+    dataset_root: Path,
+    segment_ids: list[str],
+    unit_count: int,
+    profile_id: str,
+    max_output_tokens: int,
+    timeout_seconds: int,
+    retry_attempts: int,
+    segment_workers: int,
+) -> list[dict[str, object]]:
+    ordered_segment_ids = list(segment_ids)
+    if not ordered_segment_ids:
+        return []
+
+    def _run_one(segment_id: str) -> dict[str, object]:
+        try:
+            return run_segment_units(
+                analysis_root=analysis_root,
+                dataset_root=dataset_root,
+                segment_id=segment_id,
+                unit_count=unit_count,
+                profile_id=profile_id,
+                max_output_tokens=max_output_tokens,
+                timeout_seconds=timeout_seconds,
+                retry_attempts=retry_attempts,
+            )
+        except Exception as exc:  # noqa: BLE001 - preserve one segment failure without hiding sibling results.
+            return {
+                "segment_id": segment_id,
+                "status": "failed",
+                "stop_reason": f"exception:{type(exc).__name__}",
+                "error": str(exc),
+                "started_at": "",
+                "finished_at": _now(),
+                "unit_count": 0,
+                "units": [],
+                "runtime_artifacts": {},
+            }
+
+    max_workers = max(1, min(int(segment_workers or 1), len(ordered_segment_ids)))
+    if max_workers == 1:
+        return [_run_one(segment_id) for segment_id in ordered_segment_ids]
+
+    results_by_segment: dict[str, dict[str, object]] = {}
+    with concurrent.futures.ThreadPoolExecutor(max_workers=max_workers) as executor:
+        future_to_segment = {
+            executor.submit(_run_one, segment_id): segment_id
+            for segment_id in ordered_segment_ids
+        }
+        for future in concurrent.futures.as_completed(future_to_segment):
+            segment_id = future_to_segment[future]
+            results_by_segment[segment_id] = future.result()
+    return [results_by_segment[segment_id] for segment_id in ordered_segment_ids]
+
+
 def _all_marginalia_items(direct_results: list[dict[str, object]], runner_results: list[dict[str, object]]) -> list[dict[str, object]]:
     items: list[dict[str, object]] = []
     for result in direct_results:
@@ -1282,6 +1340,7 @@ def _status_payload(
         "mode": args.mode,
         "direct_probe_set": args.direct_probe_set,
         "segment_ids": list(args.segment_id or DEFAULT_FOCUSED_SEGMENTS),
+        "segment_workers": args.segment_workers,
         "updated_at": _now(),
         "analysis_root": str(_analysis_root(args.run_id, args.analysis_id).relative_to(BACKEND_ROOT)),
         "report": str((_analysis_root(args.run_id, args.analysis_id) / "marginalia_smoke_report.md").relative_to(BACKEND_ROOT)),
@@ -1326,19 +1385,17 @@ def run(args: argparse.Namespace) -> int:
             ]
         if args.mode in {"focused", "all"}:
             segment_ids = list(args.segment_id or DEFAULT_FOCUSED_SEGMENTS)
-            runner_results = [
-                run_segment_units(
-                    analysis_root=analysis_root,
-                    dataset_root=_resolve_backend_path(args.dataset_root),
-                    segment_id=segment_id,
-                    unit_count=args.units_per_segment,
-                    profile_id=args.profile_id,
-                    max_output_tokens=args.max_output_tokens,
-                    timeout_seconds=args.timeout_seconds,
-                    retry_attempts=args.retry_attempts,
-                )
-                for segment_id in segment_ids
-            ]
+            runner_results = run_focused_segments(
+                analysis_root=analysis_root,
+                dataset_root=_resolve_backend_path(args.dataset_root),
+                segment_ids=segment_ids,
+                unit_count=args.units_per_segment,
+                profile_id=args.profile_id,
+                max_output_tokens=args.max_output_tokens,
+                timeout_seconds=args.timeout_seconds,
+                retry_attempts=args.retry_attempts,
+                segment_workers=args.segment_workers,
+            )
         summary = _write_outputs(
             analysis_root=analysis_root,
             mode=args.mode,
@@ -1369,6 +1426,7 @@ def build_parser() -> argparse.ArgumentParser:
     parser.add_argument("--profile-id", default=DEFAULT_PROFILE_ID)
     parser.add_argument("--foreground-units", type=int, default=1)
     parser.add_argument("--units-per-segment", type=int, default=4)
+    parser.add_argument("--segment-workers", type=int, default=1)
     parser.add_argument("--max-output-tokens", type=int, default=4096)
     parser.add_argument("--timeout-seconds", type=int, default=120)
     parser.add_argument("--retry-attempts", type=int, default=3)

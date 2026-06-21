@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import json
 
+from eval.attentional_v2 import run_digest_marginalia_live_smoke as smoke_runner
 from eval.attentional_v2.run_digest_marginalia_live_smoke import (
     DEFAULT_FOCUSED_SEGMENTS,
     _hard_failures,
@@ -10,6 +11,7 @@ from eval.attentional_v2.run_digest_marginalia_live_smoke import (
     _summarize_marginalia,
     build_summary,
     build_parser,
+    run_focused_segments,
 )
 
 
@@ -66,10 +68,45 @@ def test_segment_id_append_uses_defaults_only_when_unspecified():
     parser = build_parser()
 
     default_args = parser.parse_args([])
-    explicit_args = parser.parse_args(["--segment-id", "xidaduo_private_zh__segment_1"])
+    explicit_args = parser.parse_args(["--segment-id", "xidaduo_private_zh__segment_1", "--segment-workers", "5"])
 
     assert default_args.segment_id is None
+    assert default_args.segment_workers == 1
     assert list(explicit_args.segment_id or DEFAULT_FOCUSED_SEGMENTS) == ["xidaduo_private_zh__segment_1"]
+    assert explicit_args.segment_workers == 5
+
+
+def test_parallel_focused_segments_preserve_requested_order(monkeypatch, tmp_path):
+    seen: list[str] = []
+
+    def fake_run_segment_units(**kwargs):
+        segment_id = kwargs["segment_id"]
+        seen.append(segment_id)
+        return {
+            "segment_id": segment_id,
+            "status": "ok",
+            "stop_reason": "unit_limit",
+            "unit_count": 1,
+            "units": [],
+            "runtime_artifacts": {},
+        }
+
+    monkeypatch.setattr(smoke_runner, "run_segment_units", fake_run_segment_units)
+
+    results = run_focused_segments(
+        analysis_root=tmp_path,
+        dataset_root=tmp_path,
+        segment_ids=["segment_b", "segment_a", "segment_c"],
+        unit_count=20,
+        profile_id="dataset_review_high_trust",
+        max_output_tokens=4096,
+        timeout_seconds=120,
+        retry_attempts=3,
+        segment_workers=3,
+    )
+
+    assert set(seen) == {"segment_a", "segment_b", "segment_c"}
+    assert [result["segment_id"] for result in results] == ["segment_b", "segment_a", "segment_c"]
 
 
 def test_marginalia_summary_classifies_highlight_and_flags_broad_quote():

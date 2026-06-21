@@ -7,7 +7,7 @@ Update when: the current objective, active tasks, blockers, active jobs, open de
 
 This file is authoritative for durable current status. Do not keep unique active-state information only in `docs/agent-handoff.md`.
 
-Last verified: `2026-06-21T10:51:39+08:00`
+Last verified: `2026-06-21T10:59:45+08:00`
 
 ## Current Objective
 - The `Ingest -> Digest -> Reading Runner settlement` mechanism reframe is implemented; current work is fact alignment, smoke/diagnostic review, and calibration before any formal evaluation promotion.
@@ -115,6 +115,12 @@ Last verified: `2026-06-21T10:51:39+08:00`
     - scope: same `xidaduo_private_zh__segment_1` source-normalized v1.2 dataset window through `P57@2`, after runtime changed empty `retrieve_unit_memory(memory_recalls=[])` calls into `empty_tool_noop` events
     - outcome: completed with `stop_reason=target_reached`, `unit_count=10`, prompt `attentional_v2.ingest.v17`, promptset `attentional_v2-phase6-v67`
     - report: `reading-companion-backend/eval/runs/attentional_v2/ingest_live_v17_source_norm_token_preview_to_chapter1_retry1_20260614/analysis/live_v17_source_norm_token_preview_to_chapter1_retry1/preview_window_review/segments/xidaduo_private_zh__segment_1/live_v17_source_norm_token_preview_to_chapter1_retry1_preview_units.md`
+  - active Digest v16 Marginalia five-book diagnostic:
+    - run id: `digest_marginalia_v16_5book_parallel_20units_20260621`
+    - job id: `bgjob_digest_marginalia_v16_5book_parallel_20units_20260621`
+    - status: running in the background; run ledger status is `running`
+    - scope: active source-normalized v1.2 five-segment dataset, `segment_workers=5`, up to `20` accepted units per segment
+    - report target: `reading-companion-backend/eval/runs/attentional_v2/digest_marginalia_v16_5book_parallel_20units_20260621/analysis/digest_marginalia_v16_5book_parallel_20units/marginalia_smoke_report.md`
   - active diagnostic evaluation:
     - run id: `attentional_v2_ingest_digest_unit_memory_full_diagnostic_20260603_parallel5`
     - job id: `bgjob_ingest_digest_unit_memory_full_diagnostic_20260603_parallel5`
