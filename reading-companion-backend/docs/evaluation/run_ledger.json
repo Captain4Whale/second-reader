@@ -1,6 +1,6 @@
 {
   "schema_version": 1,
-  "updated_at": "2026-06-21T06:14:29.847242Z",
+  "updated_at": "2026-06-21T08:39:10.158747Z",
   "entries": [
     {
       "run_id": "attentional_v2_excerpt_surface_v1_1_judged_20260406",
@@ -2899,6 +2899,43 @@
         "marginalia_count": 123
       },
       "updated_at": "2026-06-21T06:14:29.846148Z"
+    },
+    {
+      "run_id": "digest_marginalia_v18_5book_parallel_20units_20260621",
+      "date": "2026-06-21",
+      "surface": "digest_marginalia_live_smoke",
+      "lane": "mechanism_runtime",
+      "status": "running",
+      "mechanisms": [
+        "attentional_v2"
+      ],
+      "dataset_or_manifest": [
+        "reading-companion-backend/state/eval_local_datasets/user_level_benchmarks/attentional_v2_user_level_selective_v1_repaired_20260614_source_norm_v1_2/manifest.json"
+      ],
+      "run_dir": "reading-companion-backend/eval/runs/attentional_v2/digest_marginalia_v18_5book_parallel_20units_20260621",
+      "summary_paths": {
+        "runner_units": "reading-companion-backend/eval/runs/attentional_v2/digest_marginalia_v18_5book_parallel_20units_20260621/analysis/digest_marginalia_v18_5book_parallel_20units/raw/runner_units.json",
+        "status": "reading-companion-backend/eval/runs/attentional_v2/digest_marginalia_v18_5book_parallel_20units_20260621/analysis/digest_marginalia_v18_5book_parallel_20units/status.json",
+        "summary": "reading-companion-backend/eval/runs/attentional_v2/digest_marginalia_v18_5book_parallel_20units_20260621/analysis/digest_marginalia_v18_5book_parallel_20units/raw/summary.json"
+      },
+      "job_ids": [
+        "bgjob_digest_marginalia_v18_5book_parallel_20units_20260621"
+      ],
+      "report_paths": [
+        "reading-companion-backend/eval/runs/attentional_v2/digest_marginalia_v18_5book_parallel_20units_20260621/analysis/digest_marginalia_v18_5book_parallel_20units/marginalia_smoke_report.md"
+      ],
+      "catalog_status": "not_cataloged",
+      "notes": "Diagnostic-only five-book parallel Digest v18 Marginalia smoke over the active source-normalized user-level dataset. Running 20 accepted units per segment with segment_workers=5. Focus is note-bearing cognitive-increment quality after v18 prompt refinement; no formal judge or evidence catalog promotion.",
+      "parent_run_id": "",
+      "child_run_ids": [],
+      "synthetic": false,
+      "local_missing_allowed": [
+        "reading-companion-backend/eval/runs/attentional_v2/digest_marginalia_v18_5book_parallel_20units_20260621/analysis/digest_marginalia_v18_5book_parallel_20units/raw/runner_units.json",
+        "reading-companion-backend/eval/runs/attentional_v2/digest_marginalia_v18_5book_parallel_20units_20260621/analysis/digest_marginalia_v18_5book_parallel_20units/raw/summary.json",
+        "reading-companion-backend/eval/runs/attentional_v2/digest_marginalia_v18_5book_parallel_20units_20260621/analysis/digest_marginalia_v18_5book_parallel_20units/marginalia_smoke_report.md"
+      ],
+      "metadata": {},
+      "updated_at": "2026-06-21T08:39:10.157694Z"
     }
   ]
 }
