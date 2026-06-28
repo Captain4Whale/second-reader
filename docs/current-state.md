@@ -7,7 +7,7 @@ Update when: the current objective, active tasks, blockers, active jobs, open de
 
 This file is authoritative for durable current status. Do not keep unique active-state information only in `docs/agent-handoff.md`.
 
-Last verified: `2026-06-21T21:17:49+08:00`
+Last verified: `2026-06-28T16:05:03+08:00`
 
 ## Current Objective
 - The `Ingest -> Digest -> Reading Runner settlement` mechanism reframe is implemented; current work is fact alignment, smoke/diagnostic review, and calibration before any formal evaluation promotion.
@@ -130,10 +130,11 @@ Last verified: `2026-06-21T21:17:49+08:00`
   - Digest v19 Marginalia five-book diagnostic:
     - run id: `digest_marginalia_v19_5book_parallel_20units_20260621`
     - job id: `bgjob_digest_marginalia_v19_5book_parallel_20units_20260621`
-    - status: running; run ledger status is `running`
+    - status: failed; run ledger status is `failed`
     - scope: active source-normalized v1.2 five-segment dataset, `segment_workers=5`, up to `20` accepted units per segment
-    - purpose: rerun the same five-book diagnostic after `DEC-139` / Digest v19 Marginalia prompt calibration, checking highlight-only durable value, note-bearing useful surplus, quote grounding, and stability under current Ingest v19 unitization
-    - report target: `reading-companion-backend/eval/runs/attentional_v2/digest_marginalia_v19_5book_parallel_20units_20260621/analysis/digest_marginalia_v19_5book_parallel_20units/marginalia_smoke_report.md`
+    - outcome: failed after `61` runner units with hard failures: `huochu_shengming_de_yiyi_private_zh__segment_1` stopped at `llm_contract` after `5` accepted units; `nawaer_baodian_private_zh__segment_1` stopped at `llm_timeout` after `1` accepted unit; `xidaduo` and `mangge` reached the `20`-unit limit, and `value_of_others` reached `chapter_end` after `15` units
+    - summary: `60` Marginalia items (`59` highlight-only, `1` note-bearing), `8` `quote_too_broad` caveats, no formal judge or evidence catalog promotion
+    - report: `reading-companion-backend/eval/runs/attentional_v2/digest_marginalia_v19_5book_parallel_20units_20260621/analysis/digest_marginalia_v19_5book_parallel_20units/marginalia_smoke_report.md`
   - active diagnostic evaluation:
     - run id: `attentional_v2_ingest_digest_unit_memory_full_diagnostic_20260603_parallel5`
     - job id: `bgjob_ingest_digest_unit_memory_full_diagnostic_20260603_parallel5`

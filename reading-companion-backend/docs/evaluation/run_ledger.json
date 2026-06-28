@@ -1,6 +1,6 @@
 {
   "schema_version": 1,
-  "updated_at": "2026-06-21T13:19:07.825486Z",
+  "updated_at": "2026-06-28T08:04:57.225896Z",
   "entries": [
     {
       "run_id": "attentional_v2_excerpt_surface_v1_1_judged_20260406",
@@ -2945,7 +2945,7 @@
       "date": "2026-06-21",
       "surface": "digest_marginalia_live_smoke",
       "lane": "mechanism_runtime",
-      "status": "running",
+      "status": "failed",
       "mechanisms": [
         "attentional_v2"
       ],
@@ -2965,17 +2965,13 @@
         "reading-companion-backend/eval/runs/attentional_v2/digest_marginalia_v19_5book_parallel_20units_20260621/analysis/digest_marginalia_v19_5book_parallel_20units/marginalia_smoke_report.md"
       ],
       "catalog_status": "not_cataloged",
-      "notes": "Diagnostic-only five-book parallel Digest v19 Marginalia smoke over the active source-normalized user-level dataset; running with segment_workers=5, units_per_segment=20, no formal judge or evidence catalog promotion.",
+      "notes": "Diagnostic-only five-book parallel Digest v19 Marginalia smoke over the active source-normalized user-level dataset. Failed after 61 runner units with hard failures: huochu_shengming_de_yiyi_private_zh__segment_1 stopped at llm_contract after 5 accepted units; nawaer_baodian_private_zh__segment_1 stopped at llm_timeout after 1 accepted unit. xidaduo and mangge reached the 20-unit limit; value_of_others reached chapter_end after 15 units. Summary: 60 Marginalia items, 59 highlight-only, 1 note-bearing, 8 quote_too_broad caveats; no formal judge or evidence catalog promotion.",
       "parent_run_id": "",
       "child_run_ids": [],
       "synthetic": false,
-      "local_missing_allowed": [
-        "reading-companion-backend/eval/runs/attentional_v2/digest_marginalia_v19_5book_parallel_20units_20260621/analysis/digest_marginalia_v19_5book_parallel_20units/raw/summary.json",
-        "reading-companion-backend/eval/runs/attentional_v2/digest_marginalia_v19_5book_parallel_20units_20260621/analysis/digest_marginalia_v19_5book_parallel_20units/raw/runner_units.json",
-        "reading-companion-backend/eval/runs/attentional_v2/digest_marginalia_v19_5book_parallel_20units_20260621/analysis/digest_marginalia_v19_5book_parallel_20units/marginalia_smoke_report.md"
-      ],
+      "local_missing_allowed": [],
       "metadata": {},
-      "updated_at": "2026-06-21T13:19:07.824421Z"
+      "updated_at": "2026-06-28T08:04:57.224692Z"
     }
   ]
 }
