@@ -857,6 +857,8 @@ def _memory_recalls_from_tool_results(tool_results: list[dict[str, object]]) -> 
         result = tool_result.get("result")
         if isinstance(result, Mapping):
             result_status = _clean_text(result.get("status"))
+            if result_status in {"invalid_tool_noop", "invalid_skipped"}:
+                return [], "invalid_skipped"
             if result_status in {"empty_tool_noop", "no_recall", "no_prior_unit_memory"}:
                 return [], result_status if result_status == "no_prior_unit_memory" else "empty_tool_noop"
         args = tool_result.get("args")

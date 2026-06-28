@@ -67,7 +67,7 @@ OpenCode Go requires a normal OpenAI-like `User-Agent`; the shared OpenAI-compat
 - If `retrieve_unit_memory` is available, expose it as an auto action tool.
 - The first action-tool turn may use `tool_choice="auto"` with provider thinking enabled; the June 9 Ingest reasoning probe confirmed that DeepSeek returns both `reasoning_content` and an auto `retrieve_unit_memory` tool call.
 - After action tool results, request final JSON object output with no final-output `tool_choice`.
-- Ingest final JSON is limited to the boundary / preview-partition result; runtime derives private/audit `memory_recalls[]` from non-empty action-tool args. Empty optional `retrieve_unit_memory` calls are treated as no-op / not-requested events; legacy final `memory_recalls[]` echoes are ignored, not matched as a second authority.
+- Ingest final JSON is limited to the boundary / preview-partition result; runtime derives private/audit `memory_recalls[]` from valid non-empty action-tool args. Invalid optional `retrieve_unit_memory` recall args are non-fatal `invalid_tool_noop` / `invalid_skipped` retrieval degradation, empty optional calls are no-op / not-requested events, and legacy final `memory_recalls[]` echoes are ignored rather than matched as a second authority.
 - The restriction is on forced final-output tool choice under thinking, not on auto action-tool use.
 
 ## Trace And Artifact Policy

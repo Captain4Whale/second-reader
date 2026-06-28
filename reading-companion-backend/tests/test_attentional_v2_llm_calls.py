@@ -684,6 +684,70 @@ def test_ingest_empty_recall_tool_call_is_runtime_noop(tmp_path: Path, monkeypat
     assert result["tool_result_summary"]["degradation_reason"] == "empty_memory_recalls_noop"
 
 
+def test_ingest_invalid_recall_tool_call_is_runtime_noop(tmp_path: Path, monkeypatch):
+    captured: dict[str, object] = {}
+
+    def fake_tool_loop(system_prompt, prompt, *, action_tools, output_tool, tool_handler, validator, max_tool_calls):
+        tool_args = {
+            "unit": _unit(1, "乔文达仍然跟随他。"),
+            "memory_recalls": [
+                {
+                    "recall_id": "r1",
+                    "recall_text": "Earlier reading about Siddhartha leaving home with Govinda.",
+                    "basis": "selected_source_unit",
+                }
+            ],
+        }
+        tool_result = tool_handler(
+            "retrieve_unit_memory",
+            tool_args,
+            "tool-invalid",
+        )
+        captured["tool_result"] = tool_result
+        payload = {
+            "unit": _unit(1, "乔文达仍然跟随他。"),
+            "preview_partition": [_partition("乔文达继续跟随", 1, "乔文达仍然跟随他。")],
+            "reason": "乔文达继续跟随悉达多。",
+        }
+        assert validator(payload, [{"name": "retrieve_unit_memory", "args": tool_args, "result": tool_result}]) == []
+        return SimpleNamespace(
+            payload=payload,
+            status="action_tool_called",
+            tool_results=[{"name": "retrieve_unit_memory", "args": tool_args, "result": tool_result}],
+        )
+
+    monkeypatch.setattr(llm_calls_module, "invoke_tool_loop_with_structured_output", fake_tool_loop)
+
+    result = ingest(
+        current_view_position={"current_chapter_id": 1, "current_cursor": {"paragraph_index": 1, "char_offset": 0}},
+        current_view_content={
+            "paragraph_slices": [
+                {
+                    "paragraph_index": 1,
+                    "text": "悉达多继续向前走，乔文达仍然跟随他。两个人离开婆罗门的家，走向沙门的修行生活。",
+                }
+            ]
+        },
+        output_dir=tmp_path,
+        unit_memory_tool_handler=lambda _args: {
+            "status": "invalid_tool_noop",
+            "effective_mode": "not_requested",
+            "retrieval_summary": {"recall_count": 0, "candidate_unit_count": 0, "selected_unit_count": 0},
+            "degradation_reason": "invalid_recall_tool_args",
+            "validation_errors": [
+                "memory_recalls[0].recall_text must use the current source text's primary language",
+            ],
+            "tool_call_id": _args.get("_tool_call_id"),
+        },
+    )
+
+    assert captured["tool_result"]["status"] == "invalid_tool_noop"
+    assert result["memory_recalls"] == []
+    assert result["memory_recalls_status"] == "invalid_skipped"
+    assert result["tool_loop_status"] == "tool_called"
+    assert result["tool_result_summary"]["validation_errors"]
+
+
 def test_ingest_no_prior_unit_memory_tool_result_drops_bad_recall_args(tmp_path: Path, monkeypatch):
     captured: dict[str, object] = {}
 

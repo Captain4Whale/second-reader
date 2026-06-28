@@ -3924,3 +3924,28 @@ This new direction is design frozen but not yet implemented as a formal benchmar
 - `docs/backend-reading-mechanisms/attentional_v2.md`
 - `docs/current-state.md`
 - `docs/tasks/registry.md`
+
+## Entry 138
+**ID**: DEC-140
+**Status**: active
+
+**Decision / Inflection**: Make invalid Ingest Unit Memory recall-tool args a non-fatal retrieval degradation.
+
+**Period**: June 28, 2026, after the Digest v19 five-book diagnostic failed one Chinese nonfiction segment because `retrieve_unit_memory.memory_recalls[0].recall_text` violated the same-language recall contract.
+
+**Decision**: Keep the same-language and `basis == selected_source_unit` validation for `retrieve_unit_memory` action-tool args, but stop treating invalid recall args as an Ingest boundary `llm_contract` failure. Runtime now records invalid recall args as `invalid_tool_noop` / `invalid_skipped`, skips Unit Memory retrieval for that cycle, and continues Digest with the accepted source unit plus hot/recent memory. Valid recall tool calls still drive Unit Memory retrieval, empty recall tool calls remain no-op events, and final Ingest output still does not carry `memory_recalls[]`.
+
+**Boundary**: This does not weaken final Ingest boundary validation. `unit`, `preview_partition[]`, visible paragraph coordinates, and prefix-boundary matching remain hard contract surfaces. The change only lowers the failure severity of the auxiliary Unit Memory recall channel.
+
+**Why this path won**: The recall language/basis guardrail protects retrieval quality, but Unit Memory retrieval is auxiliary to the main reading loop. A bad recall query should reduce memory support and leave an audit trail, not freeze cursor progress when the selected source-unit boundary is otherwise valid.
+
+**Primary evidence**:
+- `reading-companion-backend/src/attentional_v2/llm_calls.py`
+- `reading-companion-backend/src/attentional_v2/runner.py`
+- `reading-companion-backend/tests/test_attentional_v2_llm_calls.py`
+- `reading-companion-backend/tests/test_attentional_v2_scaffold.py`
+- `docs/implementation/new-reading-mechanism/ingest-recall-and-digest-memory-context-design.md`
+- `docs/implementation/new-reading-mechanism/llm-structured-output-protocol-note.md`
+- `docs/backend-reading-mechanisms/attentional_v2.md`
+- `docs/current-state.md`
+- `docs/tasks/registry.md`

@@ -14,7 +14,7 @@ Update when: Ingest recall wording, tool schema, recall output schema, retrieval
   - Ingest now expresses bounded recall intent through `retrieve_unit_memory` action-tool args instead of model-facing `memory_query` or final-output `memory_recalls[]`.
   - The Ingest LLM call can invoke Unit Memory retrieval through an Anthropic-style `retrieve_unit_memory` tool loop.
   - Model-side recalls are contract-validated against the current source text before retrieval execution: recall text must use the current source text's primary language when that language is clear, and model-side `basis` must remain `selected_source_unit`.
-  - `retrieve_unit_memory` action-tool preflight uses the same validator and returns `contract_violation` metadata when the action payload violates the recall contract, allowing the final-output repair path to correct the result without exposing retrieved memory back to Ingest.
+  - `retrieve_unit_memory` action-tool preflight uses the same validator, but invalid recall args are now non-fatal retrieval degradation: runtime records `invalid_tool_noop` / `invalid_skipped` metadata, skips Unit Memory retrieval for that cycle, and continues with the accepted Ingest boundary.
   - Reading Runner/runtime keeps actual retrieval execution, score fusion, source-unit resolution, artifact writing, result selection, dedupe, budget trimming, and Digest `ReadingMemory` rendering.
   - Ingest does not see, choose, return retrieved memory brief ids, or echo recall targets in final JSON; Ingest only expresses recall intentions through the action tool and receives compact status/count tool results.
   - Digest now receives one top-level `ReadingMemory` block assembled from hot current-chapter Understanding plus runtime-selected long-distance Unit Memory Understanding.
@@ -529,7 +529,7 @@ When nothing in the selected unit calls for earlier reading:
 
 Retrieval status, selected unit ids, selected brief ids, suppression reasons, and budget decisions are runtime trace / audit fields, not Ingest model-output fields.
 
-The same-language and basis rules are enforced as a structured-output contract, not only as prompt advice. If the source is clearly Chinese and the model emits an English recall, or if the model-side basis drifts from `selected_source_unit`, validation treats that as a contract failure and gives the model one repair attempt through the forced final-output tool path. Runtime fallback recalls may still use `runtime_source_text_fallback`, but that value is not a model-side basis.
+The same-language and basis rules are enforced as tool preflight validation, not only as prompt advice. If the source is clearly Chinese and the model emits an English recall, or if the model-side basis drifts from `selected_source_unit`, runtime treats the recall request as invalid and skips Unit Memory retrieval for that cycle instead of failing the accepted source-unit boundary. Runtime fallback recalls may still use `runtime_source_text_fallback`, but that value is not a model-side basis.
 
 ### Good Recall Examples
 
@@ -638,7 +638,7 @@ Trace should distinguish:
 - `retry_ingest_recall`
 - `tool_retrieve_unit_memory`
 - `tool_boundary_unresolved`
-- `tool_call_contract_violation`
+- `skip_invalid_recalls`
 - `runtime_source_text_fallback`
 - `skip_empty_recalls`
 - `skip_unusable_fallback`

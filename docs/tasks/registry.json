@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "updated_at": "2026-06-21T15:57:48+08:00",
+  "updated_at": "2026-06-28T16:18:32+08:00",
   "tasks": [
     {
       "id": "TASK-SECOND-READER-INGEST-DIGEST-REFRAME-AUDIT-20260530",
@@ -64,7 +64,8 @@
         "DEC-136",
         "DEC-137",
         "DEC-138",
-        "DEC-139"
+        "DEC-139",
+        "DEC-140"
       ],
       "job_refs": [
         "bgjob_ingest_digest_unit_memory_full_diagnostic_20260603_parallel5",
@@ -89,7 +90,7 @@
         "bgjob_digest_marginalia_v19_5book_parallel_20units_20260621"
       ],
       "acceptance_ref": "docs/implementation/new-reading-mechanism/ingest-select-next-unit-window-partition-draft-prompt.md",
-      "next_action": "Digest is live as `attentional_v2.digest.v19` / promptset `attentional_v2-phase6-v79` with unchanged output contract `digest_understanding_response_marginalia_json_v7`: canonical visible-note output is `marginalia[]`; highlight-only Marginalia still uses empty/omitted `content` plus private inline `selection_reason`, and must pass both out-of-context completeness and durable long-term reader value gates. Note-bearing Marginalia now asks for useful knowledge, context, or non-obvious connections that a thoughtful ordinary reader may not know, notice, or infer on their own; ordinary close-reading / technique commentary is explicitly demoted unless it creates non-obvious gain. The Digest v19 five-book parallel diagnostic `digest_marginalia_v19_5book_parallel_20units_20260621` failed after `61` runner units: `huochu_shengming_de_yiyi_private_zh__segment_1` hit `llm_contract` after `5` accepted units and `nawaer_baodian_private_zh__segment_1` hit `llm_timeout` after `1` accepted unit; `xidaduo` and `mangge` reached the `20`-unit limit, and `value_of_others` reached `chapter_end` after `15` units. The partial report exists at `reading-companion-backend/eval/runs/attentional_v2/digest_marginalia_v19_5book_parallel_20units_20260621/analysis/digest_marginalia_v19_5book_parallel_20units/marginalia_smoke_report.md`; next action is to inspect the `huochu` contract failure and the `nawaer` timeout before treating v19 quality results as representative.",
+      "next_action": "Digest is live as `attentional_v2.digest.v19` / promptset `attentional_v2-phase6-v79` with unchanged output contract `digest_understanding_response_marginalia_json_v7`: canonical visible-note output is `marginalia[]`; highlight-only Marginalia still uses empty/omitted `content` plus private inline `selection_reason`, and must pass both out-of-context completeness and durable long-term reader value gates. Note-bearing Marginalia now asks for useful knowledge, context, or non-obvious connections that a thoughtful ordinary reader may not know, notice, or infer on their own; ordinary close-reading / technique commentary is explicitly demoted unless it creates non-obvious gain. `DEC-140` fixes the `huochu_shengming_de_yiyi_private_zh__segment_1` failure class from the Digest v19 five-book diagnostic by making invalid `retrieve_unit_memory` recall args a non-fatal `invalid_tool_noop` / `invalid_skipped` retrieval degradation instead of an Ingest `llm_contract`; next action is to rerun the five-book v19 diagnostic or a focused retry, while separately watching the remaining `nawaer_baodian_private_zh__segment_1` provider timeout class.",
       "blocked_by": [],
       "evidence_refs": [
         "docs/current-state.md",

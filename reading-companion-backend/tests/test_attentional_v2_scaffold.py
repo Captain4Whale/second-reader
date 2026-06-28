@@ -5,6 +5,7 @@ from __future__ import annotations
 import json
 import sqlite3
 from pathlib import Path
+from types import SimpleNamespace
 
 import pytest
 
@@ -40,6 +41,7 @@ from src.attentional_v2.prompts import (
     render_digest_xml_prompt_example,
 )
 from src.attentional_v2 import runner as runner_module
+from src.attentional_v2 import llm_calls as llm_calls_module
 from src.attentional_v2.slow_cycle import (
     build_reaction_record_from_surfaced_reaction,
     compat_reaction_family,
@@ -861,6 +863,44 @@ def test_runner_respects_not_requested_recalls_without_fallback(tmp_path: Path) 
     trace = json.loads(unit_memory_retrieval_trace_file(output_dir).read_text(encoding="utf-8").strip())
     assert trace["query_source"] == "skip_empty_recalls"
     assert trace["degradation_reason"] == "no_recall"
+
+
+def test_runner_skips_invalid_recall_tool_args_without_fallback(tmp_path: Path) -> None:
+    output_dir = tmp_path / "output" / "demo-book"
+    result = runner_module._retrieve_unit_memory_for_prepared_source_unit(
+        output_dir=output_dir,
+        book_id="book-demo",
+        prepared_source_unit={
+            "selected_source_unit": {
+                "unit_id": "u000003",
+                "source_span_id": "src:c1:p3@0-p3@20",
+                "source_text": "火车站台上的告别重新出现。",
+            },
+            "memory_recalls": [],
+            "memory_recalls_status": "invalid_skipped",
+            "ingest_trace": [
+                {
+                    "memory_recalls_status": "invalid_skipped",
+                    "tool_result_summary": {
+                        "status": "invalid_tool_noop",
+                        "validation_errors": [
+                            "memory_recalls[0].recall_text must use the current source text's primary language",
+                        ],
+                    },
+                }
+            ],
+        },
+        recent_reading_memory={"entries": []},
+        memory_retrieval_config={"mode": "text_only"},
+    )
+
+    assert result["query_source"] == "skip_invalid_recalls"
+    trace = json.loads(unit_memory_retrieval_trace_file(output_dir).read_text(encoding="utf-8").strip())
+    assert trace["query_source"] == "skip_invalid_recalls"
+    assert trace["degradation_reason"] == "invalid_recall_tool_args"
+    assert trace["validation_errors"] == [
+        "memory_recalls[0].recall_text must use the current source text's primary language",
+    ]
 
 
 def test_runner_retries_retrieval_after_tool_boundary_unresolved(tmp_path: Path) -> None:
@@ -2025,6 +2065,76 @@ def test_prepare_next_source_unit_for_read_selects_mainline_unit(tmp_path, monke
     assert current_view_content["paragraph_count"] > 0
     assert current_view_content["estimated_token_count"] > 0
     assert current_view_content["preview_token_estimator"] == "tiktoken_o200k_base_v1_paragraph_xml_v1"
+
+
+def test_prepare_next_source_unit_degrades_bad_recall_tool_args(monkeypatch):
+    """Invalid Unit Memory recall args should not block an accepted Ingest boundary."""
+
+    provisioned = _provisioned_two_chapter_book()
+    document = provisioned.book_document
+    state = _empty_prepare_next_source_unit_state()
+    captured: dict[str, object] = {}
+
+    def fake_tool_loop(system_prompt, prompt, *, action_tools, output_tool, tool_handler, validator, max_tool_calls):
+        tool_args = {
+            "unit": {"end_paragraph_n": "1", "end_at": "Later question."},
+            "memory_recalls": [
+                {
+                    "recall_id": "r1",
+                    "recall_text": "the earlier setup",
+                    "basis": "wrong_basis",
+                }
+            ],
+        }
+        tool_result = tool_handler("retrieve_unit_memory", tool_args, "tool-bad-basis")
+        captured["tool_result"] = tool_result
+        payload = {
+            "unit": {"end_paragraph_n": "1", "end_at": "Later question."},
+            "preview_partition": [
+                {
+                    "title": "Question setup",
+                    "end_paragraph_n": "1",
+                    "end_at": "Later question.",
+                    "status": "complete",
+                }
+            ],
+            "reason": "The first sentence closes the opening question.",
+        }
+        assert validator(payload, [{"name": "retrieve_unit_memory", "args": tool_args, "result": tool_result}]) == []
+        return SimpleNamespace(
+            payload=payload,
+            status="action_tool_called",
+            tool_results=[{"name": "retrieve_unit_memory", "args": tool_args, "result": tool_result}],
+        )
+
+    monkeypatch.setattr(llm_calls_module, "invoke_tool_loop_with_structured_output", fake_tool_loop)
+
+    result = runner_module.prepare_next_source_unit_for_read(
+        current_chapter=document["chapters"][1],
+        current_cursor={"paragraph_index": 1, "char_offset": 0},
+        local_buffer=state["local_buffer"],  # type: ignore[arg-type]
+        continuation_capsule=state["continuation_capsule"],
+        active_attention=state["active_attention"],  # type: ignore[arg-type]
+        reflective_frames=state["reflective_frames"],  # type: ignore[arg-type]
+        reaction_records=state["reaction_records"],  # type: ignore[arg-type]
+        local_continuity=state["local_continuity"],  # type: ignore[arg-type]
+        reader_policy=runner_module.build_default_reader_policy(),
+        output_language=provisioned.output_language,
+        output_dir=None,
+        book_title=provisioned.title,
+        author=provisioned.author,
+        book_id="book-demo",
+        memory_retrieval_config={"mode": "text_only"},
+    )
+
+    assert captured["tool_result"]["status"] == "invalid_tool_noop"
+    assert result["memory_recalls"] == []
+    assert result["memory_recalls_status"] == "invalid_skipped"
+    assert result["unit_memory_retrieval"]["query_source"] == "skip_invalid_recalls"
+    assert result["unit_memory_retrieval"]["trace"]["validation_errors"] == [
+        "memory_recalls[0].basis must be selected_source_unit",
+    ]
+    assert [sentence["sentence_id"] for sentence in result["selected_unit_sentences"]] == ["c2-s1"]
 
 
 def test_prepare_next_source_unit_for_read_accepts_prefix_grouped_partitions(tmp_path, monkeypatch):

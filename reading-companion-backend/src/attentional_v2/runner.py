@@ -1484,6 +1484,32 @@ def _retrieve_unit_memory_for_prepared_source_unit(
         chapter_id=int(prepared_source_unit.get("chapter_id", 0) or 0),
     )
     if not recalls:
+        if recalls_status == "invalid_skipped":
+            tool_result_summary = (
+                dict(selected_trace.get("tool_result_summary", {}))
+                if isinstance(selected_trace, dict) and isinstance(selected_trace.get("tool_result_summary"), dict)
+                else {}
+            )
+            validation_errors = (
+                list(tool_result_summary.get("validation_errors", []))
+                if isinstance(tool_result_summary.get("validation_errors"), list)
+                else []
+            )
+            trace = {
+                "recorded_at": _timestamp(),
+                "event_type": "unit_memory_retrieval",
+                "book_id": book_id,
+                "recalls": [],
+                "query_source": "skip_invalid_recalls",
+                "mode": _clean_text(memory_retrieval_config.get("mode")) or "hybrid",
+                "effective_mode": "not_requested",
+                "degradation_reason": "invalid_recall_tool_args",
+                "validation_errors": validation_errors,
+                "candidate_counts": {},
+                "selected_units": [],
+            }
+            record_unit_memory_retrieval_trace(output_dir, trace)
+            return {"recalls": [], "query_source": "skip_invalid_recalls", "selected_units": [], "trace": trace}
         if recalls_status in {"missing", "malformed", "malformed_payload"}:
             fallback_query = fallback_query_from_source_unit(selected_source_unit)
             fallback_text = _clean_text(fallback_query.get("query_text")) if isinstance(fallback_query, dict) else ""
@@ -1811,11 +1837,38 @@ def prepare_next_source_unit_for_read(
             current_visible_paragraph_ns=current_visible_paragraph_ns,
         )
         if preflight_errors:
+            recalls = normalize_unit_memory_recalls(args.get("memory_recalls"))
+            trace = {
+                "recorded_at": _timestamp(),
+                "event_type": "unit_memory_retrieval",
+                "book_id": book_id,
+                "recalls": [dict(item) for item in recalls],
+                "query_source": "skip_invalid_recalls",
+                "tool_call_id": _clean_text(args.get("_tool_call_id")),
+                "mode": _clean_text((memory_retrieval_config or {}).get("mode")) or "hybrid",
+                "effective_mode": "not_requested",
+                "degradation_reason": "invalid_recall_tool_args",
+                "validation_errors": list(preflight_errors),
+                "candidate_counts": {"recall_count": len(recalls)},
+                "selected_units": [],
+            }
+            if output_dir is not None:
+                record_unit_memory_retrieval_trace(output_dir, trace)
+            tool_retrieval_results.append(
+                {
+                    "recalls": [],
+                    "query_source": "skip_invalid_recalls",
+                    "selected_units": [],
+                    "trace": trace,
+                }
+            )
             return {
-                "status": "contract_violation",
-                "effective_mode": _clean_text((memory_retrieval_config or {}).get("mode")) or "hybrid",
+                "status": "invalid_tool_noop",
+                "effective_mode": "not_requested",
                 "retrieval_summary": {"recall_count": 0, "candidate_unit_count": 0, "selected_unit_count": 0},
-                "degradation_reason": "; ".join(preflight_errors),
+                "degradation_reason": "invalid_recall_tool_args",
+                "validation_errors": list(preflight_errors),
+                "tool_call_id": _clean_text(args.get("_tool_call_id")),
             }
         recalls = normalize_unit_memory_recalls(args.get("memory_recalls"))
         tool_call_id = _clean_text(args.get("_tool_call_id"))
