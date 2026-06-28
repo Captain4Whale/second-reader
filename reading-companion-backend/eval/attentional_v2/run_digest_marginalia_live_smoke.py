@@ -1130,11 +1130,6 @@ def build_summary(
     }
 
 
-def _truncate(text: object, limit: int = 700) -> str:
-    value = str(text or "").strip()
-    return value if len(value) <= limit else value[: limit - 1] + "…"
-
-
 def render_report(
     *,
     summary: Mapping[str, object],
@@ -1239,7 +1234,7 @@ def render_report(
                     f"- marginalia_count: `{unit.get('marginalia_count')}`",
                     "",
                     "```text",
-                    _truncate(unit.get("source_text"), 900),
+                    str(unit.get("source_text", "")).strip(),
                     "```",
                     "",
                 ]
