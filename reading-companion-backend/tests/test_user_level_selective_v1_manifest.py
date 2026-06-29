@@ -225,6 +225,218 @@ def test_build_user_level_selective_v1_emits_real_note_cases_only(tmp_path: Path
     assert (dataset_dir / "segment_sources" / "source_a__segment_1.txt").exists()
 
 
+def test_aligned_note_dedup_preserves_distinct_quotes_in_same_sentence() -> None:
+    base = module.AlignedNote(
+        note_id="note_1",
+        notes_id="notes_a",
+        source_id="source_a",
+        note_text="Alpha",
+        note_comment="",
+        raw_locator="1",
+        section_label="Section 1",
+        source_chapter_id=2,
+        chapter_title="Chapter 1",
+        start_sentence_id="c2-s4",
+        end_sentence_id="c2-s4",
+        sentence_ids=("c2-s4",),
+        aligned_text="Alpha",
+        alignment_match_type="exact",
+        alignment_score=1.0,
+    )
+
+    duplicate = module.AlignedNote(
+        **{**base.__dict__, "note_id": "note_1_dup"}
+    )
+    distinct_same_sentence = module.AlignedNote(
+        **{**base.__dict__, "note_id": "note_2", "note_text": "Beta", "aligned_text": "Beta"}
+    )
+
+    deduped, summary = module._dedupe_aligned_notes([base, duplicate, distinct_same_sentence])
+
+    assert [note.note_id for note in deduped] == ["note_1", "note_2"]
+    assert deduped[0].duplicate_note_aliases == ("note_1_dup",)
+    assert deduped[0].duplicate_note_group_size == 2
+    assert summary["raw_note_count"] == 3
+    assert summary["unique_note_count"] == 2
+    assert summary["duplicate_note_count"] == 1
+
+
+def test_note_case_row_dedup_folds_same_final_source_span() -> None:
+    rows = [
+        {
+            "note_case_id": "source_a__note_1",
+            "segment_id": "source_a__segment_1",
+            "source_id": "source_a",
+            "note_id": "note_1",
+            "source_span_coordinate_system": "segment_source_v1",
+            "source_span_slices": [
+                {
+                    "coordinate_system": "segment_source_v1",
+                    "segment_id": "source_a__segment_1",
+                    "source_id": "source_a",
+                    "paragraph_index": 2,
+                    "char_start": 0,
+                    "char_end": 12,
+                }
+            ],
+            "provenance": {},
+        },
+        {
+            "note_case_id": "source_a__note_2",
+            "segment_id": "source_a__segment_1",
+            "source_id": "source_a",
+            "note_id": "note_2",
+            "source_span_coordinate_system": "segment_source_v1",
+            "source_span_slices": [
+                {
+                    "coordinate_system": "segment_source_v1",
+                    "segment_id": "source_a__segment_1",
+                    "source_id": "source_a",
+                    "paragraph_index": 2,
+                    "char_start": 0,
+                    "char_end": 12,
+                }
+            ],
+            "provenance": {"duplicate_note_aliases": ["note_2_color"]},
+        },
+        {
+            "note_case_id": "source_a__note_3",
+            "segment_id": "source_a__segment_1",
+            "source_id": "source_a",
+            "note_id": "note_3",
+            "source_span_coordinate_system": "segment_source_v1",
+            "source_span_slices": [
+                {
+                    "coordinate_system": "segment_source_v1",
+                    "segment_id": "source_a__segment_1",
+                    "source_id": "source_a",
+                    "paragraph_index": 2,
+                    "char_start": 3,
+                    "char_end": 15,
+                }
+            ],
+            "provenance": {},
+        },
+    ]
+
+    deduped, summary = module._dedupe_note_case_rows(rows)
+
+    assert [row["note_case_id"] for row in deduped] == ["source_a__note_1", "source_a__note_3"]
+    assert deduped[0]["provenance"]["duplicate_note_aliases"] == ["note_2", "note_2_color"]
+    assert deduped[0]["provenance"]["duplicate_note_group_size"] == 3
+    assert summary["raw_note_case_count"] == 3
+    assert summary["unique_note_case_count"] == 2
+    assert summary["duplicate_note_case_count"] == 1
+
+
+def test_build_user_level_selective_v1_targets_unique_notes_before_window_selection(
+    tmp_path: Path,
+    monkeypatch,
+) -> None:
+    dataset_dir = tmp_path / "dataset"
+    monkeypatch.setattr(module, "REGISTERED_NOTES_SOURCE_IDS", ("source_a",))
+    monkeypatch.setattr(
+        module,
+        "_load_notes_catalog",
+        lambda: {"assets": [{"linked_source_id": "source_a", "notes_id": "notes_a", "aligned_entry_count": 3}]},
+    )
+    monkeypatch.setattr(
+        module,
+        "_load_source_index",
+        lambda: {"source_a": {"source_id": "source_a", "relative_local_path": "state/library_sources/source_a.epub"}},
+    )
+    aligned_notes = [
+        module.AlignedNote(
+            note_id="note_1",
+            notes_id="notes_a",
+            source_id="source_a",
+            note_text="Chapter 1 line 4.",
+            note_comment="",
+            raw_locator="1",
+            section_label="Section 1",
+            source_chapter_id=2,
+            chapter_title="Chapter 1",
+            start_sentence_id="c2-s4",
+            end_sentence_id="c2-s4",
+            sentence_ids=("c2-s4",),
+            aligned_text="Chapter 1 line 4.",
+            alignment_match_type="exact",
+            alignment_score=1.0,
+        ),
+        module.AlignedNote(
+            note_id="note_1_duplicate",
+            notes_id="notes_a",
+            source_id="source_a",
+            note_text="Chapter 1 line 4.",
+            note_comment="",
+            raw_locator="1",
+            section_label="Chapter 1",
+            source_chapter_id=2,
+            chapter_title="Chapter 1",
+            start_sentence_id="c2-s4",
+            end_sentence_id="c2-s4",
+            sentence_ids=("c2-s4",),
+            aligned_text="Chapter 1 line 4.",
+            alignment_match_type="exact",
+            alignment_score=1.0,
+        ),
+        module.AlignedNote(
+            note_id="note_2",
+            notes_id="notes_a",
+            source_id="source_a",
+            note_text="Chapter 1 line 20.",
+            note_comment="",
+            raw_locator="2",
+            section_label="Section 1",
+            source_chapter_id=2,
+            chapter_title="Chapter 1",
+            start_sentence_id="c2-s20",
+            end_sentence_id="c2-s20",
+            sentence_ids=("c2-s20",),
+            aligned_text="Chapter 1 line 20.",
+            alignment_match_type="exact",
+            alignment_score=1.0,
+        ),
+    ]
+    monkeypatch.setattr(module, "_load_aligned_notes", lambda *, notes_id, source_id: aligned_notes)
+    document = {
+        "metadata": {"book": "Book A", "author": "Author A", "book_language": "en", "output_language": "en"},
+        "chapters": [_chapter(1, "Contents", 5), _chapter(2, "Chapter 1", 40)],
+    }
+    monkeypatch.setattr(
+        module,
+        "ensure_canonical_parse",
+        lambda _path: SimpleNamespace(
+            book_document=document,
+            title="Book A",
+            author="Author A",
+            output_language="en",
+        ),
+    )
+
+    module.build_user_level_selective_v1(
+        dataset_dir=dataset_dir,
+        split_manifest_path=None,
+        target_note_count=2,
+        hard_sentence_cap=1,
+    )
+
+    manifest = json.loads((dataset_dir / "manifest.json").read_text(encoding="utf-8"))
+    segments = [json.loads(line) for line in (dataset_dir / "segments.jsonl").read_text(encoding="utf-8").splitlines() if line.strip()]
+    note_cases = [json.loads(line) for line in (dataset_dir / "note_cases.jsonl").read_text(encoding="utf-8").splitlines() if line.strip()]
+
+    assert segments[0]["end_sentence_id"] == "c2-s21"
+    assert segments[0]["covered_note_count"] == 2
+    assert segments[0]["raw_covered_note_count"] == 3
+    assert segments[0]["duplicate_covered_note_count"] == 1
+    assert manifest["note_case_count"] == 2
+    assert manifest["raw_note_case_count"] == 2
+    assert manifest["deduplication"]["aligned_note_stages"][0]["duplicate_note_count"] == 1
+    assert [row["note_id"] for row in note_cases] == ["note_1", "note_2"]
+    assert note_cases[0]["provenance"]["duplicate_note_aliases"] == ["note_1_duplicate"]
+    assert note_cases[0]["provenance"]["duplicate_note_group_size"] == 2
+
+
 def test_build_user_level_selective_v1_source_filter_builds_only_requested_source(tmp_path: Path, monkeypatch) -> None:
     dataset_dir = tmp_path / "dataset"
     monkeypatch.setattr(module, "REGISTERED_NOTES_SOURCE_IDS", ("source_a", "source_b"))

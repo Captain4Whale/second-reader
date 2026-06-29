@@ -3949,3 +3949,28 @@ This new direction is design frozen but not yet implemented as a formal benchmar
 - `docs/backend-reading-mechanisms/attentional_v2.md`
 - `docs/current-state.md`
 - `docs/tasks/registry.md`
+
+## Entry 139
+**ID**: DEC-141
+**Status**: active
+
+**Decision / Inflection**: Treat user-level selective human note cases as unique source-span cases, not raw exported note rows.
+
+**Period**: June 29, 2026, after Marginalia precision / recall review showed that some raw Google Books / reader-app exports duplicated the same human highlight under different export groupings, causing the same missed note to appear twice in analysis reports.
+
+**Decision**: The active `user-level selective v1` split manifest now points to `attentional_v2_user_level_selective_v1_repaired_20260629_source_norm_v1_2_unique_notes`. The package keeps `5` reading segments and uses `158` unique note cases as the benchmark denominator. It preserves `210` raw covered note rows as provenance and folds `52` raw duplicate rows into `provenance.duplicate_note_aliases`. The builder deduplicates aligned notes before choosing each segment end, so `target_note_count=20` means unique source-span cases; it then runs a final `segment_source_v1` span-key fold before writing `note_cases.jsonl`, so no active rows share the same `(segment_id, source_span_slices)` key. Precision / recall analysis also defensively folds duplicate note cases when reading older datasets.
+
+**Boundary**: Raw `state/library_notes/entries/*.jsonl` exports are not rewritten. Historical eval artifacts and older dataset packages remain untouched. This is a dataset substrate repair and denominator correction, not a new formal evaluation run, prompt change, runtime change, or public API change.
+
+**Why this path won**: Human notes should be counted by the source passage they mark, because the benchmark asks whether the reader noticed a source-grounded reading opportunity. Counting duplicate exports as separate cases inflated false negatives and could make one missed highlight look like two independent misses. Keeping aliases in provenance preserves auditability without distorting the benchmark denominator.
+
+**Primary evidence**:
+- `reading-companion-backend/eval/attentional_v2/user_level_selective_v1.py`
+- `reading-companion-backend/eval/attentional_v2/render_user_level_selective_audit.py`
+- `reading-companion-backend/eval/attentional_v2/analyze_marginalia_note_precision_recall.py`
+- `reading-companion-backend/eval/manifests/splits/attentional_v2_user_level_selective_v1_draft.json`
+- `reading-companion-backend/tests/test_user_level_selective_v1_manifest.py`
+- `reading-companion-backend/tests/test_render_user_level_selective_audit.py`
+- `reading-companion-backend/tests/test_marginalia_note_precision_recall.py`
+- `docs/current-state.md`
+- `docs/tasks/registry.md`

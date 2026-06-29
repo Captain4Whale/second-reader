@@ -85,6 +85,10 @@ def test_render_user_level_selective_audit_outputs_index_and_window_docs(tmp_pat
                 "chapter_title": "Chapter 1",
                 "raw_locator": "p.1",
                 "section_label": "Section 1",
+                "provenance": {
+                    "duplicate_note_aliases": ["note_1_color"],
+                    "duplicate_note_group_size": 2,
+                },
             },
             {
                 "note_case_id": "source_a__note_1",
@@ -181,6 +185,7 @@ def test_render_user_level_selective_audit_outputs_index_and_window_docs(tmp_pat
     assert window_text.index("`source_a__note_1`") < window_text.index("`source_a__note_2`")
     assert window_text.index("`source_a__note_2`") < window_text.index("`source_a__note_3`")
     assert "duplicate_source_span_group: `group_01` (`2` cases share this span)" in window_text
+    assert "duplicate_note_aliases: `note_1_color` (`2` raw exports share this canonical case)" in window_text
     assert "- 覆盖正文单元: Chapter 1" in window_text
     assert "- internal/source chapter ids: `1`" in window_text
     assert "- 正文单元标题: `Chapter 1`" in window_text

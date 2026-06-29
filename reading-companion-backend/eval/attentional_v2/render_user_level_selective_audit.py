@@ -132,6 +132,23 @@ def _render_slice_lines(note_case: dict[str, Any]) -> list[str]:
     return lines
 
 
+def _duplicate_note_aliases(note_case: dict[str, Any]) -> list[str]:
+    provenance = note_case.get("provenance")
+    if not isinstance(provenance, dict):
+        return []
+    return [str(item) for item in provenance.get("duplicate_note_aliases") or [] if _clean_text(item)]
+
+
+def _duplicate_note_group_size(note_case: dict[str, Any]) -> int:
+    provenance = note_case.get("provenance")
+    if not isinstance(provenance, dict):
+        return 1
+    try:
+        return int(provenance.get("duplicate_note_group_size") or 1)
+    except (TypeError, ValueError):
+        return 1
+
+
 def _window_doc_name(segment_id: str) -> str:
     return f"{segment_id}.md"
 
@@ -248,6 +265,12 @@ def _render_window_doc(
         if duplicate_group_id is not None:
             lines.append(
                 f"- duplicate_source_span_group: `group_{duplicate_group_id:02d}` (`{duplicate_count}` cases share this span)"
+            )
+        duplicate_aliases = _duplicate_note_aliases(note_case)
+        if duplicate_aliases:
+            aliases = ", ".join(f"`{alias}`" for alias in duplicate_aliases)
+            lines.append(
+                f"- duplicate_note_aliases: {aliases} (`{_duplicate_note_group_size(note_case)}` raw exports share this canonical case)"
             )
         lines.extend(
             [

@@ -10,7 +10,7 @@ from __future__ import annotations
 
 import argparse
 from collections import defaultdict
-from dataclasses import dataclass
+from dataclasses import dataclass, replace
 from datetime import datetime, timezone
 import json
 from pathlib import Path
@@ -27,12 +27,12 @@ from src.reading_runtime.provisioning import ensure_canonical_parse
 
 MANIFEST_ID = "attentional_v2_user_level_selective_v1_draft"
 MANIFEST_PATH = ROOT / "eval" / "manifests" / "splits" / f"{MANIFEST_ID}.json"
-DATASET_ID = "attentional_v2_user_level_selective_v1_repaired_20260614_source_norm_v1_2"
+DATASET_ID = "attentional_v2_user_level_selective_v1_repaired_20260629_source_norm_v1_2_unique_notes"
 DATASET_DIR = ROOT / "state" / "eval_local_datasets" / "user_level_benchmarks" / DATASET_ID
 SEGMENTS_FILE = "segments.jsonl"
 NOTE_CASES_FILE = "note_cases.jsonl"
 SEGMENT_SOURCE_DIRNAME = "segment_sources"
-DEFAULT_VERSION = "2026-06-14-source-normalization-v1.2"
+DEFAULT_VERSION = "2026-06-29-source-normalization-v1.2-unique-notes"
 DEFAULT_TARGET_NOTE_COUNT = 20
 DEFAULT_HARD_SENTENCE_CAP = 350
 DEFAULT_CANDIDATE_VALIDATION_REPORT_JSON = "candidate_validation_report.json"
@@ -141,6 +141,8 @@ class AlignedNote:
     aligned_text: str
     alignment_match_type: str
     alignment_score: float
+    duplicate_note_aliases: tuple[str, ...] = ()
+    duplicate_note_group_size: int = 1
 
 
 def utc_now() -> str:
@@ -149,6 +151,63 @@ def utc_now() -> str:
 
 def _clean_text(value: Any) -> str:
     return str(value or "").strip()
+
+
+def _normalize_dedupe_text(value: str) -> str:
+    normalized = unicodedata.normalize("NFKC", _clean_text(value))
+    normalized = re.sub(r"\s+", " ", normalized, flags=re.UNICODE)
+    return normalized.strip().casefold()
+
+
+def _aligned_note_dedupe_key(note: AlignedNote) -> tuple[object, ...]:
+    return (
+        note.source_id,
+        note.source_chapter_id,
+        note.start_sentence_id,
+        note.end_sentence_id,
+        _normalize_dedupe_text(note.note_text),
+        _normalize_dedupe_text(note.aligned_text),
+    )
+
+
+def _dedupe_aligned_notes(notes: list[AlignedNote]) -> tuple[list[AlignedNote], dict[str, Any]]:
+    groups: dict[tuple[object, ...], list[AlignedNote]] = {}
+    order: list[tuple[object, ...]] = []
+    for note in notes:
+        key = _aligned_note_dedupe_key(note)
+        if key not in groups:
+            groups[key] = []
+            order.append(key)
+        groups[key].append(note)
+
+    deduped: list[AlignedNote] = []
+    duplicate_groups: list[dict[str, Any]] = []
+    for key in order:
+        group = groups[key]
+        canonical = group[0]
+        aliases = tuple(note.note_id for note in group[1:] if note.note_id)
+        if aliases:
+            canonical = replace(
+                canonical,
+                duplicate_note_aliases=aliases,
+                duplicate_note_group_size=len(group),
+            )
+            duplicate_groups.append(
+                {
+                    "canonical_note_id": canonical.note_id,
+                    "duplicate_note_aliases": list(aliases),
+                    "duplicate_note_group_size": len(group),
+                }
+            )
+        deduped.append(canonical)
+
+    return deduped, {
+        "raw_note_count": len(notes),
+        "unique_note_count": len(deduped),
+        "duplicate_note_count": len(notes) - len(deduped),
+        "duplicate_note_group_count": len(duplicate_groups),
+        "duplicate_note_groups": duplicate_groups[:20],
+    }
 
 
 def _normalize_title(value: str) -> str:
@@ -826,6 +885,96 @@ def _first_slice_key(row: dict[str, Any]) -> tuple[int, int, int] | None:
     return None
 
 
+def _note_case_span_key(row: dict[str, Any]) -> tuple[object, ...]:
+    slices = row.get("source_span_slices")
+    if not isinstance(slices, list) or not slices:
+        return (row.get("segment_id"), row.get("note_case_id"))
+    parts: list[tuple[object, ...]] = []
+    for item in slices:
+        if not isinstance(item, dict):
+            continue
+        parts.append(
+            (
+                item.get("coordinate_system") or row.get("source_span_coordinate_system") or "segment_source_v1",
+                item.get("segment_id") or row.get("segment_id"),
+                item.get("source_id") or row.get("source_id"),
+                _slice_int_field(item, "paragraph_index"),
+                _slice_int_field(item, "char_start"),
+                _slice_int_field(item, "char_end"),
+            )
+        )
+    if not parts:
+        return (row.get("segment_id"), row.get("note_case_id"))
+    return tuple(parts)
+
+
+def _note_case_aliases(row: dict[str, Any]) -> list[str]:
+    aliases: list[str] = []
+    if _clean_text(row.get("note_id")):
+        aliases.append(_clean_text(row.get("note_id")))
+    provenance = row.get("provenance") if isinstance(row.get("provenance"), dict) else {}
+    for alias in provenance.get("duplicate_note_aliases") or []:
+        alias_text = _clean_text(alias)
+        if alias_text:
+            aliases.append(alias_text)
+    return aliases
+
+
+def _dedupe_note_case_rows(note_case_rows: list[dict[str, Any]]) -> tuple[list[dict[str, Any]], dict[str, Any]]:
+    groups: dict[tuple[object, ...], list[dict[str, Any]]] = {}
+    order: list[tuple[object, ...]] = []
+    for row in note_case_rows:
+        key = _note_case_span_key(row)
+        if key not in groups:
+            groups[key] = []
+            order.append(key)
+        groups[key].append(row)
+
+    deduped: list[dict[str, Any]] = []
+    duplicate_groups: list[dict[str, Any]] = []
+    for key in order:
+        group = groups[key]
+        canonical = dict(group[0])
+        provenance = dict(canonical.get("provenance") or {})
+        aliases: list[str] = []
+        for duplicate in group:
+            aliases.extend(_note_case_aliases(duplicate))
+        canonical_id = _clean_text(canonical.get("note_id"))
+        alias_ids = []
+        seen_aliases = {canonical_id} if canonical_id else set()
+        for alias in aliases:
+            if alias in seen_aliases:
+                continue
+            seen_aliases.add(alias)
+            alias_ids.append(alias)
+        if alias_ids:
+            provenance["duplicate_note_aliases"] = alias_ids
+            provenance["duplicate_note_group_size"] = len(seen_aliases)
+            canonical["provenance"] = provenance
+        if len(group) > 1:
+            duplicate_groups.append(
+                {
+                    "canonical_note_case_id": canonical.get("note_case_id"),
+                    "duplicate_note_case_ids": [
+                        _clean_text(item.get("note_case_id"))
+                        for item in group[1:]
+                        if _clean_text(item.get("note_case_id"))
+                    ],
+                    "duplicate_note_aliases": alias_ids,
+                    "duplicate_note_group_size": len(seen_aliases),
+                }
+            )
+        deduped.append(canonical)
+
+    return deduped, {
+        "raw_note_case_count": len(note_case_rows),
+        "unique_note_case_count": len(deduped),
+        "duplicate_note_case_count": len(note_case_rows) - len(deduped),
+        "duplicate_note_case_group_count": len(duplicate_groups),
+        "duplicate_note_case_groups": duplicate_groups[:20],
+    }
+
+
 def _coordinate_remap_summary(dataset_root: Path, baseline_dataset_dir: Path | None) -> dict[str, Any]:
     candidate_rows = _load_jsonl_file(dataset_root / NOTE_CASES_FILE)
     candidate_by_id = {str(row.get("note_case_id") or ""): row for row in candidate_rows}
@@ -1086,6 +1235,7 @@ def build_user_level_selective_v1(
     note_case_rows: list[dict[str, Any]] = []
     selected_source_ids: list[str] = []
     skipped_sources: list[dict[str, str]] = []
+    source_deduplication: list[dict[str, Any]] = []
     source_filter = {source_id for source_id in (source_ids or ()) if source_id}
     source_parse_output_dirs: dict[str, Path] = {}
     source_parse_mode = "fresh_isolated" if fresh_parse_output_root is not None else "canonical_existing"
@@ -1117,9 +1267,17 @@ def build_user_level_selective_v1(
             continue
 
         notes_id = _clean_text(asset.get("notes_id"))
-        aligned_notes = _load_aligned_notes(notes_id=notes_id, source_id=source_id)
+        raw_aligned_notes = _load_aligned_notes(notes_id=notes_id, source_id=source_id)
+        aligned_notes, aligned_deduplication = _dedupe_aligned_notes(raw_aligned_notes)
+        source_deduplication.append(
+            {
+                "source_id": source_id,
+                "stage": "aligned_note_preselection",
+                **aligned_deduplication,
+            }
+        )
         if len(aligned_notes) < target_note_count:
-            skipped_sources.append({"source_id": source_id, "reason": "insufficient_aligned_notes"})
+            skipped_sources.append({"source_id": source_id, "reason": "insufficient_unique_aligned_notes"})
             continue
 
         book_path = ROOT / _clean_text(source_record["relative_local_path"])
@@ -1151,9 +1309,27 @@ def build_user_level_selective_v1(
             skipped_sources.append({"source_id": source_id, "reason": "empty_body_segment"})
             continue
 
-        eligible_notes = [note for note in aligned_notes if note.start_sentence_id in sentence_index and note.end_sentence_id in sentence_index]
+        raw_eligible_notes = [
+            note
+            for note in raw_aligned_notes
+            if note.start_sentence_id in sentence_index and note.end_sentence_id in sentence_index
+        ]
+        eligible_notes = [
+            note
+            for note in aligned_notes
+            if note.start_sentence_id in sentence_index and note.end_sentence_id in sentence_index
+        ]
+        source_deduplication.append(
+            {
+                "source_id": source_id,
+                "stage": "eligible_after_body_start",
+                "raw_note_count": len(raw_eligible_notes),
+                "unique_note_count": len(eligible_notes),
+                "duplicate_note_count": len(raw_eligible_notes) - len(eligible_notes),
+            }
+        )
         if len(eligible_notes) < target_note_count:
-            skipped_sources.append({"source_id": source_id, "reason": "insufficient_notes_after_body_start"})
+            skipped_sources.append({"source_id": source_id, "reason": "insufficient_unique_notes_after_body_start"})
             continue
 
         threshold_note = eligible_notes[target_note_count - 1]
@@ -1169,6 +1345,11 @@ def build_user_level_selective_v1(
         segment_notes = [
             note
             for note in eligible_notes
+            if sentence_index[note.end_sentence_id] <= segment_end_position
+        ]
+        raw_segment_notes = [
+            note
+            for note in raw_eligible_notes
             if sentence_index[note.end_sentence_id] <= segment_end_position
         ]
         segment_start_sentence_id = str(flat_sentences[0]["sentence_id"])
@@ -1205,6 +1386,8 @@ def build_user_level_selective_v1(
                 "chapter_titles": covered_chapter_titles,
                 "target_note_count": target_note_count,
                 "covered_note_count": len(segment_notes),
+                "raw_covered_note_count": len(raw_segment_notes),
+                "duplicate_covered_note_count": len(raw_segment_notes) - len(segment_notes),
                 "termination_reason": termination_reason,
                 "segment_source_path": f"{SEGMENT_SOURCE_DIRNAME}/{segment_id}.txt",
                 "source_span_coordinate_system": "segment_source_v1",
@@ -1248,10 +1431,23 @@ def build_user_level_selective_v1(
                         "start_sentence_id": note.start_sentence_id,
                         "end_sentence_id": note.end_sentence_id,
                         "source_coordinate_note": "source_span_slices are in the rendered reading segment coordinate system; source_sentence_ids preserve original parsed-book provenance.",
+                        "duplicate_note_aliases": list(note.duplicate_note_aliases),
+                        "duplicate_note_group_size": note.duplicate_note_group_size,
                     },
                 }
             )
         selected_source_ids.append(source_id)
+
+    raw_note_case_count = len(note_case_rows)
+    note_case_rows, final_deduplication = _dedupe_note_case_rows(note_case_rows)
+    unique_counts_by_segment: dict[str, int] = defaultdict(int)
+    for note_case in note_case_rows:
+        unique_counts_by_segment[_clean_text(note_case.get("segment_id"))] += 1
+    for segment in segments_rows:
+        segment_id = _clean_text(segment.get("segment_id"))
+        segment["covered_note_count"] = unique_counts_by_segment.get(segment_id, 0)
+    raw_covered_note_count = sum(int(row.get("raw_covered_note_count", row.get("covered_note_count", 0)) or 0) for row in segments_rows)
+    duplicate_covered_note_count = sum(int(row.get("duplicate_covered_note_count", 0) or 0) for row in segments_rows)
 
     manifest_payload = {
         "dataset_id": resolved_dataset_id,
@@ -1269,6 +1465,16 @@ def build_user_level_selective_v1(
         "hard_sentence_cap": hard_sentence_cap,
         "segment_count": len(segments_rows),
         "note_case_count": len(note_case_rows),
+        "raw_covered_note_count": raw_covered_note_count,
+        "duplicate_covered_note_count": duplicate_covered_note_count,
+        "raw_note_case_count": raw_note_case_count,
+        "duplicate_note_case_count": raw_note_case_count - len(note_case_rows),
+        "deduplication": {
+            "policy": "unique_source_span_with_raw_export_aliases",
+            "target_note_count_basis": "unique_note_cases",
+            "aligned_note_stages": source_deduplication,
+            "final_note_case_stage": final_deduplication,
+        },
         "source_manifest_refs": [
             _relative_to_root(DEFAULT_NOTES_LOCAL_REF_MANIFEST),
         ],
@@ -1312,6 +1518,10 @@ def build_user_level_selective_v1(
             "target_note_count": target_note_count,
             "hard_sentence_cap": hard_sentence_cap,
             "note_case_count": len(note_case_rows),
+            "raw_covered_note_count": raw_covered_note_count,
+            "duplicate_covered_note_count": duplicate_covered_note_count,
+            "raw_note_case_count": raw_note_case_count,
+            "duplicate_note_case_count": raw_note_case_count - len(note_case_rows),
         },
         "source_refs": {
             "source_manifests": [
@@ -1329,6 +1539,8 @@ def build_user_level_selective_v1(
                 "book_title": row["book_title"],
                 "language_track": row["language_track"],
                 "covered_note_count": row["covered_note_count"],
+                "raw_covered_note_count": row.get("raw_covered_note_count", row["covered_note_count"]),
+                "duplicate_covered_note_count": row.get("duplicate_covered_note_count", 0),
                 "termination_reason": row["termination_reason"],
             }
             for row in segments_rows
@@ -1342,6 +1554,10 @@ def build_user_level_selective_v1(
             },
             "note_cases": {
                 "ready_now": len(note_case_rows),
+                "raw_covered_now": raw_covered_note_count,
+                "duplicate_covered_note_count": duplicate_covered_note_count,
+                "raw_ready_now": raw_note_case_count,
+                "duplicate_note_case_count": raw_note_case_count - len(note_case_rows),
             },
         },
         "splits": {

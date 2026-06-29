@@ -2252,7 +2252,8 @@
         "DEC-063",
         "DEC-064",
         "DEC-073",
-        "DEC-126"
+        "DEC-126",
+        "DEC-141"
       ],
       "job_refs": [
         "bgjob_user_level_selective_v1_judged_parallel_20260414",
@@ -2269,7 +2270,7 @@
         "bgjob_user_level_selective_v1_active_formal_recovery_xidaduo_attn_20260420"
       ],
       "acceptance_ref": "docs/backend-reader-evaluation.md",
-      "next_action": "Keep the active local/user-level pointer on user-level selective v1 and treat the older excerpt surface v1.1 line as historical / superseded evidence only. The active package now lives at reading-companion-backend/state/eval_local_datasets/user_level_benchmarks/attentional_v2_user_level_selective_v1_repaired_20260614_source_norm_v1_2 with 5 reading segments and 202 note cases, rebuilt from fresh isolated Source Normalization v1.2 deterministic-only parses; all note cases and non-empty source_span_slices are preserved, source-span text is unchanged relative to the previous active 20260422 package, and Siddhartha structural footnote definitions are removed while body note references remain. The previous active 20260422 package remains preserved as the direct source-normalization comparison baseline, the prior repaired 20260416 package remains preserved as superseded prior evidence with 203 note cases, and the older 202-case package remains preserved as superseded historical evidence. Latest formal rerun: attentional_v2_user_level_selective_v1_active_rerun_20260419 still reflects the then-active prior repaired 20260416 package, completed 203 note cases across 5 windows and 2 mechanisms, and scored attentional_v2 note_recall = 0.3498 vs iterator_v1 0.1232. April 21 repair: a shard-filtered recovery invocation had overwritten the root summary with a partial one-shard aggregate; the root summary/report were regenerated from all completed shards, and shard-filtered recovery now skips root-level merge/report ownership.",
+      "next_action": "Keep the active local/user-level pointer on user-level selective v1 and treat the older excerpt surface v1.1 line as historical / superseded evidence only. The active package now lives at reading-companion-backend/state/eval_local_datasets/user_level_benchmarks/attentional_v2_user_level_selective_v1_repaired_20260629_source_norm_v1_2_unique_notes with 5 reading segments, 158 unique note cases, 210 raw covered note rows, and 52 raw duplicate rows folded into provenance aliases. It was rebuilt from fresh isolated Source Normalization v1.2 deterministic-only parses and then repaired so target_note_count=20 counts unique source-span note cases rather than raw exported note rows; all active note cases have non-empty source_span_slices and no active note_cases.jsonl rows share the same (segment_id, source_span_slices) key. Siddhartha structural footnote definitions remain removed while body note references remain. The previous June 14 source-normalized package remains preserved as the raw 202-case source-normalization comparison baseline, the previous active 20260422 package remains preserved as superseded prior evidence, the prior repaired 20260416 package remains preserved as superseded formal-rerun substrate with 203 note cases, and the older 202-case package remains preserved as superseded historical evidence. Latest formal rerun: attentional_v2_user_level_selective_v1_active_rerun_20260419 still reflects the then-active prior repaired 20260416 package, completed 203 note cases across 5 windows and 2 mechanisms, and scored attentional_v2 note_recall = 0.3498 vs iterator_v1 0.1232. April 21 repair: a shard-filtered recovery invocation had overwritten the root summary with a partial one-shard aggregate; the root summary/report were regenerated from all completed shards, and shard-filtered recovery now skips root-level merge/report ownership.",
       "blocked_by": [],
       "evidence_refs": [
         "docs/backend-reader-evaluation.md",
@@ -2277,11 +2278,11 @@
         "reading-companion-backend/eval/attentional_v2/user_level_selective_v1.py",
         "reading-companion-backend/eval/attentional_v2/run_user_level_selective_comparison.py",
         "reading-companion-backend/eval/manifests/splits/attentional_v2_user_level_selective_v1_draft.json",
+        "reading-companion-backend/state/eval_local_datasets/user_level_benchmarks/attentional_v2_user_level_selective_v1_repaired_20260629_source_norm_v1_2_unique_notes/manifest.json",
+        "reading-companion-backend/state/eval_local_datasets/user_level_benchmarks/attentional_v2_user_level_selective_v1_repaired_20260629_source_norm_v1_2_unique_notes/note_cases.jsonl",
+        "reading-companion-backend/state/eval_local_datasets/user_level_benchmarks/attentional_v2_user_level_selective_v1_repaired_20260629_source_norm_v1_2_unique_notes/audit_human_readable/index.md",
+        "reading-companion-backend/state/eval_local_datasets/user_level_benchmarks/attentional_v2_user_level_selective_v1_repaired_20260629_source_norm_v1_2_unique_notes/candidate_validation_report.md",
         "reading-companion-backend/state/eval_local_datasets/user_level_benchmarks/attentional_v2_user_level_selective_v1_repaired_20260614_source_norm_v1_2/manifest.json",
-        "reading-companion-backend/state/eval_local_datasets/user_level_benchmarks/attentional_v2_user_level_selective_v1_repaired_20260614_source_norm_v1_2/note_cases.jsonl",
-        "reading-companion-backend/state/eval_local_datasets/user_level_benchmarks/attentional_v2_user_level_selective_v1_repaired_20260614_source_norm_v1_2/audit_human_readable/index.md",
-        "reading-companion-backend/state/eval_local_datasets/user_level_benchmarks/attentional_v2_user_level_selective_v1_repaired_20260614_source_norm_v1_2/candidate_validation_report.md",
-        "reading-companion-backend/state/eval_local_datasets/user_level_benchmarks/attentional_v2_user_level_selective_v1_repaired_20260614_source_norm_v1_2/source_normalized_window_review_against_20260422.md",
         "reading-companion-backend/state/eval_local_datasets/user_level_benchmarks/attentional_v2_user_level_selective_v1_repaired_20260422/manifest.json",
         "reading-companion-backend/state/eval_local_datasets/user_level_benchmarks/attentional_v2_user_level_selective_v1_repaired_20260416/manifest.json",
         "reading-companion-backend/state/eval_local_datasets/user_level_benchmarks/attentional_v2_user_level_selective_v1/manifest.json",
@@ -2292,7 +2293,7 @@
         "reading-companion-backend/scripts/orchestrate_user_level_selective_eval.py",
         "reading-companion-backend/scripts/orchestrate_active_benchmark_eval.py"
       ],
-      "last_updated": "2026-06-14T08:19:58Z",
+      "last_updated": "2026-06-29T04:00:00Z",
       "last_updated_by": "codex"
     },
     {

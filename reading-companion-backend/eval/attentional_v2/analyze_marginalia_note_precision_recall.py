@@ -141,6 +141,64 @@ def _note_cases_in_coverage(note_cases: list[matching.NoteCase], coverage: Cover
     ]
 
 
+def _note_case_unique_key(note_case: matching.NoteCase) -> tuple[object, ...]:
+    slices: list[tuple[object, ...]] = []
+    for item in note_case.source_span_slices:
+        slices.append(
+            (
+                item.get("coordinate_system") or note_case.source_span_coordinate_system,
+                item.get("segment_id") or note_case.segment_id,
+                item.get("source_id") or note_case.source_id,
+                _int(item.get("paragraph_index")),
+                _int(item.get("char_start")),
+                _int(item.get("char_end")),
+            )
+        )
+    if slices:
+        return tuple(slices)
+    return (note_case.segment_id, note_case.note_case_id)
+
+
+def _dedupe_note_cases_for_analysis(
+    note_cases: list[matching.NoteCase],
+) -> tuple[list[matching.NoteCase], dict[str, Any], dict[str, list[str]]]:
+    groups: dict[tuple[object, ...], list[matching.NoteCase]] = {}
+    order: list[tuple[object, ...]] = []
+    for note_case in note_cases:
+        key = _note_case_unique_key(note_case)
+        if key not in groups:
+            groups[key] = []
+            order.append(key)
+        groups[key].append(note_case)
+
+    deduped: list[matching.NoteCase] = []
+    aliases_by_id: dict[str, list[str]] = {}
+    duplicate_groups: list[dict[str, Any]] = []
+    for key in order:
+        group = groups[key]
+        canonical = group[0]
+        aliases = [item.note_case_id for item in group[1:]]
+        deduped.append(canonical)
+        if aliases:
+            aliases_by_id[canonical.note_case_id] = aliases
+            duplicate_groups.append(
+                {
+                    "canonical_note_case_id": canonical.note_case_id,
+                    "duplicate_note_case_ids": aliases,
+                    "duplicate_note_case_count": len(group) - 1,
+                }
+            )
+
+    diagnostics = {
+        "raw_note_case_count": len(note_cases),
+        "unique_note_case_count": len(deduped),
+        "duplicate_note_case_count": len(note_cases) - len(deduped),
+        "duplicate_note_case_group_count": len(duplicate_groups),
+        "duplicate_note_case_groups": duplicate_groups[:20],
+    }
+    return deduped, diagnostics, aliases_by_id
+
+
 def reaction_record_to_bundle_reaction(record: dict[str, Any]) -> dict[str, Any]:
     source_quote = matching._clean_text(record.get("source_quote"))
     thought = matching._clean_text(record.get("thought")) or matching._clean_text(record.get("content"))
@@ -330,7 +388,8 @@ def evaluate_segment(
 
     segment_id = coverage.segment_id
     source_id = str(segment_result.get("source_id") or "")
-    note_cases = _note_cases_in_coverage(dataset_note_cases, coverage)
+    raw_note_cases = _note_cases_in_coverage(dataset_note_cases, coverage)
+    note_cases, note_case_deduplication, note_aliases_by_id = _dedupe_note_cases_for_analysis(raw_note_cases)
     eligible_reactions, reaction_diagnostics = _eligible_reactions(
         runtime_root=runtime_root,
         segment_id=segment_id,
@@ -367,6 +426,7 @@ def evaluate_segment(
                 "note_text": note_case.note_text,
                 "source_span_text": note_case.source_span_text,
                 "source_span_slices": note_case.source_span_slices,
+                "duplicate_note_case_aliases": note_aliases_by_id.get(note_case.note_case_id, []),
                 "label": label,
                 "counts_for_recall": bool(result.get("counts_for_recall")),
                 "matched_reaction_ids": sorted(note_match_reaction_ids),
@@ -391,6 +451,9 @@ def evaluate_segment(
         "stop_reason": segment_result.get("stop_reason"),
         "coverage": asdict(coverage),
         "note_case_count": len(note_cases),
+        "raw_note_case_count": len(raw_note_cases),
+        "duplicate_note_case_count": len(raw_note_cases) - len(note_cases),
+        "note_case_deduplication": note_case_deduplication,
         "model_marginalia_count": len(eligible_reactions),
         "matched_note_case_count": len(matched_note_ids),
         "matched_model_marginalia_count": len(matched_reaction_ids),
@@ -409,6 +472,8 @@ def evaluate_segment(
 
 def _aggregate(segment_summaries: list[dict[str, Any]]) -> dict[str, Any]:
     note_case_count = sum(int(item.get("note_case_count", 0) or 0) for item in segment_summaries)
+    raw_note_case_count = sum(int(item.get("raw_note_case_count", item.get("note_case_count", 0)) or 0) for item in segment_summaries)
+    duplicate_note_case_count = sum(int(item.get("duplicate_note_case_count", 0) or 0) for item in segment_summaries)
     model_marginalia_count = sum(int(item.get("model_marginalia_count", 0) or 0) for item in segment_summaries)
     matched_note_case_count = sum(int(item.get("matched_note_case_count", 0) or 0) for item in segment_summaries)
     matched_model_marginalia_count = sum(int(item.get("matched_model_marginalia_count", 0) or 0) for item in segment_summaries)
@@ -417,6 +482,8 @@ def _aggregate(segment_summaries: list[dict[str, Any]]) -> dict[str, Any]:
         labels.update(item.get("label_counts") or {})
     return {
         "note_case_count": note_case_count,
+        "raw_note_case_count": raw_note_case_count,
+        "duplicate_note_case_count": duplicate_note_case_count,
         "model_marginalia_count": model_marginalia_count,
         "matched_note_case_count": matched_note_case_count,
         "matched_model_marginalia_count": matched_model_marginalia_count,
@@ -449,6 +516,8 @@ def render_report(summary: dict[str, Any], note_rows: list[dict[str, Any]]) -> s
         f"- judge_mode: `{summary['judge_mode']}`",
         f"- segments: `{', '.join(summary['segment_ids'])}`",
         f"- note cases in covered windows: `{summary['aggregate']['note_case_count']}`",
+        f"- raw note cases before unique-span folding: `{summary['aggregate'].get('raw_note_case_count', summary['aggregate']['note_case_count'])}`",
+        f"- duplicate note cases folded: `{summary['aggregate'].get('duplicate_note_case_count', 0)}`",
         f"- model Marginalia in covered windows: `{summary['aggregate']['model_marginalia_count']}`",
         f"- matched note cases: `{summary['aggregate']['matched_note_case_count']}`",
         f"- matched model Marginalia: `{summary['aggregate']['matched_model_marginalia_count']}`",
@@ -458,8 +527,8 @@ def render_report(summary: dict[str, Any], note_rows: list[dict[str, Any]]) -> s
         "",
         "## Segment Results",
         "",
-        "| Segment | Book | Units | Coverage | Notes | Marginalia | TP Notes | TP Marginalia | Recall | Precision |",
-        "| --- | --- | ---: | --- | ---: | ---: | ---: | ---: | ---: | ---: |",
+        "| Segment | Book | Units | Coverage | Notes | Raw Notes | Duplicates Folded | Marginalia | TP Notes | TP Marginalia | Recall | Precision |",
+        "| --- | --- | ---: | --- | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: |",
     ]
     for item in summary["segments"]:
         coverage = item.get("coverage") or {}
@@ -472,6 +541,8 @@ def render_report(summary: dict[str, Any], note_rows: list[dict[str, Any]]) -> s
                     str(coverage.get("successful_unit_count", 0)),
                     f"`{coverage.get('start_label')} -> {coverage.get('end_label')}`",
                     str(item.get("note_case_count", 0)),
+                    str(item.get("raw_note_case_count", item.get("note_case_count", 0))),
+                    str(item.get("duplicate_note_case_count", 0)),
                     str(item.get("model_marginalia_count", 0)),
                     str(item.get("matched_note_case_count", 0)),
                     str(item.get("matched_model_marginalia_count", 0)),
@@ -489,6 +560,7 @@ def render_report(summary: dict[str, Any], note_rows: list[dict[str, Any]]) -> s
                 f"### `{row['segment_id']}` / `{row['note_case_id']}`",
                 f"- label: `{row['label']}`",
                 f"- reaction_ids: `{json.dumps(row['matched_reaction_ids'], ensure_ascii=False)}`",
+                f"- duplicate aliases folded: `{json.dumps(row.get('duplicate_note_case_aliases') or [], ensure_ascii=False)}`",
                 f"- human note: {json.dumps(row['source_span_text'], ensure_ascii=False)}",
                 f"- model quote: {json.dumps(row.get('best_reaction_quote'), ensure_ascii=False)}",
                 f"- model content: {json.dumps(row.get('best_reaction_content'), ensure_ascii=False)}",
@@ -503,6 +575,7 @@ def render_report(summary: dict[str, Any], note_rows: list[dict[str, Any]]) -> s
             [
                 f"### `{row['segment_id']}` / `{row['note_case_id']}`",
                 f"- label: `{row['label']}`",
+                f"- duplicate aliases folded: `{json.dumps(row.get('duplicate_note_case_aliases') or [], ensure_ascii=False)}`",
                 f"- reason: {json.dumps(reason, ensure_ascii=False)}",
                 f"- human note: {json.dumps(row['source_span_text'], ensure_ascii=False)}",
                 f"- best model quote: {json.dumps(row.get('best_reaction_quote'), ensure_ascii=False)}",

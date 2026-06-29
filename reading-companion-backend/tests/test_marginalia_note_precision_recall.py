@@ -260,8 +260,12 @@ def test_precision_dedupes_one_reaction_matching_multiple_notes(tmp_path: Path) 
         judge_mode="none",
     )
 
-    assert len(rows) == 2
-    assert summary["matched_note_case_count"] == 2
+    assert len(rows) == 1
+    assert rows[0]["duplicate_note_case_aliases"] == ["source_a__note_2"]
+    assert summary["raw_note_case_count"] == 2
+    assert summary["note_case_count"] == 1
+    assert summary["duplicate_note_case_count"] == 1
+    assert summary["matched_note_case_count"] == 1
     assert summary["matched_model_marginalia_count"] == 1
     assert summary["recall"] == 1.0
     assert summary["precision"] == 1.0

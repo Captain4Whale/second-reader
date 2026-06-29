@@ -58,6 +58,7 @@ Last verified: `2026-06-28T16:05:03+08:00`
     - `DEC-138` tightens live Digest note-bearing Marginalia writing: Digest prompt `attentional_v2.digest.v18` / XML spec v18 / promptset `attentional_v2-phase6-v78` keeps output contract `digest_understanding_response_marginalia_json_v7`, but now asks note-bearing content directly for what a thoughtful ordinary reader may not notice, know, or infer on their own, and rejects shallow paraphrase or classroom-style restatement
     - `DEC-139` calibrates live Digest Marginalia quality gates: Digest prompt `attentional_v2.digest.v19` / XML spec v19 / promptset `attentional_v2-phase6-v79` keeps output contract `digest_understanding_response_marginalia_json_v7`, but now frames highlight-only as a durable, out-of-context excerpt with long-term reader value, and note-bearing as useful knowledge or non-obvious connection for a thoughtful ordinary reader rather than ordinary close-reading commentary
     - `DEC-140` makes invalid `retrieve_unit_memory` recall-tool args non-fatal: same-language and `selected_source_unit` validation still runs, but invalid recall args now become `invalid_tool_noop` / `invalid_skipped` retrieval degradation instead of stopping an otherwise valid Ingest boundary as `llm_contract`
+    - `DEC-141` repairs the active user-level selective dataset again so note-aligned cases are unique source spans rather than raw exported note rows: the active split manifest now points to `attentional_v2_user_level_selective_v1_repaired_20260629_source_norm_v1_2_unique_notes`, with `5` segments, `158` unique note cases, `210` raw covered note rows, and `52` raw duplicate rows retained only as provenance aliases
     - current `llm_calls.ingest(...)` is the forward-only XML LLM boundary call: final output carries `unit.end_paragraph_n`, `unit.end_at`, `preview_partition[]`, and optional boundary-rationale `reason`; bounded Unit Memory recall intent is expressed only through the `retrieve_unit_memory` action tool
     - current LLM-call code now lives in `reading-companion-backend/src/attentional_v2/llm_calls.py`; the old ambiguous active module name is removed
     - current `attentional_v2` LLM calls keep project schemas/tools protocol-neutral; Anthropic-compatible profiles submit structured results through mechanism-private final-output tools such as `submit_ingest_result` and `submit_digest_result`, while OpenAI-compatible JSON-object profiles use JSON object plus validator/repair for Ingest/Digest final output; `retrieve_unit_memory` remains the only live action tool and is left to model `auto` choice; OpenAI-compatible DeepSeek/OpenCode JSON-object calls do not force final-output `tool_choice`
@@ -689,11 +690,11 @@ Last verified: `2026-06-28T16:05:03+08:00`
       - `attentional_v2_accumulation_benchmark_v2_frozen_active_rerun_20260419`
     - bounded long-span v1 remains older historical evidence:
       - `attentional_v2_accumulation_benchmark_v1_judged_rerun_20260407`
-- Keep the note-aligned `user-level selective v1` package as the active local/user-level benchmark, now promoted onto the source-normalized deterministic v1.2 `202`-case package.
+- Keep the note-aligned `user-level selective v1` package as the active local/user-level benchmark, now promoted onto the source-normalized deterministic v1.2 unique-note `158`-case package.
   - active split manifest:
     - `reading-companion-backend/eval/manifests/splits/attentional_v2_user_level_selective_v1_draft.json`
   - active dataset package:
-    - `reading-companion-backend/state/eval_local_datasets/user_level_benchmarks/attentional_v2_user_level_selective_v1_repaired_20260614_source_norm_v1_2`
+    - `reading-companion-backend/state/eval_local_datasets/user_level_benchmarks/attentional_v2_user_level_selective_v1_repaired_20260629_source_norm_v1_2_unique_notes`
   - active runner:
     - `reading-companion-backend/eval/attentional_v2/run_user_level_selective_comparison.py`
   - active scope:
@@ -708,20 +709,29 @@ Last verified: `2026-06-28T16:05:03+08:00`
       - `nawaer_baodian_private_zh` now uses a benchmark-local body-start override at `c13` (`认识财富创造的原理`)
       - its active window is now exactly `c13-s1 -> c13-s168`
       - its old preface-side note at `c6` (`e0056`) is no longer part of the active package
-    - the active pointer moved on June 14 from the previous `20260422` package to a fresh Source Normalization v1.2 deterministic-only rebuild:
-      - all `202` note cases remain present
+    - the active pointer moved on June 14 from the previous `20260422` package to a fresh Source Normalization v1.2 deterministic-only rebuild, and moved again on June 29 to a unique-note repaired package:
+      - `target_note_count=20` now means unique source-span note cases, not raw exported note rows
+      - raw Google Books / reader-app duplicate exports are retained only under `provenance.duplicate_note_aliases`
       - every active note case still has non-empty `source_span_slices`
-      - source-span text is unchanged relative to the previous active package even where paragraph indexes moved
-      - `xidaduo_private_zh__segment_1` no longer includes structural footnote definitions such as `Brahmanen`, `Magadha`, `[2]Vishnus`, and `[3]Lakschmi`
+      - no active `note_cases.jsonl` rows share the same `(segment_id, source_span_slices)` key
+      - `xidaduo_private_zh__segment_1` still excludes structural footnote definitions such as `Brahmanen`, `Magadha`, `[2]Vishnus`, and `[3]Lakschmi`
       - body note references remain visible, while the malformed orphan residue `1《爱经》...` remains body-visible by conservative deterministic policy
     - active package now contains:
       - `5` reading segments
-      - `202` note cases
+      - `158` unique note cases
+      - `210` raw covered note rows before duplicate folding
+      - `52` raw duplicate rows folded into provenance aliases
     - every active note case now carries a strict `segment_source_v1` char-span under `source_span_slices`
       - this is the source-coordinate system used for `Selective Legibility` candidate retrieval, because the mechanisms read the rendered `segment_sources/*.txt` substrate
       - original parsed-book sentence ids remain as provenance for audit, not as the primary matching coordinate
     - active audit index:
-      - `reading-companion-backend/state/eval_local_datasets/user_level_benchmarks/attentional_v2_user_level_selective_v1_repaired_20260614_source_norm_v1_2/audit_human_readable/index.md`
+      - `reading-companion-backend/state/eval_local_datasets/user_level_benchmarks/attentional_v2_user_level_selective_v1_repaired_20260629_source_norm_v1_2_unique_notes/audit_human_readable/index.md`
+    - superseded June 14 source-normalized package:
+      - dataset package:
+        - `reading-companion-backend/state/eval_local_datasets/user_level_benchmarks/attentional_v2_user_level_selective_v1_repaired_20260614_source_norm_v1_2`
+      - package truth:
+        - `5` reading segments
+        - `202` raw note cases before unique-span dedupe
     - superseded previous active package:
       - dataset package:
         - `reading-companion-backend/state/eval_local_datasets/user_level_benchmarks/attentional_v2_user_level_selective_v1_repaired_20260422`
@@ -813,7 +823,7 @@ Last verified: `2026-06-28T16:05:03+08:00`
         - `iterator_v1 note_recall = 0.1232`
       - current pointer boundary:
         - the formal April 19 evidence still reflects `attentional_v2_user_level_selective_v1_repaired_20260416`
-        - the active local/user-level pointer has since moved to `attentional_v2_user_level_selective_v1_repaired_20260614_source_norm_v1_2` with `202` note cases
+        - the active local/user-level pointer has since moved to `attentional_v2_user_level_selective_v1_repaired_20260629_source_norm_v1_2_unique_notes` with `158` unique note cases; it retains `210` raw covered note rows and folds `52` duplicate rows into provenance aliases
       - parent report:
         - `reading-companion-backend/eval/runs/attentional_v2/attentional_v2_active_benchmark_rerun_20260419/summary/report.md`
       - excerpt report:

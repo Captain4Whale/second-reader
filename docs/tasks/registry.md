@@ -509,17 +509,24 @@ Last updated: `2026-06-28T16:18:32+08:00`
     - `reading-companion-backend/eval/manifests/splits/attentional_v2_user_level_selective_v1_draft.json`
   - active dataset package truth:
     - dataset root:
-      - `reading-companion-backend/state/eval_local_datasets/user_level_benchmarks/attentional_v2_user_level_selective_v1_repaired_20260614_source_norm_v1_2`
+      - `reading-companion-backend/state/eval_local_datasets/user_level_benchmarks/attentional_v2_user_level_selective_v1_repaired_20260629_source_norm_v1_2_unique_notes`
     - `5` reading segments
-    - `202` note cases
-    - current active source substrate was rebuilt from fresh isolated parses with Source Normalization v1.2 deterministic-only metadata
-    - the June 14 source-normalized rebuild preserves every note case and non-empty `source_span_slices`; source-span text remains unchanged relative to the previous active package even when paragraph indexes moved
+    - `158` unique note cases
+    - `210` raw covered note rows before duplicate folding
+    - `52` raw duplicate rows folded into `provenance.duplicate_note_aliases`
+    - current active source substrate was rebuilt from fresh isolated parses with Source Normalization v1.2 deterministic-only metadata, then repaired on June 29 so note cases are unique by source span
+    - `target_note_count=20` now means unique note cases, not raw exported note rows
+    - no active `note_cases.jsonl` rows share the same `(segment_id, source_span_slices)` key
     - `xidaduo_private_zh__segment_1` no longer contains structural footnote definitions such as `Brahmanen`, `Magadha`, `[2]Vishnus`, and `[3]Lakschmi`, while body note references remain visible
     - conservative orphan residue `1《爱经》...` remains body-visible and tracked as follow-up residue rather than excluded without structural proof
     - reading segments start at the first real body unit rather than the absolute beginning of the source file
     - front matter such as disclaimers, recommendation / preface material, book-about-book notes, timeline pages, and part/chapter stubs is skipped before segment construction
     - `nawaer_baodian_private_zh` now uses a benchmark-local body-start override at `c13`, with the active window repaired to `c13-s1 -> c13-s168` and the old preface-side case `e0056` removed
     - every note case now has `segment_source_v1` char-span slices; this is the strict matching coordinate for `Selective Legibility`
+  - superseded June 14 source-normalized package:
+    - `reading-companion-backend/state/eval_local_datasets/user_level_benchmarks/attentional_v2_user_level_selective_v1_repaired_20260614_source_norm_v1_2`
+    - `5` reading segments
+    - `202` raw note cases before unique-span dedupe
   - superseded previous active package:
     - `reading-companion-backend/state/eval_local_datasets/user_level_benchmarks/attentional_v2_user_level_selective_v1_repaired_20260422`
     - `5` reading segments
@@ -550,7 +557,7 @@ Last updated: `2026-06-28T16:18:32+08:00`
       - `iterator_v1 note_recall = 0.1232`
     - evidence boundary:
       - this formal rerun still used the then-active prior repaired package `attentional_v2_user_level_selective_v1_repaired_20260416`
-      - the current active pointer has since moved to `attentional_v2_user_level_selective_v1_repaired_20260614_source_norm_v1_2` with `202` note cases
+      - the current active pointer has since moved to `attentional_v2_user_level_selective_v1_repaired_20260629_source_norm_v1_2_unique_notes` with `158` unique note cases; it retains `210` raw covered note rows and folds `52` duplicate rows into provenance aliases
     - April 21 repair note:
       - a shard-filtered recovery command had overwritten the root summary with a partial one-shard aggregate
       - the root summary/report are now regenerated from all completed shards
