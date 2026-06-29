@@ -1,6 +1,6 @@
 {
   "schema_version": 1,
-  "updated_at": "2026-06-29T14:33:55.012773Z",
+  "updated_at": "2026-06-29T23:20:21.332077Z",
   "entries": [
     {
       "run_id": "attentional_v2_excerpt_surface_v1_1_judged_20260406",
@@ -2978,7 +2978,7 @@
       "date": "2026-06-29",
       "surface": "digest_marginalia_live_smoke",
       "lane": "mechanism_runtime",
-      "status": "running",
+      "status": "review_pending",
       "mechanisms": [
         "attentional_v2"
       ],
@@ -2986,7 +2986,9 @@
         "state/eval_local_datasets/user_level_benchmarks/attentional_v2_user_level_selective_v1_repaired_20260629_source_norm_v1_2_unique_notes"
       ],
       "run_dir": "reading-companion-backend/eval/runs/attentional_v2/digest_marginalia_v20_5book_parallel_20units_20260629",
-      "summary_paths": {},
+      "summary_paths": {
+        "raw_summary": "reading-companion-backend/eval/runs/attentional_v2/digest_marginalia_v20_5book_parallel_20units_20260629/analysis/digest_marginalia_v20_5book_parallel_20units/raw/summary.json"
+      },
       "job_ids": [
         "bgjob_digest_marginalia_v20_5book_parallel_20units_20260629"
       ],
@@ -2994,15 +2996,13 @@
         "reading-companion-backend/eval/runs/attentional_v2/digest_marginalia_v20_5book_parallel_20units_20260629/analysis/digest_marginalia_v20_5book_parallel_20units/marginalia_smoke_report.md"
       ],
       "catalog_status": "not_cataloged",
-      "notes": "Diagnostic-only five-book parallel Digest v20 Marginalia smoke over the active unique-note source-normalized user-level dataset. Running with five segment workers, up to 20 accepted units per segment; no formal judge or evidence catalog promotion. The report path is allowed missing while the background job is running.",
+      "notes": "Diagnostic-only five-book parallel Digest v20 Marginalia smoke over the active unique-note source-normalized user-level dataset. Completed with summary status pass_with_caveats: 88 runner units across 5 segments, 149 Marginalia items (143 highlight-only, 6 note-bearing), 26 quote_too_broad caveats, 0 hard failures. Awaiting human review; no formal judge or evidence catalog promotion.",
       "parent_run_id": "",
       "child_run_ids": [],
       "synthetic": false,
-      "local_missing_allowed": [
-        "reading-companion-backend/eval/runs/attentional_v2/digest_marginalia_v20_5book_parallel_20units_20260629/analysis/digest_marginalia_v20_5book_parallel_20units/marginalia_smoke_report.md"
-      ],
+      "local_missing_allowed": [],
       "metadata": {},
-      "updated_at": "2026-06-29T14:33:55.011710Z"
+      "updated_at": "2026-06-29T23:20:21.331121Z"
     }
   ]
 }

@@ -7,7 +7,7 @@ Update when: the current objective, active tasks, blockers, active jobs, open de
 
 This file is authoritative for durable current status. Do not keep unique active-state information only in `docs/agent-handoff.md`.
 
-Last verified: `2026-06-29T22:21:20+08:00`
+Last verified: `2026-06-30T07:21:33+08:00`
 
 ## Current Objective
 - The `Ingest -> Digest -> Reading Runner settlement` mechanism reframe is implemented; current work is fact alignment, smoke/diagnostic review, and calibration before any formal evaluation promotion.
@@ -142,9 +142,10 @@ Last verified: `2026-06-29T22:21:20+08:00`
   - Digest v20 Marginalia five-book diagnostic:
     - run id: `digest_marginalia_v20_5book_parallel_20units_20260629`
     - job id: `bgjob_digest_marginalia_v20_5book_parallel_20units_20260629`
-    - status: running; run ledger status is `running`
+    - status: completed; run ledger status is `review_pending`
     - scope: active unique-note source-normalized v1.2 five-segment dataset, `segment_workers=5`, up to `20` accepted units per segment
     - purpose: check the live density-aware Marginalia prompt `attentional_v2.digest.v20` / promptset `attentional_v2-phase6-v80` after switching the runner version gate and default dataset root to the active unique-note package
+    - outcome: `88` runner units across `5` segments, summary status `pass_with_caveats`, `149` Marginalia items (`143` highlight-only, `6` note-bearing), `26` `quote_too_broad` caveats, and `0` hard failures
     - report: `reading-companion-backend/eval/runs/attentional_v2/digest_marginalia_v20_5book_parallel_20units_20260629/analysis/digest_marginalia_v20_5book_parallel_20units/marginalia_smoke_report.md`
   - active diagnostic evaluation:
     - run id: `attentional_v2_ingest_digest_unit_memory_full_diagnostic_20260603_parallel5`
