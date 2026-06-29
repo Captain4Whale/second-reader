@@ -1146,8 +1146,7 @@ def test_digest_uses_live_xml_prompt_and_filters_surface_reactions(tmp_path: Pat
     assert "Out-of-context completeness" in captured["prompt"]
     assert "Durable excerpt value" in captured["prompt"]
     assert "little long-term value as a standalone excerpt" in captured["prompt"]
-    assert "local facts, plot evidence, scene details" in captured["prompt"]
-    assert "ordinary informative sentences" in captured["prompt"]
+    assert "Do not select only the final conclusion" in captured["prompt"]
     assert "What is something valuable here that a thoughtful ordinary reader may not know" in captured["prompt"]
     assert "Prefer notes that add real cognitive value" in captured["prompt"]
     assert "Use literary technique, close reading, or formal analysis only when" in captured["prompt"]
@@ -1158,13 +1157,17 @@ def test_digest_uses_live_xml_prompt_and_filters_surface_reactions(tmp_path: Pat
     assert "not as output labels or a generation menu" in captured["prompt"]
     assert "Use a silent \"verb + object\" intention" not in captured["prompt"]
     assert "smallest complete contiguous `source_quote`" in captured["prompt"]
-    assert "must not be fragmentary" in captured["prompt"]
-    assert "这个人是神圣的" in captured["prompt"]
-    assert "那天晚上，城门口多了七具尸体。" in captured["prompt"]
-    assert "买下梵高画作的日本人" in captured["prompt"]
-    assert "Japanese asset bubble" in captured["prompt"]
-    assert "愿你将这条路走到底，愿你寻得解脱！" in captured["prompt"]
-    assert "it mostly restates the visible scene" in captured["prompt"]
+    assert '"Smallest complete" does not mean "shortest possible sentence."' in captured["prompt"]
+    assert "shortest contiguous span that preserves the full reusable idea" in captured["prompt"]
+    assert "If a sentence only states a definition and the next sentence applies it" in captured["prompt"]
+    assert "If a premise, contrast, exception, consequence, or boundary condition is needed" in captured["prompt"]
+    assert "## How many?" in captured["prompt"]
+    assert "valuable thought nodes" in captured["prompt"]
+    assert "Do not treat Marginalia as a top-1 or top-2 selection task" in captured["prompt"]
+    assert "Which exact source spans in this unit genuinely deserve to be carried forward?" in captured["prompt"]
+    assert "## Seperate or together?" in captured["prompt"]
+    assert "Before emitting adjacent Marginalia items" in captured["prompt"]
+    assert "Do not split a continuous valuable passage" in captured["prompt"]
     assert "turns farewell into permission" not in captured["prompt"]
     assert "The reason must name both why the quote remains understandable out of context and what durable excerpt value it carries." in captured["prompt"]
     assert "For note-bearing Marginalia, write the explanation in visible `content`; `selection_reason` may be omitted or empty." in captured["prompt"]
@@ -1197,8 +1200,8 @@ def test_digest_uses_live_xml_prompt_and_filters_surface_reactions(tmp_path: Pat
     }
     assert op["target_key"] != "legacy-ignored"
     assert manifest["node_name"] == "digest"
-    assert manifest["prompt_version"] == "attentional_v2.digest.v19"
-    assert manifest["prompt_assembly"]["spec_id"] == "attentional_v2.digest.xml.v19"
+    assert manifest["prompt_version"] == "attentional_v2.digest.v20"
+    assert manifest["prompt_assembly"]["spec_id"] == "attentional_v2.digest.xml.v20"
     assert manifest["prompt_assembly"]["output_contract"] == "digest_understanding_response_marginalia_json_v7"
     assert "mode" not in manifest["prompt_assembly"]
     assert manifest["prompt_assembly"]["rendered_blocks"] == [

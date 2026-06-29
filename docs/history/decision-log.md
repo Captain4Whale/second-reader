@@ -3974,3 +3974,26 @@ This new direction is design frozen but not yet implemented as a formal benchmar
 - `reading-companion-backend/tests/test_marginalia_note_precision_recall.py`
 - `docs/current-state.md`
 - `docs/tasks/registry.md`
+
+## Entry 140
+**ID**: DEC-142
+**Status**: active
+
+**Decision / Inflection**: Make live Digest Marginalia density-aware for high-value units.
+
+**Period**: June 29, 2026, after reviewing missed human highlights in `The Value of Others` and seeing that the v19 prompt had reasonable quote precision but under-recalled dense definition / argument chains by behaving too much like a top-1/top-2 selector.
+
+**Decision**: Live Digest is bumped to `attentional_v2.digest.v20` / XML spec v20 / promptset `attentional_v2-phase6-v80`, while keeping output contract `digest_understanding_response_marginalia_json_v7`. The user-authored v20 Marginalia policy keeps the v19 quality gates but adds density-aware selection: when a unit contains multiple durable thought nodes, preserve all genuinely valuable spans instead of choosing only the most polished or conclusive sentence. Adjacent candidates should be judged as separate or together; if neighboring sentences jointly form one definition, argument step, contrast, analogy, or mini-theory, quote them together as one Marginalia item. Source quote selection now clarifies that "smallest complete" means the shortest contiguous span that preserves the full reusable idea, not the shortest possible sentence.
+
+**Boundary**: This is a prompt-policy change only. It does not change the Digest output schema, Marginalia runtime normalization, Unit Memory retrieval semantics, Ingest behavior, public API / frontend fields, source-coordinate resolution, or historical eval/report artifacts. `selection_reason` remains mechanism-private audit metadata for highlight-only Marginalia.
+
+**Why this path won**: The previous prompt successfully pushed away many weak highlights and shallow notes, but it over-constrained dense nonfiction by implying scarcity. The accepted wording keeps the precision-oriented gates while making the model ask which exact source spans genuinely deserve to be carried forward, so dense units can produce many marks when the source itself is unusually rich.
+
+**Primary evidence**:
+- `reading-companion-backend/src/attentional_v2/prompts/digest.py`
+- `reading-companion-backend/src/attentional_v2/prompts/registry.py`
+- `reading-companion-backend/tests/test_attentional_v2_llm_calls.py`
+- `reading-companion-backend/tests/test_attentional_v2_scaffold.py`
+- `docs/backend-reading-mechanisms/attentional_v2.md`
+- `docs/current-state.md`
+- `docs/tasks/registry.md`

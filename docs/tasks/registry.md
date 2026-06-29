@@ -7,7 +7,7 @@ Update when: task status, priority, blockers, decision refs, job refs, evidence 
 
 This document is the human-readable companion to `docs/tasks/registry.json`.
 
-Last updated: `2026-06-28T16:18:32+08:00`
+Last updated: `2026-06-29T22:21:20+08:00`
 
 ## Status Values
 - `active`
@@ -25,7 +25,7 @@ Last updated: `2026-06-28T16:18:32+08:00`
 - Lane: `mechanism_runtime`
 - Priority: `high`
 - Detail: `docs/current-state.md`
-- Next: Digest is live as `attentional_v2.digest.v19` / promptset `attentional_v2-phase6-v79` with unchanged output contract `digest_understanding_response_marginalia_json_v7`: canonical visible-note output is `marginalia[]`; highlight-only Marginalia still uses empty/omitted `content` plus private inline `selection_reason`, and must pass both out-of-context completeness and durable long-term reader value gates. Note-bearing Marginalia now asks for useful knowledge, context, or non-obvious connections that a thoughtful ordinary reader may not know, notice, or infer on their own; ordinary close-reading / technique commentary is explicitly demoted unless it creates non-obvious gain. `DEC-140` fixes the `huochu_shengming_de_yiyi_private_zh__segment_1` failure class from the Digest v19 five-book diagnostic by making invalid `retrieve_unit_memory` recall args a non-fatal `invalid_tool_noop` / `invalid_skipped` retrieval degradation instead of an Ingest `llm_contract`; next action is to rerun the five-book v19 diagnostic or a focused retry, while separately watching the remaining `nawaer_baodian_private_zh__segment_1` provider timeout class.
+- Next: Digest is live as `attentional_v2.digest.v20` / promptset `attentional_v2-phase6-v80` with unchanged output contract `digest_understanding_response_marginalia_json_v7`: canonical visible-note output is `marginalia[]`; highlight-only Marginalia still uses empty/omitted `content` plus private inline `selection_reason`, and must pass both out-of-context completeness and durable long-term reader value gates. Note-bearing Marginalia still asks for useful knowledge, context, or non-obvious connections that a thoughtful ordinary reader may not know, notice, or infer on their own; ordinary close-reading / technique commentary is demoted unless it creates non-obvious gain. v20 adds density-aware Marginalia selection for high-value units: do not treat Marginalia as a top-1/top-2 task, preserve all genuinely durable thought nodes, and merge adjacent sentences when they form one complete reusable idea. `DEC-140` fixes the `huochu_shengming_de_yiyi_private_zh__segment_1` failure class from the Digest v19 five-book diagnostic by making invalid `retrieve_unit_memory` recall args a non-fatal `invalid_tool_noop` / `invalid_skipped` retrieval degradation instead of an Ingest `llm_contract`; next action is to rerun the five-book Digest diagnostic or a focused retry, while separately watching the remaining `nawaer_baodian_private_zh__segment_1` provider timeout class.
 - Jobs:
   - `bgjob_ingest_digest_unit_memory_full_diagnostic_20260603_parallel5`
   - `bgjob_unit_memory_text_only_smoke_value_20260606`
@@ -83,6 +83,8 @@ Last updated: `2026-06-28T16:18:32+08:00`
   - `DEC-138`
   - `DEC-139`
   - `DEC-140`
+  - `DEC-141`
+  - `DEC-142`
   - `docs/current-state.md`
   - `docs/backend-reader-evaluation.md`
   - `docs/implementation/new-reading-mechanism/ingest-context-and-navigate-mapping.md`

@@ -9,12 +9,12 @@ Created: `2026-06-20`
 
 ## Status
 
-- Status: implemented-live in Digest v19.
+- Status: implemented-live in Digest v20.
 - Live prompt now implements the reviewed candidate in `reading-companion-backend/src/attentional_v2/prompts/digest.py`.
 - Current live Digest baseline:
-  - prompt version: `attentional_v2.digest.v19`
-  - XML spec: `attentional_v2.digest.xml.v19`
-  - promptset: `attentional_v2-phase6-v79`
+  - prompt version: `attentional_v2.digest.v20`
+  - XML spec: `attentional_v2.digest.xml.v20`
+  - promptset: `attentional_v2-phase6-v80`
   - output contract: `digest_understanding_response_marginalia_json_v7`
 - Current live model-facing outputs:
   - `understanding`
@@ -66,6 +66,11 @@ Created: `2026-06-20`
   - Note-bearing now prioritizes useful knowledge, context, or non-obvious connections that a thoughtful ordinary reader may not know, notice, or infer on their own.
   - Ordinary close-reading / technique commentary is explicitly demoted: technique notes are allowed only when they reveal something non-obvious and materially change the quote's value.
   - The Resistance / Leverage / Growth ideas remain as silent checks, not as a generation menu.
+- Implemented v20 density-aware follow-up:
+  - Dense units should preserve all genuinely durable thought nodes rather than treating Marginalia as a top-1 or top-2 selection task.
+  - Adjacent valuable spans should be emitted separately only when they are distinct portable ideas; neighboring sentences that jointly form one definition, argument step, contrast, analogy, or mini-theory should be quoted together as one Marginalia item.
+  - `source_quote` selection now clarifies that "smallest complete" means the shortest contiguous span that preserves the full reusable idea, not the shortest possible sentence.
+  - Output contract remains `digest_understanding_response_marginalia_json_v7`; this is a prompt-selection discipline change, not a schema or runtime contract change.
 
 ## Design Goal
 

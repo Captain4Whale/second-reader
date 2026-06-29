@@ -18,9 +18,9 @@ from .reader_role import READER_ROLE_FRAGMENT
 from .types import PromptDefinition
 
 
-DIGEST_PROMPT_VERSION = "attentional_v2.digest.v19"
-DIGEST_XML_PROMPT_ASSEMBLY_SPEC_ID = "attentional_v2.digest.xml.v19"
-DIGEST_XML_PROMPTSET_VERSION = "attentional_v2-phase6-v79"
+DIGEST_PROMPT_VERSION = "attentional_v2.digest.v20"
+DIGEST_XML_PROMPT_ASSEMBLY_SPEC_ID = "attentional_v2.digest.xml.v20"
+DIGEST_XML_PROMPTSET_VERSION = "attentional_v2-phase6-v80"
 DIGEST_XML_TRANSPORT_SYSTEM_PROMPT = "Follow the structured Digest prompt in the user message. Use the required submit_digest_result tool as the final output channel."
 
 
@@ -195,16 +195,15 @@ After reading and understanding the current source unit, decide whether any exac
 
 Marginalia are not summaries, reading-comprehension explanations, or marks for everything important in the book. A good Marginalia item preserves something the reader may want to carry forward beyond this moment of reading.
 
-Do not create Marginalia just to fill the field. It is normal to emit zero items.
-
 ## Two Forms
 
 Marginalia can be highlight-only or note-bearing.
 
 ### Highlight-only
 
-Use highlight-only only when the quote itself is worth preserving without added explanation.
+Use highlight-only when the quote itself is worth preserving without added explanation.
 
+#### gates
 A highlight-only quote must pass both gates:
 
 1. Out-of-context completeness:
@@ -213,16 +212,10 @@ A highlight-only quote must pass both gates:
 2. Durable excerpt value:
    The quote gives the reader a lasting gain by itself: insight, conceptual compression, practical wisdom, aesthetic force, emotional condensation, ethical pressure, memorable language, or a transferable way of seeing.
 
-Do not use highlight-only merely because a sentence is important for understanding this book. A sentence may be crucial as evidence, plot movement, or local explanation while still having little long-term value as a standalone excerpt.
+   Do not use highlight-only merely because a sentence is important for understanding this book. A sentence may be crucial as evidence, plot movement, or local explanation while still having little long-term value as a standalone excerpt.
 
-Avoid highlight-only for:
-- local facts, plot evidence, scene details, or examples whose value depends on the current narrative;
-- topic sentences, transitions, setup questions, recaps, and argument roadmaps;
-- shocking or emotional details that matter mainly as evidence inside this book;
-- sentences whose value depends mainly on who says them, who is being described, or what happens nearby;
-- ordinary informative sentences, even when they are clear and complete.
+Do not select only the final conclusion if earlier definitions, distinctions, premises, or constraints are independently reusable.
 
-If two adjacent sentences jointly form one complete thought, image, contrast, or emotional movement, quote them together as one contiguous Marginalia item. Do not split a complete excerpt into clipped fragments.
 
 For highlight-only, output `source_quote`, leave `content` empty or omit it, and include a short private `selection_reason` naming both why the quote remains understandable out of context and what durable excerpt value it carries.
 
@@ -254,6 +247,25 @@ Do not write a note if it only:
 
 For note-bearing Marginalia, output an exact `source_quote` plus visible `content`. The note should be compact but substantial. It should give the reader something they did not already get just by rereading the quote.
 
+## How many?
+
+- Avoid flooding with ordinary sentences. It is normal to emit zero items. Do not create Marginalia just to fill the field.
+- When the unit is dense with durable ideas, harvest the valuable thought nodes instead of choosing only the most polished or most conclusive sentence. Do not suppress strong candidates just because other strong candidates already exist in the same unit. If the current unit contains multiple distinct ideas that are each worth carrying forward, preserve all of them rather than only the most striking one. Do not treat Marginalia as a top-1 or top-2 selection task. The question is not "which one or two quotes are best?"
+The question is: "Which exact source spans in this unit genuinely deserve to be carried forward?"
+
+
+## Seperate or together?
+
+In a dense argument chain, several neighboring sentences may each be worth preserving. Some should become separate Marginalia items if they are distinct portable ideas. Others should be merged into one quote if they are parts of one complete thought.
+
+Before emitting adjacent Marginalia items, ask whether they are actually one complete contiguous thought.
+
+If two or more neighboring sentences jointly form one definition, argument step, contrast, analogy, or mini-theory, quote them together as one Marginalia item.
+
+Do not split a continuous valuable passage into several clipped highlights merely because each sentence is individually interesting.
+
+Do not discard an important premise merely because a later sentence states the conclusion more memorably. If the premise itself is reusable, preserve it. If the premise and conclusion need each other, quote them together.
+
 ## Silent Lenses
 
 Use these only as private checks, not as output labels or a generation menu.
@@ -268,7 +280,17 @@ One real trigger may justify Marginalia, but a vague sense that something is "im
 
 Choose the smallest complete contiguous `source_quote` that can honestly carry the Marginalia item.
 
-"Smallest" means no unnecessary surrounding prose, but it must not be fragmentary. Prefer a complete sentence, or a tightly connected pair of sentences, when that is the minimal complete unit.
+"Smallest complete" does not mean "shortest possible sentence."
+
+It means the shortest contiguous span that preserves the full reusable idea.
+
+Prefer a complete sentence, or a tightly connected pair or group of sentences, when that is the minimal complete unit.
+
+If a sentence only states a definition and the next sentence applies it, include both when the application is what makes the definition valuable.
+
+If a premise, contrast, exception, consequence, or boundary condition is needed for the thought to survive outside the unit, include it.
+
+If several adjacent sentences form a valuable continuous passage, quote the passage as one Marginalia item rather than slicing it into fragments.
 
 Do not use ellipses, stitched fragments, paraphrases, translations, paragraph numbers, or source coordinates.
 
@@ -284,83 +306,17 @@ Do not fabricate hidden background, authorial intent, future plot, or a "real st
 
 It is better to output no Marginalia than to produce a weak highlight or an obvious note.
 
-## Output Discipline
+## Output Reminder
 
 This section explains only the `marginalia` field. The final Digest output must still follow the full OutputContract for `understanding`, `response`, and `marginalia`.
 
 For each Marginalia item:
-
-- `source_quote` must be an exact contiguous quote from the current source unit, and it should be the smallest complete span that preserves the item.
+- `source_quote` must be an exact contiguous quote from the current source unit.
+- `source_quote` should be the smallest complete span that preserves the item.
 - Empty or omitted `content` means highlight-only.
 - Non-empty `content` means note-bearing Marginalia.
 - For each highlight-only Marginalia item, include a short private `selection_reason` inside the same item. The reason must name both why the quote remains understandable out of context and what durable excerpt value it carries.
-- For note-bearing Marginalia, write the explanation in visible `content`; `selection_reason` may be omitted or empty.
-- Do not output `mode`, `kind`, `decision`, `hook`, `intent`, `evidence_status`, `calibration`, `rejected_output`, `source`, `prior_link`, `outside_link`, or `search_intent` unless a later output contract explicitly asks for them.
-
-## Calibration Examples
-
-These examples show only the `marginalia` field shape.
-
-Case 1: skip a structural transition
-Text: "下面分别讨论这三个方面。"
-Output:
-{"marginalia": []}
-
-Case 2: skip a structural signpost
-Text: "这一章将从三个方面说明问题的来龙去脉。"
-Why: this sentence may organize the reading, but it is not a standalone excerpt worth preserving.
-Output:
-{"marginalia": []}
-
-Case 3: highlight-only standalone excerpt
-Text: "旧钥匙打不开新门。"
-Why: the quoted sentence is compact, self-contained, and has durable excerpt value as a transferable metaphor.
-Output:
-{"marginalia": [{"source_quote": "旧钥匙打不开新门。", "content": "", "selection_reason": "Understandable out of context as a complete metaphor; durable value through principle-like compression."}]}
-
-Case 3B: reject locally important but context-dependent highlight-only
-Text: "这个人是神圣的。她从未如此敬重过一个人。"
-Why: this may be important inside the story, but the value depends on knowing who "this person" is and what the relationship means. Do not use highlight-only.
-Output:
-{"marginalia": []}
-
-Case 3C: reject local evidence without durable excerpt value
-Text: "那天晚上，城门口多了七具尸体。"
-Why: the detail may be shocking and important evidence inside the narrative, but by itself it does not offer durable reader value outside that narrative context.
-Output:
-{"marginalia": []}
-
-Case 4: note-bearing with useful external background
-Text: "就像那个买下梵高画作的日本人一样。"
-Why: the quote's value depends on background many readers may not know.
-Output:
-{"marginalia": [{"source_quote": "就像那个买下梵高画作的日本人一样。", "content": "This points to the late-1980s Japanese asset bubble, when Japanese buyers paid startling prices for Western trophy art, including Yasuda Fire and Marine's roughly US$40 million purchase of Van Gogh's Sunflowers. The comparison sharpens the criticism: the bidder is spending other people's money with bubble-era abandon."}]}
-
-Case 5: reject shallow note-bearing close reading
-Text: "门开着，屋里却没有人敢进去。"
-Bad note: "The open door and nobody entering form a contrast that creates tension."
-Why bad: it only names an obvious contrast and offers a classroom-style technique comment. If there is no non-obvious gain, skip it.
-Output:
-{"marginalia": []}
-
-Case 6: note a reasoning hinge only when it changes the reader's model
-Text: "由此可见，问题不在资源太少，而在资源被错误地锁住。"
-Why: the note gives a reusable conceptual distinction rather than merely saying the sentence is important.
-Output:
-{"marginalia": [{"source_quote": "由此可见，问题不在资源太少，而在资源被错误地锁住。", "content": "The sentence changes the diagnosis from scarcity to access. That distinction matters beyond this passage: a system can have enough resources in total and still fail because rules, ownership, or bottlenecks prevent those resources from circulating."}]}
-
-Case 7: preserve uncertainty without inventing context
-Text: "他又引用那句古话，说真正的路总要绕远。"
-Why: the phrase appears to invoke inherited language, but if verified context is not present in CurrentFocus or ReadingMemory, do not invent the allusion's source or function.
-Output:
-{"marginalia": [{"source_quote": "真正的路总要绕远", "content": "This is framed as an inherited saying, but the current material is not enough to verify its source or original context; keep the uncertainty visible rather than inventing a background."}]}
-
-Case 8: reject shallow note-bearing paraphrase
-Text: "愿你将这条路走到底，愿你寻得解脱！"
-Bad note: "The repeated blessing shows that Siddhartha recognizes Govinda's independent choice and hints that he will not go with him."
-Why bad: it mostly restates the visible scene and gives little beyond what a reader can infer by rereading the sentence.
-Better output:
-{"marginalia": []}""",
+- For note-bearing Marginalia, write the explanation in visible `content`; `selection_reason` may be omitted or empty.""",
     ),
     PromptFragment(
         fragment_id="digest.source_grounding_policy",
