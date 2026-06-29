@@ -139,6 +139,13 @@ Last verified: `2026-06-29T22:21:20+08:00`
     - follow-up: `DEC-140` fixes the `huochu` invalid recall-tool-args failure class by degrading it to skipped Unit Memory retrieval; the `nawaer` provider timeout class remains separate
     - summary: `60` Marginalia items (`59` highlight-only, `1` note-bearing), `8` `quote_too_broad` caveats, no formal judge or evidence catalog promotion
     - report: `reading-companion-backend/eval/runs/attentional_v2/digest_marginalia_v19_5book_parallel_20units_20260621/analysis/digest_marginalia_v19_5book_parallel_20units/marginalia_smoke_report.md`
+  - Digest v20 Marginalia five-book diagnostic:
+    - run id: `digest_marginalia_v20_5book_parallel_20units_20260629`
+    - job id: `bgjob_digest_marginalia_v20_5book_parallel_20units_20260629`
+    - status: running; run ledger status is `running`
+    - scope: active unique-note source-normalized v1.2 five-segment dataset, `segment_workers=5`, up to `20` accepted units per segment
+    - purpose: check the live density-aware Marginalia prompt `attentional_v2.digest.v20` / promptset `attentional_v2-phase6-v80` after switching the runner version gate and default dataset root to the active unique-note package
+    - report: `reading-companion-backend/eval/runs/attentional_v2/digest_marginalia_v20_5book_parallel_20units_20260629/analysis/digest_marginalia_v20_5book_parallel_20units/marginalia_smoke_report.md`
   - active diagnostic evaluation:
     - run id: `attentional_v2_ingest_digest_unit_memory_full_diagnostic_20260603_parallel5`
     - job id: `bgjob_ingest_digest_unit_memory_full_diagnostic_20260603_parallel5`
