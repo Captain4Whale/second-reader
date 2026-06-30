@@ -1144,9 +1144,10 @@ def test_digest_uses_live_xml_prompt_and_filters_surface_reactions(tmp_path: Pat
     assert "Note-bearing" in captured["prompt"]
     assert "worth preserving without added explanation" in captured["prompt"]
     assert "Out-of-context completeness" in captured["prompt"]
-    assert "Durable excerpt value" in captured["prompt"]
-    assert "little long-term value as a standalone excerpt" in captured["prompt"]
-    assert "Do not select only the final conclusion" in captured["prompt"]
+    assert "Durable value" in captured["prompt"]
+    assert "still not being worth carrying forward as a standalone Marginalia item" in captured["prompt"]
+    assert "Plain wording is not a weakness" in captured["prompt"]
+    assert "Excerpt necessity" in captured["prompt"]
     assert "What is something valuable here that a thoughtful ordinary reader may not know" in captured["prompt"]
     assert "Prefer notes that add real cognitive value" in captured["prompt"]
     assert "Use literary technique, close reading, or formal analysis only when" in captured["prompt"]
@@ -1162,14 +1163,14 @@ def test_digest_uses_live_xml_prompt_and_filters_surface_reactions(tmp_path: Pat
     assert "If a sentence only states a definition and the next sentence applies it" in captured["prompt"]
     assert "If a premise, contrast, exception, consequence, or boundary condition is needed" in captured["prompt"]
     assert "## How many?" in captured["prompt"]
-    assert "valuable thought nodes" in captured["prompt"]
+    assert "Preserve every source span that genuinely passes the gates" in captured["prompt"]
     assert "Do not treat Marginalia as a top-1 or top-2 selection task" in captured["prompt"]
     assert "Which exact source spans in this unit genuinely deserve to be carried forward?" in captured["prompt"]
-    assert "## Seperate or together?" in captured["prompt"]
+    assert "## Separate or combine quote?" in captured["prompt"]
     assert "Before emitting adjacent Marginalia items" in captured["prompt"]
     assert "Do not split a continuous valuable passage" in captured["prompt"]
     assert "turns farewell into permission" not in captured["prompt"]
-    assert "The reason must name both why the quote remains understandable out of context and what durable excerpt value it carries." in captured["prompt"]
+    assert "why it is more than local evidence, scene importance, or a strong fact from the current book" in captured["prompt"]
     assert "For note-bearing Marginalia, write the explanation in visible `content`; `selection_reason` may be omitted or empty." in captured["prompt"]
     assert '"reading_impression": "..."' not in captured["prompt"]
     assert '"surfaced_reactions": []' not in captured["prompt"]
@@ -1200,8 +1201,8 @@ def test_digest_uses_live_xml_prompt_and_filters_surface_reactions(tmp_path: Pat
     }
     assert op["target_key"] != "legacy-ignored"
     assert manifest["node_name"] == "digest"
-    assert manifest["prompt_version"] == "attentional_v2.digest.v20"
-    assert manifest["prompt_assembly"]["spec_id"] == "attentional_v2.digest.xml.v20"
+    assert manifest["prompt_version"] == "attentional_v2.digest.v21"
+    assert manifest["prompt_assembly"]["spec_id"] == "attentional_v2.digest.xml.v21"
     assert manifest["prompt_assembly"]["output_contract"] == "digest_understanding_response_marginalia_json_v7"
     assert "mode" not in manifest["prompt_assembly"]
     assert manifest["prompt_assembly"]["rendered_blocks"] == [

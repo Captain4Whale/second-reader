@@ -7,7 +7,7 @@ Update when: task status, priority, blockers, decision refs, job refs, evidence 
 
 This document is the human-readable companion to `docs/tasks/registry.json`.
 
-Last updated: `2026-06-30T07:21:33+08:00`
+Last updated: `2026-06-30T08:57:49+08:00`
 
 ## Status Values
 - `active`
@@ -25,7 +25,7 @@ Last updated: `2026-06-30T07:21:33+08:00`
 - Lane: `mechanism_runtime`
 - Priority: `high`
 - Detail: `docs/current-state.md`
-- Next: Digest is live as `attentional_v2.digest.v20` / promptset `attentional_v2-phase6-v80` with unchanged output contract `digest_understanding_response_marginalia_json_v7`: canonical visible-note output is `marginalia[]`; highlight-only Marginalia still uses empty/omitted `content` plus private inline `selection_reason`, and must pass both out-of-context completeness and durable long-term reader value gates. Note-bearing Marginalia still asks for useful knowledge, context, or non-obvious connections that a thoughtful ordinary reader may not know, notice, or infer on their own; ordinary close-reading / technique commentary is demoted unless it creates non-obvious gain. v20 adds density-aware Marginalia selection for high-value units. `digest_marginalia_v20_5book_parallel_20units_20260629` completed with summary status `pass_with_caveats` and run ledger status `review_pending`; next review the report for Marginalia density, quote breadth, and the low note-bearing rate.
+- Next: Digest is live as `attentional_v2.digest.v21` / promptset `attentional_v2-phase6-v81` with unchanged output contract `digest_understanding_response_marginalia_json_v7`: canonical visible-note output is `marginalia[]`; highlight-only Marginalia uses empty/omitted `content` plus private inline `selection_reason`, and must pass durable-value, out-of-context-completeness, and excerpt-necessity gates; the reason must explain why the quote is more than local evidence, scene importance, or a strong fact from the current book. Note-bearing Marginalia still asks for useful knowledge, context, or non-obvious connections that a thoughtful ordinary reader may not know, notice, or infer on their own. The next step is to run the same five-book parallel 20-unit diagnostic against v21 and compare highlight precision/recall against v20.
 - Jobs:
   - `bgjob_ingest_digest_unit_memory_full_diagnostic_20260603_parallel5`
   - `bgjob_unit_memory_text_only_smoke_value_20260606`
@@ -87,6 +87,7 @@ Last updated: `2026-06-30T07:21:33+08:00`
   - `DEC-140`
   - `DEC-141`
   - `DEC-142`
+  - `DEC-143`
   - `docs/current-state.md`
   - `docs/backend-reader-evaluation.md`
   - `docs/implementation/new-reading-mechanism/ingest-context-and-navigate-mapping.md`

@@ -3997,3 +3997,26 @@ This new direction is design frozen but not yet implemented as a formal benchmar
 - `docs/backend-reading-mechanisms/attentional_v2.md`
 - `docs/current-state.md`
 - `docs/tasks/registry.md`
+
+## Entry 141
+**ID**: DEC-143
+**Status**: active
+
+**Decision / Inflection**: Tighten highlight-only Marginalia around portable cognitive value rather than local book force.
+
+**Period**: June 30, 2026, after reviewing Digest v20 five-book output and seeing two simultaneous behaviors: `The Value of Others` improved when dense units were allowed to produce many highlights, while `Man's Search for Meaning` still surfaced some quote-only highlights whose value mainly came from local testimony, scene force, or book-specific evidence rather than a reusable reader gain.
+
+**Decision**: Live Digest is bumped to `attentional_v2.digest.v21` / XML spec v21 / promptset `attentional_v2-phase6-v81`, while keeping output contract `digest_understanding_response_marginalia_json_v7`. Highlight-only Marginalia now has three gates: durable value, out-of-context completeness, and excerpt necessity. A quote-only highlight must be understandable when lifted out of the book, give intrinsic portable gain, and be worth saving beyond local evidence, scene importance, or a strong fact from the current book. The prompt preserves v20's density-aware left-to-right scan and explicitly protects plain but reality-facing claims: unpolished wording can still pass if it exposes an uncomfortable reality, durable mechanism, self-deception, or reusable way to see human behavior.
+
+**Boundary**: This is a prompt-policy change only. It does not change the Digest output schema, Marginalia runtime normalization, Unit Memory retrieval semantics, Ingest behavior, public API / frontend fields, source-coordinate resolution, or historical eval/report artifacts. The adjustment deliberately avoids adding topic-specific exceptions such as separate rules for war, trauma, scenic description, or literary beauty; the general gate is whether the quote itself carries durable portable value.
+
+**Why this path won**: Adding per-genre or per-topic rules would become unbounded and brittle. The useful distinction is not the subject matter but whether the saved quote still gives readers something worth returning to when separated from the surrounding unit. The v21 wording narrows weak highlight-only selections without reopening a broad aesthetic-highlighting side channel, while retaining v20's fix for dense conceptual nonfiction.
+
+**Primary evidence**:
+- `reading-companion-backend/src/attentional_v2/prompts/digest.py`
+- `reading-companion-backend/src/attentional_v2/prompts/registry.py`
+- `reading-companion-backend/tests/test_attentional_v2_llm_calls.py`
+- `reading-companion-backend/tests/test_attentional_v2_scaffold.py`
+- `docs/backend-reading-mechanisms/attentional_v2.md`
+- `docs/current-state.md`
+- `docs/tasks/registry.md`
