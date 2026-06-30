@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "updated_at": "2026-06-30T08:57:49+08:00",
+  "updated_at": "2026-06-30T09:06:55+08:00",
   "tasks": [
     {
       "id": "TASK-SECOND-READER-INGEST-DIGEST-REFRAME-AUDIT-20260530",
@@ -91,10 +91,11 @@
         "bgjob_ingest_live_v17_source_norm_token_preview_to_chapter1_retry1_20260614",
         "bgjob_digest_marginalia_v16_5book_parallel_20units_20260621",
         "bgjob_digest_marginalia_v19_5book_parallel_20units_20260621",
-        "bgjob_digest_marginalia_v20_5book_parallel_20units_20260629"
+        "bgjob_digest_marginalia_v20_5book_parallel_20units_20260629",
+        "bgjob_digest_marginalia_v21_5book_parallel_20units_20260630"
       ],
       "acceptance_ref": "docs/implementation/new-reading-mechanism/ingest-select-next-unit-window-partition-draft-prompt.md",
-      "next_action": "Digest is live as `attentional_v2.digest.v21` / promptset `attentional_v2-phase6-v81` with unchanged output contract `digest_understanding_response_marginalia_json_v7`: canonical visible-note output is `marginalia[]`; highlight-only Marginalia uses empty/omitted `content` plus private inline `selection_reason`, and must pass durable-value, out-of-context-completeness, and excerpt-necessity gates; the reason must explain why the quote is more than local evidence, scene importance, or a strong fact from the current book. Note-bearing Marginalia still asks for useful knowledge, context, or non-obvious connections that a thoughtful ordinary reader may not know, notice, or infer on their own. The next step is to run the same five-book parallel 20-unit diagnostic against v21 and compare highlight precision/recall against v20.",
+      "next_action": "Digest is live as `attentional_v2.digest.v21` / promptset `attentional_v2-phase6-v81` with unchanged output contract `digest_understanding_response_marginalia_json_v7`: canonical visible-note output is `marginalia[]`; highlight-only Marginalia uses empty/omitted `content` plus private inline `selection_reason`, and must pass durable-value, out-of-context-completeness, and excerpt-necessity gates; the reason must explain why the quote is more than local evidence, scene importance, or a strong fact from the current book. Note-bearing Marginalia still asks for useful knowledge, context, or non-obvious connections that a thoughtful ordinary reader may not know, notice, or infer on their own. `bgjob_digest_marginalia_v21_5book_parallel_20units_20260630` is running the same five-book parallel 20-unit diagnostic against v21; when it completes, archive the job, move the run ledger to `review_pending` or `failed`, and compare highlight precision/recall against v20.",
       "blocked_by": [],
       "evidence_refs": [
         "docs/current-state.md",
