@@ -4020,3 +4020,29 @@ This new direction is design frozen but not yet implemented as a formal benchmar
 - `docs/backend-reading-mechanisms/attentional_v2.md`
 - `docs/current-state.md`
 - `docs/tasks/registry.md`
+
+## Entry 142
+**ID**: DEC-144
+**Status**: active
+
+**Decision / Inflection**: Add fixed high-throughput LLM scheduling for trusted local targets.
+
+**Period**: June 30, 2026, after the Digest v21 five-book diagnostic completed slowly and trace review showed the dominant delay was local `profile_gate_wait_ms`, not provider quota, provider gate wait, or prompt quality.
+
+**Decision**: LLM target/provider config now supports `concurrency_strategy: "adaptive" | "fixed"`. The default remains `adaptive`; fixed strategy is reserved for trusted high-concurrency targets. For fixed targets, the provider controller starts at the declared `probe_max_concurrency` / stable cap and does not reduce local gate capacity after timeout, malformed JSON, or transient network pressure, while true quota/auth cooldown and retry behavior remain intact. The current OpenCode Go `opencode_deepseek_v4_flash` local diagnostic path is configured with fixed concurrency `24`, and `dataset_review_high_trust` is allowed to burst to `24`. The Digest Marginalia smoke runner no longer applies a per-call `max_concurrency=1` override, because that runner-local scope was silently reserializing otherwise parallel segment workers.
+
+**Boundary**: This is an internal scheduling/config repair. It does not change Ingest or Digest prompts, output contracts, Unit Memory retrieval semantics, frontend/public API, source normalization, or historical report artifacts. Existing and future targets remain adaptive unless they explicitly opt into fixed strategy.
+
+**Why this path won**: Adaptive reduction is useful for uncertain provider paths, but it was the wrong control surface for a known high-throughput OpenCode target and created misleading evaluation latency. Declaring fixed capacity per trusted target keeps concurrency bounded and observable without letting local scheduling become the bottleneck. Removing the runner-level single-call override was also necessary because target-level capacity cannot help if each invocation scope clamps itself to one.
+
+**Primary evidence**:
+- `reading-companion-backend/src/reading_runtime/llm_registry.py`
+- `reading-companion-backend/src/reading_runtime/llm_gateway.py`
+- `reading-companion-backend/eval/attentional_v2/run_digest_marginalia_live_smoke.py`
+- `reading-companion-backend/config/llm_targets.local.example.json`
+- `reading-companion-backend/config/llm_profile_bindings.local.example.json`
+- `reading-companion-backend/tests/test_llm_gateway.py`
+- `reading-companion-backend/tests/test_digest_marginalia_live_smoke_runner.py`
+- `reading-companion-backend/docs/evaluation/run_ledger.md`
+- `docs/current-state.md`
+- `docs/tasks/registry.md`

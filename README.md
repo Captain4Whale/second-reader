@@ -71,6 +71,9 @@ Recommended local LLM setup:
   - supported provider contracts include `anthropic`, `google_genai`, and `openai_compatible`
   - `openai_compatible` targets require the backend dependencies `langchain-openai`, `openai`, and `instructor`; Instructor is used only as an optional structure/validation aid and does not replace project validators
   - `provider_options` may be set on a target for provider-specific request options such as `response_format`, `thinking`, or `reasoning_effort`
+  - `concurrency_strategy` may be set on a target:
+    - omit it, or set `adaptive`, for conservative targets that should back off after provider pressure
+    - set `fixed` only for trusted high-throughput targets whose key can sustain the declared `probe_max_concurrency`; quota cooldown and retry handling still apply
 - edit `reading-companion-backend/config/llm_profile_bindings.local.json` to bind stable project profile ids to those named targets
   - current stable profile ids are:
     - `runtime_reader_default`
@@ -155,7 +158,14 @@ OpenAI-compatible JSON-object targets:
   "provider_options": {
     "response_format": {"type": "json_object"},
     "thinking": {"type": "enabled"}
-  }
+  },
+  "timeout_seconds": 120,
+  "retry_attempts": 3,
+  "max_concurrency": 24,
+  "initial_max_concurrency": 24,
+  "probe_max_concurrency": 24,
+  "min_stable_concurrency": 24,
+  "concurrency_strategy": "fixed"
 }
 ```
 - project tools stay in the internal canonical shape `name`, `description`, `input_schema`
@@ -204,6 +214,7 @@ The shared LLM layer still supports:
   - `initial_max_concurrency`
   - `probe_max_concurrency`
   - `min_stable_concurrency`
+  - `concurrency_strategy`
   - `backoff_window_seconds`
   - `recover_window_seconds`
 - quota-pressure coordination policy:

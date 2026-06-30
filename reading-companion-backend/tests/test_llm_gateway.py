@@ -1521,6 +1521,78 @@ def test_relative_target_binding_paths_resolve_from_backend_root(
     assert str(bindings_path) in registry.source
 
 
+def test_target_binding_accepts_fixed_concurrency_strategy(monkeypatch: pytest.MonkeyPatch):
+    _set_targets_and_bindings(
+        monkeypatch,
+        targets={
+            "targets": [
+                {
+                    "target_id": "opencode_deepseek_v4_flash",
+                    "contract": "openai_compatible",
+                    "base_url": "https://opencode.ai/zen/go/v1",
+                    "model": "deepseek-v4-flash",
+                    "credentials": [{"credential_id": "primary", "api_key": "high-throughput-key"}],
+                    "max_concurrency": 24,
+                    "initial_max_concurrency": 24,
+                    "probe_max_concurrency": 24,
+                    "min_stable_concurrency": 24,
+                    "concurrency_strategy": "fixed",
+                }
+            ]
+        },
+        bindings={
+            "profiles": [
+                {
+                    "profile_id": DEFAULT_RUNTIME_PROFILE_ID,
+                    "target_id": "opencode_deepseek_v4_flash",
+                    "max_concurrency": 24,
+                    "default_burst_concurrency": 24,
+                },
+                {
+                    "profile_id": DEFAULT_DATASET_REVIEW_PROFILE_ID,
+                    "target_id": "opencode_deepseek_v4_flash",
+                    "max_concurrency": 24,
+                    "default_burst_concurrency": 24,
+                },
+                {
+                    "profile_id": DEFAULT_EVAL_JUDGE_PROFILE_ID,
+                    "target_id": "opencode_deepseek_v4_flash",
+                    "max_concurrency": 24,
+                    "default_burst_concurrency": 24,
+                },
+            ]
+        },
+    )
+
+    provider = get_llm_registry().get_provider("opencode_deepseek_v4_flash")
+
+    assert provider.concurrency_strategy == "fixed"
+    assert get_llm_provider_stable_concurrency("opencode_deepseek_v4_flash") == 24
+    assert get_llm_profile_stable_concurrency(DEFAULT_RUNTIME_PROFILE_ID) == 24
+
+
+def test_target_binding_rejects_invalid_concurrency_strategy(monkeypatch: pytest.MonkeyPatch):
+    _set_targets_and_bindings(
+        monkeypatch,
+        targets={
+            "targets": [
+                {
+                    "target_id": "opencode_deepseek_v4_flash",
+                    "contract": "openai_compatible",
+                    "base_url": "https://opencode.ai/zen/go/v1",
+                    "model": "deepseek-v4-flash",
+                    "credentials": [{"credential_id": "primary", "api_key": "high-throughput-key"}],
+                    "concurrency_strategy": "optimistic",
+                }
+            ]
+        },
+        bindings=_required_bindings("opencode_deepseek_v4_flash"),
+    )
+
+    with pytest.raises(LLMRegistryError, match="unsupported concurrency_strategy"):
+        get_llm_registry()
+
+
 def test_relative_backend_runtime_root_resolves_from_backend_root(
     tmp_path: Path,
     monkeypatch: pytest.MonkeyPatch,
@@ -2093,6 +2165,11 @@ def test_standard_trace_records_gate_wait_fields(monkeypatch: pytest.MonkeyPatch
     assert len(standard_rows) == 2
     assert all("provider_gate_wait_ms" in row for row in standard_rows)
     assert all("profile_gate_wait_ms" in row for row in standard_rows)
+    assert all(row["concurrency_strategy"] == "adaptive" for row in standard_rows)
+    assert all(row["provider_current_limit"] == 2 for row in standard_rows)
+    assert all(row["provider_probe_max_concurrency"] == 2 for row in standard_rows)
+    assert all(row["profile_current_limit"] == 1 for row in standard_rows)
+    assert all(row["profile_max_concurrency"] == 1 for row in standard_rows)
     assert max(int(row["profile_gate_wait_ms"]) for row in standard_rows) > 0
 
 
@@ -3027,6 +3104,68 @@ def test_provider_backoff_reduces_stable_limit_after_timeout_pressure(monkeypatc
 
     assert get_llm_provider_stable_concurrency("anthropic_primary") == 5
     assert get_llm_profile_stable_concurrency(DEFAULT_RUNTIME_PROFILE_ID) == 5
+
+
+def test_fixed_provider_strategy_does_not_backoff_after_timeout_pressure(monkeypatch: pytest.MonkeyPatch):
+    monkeypatch.setenv("PRIMARY_KEY", "timing-key")
+    _set_registry(
+        monkeypatch,
+        {
+            "providers": [
+                {
+                    "provider_id": "anthropic_primary",
+                    "contract": "anthropic",
+                    "api_key_env": "PRIMARY_KEY",
+                    "supported_models": ["claude-opus-4-6"],
+                    "retry_attempts": 1,
+                    "max_concurrency": 12,
+                    "initial_max_concurrency": 12,
+                    "probe_max_concurrency": 12,
+                    "min_stable_concurrency": 2,
+                    "concurrency_strategy": "fixed",
+                    "backoff_window_seconds": 30,
+                    "recover_window_seconds": 30,
+                }
+            ],
+            "profiles": [
+                {
+                    "profile_id": DEFAULT_RUNTIME_PROFILE_ID,
+                    "provider_id": "anthropic_primary",
+                    "model": "claude-opus-4-6",
+                    "retry_attempts": 1,
+                    "max_concurrency": 12,
+                    "default_burst_concurrency": 12,
+                },
+                {
+                    "profile_id": DEFAULT_DATASET_REVIEW_PROFILE_ID,
+                    "provider_id": "anthropic_primary",
+                    "model": "claude-opus-4-6",
+                    "retry_attempts": 1,
+                    "max_concurrency": 12,
+                    "default_burst_concurrency": 12,
+                },
+                {
+                    "profile_id": DEFAULT_EVAL_JUDGE_PROFILE_ID,
+                    "provider_id": "anthropic_primary",
+                    "model": "claude-opus-4-6",
+                    "retry_attempts": 1,
+                    "max_concurrency": 12,
+                    "default_burst_concurrency": 12,
+                },
+            ],
+        },
+    )
+    adapter = _RecordingAdapter({"timing-key": "timeout"})
+    monkeypatch.setitem(CONTRACT_ADAPTERS, "anthropic", adapter)
+
+    with llm_invocation_scope(profile_id=DEFAULT_RUNTIME_PROFILE_ID):
+        with pytest.raises(ReaderLLMError):
+            invoke_json("system", "user", {})
+        with pytest.raises(ReaderLLMError):
+            invoke_json("system", "user", {})
+
+    assert get_llm_provider_stable_concurrency("anthropic_primary") == 12
+    assert get_llm_profile_stable_concurrency(DEFAULT_RUNTIME_PROFILE_ID) == 12
 
 
 def test_eval_profile_waits_through_shared_quota_cooldown_and_emits_trace_metadata(

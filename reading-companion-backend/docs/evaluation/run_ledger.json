@@ -1,6 +1,6 @@
 {
   "schema_version": 1,
-  "updated_at": "2026-06-30T01:06:06.043258Z",
+  "updated_at": "2026-06-30T04:49:52.217792Z",
   "entries": [
     {
       "run_id": "attentional_v2_excerpt_surface_v1_1_judged_20260406",
@@ -3009,7 +3009,7 @@
       "date": "2026-06-30",
       "surface": "digest_marginalia_live_smoke",
       "lane": "mechanism_runtime",
-      "status": "running",
+      "status": "superseded",
       "mechanisms": [
         "attentional_v2"
       ],
@@ -3025,15 +3025,81 @@
         "reading-companion-backend/eval/runs/attentional_v2/digest_marginalia_v21_5book_parallel_20units_20260630/analysis/digest_marginalia_v21_5book_parallel_20units/marginalia_smoke_report.md"
       ],
       "catalog_status": "not_cataloged",
-      "notes": "Diagnostic-only five-book parallel Digest v21 Marginalia smoke over the active unique-note source-normalized dataset; five segment workers, up to 20 accepted units per segment; no formal judge or evidence catalog promotion; report allowed missing while running.",
+      "notes": "Diagnostic-only five-book parallel Digest v21 Marginalia smoke completed under the old adaptive scheduler with severe local profile_gate_wait_ms queueing. Superseded by scheduler-fixed rerun; keep only as scheduling-bottleneck evidence, not prompt-quality evidence.",
+      "parent_run_id": "",
+      "child_run_ids": [],
+      "synthetic": false,
+      "local_missing_allowed": [],
+      "metadata": {
+        "superseded_by": "digest_marginalia_v21_5book_parallel_20units_scheduler_fixed_20260630"
+      },
+      "updated_at": "2026-06-30T04:38:15.568318Z"
+    },
+    {
+      "run_id": "digest_marginalia_v21_5book_parallel_20units_scheduler_fixed_20260630",
+      "date": "2026-06-30",
+      "surface": "digest_marginalia_live_smoke",
+      "lane": "mechanism_runtime",
+      "status": "superseded",
+      "mechanisms": [
+        "attentional_v2"
+      ],
+      "dataset_or_manifest": [
+        "state/eval_local_datasets/user_level_benchmarks/attentional_v2_user_level_selective_v1_repaired_20260629_source_norm_v1_2_unique_notes"
+      ],
+      "run_dir": "reading-companion-backend/eval/runs/attentional_v2/digest_marginalia_v21_5book_parallel_20units_scheduler_fixed_20260630",
+      "summary_paths": {},
+      "job_ids": [
+        "bgjob_digest_marginalia_v21_5book_parallel_20units_scheduler_fixed_20260630"
+      ],
+      "report_paths": [
+        "reading-companion-backend/eval/runs/attentional_v2/digest_marginalia_v21_5book_parallel_20units_scheduler_fixed_20260630/analysis/digest_marginalia_v21_5book_parallel_20units_scheduler_fixed/marginalia_smoke_report.md"
+      ],
+      "catalog_status": "not_cataloged",
+      "notes": "Abandoned/superseded scheduler-fixed initial attempt. It started after target fixed concurrency was added but before the smoke runner max_concurrency=1 scope override was removed, so it still serialized profile calls and is not valid quality evidence.",
       "parent_run_id": "",
       "child_run_ids": [],
       "synthetic": false,
       "local_missing_allowed": [
-        "reading-companion-backend/eval/runs/attentional_v2/digest_marginalia_v21_5book_parallel_20units_20260630/analysis/digest_marginalia_v21_5book_parallel_20units/marginalia_smoke_report.md"
+        "reading-companion-backend/eval/runs/attentional_v2/digest_marginalia_v21_5book_parallel_20units_scheduler_fixed_20260630/analysis/digest_marginalia_v21_5book_parallel_20units_scheduler_fixed/marginalia_smoke_report.md"
       ],
-      "metadata": {},
-      "updated_at": "2026-06-30T01:06:06.042466Z"
+      "metadata": {
+        "superseded_by": "digest_marginalia_v21_5book_parallel_20units_scheduler_fixed_retry1_20260630"
+      },
+      "updated_at": "2026-06-30T04:42:30.107201Z"
+    },
+    {
+      "run_id": "digest_marginalia_v21_5book_parallel_20units_scheduler_fixed_retry1_20260630",
+      "date": "2026-06-30",
+      "surface": "digest_marginalia_live_smoke",
+      "lane": "mechanism_runtime",
+      "status": "running",
+      "mechanisms": [
+        "attentional_v2"
+      ],
+      "dataset_or_manifest": [
+        "state/eval_local_datasets/user_level_benchmarks/attentional_v2_user_level_selective_v1_repaired_20260629_source_norm_v1_2_unique_notes"
+      ],
+      "run_dir": "reading-companion-backend/eval/runs/attentional_v2/digest_marginalia_v21_5book_parallel_20units_scheduler_fixed_retry1_20260630",
+      "summary_paths": {},
+      "job_ids": [
+        "bgjob_digest_marginalia_v21_5book_parallel_20units_scheduler_fixed_retry1_20260630"
+      ],
+      "report_paths": [
+        "reading-companion-backend/eval/runs/attentional_v2/digest_marginalia_v21_5book_parallel_20units_scheduler_fixed_retry1_20260630/analysis/digest_marginalia_v21_5book_parallel_20units_scheduler_fixed_retry1/marginalia_smoke_report.md"
+      ],
+      "catalog_status": "not_cataloged",
+      "notes": "Clean scheduler-fixed retry of the Digest v21 five-book 20-unit diagnostic after both target fixed concurrency 24 and smoke-runner scope-concurrency override removal. Diagnostic only; compare profile_gate_wait_ms against superseded old-scheduler runs before prompt-quality review.",
+      "parent_run_id": "",
+      "child_run_ids": [],
+      "synthetic": false,
+      "local_missing_allowed": [
+        "reading-companion-backend/eval/runs/attentional_v2/digest_marginalia_v21_5book_parallel_20units_scheduler_fixed_retry1_20260630/analysis/digest_marginalia_v21_5book_parallel_20units_scheduler_fixed_retry1/marginalia_smoke_report.md"
+      ],
+      "metadata": {
+        "supersedes": "digest_marginalia_v21_5book_parallel_20units_scheduler_fixed_20260630"
+      },
+      "updated_at": "2026-06-30T04:49:52.216732Z"
     }
   ]
 }

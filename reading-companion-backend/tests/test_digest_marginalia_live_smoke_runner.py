@@ -7,6 +7,7 @@ from eval.attentional_v2.run_digest_marginalia_live_smoke import (
     DEFAULT_FOCUSED_SEGMENTS,
     _hard_failures,
     _direct_probes_for_set,
+    _llm_call_overrides,
     _load_dataset_segment,
     _summarize_marginalia,
     build_summary,
@@ -74,6 +75,19 @@ def test_segment_id_append_uses_defaults_only_when_unspecified():
     assert default_args.segment_workers == 1
     assert list(explicit_args.segment_id or DEFAULT_FOCUSED_SEGMENTS) == ["xidaduo_private_zh__segment_1"]
     assert explicit_args.segment_workers == 5
+
+
+def test_llm_overrides_do_not_force_single_call_concurrency():
+    overrides = _llm_call_overrides(
+        max_output_tokens=4096,
+        timeout_seconds=120,
+        retry_attempts=3,
+    )
+
+    assert overrides.max_output_tokens == 4096
+    assert overrides.timeout_seconds == 120
+    assert overrides.retry_attempts == 3
+    assert overrides.max_concurrency is None
 
 
 def test_parallel_focused_segments_preserve_requested_order(monkeypatch, tmp_path):

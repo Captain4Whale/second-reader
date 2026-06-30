@@ -36,7 +36,11 @@
       },
       "timeout_seconds": 120,
       "retry_attempts": 3,
-      "max_concurrency": 8
+      "max_concurrency": 24,
+      "initial_max_concurrency": 24,
+      "probe_max_concurrency": 24,
+      "min_stable_concurrency": 24,
+      "concurrency_strategy": "fixed"
     }
   ]
 }

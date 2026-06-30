@@ -16,6 +16,7 @@
       "initial_max_concurrency": 6,
       "probe_max_concurrency": 12,
       "min_stable_concurrency": 2,
+      "concurrency_strategy": "adaptive",
       "backoff_window_seconds": 10,
       "recover_window_seconds": 20
     }

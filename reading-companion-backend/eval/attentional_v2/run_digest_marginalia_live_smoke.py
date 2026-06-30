@@ -477,6 +477,19 @@ def _direct_probes_for_set(probe_set: str) -> tuple[DirectDigestProbe, ...]:
         raise ValueError(f"Unknown direct probe set: {probe_set}") from exc
 
 
+def _llm_call_overrides(
+    *,
+    max_output_tokens: int,
+    timeout_seconds: int,
+    retry_attempts: int,
+) -> LLMInvocationOverrides:
+    return LLMInvocationOverrides(
+        max_output_tokens=max_output_tokens,
+        timeout_seconds=timeout_seconds,
+        retry_attempts=retry_attempts,
+    )
+
+
 def run_direct_digest_smoke(
     *,
     analysis_root: Path,
@@ -541,11 +554,10 @@ def run_direct_digest_smoke(
             node=probe.probe_id,
             extra={"probe_id": probe.probe_id},
         )
-        overrides = LLMInvocationOverrides(
+        overrides = _llm_call_overrides(
             max_output_tokens=max_output_tokens,
             timeout_seconds=timeout_seconds,
             retry_attempts=retry_attempts,
-            max_concurrency=1,
         )
         started_at = _now()
         started = time.perf_counter()
@@ -794,11 +806,10 @@ def run_segment_units(
             node=f"{segment_id}_unit_{unit_index:03d}",
             extra={"segment_id": segment_id, "unit_index": unit_index},
         )
-        overrides = LLMInvocationOverrides(
+        overrides = _llm_call_overrides(
             max_output_tokens=max_output_tokens,
             timeout_seconds=timeout_seconds,
             retry_attempts=retry_attempts,
-            max_concurrency=1,
         )
         unit_started = time.perf_counter()
         try:

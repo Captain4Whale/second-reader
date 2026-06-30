@@ -1016,10 +1016,13 @@ class _AdaptiveProviderController:
         self.provider = provider
         self._condition = threading.Condition()
         self._active = 0
-        self._current_limit = max(
-            provider.min_stable_concurrency,
-            min(provider.initial_max_concurrency, provider.probe_max_concurrency),
-        )
+        if provider.concurrency_strategy == "fixed":
+            self._current_limit = max(provider.min_stable_concurrency, provider.probe_max_concurrency)
+        else:
+            self._current_limit = max(
+                provider.min_stable_concurrency,
+                min(provider.initial_max_concurrency, provider.probe_max_concurrency),
+            )
         self._last_adjustment_at = 0.0
         self._last_pressure_at = 0.0
         self._pressure_events: deque[float] = deque()
@@ -1050,6 +1053,8 @@ class _AdaptiveProviderController:
             self._condition.notify_all()
 
     def report_success(self) -> None:
+        if self.provider.concurrency_strategy == "fixed":
+            return
         now = time.monotonic()
         with self._condition:
             self._prune_pressure_locked(now)
@@ -1066,6 +1071,9 @@ class _AdaptiveProviderController:
         with self._condition:
             self._prune_pressure_locked(now)
             self._pressure_events.append(now)
+            if self.provider.concurrency_strategy == "fixed":
+                self._last_pressure_at = now
+                return
             should_backoff = len(self._pressure_events) >= 2 or self._current_limit > self.provider.initial_max_concurrency
             if not should_backoff:
                 return
@@ -2197,6 +2205,12 @@ def _invoke_response(
                         "problem_code": "",
                         "quota_wait_ms_total": quota_wait_ms_total,
                         "quota_retry_attempt_count": quota_retry_attempt_count,
+                        "concurrency_strategy": provider.concurrency_strategy,
+                        "provider_current_limit": provider_controller.current_limit,
+                        "provider_probe_max_concurrency": provider.probe_max_concurrency,
+                        "provider_max_concurrency": provider.max_concurrency,
+                        "profile_current_limit": profile_gate.current_limit,
+                        "profile_max_concurrency": profile.max_concurrency,
                         "provider_gate_wait_ms": provider_gate_wait_ms,
                         "profile_gate_wait_ms": profile_gate_wait_ms,
                         "fallback": {
@@ -2284,6 +2298,12 @@ def _invoke_response(
         "problem_code": final_problem_code or "network_blocked",
         "quota_wait_ms_total": quota_wait_ms_total,
         "quota_retry_attempt_count": quota_retry_attempt_count,
+        "concurrency_strategy": provider.concurrency_strategy if provider is not None else "",
+        "provider_current_limit": provider_controller.current_limit if provider_controller is not None else 0,
+        "provider_probe_max_concurrency": provider.probe_max_concurrency if provider is not None else 0,
+        "provider_max_concurrency": provider.max_concurrency if provider is not None else 0,
+        "profile_current_limit": profile_gate.current_limit if profile_gate is not None else 0,
+        "profile_max_concurrency": profile.max_concurrency,
         "provider_gate_wait_ms": sum(int(item.get("provider_gate_wait_ms", 0) or 0) for item in attempts),
         "profile_gate_wait_ms": sum(int(item.get("profile_gate_wait_ms", 0) or 0) for item in attempts),
         "error_type": last_error.__class__.__name__ if last_error is not None else "",

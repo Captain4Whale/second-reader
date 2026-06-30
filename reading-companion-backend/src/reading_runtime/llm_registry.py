@@ -26,6 +26,7 @@ from src.config import (
 
 LLMProviderContract = Literal["anthropic", "google_genai", "openai_compatible"]
 LLMProfileModelSource = Literal["profile", "selected_target"]
+LLMConcurrencyStrategy = Literal["adaptive", "fixed"]
 
 DEFAULT_RUNTIME_PROFILE_ID = "runtime_reader_default"
 DEFAULT_DATASET_REVIEW_PROFILE_ID = "dataset_review_high_trust"
@@ -33,6 +34,7 @@ DEFAULT_EVAL_JUDGE_PROFILE_ID = "eval_judge_high_trust"
 BACKEND_ROOT = Path(__file__).resolve().parents[2]
 
 _ALLOWED_CONTRACTS = {"anthropic", "google_genai", "openai_compatible"}
+_ALLOWED_CONCURRENCY_STRATEGIES = {"adaptive", "fixed"}
 _TARGET_PROVIDER_OPTIONAL_FIELDS = (
     "timeout_seconds",
     "retry_attempts",
@@ -40,6 +42,7 @@ _TARGET_PROVIDER_OPTIONAL_FIELDS = (
     "initial_max_concurrency",
     "probe_max_concurrency",
     "min_stable_concurrency",
+    "concurrency_strategy",
     "backoff_window_seconds",
     "recover_window_seconds",
     "quota_cooldown_base_seconds",
@@ -106,6 +109,7 @@ class LLMProviderConfig:
     initial_max_concurrency: int
     probe_max_concurrency: int
     min_stable_concurrency: int
+    concurrency_strategy: LLMConcurrencyStrategy
     backoff_window_seconds: int
     recover_window_seconds: int
     quota_cooldown_base_seconds: int
@@ -641,6 +645,7 @@ def _legacy_registry_payload() -> dict[str, Any]:
         "initial_max_concurrency": _env_int("LLM_INITIAL_MAX_CONCURRENCY", 6),
         "probe_max_concurrency": _env_int("LLM_PROBE_MAX_CONCURRENCY", get_llm_max_concurrency()),
         "min_stable_concurrency": _env_int("LLM_MIN_STABLE_CONCURRENCY", 2),
+        "concurrency_strategy": "adaptive",
         "backoff_window_seconds": _env_int("LLM_BACKOFF_WINDOW_SECONDS", 10),
         "recover_window_seconds": _env_int("LLM_RECOVER_WINDOW_SECONDS", 20),
         "quota_cooldown_base_seconds": _env_int("LLM_QUOTA_COOLDOWN_BASE_SECONDS", 10),
@@ -802,6 +807,11 @@ def _parse_provider(entry: Any) -> LLMProviderConfig:
             int(entry.get("initial_max_concurrency", initial_default) or initial_default),
         ),
     )
+    concurrency_strategy = _clean_str(entry.get("concurrency_strategy") or "adaptive").lower()
+    if concurrency_strategy not in _ALLOWED_CONCURRENCY_STRATEGIES:
+        raise LLMRegistryError(
+            f"Provider {provider_id} has unsupported concurrency_strategy: {concurrency_strategy}"
+        )
     return LLMProviderConfig(
         provider_id=provider_id,
         contract=contract,  # type: ignore[arg-type]
@@ -817,6 +827,7 @@ def _parse_provider(entry: Any) -> LLMProviderConfig:
         initial_max_concurrency=initial_max_concurrency,
         probe_max_concurrency=max(probe_max_concurrency, min_stable_concurrency),
         min_stable_concurrency=min_stable_concurrency,
+        concurrency_strategy=concurrency_strategy,  # type: ignore[arg-type]
         backoff_window_seconds=max(1, int(entry.get("backoff_window_seconds", 10) or 10)),
         recover_window_seconds=max(1, int(entry.get("recover_window_seconds", 20) or 20)),
         quota_cooldown_base_seconds=max(1, int(entry.get("quota_cooldown_base_seconds", 10) or 10)),
@@ -1178,6 +1189,7 @@ __all__ = [
     "LLMTargetTierConfig",
     "LLMProviderConfig",
     "LLMProviderContract",
+    "LLMConcurrencyStrategy",
     "LLMRegistry",
     "LLMRegistryError",
     "clear_llm_registry_cache",
