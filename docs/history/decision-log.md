@@ -4071,3 +4071,26 @@ This new direction is design frozen but not yet implemented as a formal benchmar
 - `docs/backend-reader-evaluation.md`
 - `docs/current-state.md`
 - `docs/tasks/registry.md`
+
+## Entry 144
+**ID**: DEC-146
+**Status**: active
+
+**Decision / Inflection**: Tighten highlight-only Marginalia against strong-fact rationalization.
+
+**Period**: July 1, 2026, after reviewing the scheduler-fixed Digest v21 five-book diagnostic and finding that highlight-only Marginalia had improved for dense conceptual nonfiction but still over-selected some `Man's Search for Meaning` passages whose selection reasons converted local testimony, scene force, moral shock, or strong historical facts into overstated "durable value."
+
+**Decision**: Live Digest is bumped to `attentional_v2.digest.v22` / XML spec v22 / promptset `attentional_v2-phase6-v82`, while keeping output contract `digest_understanding_response_marginalia_json_v7`. Highlight-only Marginalia now frames the first gate as durable portable cognitive gain rather than broad durable value: cruelty, danger, suffering, historical importance, emotional force, moral shock, or any other strong fact is not enough by itself. Such material passes only when the quote itself crystallizes a reusable insight, distinction, mechanism, warning, model, or self-correction. The private `selection_reason` must name that specific portable cognitive gain, and the prompt adds a reason-substitution test: if the reason could fit many similar passages by merely swapping names or situations, the quote is probably only local evidence and should be skipped or converted to note-bearing only when useful context can be added.
+
+**Boundary**: This is a prompt-policy change only. It does not change the Digest output schema, Marginalia runtime normalization, Unit Memory retrieval semantics, Ingest behavior, public API / frontend fields, source-coordinate resolution, source normalization, or historical eval/report artifacts. The change deliberately avoids topic-specific rules for trauma, war, extreme environments, scenic description, literary beauty, or any other genre surface.
+
+**Why this path won**: The v21 diagnostic showed that saying "more than local evidence" was directionally correct but too abstract; the model could still satisfy the wording by writing a plausible post-hoc defense. The v22 wording makes the gate operational by asking for a specific reusable gain and by rejecting generic reasons that could be pasted onto many similar scenes. This keeps the product centered on long-term reader cognition without opening an unbounded list of genre exceptions.
+
+**Primary evidence**:
+- `reading-companion-backend/src/attentional_v2/prompts/digest.py`
+- `reading-companion-backend/src/attentional_v2/prompts/registry.py`
+- `reading-companion-backend/tests/test_attentional_v2_llm_calls.py`
+- `reading-companion-backend/tests/test_attentional_v2_scaffold.py`
+- `docs/backend-reading-mechanisms/attentional_v2.md`
+- `docs/current-state.md`
+- `docs/tasks/registry.md`

@@ -18,9 +18,9 @@ from .reader_role import READER_ROLE_FRAGMENT
 from .types import PromptDefinition
 
 
-DIGEST_PROMPT_VERSION = "attentional_v2.digest.v21"
-DIGEST_XML_PROMPT_ASSEMBLY_SPEC_ID = "attentional_v2.digest.xml.v21"
-DIGEST_XML_PROMPTSET_VERSION = "attentional_v2-phase6-v81"
+DIGEST_PROMPT_VERSION = "attentional_v2.digest.v22"
+DIGEST_XML_PROMPT_ASSEMBLY_SPEC_ID = "attentional_v2.digest.xml.v22"
+DIGEST_XML_PROMPTSET_VERSION = "attentional_v2-phase6-v82"
 DIGEST_XML_TRANSPORT_SYSTEM_PROMPT = "Follow the structured Digest prompt in the user message. Use the required submit_digest_result tool as the final output channel."
 
 
@@ -35,7 +35,7 @@ Stay with this unit as the present moment of reading. Let the carried reading co
 
 After reading, express the result in three connected ways: what you understand from the text, how you respond to it as a reader, and which exact quotes, if any, should become Marginalia in the page margin.
 
-Marginalia may be highlight-only or note-bearing. A highlight-only item preserves an exact quote that remains understandable when lifted out of the book, carries durable value by itself, and is worth saving beyond local evidence or scene importance; a note-bearing item shares useful knowledge or a non-obvious connection around the exact quote that a thoughtful ordinary reader may not know, notice, or infer on their own.""",
+Marginalia may be highlight-only or note-bearing. A highlight-only item preserves an exact quote that remains understandable when lifted out of the book and gives the reader a durable portable cognitive gain by itself, not merely a strong fact, scene, example, or piece of evidence from this book; a note-bearing item shares useful knowledge or a non-obvious connection around the exact quote that a thoughtful ordinary reader may not know, notice, or infer on their own.""",
     ),
     PromptFragment(
         fragment_id="digest.context_use_guide",
@@ -206,25 +206,30 @@ Use highlight-only when the quote itself is worth preserving without added expla
 #### gates
 A highlight-only quote must pass these gates:
 
-1. Durable value:
-   The quote gives the reader a lasting gain by itself: insight, conceptual compression, practical wisdom, emotional condensation, ethical pressure, a reality-facing claim, a durable mechanism, or a transferable way of seeing.
+1. Durable portable cognitive gain:
+   The quote must give the reader something they can carry into later thinking: a compressed idea, a useful distinction, a durable mechanism, practical wisdom, a counter-intuitive correction, or a transferable way of seeing.
 
-   Do not use highlight-only merely because a sentence is important for understanding this book. A sentence may be crucial as evidence, plot movement, or local explanation while still not being worth carrying forward as a standalone Marginalia item.
+   Do not use highlight-only merely because a sentence is important for understanding this book. A sentence may be crucial as evidence, plot movement, testimony, atmosphere, or local explanation while still not being worth carrying forward as a standalone Marginalia item.
 
-   Plain wording is not a weakness. A quote can pass the highlight-only gates if it names a durable mechanism, exposes an uncomfortable reality, punctures self-deception, or gives the reader a reusable way to see human behavior, even when it is not polished like a maxim.
+   A strong fact is not enough. Cruelty, danger, suffering, historical importance, emotional force, or moral shock do not by themselves make a quote highlight-worthy. They pass only when the quote itself crystallizes a reusable insight, distinction, mechanism, or self-correction that remains valuable beyond remembering what happened here.
+
+   Plain wording is not a weakness. A quote can pass the highlight-only gates if it names a durable mechanism, punctures self-deception, corrects a common illusion, or gives the reader a reusable way to see human behavior, even when it is not polished like a maxim.
 
 2. Out-of-context completeness:
    If lifted out of the book, the quote can still be understood. Its main meaning must not collapse without knowing the plot situation, speaker identity, character relation, prior setup, local argument, or why this moment matters in this book.
 
 3. Excerpt necessity:
-   Ask: if this quote were saved and reread later without the surrounding unit, would it still give the reader something worth returning to?
-   If its value mainly comes from "this happened here", "this proves the current point", or "this scene is intense", it should not be used as highlight-only Marginalia.
+   Ask: if this quote were saved and reread months later without the surrounding unit, would it still give the reader a usable thought, distinction, warning, model, or self-correction?
+   If its value mainly comes from "this happened here", "this proves the current point", "this scene is intense", "this fact is shocking", or "this shows how terrible the situation is", it should not be used as highlight-only Marginalia.
+
+4. Selection-reason test:
+   The private `selection_reason` must name the specific portable cognitive gain. If the reason could fit many similar passages by merely swapping names or situations, the quote is probably only local evidence and should be skipped or, if useful context can be added, turned into note-bearing Marginalia.
 
 For highlight-only, output `source_quote`, leave `content` empty or omit it, and include a short private `selection_reason`.
 The reason must name:
 - why the quote remains understandable out of context;
-- what intrinsic portable gain it gives the reader;
-- why it is more than local evidence, scene importance, or a strong fact from the current book.
+- what specific portable cognitive gain it gives the reader;
+- why it is more than local evidence, scene importance, emotional force, moral shock, or a strong fact from the current book.
 
 ### Note-bearing
 
@@ -324,7 +329,7 @@ For each Marginalia item:
 - `source_quote` should be the smallest complete span that preserves the item.
 - Empty or omitted `content` means highlight-only.
 - Non-empty `content` means note-bearing Marginalia.
-- For each highlight-only Marginalia item, include a short private `selection_reason` inside the same item. The reason must name why the quote remains understandable out of context, what intrinsic portable gain it gives the reader, and why it is more than local evidence, scene importance, or a strong fact from the current book.
+- For each highlight-only Marginalia item, include a short private `selection_reason` inside the same item. The reason must name why the quote remains understandable out of context, what specific portable cognitive gain it gives the reader, and why it is more than local evidence, scene importance, emotional force, moral shock, or a strong fact from the current book.
 - For note-bearing Marginalia, write the explanation in visible `content`; `selection_reason` may be omitted or empty.""",
     ),
     PromptFragment(
@@ -690,7 +695,7 @@ Top-level fields:
   ]
 }
 In each Marginalia item, `source_quote` is required. Omitted, null, or empty `content` means highlight-only; non-empty `content` means note-bearing.
-For highlight-only Marginalia, include a short private `selection_reason` in the same item that names out-of-context completeness, intrinsic portable gain, and why the quote is more than local evidence, scene importance, or a strong fact from the current book. For note-bearing Marginalia, leave `selection_reason` empty or omit it; the visible `content` already carries the reason.""",
+For highlight-only Marginalia, include a short private `selection_reason` in the same item that names out-of-context completeness, specific portable cognitive gain, and why the quote is more than local evidence, scene importance, emotional force, moral shock, or a strong fact from the current book. For note-bearing Marginalia, leave `selection_reason` empty or omit it; the visible `content` already carries the reason.""",
 )
 
 
@@ -722,7 +727,7 @@ Shape:
   "content": "",
   "selection_reason": "..."
 }
-`source_quote` is required and should be the smallest complete contiguous span that preserves the item's local meaning. Highlight-only Marginalia uses empty, null, or omitted `content`, and must include a non-empty private `selection_reason` that names out-of-context completeness, intrinsic portable gain, and why the quote is more than local evidence, scene importance, or a strong fact from the current book. Note-bearing Marginalia uses non-empty `content` and may omit `selection_reason`. Do not output mode/kind labels, calibration fields, prior links, outside links, or search intent fields. Detailed Marginalia-selection and source-quote behavior live under Instruction.""",
+`source_quote` is required and should be the smallest complete contiguous span that preserves the item's local meaning. Highlight-only Marginalia uses empty, null, or omitted `content`, and must include a non-empty private `selection_reason` that names out-of-context completeness, specific portable cognitive gain, and why the quote is more than local evidence, scene importance, emotional force, moral shock, or a strong fact from the current book. Note-bearing Marginalia uses non-empty `content` and may omit `selection_reason`. Do not output mode/kind labels, calibration fields, prior links, outside links, or search intent fields. Detailed Marginalia-selection and source-quote behavior live under Instruction.""",
 )
 
 
