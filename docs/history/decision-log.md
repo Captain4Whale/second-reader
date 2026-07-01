@@ -4094,3 +4094,29 @@ This new direction is design frozen but not yet implemented as a formal benchmar
 - `docs/backend-reading-mechanisms/attentional_v2.md`
 - `docs/current-state.md`
 - `docs/tasks/registry.md`
+
+## Entry 145
+**ID**: DEC-147
+**Status**: active
+
+**Decision / Inflection**: Make Digest Marginalia explicit parallel Highlights and Notes.
+
+**Period**: July 1, 2026, after reviewing v22 five-book output and concluding that the prompt still treated quote-only Highlights and note-bearing Marginalia like mutually exclusive forms of one object. That framing suppressed Notes and encouraged the model to decide a single best "type" per source span, even though real reader behavior can highlight a sentence and separately write a note on an overlapping or differently sized span.
+
+**Decision**: Live Digest is bumped to `attentional_v2.digest.v23` / XML spec v23 / promptset `attentional_v2-phase6-v83` / output contract `digest_understanding_response_marginalia_json_v8`. Marginalia now include two independent reader actions: `Highlights` and `Notes`. New live `marginalia[]` items require `kind: "highlight" | "note"`. Highlights preserve exact source text worth carrying forward by itself, require private `selection_reason`, and keep visible `content` empty/omitted. Notes attach valuable reader-facing thought to a precise source anchor, require non-empty visible `content`, and may omit `selection_reason`. Highlight and Note quotes may overlap and are not deduped by quote.
+
+**Boundary**: This changes the live Digest prompt, output schema, private runtime normalization, Unit Memory / observability / smoke-report artifacts, and reaction compatibility projection. It does not add a new public API enum, frontend route, Ingest behavior, Unit Memory retrieval semantics, source normalization behavior, or historical artifact rewrite. Legacy payloads without `kind`, legacy `annotations[]`, and old top-level `marginalia_audit[]` remain compatibility inputs.
+
+**Why this path won**: The earlier content-derived rule made the model infer Marginalia type from whether `content` was empty, which turned a reader's two natural actions into a single field-filling choice. Explicit `kind` lets the model scan for Highlights and Notes separately, preserves overlapping anchors, and keeps the public compatibility layer stable by projecting Highlights to the existing `highlight` family and Notes to existing `association` unless legacy link/search metadata overrides it.
+
+**Primary evidence**:
+- `reading-companion-backend/src/attentional_v2/prompts/digest.py`
+- `reading-companion-backend/src/attentional_v2/prompts/registry.py`
+- `reading-companion-backend/src/attentional_v2/llm_output_tools.py`
+- `reading-companion-backend/src/attentional_v2/llm_calls.py`
+- `reading-companion-backend/src/attentional_v2/slow_cycle.py`
+- `reading-companion-backend/tests/test_attentional_v2_llm_calls.py`
+- `reading-companion-backend/tests/test_attentional_v2_scaffold.py`
+- `docs/backend-reading-mechanisms/attentional_v2.md`
+- `docs/current-state.md`
+- `docs/tasks/registry.md`

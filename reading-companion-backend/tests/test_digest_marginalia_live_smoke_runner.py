@@ -139,33 +139,34 @@ def test_marginalia_summary_classifies_highlight_and_flags_broad_quote():
     summary = _summarize_marginalia(
         [
             {
+                "kind": "highlight",
                 "source_quote": "Beta changes the whole argument.",
                 "content": "",
                 "selection_reason": "Compact standalone turn with intrinsic force.",
             },
-            {"source_quote": source_text, "content": "This is important."},
+            {"kind": "note", "source_quote": source_text, "content": "This is important."},
         ],
         source_text=source_text,
     )
 
-    assert summary[0]["kind"] == "highlight_only"
+    assert summary[0]["kind"] == "highlight"
     assert summary[0]["quote_found_in_unit"] is True
     assert summary[0]["selection_reason"] == "Compact standalone turn with intrinsic force."
-    assert summary[1]["kind"] == "note_bearing"
+    assert summary[1]["kind"] == "note"
     assert "quote_too_broad" in summary[1]["quality_flags"]
     assert "possibly_generic" in summary[1]["quality_flags"]
 
 
-def test_summary_treats_no_highlight_only_as_caveat_not_failure():
+def test_summary_treats_no_highlight_as_caveat_not_failure():
     direct_results = [
         {
             "status": "ok",
             "probe_id": "probe",
-            "output_contract": "digest_understanding_response_marginalia_json_v7",
+            "output_contract": "digest_understanding_response_marginalia_json_v8",
             "legacy_field_leaks": [],
             "marginalia_review": [
                 {
-                    "kind": "note_bearing",
+                    "kind": "note",
                     "quote_found_in_unit": True,
                     "quality_flags": [],
                 }
@@ -185,6 +186,7 @@ def test_summary_treats_no_highlight_only_as_caveat_not_failure():
 
     assert summary["status"] == "pass_with_caveats"
     assert summary["hard_failures"] == []
+    assert summary["highlight_observed"] is False
     assert summary["highlight_only_observed"] is False
     assert summary["direct_probe_set"] == "calibration"
 
@@ -263,7 +265,7 @@ def test_hard_failures_catches_legacy_field_leak_and_unresolved_quote():
             {
                 "status": "ok",
                 "probe_id": "probe",
-                "output_contract": "digest_understanding_response_marginalia_json_v7",
+                "output_contract": "digest_understanding_response_marginalia_json_v8",
                 "legacy_field_leaks": ["marginalia[0].search_intent"],
                 "marginalia_review": [{"index": 1, "quote_found_in_unit": False}],
             }

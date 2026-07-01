@@ -241,7 +241,7 @@ def test_prompt_assembler_renders_spec_and_metadata_without_live_migration() -> 
     assert "test.role.v1" not in result.rendered_text
     assert "current_focus" not in result.rendered_text
     assert "ref=" not in result.rendered_text
-    assert DIGEST_PROMPT_VERSION == "attentional_v2.digest.v22"
+    assert DIGEST_PROMPT_VERSION == "attentional_v2.digest.v23"
     assert ATTENTIONAL_V2_PROMPTS.digest_system == "Follow the structured Digest prompt in the user message. Use the required submit_digest_result tool as the final output channel."
     assert "Structural frame:" not in ATTENTIONAL_V2_PROMPTS.digest_prompt
 
@@ -343,7 +343,7 @@ def test_digest_xml_prompt_example_renders_escaped_blocks() -> None:
     assert "reading_state" not in rendered
     assert "current_focus" not in rendered
     assert "output_contract" not in rendered
-    assert DIGEST_PROMPT_VERSION == "attentional_v2.digest.v22"
+    assert DIGEST_PROMPT_VERSION == "attentional_v2.digest.v23"
     assert ATTENTIONAL_V2_PROMPTS.digest_version == DIGEST_PROMPT_VERSION
     assert ATTENTIONAL_V2_PROMPTS.digest_system == "Follow the structured Digest prompt in the user message. Use the required submit_digest_result tool as the final output channel."
     assert "Structural frame:" not in ATTENTIONAL_V2_PROMPTS.digest_prompt
@@ -367,11 +367,11 @@ def test_full_digest_prompt_xml_assembly_renders_all_live_blocks() -> None:
         },
     )
 
-    assert result.spec_id == "attentional_v2.digest.xml.v22"
+    assert result.spec_id == "attentional_v2.digest.xml.v23"
     assert result.owner_node == "digest"
     assert result.prompt_version == DIGEST_PROMPT_VERSION
     assert result.promptset_version == DIGEST_XML_PROMPTSET_VERSION
-    assert result.output_contract == "digest_understanding_response_marginalia_json_v7"
+    assert result.output_contract == "digest_understanding_response_marginalia_json_v8"
     assert result.rendered_blocks == (
         "ReaderRole",
         "Instruction",
@@ -406,8 +406,11 @@ def test_full_digest_prompt_xml_assembly_renders_all_live_blocks() -> None:
     assert '"prior_link": null' not in result.rendered_text
     assert '"outside_link": null' not in result.rendered_text
     assert '"search_intent": null' not in result.rendered_text
-    assert "Highlight-only" in result.rendered_text
-    assert "Note-bearing" in result.rendered_text
+    assert "Marginalia include Highlights and Notes." in result.rendered_text
+    assert "## Highlights" in result.rendered_text
+    assert "## Notes" in result.rendered_text
+    assert '"kind": "highlight"' in result.rendered_text
+    assert '"kind": "note"' in result.rendered_text
     assert "Durable portable cognitive gain" in result.rendered_text
     assert "A strong fact is not enough" in result.rendered_text
     assert "Cruelty, danger, suffering, historical importance, emotional force, or moral shock" in result.rendered_text
@@ -420,7 +423,7 @@ def test_full_digest_prompt_xml_assembly_renders_all_live_blocks() -> None:
     assert "value_slot" not in result.rendered_text
     assert "book_identity" not in result.rendered_text
     assert "digest.role_and_stance" not in result.rendered_text
-    assert DIGEST_PROMPT_VERSION == "attentional_v2.digest.v22"
+    assert DIGEST_PROMPT_VERSION == "attentional_v2.digest.v23"
     assert ATTENTIONAL_V2_PROMPTS.digest_system == "Follow the structured Digest prompt in the user message. Use the required submit_digest_result tool as the final output channel."
 
 
@@ -463,7 +466,7 @@ def test_digest_reader_role_and_instruction_xml_renders_target_structure() -> No
     assert "Split into multiple entries" not in rendered
     assert "<Response>" in rendered
     assert "<Marginalia>" in rendered
-    assert "worth preserving without added explanation" in rendered
+    assert "worth carrying forward by itself" in rendered
     assert "Out-of-context completeness" in rendered
     assert "Durable portable cognitive gain" in rendered
     assert "still not being worth carrying forward as a standalone Marginalia item" in rendered
@@ -475,21 +478,22 @@ def test_digest_reader_role_and_instruction_xml_renders_target_structure() -> No
     assert "Use literary technique, close reading, or formal analysis only when" in rendered
     assert "Do not write a note merely to say" in rendered
     assert '"forms a contrast"' in rendered
-    assert "Do not write a note if it only" in rendered
+    assert "Do not write a Note if it only" in rendered
     assert "Silent Lenses" in rendered
     assert "not as output labels or a generation menu" in rendered
     assert "Use a silent \"verb + object\" intention" not in rendered
-    assert "smallest complete contiguous `source_quote`" in rendered
-    assert '"Smallest complete" does not mean "shortest possible sentence."' in rendered
+    assert "choose the smallest complete contiguous span" in rendered
+    assert 'For Highlights, "smallest complete" does not mean "shortest possible sentence."' in rendered
     assert "shortest contiguous span that preserves the full reusable idea" in rendered
     assert "If a sentence only states a definition and the next sentence applies it" in rendered
     assert "If a premise, contrast, exception, consequence, or boundary condition is needed" in rendered
     assert "## How many?" in rendered
-    assert "Preserve every source span that genuinely passes the gates" in rendered
-    assert "Do not treat Marginalia as a top-1 or top-2 selection task" in rendered
-    assert "Which exact source spans in this unit genuinely deserve to be carried forward?" in rendered
-    assert "## Separate or combine quote?" in rendered
-    assert "Before emitting adjacent Marginalia items" in rendered
+    assert "Preserve every source span that genuinely passes the relevant gates" in rendered
+    assert "Do not reduce either pass to representative samples" in rendered
+    assert "First, find Highlights" in rendered
+    assert "Second, find Notes" in rendered
+    assert "## Source Quote Span By Action" in rendered
+    assert "Before emitting adjacent Highlights" in rendered
     assert "Do not split a continuous valuable passage" in rendered
     assert "<TaskOverview>" not in rendered
     assert "<ReadingBehavior>" not in rendered
@@ -518,7 +522,7 @@ def test_digest_reader_role_and_instruction_xml_renders_target_structure() -> No
     assert "reader.role" not in rendered
     assert "digest.current_step" not in rendered
     assert "reading-companion-backend" not in rendered
-    assert DIGEST_PROMPT_VERSION == "attentional_v2.digest.v22"
+    assert DIGEST_PROMPT_VERSION == "attentional_v2.digest.v23"
     assert ATTENTIONAL_V2_PROMPTS.digest_system == "Follow the structured Digest prompt in the user message. Use the required submit_digest_result tool as the final output channel."
     assert "Structural frame:" not in ATTENTIONAL_V2_PROMPTS.digest_prompt
     assert rendered.index("<ReaderRole>") < rendered.index("<Instruction>")
@@ -568,7 +572,7 @@ def test_digest_book_info_xml_renders_light_orientation_block() -> None:
     assert "book_identity" not in rendered
     assert "chapter_identity" not in rendered
     assert "ref=" not in rendered
-    assert DIGEST_PROMPT_VERSION == "attentional_v2.digest.v22"
+    assert DIGEST_PROMPT_VERSION == "attentional_v2.digest.v23"
     assert "Structural frame:" not in ATTENTIONAL_V2_PROMPTS.digest_prompt
 
 
@@ -635,7 +639,7 @@ def test_digest_current_focus_xml_renders_mainline_source_unit_with_paragraphs()
     assert "reading_path" not in rendered
     assert "reading_position" not in rendered
     assert "reading_intent" not in rendered
-    assert DIGEST_PROMPT_VERSION == "attentional_v2.digest.v22"
+    assert DIGEST_PROMPT_VERSION == "attentional_v2.digest.v23"
     assert "Structural frame:" not in ATTENTIONAL_V2_PROMPTS.digest_prompt
 
 
@@ -709,7 +713,7 @@ def test_digest_reading_memory_xml_projects_recent_memory_as_text_array_only() -
     assert "value_slot" not in rendered
     assert "recent_memory" not in rendered
     assert "ref=" not in rendered
-    assert DIGEST_PROMPT_VERSION == "attentional_v2.digest.v22"
+    assert DIGEST_PROMPT_VERSION == "attentional_v2.digest.v23"
     assert "Structural frame:" not in ATTENTIONAL_V2_PROMPTS.digest_prompt
 
 
@@ -1211,8 +1215,8 @@ def test_digest_output_contract_xml_renders_target_contract() -> None:
     assert '"prior_link": null' not in rendered
     assert '"outside_link": null' not in rendered
     assert '"search_intent": null' not in rendered
-    assert "Highlight-only" in rendered
-    assert "Note-bearing" in rendered
+    assert '"kind": "highlight"' in rendered
+    assert '"kind": "note"' in rendered
     assert '"reading_impression": "..."' not in rendered
     assert '"surfaced_reactions": []' not in rendered
     assert '"recent_reading_memory": []' not in rendered
@@ -1237,7 +1241,7 @@ def test_digest_output_contract_xml_renders_target_contract() -> None:
     assert "language_contract" not in rendered
     assert "digest.output_use_guide" not in rendered
     assert "ref=" not in rendered
-    assert DIGEST_PROMPT_VERSION == "attentional_v2.digest.v22"
+    assert DIGEST_PROMPT_VERSION == "attentional_v2.digest.v23"
     assert ATTENTIONAL_V2_PROMPTS.digest_system == "Follow the structured Digest prompt in the user message. Use the required submit_digest_result tool as the final output channel."
     assert "Structural frame:" not in ATTENTIONAL_V2_PROMPTS.digest_prompt
 
@@ -1311,7 +1315,7 @@ def test_attentional_v2_prompt_registry_contains_node_definitions() -> None:
     assert all(definition.status == "active" for definition in definitions)
     assert all(definition.required_inputs for definition in definitions)
     assert all(
-        definition.output_contract.endswith(("_v1", "_v2", "_v3", "_v4", "_v5", "_v6", "_v7"))
+        definition.output_contract.endswith(("_v1", "_v2", "_v3", "_v4", "_v5", "_v6", "_v7", "_v8"))
         for definition in definitions
     )
 
@@ -1321,9 +1325,9 @@ def test_attentional_v2_prompt_registry_projects_current_bundle() -> None:
     ingest = ATTENTIONAL_V2_PROMPT_REGISTRY.get("attentional_v2.ingest")
     chapter = ATTENTIONAL_V2_PROMPT_REGISTRY.get("attentional_v2.chapter_consolidation")
 
-    assert ATTENTIONAL_V2_PROMPTSET_VERSION == "attentional_v2-phase6-v82"
+    assert ATTENTIONAL_V2_PROMPTSET_VERSION == "attentional_v2-phase6-v83"
     assert ATTENTIONAL_V2_PROMPTS.promptset_version == ATTENTIONAL_V2_PROMPTSET_VERSION
-    assert digest.version == DIGEST_PROMPT_VERSION == "attentional_v2.digest.v22"
+    assert digest.version == DIGEST_PROMPT_VERSION == "attentional_v2.digest.v23"
     assert ATTENTIONAL_V2_PROMPTS.digest_version == digest.version
     assert ATTENTIONAL_V2_PROMPTS.digest_system == digest.system_prompt
     assert ATTENTIONAL_V2_PROMPTS.digest_prompt == digest.user_prompt_template
@@ -1333,9 +1337,10 @@ def test_attentional_v2_prompt_registry_projects_current_bundle() -> None:
     assert ATTENTIONAL_V2_PROMPTS.chapter_consolidation_prompt == chapter.user_prompt_template
 
 
-def test_highlight_only_marginalia_persists_without_fabricated_note_text() -> None:
+def test_highlight_marginalia_persists_without_fabricated_note_text() -> None:
     record = build_reaction_record_from_surfaced_reaction(
         reaction={
+            "kind": "highlight",
             "source_quote": "庭下如积水空明",
             "content": "",
         },
@@ -1356,8 +1361,36 @@ def test_highlight_only_marginalia_persists_without_fabricated_note_text() -> No
     assert record["record_source"] == "read_surface"
     assert record["thought"] == ""
     assert record["source_quote"] == "庭下如积水空明"
+    assert record["marginalia_kind"] == "highlight"
     assert record["compat_family"] == "highlight"
     assert compat_reaction_family(record) == "highlight"
+
+
+def test_note_marginalia_maps_to_public_association_without_becoming_highlight() -> None:
+    record = build_reaction_record_from_surfaced_reaction(
+        reaction={
+            "kind": "note",
+            "source_quote": "庭下如积水空明",
+            "content": "This note adds a compact observation.",
+        },
+        primary_source_ref={
+            "quote": "庭下如积水空明",
+            "role": "reaction_anchor",
+            "source_span": {
+                "start_cursor": {"chapter_id": 1, "paragraph_index": 1, "char_offset": 0},
+                "end_cursor": {"chapter_id": 1, "paragraph_index": 1, "char_offset": 8},
+            },
+        },
+        chapter_id=1,
+        chapter_ref="Chapter 1",
+        emitted_at_source_span_id="src:c1:p1@0-p1@8",
+    )
+
+    assert record is not None
+    assert record["thought"] == "This note adds a compact observation."
+    assert record["marginalia_kind"] == "note"
+    assert record["compat_family"] == "association"
+    assert compat_reaction_family(record) == "association"
 
 
 def test_prompt_registry_rejects_duplicate_prompt_ids() -> None:

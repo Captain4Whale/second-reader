@@ -68,11 +68,12 @@ DIGEST_RESULT_TOOL = final_output_tool(
                 "type": "array",
                 "items": _object_schema(
                     {
+                        "kind": {"type": "string", "enum": ["highlight", "note"]},
                         "source_quote": {"type": "string"},
                         "content": {"type": ["string", "null"]},
                         "selection_reason": {"type": ["string", "null"]},
                     },
-                    required=["source_quote"],
+                    required=["kind", "source_quote"],
                 ),
             },
         },
@@ -351,17 +352,30 @@ def validate_digest_result(payload: Mapping[str, Any], *, current_unit_texts: li
             source_quote = str(item.get("source_quote") or item.get("anchor_quote") or "").strip()
             if not source_quote:
                 errors.append(f"marginalia[{index}].source_quote must be non-empty")
+            raw_kind = item.get("kind")
+            kind = str(raw_kind or "").strip().lower()
+            if raw_kind is not None and not isinstance(raw_kind, str):
+                errors.append(f"marginalia[{index}].kind must be highlight or note")
+            elif kind and kind not in {"highlight", "note"}:
+                errors.append(f"marginalia[{index}].kind must be highlight or note")
             content = item.get("content")
             if content is not None and not isinstance(content, str):
                 errors.append(f"marginalia[{index}].content must be a string or null")
             selection_reason = item.get("selection_reason")
             if selection_reason is not None and not isinstance(selection_reason, str):
                 errors.append(f"marginalia[{index}].selection_reason must be a string or null")
+            content_text = str(content or "").strip() if isinstance(content, str) else ""
             reason_text = str(selection_reason or "").strip()
-            if source_quote and not (isinstance(content, str) and content.strip()):
+            if not kind:
+                kind = "note" if content_text else "highlight"
+            if source_quote and kind == "highlight":
+                if content_text:
+                    errors.append(f"marginalia[{index}].content must be empty for highlight")
                 reason_text = reason_text or legacy_audit_reason_by_quote.get(source_quote, "")
                 if not reason_text:
-                    errors.append(f"marginalia[{index}].selection_reason must be non-empty for highlight-only")
+                    errors.append(f"marginalia[{index}].selection_reason must be non-empty for highlight")
+            if source_quote and kind == "note" and not content_text:
+                errors.append(f"marginalia[{index}].content must be non-empty for note")
     response = payload.get("response")
     if not isinstance(response, str):
         errors.append("response must be a string")

@@ -352,6 +352,7 @@ class StateOperation(TypedDict, total=False):
 class MarginaliaItem(TypedDict, total=False):
     """One visible page-margin reader note surfaced directly by Digest."""
 
+    kind: str
     source_quote: str
     content: str
     selection_reason: str
@@ -361,7 +362,7 @@ class MarginaliaItem(TypedDict, total=False):
 
 
 class MarginaliaAuditItem(TypedDict, total=False):
-    """Legacy mechanism-private selection audit for v14 highlight-only Marginalia."""
+    """Legacy mechanism-private selection audit for pre-v15 highlight Marginalia."""
 
     source_quote: str
     selection_reason: str
@@ -575,6 +576,7 @@ class AnchoredReactionRecord(TypedDict, total=False):
     record_source: str
     type: ReactionType
     compat_family: ReactionType
+    marginalia_kind: str
     thought: str
     source_quote: str
     primary_source_ref: SourceRef

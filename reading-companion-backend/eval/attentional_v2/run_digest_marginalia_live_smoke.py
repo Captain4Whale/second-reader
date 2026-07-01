@@ -29,9 +29,9 @@ BACKEND_ROOT = Path(__file__).resolve().parents[2]
 if str(BACKEND_ROOT) not in sys.path:
     sys.path.insert(0, str(BACKEND_ROOT))
 
-DEFAULT_RUN_ID = "digest_marginalia_v22_live_smoke_20260701"
-DEFAULT_ANALYSIS_ID = "digest_marginalia_v22_live_smoke"
-DEFAULT_JOB_ID = "bgjob_digest_marginalia_v22_live_smoke_20260701"
+DEFAULT_RUN_ID = "digest_marginalia_v23_live_smoke_20260701"
+DEFAULT_ANALYSIS_ID = "digest_marginalia_v23_live_smoke"
+DEFAULT_JOB_ID = "bgjob_digest_marginalia_v23_live_smoke_20260701"
 DEFAULT_PROFILE_ID = "dataset_review_high_trust"
 DEFAULT_DATASET_ROOT = (
     BACKEND_ROOT
@@ -201,7 +201,10 @@ def _legacy_field_leaks(payload: object) -> list[str]:
 
 
 def _marginalia_kind(item: Mapping[str, object]) -> str:
-    return "highlight_only" if not _clean_text(item.get("content")) else "note_bearing"
+    kind = _clean_text(item.get("kind")).lower()
+    if kind in {"highlight", "note"}:
+        return kind
+    return "highlight" if not _clean_text(item.get("content")) else "note"
 
 
 def _normalize_marginalia_audit_for_review(
@@ -293,8 +296,8 @@ def _summarize_marginalia(
         kind = _marginalia_kind(item)
         selection_reason = (
             _clean_text(item.get("selection_reason")) or reason_by_quote.get(quote, "")
-            if kind == "highlight_only"
-            else ""
+        if kind == "highlight"
+        else ""
         )
         quality_flags = _quality_flags(
             item=item,
@@ -302,7 +305,7 @@ def _summarize_marginalia(
             understanding=understanding,
             response=response,
         )
-        if kind == "highlight_only" and not selection_reason:
+        if kind == "highlight" and not selection_reason:
             quality_flags.append("missing_selection_reason")
         items.append(
             {
@@ -555,7 +558,7 @@ def run_direct_digest_smoke(
         _json_dump(output_dir / "prompt_manifest.json", prompt_manifest)
         trace_context = eval_trace_context(
             analysis_root,
-            eval_target="digest_marginalia_v22_live_smoke",
+            eval_target="digest_marginalia_v23_live_smoke",
             stage="direct_digest",
             node=probe.probe_id,
             extra={"probe_id": probe.probe_id},
@@ -818,7 +821,7 @@ def run_segment_units(
             attempt_timeout_seconds = timeout_seconds if unit_attempt == 0 else _unit_recovery_timeout_seconds(timeout_seconds)
             trace_context = eval_trace_context(
                 analysis_root,
-                eval_target="digest_marginalia_v22_live_smoke",
+                eval_target="digest_marginalia_v23_live_smoke",
                 stage="focused_runner",
                 node=f"{segment_id}_unit_{unit_index:03d}_attempt_{unit_attempt + 1}",
                 extra={
@@ -1130,14 +1133,14 @@ def _all_marginalia_items(direct_results: list[dict[str, object]], runner_result
 def _hard_failures(direct_results: list[dict[str, object]], runner_results: list[dict[str, object]]) -> list[str]:
     failures: list[str] = []
     prompt = ATTENTIONAL_V2_PROMPTS
-    if prompt.digest_version != "attentional_v2.digest.v22":
+    if prompt.digest_version != "attentional_v2.digest.v23":
         failures.append(f"unexpected_digest_version:{prompt.digest_version}")
-    if prompt.promptset_version != "attentional_v2-phase6-v82":
+    if prompt.promptset_version != "attentional_v2-phase6-v83":
         failures.append(f"unexpected_promptset:{prompt.promptset_version}")
     for result in direct_results:
         if result.get("status") != "ok":
             failures.append(f"direct_failed:{result.get('probe_id')}")
-        if result.get("output_contract") != "digest_understanding_response_marginalia_json_v7":
+        if result.get("output_contract") != "digest_understanding_response_marginalia_json_v8":
             failures.append(f"unexpected_output_contract:{result.get('probe_id')}:{result.get('output_contract')}")
         leaks = result.get("legacy_field_leaks")
         if isinstance(leaks, list) and leaks:
@@ -1229,7 +1232,7 @@ def build_summary(
         status = "partial"
     if status == "pass" and flag_counts:
         status = "pass_with_caveats"
-    if status == "pass" and kind_counts.get("highlight_only", 0) == 0:
+    if status == "pass" and kind_counts.get("highlight", 0) == 0:
         status = "pass_with_caveats"
     return {
         "run_id": run_id,
@@ -1242,7 +1245,7 @@ def build_summary(
         "generated_at": _now(),
         "prompt_version": ATTENTIONAL_V2_PROMPTS.digest_version,
         "promptset_version": ATTENTIONAL_V2_PROMPTS.promptset_version,
-        "output_contract": "digest_understanding_response_marginalia_json_v7",
+        "output_contract": "digest_understanding_response_marginalia_json_v8",
         "direct_probe_count": len(direct_results),
         "runner_segment_count": len(runner_results),
         "runner_unit_count": sum(int(result.get("unit_count", 0) or 0) for result in runner_results),
@@ -1258,7 +1261,8 @@ def build_summary(
             for result in runner_results
             if isinstance(result.get("recovered_units"), list)
         ),
-        "highlight_only_observed": kind_counts.get("highlight_only", 0) > 0,
+        "highlight_observed": kind_counts.get("highlight", 0) > 0,
+        "highlight_only_observed": kind_counts.get("highlight", 0) > 0,
     }
 
 
@@ -1269,7 +1273,7 @@ def render_report(
     runner_results: list[dict[str, object]],
 ) -> str:
     lines: list[str] = [
-        "# Digest Marginalia v22 Live Smoke",
+        "# Digest Marginalia v23 Live Smoke",
         "",
         "## Summary",
         f"- status: `{summary.get('status')}`",
@@ -1287,7 +1291,7 @@ def render_report(
         f"- marginalia count: `{summary.get('marginalia_count')}`",
         f"- marginalia kinds: `{json.dumps(summary.get('marginalia_kind_counts', {}), ensure_ascii=False)}`",
         f"- quality flags: `{json.dumps(summary.get('quality_flag_counts', {}), ensure_ascii=False)}`",
-        f"- highlight-only observed: `{summary.get('highlight_only_observed')}`",
+        f"- highlight observed: `{summary.get('highlight_observed', summary.get('highlight_only_observed'))}`",
         "",
     ]
     failures = summary.get("hard_failures")
@@ -1423,12 +1427,12 @@ def render_report(
             else:
                 lines.append("- No Marginalia emitted.")
             lines.append("")
-    if summary.get("status") == "pass_with_caveats" and not summary.get("highlight_only_observed"):
+    if summary.get("status") == "pass_with_caveats" and not summary.get("highlight_observed", summary.get("highlight_only_observed")):
         lines.extend(
             [
                 "## Caveat",
                 "",
-                "No live highlight-only Marginalia was naturally emitted in this smoke. "
+                "No live Highlight Marginalia was naturally emitted in this smoke. "
                 "That is a quality observation rather than a contract failure; deterministic tests cover quote-only persistence.",
                 "",
             ]

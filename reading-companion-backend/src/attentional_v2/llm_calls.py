@@ -697,17 +697,25 @@ def _normalize_marginalia_item(
     source_quote = _clean_text(value.get("source_quote") or value.get("anchor_quote"))
     content = _clean_text(value.get("content"))
     selection_reason = _clean_text(value.get("selection_reason"))
+    kind = _clean_text(value.get("kind")).lower()
+    if kind not in {"highlight", "note"}:
+        kind = "note" if content else "highlight"
     if not source_quote:
         return None
     if current_unit_texts and not any(source_quote in text for text in current_unit_texts):
         return None
+    if kind == "highlight":
+        content = ""
     if content and _contains_internal_reference_markup(content):
         return None
+    if kind == "note" and not content:
+        return None
     normalized: MarginaliaItem = {
+        "kind": kind,
         "source_quote": source_quote,
         "content": content,
     }
-    if not content:
+    if kind == "highlight":
         selection_reason = selection_reason or _clean_text((legacy_selection_reasons or {}).get(source_quote))
         if selection_reason:
             normalized["selection_reason"] = selection_reason

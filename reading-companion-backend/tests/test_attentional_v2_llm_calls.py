@@ -1027,6 +1027,7 @@ def test_digest_uses_live_xml_prompt_and_filters_surface_reactions(tmp_path: Pat
             "response": "The line flips the frame.",
             "marginalia": [
                 {
+                    "kind": "note",
                     "source_quote": "Alpha hinge.",
                     "content": "That phrase suddenly snaps the claim into place.",
                     "prior_link": {
@@ -1036,11 +1037,13 @@ def test_digest_uses_live_xml_prompt_and_filters_surface_reactions(tmp_path: Pat
                     },
                 },
                 {
+                    "kind": "highlight",
                     "source_quote": "Beta consequence.",
                     "content": "",
                     "selection_reason": "Intrinsic excerpt value through compact consequence wording.",
                 },
                 {
+                    "kind": "note",
                     "source_quote": "Quote outside unit",
                     "content": "This one should be dropped.",
                 }
@@ -1140,9 +1143,12 @@ def test_digest_uses_live_xml_prompt_and_filters_surface_reactions(tmp_path: Pat
     assert '"prior_link": null' not in captured["prompt"]
     assert '"outside_link": null' not in captured["prompt"]
     assert '"search_intent": null' not in captured["prompt"]
-    assert "Highlight-only" in captured["prompt"]
-    assert "Note-bearing" in captured["prompt"]
-    assert "worth preserving without added explanation" in captured["prompt"]
+    assert "Marginalia include Highlights and Notes." in captured["prompt"]
+    assert "## Highlights" in captured["prompt"]
+    assert "## Notes" in captured["prompt"]
+    assert "through two independent reader actions" in captured["prompt"]
+    assert "Their source quotes are chosen for their own purposes and may overlap." in captured["prompt"]
+    assert "Use Highlights when the quoted source text itself is worth preserving." in captured["prompt"]
     assert "Out-of-context completeness" in captured["prompt"]
     assert "Durable portable cognitive gain" in captured["prompt"]
     assert "still not being worth carrying forward as a standalone Marginalia item" in captured["prompt"]
@@ -1153,29 +1159,32 @@ def test_digest_uses_live_xml_prompt_and_filters_surface_reactions(tmp_path: Pat
     assert "Selection-reason test" in captured["prompt"]
     assert "could fit many similar passages by merely swapping names or situations" in captured["prompt"]
     assert "What is something valuable here that a thoughtful ordinary reader may not know" in captured["prompt"]
+    assert "A Note source quote does not need to pass the Highlight gates." in captured["prompt"]
     assert "Prefer notes that add real cognitive value" in captured["prompt"]
     assert "Use literary technique, close reading, or formal analysis only when" in captured["prompt"]
     assert "Do not write a note merely to say" in captured["prompt"]
     assert '"forms a contrast"' in captured["prompt"]
-    assert "Do not write a note if it only" in captured["prompt"]
+    assert "Do not write a Note if it only" in captured["prompt"]
     assert "Silent Lenses" in captured["prompt"]
     assert "not as output labels or a generation menu" in captured["prompt"]
     assert "Use a silent \"verb + object\" intention" not in captured["prompt"]
-    assert "smallest complete contiguous `source_quote`" in captured["prompt"]
-    assert '"Smallest complete" does not mean "shortest possible sentence."' in captured["prompt"]
+    assert "Choose the `source_quote` according to the Marginalia item kind." in captured["prompt"]
+    assert 'For Highlights, "smallest complete" does not mean "shortest possible sentence."' in captured["prompt"]
     assert "shortest contiguous span that preserves the full reusable idea" in captured["prompt"]
     assert "If a sentence only states a definition and the next sentence applies it" in captured["prompt"]
     assert "If a premise, contrast, exception, consequence, or boundary condition is needed" in captured["prompt"]
     assert "## How many?" in captured["prompt"]
-    assert "Preserve every source span that genuinely passes the gates" in captured["prompt"]
-    assert "Do not treat Marginalia as a top-1 or top-2 selection task" in captured["prompt"]
-    assert "Which exact source spans in this unit genuinely deserve to be carried forward?" in captured["prompt"]
-    assert "## Separate or combine quote?" in captured["prompt"]
-    assert "Before emitting adjacent Marginalia items" in captured["prompt"]
+    assert "Preserve every source span that genuinely passes the relevant gates" in captured["prompt"]
+    assert "Do not reduce either pass to representative samples" in captured["prompt"]
+    assert "First, find Highlights" in captured["prompt"]
+    assert "Second, find Notes" in captured["prompt"]
+    assert "## Source Quote Span By Action" in captured["prompt"]
+    assert "For Notes, choose the smallest precise contiguous span" in captured["prompt"]
+    assert "Before emitting adjacent Highlights" in captured["prompt"]
     assert "Do not split a continuous valuable passage" in captured["prompt"]
     assert "turns farewell into permission" not in captured["prompt"]
     assert "why it is more than local evidence, scene importance, emotional force, moral shock, or a strong fact from the current book" in captured["prompt"]
-    assert "For note-bearing Marginalia, write the explanation in visible `content`; `selection_reason` may be omitted or empty." in captured["prompt"]
+    assert 'For `kind: "note"`, include non-empty visible `content`; `selection_reason` may be omitted or empty.' in captured["prompt"]
     assert '"reading_impression": "..."' not in captured["prompt"]
     assert '"surfaced_reactions": []' not in captured["prompt"]
     assert '"recent_reading_memory": []' not in captured["prompt"]
@@ -1187,10 +1196,12 @@ def test_digest_uses_live_xml_prompt_and_filters_surface_reactions(tmp_path: Pat
     assert result["reading_impression"] == "The line flips the frame."
     assert result["surfaced_reactions"] == [
         {
+            "kind": "note",
             "source_quote": "Alpha hinge.",
             "content": "That phrase suddenly snaps the claim into place.",
         },
         {
+            "kind": "highlight",
             "source_quote": "Beta consequence.",
             "content": "",
             "selection_reason": "Intrinsic excerpt value through compact consequence wording.",
@@ -1205,9 +1216,9 @@ def test_digest_uses_live_xml_prompt_and_filters_surface_reactions(tmp_path: Pat
     }
     assert op["target_key"] != "legacy-ignored"
     assert manifest["node_name"] == "digest"
-    assert manifest["prompt_version"] == "attentional_v2.digest.v22"
-    assert manifest["prompt_assembly"]["spec_id"] == "attentional_v2.digest.xml.v22"
-    assert manifest["prompt_assembly"]["output_contract"] == "digest_understanding_response_marginalia_json_v7"
+    assert manifest["prompt_version"] == "attentional_v2.digest.v23"
+    assert manifest["prompt_assembly"]["spec_id"] == "attentional_v2.digest.xml.v23"
+    assert manifest["prompt_assembly"]["output_contract"] == "digest_understanding_response_marginalia_json_v8"
     assert "mode" not in manifest["prompt_assembly"]
     assert manifest["prompt_assembly"]["rendered_blocks"] == [
         "ReaderRole",
@@ -1219,13 +1230,14 @@ def test_digest_uses_live_xml_prompt_and_filters_surface_reactions(tmp_path: Pat
     ]
 
 
-def test_digest_validator_accepts_highlight_only_and_rejects_missing_quote() -> None:
+def test_digest_validator_accepts_highlight_and_note_and_rejects_bad_items() -> None:
     assert validate_digest_result(
         {
             "understanding": "The unit establishes a clear movement.",
             "response": "The ending lands quietly.",
             "marginalia": [
                 {
+                    "kind": "highlight",
                     "source_quote": "Alpha hinge.",
                     "content": "",
                     "selection_reason": "Intrinsic excerpt value through compact hinge phrasing.",
@@ -1246,18 +1258,49 @@ def test_digest_validator_accepts_highlight_only_and_rejects_missing_quote() -> 
         {
             "understanding": "The unit establishes a clear movement.",
             "response": "The ending lands quietly.",
-            "marginalia": [{"source_quote": "Alpha hinge.", "content": ""}],
+            "marginalia": [{"kind": "highlight", "source_quote": "Alpha hinge.", "content": ""}],
         },
         current_unit_texts=["Alpha hinge."],
-    ) == ["marginalia[0].selection_reason must be non-empty for highlight-only"]
+    ) == ["marginalia[0].selection_reason must be non-empty for highlight"]
     assert validate_digest_result(
         {
             "understanding": "The unit establishes a clear movement.",
             "response": "The ending lands quietly.",
-            "marginalia": [{"source_quote": "Alpha hinge.", "content": "Visible note explains it."}],
+            "marginalia": [
+                {
+                    "kind": "highlight",
+                    "source_quote": "Alpha hinge.",
+                    "content": "Visible note should use kind=note.",
+                    "selection_reason": "Intrinsic excerpt value through compact hinge phrasing.",
+                }
+            ],
+        },
+        current_unit_texts=["Alpha hinge."],
+    ) == ["marginalia[0].content must be empty for highlight"]
+    assert validate_digest_result(
+        {
+            "understanding": "The unit establishes a clear movement.",
+            "response": "The ending lands quietly.",
+            "marginalia": [{"kind": "note", "source_quote": "Alpha hinge.", "content": "Visible note explains it."}],
         },
         current_unit_texts=["Alpha hinge."],
     ) == []
+    assert validate_digest_result(
+        {
+            "understanding": "The unit establishes a clear movement.",
+            "response": "The ending lands quietly.",
+            "marginalia": [{"kind": "note", "source_quote": "Alpha hinge.", "content": ""}],
+        },
+        current_unit_texts=["Alpha hinge."],
+    ) == ["marginalia[0].content must be non-empty for note"]
+    assert validate_digest_result(
+        {
+            "understanding": "The unit establishes a clear movement.",
+            "response": "The ending lands quietly.",
+            "marginalia": [{"kind": "unknown", "source_quote": "Alpha hinge.", "content": ""}],
+        },
+        current_unit_texts=["Alpha hinge."],
+    ) == ["marginalia[0].kind must be highlight or note"]
     assert validate_digest_result(
         {
             "understanding": "The unit establishes a clear movement.",

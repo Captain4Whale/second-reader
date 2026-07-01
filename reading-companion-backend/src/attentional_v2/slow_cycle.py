@@ -621,15 +621,24 @@ def build_reaction_record_from_surfaced_reaction(
     override_family = _clean_text(compat_family_override)
     if override_family not in _COMPAT_FAMILIES:
         override_family = ""
-    compat_family = override_family or compat_reaction_family(
-        {
-            "content": thought,
-            "source_quote": source_quote,
-            "prior_link": prior_link,
-            "outside_link": outside_link,
-            "search_intent": search_intent,
-        }
-    )
+    compat_payload = {
+        "content": thought,
+        "source_quote": source_quote,
+        "prior_link": prior_link,
+        "outside_link": outside_link,
+        "search_intent": search_intent,
+    }
+    digest_kind = _clean_text(reaction.get("kind")).lower()
+    if override_family:
+        compat_family = override_family
+    elif prior_link is not None or outside_link is not None or search_intent is not None:
+        compat_family = compat_reaction_family(compat_payload)
+    elif digest_kind == "highlight":
+        compat_family = "highlight"
+    elif digest_kind == "note":
+        compat_family = "association"
+    else:
+        compat_family = compat_reaction_family(compat_payload)
 
     return {
         "reaction_id": reaction_id
@@ -645,6 +654,7 @@ def build_reaction_record_from_surfaced_reaction(
         "record_source": "read_surface",
         "type": compat_family,  # type: ignore[typeddict-item]
         "compat_family": compat_family,  # type: ignore[typeddict-item]
+        "marginalia_kind": digest_kind if digest_kind in {"highlight", "note"} else "",
         "thought": thought,
         "source_quote": source_quote,
         "primary_source_ref": normalized_primary_source_ref,

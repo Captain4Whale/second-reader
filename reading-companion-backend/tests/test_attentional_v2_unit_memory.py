@@ -96,7 +96,7 @@ def test_unit_memory_entry_derives_weighted_surface_docs():
     assert "\n" in [doc for doc in docs if doc["surface"] == "unit_marginalia"][0]["text"]
 
 
-def test_unit_memory_indexes_highlight_only_marginalia():
+def test_unit_memory_indexes_highlight_marginalia():
     entry = build_unit_memory_entry(
         book_id="book-demo",
         chapter_id=1,
@@ -106,6 +106,7 @@ def test_unit_memory_indexes_highlight_only_marginalia():
             "reading_impression": "The image stays clear.",
             "marginalia": [
                 {
+                    "kind": "highlight",
                     "source_quote": "庭下如积水空明",
                     "content": "",
                     "selection_reason": "The quoted image is compact and independently memorable.",
@@ -128,6 +129,7 @@ def test_unit_memory_indexes_highlight_only_marginalia():
     assert marginalia_doc["text"] == "庭下如积水空明"
     assert entry["digest"]["marginalia"] == [
         {
+            "kind": "highlight",
             "source_quote": "庭下如积水空明",
             "content": "",
             "selection_reason": "The quoted image is compact and independently memorable.",
