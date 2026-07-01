@@ -1,6 +1,6 @@
 {
   "schema_version": 1,
-  "updated_at": "2026-06-30T04:49:52.217792Z",
+  "updated_at": "2026-07-01T11:49:40.124115Z",
   "entries": [
     {
       "run_id": "attentional_v2_excerpt_surface_v1_1_judged_20260406",
@@ -3073,7 +3073,7 @@
       "date": "2026-06-30",
       "surface": "digest_marginalia_live_smoke",
       "lane": "mechanism_runtime",
-      "status": "running",
+      "status": "failed",
       "mechanisms": [
         "attentional_v2"
       ],
@@ -3089,17 +3089,15 @@
         "reading-companion-backend/eval/runs/attentional_v2/digest_marginalia_v21_5book_parallel_20units_scheduler_fixed_retry1_20260630/analysis/digest_marginalia_v21_5book_parallel_20units_scheduler_fixed_retry1/marginalia_smoke_report.md"
       ],
       "catalog_status": "not_cataloged",
-      "notes": "Clean scheduler-fixed retry of the Digest v21 five-book 20-unit diagnostic after both target fixed concurrency 24 and smoke-runner scope-concurrency override removal. Diagnostic only; compare profile_gate_wait_ms against superseded old-scheduler runs before prompt-quality review.",
+      "notes": "Scheduler-fixed Digest v21 five-book 20-unit diagnostic failed after 82 runner units because nawaer_baodian_private_zh__segment_1 hit llm_timeout. Scheduling repair itself held: standard traces show fixed strategy with profile/provider limits 24 and zero local gate wait across 211 LLM trace rows.",
       "parent_run_id": "",
       "child_run_ids": [],
       "synthetic": false,
-      "local_missing_allowed": [
-        "reading-companion-backend/eval/runs/attentional_v2/digest_marginalia_v21_5book_parallel_20units_scheduler_fixed_retry1_20260630/analysis/digest_marginalia_v21_5book_parallel_20units_scheduler_fixed_retry1/marginalia_smoke_report.md"
-      ],
+      "local_missing_allowed": [],
       "metadata": {
         "supersedes": "digest_marginalia_v21_5book_parallel_20units_scheduler_fixed_20260630"
       },
-      "updated_at": "2026-06-30T04:49:52.216732Z"
+      "updated_at": "2026-07-01T11:49:40.122781Z"
     }
   ]
 }

@@ -154,11 +154,12 @@ Last verified: `2026-06-30T09:06:55+08:00`
     - superseded status: completed under the old adaptive scheduler with severe local `profile_gate_wait_ms` queueing; run ledger status is `superseded`, and it should be used only as scheduling-bottleneck evidence, not prompt-quality evidence
     - clean scheduler-fixed retry run id: `digest_marginalia_v21_5book_parallel_20units_scheduler_fixed_retry1_20260630`
     - clean scheduler-fixed retry job id: `bgjob_digest_marginalia_v21_5book_parallel_20units_scheduler_fixed_retry1_20260630`
-    - status: running; run ledger status is `running`
+    - status: failed; run ledger status is `failed`
     - scope: active unique-note source-normalized v1.2 five-segment dataset, `segment_workers=5`, up to `20` accepted units per segment
     - purpose: compare the live durable-value / out-of-context-completeness / excerpt-necessity highlight-only gates in `attentional_v2.digest.v21` / promptset `attentional_v2-phase6-v81` against the v20 density-aware baseline after fixing local LLM scheduling
-    - scheduling health: first standard traces show `concurrency_strategy=fixed`, `profile_current_limit=24`, `provider_current_limit=24`, `profile_gate_wait_ms=0`, and `provider_gate_wait_ms=0`; continue to inspect these fields after completion
-    - report target: `reading-companion-backend/eval/runs/attentional_v2/digest_marginalia_v21_5book_parallel_20units_scheduler_fixed_retry1_20260630/analysis/digest_marginalia_v21_5book_parallel_20units_scheduler_fixed_retry1/marginalia_smoke_report.md`
+    - outcome: `82` runner units, `186` Marginalia items (`173` highlight-only, `13` note-bearing), `33` `quote_too_broad` caveats, and hard failure `runner_failed:nawaer_baodian_private_zh__segment_1:llm_timeout`
+    - scheduling health: standard traces show `concurrency_strategy=fixed`, `profile_current_limit=24`, `provider_current_limit=24`, `profile_gate_wait_ms=0`, and `provider_gate_wait_ms=0` across `211` LLM trace rows, so the local scheduler bottleneck is resolved even though this diagnostic failed on one provider timeout
+    - report: `reading-companion-backend/eval/runs/attentional_v2/digest_marginalia_v21_5book_parallel_20units_scheduler_fixed_retry1_20260630/analysis/digest_marginalia_v21_5book_parallel_20units_scheduler_fixed_retry1/marginalia_smoke_report.md`
   - active diagnostic evaluation:
     - run id: `attentional_v2_ingest_digest_unit_memory_full_diagnostic_20260603_parallel5`
     - job id: `bgjob_ingest_digest_unit_memory_full_diagnostic_20260603_parallel5`
@@ -3486,7 +3487,7 @@ Last verified: `2026-06-30T09:06:55+08:00`
 - none
 
 ## Active Job IDs
-- `bgjob_digest_marginalia_v21_5book_parallel_20units_scheduler_fixed_retry1_20260630`
+- none
 
 ## Recommended Reading Path
 1. `AGENTS.md`
@@ -3507,7 +3508,7 @@ Last verified: `2026-06-30T09:06:55+08:00`
 ## Machine-Readable Appendix
 ```json
 {
-  "updated_at": "2026-06-30T04:47:46Z",
+  "updated_at": "2026-07-01T11:49:40Z",
   "last_updated_by": "codex",
   "active_task_ids": [
     "TASK-ATTENTIONAL-V2-STRUCTURAL-REWORK",
@@ -3517,9 +3518,7 @@ Last verified: `2026-06-30T09:06:55+08:00`
   ],
   "waiting_task_ids": [],
   "blocked_task_ids": [],
-  "active_job_ids": [
-    "bgjob_digest_marginalia_v21_5book_parallel_20units_scheduler_fixed_retry1_20260630"
-  ],
+  "active_job_ids": [],
   "open_decision_ids": [],
   "detail_refs": [
     "docs/backend-reader-evaluation.md",
