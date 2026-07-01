@@ -7,7 +7,7 @@ Update when: task status, priority, blockers, decision refs, job refs, evidence 
 
 This document is the human-readable companion to `docs/tasks/registry.json`.
 
-Last updated: `2026-07-02T01:07:21+08:00`
+Last updated: `2026-07-02T07:51:51+08:00`
 
 ## Status Values
 - `active`
@@ -25,7 +25,7 @@ Last updated: `2026-07-02T01:07:21+08:00`
 - Lane: `mechanism_runtime`
 - Priority: `high`
 - Detail: `docs/current-state.md`
-- Next: Digest is live as `attentional_v2.digest.v23` / promptset `attentional_v2-phase6-v83` / output contract `digest_understanding_response_marginalia_json_v8`: canonical visible-note output remains `marginalia[]`, but new live items now require explicit `kind: "highlight" | "note"`. Highlights preserve exact source text worth carrying forward by itself, require private `selection_reason`, and keep `content` empty/omitted; Notes attach reader-facing cognitive surplus to a precise source anchor and require non-empty visible `content`. The v23 five-book diagnostic `bgjob_digest_marginalia_v23_5book_parallel_20units_20260701` is running over the active unique-note dataset with `segment_workers=5`, up to `20` accepted units per segment, and `failure_policy=partial`; next check its `status.json`, refresh/archive the job after completion, and update the run ledger to `review_pending`, `partial`, or `failed`.
+- Next: Digest is live as `attentional_v2.digest.v23` / promptset `attentional_v2-phase6-v83` / output contract `digest_understanding_response_marginalia_json_v8`: canonical visible-note output remains `marginalia[]`, but new live items now require explicit `kind: "highlight" | "note"`. Highlights preserve exact source text worth carrying forward by itself, require private `selection_reason`, and keep `content` empty/omitted; Notes attach reader-facing cognitive surplus to a precise source anchor and require non-empty visible `content`. The v23 five-book diagnostic `bgjob_digest_marginalia_v23_5book_parallel_20units_20260701` completed with summary status `partial`: provider/network `network_blocked` stopped all five segments after recovery attempts, leaving only `2` accepted runner units from `mangge_zhi_dao`; use the generated report as failure evidence rather than a quality sample, and rerun only after the provider/network path is stable.
 - Jobs:
   - `bgjob_ingest_digest_unit_memory_full_diagnostic_20260603_parallel5`
   - `bgjob_unit_memory_text_only_smoke_value_20260606`

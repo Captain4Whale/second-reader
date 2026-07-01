@@ -7,7 +7,7 @@ Update when: the current objective, active tasks, blockers, active jobs, open de
 
 This file is authoritative for durable current status. Do not keep unique active-state information only in `docs/agent-handoff.md`.
 
-Last verified: `2026-07-02T01:07:21+08:00`
+Last verified: `2026-07-02T07:51:51+08:00`
 
 ## Current Objective
 - The `Ingest -> Digest -> Reading Runner settlement` mechanism reframe is implemented; current work is fact alignment, smoke/diagnostic review, and calibration before any formal evaluation promotion.
@@ -176,10 +176,11 @@ Last verified: `2026-07-02T01:07:21+08:00`
   - Digest v23 Marginalia five-book diagnostic:
     - run id: `digest_marginalia_v23_5book_parallel_20units_20260701`
     - job id: `bgjob_digest_marginalia_v23_5book_parallel_20units_20260701`
-    - status: running; run ledger status is `running`
+    - status: completed with summary status `partial`; run ledger status is `partial`
     - scope: active unique-note source-normalized v1.2 five-segment dataset, `segment_workers=5`, up to `20` accepted units per segment, `failure_policy=partial`
     - purpose: test live Digest v23 parallel Highlights / Notes output with explicit `marginalia[].kind`
-    - report target: `reading-companion-backend/eval/runs/attentional_v2/digest_marginalia_v23_5book_parallel_20units_20260701/analysis/digest_marginalia_v23_5book_parallel_20units/marginalia_smoke_report.md`
+    - outcome: provider/network `network_blocked` stopped all five segments after recovery attempts; only `2` accepted runner units completed, both from `mangge_zhi_dao`, yielding `2` highlight Marginalia and no useful five-book v23 quality sample
+    - report: `reading-companion-backend/eval/runs/attentional_v2/digest_marginalia_v23_5book_parallel_20units_20260701/analysis/digest_marginalia_v23_5book_parallel_20units/marginalia_smoke_report.md`
   - active diagnostic evaluation:
     - run id: `attentional_v2_ingest_digest_unit_memory_full_diagnostic_20260603_parallel5`
     - job id: `bgjob_ingest_digest_unit_memory_full_diagnostic_20260603_parallel5`
