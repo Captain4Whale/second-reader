@@ -164,6 +164,14 @@ Last verified: `2026-07-01T20:07:00+08:00`
     - scheduling health: standard traces show `concurrency_strategy=fixed`, `profile_current_limit=24`, `provider_current_limit=24`, `profile_gate_wait_ms=0`, and `provider_gate_wait_ms=0` across `211` LLM trace rows, so the local scheduler bottleneck is resolved even though this diagnostic failed on one provider timeout
     - recovery follow-up: `DEC-145` changes future Digest Marginalia focused diagnostics to default `--failure-policy partial`; after provider-call retries exhaust, the runner retries the same unit once from the same cursor with a bounded timeout increase, then preserves the segment as `partial` if the transient failure persists while sibling segments and aggregate report generation continue
     - report: `reading-companion-backend/eval/runs/attentional_v2/digest_marginalia_v21_5book_parallel_20units_scheduler_fixed_retry1_20260630/analysis/digest_marginalia_v21_5book_parallel_20units_scheduler_fixed_retry1/marginalia_smoke_report.md`
+  - Digest v22 Marginalia five-book diagnostic:
+    - run id: `digest_marginalia_v22_5book_parallel_20units_20260701`
+    - job id: `bgjob_digest_marginalia_v22_5book_parallel_20units_20260701`
+    - status: running; run ledger status is `running`
+    - scope: active unique-note source-normalized v1.2 five-segment dataset, `segment_workers=5`, up to `20` accepted units per segment, `failure_policy=partial`
+    - purpose: compare the live durable portable cognitive gain / out-of-context-completeness / excerpt-necessity / selection-reason highlight-only gates in `attentional_v2.digest.v22` / promptset `attentional_v2-phase6-v82`
+    - early health: job registry shows the process alive; early standard LLM traces are `ok`, `concurrency_strategy=fixed`, `profile_gate_wait_ms=0`, and `provider_gate_wait_ms=0`, so the run is not locally scheduler-bound
+    - report target: `reading-companion-backend/eval/runs/attentional_v2/digest_marginalia_v22_5book_parallel_20units_20260701/analysis/digest_marginalia_v22_5book_parallel_20units/marginalia_smoke_report.md`
   - active diagnostic evaluation:
     - run id: `attentional_v2_ingest_digest_unit_memory_full_diagnostic_20260603_parallel5`
     - job id: `bgjob_ingest_digest_unit_memory_full_diagnostic_20260603_parallel5`

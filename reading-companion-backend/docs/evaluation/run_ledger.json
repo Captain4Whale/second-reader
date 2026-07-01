@@ -1,6 +1,6 @@
 {
   "schema_version": 1,
-  "updated_at": "2026-07-01T11:49:40.124115Z",
+  "updated_at": "2026-07-01T12:55:08.855467Z",
   "entries": [
     {
       "run_id": "attentional_v2_excerpt_surface_v1_1_judged_20260406",
@@ -3098,6 +3098,40 @@
         "supersedes": "digest_marginalia_v21_5book_parallel_20units_scheduler_fixed_20260630"
       },
       "updated_at": "2026-07-01T11:49:40.122781Z"
+    },
+    {
+      "run_id": "digest_marginalia_v22_5book_parallel_20units_20260701",
+      "date": "2026-07-01",
+      "surface": "digest_marginalia_live_smoke",
+      "lane": "mechanism_runtime",
+      "status": "running",
+      "mechanisms": [
+        "attentional_v2"
+      ],
+      "dataset_or_manifest": [
+        "state/eval_local_datasets/user_level_benchmarks/attentional_v2_user_level_selective_v1_repaired_20260629_source_norm_v1_2_unique_notes"
+      ],
+      "run_dir": "reading-companion-backend/eval/runs/attentional_v2/digest_marginalia_v22_5book_parallel_20units_20260701",
+      "summary_paths": {
+        "raw_summary": "reading-companion-backend/eval/runs/attentional_v2/digest_marginalia_v22_5book_parallel_20units_20260701/analysis/digest_marginalia_v22_5book_parallel_20units/raw/summary.json"
+      },
+      "job_ids": [
+        "bgjob_digest_marginalia_v22_5book_parallel_20units_20260701"
+      ],
+      "report_paths": [
+        "reading-companion-backend/eval/runs/attentional_v2/digest_marginalia_v22_5book_parallel_20units_20260701/analysis/digest_marginalia_v22_5book_parallel_20units/marginalia_smoke_report.md"
+      ],
+      "catalog_status": "not_cataloged",
+      "notes": "Running diagnostic-only five-book parallel Digest v22 Marginalia smoke over the active unique-note source-normalized user-level dataset. Uses failure-policy partial, segment_workers=5, units_per_segment=20, profile dataset_review_high_trust, max_output_tokens=4096, timeout_seconds=120, retry_attempts=3. Early health: process alive, standard LLM traces ok, fixed strategy with zero profile/provider gate wait. No formal judge or evidence catalog promotion.",
+      "parent_run_id": "",
+      "child_run_ids": [],
+      "synthetic": false,
+      "local_missing_allowed": [
+        "reading-companion-backend/eval/runs/attentional_v2/digest_marginalia_v22_5book_parallel_20units_20260701/analysis/digest_marginalia_v22_5book_parallel_20units/raw/summary.json",
+        "reading-companion-backend/eval/runs/attentional_v2/digest_marginalia_v22_5book_parallel_20units_20260701/analysis/digest_marginalia_v22_5book_parallel_20units/marginalia_smoke_report.md"
+      ],
+      "metadata": {},
+      "updated_at": "2026-07-01T12:55:08.854337Z"
     }
   ]
 }

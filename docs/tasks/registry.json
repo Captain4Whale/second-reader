@@ -97,7 +97,7 @@
         "bgjob_digest_marginalia_v21_5book_parallel_20units_scheduler_fixed_retry1_20260630"
       ],
       "acceptance_ref": "docs/implementation/new-reading-mechanism/ingest-select-next-unit-window-partition-draft-prompt.md",
-      "next_action": "Digest is live as `attentional_v2.digest.v22` / promptset `attentional_v2-phase6-v82` with unchanged output contract `digest_understanding_response_marginalia_json_v7`: canonical visible-note output is `marginalia[]`; highlight-only Marginalia uses empty/omitted `content` plus private inline `selection_reason`, and must pass durable portable cognitive gain, out-of-context-completeness, excerpt-necessity, and selection-reason tests; strong facts, emotional force, moral shock, or scene importance are not enough unless the quote itself crystallizes a reusable insight, distinction, mechanism, warning, model, or self-correction. Note-bearing Marginalia still asks for useful knowledge, context, or non-obvious connections that a thoughtful ordinary reader may not know, notice, or infer on their own. The old `bgjob_digest_marginalia_v21_5book_parallel_20units_20260630` completed under severe local `profile_gate_wait_ms` queueing and is superseded as quality evidence. The clean scheduler-fixed retry `bgjob_digest_marginalia_v21_5book_parallel_20units_scheduler_fixed_retry1_20260630` failed after `82` runner units because `nawaer_baodian_private_zh__segment_1` hit `llm_timeout`; scheduling itself held with fixed strategy, profile/provider limits `24`, and zero local gate wait across `211` trace rows. The Digest Marginalia smoke runner now defaults focused diagnostics to `--failure-policy partial`: transient LLM failures are retried once at the unit level from the same cursor and then preserved as segment-level partial evidence instead of failing the whole run. Next, rerun a v22 five-book diagnostic only when a fresh quality comparison is needed; use `--failure-policy strict` for formal acceptance lanes.",
+      "next_action": "Digest is live as `attentional_v2.digest.v22` / promptset `attentional_v2-phase6-v82` with unchanged output contract `digest_understanding_response_marginalia_json_v7`: canonical visible-note output is `marginalia[]`; highlight-only Marginalia uses empty/omitted `content` plus private inline `selection_reason`, and must pass durable portable cognitive gain, out-of-context-completeness, excerpt-necessity, and selection-reason tests; strong facts, emotional force, moral shock, or scene importance are not enough unless the quote itself crystallizes a reusable insight, distinction, mechanism, warning, model, or self-correction. Note-bearing Marginalia still asks for useful knowledge, context, or non-obvious connections that a thoughtful ordinary reader may not know, notice, or infer on their own. `bgjob_digest_marginalia_v22_5book_parallel_20units_20260701` is running the five-book, 20-unit, `segment_workers=5`, `failure_policy=partial` diagnostic over the active unique-note source-normalized dataset; early health is normal with fixed strategy and zero local/profile gate wait. After completion, archive/check the job, update the run ledger to `review_pending`, `partial`, or `failed`, and review whether the stronger highlight-only gate reduces strong-fact rationalization without suppressing dense conceptual nonfiction.",
       "blocked_by": [],
       "evidence_refs": [
         "docs/current-state.md",
@@ -160,7 +160,10 @@
         "reading-companion-backend/eval/runs/attentional_v2/attentional_v2_unit_memory_text_only_smoke_xidaduo_post_r16_aux_backing_20260606/analysis/unit_memory_post_r16_aux_backing_review/README.md"
       ],
       "last_updated": "2026-06-28T16:05:03+08:00",
-      "last_updated_by": "codex"
+      "last_updated_by": "codex",
+      "jobs": [
+        "bgjob_digest_marginalia_v22_5book_parallel_20units_20260701"
+      ]
     },
     {
       "id": "TASK-SECOND-READER-READ-PROMPT-XML-FULL-ACTIVE-DIAGNOSTIC-20260526",
