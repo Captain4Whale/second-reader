@@ -37,6 +37,8 @@ from src.reading_runtime.llm_gateway import (
     invoke_structured_output_tool,
     invoke_tool_loop_with_final_output,
     invoke_tool_loop_with_structured_output,
+    is_transient_llm_problem_code,
+    is_transient_reader_llm_error,
     llm_invocation_scope,
     parse_json_payload,
     runtime_trace_context,
@@ -471,6 +473,17 @@ def _pooled_primary_bindings(
 
 def _read_jsonl(path: Path) -> list[dict[str, Any]]:
     return [json.loads(line) for line in path.read_text(encoding="utf-8").splitlines() if line.strip()]
+
+
+def test_reader_llm_error_transient_policy_classifies_retryable_codes():
+    assert is_transient_llm_problem_code("llm_timeout") is True
+    assert is_transient_llm_problem_code("network_blocked") is True
+    assert is_transient_llm_problem_code("llm_quota") is True
+    assert is_transient_llm_problem_code("llm_contract") is False
+    assert is_transient_llm_problem_code("llm_auth") is False
+
+    assert is_transient_reader_llm_error(ReaderLLMError("timed out", problem_code="llm_timeout")) is True
+    assert is_transient_reader_llm_error(ReaderLLMError("bad schema", problem_code="llm_contract")) is False
 
 
 def test_parse_json_payload_recovers_double_quoted_strings_with_literal_newlines_and_trailing_commas():

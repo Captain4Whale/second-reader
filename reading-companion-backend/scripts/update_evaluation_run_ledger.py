@@ -30,6 +30,7 @@ ALLOWED_STATUSES = {
     "planned",
     "running",
     "completed",
+    "partial",
     "review_pending",
     "cataloged",
     "failed",

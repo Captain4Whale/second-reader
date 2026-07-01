@@ -4046,3 +4046,28 @@ This new direction is design frozen but not yet implemented as a formal benchmar
 - `reading-companion-backend/docs/evaluation/run_ledger.md`
 - `docs/current-state.md`
 - `docs/tasks/registry.md`
+
+## Entry 143
+**ID**: DEC-145
+**Status**: active
+
+**Decision / Inflection**: Make Digest Marginalia diagnostics resilient to transient LLM failures without hiding source coverage gaps.
+
+**Period**: July 1, 2026, after the scheduler-fixed Digest v21 five-book diagnostic proved that local gate wait was fixed but still failed the whole run when `nawaer_baodian_private_zh__segment_1` hit `llm_timeout` after gateway call-level retries were already exhausted.
+
+**Decision**: Digest Marginalia focused diagnostics now use a layered recovery model. The shared gateway still owns provider-call attempts, with `retry_attempts` defined as total attempts including the first call. The smoke runner defaults to `--failure-policy partial`; for transient `ReaderLLMError` codes (`llm_timeout`, `network_blocked`, exhausted `llm_quota`) it retries the same unit once from the same cursor with bounded timeout escalation. If recovery still fails, it stops only that segment at the current cursor, records `partial_failures[]`, `unit_recovery_attempts`, `recovered_units`, and final cursor metadata, lets sibling segments continue, writes the aggregate report, and exits successfully with summary status `partial`. Strict lanes can opt into `--failure-policy strict`, where the same transient segment failure remains a hard nonzero failure.
+
+**Boundary**: This is diagnostic/eval-runner recovery behavior plus shared transient-error classification. It does not change Ingest/Digest prompts, output contracts, Unit Memory retrieval semantics, source normalization, frontend/public API, or source cursor safety. Ingest failures remain non-skippable: after recovery is exhausted, the runner stops at the current cursor rather than advancing over unread text. Non-transient failures such as `llm_contract`, invalid boundary/schema, unresolved quotes, unexpected prompt/version/schema, or non-LLM exceptions remain hard failures.
+
+**Why this path won**: The failed v21 run had useful evidence from four full segments and part of the fifth, but the old runner discarded the diagnostic as a whole-run failure after one provider timeout. Treating transient LLM exhaustion as segment-level partial completion preserves evidence honestly while avoiding source corruption. Keeping strict mode available preserves the sharper semantics needed for formal acceptance or catalog-promotion lanes.
+
+**Primary evidence**:
+- `reading-companion-backend/eval/attentional_v2/run_digest_marginalia_live_smoke.py`
+- `reading-companion-backend/src/reading_runtime/llm_gateway.py`
+- `reading-companion-backend/src/iterator_reader/llm_utils.py`
+- `reading-companion-backend/scripts/update_evaluation_run_ledger.py`
+- `reading-companion-backend/tests/test_digest_marginalia_live_smoke_runner.py`
+- `reading-companion-backend/tests/test_llm_gateway.py`
+- `docs/backend-reader-evaluation.md`
+- `docs/current-state.md`
+- `docs/tasks/registry.md`

@@ -9,7 +9,9 @@ from eval.attentional_v2.run_digest_marginalia_live_smoke import (
     _direct_probes_for_set,
     _llm_call_overrides,
     _load_dataset_segment,
+    _partial_failures,
     _summarize_marginalia,
+    _unit_recovery_timeout_seconds,
     build_summary,
     build_parser,
     run_focused_segments,
@@ -73,8 +75,15 @@ def test_segment_id_append_uses_defaults_only_when_unspecified():
 
     assert default_args.segment_id is None
     assert default_args.segment_workers == 1
+    assert default_args.failure_policy == "partial"
+    assert default_args.unit_recovery_attempts == 1
     assert list(explicit_args.segment_id or DEFAULT_FOCUSED_SEGMENTS) == ["xidaduo_private_zh__segment_1"]
     assert explicit_args.segment_workers == 5
+
+
+def test_unit_recovery_timeout_escalates_with_cap():
+    assert _unit_recovery_timeout_seconds(120) == 180
+    assert _unit_recovery_timeout_seconds(260) == 300
 
 
 def test_llm_overrides_do_not_force_single_call_concurrency():
@@ -117,6 +126,8 @@ def test_parallel_focused_segments_preserve_requested_order(monkeypatch, tmp_pat
         timeout_seconds=120,
         retry_attempts=3,
         segment_workers=3,
+        failure_policy="partial",
+        unit_recovery_attempts=1,
     )
 
     assert set(seen) == {"segment_a", "segment_b", "segment_c"}
@@ -176,6 +187,74 @@ def test_summary_treats_no_highlight_only_as_caveat_not_failure():
     assert summary["hard_failures"] == []
     assert summary["highlight_only_observed"] is False
     assert summary["direct_probe_set"] == "calibration"
+
+
+def test_summary_treats_transient_segment_stop_as_partial_not_hard_failure():
+    runner_results = [
+        {
+            "segment_id": "nawaer_baodian_private_zh__segment_1",
+            "book_title": "纳瓦尔宝典",
+            "status": "partial",
+            "stop_reason": "llm_timeout",
+            "unit_count": 2,
+            "final_cursor": {"paragraph_index": 9, "char_offset": 0},
+            "unit_recovery_attempts": 1,
+            "recovered_units": [{"unit_index": 1}],
+            "partial_failures": [
+                {
+                    "unit_index": 3,
+                    "problem_code": "llm_timeout",
+                    "final_cursor": {"paragraph_index": 9, "char_offset": 0},
+                }
+            ],
+            "units": [],
+            "runtime_artifacts": {"read_audit_count": 2, "unit_memory_entry_count": 2},
+        }
+    ]
+
+    summary = build_summary(
+        mode="focused",
+        direct_probe_set="calibration",
+        direct_results=[],
+        runner_results=runner_results,
+        run_id="run",
+        analysis_id="analysis",
+        job_id="job",
+    )
+
+    assert summary["status"] == "partial"
+    assert summary["hard_failures"] == []
+    assert summary["partial_segment_count"] == 1
+    assert summary["unit_recovery_attempts"] == 1
+    assert summary["recovered_unit_count"] == 1
+    assert _partial_failures(runner_results)[0]["segment_id"] == "nawaer_baodian_private_zh__segment_1"
+
+
+def test_summary_keeps_strict_segment_failure_hard():
+    runner_results = [
+        {
+            "segment_id": "nawaer_baodian_private_zh__segment_1",
+            "status": "failed",
+            "stop_reason": "llm_timeout",
+            "unit_count": 2,
+            "units": [],
+            "runtime_artifacts": {"read_audit_count": 2, "unit_memory_entry_count": 2},
+        }
+    ]
+
+    summary = build_summary(
+        mode="focused",
+        direct_probe_set="calibration",
+        direct_results=[],
+        runner_results=runner_results,
+        run_id="run",
+        analysis_id="analysis",
+        job_id="job",
+        failure_policy="strict",
+    )
+
+    assert summary["status"] == "fail"
+    assert "runner_failed:nawaer_baodian_private_zh__segment_1:llm_timeout" in summary["hard_failures"]
 
 
 def test_hard_failures_catches_legacy_field_leak_and_unresolved_quote():

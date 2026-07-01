@@ -55,6 +55,23 @@ class ReaderLLMError(RuntimeError):
         self.problem_code = problem_code
 
 
+TRANSIENT_LLM_PROBLEM_CODES: frozenset[CurrentReadingProblemCode] = frozenset(
+    {"llm_timeout", "llm_quota", "network_blocked"}
+)
+
+
+def is_transient_llm_problem_code(value: object) -> bool:
+    """Return whether a normalized LLM problem is retryable at a higher layer."""
+
+    return str(value or "") in TRANSIENT_LLM_PROBLEM_CODES
+
+
+def is_transient_reader_llm_error(exc: BaseException) -> bool:
+    """Return whether a ReaderLLMError can be retried without moving source cursor."""
+
+    return isinstance(exc, ReaderLLMError) and is_transient_llm_problem_code(exc.problem_code)
+
+
 class JsonlTraceSink:
     """Append-only JSONL sink used by runtime and eval traces."""
 
@@ -3124,6 +3141,8 @@ __all__ = [
     "invoke_structured_output_tool",
     "invoke_text",
     "invoke_tool_loop_with_final_output",
+    "is_transient_llm_problem_code",
+    "is_transient_reader_llm_error",
     "llm_invocation_scope",
     "parse_json_payload",
     "response_text",

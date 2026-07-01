@@ -100,7 +100,7 @@ from src.attentional_v2.storage import (  # noqa: E402
     unit_span_ledger_file,
 )
 from src.attentional_v2.unit_memory import resolve_memory_retrieval_config  # noqa: E402
-from src.iterator_reader.llm_utils import ReaderLLMError  # noqa: E402
+from src.iterator_reader.llm_utils import ReaderLLMError, is_transient_reader_llm_error  # noqa: E402
 from src.reading_core.book_document import BookDocument  # noqa: E402
 from src.reading_core.sentences import build_sentence_records  # noqa: E402
 from src.reading_core.storage import book_document_file, save_book_document  # noqa: E402
@@ -490,6 +490,12 @@ def _llm_call_overrides(
     )
 
 
+def _unit_recovery_timeout_seconds(timeout_seconds: int) -> int:
+    base = max(1, int(timeout_seconds or 1))
+    escalated = max(base + 60, (base * 3 + 1) // 2)
+    return min(300, escalated)
+
+
 def run_direct_digest_smoke(
     *,
     analysis_root: Path,
@@ -759,6 +765,8 @@ def run_segment_units(
     max_output_tokens: int,
     timeout_seconds: int,
     retry_attempts: int,
+    failure_policy: str = "partial",
+    unit_recovery_attempts: int = 1,
 ) -> dict[str, object]:
     segment = _load_dataset_segment(dataset_root, segment_id)
     chapter = dict(segment["chapter"]) if isinstance(segment.get("chapter"), Mapping) else {}
@@ -792,6 +800,9 @@ def run_segment_units(
     chapter_ref = _chapter_ref(chapter)
     cursor = first_cursor_for_chapter(chapter)
     units: list[dict[str, object]] = []
+    partial_failures: list[dict[str, object]] = []
+    recovered_units: list[dict[str, object]] = []
+    unit_recovery_attempt_count = 0
     status = "ok"
     stop_reason = "unit_limit"
     started_at = _now()
@@ -799,98 +810,146 @@ def run_segment_units(
         if cursor_at_or_after_chapter_end(chapter, cursor):
             stop_reason = "chapter_end"
             break
-        trace_context = eval_trace_context(
-            analysis_root,
-            eval_target="digest_marginalia_v21_live_smoke",
-            stage="focused_runner",
-            node=f"{segment_id}_unit_{unit_index:03d}",
-            extra={"segment_id": segment_id, "unit_index": unit_index},
-        )
-        overrides = _llm_call_overrides(
-            max_output_tokens=max_output_tokens,
-            timeout_seconds=timeout_seconds,
-            retry_attempts=retry_attempts,
-        )
         unit_started = time.perf_counter()
-        try:
-            with llm_invocation_scope(
-                profile_id=profile_id,
-                trace_context=trace_context,
-                overrides=overrides,
-                required_stable_concurrency=1,
-            ):
-                prepared_source_unit = prepare_next_source_unit_for_read(
-                    current_chapter=chapter,
-                    current_cursor=dict(cursor),
-                    local_buffer=local_buffer,  # type: ignore[arg-type]
-                    continuation_capsule=dict(bundle.get("continuation_capsule", {})),
-                    active_attention=active_attention,  # type: ignore[arg-type]
-                    recent_reading_memory=recent_reading_memory,  # type: ignore[arg-type]
-                    reflective_frames=reflective_frames,  # type: ignore[arg-type]
-                    reaction_records=reaction_records,  # type: ignore[arg-type]
-                    local_continuity=local_continuity,  # type: ignore[arg-type]
-                    reader_policy=reader_policy,  # type: ignore[arg-type]
-                    output_language=_clean_text(segment.get("output_language")) or "zh",
-                    output_dir=output_dir,
-                    book_title=_clean_text(segment.get("book_title")),
-                    author=_clean_text(segment.get("author")),
-                    book_id=segment_id,
-                    memory_retrieval_config=memory_retrieval_config,
-                )
-                settled_unit = _settle_next_unit(
-                    prepared_source_unit=prepared_source_unit,
-                    chapter_lookup=chapter_lookup,
-                    local_buffer=local_buffer,  # type: ignore[arg-type]
-                    local_continuity=local_continuity,  # type: ignore[arg-type]
-                    continuation_capsule=dict(bundle.get("continuation_capsule", {})),
-                    active_attention=active_attention,  # type: ignore[arg-type]
-                    recent_reading_memory=recent_reading_memory,  # type: ignore[arg-type]
-                    reflective_frames=reflective_frames,  # type: ignore[arg-type]
-                    knowledge_activations=knowledge_activations,  # type: ignore[arg-type]
-                    reaction_records=reaction_records,  # type: ignore[arg-type]
-                    reconsolidation_records=reconsolidation_records,
-                    reader_policy=reader_policy,  # type: ignore[arg-type]
-                    output_language=_clean_text(segment.get("output_language")) or "zh",
-                    output_dir=output_dir,
-                    provisioned=provisioned,
-                    bundle=bundle,  # type: ignore[arg-type]
-                    memory_retrieval_config=memory_retrieval_config,
-                    reading_queue_stage="marginalia_live_smoke",
-                    total_chapters=1,
-                    completed_chapters=0,
-                    memory_quality_probe_config=None,
-                    ordered_probe_sentence_ids=[],
-                    meaning_units_in_chapter=[],
-                    already_ingested_sentence_ids=set(),
-                    capture_memory_probe=False,
-                )
-        except ReaderLLMError as exc:
-            status = "failed"
-            stop_reason = _clean_text(getattr(exc, "problem_code", "")) or "reader_llm_error"
-            units.append(
-                {
+        unit_recovery_events: list[dict[str, object]] = []
+        settled_unit: dict[str, object] | None = None
+        max_unit_attempts = max(0, int(unit_recovery_attempts or 0)) + 1
+        for unit_attempt in range(max_unit_attempts):
+            attempt_timeout_seconds = timeout_seconds if unit_attempt == 0 else _unit_recovery_timeout_seconds(timeout_seconds)
+            trace_context = eval_trace_context(
+                analysis_root,
+                eval_target="digest_marginalia_v21_live_smoke",
+                stage="focused_runner",
+                node=f"{segment_id}_unit_{unit_index:03d}_attempt_{unit_attempt + 1}",
+                extra={
+                    "segment_id": segment_id,
                     "unit_index": unit_index,
-                    "status": "failed",
+                    "unit_attempt": unit_attempt + 1,
+                    "unit_recovery_attempt": unit_attempt,
+                    "failure_policy": failure_policy,
+                },
+            )
+            overrides = _llm_call_overrides(
+                max_output_tokens=max_output_tokens,
+                timeout_seconds=attempt_timeout_seconds,
+                retry_attempts=retry_attempts,
+            )
+            try:
+                with llm_invocation_scope(
+                    profile_id=profile_id,
+                    trace_context=trace_context,
+                    overrides=overrides,
+                    required_stable_concurrency=1,
+                ):
+                    prepared_source_unit = prepare_next_source_unit_for_read(
+                        current_chapter=chapter,
+                        current_cursor=dict(cursor),
+                        local_buffer=local_buffer,  # type: ignore[arg-type]
+                        continuation_capsule=dict(bundle.get("continuation_capsule", {})),
+                        active_attention=active_attention,  # type: ignore[arg-type]
+                        recent_reading_memory=recent_reading_memory,  # type: ignore[arg-type]
+                        reflective_frames=reflective_frames,  # type: ignore[arg-type]
+                        reaction_records=reaction_records,  # type: ignore[arg-type]
+                        local_continuity=local_continuity,  # type: ignore[arg-type]
+                        reader_policy=reader_policy,  # type: ignore[arg-type]
+                        output_language=_clean_text(segment.get("output_language")) or "zh",
+                        output_dir=output_dir,
+                        book_title=_clean_text(segment.get("book_title")),
+                        author=_clean_text(segment.get("author")),
+                        book_id=segment_id,
+                        memory_retrieval_config=memory_retrieval_config,
+                    )
+                    settled_unit = _settle_next_unit(
+                        prepared_source_unit=prepared_source_unit,
+                        chapter_lookup=chapter_lookup,
+                        local_buffer=local_buffer,  # type: ignore[arg-type]
+                        local_continuity=local_continuity,  # type: ignore[arg-type]
+                        continuation_capsule=dict(bundle.get("continuation_capsule", {})),
+                        active_attention=active_attention,  # type: ignore[arg-type]
+                        recent_reading_memory=recent_reading_memory,  # type: ignore[arg-type]
+                        reflective_frames=reflective_frames,  # type: ignore[arg-type]
+                        knowledge_activations=knowledge_activations,  # type: ignore[arg-type]
+                        reaction_records=reaction_records,  # type: ignore[arg-type]
+                        reconsolidation_records=reconsolidation_records,
+                        reader_policy=reader_policy,  # type: ignore[arg-type]
+                        output_language=_clean_text(segment.get("output_language")) or "zh",
+                        output_dir=output_dir,
+                        provisioned=provisioned,
+                        bundle=bundle,  # type: ignore[arg-type]
+                        memory_retrieval_config=memory_retrieval_config,
+                        reading_queue_stage="marginalia_live_smoke",
+                        total_chapters=1,
+                        completed_chapters=0,
+                        memory_quality_probe_config=None,
+                        ordered_probe_sentence_ids=[],
+                        meaning_units_in_chapter=[],
+                        already_ingested_sentence_ids=set(),
+                        capture_memory_probe=False,
+                    )
+                if unit_attempt > 0:
+                    recovered_units.append(
+                        {
+                            "unit_index": unit_index,
+                            "start_cursor": dict(cursor),
+                            "recovery_attempt": unit_attempt,
+                            "timeout_seconds": attempt_timeout_seconds,
+                        }
+                    )
+                break
+            except ReaderLLMError as exc:
+                problem_code = _clean_text(getattr(exc, "problem_code", "")) or "reader_llm_error"
+                transient = is_transient_reader_llm_error(exc)
+                event = {
+                    "attempt": unit_attempt + 1,
+                    "recovery_attempt": unit_attempt,
+                    "problem_code": problem_code,
+                    "transient": transient,
+                    "timeout_seconds": attempt_timeout_seconds,
+                    "error": str(exc),
+                }
+                unit_recovery_events.append(event)
+                if transient and unit_attempt + 1 < max_unit_attempts:
+                    unit_recovery_attempt_count += 1
+                    continue
+                status = "partial" if transient and failure_policy == "partial" else "failed"
+                stop_reason = problem_code
+                failure_record = {
+                    "unit_index": unit_index,
+                    "status": status,
                     "problem_code": stop_reason,
                     "error": str(exc),
+                    "transient": transient,
+                    "failure_policy": failure_policy,
                     "start_cursor": dict(cursor),
+                    "final_cursor": dict(cursor),
                     "duration_seconds": round(time.perf_counter() - unit_started, 3),
+                    "unit_recovery_attempts": len(unit_recovery_events) - 1,
+                    "recovery_events": unit_recovery_events,
                 }
-            )
-            break
-        except Exception as exc:  # noqa: BLE001 - smoke runner should record the failure class.
-            status = "failed"
-            stop_reason = f"exception:{type(exc).__name__}"
-            units.append(
-                {
-                    "unit_index": unit_index,
-                    "status": "failed",
-                    "problem_code": stop_reason,
-                    "error": str(exc),
-                    "start_cursor": dict(cursor),
-                    "duration_seconds": round(time.perf_counter() - unit_started, 3),
-                }
-            )
+                units.append(failure_record)
+                if status == "partial":
+                    partial_failures.append(failure_record)
+                break
+            except Exception as exc:  # noqa: BLE001 - smoke runner should record the failure class.
+                status = "failed"
+                stop_reason = f"exception:{type(exc).__name__}"
+                units.append(
+                    {
+                        "unit_index": unit_index,
+                        "status": "failed",
+                        "problem_code": stop_reason,
+                        "error": str(exc),
+                        "transient": False,
+                        "failure_policy": failure_policy,
+                        "start_cursor": dict(cursor),
+                        "final_cursor": dict(cursor),
+                        "duration_seconds": round(time.perf_counter() - unit_started, 3),
+                        "unit_recovery_attempts": len(unit_recovery_events),
+                        "recovery_events": unit_recovery_events,
+                    }
+                )
+                break
+        if settled_unit is None:
             break
 
         local_buffer = settled_unit["local_buffer"]  # type: ignore[assignment]
@@ -928,6 +987,9 @@ def run_segment_units(
                 "status": "ok",
                 "duration_seconds": round(time.perf_counter() - unit_started, 3),
                 "start_cursor": dict(cursor),
+                "unit_recovery_attempts": len(unit_recovery_events),
+                "recovery_events": unit_recovery_events,
+                "recovered": bool(unit_recovery_events),
                 "end_cursor": dict(settled_unit.get("source_cursor", {}))
                 if isinstance(settled_unit.get("source_cursor"), Mapping)
                 else {},
@@ -973,6 +1035,11 @@ def run_segment_units(
         "started_at": started_at,
         "finished_at": _now(),
         "unit_count": len([unit for unit in units if unit.get("status") == "ok"]),
+        "final_cursor": dict(cursor),
+        "failure_policy": failure_policy,
+        "unit_recovery_attempts": unit_recovery_attempt_count,
+        "recovered_units": recovered_units,
+        "partial_failures": partial_failures,
         "units": units,
         "runtime_artifacts": _runtime_artifact_summary(output_dir),
     }
@@ -989,6 +1056,8 @@ def run_focused_segments(
     timeout_seconds: int,
     retry_attempts: int,
     segment_workers: int,
+    failure_policy: str = "partial",
+    unit_recovery_attempts: int = 1,
 ) -> list[dict[str, object]]:
     ordered_segment_ids = list(segment_ids)
     if not ordered_segment_ids:
@@ -1005,6 +1074,8 @@ def run_focused_segments(
                 max_output_tokens=max_output_tokens,
                 timeout_seconds=timeout_seconds,
                 retry_attempts=retry_attempts,
+                failure_policy=failure_policy,
+                unit_recovery_attempts=unit_recovery_attempts,
             )
         except Exception as exc:  # noqa: BLE001 - preserve one segment failure without hiding sibling results.
             return {
@@ -1015,6 +1086,11 @@ def run_focused_segments(
                 "started_at": "",
                 "finished_at": _now(),
                 "unit_count": 0,
+                "final_cursor": {},
+                "failure_policy": failure_policy,
+                "unit_recovery_attempts": 0,
+                "recovered_units": [],
+                "partial_failures": [],
                 "units": [],
                 "runtime_artifacts": {},
             }
@@ -1072,13 +1148,15 @@ def _hard_failures(direct_results: list[dict[str, object]], runner_results: list
             if isinstance(item, Mapping) and "missing_selection_reason" in item.get("quality_flags", []):
                 failures.append(f"direct_missing_selection_reason:{result.get('probe_id')}:{item.get('index')}")
     for segment in runner_results:
-        if segment.get("status") != "ok":
+        segment_status = _clean_text(segment.get("status"))
+        if segment_status not in {"ok", "partial"}:
             failures.append(f"runner_failed:{segment.get('segment_id')}:{segment.get('stop_reason')}")
         artifact_summary = segment.get("runtime_artifacts")
         artifact_summary = dict(artifact_summary) if isinstance(artifact_summary, Mapping) else {}
-        if int(artifact_summary.get("read_audit_count", 0) or 0) <= 0:
+        segment_unit_count = int(segment.get("unit_count", 0) or 0)
+        if segment_unit_count > 0 and int(artifact_summary.get("read_audit_count", 0) or 0) <= 0:
             failures.append(f"missing_read_audit:{segment.get('segment_id')}")
-        if int(artifact_summary.get("unit_memory_entry_count", 0) or 0) < int(segment.get("unit_count", 0) or 0):
+        if int(artifact_summary.get("unit_memory_entry_count", 0) or 0) < segment_unit_count:
             failures.append(f"unit_memory_entry_missing:{segment.get('segment_id')}")
         for unit in segment.get("units", []):
             if not isinstance(unit, Mapping) or unit.get("status") != "ok":
@@ -1093,6 +1171,36 @@ def _hard_failures(direct_results: list[dict[str, object]], runner_results: list
     return failures
 
 
+def _partial_failures(runner_results: list[dict[str, object]]) -> list[dict[str, object]]:
+    failures: list[dict[str, object]] = []
+    for segment in runner_results:
+        if segment.get("status") != "partial":
+            continue
+        segment_failures = segment.get("partial_failures")
+        if isinstance(segment_failures, list) and segment_failures:
+            for failure in segment_failures:
+                if isinstance(failure, Mapping):
+                    failures.append(
+                        {
+                            "segment_id": segment.get("segment_id"),
+                            "book_title": segment.get("book_title"),
+                            "stop_reason": segment.get("stop_reason"),
+                            "final_cursor": segment.get("final_cursor"),
+                            **dict(failure),
+                        }
+                    )
+        else:
+            failures.append(
+                {
+                    "segment_id": segment.get("segment_id"),
+                    "book_title": segment.get("book_title"),
+                    "stop_reason": segment.get("stop_reason"),
+                    "final_cursor": segment.get("final_cursor"),
+                }
+            )
+    return failures
+
+
 def build_summary(
     *,
     mode: str,
@@ -1102,6 +1210,7 @@ def build_summary(
     run_id: str,
     analysis_id: str,
     job_id: str,
+    failure_policy: str = "partial",
 ) -> dict[str, object]:
     all_items = _all_marginalia_items(direct_results, runner_results)
     kind_counts: dict[str, int] = {}
@@ -1114,7 +1223,10 @@ def build_summary(
             if flag_text:
                 flag_counts[flag_text] = flag_counts.get(flag_text, 0) + 1
     failures = _hard_failures(direct_results, runner_results)
+    partial_failures = _partial_failures(runner_results)
     status = "pass" if not failures else "fail"
+    if status == "pass" and partial_failures:
+        status = "partial"
     if status == "pass" and flag_counts:
         status = "pass_with_caveats"
     if status == "pass" and kind_counts.get("highlight_only", 0) == 0:
@@ -1124,6 +1236,7 @@ def build_summary(
         "analysis_id": analysis_id,
         "job_id": job_id,
         "mode": mode,
+        "failure_policy": failure_policy,
         "direct_probe_set": direct_probe_set,
         "status": status,
         "generated_at": _now(),
@@ -1137,6 +1250,14 @@ def build_summary(
         "marginalia_kind_counts": kind_counts,
         "quality_flag_counts": flag_counts,
         "hard_failures": failures,
+        "partial_failures": partial_failures,
+        "partial_segment_count": sum(1 for result in runner_results if result.get("status") == "partial"),
+        "unit_recovery_attempts": sum(int(result.get("unit_recovery_attempts", 0) or 0) for result in runner_results),
+        "recovered_unit_count": sum(
+            len(result.get("recovered_units", []))
+            for result in runner_results
+            if isinstance(result.get("recovered_units"), list)
+        ),
         "highlight_only_observed": kind_counts.get("highlight_only", 0) > 0,
     }
 
@@ -1155,10 +1276,14 @@ def render_report(
         f"- run_id: `{summary.get('run_id')}`",
         f"- prompt: `{summary.get('prompt_version')}` / `{summary.get('promptset_version')}`",
         f"- output_contract: `{summary.get('output_contract')}`",
+        f"- failure_policy: `{summary.get('failure_policy')}`",
         f"- direct_probe_set: `{summary.get('direct_probe_set')}`",
         f"- direct probes: `{summary.get('direct_probe_count')}`",
         f"- runner segments: `{summary.get('runner_segment_count')}`",
         f"- runner units: `{summary.get('runner_unit_count')}`",
+        f"- partial segments: `{summary.get('partial_segment_count')}`",
+        f"- unit recovery attempts: `{summary.get('unit_recovery_attempts')}`",
+        f"- recovered units: `{summary.get('recovered_unit_count')}`",
         f"- marginalia count: `{summary.get('marginalia_count')}`",
         f"- marginalia kinds: `{json.dumps(summary.get('marginalia_kind_counts', {}), ensure_ascii=False)}`",
         f"- quality flags: `{json.dumps(summary.get('quality_flag_counts', {}), ensure_ascii=False)}`",
@@ -1169,6 +1294,20 @@ def render_report(
     if isinstance(failures, list) and failures:
         lines.extend(["## Hard Failures", ""])
         lines.extend(f"- `{failure}`" for failure in failures)
+        lines.append("")
+    partial_failures = summary.get("partial_failures")
+    if isinstance(partial_failures, list) and partial_failures:
+        lines.extend(["## Partial Failures", ""])
+        for failure in partial_failures:
+            if not isinstance(failure, Mapping):
+                continue
+            lines.append(
+                "- "
+                f"segment=`{failure.get('segment_id')}` "
+                f"unit=`{failure.get('unit_index')}` "
+                f"problem=`{failure.get('problem_code') or failure.get('stop_reason')}` "
+                f"final_cursor=`{json.dumps(failure.get('final_cursor', {}), ensure_ascii=False)}`"
+            )
         lines.append("")
     lines.extend(["## Direct Digest Contract Probes", ""])
     for result in direct_results:
@@ -1217,9 +1356,26 @@ def render_report(
                 f"- status: `{segment.get('status')}`",
                 f"- stop_reason: `{segment.get('stop_reason')}`",
                 f"- unit_count: `{segment.get('unit_count')}`",
+                f"- final_cursor: `{json.dumps(segment.get('final_cursor', {}), ensure_ascii=False)}`",
+                f"- unit_recovery_attempts: `{segment.get('unit_recovery_attempts', 0)}`",
+                f"- recovered_units: `{len(segment.get('recovered_units', [])) if isinstance(segment.get('recovered_units'), list) else 0}`",
                 "",
             ]
         )
+        segment_partials = segment.get("partial_failures")
+        if isinstance(segment_partials, list) and segment_partials:
+            lines.extend(["**Partial Segment Stop**", ""])
+            for failure in segment_partials:
+                if not isinstance(failure, Mapping):
+                    continue
+                lines.append(
+                    "- "
+                    f"unit=`{failure.get('unit_index')}` "
+                    f"problem=`{failure.get('problem_code')}` "
+                    f"attempts=`{failure.get('unit_recovery_attempts')}` "
+                    f"cursor=`{json.dumps(failure.get('final_cursor', {}), ensure_ascii=False)}`"
+                )
+            lines.append("")
         artifact_summary = segment.get("runtime_artifacts")
         if isinstance(artifact_summary, Mapping):
             lines.extend(
@@ -1242,6 +1398,8 @@ def render_report(
                     f"#### Unit {unit.get('unit_index')}",
                     f"- status: `{unit.get('status')}`",
                     f"- span: `{unit.get('span')}`",
+                    f"- recovered: `{unit.get('recovered', False)}`",
+                    f"- unit_recovery_attempts: `{unit.get('unit_recovery_attempts', 0)}`",
                     f"- marginalia_count: `{unit.get('marginalia_count')}`",
                     "",
                     "```text",
@@ -1295,6 +1453,7 @@ def _write_outputs(
     run_id: str,
     analysis_id: str,
     job_id: str,
+    failure_policy: str = "partial",
     direct_results: list[dict[str, object]],
     runner_results: list[dict[str, object]],
 ) -> dict[str, object]:
@@ -1320,6 +1479,7 @@ def _write_outputs(
         run_id=run_id,
         analysis_id=analysis_id,
         job_id=job_id,
+        failure_policy=failure_policy,
     )
     _json_dump(raw_dir / "summary.json", summary)
     report = render_report(
@@ -1344,9 +1504,11 @@ def _status_payload(
         "analysis_id": args.analysis_id,
         "job_id": args.job_id,
         "mode": args.mode,
+        "failure_policy": args.failure_policy,
         "direct_probe_set": args.direct_probe_set,
         "segment_ids": list(args.segment_id or DEFAULT_FOCUSED_SEGMENTS),
         "segment_workers": args.segment_workers,
+        "unit_recovery_attempts": args.unit_recovery_attempts,
         "updated_at": _now(),
         "analysis_root": str(_analysis_root(args.run_id, args.analysis_id).relative_to(BACKEND_ROOT)),
         "report": str((_analysis_root(args.run_id, args.analysis_id) / "marginalia_smoke_report.md").relative_to(BACKEND_ROOT)),
@@ -1387,6 +1549,8 @@ def run(args: argparse.Namespace) -> int:
                     max_output_tokens=args.max_output_tokens,
                     timeout_seconds=args.timeout_seconds,
                     retry_attempts=args.retry_attempts,
+                    failure_policy=args.failure_policy,
+                    unit_recovery_attempts=args.unit_recovery_attempts,
                 )
             ]
         if args.mode in {"focused", "all"}:
@@ -1401,6 +1565,8 @@ def run(args: argparse.Namespace) -> int:
                 timeout_seconds=args.timeout_seconds,
                 retry_attempts=args.retry_attempts,
                 segment_workers=args.segment_workers,
+                failure_policy=args.failure_policy,
+                unit_recovery_attempts=args.unit_recovery_attempts,
             )
         summary = _write_outputs(
             analysis_root=analysis_root,
@@ -1409,6 +1575,7 @@ def run(args: argparse.Namespace) -> int:
             run_id=args.run_id,
             analysis_id=args.analysis_id,
             job_id=args.job_id,
+            failure_policy=args.failure_policy,
             direct_results=direct_results,
             runner_results=runner_results,
         )
@@ -1436,6 +1603,8 @@ def build_parser() -> argparse.ArgumentParser:
     parser.add_argument("--max-output-tokens", type=int, default=4096)
     parser.add_argument("--timeout-seconds", type=int, default=120)
     parser.add_argument("--retry-attempts", type=int, default=3)
+    parser.add_argument("--failure-policy", choices=["partial", "strict"], default="partial")
+    parser.add_argument("--unit-recovery-attempts", type=int, default=1)
     return parser
 
 

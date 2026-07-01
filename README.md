@@ -88,6 +88,7 @@ Recommended local LLM setup:
     - sibling Python processes now share a pooled-tier dispatch cursor under `BACKEND_RUNTIME_ROOT/state/llm_gateway/tier_dispatch/`, so future launches do not all restart from the first target in the tier
     - already-running scopes are not rebalanced mid-flight; if you want a live job to pick up new pooled-routing behavior, relaunch that job
   - this is the file where you choose which target tier policy each profile uses and any profile-level overrides such as `temperature`, `max_output_tokens`, `retry_attempts`, `max_concurrency`, `quota_retry_attempts`, and `quota_wait_budget_seconds`
+  - `retry_attempts` means total provider-call attempts, including the first call; for example, `retry_attempts: 3` means one initial try plus up to two call-level retries before a higher runner layer decides whether to recover, partialize, or fail
   - `provider_options` may also be set per profile; profile options override target options at invocation time
 
 Recommended tiered binding shape:

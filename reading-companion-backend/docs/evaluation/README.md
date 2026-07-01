@@ -23,7 +23,7 @@ This split is intentional:
 
 Use [run_ledger.md](./run_ledger.md) when asking "what evals have we run, when did they run, what status did they reach, and where are the artifacts/reports?"
 
-- The ledger can include completed, failed, abandoned, invalidated, synthetic parent, and review-pending runs.
+- The ledger can include completed, partial, failed, abandoned, invalidated, synthetic parent, and review-pending runs.
 - It does not make a run trusted evidence and does not promote Long Span vNext to formal authority.
 - It intentionally sits between raw artifacts and the evidence catalog: broader than `evidence_catalog.*`, narrower and more curated than listing every debug/dryrun directory under `eval/runs/`.
 - Update it with:
