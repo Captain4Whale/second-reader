@@ -7,7 +7,7 @@ Update when: task status, priority, blockers, decision refs, job refs, evidence 
 
 This document is the human-readable companion to `docs/tasks/registry.json`.
 
-Last updated: `2026-07-01T20:07:00+08:00`
+Last updated: `2026-07-02T01:07:21+08:00`
 
 ## Status Values
 - `active`
@@ -25,7 +25,7 @@ Last updated: `2026-07-01T20:07:00+08:00`
 - Lane: `mechanism_runtime`
 - Priority: `high`
 - Detail: `docs/current-state.md`
-- Next: Digest is live as `attentional_v2.digest.v23` / promptset `attentional_v2-phase6-v83` / output contract `digest_understanding_response_marginalia_json_v8`: canonical visible-note output remains `marginalia[]`, but new live items now require explicit `kind: "highlight" | "note"`. Highlights preserve exact source text worth carrying forward by itself, require private `selection_reason`, and keep `content` empty/omitted; Notes attach reader-facing cognitive surplus to a precise source anchor and require non-empty visible `content`. Digest scans Highlights and Notes as two independent reader actions, their quotes may overlap, and runtime preserves legacy `annotations[]`, old no-kind payloads, and top-level `marginalia_audit[]` as compatibility input only. The five-book v22 diagnostic remains the latest reviewed live-run evidence; next run should test whether v23 increases useful Notes without weakening the tightened Highlight gate.
+- Next: Digest is live as `attentional_v2.digest.v23` / promptset `attentional_v2-phase6-v83` / output contract `digest_understanding_response_marginalia_json_v8`: canonical visible-note output remains `marginalia[]`, but new live items now require explicit `kind: "highlight" | "note"`. Highlights preserve exact source text worth carrying forward by itself, require private `selection_reason`, and keep `content` empty/omitted; Notes attach reader-facing cognitive surplus to a precise source anchor and require non-empty visible `content`. The v23 five-book diagnostic `bgjob_digest_marginalia_v23_5book_parallel_20units_20260701` is running over the active unique-note dataset with `segment_workers=5`, up to `20` accepted units per segment, and `failure_policy=partial`; next check its `status.json`, refresh/archive the job after completion, and update the run ledger to `review_pending`, `partial`, or `failed`.
 - Jobs:
   - `bgjob_ingest_digest_unit_memory_full_diagnostic_20260603_parallel5`
   - `bgjob_unit_memory_text_only_smoke_value_20260606`
@@ -50,6 +50,7 @@ Last updated: `2026-07-01T20:07:00+08:00`
   - `bgjob_digest_marginalia_v20_5book_parallel_20units_20260629`
   - `bgjob_digest_marginalia_v21_5book_parallel_20units_scheduler_fixed_retry1_20260630`
   - `bgjob_digest_marginalia_v22_5book_parallel_20units_20260701`
+  - `bgjob_digest_marginalia_v23_5book_parallel_20units_20260701`
 - Evidence:
   - `DEC-103`
   - `DEC-104`

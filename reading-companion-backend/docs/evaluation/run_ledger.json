@@ -1,6 +1,6 @@
 {
   "schema_version": 1,
-  "updated_at": "2026-07-01T12:55:08.855467Z",
+  "updated_at": "2026-07-01T15:29:36.407927Z",
   "entries": [
     {
       "run_id": "attentional_v2_excerpt_surface_v1_1_judged_20260406",
@@ -3129,6 +3129,33 @@
       "local_missing_allowed": [],
       "metadata": {},
       "updated_at": "2026-07-01T14:35:40.349647Z"
+    },
+    {
+      "run_id": "digest_marginalia_v23_5book_parallel_20units_20260701",
+      "date": "2026-07-01",
+      "surface": "digest_marginalia",
+      "lane": "mechanism_runtime",
+      "status": "running",
+      "mechanisms": [
+        "attentional_v2"
+      ],
+      "dataset_or_manifest": [
+        "state/eval_local_datasets/user_level_benchmarks/attentional_v2_user_level_selective_v1_repaired_20260629_source_norm_v1_2_unique_notes"
+      ],
+      "run_dir": "reading-companion-backend/eval/runs/attentional_v2/digest_marginalia_v23_5book_parallel_20units_20260701",
+      "summary_paths": {},
+      "job_ids": [
+        "bgjob_digest_marginalia_v23_5book_parallel_20units_20260701"
+      ],
+      "report_paths": [],
+      "catalog_status": "not_cataloged",
+      "notes": "Live Digest v23 parallel Highlights/Notes five-book diagnostic; five active source-normalized segments, segment_workers=5, up to 20 accepted units per segment.",
+      "parent_run_id": "",
+      "child_run_ids": [],
+      "synthetic": false,
+      "local_missing_allowed": [],
+      "metadata": {},
+      "updated_at": "2026-07-01T15:29:36.406841Z"
     }
   ]
 }
