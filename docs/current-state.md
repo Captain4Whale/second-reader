@@ -167,11 +167,11 @@ Last verified: `2026-07-01T20:07:00+08:00`
   - Digest v22 Marginalia five-book diagnostic:
     - run id: `digest_marginalia_v22_5book_parallel_20units_20260701`
     - job id: `bgjob_digest_marginalia_v22_5book_parallel_20units_20260701`
-    - status: running; run ledger status is `running`
+    - status: completed; run ledger status is `review_pending`
     - scope: active unique-note source-normalized v1.2 five-segment dataset, `segment_workers=5`, up to `20` accepted units per segment, `failure_policy=partial`
     - purpose: compare the live durable portable cognitive gain / out-of-context-completeness / excerpt-necessity / selection-reason highlight-only gates in `attentional_v2.digest.v22` / promptset `attentional_v2-phase6-v82`
-    - early health: job registry shows the process alive; early standard LLM traces are `ok`, `concurrency_strategy=fixed`, `profile_gate_wait_ms=0`, and `provider_gate_wait_ms=0`, so the run is not locally scheduler-bound
-    - report target: `reading-companion-backend/eval/runs/attentional_v2/digest_marginalia_v22_5book_parallel_20units_20260701/analysis/digest_marginalia_v22_5book_parallel_20units/marginalia_smoke_report.md`
+    - outcome: summary status `pass_with_caveats`; `88` runner units across 5 segments, `171` Marginalia items (`165` highlight-only, `6` note-bearing), `30` `quote_too_broad` caveats, and zero hard or partial failures
+    - report: `reading-companion-backend/eval/runs/attentional_v2/digest_marginalia_v22_5book_parallel_20units_20260701/analysis/digest_marginalia_v22_5book_parallel_20units/marginalia_smoke_report.md`
   - active diagnostic evaluation:
     - run id: `attentional_v2_ingest_digest_unit_memory_full_diagnostic_20260603_parallel5`
     - job id: `bgjob_ingest_digest_unit_memory_full_diagnostic_20260603_parallel5`
