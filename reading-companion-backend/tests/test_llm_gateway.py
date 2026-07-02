@@ -258,6 +258,8 @@ class _SequencedRecordingAdapter(_RecordingAdapter):
             raise RuntimeError("timed out")
         if action == "malformed":
             return _FakeResponse("not json at all")
+        if isinstance(action, BaseException):
+            raise action
         if isinstance(action, tuple) and len(action) == 2 and action[0] == "response":
             return _FakeResponse(str(action[1]))
         payload = self.response_content.replace("__API_KEY__", api_key)
@@ -2017,6 +2019,103 @@ def test_standard_trace_records_malformed_json_error_details(
     assert standard_rows[-1]["problem_code"] == "network_blocked"
     assert standard_rows[-1]["error_type"] == "RuntimeError"
     assert standard_rows[-1]["error_message"] == "malformed json payload"
+
+
+def test_openai_connection_error_records_private_provider_diagnostics(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+):
+    class APIConnectionError(Exception):
+        pass
+
+    class RemoteProtocolError(Exception):
+        pass
+
+    cause = RemoteProtocolError(
+        "Server disconnected without sending a response. Authorization: Bearer sk-sensitive123"
+    )
+    exc = APIConnectionError("Connection error.")
+    exc.__cause__ = cause
+    _set_targets_and_bindings(
+        monkeypatch,
+        targets={
+            "targets": [
+                {
+                    "target_id": "opencode_runtime",
+                    "contract": "openai_compatible",
+                    "base_url": "https://opencode.local/v1?token=secret-token",
+                    "model": "deepseek-v4",
+                    "credentials": [{"credential_id": "primary", "api_key": "runtime-key"}],
+                    "retry_attempts": 1,
+                }
+            ]
+        },
+        bindings=_required_bindings("opencode_runtime"),
+    )
+    adapter = _SequencedRecordingAdapter([exc])
+    monkeypatch.setitem(CONTRACT_ADAPTERS, "openai_compatible", adapter)
+
+    output_dir = tmp_path / "output" / "api-connection"
+    with llm_invocation_scope(
+        profile_id=DEFAULT_RUNTIME_PROFILE_ID,
+        trace_context=runtime_trace_context(output_dir, mechanism_key="attentional_v2", debug_enabled=True),
+    ):
+        with pytest.raises(ReaderLLMError) as exc_info:
+            invoke_json("system", "user", {})
+
+    assert exc_info.value.problem_code == "network_blocked"
+    assert exc_info.value.details["connection_error_kind"] == "remote_protocol_error"
+    standard_rows = _read_jsonl(runtime_artifacts.llm_standard_trace_file(output_dir))
+    debug_rows = _read_jsonl(runtime_artifacts.llm_debug_trace_file(output_dir, "attentional_v2"))
+    final_row = standard_rows[-1]
+    assert final_row["problem_code"] == "network_blocked"
+    assert final_row["provider_error_type"] == "APIConnectionError"
+    assert final_row["provider_error_cause_type"] == "RemoteProtocolError"
+    assert final_row["connection_error_kind"] == "remote_protocol_error"
+    assert "sk-sensitive123" not in final_row["provider_error_cause_repr"]
+    assert "secret-token" not in final_row["provider_error_cause_repr"]
+    assert debug_rows[-1]["attempts"][0]["connection_error_kind"] == "remote_protocol_error"
+
+
+def test_connection_error_with_timeout_cause_still_classifies_as_timeout(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+):
+    class APIConnectionError(Exception):
+        pass
+
+    exc = APIConnectionError("Connection error.")
+    exc.__cause__ = TimeoutError("read timeout")
+    _set_targets_and_bindings(
+        monkeypatch,
+        targets={
+            "targets": [
+                {
+                    "target_id": "opencode_runtime",
+                    "contract": "openai_compatible",
+                    "base_url": "https://opencode.local/v1",
+                    "model": "deepseek-v4",
+                    "credentials": [{"credential_id": "primary", "api_key": "runtime-key"}],
+                    "retry_attempts": 1,
+                }
+            ]
+        },
+        bindings=_required_bindings("opencode_runtime"),
+    )
+    monkeypatch.setitem(CONTRACT_ADAPTERS, "openai_compatible", _SequencedRecordingAdapter([exc]))
+
+    output_dir = tmp_path / "output" / "api-timeout"
+    with llm_invocation_scope(
+        profile_id=DEFAULT_RUNTIME_PROFILE_ID,
+        trace_context=runtime_trace_context(output_dir, mechanism_key="attentional_v2"),
+    ):
+        with pytest.raises(ReaderLLMError) as exc_info:
+            invoke_json("system", "user", {})
+
+    assert exc_info.value.problem_code == "llm_timeout"
+    standard_rows = _read_jsonl(runtime_artifacts.llm_standard_trace_file(output_dir))
+    assert standard_rows[-1]["problem_code"] == "llm_timeout"
+    assert standard_rows[-1]["provider_error_cause_type"] == "TimeoutError"
 
 
 def test_unsupported_model_plan_is_classified_as_llm_auth(

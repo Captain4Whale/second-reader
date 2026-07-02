@@ -20,6 +20,7 @@ Use `docs/backend-reading-mechanism.md` for shared platform boundaries. Use `doc
 - `DEC-107` replaces the old `Navigate` LLM-call identity with `Ingest`.
 - `DEC-110` lands the Unit Memory ledger + hybrid retrieval bottom framework. The follow-through recall/tool slice now lets Ingest emit bounded prior-reading recalls, lets Reading Runner execute runtime-owned Unit Memory retrieval/selection, and renders selected Understanding lines into Digest `ReadingMemory`.
 - `DEC-128` promotes Marginalia as the canonical Digest visible-note concept. Live Digest now emits `marginalia[]`; legacy `annotations[]`, `surfaced_reactions`, `reaction_records`, and public `reaction_*` names remain compatibility/audit aliases unless a later cleanup retires them explicitly.
+- `DEC-148` keeps `network_blocked` as the compatibility problem code for provider connection failures while adding private provider exception diagnostics and delayed same-cursor unit recovery for focused diagnostics.
 - Stable live behavior remains defined here and should be updated only when implementation lands.
 
 ## Mechanism-Internal Reading Runner Boundary
@@ -473,6 +474,9 @@ Use `docs/backend-reading-mechanism.md` for shared platform boundaries. Use `doc
   - The live final-output tools are `submit_ingest_result`, `submit_digest_result`, `submit_bridge_resolution_result`, `submit_reflective_promotion_result`, `submit_reconsolidation_result`, `submit_chapter_consolidation_result`, and `submit_survey_chapter_zone_result`.
   - `retrieve_unit_memory` remains the only current action tool; it is available to Ingest as `tool_choice="auto"` before final structured output and is never forced merely to transport final JSON.
   - Missing submit-tool calls, wrong submit-tool names, non-object tool args, malformed JSON objects, or business-validator failures are repaired once and then reported as public `llm_contract` problems if still invalid.
+  - Public/runtime connection failures still use the coarse compatibility problem code `network_blocked`, but private standard/debug traces now retain provider exception details: `provider_error_type`, `provider_error_repr`, `provider_error_cause_type`, `provider_error_cause_repr`, and `connection_error_kind` (`api_connection_error`, `remote_protocol_error`, `connect_error`, `read_error`, `ssl_error`, or `unknown_connection_error`).
+  - Focused Digest Marginalia diagnostics use layered transient recovery: gateway provider-call retries run first; then the runner retries the same unit from the same cursor with the configured delayed recovery schedule (`0,120,300` seconds by default under `failure_policy=partial`) and bounded timeout escalation; exhausted transient failures stop only the affected segment as `partial` without advancing over unread source text.
+  - `retry_attempts` in gateway/profile configuration means total provider-call attempts, including the first call.
   - Raw provider reasoning/thinking content is not a standard runtime artifact; standard traces keep only normal content, usage, and compact metadata.
   - Current OpenCode / DeepSeek JSON-object protocol details and historical MiniMax transport notes are recorded in `docs/implementation/new-reading-mechanism/llm-structured-output-protocol-note.md`.
 - Subject continuity is implemented in Digest prompt `attentional_v2.digest.v23` and documented in `docs/implementation/new-reading-mechanism/ingest-recall-and-digest-memory-context-design.md`.

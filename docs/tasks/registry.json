@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "updated_at": "2026-07-02T07:51:51+08:00",
+  "updated_at": "2026-07-02T08:14:08+08:00",
   "tasks": [
     {
       "id": "TASK-SECOND-READER-INGEST-DIGEST-REFRAME-AUDIT-20260530",
@@ -70,7 +70,10 @@
         "DEC-142",
         "DEC-143",
         "DEC-144",
-        "DEC-145"
+        "DEC-145",
+        "DEC-146",
+        "DEC-147",
+        "DEC-148"
       ],
       "job_refs": [
         "bgjob_ingest_digest_unit_memory_full_diagnostic_20260603_parallel5",
@@ -99,7 +102,7 @@
         "bgjob_digest_marginalia_v23_5book_parallel_20units_20260701"
       ],
       "acceptance_ref": "docs/implementation/new-reading-mechanism/ingest-select-next-unit-window-partition-draft-prompt.md",
-      "next_action": "Digest is live as `attentional_v2.digest.v23` / promptset `attentional_v2-phase6-v83` / output contract `digest_understanding_response_marginalia_json_v8`: canonical visible-note output remains `marginalia[]`, but new live items now require explicit `kind: \"highlight\" | \"note\"`. Highlights preserve exact source text worth carrying forward by itself, require private `selection_reason`, and keep `content` empty/omitted; Notes attach reader-facing cognitive surplus to a precise source anchor and require non-empty visible `content`. The v23 five-book diagnostic `bgjob_digest_marginalia_v23_5book_parallel_20units_20260701` completed with summary status `partial`: provider/network `network_blocked` stopped all five segments after recovery attempts, leaving only `2` accepted runner units from `mangge_zhi_dao`; use the generated report as failure evidence rather than a quality sample, and rerun only after the provider/network path is stable.",
+      "next_action": "Digest is live as `attentional_v2.digest.v23` / promptset `attentional_v2-phase6-v83` / output contract `digest_understanding_response_marginalia_json_v8`: canonical visible-note output remains `marginalia[]`, but new live items now require explicit `kind: \"highlight\" | \"note\"`. Highlights preserve exact source text worth carrying forward by itself, require private `selection_reason`, and keep `content` empty/omitted; Notes attach reader-facing cognitive surplus to a precise source anchor and require non-empty visible `content`. The v23 five-book diagnostic `bgjob_digest_marginalia_v23_5book_parallel_20units_20260701` completed with summary status `partial`: provider/network `network_blocked` stopped all five segments after recovery attempts, leaving only `2` accepted runner units from `mangge_zhi_dao`; use the generated report as failure evidence rather than a quality sample. `DEC-148` has now landed private provider-connection diagnostics plus delayed same-cursor unit recovery, so the next v23 rerun should use those focused-runner defaults before changing prompt, concurrency, or dataset shape again.",
       "blocked_by": [],
       "evidence_refs": [
         "docs/current-state.md",
@@ -165,7 +168,8 @@
       "last_updated_by": "codex",
       "jobs": [
         "bgjob_digest_marginalia_v22_5book_parallel_20units_20260701"
-      ]
+      ],
+      "updated_at": "2026-07-02T08:14:08+08:00"
     },
     {
       "id": "TASK-SECOND-READER-READ-PROMPT-XML-FULL-ACTIVE-DIAGNOSTIC-20260526",
@@ -4074,5 +4078,5 @@
       "last_updated_by": "codex"
     }
   ],
-  "last_updated": "2026-06-28T16:05:03+08:00"
+  "last_updated": "2026-07-02T08:14:08+08:00"
 }

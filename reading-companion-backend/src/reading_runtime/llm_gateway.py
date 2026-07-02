@@ -50,9 +50,16 @@ except ModuleNotFoundError:  # pragma: no cover - non-posix fallback
 class ReaderLLMError(RuntimeError):
     """Typed LLM invocation failure surfaced to runtime/eval callers."""
 
-    def __init__(self, message: str, *, problem_code: CurrentReadingProblemCode):
+    def __init__(
+        self,
+        message: str,
+        *,
+        problem_code: CurrentReadingProblemCode,
+        details: Mapping[str, Any] | None = None,
+    ):
         super().__init__(message)
         self.problem_code = problem_code
+        self.details = dict(details or {})
 
 
 TRANSIENT_LLM_PROBLEM_CODES: frozenset[CurrentReadingProblemCode] = frozenset(
@@ -228,10 +235,100 @@ def _excerpt(text: str, limit: int = 600) -> str:
     return stripped[: limit - 3].rstrip() + "..."
 
 
+_SENSITIVE_ERROR_PATTERNS: tuple[re.Pattern[str], ...] = (
+    re.compile(r"(?i)(api[_-]?key|x-api-key|authorization|bearer)\s*[:=]\s*['\"]?[^'\"\s,}]+"),
+    re.compile(r"(?i)(sk-[A-Za-z0-9_\-]{8,})"),
+    re.compile(r"(?i)([?&](?:api[_-]?key|key|token)=)[^&\s]+"),
+)
+
+
+def _redact_error_text(value: object, *, limit: int = 1000) -> str:
+    """Return compact provider-error text without leaking credentials."""
+
+    text = str(value or "")
+    def _replacement(match: re.Match[str]) -> str:
+        if not match.groups():
+            return "<redacted>"
+        label = match.group(1)
+        if label.lower().startswith("sk-"):
+            return "<redacted>"
+        if label.startswith(("?", "&")):
+            return f"{label}<redacted>"
+        return f"{label}=<redacted>"
+
+    for pattern in _SENSITIVE_ERROR_PATTERNS:
+        text = pattern.sub(_replacement, text)
+    if len(text) <= limit:
+        return text
+    return text[: limit - 3].rstrip() + "..."
+
+
+def _exception_chain(exc: BaseException | None, *, limit: int = 6) -> list[BaseException]:
+    """Return an exception plus its cause/context chain without looping forever."""
+
+    chain: list[BaseException] = []
+    seen: set[int] = set()
+    current = exc
+    while current is not None and id(current) not in seen and len(chain) < limit:
+        chain.append(current)
+        seen.add(id(current))
+        current = current.__cause__ or current.__context__
+    return chain
+
+
+def _provider_exception_diagnostics(exc: Exception | None) -> dict[str, str]:
+    """Private trace metadata for provider/client exceptions."""
+
+    if exc is None:
+        return {
+            "provider_error_type": "",
+            "provider_error_repr": "",
+            "provider_error_cause_type": "",
+            "provider_error_cause_repr": "",
+            "connection_error_kind": "",
+        }
+    chain = _exception_chain(exc)
+    cause = chain[1] if len(chain) > 1 else None
+    return {
+        "provider_error_type": exc.__class__.__name__,
+        "provider_error_repr": _redact_error_text(repr(exc)),
+        "provider_error_cause_type": cause.__class__.__name__ if cause is not None else "",
+        "provider_error_cause_repr": _redact_error_text(repr(cause)) if cause is not None else "",
+        "connection_error_kind": _connection_error_kind(exc),
+    }
+
+
+def _connection_error_kind(exc: Exception | None) -> str:
+    """Classify private OpenAI-compatible connection failures without changing runtime problem codes."""
+
+    if exc is None:
+        return ""
+    chain = _exception_chain(exc)
+    haystack = " ".join(
+        f"{item.__class__.__module__}.{item.__class__.__name__} {item!r} {item}" for item in chain
+    ).lower()
+    if any(token in haystack for token in ("remoteprotocolerror", "remote protocol", "server disconnected")):
+        return "remote_protocol_error"
+    if any(token in haystack for token in ("connecterror", "connect error", "connection refused", "name or service not known")):
+        return "connect_error"
+    if any(token in haystack for token in ("readerror", "read error", "incomplete read")):
+        return "read_error"
+    if any(token in haystack for token in ("sslerror", "ssl error", "certificate verify failed")):
+        return "ssl_error"
+    if any(token in haystack for token in ("apiconnectionerror", "api connection")):
+        return "api_connection_error"
+    if "connection error" in haystack or "network" in haystack:
+        return "unknown_connection_error"
+    return ""
+
+
 def _classify_llm_problem(exc: Exception) -> CurrentReadingProblemCode:
     """Map provider/network failures into one stable runtime problem code."""
 
-    message = str(exc).lower()
+    message = " ".join(
+        f"{item.__class__.__module__}.{item.__class__.__name__} {item!r} {item}"
+        for item in _exception_chain(exc)
+    ).lower()
     if any(token in message for token in ("timed out", "timeout", "read timeout", "deadline exceeded")):
         return "llm_timeout"
     if any(
@@ -2044,6 +2141,11 @@ def _invoke_response(
         problem_code: str = "",
         error_type: str = "",
         error_message: str = "",
+        provider_error_type: str = "",
+        provider_error_repr: str = "",
+        provider_error_cause_type: str = "",
+        provider_error_cause_repr: str = "",
+        connection_error_kind: str = "",
         quota_wait_ms_before_attempt: int = 0,
         shared_quota_cooldown_honored: bool = False,
         provider_gate_wait_ms: int = 0,
@@ -2062,6 +2164,11 @@ def _invoke_response(
             "problem_code": problem_code,
             "error_type": error_type,
             "error_message": error_message,
+            "provider_error_type": provider_error_type,
+            "provider_error_repr": provider_error_repr,
+            "provider_error_cause_type": provider_error_cause_type,
+            "provider_error_cause_repr": provider_error_cause_repr,
+            "connection_error_kind": connection_error_kind,
             "quota_wait_ms_before_attempt": quota_wait_ms_before_attempt,
             "shared_quota_cooldown_honored": shared_quota_cooldown_honored,
             "provider_gate_wait_ms": provider_gate_wait_ms,
@@ -2115,6 +2222,7 @@ def _invoke_response(
                                 problem_code="llm_quota",
                                 error_type=last_error.__class__.__name__,
                                 error_message=str(last_error),
+                                **_provider_exception_diagnostics(last_error),
                             )
                         )
                         provider_skipped_for_quota = True
@@ -2138,6 +2246,7 @@ def _invoke_response(
                                 problem_code="llm_quota",
                                 error_type=last_error.__class__.__name__,
                                 error_message=str(last_error),
+                                **_provider_exception_diagnostics(last_error),
                             )
                         )
                         provider_skipped_for_quota = True
@@ -2272,6 +2381,7 @@ def _invoke_response(
                             problem_code=classified,
                             error_type=exc.__class__.__name__,
                             error_message=str(exc),
+                            **_provider_exception_diagnostics(exc),
                             quota_wait_ms_before_attempt=quota_wait_ms_before_attempt,
                             shared_quota_cooldown_honored=shared_quota_cooldown_honored,
                             provider_gate_wait_ms=provider_gate_wait_ms,
@@ -2325,6 +2435,7 @@ def _invoke_response(
         "profile_gate_wait_ms": sum(int(item.get("profile_gate_wait_ms", 0) or 0) for item in attempts),
         "error_type": last_error.__class__.__name__ if last_error is not None else "",
         "error_message": str(last_error or ""),
+        **_provider_exception_diagnostics(last_error),
         "fallback": {
             "used_failover": len(attempts) > 1,
             "providers_tried": [item["provider_id"] for item in attempts],
@@ -2346,7 +2457,14 @@ def _invoke_response(
     )
     if isinstance(last_error, ReaderLLMError):
         raise last_error
-    raise ReaderLLMError(str(last_error or "LLM invocation failed."), problem_code=final_problem_code or "network_blocked")
+    raise ReaderLLMError(
+        str(last_error or "LLM invocation failed."),
+        problem_code=final_problem_code or "network_blocked",
+        details={
+            **_provider_exception_diagnostics(last_error),
+            "provider_call_attempt_count": len(attempts),
+        },
+    )
 
 
 def _extract_tool_calls(response: Any) -> list[dict[str, Any]]:

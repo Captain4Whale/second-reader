@@ -493,10 +493,32 @@ def _llm_call_overrides(
     )
 
 
-def _unit_recovery_timeout_seconds(timeout_seconds: int) -> int:
+def _unit_recovery_timeout_seconds(timeout_seconds: int, *, recovery_attempt: int = 1, scale: float = 1.5) -> int:
     base = max(1, int(timeout_seconds or 1))
-    escalated = max(base + 60, (base * 3 + 1) // 2)
+    multiplier = max(1.0, float(scale or 1.0)) ** max(1, int(recovery_attempt or 1))
+    escalated = max(base + 60, int(base * multiplier + 0.999))
     return min(300, escalated)
+
+
+def _unit_recovery_delay_schedule(raw: str | None, *, failure_policy: str) -> list[int]:
+    default = "0,120,300" if failure_policy == "partial" else "0"
+    text = _clean_text(raw) or default
+    values: list[int] = []
+    for part in text.split(","):
+        stripped = part.strip()
+        if not stripped:
+            continue
+        values.append(max(0, int(stripped)))
+    return values or [0]
+
+
+def _unit_recovery_delay_for_attempt(schedule: list[int], *, recovery_attempt: int) -> int:
+    if recovery_attempt <= 0:
+        return 0
+    if not schedule:
+        return 0
+    index = min(recovery_attempt - 1, len(schedule) - 1)
+    return int(schedule[index])
 
 
 def run_direct_digest_smoke(
@@ -769,7 +791,9 @@ def run_segment_units(
     timeout_seconds: int,
     retry_attempts: int,
     failure_policy: str = "partial",
-    unit_recovery_attempts: int = 1,
+    unit_recovery_attempts: int = 3,
+    unit_recovery_delay_seconds: str | None = None,
+    unit_recovery_timeout_scale: float = 1.5,
 ) -> dict[str, object]:
     segment = _load_dataset_segment(dataset_root, segment_id)
     chapter = dict(segment["chapter"]) if isinstance(segment.get("chapter"), Mapping) else {}
@@ -806,6 +830,10 @@ def run_segment_units(
     partial_failures: list[dict[str, object]] = []
     recovered_units: list[dict[str, object]] = []
     unit_recovery_attempt_count = 0
+    recovery_delay_schedule = _unit_recovery_delay_schedule(
+        unit_recovery_delay_seconds,
+        failure_policy=failure_policy,
+    )
     status = "ok"
     stop_reason = "unit_limit"
     started_at = _now()
@@ -818,7 +846,21 @@ def run_segment_units(
         settled_unit: dict[str, object] | None = None
         max_unit_attempts = max(0, int(unit_recovery_attempts or 0)) + 1
         for unit_attempt in range(max_unit_attempts):
-            attempt_timeout_seconds = timeout_seconds if unit_attempt == 0 else _unit_recovery_timeout_seconds(timeout_seconds)
+            recovery_delay_seconds = _unit_recovery_delay_for_attempt(
+                recovery_delay_schedule,
+                recovery_attempt=unit_attempt,
+            )
+            if unit_attempt > 0 and recovery_delay_seconds > 0:
+                time.sleep(recovery_delay_seconds)
+            attempt_timeout_seconds = (
+                timeout_seconds
+                if unit_attempt == 0
+                else _unit_recovery_timeout_seconds(
+                    timeout_seconds,
+                    recovery_attempt=unit_attempt,
+                    scale=unit_recovery_timeout_scale,
+                )
+            )
             trace_context = eval_trace_context(
                 analysis_root,
                 eval_target="digest_marginalia_v23_live_smoke",
@@ -829,6 +871,9 @@ def run_segment_units(
                     "unit_index": unit_index,
                     "unit_attempt": unit_attempt + 1,
                     "unit_recovery_attempt": unit_attempt,
+                    "unit_recovery_delay_seconds": recovery_delay_seconds,
+                    "unit_recovery_delay_schedule": recovery_delay_schedule,
+                    "unit_recovery_timeout_scale": unit_recovery_timeout_scale,
                     "failure_policy": failure_policy,
                 },
             )
@@ -895,6 +940,7 @@ def run_segment_units(
                             "unit_index": unit_index,
                             "start_cursor": dict(cursor),
                             "recovery_attempt": unit_attempt,
+                            "delay_seconds": recovery_delay_seconds,
                             "timeout_seconds": attempt_timeout_seconds,
                         }
                     )
@@ -902,12 +948,19 @@ def run_segment_units(
             except ReaderLLMError as exc:
                 problem_code = _clean_text(getattr(exc, "problem_code", "")) or "reader_llm_error"
                 transient = is_transient_reader_llm_error(exc)
+                details = getattr(exc, "details", {})
+                provider_details = dict(details) if isinstance(details, Mapping) else {}
                 event = {
                     "attempt": unit_attempt + 1,
                     "recovery_attempt": unit_attempt,
                     "problem_code": problem_code,
                     "transient": transient,
+                    "delay_seconds": recovery_delay_seconds,
                     "timeout_seconds": attempt_timeout_seconds,
+                    "provider_call_attempt_count": provider_details.get("provider_call_attempt_count"),
+                    "connection_error_kind": provider_details.get("connection_error_kind", ""),
+                    "provider_error_type": provider_details.get("provider_error_type", ""),
+                    "provider_error_cause_type": provider_details.get("provider_error_cause_type", ""),
                     "error": str(exc),
                 }
                 unit_recovery_events.append(event)
@@ -927,7 +980,13 @@ def run_segment_units(
                     "final_cursor": dict(cursor),
                     "duration_seconds": round(time.perf_counter() - unit_started, 3),
                     "unit_recovery_attempts": len(unit_recovery_events) - 1,
+                    "unit_recovery_delay_schedule": recovery_delay_schedule,
+                    "unit_recovery_timeout_scale": unit_recovery_timeout_scale,
                     "recovery_events": unit_recovery_events,
+                    "provider_call_attempt_count": provider_details.get("provider_call_attempt_count"),
+                    "connection_error_kind": provider_details.get("connection_error_kind", ""),
+                    "provider_error_type": provider_details.get("provider_error_type", ""),
+                    "provider_error_cause_type": provider_details.get("provider_error_cause_type", ""),
                 }
                 units.append(failure_record)
                 if status == "partial":
@@ -948,6 +1007,8 @@ def run_segment_units(
                         "final_cursor": dict(cursor),
                         "duration_seconds": round(time.perf_counter() - unit_started, 3),
                         "unit_recovery_attempts": len(unit_recovery_events),
+                        "unit_recovery_delay_schedule": recovery_delay_schedule,
+                        "unit_recovery_timeout_scale": unit_recovery_timeout_scale,
                         "recovery_events": unit_recovery_events,
                     }
                 )
@@ -991,6 +1052,8 @@ def run_segment_units(
                 "duration_seconds": round(time.perf_counter() - unit_started, 3),
                 "start_cursor": dict(cursor),
                 "unit_recovery_attempts": len(unit_recovery_events),
+                "unit_recovery_delay_schedule": recovery_delay_schedule,
+                "unit_recovery_timeout_scale": unit_recovery_timeout_scale,
                 "recovery_events": unit_recovery_events,
                 "recovered": bool(unit_recovery_events),
                 "end_cursor": dict(settled_unit.get("source_cursor", {}))
@@ -1041,6 +1104,8 @@ def run_segment_units(
         "final_cursor": dict(cursor),
         "failure_policy": failure_policy,
         "unit_recovery_attempts": unit_recovery_attempt_count,
+        "unit_recovery_delay_schedule": recovery_delay_schedule,
+        "unit_recovery_timeout_scale": unit_recovery_timeout_scale,
         "recovered_units": recovered_units,
         "partial_failures": partial_failures,
         "units": units,
@@ -1060,7 +1125,9 @@ def run_focused_segments(
     retry_attempts: int,
     segment_workers: int,
     failure_policy: str = "partial",
-    unit_recovery_attempts: int = 1,
+    unit_recovery_attempts: int = 3,
+    unit_recovery_delay_seconds: str | None = None,
+    unit_recovery_timeout_scale: float = 1.5,
 ) -> list[dict[str, object]]:
     ordered_segment_ids = list(segment_ids)
     if not ordered_segment_ids:
@@ -1079,8 +1146,14 @@ def run_focused_segments(
                 retry_attempts=retry_attempts,
                 failure_policy=failure_policy,
                 unit_recovery_attempts=unit_recovery_attempts,
+                unit_recovery_delay_seconds=unit_recovery_delay_seconds,
+                unit_recovery_timeout_scale=unit_recovery_timeout_scale,
             )
         except Exception as exc:  # noqa: BLE001 - preserve one segment failure without hiding sibling results.
+            recovery_delay_schedule = _unit_recovery_delay_schedule(
+                unit_recovery_delay_seconds,
+                failure_policy=failure_policy,
+            )
             return {
                 "segment_id": segment_id,
                 "status": "failed",
@@ -1092,6 +1165,8 @@ def run_focused_segments(
                 "final_cursor": {},
                 "failure_policy": failure_policy,
                 "unit_recovery_attempts": 0,
+                "unit_recovery_delay_schedule": recovery_delay_schedule,
+                "unit_recovery_timeout_scale": unit_recovery_timeout_scale,
                 "recovered_units": [],
                 "partial_failures": [],
                 "units": [],
@@ -1234,6 +1309,28 @@ def build_summary(
         status = "pass_with_caveats"
     if status == "pass" and kind_counts.get("highlight", 0) == 0:
         status = "pass_with_caveats"
+    connection_error_kind_counts: dict[str, int] = {}
+    for failure in partial_failures:
+        kind = _clean_text(failure.get("connection_error_kind"))
+        if kind:
+            connection_error_kind_counts[kind] = connection_error_kind_counts.get(kind, 0) + 1
+    recovery_delay_schedules: list[list[int]] = []
+    seen_schedules: set[tuple[int, ...]] = set()
+    for result in runner_results:
+        schedule_value = result.get("unit_recovery_delay_schedule")
+        if not isinstance(schedule_value, list):
+            continue
+        schedule = tuple(int(item) for item in schedule_value if isinstance(item, int))
+        if schedule and schedule not in seen_schedules:
+            seen_schedules.add(schedule)
+            recovery_delay_schedules.append(list(schedule))
+    recovery_timeout_scales = sorted(
+        {
+            float(result.get("unit_recovery_timeout_scale"))
+            for result in runner_results
+            if result.get("unit_recovery_timeout_scale") is not None
+        }
+    )
     return {
         "run_id": run_id,
         "analysis_id": analysis_id,
@@ -1254,8 +1351,11 @@ def build_summary(
         "quality_flag_counts": flag_counts,
         "hard_failures": failures,
         "partial_failures": partial_failures,
+        "connection_error_kind_counts": connection_error_kind_counts,
         "partial_segment_count": sum(1 for result in runner_results if result.get("status") == "partial"),
         "unit_recovery_attempts": sum(int(result.get("unit_recovery_attempts", 0) or 0) for result in runner_results),
+        "unit_recovery_delay_schedules": recovery_delay_schedules,
+        "unit_recovery_timeout_scales": recovery_timeout_scales,
         "recovered_unit_count": sum(
             len(result.get("recovered_units", []))
             for result in runner_results
@@ -1287,7 +1387,10 @@ def render_report(
         f"- runner units: `{summary.get('runner_unit_count')}`",
         f"- partial segments: `{summary.get('partial_segment_count')}`",
         f"- unit recovery attempts: `{summary.get('unit_recovery_attempts')}`",
+        f"- unit recovery delay schedules: `{json.dumps(summary.get('unit_recovery_delay_schedules', []), ensure_ascii=False)}`",
+        f"- unit recovery timeout scales: `{json.dumps(summary.get('unit_recovery_timeout_scales', []), ensure_ascii=False)}`",
         f"- recovered units: `{summary.get('recovered_unit_count')}`",
+        f"- connection error kinds: `{json.dumps(summary.get('connection_error_kind_counts', {}), ensure_ascii=False)}`",
         f"- marginalia count: `{summary.get('marginalia_count')}`",
         f"- marginalia kinds: `{json.dumps(summary.get('marginalia_kind_counts', {}), ensure_ascii=False)}`",
         f"- quality flags: `{json.dumps(summary.get('quality_flag_counts', {}), ensure_ascii=False)}`",
@@ -1310,6 +1413,11 @@ def render_report(
                 f"segment=`{failure.get('segment_id')}` "
                 f"unit=`{failure.get('unit_index')}` "
                 f"problem=`{failure.get('problem_code') or failure.get('stop_reason')}` "
+                f"connection_kind=`{failure.get('connection_error_kind', '')}` "
+                f"provider_error=`{failure.get('provider_error_type', '')}` "
+                f"provider_attempts=`{failure.get('provider_call_attempt_count', '')}` "
+                f"unit_recovery_attempts=`{failure.get('unit_recovery_attempts', '')}` "
+                f"delay_schedule=`{json.dumps(failure.get('unit_recovery_delay_schedule', []), ensure_ascii=False)}` "
                 f"final_cursor=`{json.dumps(failure.get('final_cursor', {}), ensure_ascii=False)}`"
             )
         lines.append("")
@@ -1362,6 +1470,8 @@ def render_report(
                 f"- unit_count: `{segment.get('unit_count')}`",
                 f"- final_cursor: `{json.dumps(segment.get('final_cursor', {}), ensure_ascii=False)}`",
                 f"- unit_recovery_attempts: `{segment.get('unit_recovery_attempts', 0)}`",
+                f"- unit_recovery_delay_schedule: `{json.dumps(segment.get('unit_recovery_delay_schedule', []), ensure_ascii=False)}`",
+                f"- unit_recovery_timeout_scale: `{segment.get('unit_recovery_timeout_scale', '')}`",
                 f"- recovered_units: `{len(segment.get('recovered_units', [])) if isinstance(segment.get('recovered_units'), list) else 0}`",
                 "",
             ]
@@ -1377,6 +1487,10 @@ def render_report(
                     f"unit=`{failure.get('unit_index')}` "
                     f"problem=`{failure.get('problem_code')}` "
                     f"attempts=`{failure.get('unit_recovery_attempts')}` "
+                    f"connection_kind=`{failure.get('connection_error_kind', '')}` "
+                    f"provider_error=`{failure.get('provider_error_type', '')}` "
+                    f"provider_attempts=`{failure.get('provider_call_attempt_count', '')}` "
+                    f"delay_schedule=`{json.dumps(failure.get('unit_recovery_delay_schedule', []), ensure_ascii=False)}` "
                     f"cursor=`{json.dumps(failure.get('final_cursor', {}), ensure_ascii=False)}`"
                 )
             lines.append("")
@@ -1404,6 +1518,8 @@ def render_report(
                     f"- span: `{unit.get('span')}`",
                     f"- recovered: `{unit.get('recovered', False)}`",
                     f"- unit_recovery_attempts: `{unit.get('unit_recovery_attempts', 0)}`",
+                    f"- unit_recovery_delay_schedule: `{json.dumps(unit.get('unit_recovery_delay_schedule', []), ensure_ascii=False)}`",
+                    f"- unit_recovery_timeout_scale: `{unit.get('unit_recovery_timeout_scale', '')}`",
                     f"- marginalia_count: `{unit.get('marginalia_count')}`",
                     "",
                     "```text",
@@ -1513,6 +1629,12 @@ def _status_payload(
         "segment_ids": list(args.segment_id or DEFAULT_FOCUSED_SEGMENTS),
         "segment_workers": args.segment_workers,
         "unit_recovery_attempts": args.unit_recovery_attempts,
+        "unit_recovery_delay_seconds": args.unit_recovery_delay_seconds,
+        "unit_recovery_delay_schedule": _unit_recovery_delay_schedule(
+            args.unit_recovery_delay_seconds,
+            failure_policy=args.failure_policy,
+        ),
+        "unit_recovery_timeout_scale": args.unit_recovery_timeout_scale,
         "updated_at": _now(),
         "analysis_root": str(_analysis_root(args.run_id, args.analysis_id).relative_to(BACKEND_ROOT)),
         "report": str((_analysis_root(args.run_id, args.analysis_id) / "marginalia_smoke_report.md").relative_to(BACKEND_ROOT)),
@@ -1555,6 +1677,8 @@ def run(args: argparse.Namespace) -> int:
                     retry_attempts=args.retry_attempts,
                     failure_policy=args.failure_policy,
                     unit_recovery_attempts=args.unit_recovery_attempts,
+                    unit_recovery_delay_seconds=args.unit_recovery_delay_seconds,
+                    unit_recovery_timeout_scale=args.unit_recovery_timeout_scale,
                 )
             ]
         if args.mode in {"focused", "all"}:
@@ -1571,6 +1695,8 @@ def run(args: argparse.Namespace) -> int:
                 segment_workers=args.segment_workers,
                 failure_policy=args.failure_policy,
                 unit_recovery_attempts=args.unit_recovery_attempts,
+                unit_recovery_delay_seconds=args.unit_recovery_delay_seconds,
+                unit_recovery_timeout_scale=args.unit_recovery_timeout_scale,
             )
         summary = _write_outputs(
             analysis_root=analysis_root,
@@ -1608,7 +1734,18 @@ def build_parser() -> argparse.ArgumentParser:
     parser.add_argument("--timeout-seconds", type=int, default=120)
     parser.add_argument("--retry-attempts", type=int, default=3)
     parser.add_argument("--failure-policy", choices=["partial", "strict"], default="partial")
-    parser.add_argument("--unit-recovery-attempts", type=int, default=1)
+    parser.add_argument(
+        "--unit-recovery-attempts",
+        type=int,
+        default=3,
+        help="Extra unit-level retries after the first failed unit attempt.",
+    )
+    parser.add_argument(
+        "--unit-recovery-delay-seconds",
+        default=None,
+        help="Comma-separated unit recovery delay schedule. Defaults to 0,120,300 for partial policy and 0 for strict.",
+    )
+    parser.add_argument("--unit-recovery-timeout-scale", type=float, default=1.5)
     return parser
 
 

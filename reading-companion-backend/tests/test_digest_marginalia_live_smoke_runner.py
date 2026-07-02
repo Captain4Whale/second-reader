@@ -11,6 +11,8 @@ from eval.attentional_v2.run_digest_marginalia_live_smoke import (
     _load_dataset_segment,
     _partial_failures,
     _summarize_marginalia,
+    _unit_recovery_delay_for_attempt,
+    _unit_recovery_delay_schedule,
     _unit_recovery_timeout_seconds,
     build_summary,
     build_parser,
@@ -76,14 +78,28 @@ def test_segment_id_append_uses_defaults_only_when_unspecified():
     assert default_args.segment_id is None
     assert default_args.segment_workers == 1
     assert default_args.failure_policy == "partial"
-    assert default_args.unit_recovery_attempts == 1
+    assert default_args.unit_recovery_attempts == 3
+    assert default_args.unit_recovery_delay_seconds is None
+    assert default_args.unit_recovery_timeout_scale == 1.5
     assert list(explicit_args.segment_id or DEFAULT_FOCUSED_SEGMENTS) == ["xidaduo_private_zh__segment_1"]
     assert explicit_args.segment_workers == 5
 
 
 def test_unit_recovery_timeout_escalates_with_cap():
     assert _unit_recovery_timeout_seconds(120) == 180
+    assert _unit_recovery_timeout_seconds(120, recovery_attempt=2, scale=1.5) == 270
     assert _unit_recovery_timeout_seconds(260) == 300
+
+
+def test_unit_recovery_delay_schedule_defaults_and_repeats_last_value():
+    assert _unit_recovery_delay_schedule(None, failure_policy="partial") == [0, 120, 300]
+    assert _unit_recovery_delay_schedule(None, failure_policy="strict") == [0]
+    schedule = _unit_recovery_delay_schedule("0, 5", failure_policy="partial")
+    assert schedule == [0, 5]
+    assert _unit_recovery_delay_for_attempt(schedule, recovery_attempt=0) == 0
+    assert _unit_recovery_delay_for_attempt(schedule, recovery_attempt=1) == 0
+    assert _unit_recovery_delay_for_attempt(schedule, recovery_attempt=2) == 5
+    assert _unit_recovery_delay_for_attempt(schedule, recovery_attempt=3) == 5
 
 
 def test_llm_overrides_do_not_force_single_call_concurrency():
@@ -101,10 +117,18 @@ def test_llm_overrides_do_not_force_single_call_concurrency():
 
 def test_parallel_focused_segments_preserve_requested_order(monkeypatch, tmp_path):
     seen: list[str] = []
+    recovery_kwargs: list[tuple[str, object, object]] = []
 
     def fake_run_segment_units(**kwargs):
         segment_id = kwargs["segment_id"]
         seen.append(segment_id)
+        recovery_kwargs.append(
+            (
+                segment_id,
+                kwargs.get("unit_recovery_delay_seconds"),
+                kwargs.get("unit_recovery_timeout_scale"),
+            )
+        )
         return {
             "segment_id": segment_id,
             "status": "ok",
@@ -128,10 +152,17 @@ def test_parallel_focused_segments_preserve_requested_order(monkeypatch, tmp_pat
         segment_workers=3,
         failure_policy="partial",
         unit_recovery_attempts=1,
+        unit_recovery_delay_seconds="0,2",
+        unit_recovery_timeout_scale=2.0,
     )
 
     assert set(seen) == {"segment_a", "segment_b", "segment_c"}
     assert [result["segment_id"] for result in results] == ["segment_b", "segment_a", "segment_c"]
+    assert set(recovery_kwargs) == {
+        ("segment_a", "0,2", 2.0),
+        ("segment_b", "0,2", 2.0),
+        ("segment_c", "0,2", 2.0),
+    }
 
 
 def test_marginalia_summary_classifies_highlight_and_flags_broad_quote():
@@ -201,12 +232,17 @@ def test_summary_treats_transient_segment_stop_as_partial_not_hard_failure():
             "unit_count": 2,
             "final_cursor": {"paragraph_index": 9, "char_offset": 0},
             "unit_recovery_attempts": 1,
+            "unit_recovery_delay_schedule": [0, 120, 300],
+            "unit_recovery_timeout_scale": 1.5,
             "recovered_units": [{"unit_index": 1}],
             "partial_failures": [
                 {
                     "unit_index": 3,
                     "problem_code": "llm_timeout",
                     "final_cursor": {"paragraph_index": 9, "char_offset": 0},
+                    "connection_error_kind": "read_error",
+                    "unit_recovery_delay_schedule": [0, 120, 300],
+                    "unit_recovery_timeout_scale": 1.5,
                 }
             ],
             "units": [],
@@ -229,6 +265,9 @@ def test_summary_treats_transient_segment_stop_as_partial_not_hard_failure():
     assert summary["partial_segment_count"] == 1
     assert summary["unit_recovery_attempts"] == 1
     assert summary["recovered_unit_count"] == 1
+    assert summary["connection_error_kind_counts"] == {"read_error": 1}
+    assert summary["unit_recovery_delay_schedules"] == [[0, 120, 300]]
+    assert summary["unit_recovery_timeout_scales"] == [1.5]
     assert _partial_failures(runner_results)[0]["segment_id"] == "nawaer_baodian_private_zh__segment_1"
 
 

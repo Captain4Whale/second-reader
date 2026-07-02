@@ -4120,3 +4120,26 @@ This new direction is design frozen but not yet implemented as a formal benchmar
 - `docs/backend-reading-mechanisms/attentional_v2.md`
 - `docs/current-state.md`
 - `docs/tasks/registry.md`
+
+## Entry 146
+**ID**: DEC-148
+**Status**: active
+
+**Decision / Inflection**: Add private provider-connection diagnostics and delayed unit recovery for reading diagnostics.
+
+**Period**: July 2, 2026, after the first Digest v23 five-book diagnostic stopped with the coarse compatibility problem code `network_blocked`, even though the operator-facing issue was not a simple local network outage and the existing trace did not preserve enough provider exception detail to tell which OpenAI-compatible connection failure happened.
+
+**Decision**: Keep public/runtime `problem_code = "network_blocked"` for compatibility, but record private provider exception diagnostics in standard/debug LLM traces and failed-call metadata: `provider_error_type`, `provider_error_repr`, `provider_error_cause_type`, `provider_error_cause_repr`, and `connection_error_kind`. Known connection shapes are classified privately as `api_connection_error`, `remote_protocol_error`, `connect_error`, `read_error`, `ssl_error`, or `unknown_connection_error`. Digest Marginalia focused diagnostics also gain delayed transient unit recovery: after provider-call retries and immediate unit retry fail, the runner retries the same unit from the same cursor using the default delay schedule `0,120,300` seconds for `failure_policy=partial`, with timeout escalation capped at `300s`. If recovery is exhausted, only that segment becomes `partial`; sibling segments continue and the aggregate report is still written.
+
+**Boundary**: This is an internal gateway observability and diagnostic-runner recovery repair. It does not change Ingest or Digest prompts, output contracts, Source Normalization, Unit Memory retrieval semantics, frontend/public API fields, or source cursor safety. The runner still never skips unread source text after an Ingest/Digest transient failure; it either recovers the same unit or stops the affected segment at the current cursor.
+
+**Why this path won**: The old trace collapsed several provider/client failure classes into the same `network_blocked` label, which made postmortems misleading and encouraged fixing the wrong layer. At the same time, immediate retries alone are weak for short provider connection drops. Keeping the stable public code while adding private diagnostics preserves compatibility, and delayed same-cursor unit recovery improves diagnostic usefulness without corrupting coverage or hiding hard contract failures.
+
+**Primary evidence**:
+- `reading-companion-backend/src/reading_runtime/llm_gateway.py`
+- `reading-companion-backend/eval/attentional_v2/run_digest_marginalia_live_smoke.py`
+- `reading-companion-backend/tests/test_llm_gateway.py`
+- `reading-companion-backend/tests/test_digest_marginalia_live_smoke_runner.py`
+- `docs/backend-reading-mechanisms/attentional_v2.md`
+- `docs/current-state.md`
+- `docs/tasks/registry.md`
