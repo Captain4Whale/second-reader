@@ -1,6 +1,6 @@
 {
   "schema_version": 1,
-  "updated_at": "2026-07-01T23:52:05.294691Z",
+  "updated_at": "2026-07-02T00:33:51.040824Z",
   "entries": [
     {
       "run_id": "attentional_v2_excerpt_surface_v1_1_judged_20260406",
@@ -3158,6 +3158,40 @@
       "local_missing_allowed": [],
       "metadata": {},
       "updated_at": "2026-07-01T23:52:05.293652Z"
+    },
+    {
+      "run_id": "digest_marginalia_v23_5book_parallel_20units_recovery_retry1_20260702",
+      "date": "2026-07-02",
+      "surface": "digest_marginalia_live_smoke",
+      "lane": "mechanism_runtime",
+      "status": "running",
+      "mechanisms": [
+        "attentional_v2"
+      ],
+      "dataset_or_manifest": [
+        "state/eval_local_datasets/user_level_benchmarks/attentional_v2_user_level_selective_v1_repaired_20260629_source_norm_v1_2_unique_notes"
+      ],
+      "run_dir": "reading-companion-backend/eval/runs/attentional_v2/digest_marginalia_v23_5book_parallel_20units_recovery_retry1_20260702",
+      "summary_paths": {
+        "raw_summary": "reading-companion-backend/eval/runs/attentional_v2/digest_marginalia_v23_5book_parallel_20units_recovery_retry1_20260702/analysis/digest_marginalia_v23_5book_parallel_20units_recovery_retry1/raw/summary.json"
+      },
+      "job_ids": [
+        "bgjob_digest_marginalia_v23_5book_parallel_20units_recovery_retry1_20260702"
+      ],
+      "report_paths": [
+        "reading-companion-backend/eval/runs/attentional_v2/digest_marginalia_v23_5book_parallel_20units_recovery_retry1_20260702/analysis/digest_marginalia_v23_5book_parallel_20units_recovery_retry1/marginalia_smoke_report.md"
+      ],
+      "catalog_status": "not_cataloged",
+      "notes": "Diagnostic-only five-book parallel Digest v23 Marginalia retry using DEC-148 provider connection diagnostics and delayed same-cursor unit recovery defaults; running for human review, no formal judge or evidence catalog promotion.",
+      "parent_run_id": "",
+      "child_run_ids": [],
+      "synthetic": false,
+      "local_missing_allowed": [
+        "reading-companion-backend/eval/runs/attentional_v2/digest_marginalia_v23_5book_parallel_20units_recovery_retry1_20260702/analysis/digest_marginalia_v23_5book_parallel_20units_recovery_retry1/raw/summary.json",
+        "reading-companion-backend/eval/runs/attentional_v2/digest_marginalia_v23_5book_parallel_20units_recovery_retry1_20260702/analysis/digest_marginalia_v23_5book_parallel_20units_recovery_retry1/marginalia_smoke_report.md"
+      ],
+      "metadata": {},
+      "updated_at": "2026-07-02T00:33:51.039824Z"
     }
   ]
 }

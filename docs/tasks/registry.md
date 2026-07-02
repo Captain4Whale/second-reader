@@ -7,7 +7,7 @@ Update when: task status, priority, blockers, decision refs, job refs, evidence 
 
 This document is the human-readable companion to `docs/tasks/registry.json`.
 
-Last updated: `2026-07-02T08:14:08+08:00`
+Last updated: `2026-07-02T08:32:34+08:00`
 
 ## Status Values
 - `active`
@@ -25,7 +25,7 @@ Last updated: `2026-07-02T08:14:08+08:00`
 - Lane: `mechanism_runtime`
 - Priority: `high`
 - Detail: `docs/current-state.md`
-- Next: Digest is live as `attentional_v2.digest.v23` / promptset `attentional_v2-phase6-v83` / output contract `digest_understanding_response_marginalia_json_v8`: canonical visible-note output remains `marginalia[]`, but new live items now require explicit `kind: "highlight" | "note"`. Highlights preserve exact source text worth carrying forward by itself, require private `selection_reason`, and keep `content` empty/omitted; Notes attach reader-facing cognitive surplus to a precise source anchor and require non-empty visible `content`. The v23 five-book diagnostic `bgjob_digest_marginalia_v23_5book_parallel_20units_20260701` completed with summary status `partial`: provider/network `network_blocked` stopped all five segments after recovery attempts, leaving only `2` accepted runner units from `mangge_zhi_dao`; use the generated report as failure evidence rather than a quality sample. `DEC-148` has now landed private provider-connection diagnostics plus delayed same-cursor unit recovery, so the next v23 rerun should use those focused-runner defaults before changing prompt, concurrency, or dataset shape again.
+- Next: Digest is live as `attentional_v2.digest.v23` / promptset `attentional_v2-phase6-v83` / output contract `digest_understanding_response_marginalia_json_v8`: canonical visible-note output remains `marginalia[]`, but new live items now require explicit `kind: "highlight" | "note"`. Highlights preserve exact source text worth carrying forward by itself, require private `selection_reason`, and keep `content` empty/omitted; Notes attach reader-facing cognitive surplus to a precise source anchor and require non-empty visible `content`. The v23 five-book diagnostic retry `bgjob_digest_marginalia_v23_5book_parallel_20units_recovery_retry1_20260702` is running over the active unique-note source-normalized five-segment dataset with `segment_workers=5`, `units_per_segment=20`, and `DEC-148` delayed same-cursor recovery defaults (`0,120,300`). Early traces show the fixed OpenCode target is active with zero local gate wait; after completion, update the ledger to `review_pending`, `partial`, or `failed` and review the generated Marginalia report.
 - Jobs:
   - `bgjob_ingest_digest_unit_memory_full_diagnostic_20260603_parallel5`
   - `bgjob_unit_memory_text_only_smoke_value_20260606`
@@ -51,6 +51,7 @@ Last updated: `2026-07-02T08:14:08+08:00`
   - `bgjob_digest_marginalia_v21_5book_parallel_20units_scheduler_fixed_retry1_20260630`
   - `bgjob_digest_marginalia_v22_5book_parallel_20units_20260701`
   - `bgjob_digest_marginalia_v23_5book_parallel_20units_20260701`
+  - `bgjob_digest_marginalia_v23_5book_parallel_20units_recovery_retry1_20260702`
 - Evidence:
   - `DEC-103`
   - `DEC-104`
