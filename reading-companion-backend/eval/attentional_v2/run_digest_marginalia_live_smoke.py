@@ -29,9 +29,9 @@ BACKEND_ROOT = Path(__file__).resolve().parents[2]
 if str(BACKEND_ROOT) not in sys.path:
     sys.path.insert(0, str(BACKEND_ROOT))
 
-DEFAULT_RUN_ID = "digest_marginalia_v23_live_smoke_20260701"
-DEFAULT_ANALYSIS_ID = "digest_marginalia_v23_live_smoke"
-DEFAULT_JOB_ID = "bgjob_digest_marginalia_v23_live_smoke_20260701"
+DEFAULT_RUN_ID = "digest_marginalia_v24_live_smoke_20260703"
+DEFAULT_ANALYSIS_ID = "digest_marginalia_v24_live_smoke"
+DEFAULT_JOB_ID = "bgjob_digest_marginalia_v24_live_smoke_20260703"
 DEFAULT_PROFILE_ID = "dataset_review_high_trust"
 DEFAULT_DATASET_ROOT = (
     BACKEND_ROOT
@@ -1208,9 +1208,9 @@ def _all_marginalia_items(direct_results: list[dict[str, object]], runner_result
 def _hard_failures(direct_results: list[dict[str, object]], runner_results: list[dict[str, object]]) -> list[str]:
     failures: list[str] = []
     prompt = ATTENTIONAL_V2_PROMPTS
-    if prompt.digest_version != "attentional_v2.digest.v23":
+    if prompt.digest_version != "attentional_v2.digest.v24":
         failures.append(f"unexpected_digest_version:{prompt.digest_version}")
-    if prompt.promptset_version != "attentional_v2-phase6-v83":
+    if prompt.promptset_version != "attentional_v2-phase6-v84":
         failures.append(f"unexpected_promptset:{prompt.promptset_version}")
     for result in direct_results:
         if result.get("status") != "ok":
@@ -1373,7 +1373,7 @@ def render_report(
     runner_results: list[dict[str, object]],
 ) -> str:
     lines: list[str] = [
-        "# Digest Marginalia v23 Live Smoke",
+        "# Digest Marginalia v24 Live Smoke",
         "",
         "## Summary",
         f"- status: `{summary.get('status')}`",

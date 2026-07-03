@@ -3,7 +3,7 @@
 This ledger indexes important evaluation runs and points to their machine artifacts, job ids, reports, and catalog status. It is an operational run index, not evidence approval.
 
 - Schema version: `1`
-- Last updated: `2026-07-03T11:29:58Z`
+- Last updated: `2026-07-03T11:39:58Z`
 
 ## Layer Boundaries
 

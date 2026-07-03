@@ -1,6 +1,6 @@
 {
   "schema_version": 1,
-  "updated_at": "2026-07-03T11:29:58Z",
+  "updated_at": "2026-07-03T11:39:58Z",
   "entries": [
     {
       "run_id": "attentional_v2_excerpt_surface_v1_1_judged_20260406",
@@ -3189,6 +3189,39 @@
       "local_missing_allowed": [],
       "metadata": {},
       "updated_at": "2026-07-03T11:29:58Z"
+    }
+  ],
+  "runs": [
+    {
+      "run_id": "digest_marginalia_v24_5book_parallel_20units_20260703",
+      "date": "2026-07-03",
+      "surface": "digest_marginalia_live_smoke",
+      "lane": "mechanism_runtime",
+      "status": "running",
+      "mechanisms": [
+        "attentional_v2"
+      ],
+      "dataset_or_manifest": [
+        "state/eval_local_datasets/user_level_benchmarks/attentional_v2_user_level_selective_v1_repaired_20260629_source_norm_v1_2_unique_notes"
+      ],
+      "run_dir": "reading-companion-backend/eval/runs/attentional_v2/digest_marginalia_v24_5book_parallel_20units_20260703",
+      "summary_paths": {
+        "raw_summary": "reading-companion-backend/eval/runs/attentional_v2/digest_marginalia_v24_5book_parallel_20units_20260703/analysis/digest_marginalia_v24_5book_parallel_20units/raw/summary.json"
+      },
+      "job_ids": [
+        "bgjob_digest_marginalia_v24_5book_parallel_20units_20260703"
+      ],
+      "report_paths": [
+        "reading-companion-backend/eval/runs/attentional_v2/digest_marginalia_v24_5book_parallel_20units_20260703/analysis/digest_marginalia_v24_5book_parallel_20units/marginalia_smoke_report.md"
+      ],
+      "catalog_status": "not_cataloged",
+      "notes": "Diagnostic-only five-book parallel Digest v24 Marginalia smoke over the active unique-note source-normalized user-level dataset. Scope: segment_workers=5, up to 20 accepted units per segment, failure_policy=partial, delayed same-cursor unit recovery enabled. Tests the intrinsic quote-value Highlight gate from DEC-149; no formal judge or evidence catalog promotion.",
+      "parent_run_id": "",
+      "child_run_ids": [],
+      "synthetic": false,
+      "local_missing_allowed": [],
+      "metadata": {},
+      "updated_at": "2026-07-03T11:39:58Z"
     }
   ]
 }

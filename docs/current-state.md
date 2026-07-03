@@ -7,7 +7,7 @@ Update when: the current objective, active tasks, blockers, active jobs, open de
 
 This file is authoritative for durable current status. Do not keep unique active-state information only in `docs/agent-handoff.md`.
 
-Last verified: `2026-07-03T19:29:58+08:00`
+Last verified: `2026-07-03T19:39:58+08:00`
 
 ## Current Objective
 - The `Ingest -> Digest -> Reading Runner settlement` mechanism reframe is implemented; current work is fact alignment, smoke/diagnostic review, and calibration before any formal evaluation promotion.
@@ -192,6 +192,13 @@ Last verified: `2026-07-03T19:29:58+08:00`
     - recovery policy: `unit_recovery_attempts=3`, `unit_recovery_delay_seconds=0,120,300`, `unit_recovery_timeout_scale=1.5`
     - outcome: summary status `pass_with_caveats`; `88` runner units across 5 segments, `170` Marginalia items (`133` Highlights, `37` Notes), `20` `quote_too_broad` caveats, `1` `possibly_generic` caveat, zero hard/partial failures, `21` unit recovery attempts, and `9` recovered units
     - report: `reading-companion-backend/eval/runs/attentional_v2/digest_marginalia_v23_5book_parallel_20units_recovery_retry1_20260702/analysis/digest_marginalia_v23_5book_parallel_20units_recovery_retry1/marginalia_smoke_report.md`
+  - Digest v24 Marginalia five-book diagnostic:
+    - run id: `digest_marginalia_v24_5book_parallel_20units_20260703`
+    - job id: `bgjob_digest_marginalia_v24_5book_parallel_20units_20260703`
+    - status: running; run ledger status is `running`
+    - scope: active unique-note source-normalized v1.2 five-segment dataset, `segment_workers=5`, up to `20` accepted units per segment, `failure_policy=partial`
+    - purpose: test the live intrinsic quote-value Highlight gate in `attentional_v2.digest.v24` / promptset `attentional_v2-phase6-v84` against the same five-segment diagnostic shape used for v22/v23 review
+    - expected report: `reading-companion-backend/eval/runs/attentional_v2/digest_marginalia_v24_5book_parallel_20units_20260703/analysis/digest_marginalia_v24_5book_parallel_20units/marginalia_smoke_report.md`
   - active diagnostic evaluation:
     - run id: `attentional_v2_ingest_digest_unit_memory_full_diagnostic_20260603_parallel5`
     - job id: `bgjob_ingest_digest_unit_memory_full_diagnostic_20260603_parallel5`
