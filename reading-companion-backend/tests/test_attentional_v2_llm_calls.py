@@ -1150,14 +1150,19 @@ def test_digest_uses_live_xml_prompt_and_filters_surface_reactions(tmp_path: Pat
     assert "Their source quotes are chosen for their own purposes and may overlap." in captured["prompt"]
     assert "Use Highlights when the quoted source text itself is worth preserving." in captured["prompt"]
     assert "Out-of-context completeness" in captured["prompt"]
-    assert "Durable portable cognitive gain" in captured["prompt"]
+    assert "Intrinsic portable cognitive gain" in captured["prompt"]
     assert "still not being worth carrying forward as a standalone Marginalia item" in captured["prompt"]
     assert "A strong fact is not enough" in captured["prompt"]
     assert "Cruelty, danger, suffering, historical importance, emotional force, or moral shock" in captured["prompt"]
     assert "Plain wording is not a weakness" in captured["prompt"]
     assert "Excerpt necessity" in captured["prompt"]
-    assert "Selection-reason test" in captured["prompt"]
+    assert "Quote-itself test" in captured["prompt"]
+    assert "If the passage becomes valuable only after you explain what it shows, it fails the Highlight gate." in captured["prompt"]
+    assert "This does not decide whether it should become a Note; Notes are judged independently in the Notes pass." in captured["prompt"]
+    assert "Selection-reason audit" in captured["prompt"]
     assert "could fit many similar passages by merely swapping names or situations" in captured["prompt"]
+    assert "must not rescue a merely local fact, scene, example, testimony, or shocking event" in captured["prompt"]
+    assert "must not supply the missing value" in captured["prompt"]
     assert "What is something valuable here that a thoughtful ordinary reader may not know" in captured["prompt"]
     assert "A Note source quote does not need to pass the Highlight gates." in captured["prompt"]
     assert "Prefer notes that add real cognitive value" in captured["prompt"]
@@ -1183,6 +1188,7 @@ def test_digest_uses_live_xml_prompt_and_filters_surface_reactions(tmp_path: Pat
     assert "Before emitting adjacent Highlights" in captured["prompt"]
     assert "Do not split a continuous valuable passage" in captured["prompt"]
     assert "turns farewell into permission" not in captured["prompt"]
+    assert "what specific portable cognitive gain is already visible in the quoted words" in captured["prompt"]
     assert "why it is more than local evidence, scene importance, emotional force, moral shock, or a strong fact from the current book" in captured["prompt"]
     assert 'For `kind: "note"`, include non-empty visible `content`; `selection_reason` may be omitted or empty.' in captured["prompt"]
     assert '"reading_impression": "..."' not in captured["prompt"]
@@ -1216,8 +1222,8 @@ def test_digest_uses_live_xml_prompt_and_filters_surface_reactions(tmp_path: Pat
     }
     assert op["target_key"] != "legacy-ignored"
     assert manifest["node_name"] == "digest"
-    assert manifest["prompt_version"] == "attentional_v2.digest.v23"
-    assert manifest["prompt_assembly"]["spec_id"] == "attentional_v2.digest.xml.v23"
+    assert manifest["prompt_version"] == "attentional_v2.digest.v24"
+    assert manifest["prompt_assembly"]["spec_id"] == "attentional_v2.digest.xml.v24"
     assert manifest["prompt_assembly"]["output_contract"] == "digest_understanding_response_marginalia_json_v8"
     assert "mode" not in manifest["prompt_assembly"]
     assert manifest["prompt_assembly"]["rendered_blocks"] == [

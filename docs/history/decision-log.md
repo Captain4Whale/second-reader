@@ -4143,3 +4143,26 @@ This new direction is design frozen but not yet implemented as a formal benchmar
 - `docs/backend-reading-mechanisms/attentional_v2.md`
 - `docs/current-state.md`
 - `docs/tasks/registry.md`
+
+## Entry 147
+**ID**: DEC-149
+**Status**: active
+
+**Decision / Inflection**: Tighten Digest Highlights so private reasons cannot rescue weak quotes.
+
+**Period**: July 3, 2026, after comparing the v22 and v21 five-book Digest Marginalia diagnostics. The v22 highlight gate reduced many weak local-evidence Highlights, especially in `huochu_shengming_de_yiyi`, but remaining weak cases showed a repeated pattern: the quote itself was a local fact, testimony, scene, or shock, while the private `selection_reason` abstracted it into a broader lesson after the fact.
+
+**Decision**: Live Digest is bumped to `attentional_v2.digest.v24` / XML spec v24 / promptset `attentional_v2-phase6-v84`, while keeping output contract `digest_understanding_response_marginalia_json_v8`. Highlight selection now uses an intrinsic quote-value gate: the quoted words themselves must already carry the portable cognitive gain. The private `selection_reason` may identify value already visible in the quote, but must not create it by translating a local fact, scene, example, testimony, emotional shock, or book-specific event into a general lesson. A new quote-itself test asks whether a thoughtful reader would still see why the quote is worth preserving without `selection_reason`, `content`, surrounding context, or an explanation from the model.
+
+**Boundary**: This is a prompt-quality calibration only. It does not change the Marginalia item schema, Digest runtime normalization, Unit Memory retrieval semantics, public API / frontend fields, Ingest behavior, source-coordinate resolution, provider recovery, or historical eval/report artifacts. Highlights and Notes remain independent actions; a failed Highlight gate does not automatically make the passage a Note candidate, and Notes remain judged separately in the Notes pass.
+
+**Why this path won**: Adding more topical exceptions, such as special rules for trauma or historical violence, would not generalize across books. The more universal failure was that the model treated `selection_reason` as a place to justify a weak quote. Requiring the quoted words themselves to carry the durable value keeps strong non-fiction definitions, principles, and reality-facing claims eligible while reducing local scene/fact Highlights whose value exists only after external abstraction.
+
+**Primary evidence**:
+- `reading-companion-backend/src/attentional_v2/prompts/digest.py`
+- `reading-companion-backend/src/attentional_v2/prompts/registry.py`
+- `reading-companion-backend/tests/test_attentional_v2_llm_calls.py`
+- `reading-companion-backend/tests/test_attentional_v2_scaffold.py`
+- `docs/backend-reading-mechanisms/attentional_v2.md`
+- `docs/current-state.md`
+- `docs/tasks/registry.md`

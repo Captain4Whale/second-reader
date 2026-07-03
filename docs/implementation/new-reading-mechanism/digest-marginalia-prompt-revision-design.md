@@ -9,25 +9,25 @@ Created: `2026-06-20`
 
 ## Status
 
-- Status: implemented-live in Digest v20.
+- Status: implemented-live in Digest v24.
 - Live prompt now implements the reviewed candidate in `reading-companion-backend/src/attentional_v2/prompts/digest.py`.
 - Current live Digest baseline:
-  - prompt version: `attentional_v2.digest.v20`
-  - XML spec: `attentional_v2.digest.xml.v20`
-  - promptset: `attentional_v2-phase6-v80`
-  - output contract: `digest_understanding_response_marginalia_json_v7`
+  - prompt version: `attentional_v2.digest.v24`
+  - XML spec: `attentional_v2.digest.xml.v24`
+  - promptset: `attentional_v2-phase6-v84`
+  - output contract: `digest_understanding_response_marginalia_json_v8`
 - Current live model-facing outputs:
   - `understanding`
   - `response`
   - `marginalia[]`
 - Implemented output-contract direction:
-  - The model-facing Marginalia item contains `source_quote`, optional `content`, and optional private `selection_reason`.
+  - The model-facing Marginalia item contains required `kind`, required `source_quote`, optional `content`, and optional private `selection_reason`.
+  - `kind` is required and must be `"highlight"` or `"note"` for new live output.
   - `source_quote` is required.
-  - `content` may be omitted or empty; omitted / empty `content` means highlight-only.
-  - Non-empty `content` means note-bearing Marginalia.
-  - Highlight-only Marginalia must carry a short private `selection_reason` inline on the same item.
-  - Note-bearing Marginalia may omit `selection_reason` because visible `content` carries the reason.
-  - Do not add `mode`, `kind`, `decision`, or inherited optional metadata to the normal model-facing Marginalia item unless a later product/runtime design explicitly reintroduces it.
+  - `kind: "highlight"` preserves exact source text worth carrying forward by itself; it requires non-empty private `selection_reason` and keeps `content` empty or omitted.
+  - `kind: "note"` attaches reader-facing cognitive surplus to a precise source anchor; it requires non-empty visible `content` and may omit `selection_reason`.
+  - Highlights and Notes are independent reader actions; their source quotes may overlap and are not deduped by quote.
+  - Do not add `mode`, `decision`, `prior_link`, `outside_link`, `search_intent`, or other inherited optional metadata to the normal model-facing Marginalia item unless a later product/runtime design explicitly reintroduces it.
 - Implemented v12 quality-policy follow-up:
   - Highlight-only now means an exact quote can stand alone as an excerpt worth preserving; another reader should be able to see the reason for marking from the quoted words themselves.
   - Structurally important but context-dependent spans, such as topic sentences, transitions, setup questions, recaps, or argument signposts, should usually stay in Understanding or become note-bearing Marginalia rather than quote-only highlights.
@@ -71,15 +71,29 @@ Created: `2026-06-20`
   - Adjacent valuable spans should be emitted separately only when they are distinct portable ideas; neighboring sentences that jointly form one definition, argument step, contrast, analogy, or mini-theory should be quoted together as one Marginalia item.
   - `source_quote` selection now clarifies that "smallest complete" means the shortest contiguous span that preserves the full reusable idea, not the shortest possible sentence.
   - Output contract remains `digest_understanding_response_marginalia_json_v7`; this is a prompt-selection discipline change, not a schema or runtime contract change.
+- Implemented v21-v22 Highlight gate follow-up:
+  - Highlights must pass durable-value, out-of-context-completeness, and excerpt-necessity gates.
+  - Strong facts, suffering, historical importance, emotional force, and moral shock are not enough by themselves unless the quote itself crystallizes a reusable insight, distinction, mechanism, warning, model, or self-correction.
+  - Private `selection_reason` must name the specific portable gain and fail if it could fit many similar passages by merely swapping names or situations.
+- Implemented v23 parallel-actions follow-up:
+  - Marginalia now include explicit parallel `Highlights` and `Notes` rather than a single content-empty/content-bearing choice.
+  - New live output requires `marginalia[].kind`.
+  - Highlights and Notes are judged in separate passes; overlapping anchors are allowed.
+  - Output contract is now `digest_understanding_response_marginalia_json_v8`.
+- Implemented v24 intrinsic quote-value follow-up:
+  - Highlights now use an intrinsic quote-value gate: the quoted words themselves must already carry the portable cognitive gain.
+  - Private `selection_reason` may identify value already visible in the quote, but must not supply missing value by translating a local fact, scene, example, testimony, emotional shock, or book-specific event into a general lesson after the fact.
+  - The quote-itself test asks whether a thoughtful reader would still see why the quote is worth preserving without `selection_reason`, `content`, surrounding context, or an explanation from the model.
+  - Notes remain an independent pass; failing the Highlight gate does not automatically make a passage a Note candidate.
 
 ## Design Goal
 
 Revise the Digest prompt so Marginalia becomes a stronger user-visible reading surface:
 
-- Marginalia should cover both highlight-only marks and note-bearing marks.
-- Highlight-only means the source quote itself is excerpt-worthy, preserves a complete local meaning span, can stand alone without surrounding context or an added note, and has durable value as an excerpt.
-- Highlight-only selection should leave a short private reason for audit, so later review can tell why the quote was selected without exposing that reason to the reader.
-- Note-bearing Marginalia means the quote needs a reader-visible thought, explanation, question, connection, or judgment to preserve its value.
+- Marginalia should cover both Highlights and Notes as independent reader actions.
+- Highlights mean the source quote itself is excerpt-worthy, preserves a complete local meaning span, can stand alone without surrounding context or an added note, and already carries durable portable cognitive value in the quoted words.
+- Highlight selection should leave a short private reason for audit, so later review can tell why the quote was selected without exposing that reason to the reader.
+- Notes mean the quote is a precise anchor for a reader-visible thought, explanation, question, connection, or judgment that adds cognitive surplus.
 - The prompt should help the model avoid generic annotation, forced commentary, unsupported external knowledge, and note inflation.
 - Any final output-contract change must stay compatible with source anchoring and frontend highlight behavior.
 
@@ -507,19 +521,19 @@ Current working answer:
 Current role:
 
 - Requires top-level `understanding`, `response`, and `marginalia`.
-- Allows each Marginalia item to include `source_quote`, optional `content`, and optional private `selection_reason`.
+- Allows each Marginalia item to include required `kind`, required `source_quote`, optional `content`, and optional private `selection_reason`.
 
 Current working answer:
 
-- The live final-output tool schema should expose `source_quote`, optional `content`, and optional private `selection_reason` for each Marginalia item.
+- The live final-output tool schema should expose `kind`, `source_quote`, optional `content`, and optional private `selection_reason` for each Marginalia item.
+- `kind` should be required and must be `"highlight"` or `"note"` for new live output.
 - `source_quote` should be required.
-- `content` should be optional and nullable / empty-string tolerant.
-- Highlight-only Marginalia should include non-empty inline `selection_reason`.
-- `selection_reason` should be short, private, and specific to the quote's durable excerpt value.
-- Note-bearing Marginalia does not require inline `selection_reason`; its visible `content` is the selection reason.
+- `kind: "highlight"` should include non-empty inline `selection_reason`; `content` should be empty or omitted.
+- `selection_reason` should be short, private, and specific to durable value already visible in the quote itself.
+- `kind: "note"` should require non-empty visible `content` and does not require inline `selection_reason`; its visible `content` is the reader-facing note.
 - The schema should not expose `prior_link`, `outside_link`, or `search_intent` as normal live output fields.
 - Backward-compatible normalizers may continue to read legacy metadata from older artifacts or malformed outputs, but those fields are not a current model-facing contract.
-- Do not add `mode` / `kind` in this slice; highlight-only remains runtime-derived from empty, null, or omitted `content`.
+- Do not add `mode` / `decision` in this slice.
 
 ### 18. Runtime Normalization And Settlement
 
@@ -533,20 +547,21 @@ Current role:
 
 Current working answer:
 
-- Runtime normalization should accept Marginalia items with exact `source_quote` and empty, null, or omitted `content`.
+- Runtime normalization should accept new live Marginalia items with required `kind`, exact `source_quote`, and kind-appropriate `content` / `selection_reason`.
 - Missing or unresolved `source_quote` remains invalid / dropped according to existing source-grounding rules.
-- Highlight-only items should be stored as canonical Marginalia records with empty note content, so they can travel through the same mark / Marginalia surface as note-bearing items.
-- Highlight-only private audit reasons should be stored in mechanism-private runtime / audit / Unit Memory metadata, but they should not become public Marginalia content or retrieval text.
-- Runtime/frontend can derive highlight-only vs note-bearing from normalized `content`.
+- Highlight items should be stored as canonical Marginalia records with empty note content, so they can travel through the same mark / Marginalia surface as Notes.
+- Highlight private audit reasons should be stored in mechanism-private runtime / audit / Unit Memory metadata, but they should not become public Marginalia content or retrieval text.
+- Runtime/frontend should use canonical normalized `kind` for new artifacts while preserving legacy content-derived inference for old artifacts.
 - Legacy annotation/reaction aliases should preserve highlight-only semantics where compatibility surfaces need them, but new runtime/audit rows should use canonical Marginalia vocabulary.
 - Legacy `prior_link`, `outside_link`, and `search_intent` may remain compatibility-read fields; they should not be required or emitted for new live Marginalia.
 
-## Open Output-Contract Direction
+## Current Live Output-Contract Direction
 
-Current working decision for the next reviewed Digest Marginalia contract:
+Current live Digest Marginalia contract:
 
 ```json
 {
+  "kind": "highlight",
   "source_quote": "...",
   "content": "",
   "selection_reason": "..."
@@ -555,17 +570,17 @@ Current working decision for the next reviewed Digest Marginalia contract:
 
 Interpretation:
 
+- `kind` is required and must be `"highlight"` or `"note"` for new live outputs.
 - `source_quote` is required.
-- Empty, `null`, or omitted `content` means highlight-only.
-- Non-empty `content` means note-bearing Marginalia.
-- Highlight-only requires inline `selection_reason` naming both out-of-context completeness and durable excerpt value; note-bearing may omit it.
-- No explicit `mode` / `kind` / `decision` field is needed in this slice.
+- For `kind: "highlight"`, `selection_reason` is required, `content` is empty or omitted, and the quote must pass intrinsic quote-value, quote-itself, out-of-context-completeness, excerpt-necessity, and selection-reason-audit gates.
+- For `kind: "note"`, `content` is required and visible, while `selection_reason` may be omitted or empty.
+- No explicit `mode` / `decision` field is needed in this slice.
 - `prior_link`, `outside_link`, and `search_intent` should not be part of the normal model-facing Marginalia item. They may remain backward-compatible backend fields for older reaction / annotation / Marginalia artifacts, but should not appear in the live prompt ReturnFormat, final-output tool schema, or few-shot examples.
 - Future source-backlink, external-reference, or research-intent behavior should be redesigned as an explicit product/runtime feature rather than hidden inside ordinary Marginalia item metadata.
 
 ## Accepted Implementation Slice
 
-This design is implemented by the Digest v11-v19 slices. The implementation updated these surfaces together:
+This design is implemented by the Digest v11-v24 slices. The implementation updated these surfaces together:
 
 - Digest prompt version / XML spec / promptset / output-contract id.
 - `Instruction / Marginalia` with the current candidate prompt text.
@@ -573,18 +588,22 @@ This design is implemented by the Digest v11-v19 slices. The implementation upda
 - v17 highlight-only context-loss guidance so quote-only highlights must remain understandable out of context and carry visible excerpt value.
 - v18 note-bearing guidance so note content asks directly for what a thoughtful ordinary reader may not notice, know, or infer on their own.
 - v19 quality calibration so highlight-only targets durable long-term reader value and note-bearing demotes ordinary close-reading / technique commentary unless it produces non-obvious gain.
+- v20 density guidance so high-value units can produce multiple Highlights / Notes and adjacent sentences are quoted together when they form one complete reusable idea.
+- v21-v22 Highlight gates so strong facts, moral shock, and local evidence are not enough unless the quote itself crystallizes reusable cognitive value.
+- v23 explicit `kind` so Highlights and Notes are parallel reader actions rather than a content-derived choice.
+- v24 intrinsic quote-value guidance so private `selection_reason` identifies value already present in the quote rather than rescuing weak local evidence through post-hoc abstraction.
 - `Instruction / SourceGrounding` to align exact-quote wording with highlight-only and note-bearing Marginalia.
 - `Instruction / ResponseDiscipline` to forbid calibration fields and inherited metadata fields in final output.
-- `OutputContract / ReturnFormat` and `OutputFields / MarginaliaField` to show visible `source_quote` plus optional `content`, plus inline private highlight-only `selection_reason` audit metadata.
-- Final-output tool schema so `marginalia[].content` is not required.
-- Digest output validator and normalizer so highlight-only items are accepted when `source_quote` resolves and `content` is empty / null / omitted, and so each highlight-only item carries one private inline audit reason.
-- Runtime/audit/unit-memory persistence so new records use canonical `marginalia` vocabulary, preserve highlight-only vs note-bearing semantics, and keep private audit reasons out of reader-visible Marginalia content.
+- `OutputContract / ReturnFormat` and `OutputFields / MarginaliaField` to show visible `kind`, `source_quote`, optional `content`, plus inline private Highlight `selection_reason` audit metadata.
+- Final-output tool schema so `marginalia[].kind` is required for new live output, Highlight items require `selection_reason`, and Note items require visible `content`.
+- Digest output validator and normalizer so new items are validated by `kind`, legacy items without `kind` remain accepted through compatibility inference, and old top-level `marginalia_audit[]` can still provide fallback reasons for historical payloads.
+- Runtime/audit/unit-memory persistence so new records use canonical `marginalia` vocabulary, preserve explicit Highlight vs Note semantics, and keep private audit reasons out of reader-visible Marginalia content.
 
 Non-goals for this slice:
 
 - Do not redesign `ReadingMemory`, Unit Memory retrieval, Ingest, or Digest `understanding` semantics.
 - Do not reintroduce `prior_link`, `outside_link`, or `search_intent` into the live Marginalia output contract.
-- Do not add explicit `mode`, `kind`, or `decision` fields.
+- Do not add explicit `mode` or `decision` fields.
 - Do not expose `selection_reason` as a frontend/public API field in this slice.
 - Do not modify frontend presentation beyond whatever minimal compatibility is required to carry highlight-only Marginalia through existing mark surfaces.
 

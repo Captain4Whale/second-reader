@@ -7,7 +7,7 @@ Update when: task status, priority, blockers, decision refs, job refs, evidence 
 
 This document is the human-readable companion to `docs/tasks/registry.json`.
 
-Last updated: `2026-07-02T08:32:34+08:00`
+Last updated: `2026-07-03T19:29:58+08:00`
 
 ## Status Values
 - `active`
@@ -25,7 +25,7 @@ Last updated: `2026-07-02T08:32:34+08:00`
 - Lane: `mechanism_runtime`
 - Priority: `high`
 - Detail: `docs/current-state.md`
-- Next: Digest is live as `attentional_v2.digest.v23` / promptset `attentional_v2-phase6-v83` / output contract `digest_understanding_response_marginalia_json_v8`: canonical visible-note output remains `marginalia[]`, but new live items now require explicit `kind: "highlight" | "note"`. Highlights preserve exact source text worth carrying forward by itself, require private `selection_reason`, and keep `content` empty/omitted; Notes attach reader-facing cognitive surplus to a precise source anchor and require non-empty visible `content`. The v23 five-book diagnostic retry `bgjob_digest_marginalia_v23_5book_parallel_20units_recovery_retry1_20260702` is running over the active unique-note source-normalized five-segment dataset with `segment_workers=5`, `units_per_segment=20`, and `DEC-148` delayed same-cursor recovery defaults (`0,120,300`). Early traces show the fixed OpenCode target is active with zero local gate wait; after completion, update the ledger to `review_pending`, `partial`, or `failed` and review the generated Marginalia report.
+- Next: Digest is live as `attentional_v2.digest.v24` / promptset `attentional_v2-phase6-v84` / output contract `digest_understanding_response_marginalia_json_v8`: canonical visible-note output remains `marginalia[]` with explicit `kind: "highlight" | "note"`. Highlights now require intrinsic quote value: the quoted words themselves must already carry the portable cognitive gain, while private `selection_reason` may identify but not invent that value by abstracting a local scene/fact/testimony after the fact. Notes remain an independent pass with non-empty visible `content`. The v23 five-book diagnostic retry completed as `pass_with_caveats` and is ready for review; the next diagnostic, if requested, should run the v24 prompt over the same active unique-note source-normalized five-segment dataset.
 - Jobs:
   - `bgjob_ingest_digest_unit_memory_full_diagnostic_20260603_parallel5`
   - `bgjob_unit_memory_text_only_smoke_value_20260606`
@@ -97,6 +97,7 @@ Last updated: `2026-07-02T08:32:34+08:00`
   - `DEC-146`
   - `DEC-147`
   - `DEC-148`
+  - `DEC-149`
   - `docs/current-state.md`
   - `docs/backend-reader-evaluation.md`
   - `docs/implementation/new-reading-mechanism/ingest-context-and-navigate-mapping.md`

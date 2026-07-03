@@ -18,9 +18,9 @@ from .reader_role import READER_ROLE_FRAGMENT
 from .types import PromptDefinition
 
 
-DIGEST_PROMPT_VERSION = "attentional_v2.digest.v23"
-DIGEST_XML_PROMPT_ASSEMBLY_SPEC_ID = "attentional_v2.digest.xml.v23"
-DIGEST_XML_PROMPTSET_VERSION = "attentional_v2-phase6-v83"
+DIGEST_PROMPT_VERSION = "attentional_v2.digest.v24"
+DIGEST_XML_PROMPT_ASSEMBLY_SPEC_ID = "attentional_v2.digest.xml.v24"
+DIGEST_XML_PROMPTSET_VERSION = "attentional_v2-phase6-v84"
 DIGEST_XML_TRANSPORT_SYSTEM_PROMPT = "Follow the structured Digest prompt in the user message. Use the required submit_digest_result tool as the final output channel."
 
 
@@ -35,7 +35,7 @@ Stay with this unit as the present moment of reading. Let the carried reading co
 
 After reading, express the result in three connected ways: what you understand from the text, how you respond to it as a reader, and which exact quotes, if any, should become Marginalia in the page margin.
 
-Marginalia include Highlights and Notes. A Highlight preserves exact source text that remains understandable when lifted out of the book and gives the reader a durable portable cognitive gain by itself, not merely a strong fact, scene, example, or piece of evidence from this book. A Note attaches useful knowledge or a non-obvious connection to a precise source anchor that a thoughtful ordinary reader may not know, notice, or infer on their own.""",
+Marginalia include Highlights and Notes. A Highlight preserves exact source text that remains understandable when lifted out of the book and gives the reader a durable portable cognitive gain by itself; the private selection reason may identify that value, but must not create it by turning a local fact, scene, example, testimony, or shocking event into a broader lesson after the fact. A Note attaches useful knowledge or a non-obvious connection to a precise source anchor that a thoughtful ordinary reader may not know, notice, or infer on their own.""",
     ),
     PromptFragment(
         fragment_id="digest.context_use_guide",
@@ -210,8 +210,10 @@ Use Highlights when the quoted source text itself is worth preserving.
 #### gates
 A Highlight quote must pass these gates:
 
-1. Durable portable cognitive gain:
-   The quote must give the reader something they can carry into later thinking: a compressed idea, a useful distinction, a durable mechanism, practical wisdom, a counter-intuitive correction, or a transferable way of seeing.
+1. Intrinsic portable cognitive gain:
+   The quoted words themselves must already give the reader something they can carry into later thinking: a compressed idea, a useful distinction, a durable mechanism, practical wisdom, a counter-intuitive correction, or a transferable way of seeing.
+
+   The private `selection_reason` may only identify value already present in the quote. It must not rescue a merely local fact, scene, example, testimony, or shocking event by translating it into a broader lesson after the fact.
 
    Do not use a Highlight merely because a sentence is important for understanding this book. A sentence may be crucial as evidence, plot movement, testimony, atmosphere, or local explanation while still not being worth carrying forward as a standalone Marginalia item.
 
@@ -226,13 +228,20 @@ A Highlight quote must pass these gates:
    Ask: if this quote were saved and reread months later without the surrounding unit, would it still give the reader a usable thought, distinction, warning, model, or self-correction?
    If its value mainly comes from "this happened here", "this proves the current point", "this scene is intense", "this fact is shocking", or "this shows how terrible the situation is", it should not be used as a Highlight.
 
-4. Selection-reason test:
-   The private `selection_reason` must name the specific portable cognitive gain. If the reason could fit many similar passages by merely swapping names or situations, the quote is probably only local evidence and should not be a Highlight. It may still be a useful anchor for a Note, judged separately under Notes.
+4. Quote-itself test:
+   Ask: if this `source_quote` were shown to the reader without `selection_reason`, `content`, surrounding context, or an explanation from you, would a thoughtful reader still see why it is worth preserving?
+
+   If the answer is no, do not use it as a Highlight. If the passage becomes valuable only after you explain what it shows, it fails the Highlight gate. This does not decide whether it should become a Note; Notes are judged independently in the Notes pass.
+
+5. Selection-reason audit:
+   The private `selection_reason` must point to the specific durable gain already visible in the quoted words. If the reason could fit many similar passages by merely swapping names or situations, the quote is probably only local evidence and should not be a Highlight.
+
+   If the reason mainly says that the quote "shows", "reveals", "illustrates", or "symbolizes" a broader condition while the quote itself remains a local event, fact, or scene, the quote is probably not a Highlight.
 
 For a Highlight item, output `kind: "highlight"`, `source_quote`, and a short private `selection_reason`. Leave `content` empty or omit it.
 The reason must name:
 - why the quote remains understandable out of context;
-- what specific portable cognitive gain it gives the reader;
+- what specific portable cognitive gain is already visible in the quoted words;
 - why it is more than local evidence, scene importance, emotional force, moral shock, or a strong fact from the current book.
 
 ## Notes
@@ -337,7 +346,7 @@ This section explains only the `marginalia` field. The final Digest output must 
 For each Marginalia item:
 - `kind` must be either `"highlight"` or `"note"`.
 - `source_quote` must be an exact contiguous quote from the current source unit.
-- For `kind: "highlight"`, include a short private `selection_reason` inside the same item and leave `content` empty or omit it. The reason must name why the quote remains understandable out of context, what specific portable cognitive gain it gives the reader, and why it is more than local evidence, scene importance, emotional force, moral shock, or a strong fact from the current book.
+- For `kind: "highlight"`, include a short private `selection_reason` inside the same item and leave `content` empty or omit it. The reason must name why the quote remains understandable out of context, what specific portable cognitive gain is already visible in the quoted words, and why it is more than local evidence, scene importance, emotional force, moral shock, or a strong fact from the current book. The reason must not supply the missing value by turning a local fact, scene, testimony, emotional shock, or book-specific event into a general lesson after the fact.
 - For `kind: "note"`, include non-empty visible `content`; `selection_reason` may be omitted or empty.
 - Highlights and Notes are independent items. Their source quotes may overlap.""",
     ),
@@ -709,7 +718,7 @@ Top-level fields:
   ]
 }
 In each Marginalia item, `kind` and `source_quote` are required. `kind` must be `"highlight"` or `"note"`.
-For a Highlight, include a short private `selection_reason` that names out-of-context completeness, specific portable cognitive gain, and why the quote is more than local evidence, scene importance, emotional force, moral shock, or a strong fact from the current book. Leave `content` empty or omit it.
+For a Highlight, include a short private `selection_reason` that names out-of-context completeness, the durable value already visible in the quote itself, and why the quote is more than local evidence, scene importance, emotional force, moral shock, or a strong fact from the current book. The reason must not supply the missing value by turning a local fact, scene, testimony, emotional shock, or book-specific event into a general lesson after the fact. Leave `content` empty or omit it.
 For a Note, include non-empty visible `content`; `selection_reason` may be empty or omitted.""",
 )
 
@@ -742,7 +751,7 @@ Shape:
   "source_quote": "...",
   "selection_reason": "..."
 }
-`kind` is required and must be `"highlight"` or `"note"`. `source_quote` is required and should follow the span rule for that kind. A Highlight must include a non-empty private `selection_reason` that names out-of-context completeness, specific portable cognitive gain, and why the quote is more than local evidence, scene importance, emotional force, moral shock, or a strong fact from the current book. A Note must include non-empty visible `content` and may omit `selection_reason`. Do not output calibration fields, prior links, outside links, or search intent fields. Detailed Marginalia-selection and source-quote behavior live under Instruction.""",
+`kind` is required and must be `"highlight"` or `"note"`. `source_quote` is required and should follow the span rule for that kind. A Highlight must include a non-empty private `selection_reason` that names out-of-context completeness, the durable value already visible in the quote itself, and why the quote is more than local evidence, scene importance, emotional force, moral shock, or a strong fact from the current book; the reason must not supply the missing value by turning a local fact, scene, testimony, emotional shock, or book-specific event into a general lesson after the fact. A Note must include non-empty visible `content` and may omit `selection_reason`. Do not output calibration fields, prior links, outside links, or search intent fields. Detailed Marginalia-selection and source-quote behavior live under Instruction.""",
 )
 
 
