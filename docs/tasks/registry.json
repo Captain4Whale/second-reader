@@ -106,7 +106,7 @@
         "bgjob_digest_marginalia_v24_5book_parallel_20units_continue1_20260704"
       ],
       "acceptance_ref": "docs/implementation/new-reading-mechanism/ingest-select-next-unit-window-partition-draft-prompt.md",
-      "next_action": "Digest is live as `attentional_v2.digest.v24` / promptset `attentional_v2-phase6-v84` / output contract `digest_understanding_response_marginalia_json_v8`: canonical visible-note output remains `marginalia[]` with explicit `kind: \"highlight\" | \"note\"`. Highlights now require intrinsic quote value: the quoted words themselves must already carry the portable cognitive gain, while private `selection_reason` may identify but not invent that value by abstracting a local scene/fact/testimony after the fact. Notes remain an independent pass with non-empty visible `content`. The v24 continuation diagnostic `bgjob_digest_marginalia_v24_5book_parallel_20units_continue1_20260704` completed as `partial`: it added `39` accepted units and combined with the prior partial run for `63` total accepted units; `mangge` and `value_of_others` reached `20`, while `xidaduo`, `huochu`, and `nawaer` stopped after repeated provider `RemoteProtocolError` / `network_blocked` recovery exhaustion. Review the partial report before deciding whether another continuation is worth running.",
+      "next_action": "Digest is live as `attentional_v2.digest.v24` / promptset `attentional_v2-phase6-v84` / output contract `digest_understanding_response_marginalia_json_v8`: canonical visible-note output remains `marginalia[]` with explicit `kind: \"highlight\" | \"note\"`. Highlights now require intrinsic quote value: the quoted words themselves must already carry the portable cognitive gain, while private `selection_reason` may identify but not invent that value by abstracting a local scene/fact/testimony after the fact. Notes remain an independent pass with non-empty visible `content`. The v24 continuation diagnostic `bgjob_digest_marginalia_v24_5book_parallel_20units_continue1_20260704` completed as `partial`: it added `39` accepted units and combined with the prior partial run for `63` total accepted units; `mangge` and `value_of_others` reached `20`, while `xidaduo`, `huochu`, and `nawaer` stopped after repeated provider `RemoteProtocolError` / `network_blocked` recovery exhaustion. `DEC-150` now upgrades focused diagnostic transient recovery for long-running jobs to `6` extra same-cursor unit retries, delay schedule `0,120,300,600,900,1200`, and a `3600s` per-unit recovery budget, so the next continuation can wait through provider-side instability instead of giving up after a short outage.",
       "blocked_by": [],
       "evidence_refs": [
         "docs/current-state.md",
@@ -173,7 +173,10 @@
       "jobs": [
         "bgjob_digest_marginalia_v22_5book_parallel_20units_20260701"
       ],
-      "updated_at": "2026-07-02T08:32:34+08:00"
+      "updated_at": "2026-07-02T08:32:34+08:00",
+      "evidence": [
+        "DEC-150"
+      ]
     },
     {
       "id": "TASK-SECOND-READER-READ-PROMPT-XML-FULL-ACTIVE-DIAGNOSTIC-20260526",

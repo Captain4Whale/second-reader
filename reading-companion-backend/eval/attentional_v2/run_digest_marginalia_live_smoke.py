@@ -501,7 +501,7 @@ def _unit_recovery_timeout_seconds(timeout_seconds: int, *, recovery_attempt: in
 
 
 def _unit_recovery_delay_schedule(raw: str | None, *, failure_policy: str) -> list[int]:
-    default = "0,120,300" if failure_policy == "partial" else "0"
+    default = "0,120,300,600,900,1200" if failure_policy == "partial" else "0"
     text = _clean_text(raw) or default
     values: list[int] = []
     for part in text.split(","):
@@ -519,6 +519,16 @@ def _unit_recovery_delay_for_attempt(schedule: list[int], *, recovery_attempt: i
         return 0
     index = min(recovery_attempt - 1, len(schedule) - 1)
     return int(schedule[index])
+
+
+def _unit_recovery_max_elapsed_seconds(raw: int | None, *, failure_policy: str) -> int:
+    if raw is not None:
+        return max(0, int(raw))
+    return 3600 if failure_policy == "partial" else 0
+
+
+def _unit_recovery_budget_allows_retry(*, elapsed_seconds: float, max_elapsed_seconds: int) -> bool:
+    return max_elapsed_seconds <= 0 or elapsed_seconds < max_elapsed_seconds
 
 
 def run_direct_digest_smoke(
@@ -869,9 +879,10 @@ def run_segment_units(
     timeout_seconds: int,
     retry_attempts: int,
     failure_policy: str = "partial",
-    unit_recovery_attempts: int = 3,
+    unit_recovery_attempts: int = 6,
     unit_recovery_delay_seconds: str | None = None,
     unit_recovery_timeout_scale: float = 1.5,
+    unit_recovery_max_elapsed_seconds: int | None = None,
     start_cursor: Mapping[str, object] | None = None,
     unit_index_offset: int = 0,
     target_total_units: int | None = None,
@@ -919,6 +930,10 @@ def run_segment_units(
         unit_recovery_delay_seconds,
         failure_policy=failure_policy,
     )
+    recovery_max_elapsed_seconds = _unit_recovery_max_elapsed_seconds(
+        unit_recovery_max_elapsed_seconds,
+        failure_policy=failure_policy,
+    )
     status = "ok"
     stop_reason = "unit_limit"
     started_at = _now()
@@ -959,6 +974,7 @@ def run_segment_units(
                     "unit_recovery_delay_seconds": recovery_delay_seconds,
                     "unit_recovery_delay_schedule": recovery_delay_schedule,
                     "unit_recovery_timeout_scale": unit_recovery_timeout_scale,
+                    "unit_recovery_max_elapsed_seconds": recovery_max_elapsed_seconds,
                     "failure_policy": failure_policy,
                 },
             )
@@ -1049,7 +1065,12 @@ def run_segment_units(
                     "error": str(exc),
                 }
                 unit_recovery_events.append(event)
-                if transient and unit_attempt + 1 < max_unit_attempts:
+                elapsed = time.perf_counter() - unit_started
+                budget_allows_retry = _unit_recovery_budget_allows_retry(
+                    elapsed_seconds=elapsed,
+                    max_elapsed_seconds=recovery_max_elapsed_seconds,
+                )
+                if transient and unit_attempt + 1 < max_unit_attempts and budget_allows_retry:
                     unit_recovery_attempt_count += 1
                     continue
                 status = "partial" if transient and failure_policy == "partial" else "failed"
@@ -1067,6 +1088,13 @@ def run_segment_units(
                     "unit_recovery_attempts": len(unit_recovery_events) - 1,
                     "unit_recovery_delay_schedule": recovery_delay_schedule,
                     "unit_recovery_timeout_scale": unit_recovery_timeout_scale,
+                    "unit_recovery_max_elapsed_seconds": recovery_max_elapsed_seconds,
+                    "unit_recovery_elapsed_seconds": round(elapsed, 3),
+                    "unit_recovery_budget_exhausted": bool(
+                        transient
+                        and unit_attempt + 1 < max_unit_attempts
+                        and not budget_allows_retry
+                    ),
                     "recovery_events": unit_recovery_events,
                     "provider_call_attempt_count": provider_details.get("provider_call_attempt_count"),
                     "connection_error_kind": provider_details.get("connection_error_kind", ""),
@@ -1094,6 +1122,7 @@ def run_segment_units(
                         "unit_recovery_attempts": len(unit_recovery_events),
                         "unit_recovery_delay_schedule": recovery_delay_schedule,
                         "unit_recovery_timeout_scale": unit_recovery_timeout_scale,
+                        "unit_recovery_max_elapsed_seconds": recovery_max_elapsed_seconds,
                         "recovery_events": unit_recovery_events,
                     }
                 )
@@ -1139,6 +1168,7 @@ def run_segment_units(
                 "unit_recovery_attempts": len(unit_recovery_events),
                 "unit_recovery_delay_schedule": recovery_delay_schedule,
                 "unit_recovery_timeout_scale": unit_recovery_timeout_scale,
+                "unit_recovery_max_elapsed_seconds": recovery_max_elapsed_seconds,
                 "recovery_events": unit_recovery_events,
                 "recovered": bool(unit_recovery_events),
                 "end_cursor": dict(settled_unit.get("source_cursor", {}))
@@ -1191,6 +1221,7 @@ def run_segment_units(
         "unit_recovery_attempts": unit_recovery_attempt_count,
         "unit_recovery_delay_schedule": recovery_delay_schedule,
         "unit_recovery_timeout_scale": unit_recovery_timeout_scale,
+        "unit_recovery_max_elapsed_seconds": recovery_max_elapsed_seconds,
         "resume_from_run_id": resume_from_run_id,
         "resume_from_analysis_root": resume_from_analysis_root,
         "resume_runtime_dir": str(resume_runtime_dir) if resume_runtime_dir is not None else "",
@@ -1217,9 +1248,10 @@ def run_focused_segments(
     retry_attempts: int,
     segment_workers: int,
     failure_policy: str = "partial",
-    unit_recovery_attempts: int = 3,
+    unit_recovery_attempts: int = 6,
     unit_recovery_delay_seconds: str | None = None,
     unit_recovery_timeout_scale: float = 1.5,
+    unit_recovery_max_elapsed_seconds: int | None = None,
     resume_plan: Mapping[str, Mapping[str, object]] | None = None,
 ) -> list[dict[str, object]]:
     ordered_segment_ids = list(segment_ids)
@@ -1253,6 +1285,10 @@ def run_focused_segments(
                     failure_policy=failure_policy,
                 ),
                 "unit_recovery_timeout_scale": unit_recovery_timeout_scale,
+                "unit_recovery_max_elapsed_seconds": _unit_recovery_max_elapsed_seconds(
+                    unit_recovery_max_elapsed_seconds,
+                    failure_policy=failure_policy,
+                ),
                 "resume_from_run_id": segment_resume.get("resume_from_run_id", ""),
                 "resume_from_analysis_root": segment_resume.get("resume_from_analysis_root", ""),
                 "resume_runtime_dir": segment_resume.get("resume_runtime_dir", ""),
@@ -1279,6 +1315,7 @@ def run_focused_segments(
                 unit_recovery_attempts=unit_recovery_attempts,
                 unit_recovery_delay_seconds=unit_recovery_delay_seconds,
                 unit_recovery_timeout_scale=unit_recovery_timeout_scale,
+                unit_recovery_max_elapsed_seconds=unit_recovery_max_elapsed_seconds,
                 start_cursor=segment_resume.get("start_cursor")
                 if isinstance(segment_resume.get("start_cursor"), Mapping)
                 else None,
@@ -1308,6 +1345,10 @@ def run_focused_segments(
                 "unit_recovery_attempts": 0,
                 "unit_recovery_delay_schedule": recovery_delay_schedule,
                 "unit_recovery_timeout_scale": unit_recovery_timeout_scale,
+                "unit_recovery_max_elapsed_seconds": _unit_recovery_max_elapsed_seconds(
+                    unit_recovery_max_elapsed_seconds,
+                    failure_policy=failure_policy,
+                ),
                 "recovered_units": [],
                 "partial_failures": [],
                 "units": [],
@@ -1472,6 +1513,13 @@ def build_summary(
             if result.get("unit_recovery_timeout_scale") is not None
         }
     )
+    recovery_max_elapsed_seconds = sorted(
+        {
+            int(result.get("unit_recovery_max_elapsed_seconds"))
+            for result in runner_results
+            if result.get("unit_recovery_max_elapsed_seconds") is not None
+        }
+    )
     resume_from_run_ids = sorted(
         {
             _clean_text(result.get("resume_from_run_id"))
@@ -1521,6 +1569,7 @@ def build_summary(
         "unit_recovery_attempts": sum(int(result.get("unit_recovery_attempts", 0) or 0) for result in runner_results),
         "unit_recovery_delay_schedules": recovery_delay_schedules,
         "unit_recovery_timeout_scales": recovery_timeout_scales,
+        "unit_recovery_max_elapsed_seconds": recovery_max_elapsed_seconds,
         "recovered_unit_count": sum(
             len(result.get("recovered_units", []))
             for result in runner_results
@@ -1558,6 +1607,7 @@ def render_report(
         f"- unit recovery attempts: `{summary.get('unit_recovery_attempts')}`",
         f"- unit recovery delay schedules: `{json.dumps(summary.get('unit_recovery_delay_schedules', []), ensure_ascii=False)}`",
         f"- unit recovery timeout scales: `{json.dumps(summary.get('unit_recovery_timeout_scales', []), ensure_ascii=False)}`",
+        f"- unit recovery max elapsed seconds: `{json.dumps(summary.get('unit_recovery_max_elapsed_seconds', []), ensure_ascii=False)}`",
         f"- recovered units: `{summary.get('recovered_unit_count')}`",
         f"- connection error kinds: `{json.dumps(summary.get('connection_error_kind_counts', {}), ensure_ascii=False)}`",
         f"- marginalia count: `{summary.get('marginalia_count')}`",
@@ -1587,6 +1637,8 @@ def render_report(
                 f"provider_attempts=`{failure.get('provider_call_attempt_count', '')}` "
                 f"unit_recovery_attempts=`{failure.get('unit_recovery_attempts', '')}` "
                 f"delay_schedule=`{json.dumps(failure.get('unit_recovery_delay_schedule', []), ensure_ascii=False)}` "
+                f"max_elapsed=`{failure.get('unit_recovery_max_elapsed_seconds', '')}` "
+                f"budget_exhausted=`{failure.get('unit_recovery_budget_exhausted', False)}` "
                 f"final_cursor=`{json.dumps(failure.get('final_cursor', {}), ensure_ascii=False)}`"
             )
         lines.append("")
@@ -1646,6 +1698,7 @@ def render_report(
                 f"- unit_recovery_attempts: `{segment.get('unit_recovery_attempts', 0)}`",
                 f"- unit_recovery_delay_schedule: `{json.dumps(segment.get('unit_recovery_delay_schedule', []), ensure_ascii=False)}`",
                 f"- unit_recovery_timeout_scale: `{segment.get('unit_recovery_timeout_scale', '')}`",
+                f"- unit_recovery_max_elapsed_seconds: `{segment.get('unit_recovery_max_elapsed_seconds', '')}`",
                 f"- recovered_units: `{len(segment.get('recovered_units', [])) if isinstance(segment.get('recovered_units'), list) else 0}`",
                 "",
             ]
@@ -1665,6 +1718,8 @@ def render_report(
                     f"provider_error=`{failure.get('provider_error_type', '')}` "
                     f"provider_attempts=`{failure.get('provider_call_attempt_count', '')}` "
                     f"delay_schedule=`{json.dumps(failure.get('unit_recovery_delay_schedule', []), ensure_ascii=False)}` "
+                    f"max_elapsed=`{failure.get('unit_recovery_max_elapsed_seconds', '')}` "
+                    f"budget_exhausted=`{failure.get('unit_recovery_budget_exhausted', False)}` "
                     f"cursor=`{json.dumps(failure.get('final_cursor', {}), ensure_ascii=False)}`"
                 )
             lines.append("")
@@ -1694,6 +1749,7 @@ def render_report(
                     f"- unit_recovery_attempts: `{unit.get('unit_recovery_attempts', 0)}`",
                     f"- unit_recovery_delay_schedule: `{json.dumps(unit.get('unit_recovery_delay_schedule', []), ensure_ascii=False)}`",
                     f"- unit_recovery_timeout_scale: `{unit.get('unit_recovery_timeout_scale', '')}`",
+                    f"- unit_recovery_max_elapsed_seconds: `{unit.get('unit_recovery_max_elapsed_seconds', '')}`",
                     f"- marginalia_count: `{unit.get('marginalia_count')}`",
                     "",
                     "```text",
@@ -1809,6 +1865,10 @@ def _status_payload(
             failure_policy=args.failure_policy,
         ),
         "unit_recovery_timeout_scale": args.unit_recovery_timeout_scale,
+        "unit_recovery_max_elapsed_seconds": _unit_recovery_max_elapsed_seconds(
+            args.unit_recovery_max_elapsed_seconds,
+            failure_policy=args.failure_policy,
+        ),
         "resume_from_analysis_root": args.resume_from_analysis_root,
         "resume_from_run_id": args.resume_from_run_id,
         "target_total_units": args.target_total_units,
@@ -1861,6 +1921,7 @@ def run(args: argparse.Namespace) -> int:
                     unit_recovery_attempts=args.unit_recovery_attempts,
                     unit_recovery_delay_seconds=args.unit_recovery_delay_seconds,
                     unit_recovery_timeout_scale=args.unit_recovery_timeout_scale,
+                    unit_recovery_max_elapsed_seconds=args.unit_recovery_max_elapsed_seconds,
                 )
             ]
         if args.mode in {"focused", "all"}:
@@ -1893,6 +1954,7 @@ def run(args: argparse.Namespace) -> int:
                 unit_recovery_attempts=args.unit_recovery_attempts,
                 unit_recovery_delay_seconds=args.unit_recovery_delay_seconds,
                 unit_recovery_timeout_scale=args.unit_recovery_timeout_scale,
+                unit_recovery_max_elapsed_seconds=args.unit_recovery_max_elapsed_seconds,
                 resume_plan=resume_plan,
             )
         summary = _write_outputs(
@@ -1934,15 +1996,21 @@ def build_parser() -> argparse.ArgumentParser:
     parser.add_argument(
         "--unit-recovery-attempts",
         type=int,
-        default=3,
+        default=6,
         help="Extra unit-level retries after the first failed unit attempt.",
     )
     parser.add_argument(
         "--unit-recovery-delay-seconds",
         default=None,
-        help="Comma-separated unit recovery delay schedule. Defaults to 0,120,300 for partial policy and 0 for strict.",
+        help="Comma-separated unit recovery delay schedule. Defaults to 0,120,300,600,900,1200 for partial policy and 0 for strict.",
     )
     parser.add_argument("--unit-recovery-timeout-scale", type=float, default=1.5)
+    parser.add_argument(
+        "--unit-recovery-max-elapsed-seconds",
+        type=int,
+        default=None,
+        help="Maximum elapsed seconds spent recovering one transient unit before marking the segment partial. Defaults to 3600 for partial policy; 0 disables this cap.",
+    )
     parser.add_argument(
         "--resume-from-analysis-root",
         default="",

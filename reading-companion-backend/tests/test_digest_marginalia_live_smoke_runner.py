@@ -12,8 +12,10 @@ from eval.attentional_v2.run_digest_marginalia_live_smoke import (
     _load_resume_plan,
     _partial_failures,
     _summarize_marginalia,
+    _unit_recovery_budget_allows_retry,
     _unit_recovery_delay_for_attempt,
     _unit_recovery_delay_schedule,
+    _unit_recovery_max_elapsed_seconds,
     _unit_recovery_timeout_seconds,
     build_summary,
     build_parser,
@@ -79,9 +81,10 @@ def test_segment_id_append_uses_defaults_only_when_unspecified():
     assert default_args.segment_id is None
     assert default_args.segment_workers == 1
     assert default_args.failure_policy == "partial"
-    assert default_args.unit_recovery_attempts == 3
+    assert default_args.unit_recovery_attempts == 6
     assert default_args.unit_recovery_delay_seconds is None
     assert default_args.unit_recovery_timeout_scale == 1.5
+    assert default_args.unit_recovery_max_elapsed_seconds is None
     assert list(explicit_args.segment_id or DEFAULT_FOCUSED_SEGMENTS) == ["xidaduo_private_zh__segment_1"]
     assert explicit_args.segment_workers == 5
 
@@ -93,7 +96,7 @@ def test_unit_recovery_timeout_escalates_with_cap():
 
 
 def test_unit_recovery_delay_schedule_defaults_and_repeats_last_value():
-    assert _unit_recovery_delay_schedule(None, failure_policy="partial") == [0, 120, 300]
+    assert _unit_recovery_delay_schedule(None, failure_policy="partial") == [0, 120, 300, 600, 900, 1200]
     assert _unit_recovery_delay_schedule(None, failure_policy="strict") == [0]
     schedule = _unit_recovery_delay_schedule("0, 5", failure_policy="partial")
     assert schedule == [0, 5]
@@ -101,6 +104,19 @@ def test_unit_recovery_delay_schedule_defaults_and_repeats_last_value():
     assert _unit_recovery_delay_for_attempt(schedule, recovery_attempt=1) == 0
     assert _unit_recovery_delay_for_attempt(schedule, recovery_attempt=2) == 5
     assert _unit_recovery_delay_for_attempt(schedule, recovery_attempt=3) == 5
+
+
+def test_unit_recovery_max_elapsed_defaults_for_long_running_partial_policy():
+    assert _unit_recovery_max_elapsed_seconds(None, failure_policy="partial") == 3600
+    assert _unit_recovery_max_elapsed_seconds(None, failure_policy="strict") == 0
+    assert _unit_recovery_max_elapsed_seconds(90, failure_policy="partial") == 90
+    assert _unit_recovery_max_elapsed_seconds(-1, failure_policy="partial") == 0
+
+
+def test_unit_recovery_budget_allows_retry_until_budget_is_exhausted():
+    assert _unit_recovery_budget_allows_retry(elapsed_seconds=3599.9, max_elapsed_seconds=3600) is True
+    assert _unit_recovery_budget_allows_retry(elapsed_seconds=3600.0, max_elapsed_seconds=3600) is False
+    assert _unit_recovery_budget_allows_retry(elapsed_seconds=999999.0, max_elapsed_seconds=0) is True
 
 
 def test_llm_overrides_do_not_force_single_call_concurrency():
@@ -118,7 +134,7 @@ def test_llm_overrides_do_not_force_single_call_concurrency():
 
 def test_parallel_focused_segments_preserve_requested_order(monkeypatch, tmp_path):
     seen: list[str] = []
-    recovery_kwargs: list[tuple[str, object, object]] = []
+    recovery_kwargs: list[tuple[str, object, object, object]] = []
 
     def fake_run_segment_units(**kwargs):
         segment_id = kwargs["segment_id"]
@@ -128,6 +144,7 @@ def test_parallel_focused_segments_preserve_requested_order(monkeypatch, tmp_pat
                 segment_id,
                 kwargs.get("unit_recovery_delay_seconds"),
                 kwargs.get("unit_recovery_timeout_scale"),
+                kwargs.get("unit_recovery_max_elapsed_seconds"),
             )
         )
         return {
@@ -155,14 +172,15 @@ def test_parallel_focused_segments_preserve_requested_order(monkeypatch, tmp_pat
         unit_recovery_attempts=1,
         unit_recovery_delay_seconds="0,2",
         unit_recovery_timeout_scale=2.0,
+        unit_recovery_max_elapsed_seconds=90,
     )
 
     assert set(seen) == {"segment_a", "segment_b", "segment_c"}
     assert [result["segment_id"] for result in results] == ["segment_b", "segment_a", "segment_c"]
     assert set(recovery_kwargs) == {
-        ("segment_a", "0,2", 2.0),
-        ("segment_b", "0,2", 2.0),
-        ("segment_c", "0,2", 2.0),
+        ("segment_a", "0,2", 2.0, 90),
+        ("segment_b", "0,2", 2.0, 90),
+        ("segment_c", "0,2", 2.0, 90),
     }
 
 

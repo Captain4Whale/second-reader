@@ -4166,3 +4166,24 @@ This new direction is design frozen but not yet implemented as a formal benchmar
 - `docs/backend-reading-mechanisms/attentional_v2.md`
 - `docs/current-state.md`
 - `docs/tasks/registry.md`
+
+## Entry 148
+**ID**: DEC-150
+**Status**: active
+
+**Decision / Inflection**: Treat provider-side transient instability as a long-task wait-and-retry condition before giving up on a reading diagnostic segment.
+
+**Period**: July 4, 2026, after comparing lightweight OpenCode Go connectivity probes with full five-book Digest Marginalia diagnostics. Short proxy/direct probes completed successfully, while full Ingest/Digest diagnostics still encountered provider-side `502 origin_bad_gateway` and `APIConnectionError` / `RemoteProtocolError` failures during longer, heavier calls.
+
+**Decision**: Focused Digest Marginalia diagnostics keep the layered model from `DEC-148`, but the default partial-mode recovery budget is upgraded for long-running jobs. After gateway provider-call retries exhaust, the runner retries the same unit from the same cursor up to `6` additional unit-level attempts, using the default delay schedule `0,120,300,600,900,1200` seconds, bounded timeout escalation, and a `3600s` per-unit transient recovery budget. If the budget is exhausted, the segment is still marked `partial` at the current cursor rather than advancing over unread source text; sibling segments and report generation continue.
+
+**Boundary**: This changes diagnostic/eval-runner recovery defaults and reporting metadata only. It does not change Ingest/Digest prompts, output contracts, source normalization, Unit Memory retrieval semantics, public API, frontend behavior, or provider configuration. Hard contract failures such as invalid boundaries, schema errors, unresolved quotes, unexpected prompt versions, and non-LLM exceptions remain hard failures rather than long-wait retry candidates.
+
+**Why this path won**: For long reading diagnostics, a few minutes of upstream instability should not waste an entire multi-book run. The earlier `0,120,300` policy was enough to preserve partial evidence, but not enough to wait through a provider-side bad-gateway window. A bounded longer recovery budget matches the product reality of long-running reading jobs while preserving cursor safety and keeping real prompt/runtime bugs visible.
+
+**Primary evidence**:
+- `reading-companion-backend/eval/attentional_v2/run_digest_marginalia_live_smoke.py`
+- `reading-companion-backend/tests/test_digest_marginalia_live_smoke_runner.py`
+- `docs/backend-reading-mechanisms/attentional_v2.md`
+- `docs/current-state.md`
+- `docs/tasks/registry.md`
