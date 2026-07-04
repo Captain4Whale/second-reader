@@ -7,7 +7,7 @@ Update when: task status, priority, blockers, decision refs, job refs, evidence 
 
 This document is the human-readable companion to `docs/tasks/registry.json`.
 
-Last updated: `2026-07-04T09:02:09+08:00`
+Last updated: `2026-07-04T10:13:59+08:00`
 
 ## Status Values
 - `active`
@@ -25,7 +25,7 @@ Last updated: `2026-07-04T09:02:09+08:00`
 - Lane: `mechanism_runtime`
 - Priority: `high`
 - Detail: `docs/current-state.md`
-- Next: Digest is live as `attentional_v2.digest.v24` / promptset `attentional_v2-phase6-v84` / output contract `digest_understanding_response_marginalia_json_v8`: canonical visible-note output remains `marginalia[]` with explicit `kind: "highlight" | "note"`. Highlights now require intrinsic quote value: the quoted words themselves must already carry the portable cognitive gain, while private `selection_reason` may identify but not invent that value by abstracting a local scene/fact/testimony after the fact. Notes remain an independent pass with non-empty visible `content`. The first v24 five-book diagnostic completed as `partial` after `24` accepted units; continuation job `bgjob_digest_marginalia_v24_5book_parallel_20units_continue1_20260704` is now running from the previous final cursors with copied runtime state to reach `20` total accepted units per segment.
+- Next: Digest is live as `attentional_v2.digest.v24` / promptset `attentional_v2-phase6-v84` / output contract `digest_understanding_response_marginalia_json_v8`: canonical visible-note output remains `marginalia[]` with explicit `kind: "highlight" | "note"`. Highlights now require intrinsic quote value: the quoted words themselves must already carry the portable cognitive gain, while private `selection_reason` may identify but not invent that value by abstracting a local scene/fact/testimony after the fact. Notes remain an independent pass with non-empty visible `content`. The v24 continuation diagnostic `bgjob_digest_marginalia_v24_5book_parallel_20units_continue1_20260704` completed as `partial`: it added `39` accepted units and combined with the prior partial run for `63` total accepted units; `mangge` and `value_of_others` reached `20`, while `xidaduo`, `huochu`, and `nawaer` stopped after repeated provider `RemoteProtocolError` / `network_blocked` recovery exhaustion. Review the partial report before deciding whether another continuation is worth running.
 - Jobs:
   - `bgjob_ingest_digest_unit_memory_full_diagnostic_20260603_parallel5`
   - `bgjob_unit_memory_text_only_smoke_value_20260606`

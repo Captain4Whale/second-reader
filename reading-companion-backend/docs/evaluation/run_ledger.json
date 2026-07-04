@@ -1,6 +1,6 @@
 {
   "schema_version": 1,
-  "updated_at": "2026-07-04T01:02:09.137463Z",
+  "updated_at": "2026-07-04T02:12:23.279979Z",
   "entries": [
     {
       "run_id": "attentional_v2_excerpt_surface_v1_1_judged_20260406",
@@ -3226,7 +3226,7 @@
       "date": "2026-07-04",
       "surface": "digest_marginalia_live_smoke",
       "lane": "mechanism_runtime",
-      "status": "running",
+      "status": "partial",
       "mechanisms": [
         "attentional_v2"
       ],
@@ -3234,19 +3234,23 @@
         "state/eval_local_datasets/user_level_benchmarks/attentional_v2_user_level_selective_v1_repaired_20260629_source_norm_v1_2_unique_notes"
       ],
       "run_dir": "reading-companion-backend/eval/runs/attentional_v2/digest_marginalia_v24_5book_parallel_20units_continue1_20260704",
-      "summary_paths": {},
+      "summary_paths": {
+        "raw_summary": "reading-companion-backend/eval/runs/attentional_v2/digest_marginalia_v24_5book_parallel_20units_continue1_20260704/analysis/digest_marginalia_v24_5book_parallel_20units_continue1/raw/summary.json"
+      },
       "job_ids": [
         "bgjob_digest_marginalia_v24_5book_parallel_20units_continue1_20260704"
       ],
-      "report_paths": [],
+      "report_paths": [
+        "reading-companion-backend/eval/runs/attentional_v2/digest_marginalia_v24_5book_parallel_20units_continue1_20260704/analysis/digest_marginalia_v24_5book_parallel_20units_continue1/marginalia_smoke_report.md"
+      ],
       "catalog_status": "not_cataloged",
-      "notes": "Continuation of partial Digest v24 five-book diagnostic from digest_marginalia_v24_5book_parallel_20units_20260703. Seeds each segment from the previous runtime artifacts and resumes from final_cursor to target 20 total accepted units per segment; no formal judge or evidence catalog promotion.",
-      "parent_run_id": "",
+      "notes": "Continuation of partial Digest v24 five-book diagnostic from digest_marginalia_v24_5book_parallel_20units_20260703. Completed as partial: added 39 accepted runner units and combined with 24 prior units for 63 total; mangge and value_of_others reached 20 combined units, while xidaduo stopped at 13, huochu at 9, and nawaer at 1 after repeated provider APIConnectionError/RemoteProtocolError network_blocked recovery exhaustion. Produced 79 Marginalia items (61 Highlights, 18 Notes), 26 quote_too_broad caveats, 1 possibly_generic caveat, 0 hard failures, 3 partial segment stops, 21 unit recovery attempts, and 7 recovered units. Diagnostic only; no formal judge or evidence catalog promotion.",
+      "parent_run_id": "digest_marginalia_v24_5book_parallel_20units_20260703",
       "child_run_ids": [],
       "synthetic": false,
       "local_missing_allowed": [],
       "metadata": {},
-      "updated_at": "2026-07-04T01:02:09.136426Z"
+      "updated_at": "2026-07-04T02:12:23.279062Z"
     }
   ]
 }

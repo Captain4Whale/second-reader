@@ -7,7 +7,7 @@ Update when: the current objective, active tasks, blockers, active jobs, open de
 
 This file is authoritative for durable current status. Do not keep unique active-state information only in `docs/agent-handoff.md`.
 
-Last verified: `2026-07-04T09:02:09+08:00`
+Last verified: `2026-07-04T10:13:59+08:00`
 
 ## Current Objective
 - The `Ingest -> Digest -> Reading Runner settlement` mechanism reframe is implemented; current work is fact alignment, smoke/diagnostic review, and calibration before any formal evaluation promotion.
@@ -204,10 +204,13 @@ Last verified: `2026-07-04T09:02:09+08:00`
   - Digest v24 Marginalia five-book continuation diagnostic:
     - run id: `digest_marginalia_v24_5book_parallel_20units_continue1_20260704`
     - job id: `bgjob_digest_marginalia_v24_5book_parallel_20units_continue1_20260704`
-    - status: `running`; run ledger status is `running`
+    - status: completed with summary status `partial`; run ledger status is `partial`
     - scope: continuation of `digest_marginalia_v24_5book_parallel_20units_20260703`, using the active unique-note source-normalized v1.2 five-segment dataset, `segment_workers=5`, and `failure_policy=partial`
     - continuation plan: copy each previous segment runtime directory, resume from that segment's `final_cursor`, and run only the remaining units needed to reach `20` total accepted units per segment (`xidaduo=13`, `huochu=15`, `mangge=15`, `nawaer=20`, `value_of_others=13`)
-    - expected report: `reading-companion-backend/eval/runs/attentional_v2/digest_marginalia_v24_5book_parallel_20units_continue1_20260704/analysis/digest_marginalia_v24_5book_parallel_20units_continue1/marginalia_smoke_report.md`
+    - outcome: added `39` accepted runner units and combined with the previous partial run's `24` accepted units for `63` total accepted units; `mangge` and `value_of_others` reached `20` combined units, while `xidaduo` stopped at `13`, `huochu` at `9`, and `nawaer` at `1` after repeated provider `APIConnectionError` / `RemoteProtocolError` exhaustion under the delayed same-cursor recovery policy
+    - summary: `79` Marginalia items (`61` Highlights, `18` Notes), `26` `quote_too_broad` caveats, `1` `possibly_generic` caveat, `0` hard failures, `3` partial segment stops, `21` unit recovery attempts, and `7` recovered units
+    - interpretation: the continuation salvaged usable v24 evidence and proved partial diagnostics preserve sibling-segment results, but it still is not a complete five-book 20-unit quality sample because three segments stopped on provider connection errors
+    - report: `reading-companion-backend/eval/runs/attentional_v2/digest_marginalia_v24_5book_parallel_20units_continue1_20260704/analysis/digest_marginalia_v24_5book_parallel_20units_continue1/marginalia_smoke_report.md`
   - active diagnostic evaluation:
     - run id: `attentional_v2_ingest_digest_unit_memory_full_diagnostic_20260603_parallel5`
     - job id: `bgjob_ingest_digest_unit_memory_full_diagnostic_20260603_parallel5`
