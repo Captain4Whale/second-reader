@@ -1,6 +1,6 @@
 {
   "schema_version": 1,
-  "updated_at": "2026-07-03T11:39:58Z",
+  "updated_at": "2026-07-04T00:28:01Z",
   "entries": [
     {
       "run_id": "attentional_v2_excerpt_surface_v1_1_judged_20260406",
@@ -3189,15 +3189,13 @@
       "local_missing_allowed": [],
       "metadata": {},
       "updated_at": "2026-07-03T11:29:58Z"
-    }
-  ],
-  "runs": [
+    },
     {
       "run_id": "digest_marginalia_v24_5book_parallel_20units_20260703",
       "date": "2026-07-03",
       "surface": "digest_marginalia_live_smoke",
       "lane": "mechanism_runtime",
-      "status": "running",
+      "status": "partial",
       "mechanisms": [
         "attentional_v2"
       ],
@@ -3215,13 +3213,13 @@
         "reading-companion-backend/eval/runs/attentional_v2/digest_marginalia_v24_5book_parallel_20units_20260703/analysis/digest_marginalia_v24_5book_parallel_20units/marginalia_smoke_report.md"
       ],
       "catalog_status": "not_cataloged",
-      "notes": "Diagnostic-only five-book parallel Digest v24 Marginalia smoke over the active unique-note source-normalized user-level dataset. Scope: segment_workers=5, up to 20 accepted units per segment, failure_policy=partial, delayed same-cursor unit recovery enabled. Tests the intrinsic quote-value Highlight gate from DEC-149; no formal judge or evidence catalog promotion.",
+      "notes": "Diagnostic-only five-book parallel Digest v24 Marginalia smoke over the active unique-note source-normalized user-level dataset. Completed as partial because provider-side transient failures stopped all five segments despite provider-call retries and delayed same-cursor unit recovery. Preserved 24 runner units and 42 Marginalia items (35 Highlights, 7 Notes), with 8 quote_too_broad caveats, 0 hard failures, 5 partial segment stops, 23 unit recovery attempts, and 7 recovered units. Use as partial v24 evidence only, not as a complete five-book quality sample or evidence-catalog promotion.",
       "parent_run_id": "",
       "child_run_ids": [],
       "synthetic": false,
       "local_missing_allowed": [],
       "metadata": {},
-      "updated_at": "2026-07-03T11:39:58Z"
+      "updated_at": "2026-07-04T00:28:01Z"
     }
   ]
 }
