@@ -9,6 +9,7 @@ from eval.attentional_v2.run_digest_marginalia_live_smoke import (
     _direct_probes_for_set,
     _llm_call_overrides,
     _load_dataset_segment,
+    _load_resume_plan,
     _partial_failures,
     _summarize_marginalia,
     _unit_recovery_delay_for_attempt,
@@ -163,6 +164,93 @@ def test_parallel_focused_segments_preserve_requested_order(monkeypatch, tmp_pat
         ("segment_b", "0,2", 2.0),
         ("segment_c", "0,2", 2.0),
     }
+
+
+def test_resume_plan_computes_remaining_units_and_runtime_dirs(tmp_path):
+    analysis_root = tmp_path / "previous" / "analysis"
+    runtime_dir = analysis_root / "runtime" / "segment_a"
+    runtime_dir.mkdir(parents=True)
+    (analysis_root / "raw").mkdir(parents=True)
+    (analysis_root / "raw" / "runner_units.json").write_text(
+        json.dumps(
+            [
+                {
+                    "segment_id": "segment_a",
+                    "status": "partial",
+                    "stop_reason": "network_blocked",
+                    "unit_count": 7,
+                    "final_cursor": {"chapter_id": 1, "paragraph_index": 88, "char_offset": 0},
+                    "runtime_artifacts": {"output_dir": str(runtime_dir)},
+                }
+            ],
+            ensure_ascii=False,
+        ),
+        encoding="utf-8",
+    )
+
+    plan = _load_resume_plan(
+        resume_analysis_root=analysis_root,
+        resume_from_run_id="previous_run",
+        segment_ids=["segment_a"],
+        target_total_units=20,
+    )
+
+    segment_plan = plan["segment_a"]
+    assert segment_plan["resume_from_run_id"] == "previous_run"
+    assert segment_plan["prior_unit_count"] == 7
+    assert segment_plan["remaining_units"] == 13
+    assert segment_plan["target_total_units"] == 20
+    assert segment_plan["start_cursor"] == {"chapter_id": 1, "paragraph_index": 88, "char_offset": 0}
+    assert segment_plan["resume_runtime_dir"] == str(runtime_dir)
+
+
+def test_resume_plan_rejects_missing_segment(tmp_path):
+    analysis_root = tmp_path / "previous" / "analysis"
+    (analysis_root / "raw").mkdir(parents=True)
+    (analysis_root / "raw" / "runner_units.json").write_text("[]\n", encoding="utf-8")
+
+    try:
+        _load_resume_plan(
+            resume_analysis_root=analysis_root,
+            resume_from_run_id="previous_run",
+            segment_ids=["segment_a"],
+            target_total_units=20,
+        )
+    except ValueError as exc:
+        assert "resume segment not found" in str(exc)
+    else:
+        raise AssertionError("missing resume segment should fail")
+
+
+def test_summary_reports_prior_and_combined_resume_units():
+    summary = build_summary(
+        mode="focused",
+        direct_probe_set="calibration",
+        direct_results=[],
+        runner_results=[
+            {
+                "segment_id": "segment_a",
+                "status": "ok",
+                "stop_reason": "unit_limit",
+                "unit_count": 13,
+                "prior_unit_count": 7,
+                "combined_unit_count": 20,
+                "target_total_units": 20,
+                "resume_from_run_id": "previous_run",
+                "units": [],
+                "runtime_artifacts": {"read_audit_count": 20, "unit_memory_entry_count": 20},
+            }
+        ],
+        run_id="run",
+        analysis_id="analysis",
+        job_id="job",
+    )
+
+    assert summary["runner_unit_count"] == 13
+    assert summary["prior_runner_unit_count"] == 7
+    assert summary["combined_runner_unit_count"] == 20
+    assert summary["target_total_units"] == [20]
+    assert summary["resume_from_run_ids"] == ["previous_run"]
 
 
 def test_marginalia_summary_classifies_highlight_and_flags_broad_quote():

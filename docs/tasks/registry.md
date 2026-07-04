@@ -7,7 +7,7 @@ Update when: task status, priority, blockers, decision refs, job refs, evidence 
 
 This document is the human-readable companion to `docs/tasks/registry.json`.
 
-Last updated: `2026-07-04T08:27:01+08:00`
+Last updated: `2026-07-04T09:02:09+08:00`
 
 ## Status Values
 - `active`
@@ -25,7 +25,7 @@ Last updated: `2026-07-04T08:27:01+08:00`
 - Lane: `mechanism_runtime`
 - Priority: `high`
 - Detail: `docs/current-state.md`
-- Next: Digest is live as `attentional_v2.digest.v24` / promptset `attentional_v2-phase6-v84` / output contract `digest_understanding_response_marginalia_json_v8`: canonical visible-note output remains `marginalia[]` with explicit `kind: "highlight" | "note"`. Highlights now require intrinsic quote value: the quoted words themselves must already carry the portable cognitive gain, while private `selection_reason` may identify but not invent that value by abstracting a local scene/fact/testimony after the fact. Notes remain an independent pass with non-empty visible `content`. The v24 five-book diagnostic completed as `partial` because provider-side transient failures stopped all five segments after `24` accepted units; use it only as partial evidence and decide whether to rerun for a complete quality sample before further prompt tuning.
+- Next: Digest is live as `attentional_v2.digest.v24` / promptset `attentional_v2-phase6-v84` / output contract `digest_understanding_response_marginalia_json_v8`: canonical visible-note output remains `marginalia[]` with explicit `kind: "highlight" | "note"`. Highlights now require intrinsic quote value: the quoted words themselves must already carry the portable cognitive gain, while private `selection_reason` may identify but not invent that value by abstracting a local scene/fact/testimony after the fact. Notes remain an independent pass with non-empty visible `content`. The first v24 five-book diagnostic completed as `partial` after `24` accepted units; continuation job `bgjob_digest_marginalia_v24_5book_parallel_20units_continue1_20260704` is now running from the previous final cursors with copied runtime state to reach `20` total accepted units per segment.
 - Jobs:
   - `bgjob_ingest_digest_unit_memory_full_diagnostic_20260603_parallel5`
   - `bgjob_unit_memory_text_only_smoke_value_20260606`
@@ -53,6 +53,7 @@ Last updated: `2026-07-04T08:27:01+08:00`
   - `bgjob_digest_marginalia_v23_5book_parallel_20units_20260701`
   - `bgjob_digest_marginalia_v23_5book_parallel_20units_recovery_retry1_20260702`
   - `bgjob_digest_marginalia_v24_5book_parallel_20units_20260703`
+  - `bgjob_digest_marginalia_v24_5book_parallel_20units_continue1_20260704`
 - Evidence:
   - `DEC-103`
   - `DEC-104`

@@ -7,7 +7,7 @@ Update when: the current objective, active tasks, blockers, active jobs, open de
 
 This file is authoritative for durable current status. Do not keep unique active-state information only in `docs/agent-handoff.md`.
 
-Last verified: `2026-07-04T08:27:01+08:00`
+Last verified: `2026-07-04T09:02:09+08:00`
 
 ## Current Objective
 - The `Ingest -> Digest -> Reading Runner settlement` mechanism reframe is implemented; current work is fact alignment, smoke/diagnostic review, and calibration before any formal evaluation promotion.
@@ -201,6 +201,13 @@ Last verified: `2026-07-04T08:27:01+08:00`
     - outcome: provider-side transient failures stopped all five segments despite provider-call retries and delayed same-cursor unit recovery; preserved `24` runner units (`xidaduo=7`, `huochu=5`, `mangge=5`, `nawaer=0`, `value_of_others=7`), `42` Marginalia items (`35` Highlights, `7` Notes), `8` `quote_too_broad` caveats, `0` hard failures, `5` partial segment stops, `23` unit recovery attempts, and `7` recovered units
     - interpretation: this is partial v24 evidence only; do not treat it as a complete five-book quality sample or evidence-catalog promotion
     - report: `reading-companion-backend/eval/runs/attentional_v2/digest_marginalia_v24_5book_parallel_20units_20260703/analysis/digest_marginalia_v24_5book_parallel_20units/marginalia_smoke_report.md`
+  - Digest v24 Marginalia five-book continuation diagnostic:
+    - run id: `digest_marginalia_v24_5book_parallel_20units_continue1_20260704`
+    - job id: `bgjob_digest_marginalia_v24_5book_parallel_20units_continue1_20260704`
+    - status: `running`; run ledger status is `running`
+    - scope: continuation of `digest_marginalia_v24_5book_parallel_20units_20260703`, using the active unique-note source-normalized v1.2 five-segment dataset, `segment_workers=5`, and `failure_policy=partial`
+    - continuation plan: copy each previous segment runtime directory, resume from that segment's `final_cursor`, and run only the remaining units needed to reach `20` total accepted units per segment (`xidaduo=13`, `huochu=15`, `mangge=15`, `nawaer=20`, `value_of_others=13`)
+    - expected report: `reading-companion-backend/eval/runs/attentional_v2/digest_marginalia_v24_5book_parallel_20units_continue1_20260704/analysis/digest_marginalia_v24_5book_parallel_20units_continue1/marginalia_smoke_report.md`
   - active diagnostic evaluation:
     - run id: `attentional_v2_ingest_digest_unit_memory_full_diagnostic_20260603_parallel5`
     - job id: `bgjob_ingest_digest_unit_memory_full_diagnostic_20260603_parallel5`

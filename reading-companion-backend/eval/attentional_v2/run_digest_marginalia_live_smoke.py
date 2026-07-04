@@ -772,12 +772,90 @@ def _runtime_artifact_summary(output_dir: Path) -> dict[str, object]:
     }
 
 
-def _prepare_output_dir(analysis_root: Path, segment_id: str) -> Path:
+def _prepare_output_dir(
+    analysis_root: Path,
+    segment_id: str,
+    *,
+    resume_runtime_dir: Path | None = None,
+) -> Path:
     output_dir = analysis_root / "runtime" / segment_id
+    if resume_runtime_dir is not None and resume_runtime_dir.exists() and resume_runtime_dir.resolve() == output_dir.resolve():
+        return output_dir
     if output_dir.exists():
         shutil.rmtree(output_dir)
-    output_dir.mkdir(parents=True, exist_ok=True)
+    if resume_runtime_dir is not None and resume_runtime_dir.exists():
+        shutil.copytree(resume_runtime_dir, output_dir)
+    else:
+        output_dir.mkdir(parents=True, exist_ok=True)
     return output_dir
+
+
+def _resume_segment_ids(resume_analysis_root: Path) -> list[str]:
+    runner_units_path = resume_analysis_root / "raw" / "runner_units.json"
+    if not runner_units_path.exists():
+        return []
+    payload = json.loads(runner_units_path.read_text(encoding="utf-8"))
+    if not isinstance(payload, list):
+        return []
+    return [
+        str(item.get("segment_id"))
+        for item in payload
+        if isinstance(item, Mapping) and _clean_text(item.get("segment_id"))
+    ]
+
+
+def _load_resume_plan(
+    *,
+    resume_analysis_root: Path,
+    resume_from_run_id: str,
+    segment_ids: list[str],
+    target_total_units: int,
+) -> dict[str, dict[str, object]]:
+    runner_units_path = resume_analysis_root / "raw" / "runner_units.json"
+    if not runner_units_path.exists():
+        raise FileNotFoundError(f"resume runner units not found: {runner_units_path}")
+    payload = json.loads(runner_units_path.read_text(encoding="utf-8"))
+    if not isinstance(payload, list):
+        raise ValueError(f"resume runner units must be a list: {runner_units_path}")
+
+    previous_by_segment: dict[str, dict[str, object]] = {}
+    for item in payload:
+        if not isinstance(item, Mapping):
+            continue
+        segment_id = _clean_text(item.get("segment_id"))
+        if segment_id:
+            previous_by_segment[segment_id] = dict(item)
+
+    plan: dict[str, dict[str, object]] = {}
+    for segment_id in segment_ids:
+        previous = previous_by_segment.get(segment_id)
+        if previous is None:
+            raise ValueError(f"resume segment not found in previous run: {segment_id}")
+        prior_unit_count = int(previous.get("unit_count", 0) or 0)
+        remaining_units = max(0, int(target_total_units) - prior_unit_count)
+        final_cursor = previous.get("final_cursor")
+        if remaining_units > 0 and not isinstance(final_cursor, Mapping):
+            raise ValueError(f"resume segment has no final_cursor: {segment_id}")
+        artifact_summary = previous.get("runtime_artifacts")
+        artifact_summary = dict(artifact_summary) if isinstance(artifact_summary, Mapping) else {}
+        raw_output_dir = _clean_text(artifact_summary.get("output_dir"))
+        resume_runtime_dir = _resolve_backend_path(raw_output_dir) if raw_output_dir else resume_analysis_root / "runtime" / segment_id
+        plan[segment_id] = {
+            "resume_from_run_id": resume_from_run_id,
+            "resume_from_analysis_root": str(
+                resume_analysis_root.relative_to(BACKEND_ROOT)
+                if resume_analysis_root.is_relative_to(BACKEND_ROOT)
+                else resume_analysis_root
+            ),
+            "resume_runtime_dir": str(resume_runtime_dir),
+            "start_cursor": dict(final_cursor) if isinstance(final_cursor, Mapping) else {},
+            "prior_unit_count": prior_unit_count,
+            "target_total_units": int(target_total_units),
+            "remaining_units": remaining_units,
+            "previous_status": previous.get("status"),
+            "previous_stop_reason": previous.get("stop_reason"),
+        }
+    return plan
 
 
 def run_segment_units(
@@ -794,17 +872,24 @@ def run_segment_units(
     unit_recovery_attempts: int = 3,
     unit_recovery_delay_seconds: str | None = None,
     unit_recovery_timeout_scale: float = 1.5,
+    start_cursor: Mapping[str, object] | None = None,
+    unit_index_offset: int = 0,
+    target_total_units: int | None = None,
+    resume_from_run_id: str = "",
+    resume_from_analysis_root: str = "",
+    resume_runtime_dir: Path | None = None,
 ) -> dict[str, object]:
     segment = _load_dataset_segment(dataset_root, segment_id)
     chapter = dict(segment["chapter"]) if isinstance(segment.get("chapter"), Mapping) else {}
     document = dict(segment["document"]) if isinstance(segment.get("document"), Mapping) else {}
-    output_dir = _prepare_output_dir(analysis_root, segment_id)
+    output_dir = _prepare_output_dir(analysis_root, segment_id, resume_runtime_dir=resume_runtime_dir)
     save_book_document(book_document_file(output_dir), document)  # type: ignore[arg-type]
     initialize_artifact_tree(output_dir)
     _write_manifest(output_dir, document)  # type: ignore[arg-type]
     bundle = _load_runtime_bundle(output_dir)
     reader_policy = bundle["reader_policy"]
-    memory_retrieval_config = resolve_memory_retrieval_config(output_dir, {}, continue_mode=False)
+    is_resume = start_cursor is not None or bool(resume_from_run_id)
+    memory_retrieval_config = resolve_memory_retrieval_config(output_dir, {}, continue_mode=is_resume)
     _, chapter_lookup = _build_sentence_lookup(document)  # type: ignore[arg-type]
     provisioned = ProvisionedBook(
         book_path=Path(str(segment.get("segment_source_path"))),
@@ -825,7 +910,7 @@ def run_segment_units(
     reaction_records = bundle["reaction_records"]
     reconsolidation_records = bundle["reconsolidation_records"]
     chapter_ref = _chapter_ref(chapter)
-    cursor = first_cursor_for_chapter(chapter)
+    cursor = normalize_cursor_for_chapter(chapter, start_cursor) if start_cursor is not None else first_cursor_for_chapter(chapter)
     units: list[dict[str, object]] = []
     partial_failures: list[dict[str, object]] = []
     recovered_units: list[dict[str, object]] = []
@@ -837,7 +922,7 @@ def run_segment_units(
     status = "ok"
     stop_reason = "unit_limit"
     started_at = _now()
-    for unit_index in range(1, max(1, unit_count) + 1):
+    for unit_index in range(unit_index_offset + 1, unit_index_offset + max(1, unit_count) + 1):
         if cursor_at_or_after_chapter_end(chapter, cursor):
             stop_reason = "chapter_end"
             break
@@ -1106,6 +1191,13 @@ def run_segment_units(
         "unit_recovery_attempts": unit_recovery_attempt_count,
         "unit_recovery_delay_schedule": recovery_delay_schedule,
         "unit_recovery_timeout_scale": unit_recovery_timeout_scale,
+        "resume_from_run_id": resume_from_run_id,
+        "resume_from_analysis_root": resume_from_analysis_root,
+        "resume_runtime_dir": str(resume_runtime_dir) if resume_runtime_dir is not None else "",
+        "resume_start_cursor": dict(start_cursor) if isinstance(start_cursor, Mapping) else {},
+        "prior_unit_count": int(unit_index_offset),
+        "target_total_units": target_total_units,
+        "combined_unit_count": int(unit_index_offset) + len([unit for unit in units if unit.get("status") == "ok"]),
         "recovered_units": recovered_units,
         "partial_failures": partial_failures,
         "units": units,
@@ -1128,18 +1220,57 @@ def run_focused_segments(
     unit_recovery_attempts: int = 3,
     unit_recovery_delay_seconds: str | None = None,
     unit_recovery_timeout_scale: float = 1.5,
+    resume_plan: Mapping[str, Mapping[str, object]] | None = None,
 ) -> list[dict[str, object]]:
     ordered_segment_ids = list(segment_ids)
     if not ordered_segment_ids:
         return []
 
     def _run_one(segment_id: str) -> dict[str, object]:
+        segment_resume = dict(resume_plan.get(segment_id, {})) if isinstance(resume_plan, Mapping) else {}
+        segment_unit_count = int(segment_resume.get("remaining_units", unit_count) or 0)
+        prior_unit_count = int(segment_resume.get("prior_unit_count", 0) or 0)
+        target_total_units = (
+            int(segment_resume.get("target_total_units"))
+            if segment_resume.get("target_total_units") is not None
+            else None
+        )
+        if segment_unit_count <= 0:
+            return {
+                "segment_id": segment_id,
+                "status": "ok",
+                "stop_reason": "target_already_reached",
+                "started_at": _now(),
+                "finished_at": _now(),
+                "unit_count": 0,
+                "final_cursor": dict(segment_resume.get("start_cursor", {}))
+                if isinstance(segment_resume.get("start_cursor"), Mapping)
+                else {},
+                "failure_policy": failure_policy,
+                "unit_recovery_attempts": 0,
+                "unit_recovery_delay_schedule": _unit_recovery_delay_schedule(
+                    unit_recovery_delay_seconds,
+                    failure_policy=failure_policy,
+                ),
+                "unit_recovery_timeout_scale": unit_recovery_timeout_scale,
+                "resume_from_run_id": segment_resume.get("resume_from_run_id", ""),
+                "resume_from_analysis_root": segment_resume.get("resume_from_analysis_root", ""),
+                "resume_runtime_dir": segment_resume.get("resume_runtime_dir", ""),
+                "resume_start_cursor": segment_resume.get("start_cursor", {}),
+                "prior_unit_count": prior_unit_count,
+                "target_total_units": target_total_units,
+                "combined_unit_count": prior_unit_count,
+                "recovered_units": [],
+                "partial_failures": [],
+                "units": [],
+                "runtime_artifacts": {},
+            }
         try:
             return run_segment_units(
                 analysis_root=analysis_root,
                 dataset_root=dataset_root,
                 segment_id=segment_id,
-                unit_count=unit_count,
+                unit_count=segment_unit_count,
                 profile_id=profile_id,
                 max_output_tokens=max_output_tokens,
                 timeout_seconds=timeout_seconds,
@@ -1148,6 +1279,16 @@ def run_focused_segments(
                 unit_recovery_attempts=unit_recovery_attempts,
                 unit_recovery_delay_seconds=unit_recovery_delay_seconds,
                 unit_recovery_timeout_scale=unit_recovery_timeout_scale,
+                start_cursor=segment_resume.get("start_cursor")
+                if isinstance(segment_resume.get("start_cursor"), Mapping)
+                else None,
+                unit_index_offset=prior_unit_count,
+                target_total_units=target_total_units,
+                resume_from_run_id=_clean_text(segment_resume.get("resume_from_run_id")),
+                resume_from_analysis_root=_clean_text(segment_resume.get("resume_from_analysis_root")),
+                resume_runtime_dir=Path(_clean_text(segment_resume.get("resume_runtime_dir")))
+                if _clean_text(segment_resume.get("resume_runtime_dir"))
+                else None,
             )
         except Exception as exc:  # noqa: BLE001 - preserve one segment failure without hiding sibling results.
             recovery_delay_schedule = _unit_recovery_delay_schedule(
@@ -1331,6 +1472,26 @@ def build_summary(
             if result.get("unit_recovery_timeout_scale") is not None
         }
     )
+    resume_from_run_ids = sorted(
+        {
+            _clean_text(result.get("resume_from_run_id"))
+            for result in runner_results
+            if _clean_text(result.get("resume_from_run_id"))
+        }
+    )
+    prior_runner_unit_count = sum(int(result.get("prior_unit_count", 0) or 0) for result in runner_results)
+    combined_runner_unit_count = sum(
+        int(result.get("combined_unit_count", 0) or 0)
+        for result in runner_results
+        if result.get("combined_unit_count") is not None
+    )
+    target_total_units = sorted(
+        {
+            int(result.get("target_total_units"))
+            for result in runner_results
+            if result.get("target_total_units") is not None
+        }
+    )
     return {
         "run_id": run_id,
         "analysis_id": analysis_id,
@@ -1346,6 +1507,10 @@ def build_summary(
         "direct_probe_count": len(direct_results),
         "runner_segment_count": len(runner_results),
         "runner_unit_count": sum(int(result.get("unit_count", 0) or 0) for result in runner_results),
+        "resume_from_run_ids": resume_from_run_ids,
+        "prior_runner_unit_count": prior_runner_unit_count,
+        "combined_runner_unit_count": combined_runner_unit_count,
+        "target_total_units": target_total_units,
         "marginalia_count": len(all_items),
         "marginalia_kind_counts": kind_counts,
         "quality_flag_counts": flag_counts,
@@ -1385,6 +1550,10 @@ def render_report(
         f"- direct probes: `{summary.get('direct_probe_count')}`",
         f"- runner segments: `{summary.get('runner_segment_count')}`",
         f"- runner units: `{summary.get('runner_unit_count')}`",
+        f"- resume_from_run_ids: `{json.dumps(summary.get('resume_from_run_ids', []), ensure_ascii=False)}`",
+        f"- prior runner units: `{summary.get('prior_runner_unit_count')}`",
+        f"- combined runner units: `{summary.get('combined_runner_unit_count')}`",
+        f"- target total units: `{json.dumps(summary.get('target_total_units', []), ensure_ascii=False)}`",
         f"- partial segments: `{summary.get('partial_segment_count')}`",
         f"- unit recovery attempts: `{summary.get('unit_recovery_attempts')}`",
         f"- unit recovery delay schedules: `{json.dumps(summary.get('unit_recovery_delay_schedules', []), ensure_ascii=False)}`",
@@ -1468,6 +1637,11 @@ def render_report(
                 f"- status: `{segment.get('status')}`",
                 f"- stop_reason: `{segment.get('stop_reason')}`",
                 f"- unit_count: `{segment.get('unit_count')}`",
+                f"- prior_unit_count: `{segment.get('prior_unit_count', 0)}`",
+                f"- combined_unit_count: `{segment.get('combined_unit_count', segment.get('unit_count'))}`",
+                f"- target_total_units: `{segment.get('target_total_units', '')}`",
+                f"- resume_from_run_id: `{segment.get('resume_from_run_id', '')}`",
+                f"- resume_start_cursor: `{json.dumps(segment.get('resume_start_cursor', {}), ensure_ascii=False)}`",
                 f"- final_cursor: `{json.dumps(segment.get('final_cursor', {}), ensure_ascii=False)}`",
                 f"- unit_recovery_attempts: `{segment.get('unit_recovery_attempts', 0)}`",
                 f"- unit_recovery_delay_schedule: `{json.dumps(segment.get('unit_recovery_delay_schedule', []), ensure_ascii=False)}`",
@@ -1635,6 +1809,9 @@ def _status_payload(
             failure_policy=args.failure_policy,
         ),
         "unit_recovery_timeout_scale": args.unit_recovery_timeout_scale,
+        "resume_from_analysis_root": args.resume_from_analysis_root,
+        "resume_from_run_id": args.resume_from_run_id,
+        "target_total_units": args.target_total_units,
         "updated_at": _now(),
         "analysis_root": str(_analysis_root(args.run_id, args.analysis_id).relative_to(BACKEND_ROOT)),
         "report": str((_analysis_root(args.run_id, args.analysis_id) / "marginalia_smoke_report.md").relative_to(BACKEND_ROOT)),
@@ -1654,6 +1831,11 @@ def run(args: argparse.Namespace) -> int:
     _json_dump(status_file, _status_payload(args=args, status="running"))
     direct_results: list[dict[str, object]] = []
     runner_results: list[dict[str, object]] = []
+    resume_analysis_root: Path | None = (
+        _resolve_backend_path(args.resume_from_analysis_root)
+        if args.resume_from_analysis_root
+        else None
+    )
     try:
         if args.mode in {"direct", "foreground-gate", "all"}:
             direct_results = run_direct_digest_smoke(
@@ -1682,7 +1864,21 @@ def run(args: argparse.Namespace) -> int:
                 )
             ]
         if args.mode in {"focused", "all"}:
-            segment_ids = list(args.segment_id or DEFAULT_FOCUSED_SEGMENTS)
+            if args.segment_id:
+                segment_ids = list(args.segment_id)
+            elif resume_analysis_root is not None:
+                segment_ids = _resume_segment_ids(resume_analysis_root)
+            else:
+                segment_ids = list(DEFAULT_FOCUSED_SEGMENTS)
+            resume_plan = None
+            if resume_analysis_root is not None:
+                target_total_units = int(args.target_total_units or args.units_per_segment)
+                resume_plan = _load_resume_plan(
+                    resume_analysis_root=resume_analysis_root,
+                    resume_from_run_id=args.resume_from_run_id,
+                    segment_ids=segment_ids,
+                    target_total_units=target_total_units,
+                )
             runner_results = run_focused_segments(
                 analysis_root=analysis_root,
                 dataset_root=_resolve_backend_path(args.dataset_root),
@@ -1697,6 +1893,7 @@ def run(args: argparse.Namespace) -> int:
                 unit_recovery_attempts=args.unit_recovery_attempts,
                 unit_recovery_delay_seconds=args.unit_recovery_delay_seconds,
                 unit_recovery_timeout_scale=args.unit_recovery_timeout_scale,
+                resume_plan=resume_plan,
             )
         summary = _write_outputs(
             analysis_root=analysis_root,
@@ -1746,6 +1943,22 @@ def build_parser() -> argparse.ArgumentParser:
         help="Comma-separated unit recovery delay schedule. Defaults to 0,120,300 for partial policy and 0 for strict.",
     )
     parser.add_argument("--unit-recovery-timeout-scale", type=float, default=1.5)
+    parser.add_argument(
+        "--resume-from-analysis-root",
+        default="",
+        help="Existing analysis root whose raw/runner_units.json and runtime/ dirs should seed a focused continuation run.",
+    )
+    parser.add_argument(
+        "--resume-from-run-id",
+        default="",
+        help="Previous run id to record in continuation metadata.",
+    )
+    parser.add_argument(
+        "--target-total-units",
+        type=int,
+        default=None,
+        help="Total accepted units desired per segment after resume. Defaults to --units-per-segment.",
+    )
     return parser
 
 
