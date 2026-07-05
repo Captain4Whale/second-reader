@@ -4212,3 +4212,32 @@ This new direction is design frozen but not yet implemented as a formal benchmar
 - `docs/backend-reader-evaluation.md`
 - `docs/current-state.md`
 - `docs/tasks/registry.md`
+
+## Entry 150
+**ID**: DEC-152
+**Status**: active
+
+**Decision / Inflection**: Stop accepting failed Digest calls as successful empty reads.
+
+**Period**: July 5, 2026, after manual review of the five-book Digest v24 full-window review packet found that Huochu unit `13` had a Digest `network_blocked` failure recorded in `llm_fallbacks` while the unit was still settled as `digest_complete` with empty `understanding` / `reading_impression`. Later Huochu units continued from the advanced cursor, which made the run look operationally complete while leaving a continuity memory gap.
+
+**Decision**: Digest `ReaderLLMError` now propagates out of the Reading Runner instead of being caught and normalized into `{reading_impression: "", marginalia: []}`. For content-bearing source text, empty `understanding` or empty `response` is a `llm_contract` failure. Settlement, Unit Memory writeback, `read_audit`, Unit Span Ledger append, and cursor advance happen only after a valid Digest result. `DigestResult` now carries explicit `understanding`, `read_audit` records it top-level and inside `digest_result`, Unit Memory prefers that explicit field while keeping legacy memory-op fallback, and the smoke runner treats successful units with `llm_fallbacks` or empty U/R as hard failures.
+
+**Boundary**: This is a reliability/runtime and audit fix. It does not change prompts, public API payloads, Marginalia item schema, source-coordinate resolution, Unit Memory retrieval semantics, provider configuration, or old artifacts. Existing full-window evidence is not silently repaired; Huochu unit `13` and downstream Huochu continuity remain diagnostic / tainted until a Huochu-only full-window rerun is produced after this fix.
+
+**Why this path won**: A continuous reader cannot advance over a unit that was not actually digested. The existing recovery loop already knew how to retry recoverable unit failures from the same cursor, but the inner Digest fallback hid the failure from that loop. Propagating the error preserves cursor safety, makes provider and contract failures auditable, and prevents empty successful rows from contaminating later memory and evaluation evidence.
+
+**Primary evidence**:
+- `reading-companion-backend/src/attentional_v2/runner.py`
+- `reading-companion-backend/src/attentional_v2/llm_calls.py`
+- `reading-companion-backend/src/attentional_v2/observability.py`
+- `reading-companion-backend/src/attentional_v2/unit_memory.py`
+- `reading-companion-backend/eval/attentional_v2/run_digest_marginalia_live_smoke.py`
+- `reading-companion-backend/tests/test_attentional_v2_phase_b.py`
+- `reading-companion-backend/tests/test_attentional_v2_llm_calls.py`
+- `reading-companion-backend/tests/test_digest_marginalia_live_smoke_runner.py`
+- `reading-companion-backend/tests/test_attentional_v2_unit_memory.py`
+- `docs/backend-reading-mechanisms/attentional_v2.md`
+- `docs/backend-reader-evaluation.md`
+- `docs/current-state.md`
+- `docs/tasks/registry.md`

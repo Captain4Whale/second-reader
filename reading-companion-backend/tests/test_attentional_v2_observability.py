@@ -223,12 +223,14 @@ def test_record_read_writes_compact_ingest_trace(tmp_path: Path) -> None:
     audit_line = json.loads(read_audit_file(output_dir).read_text(encoding="utf-8").strip())
 
     assert audit_line["digest_result"] == {
+        "understanding": "",
         "reading_impression": "A mainline unit lands.",
         "marginalia": [],
         "surfaced_reactions": [],
         "memory_uptake_ops": [],
         "memory_uptake_admission_events": [],
     }
+    assert audit_line["understanding"] == ""
     assert audit_line["memory_uptake_ops"] == []
     assert audit_line["memory_uptake_op_count"] == 0
     assert audit_line["memory_uptake_ops_by_target_store"] == {}

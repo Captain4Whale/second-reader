@@ -299,6 +299,7 @@ class ReadAnchorEvidence(TypedDict, total=False):
 class DigestResult(TypedDict, total=False):
     """Structured record of one reader-like pass over a chosen coverage unit."""
 
+    understanding: str
     reading_impression: str
     marginalia: list["MarginaliaItem"]
     surfaced_reactions: list["SurfacedReaction"]

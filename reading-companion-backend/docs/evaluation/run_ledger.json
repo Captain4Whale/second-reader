@@ -1,6 +1,6 @@
 {
   "schema_version": 1,
-  "updated_at": "2026-07-05T09:43:29Z",
+  "updated_at": "2026-07-05T11:03:07Z",
   "entries": [
     {
       "run_id": "attentional_v2_excerpt_surface_v1_1_judged_20260406",
@@ -3278,7 +3278,7 @@
         "reading-companion-backend/eval/runs/attentional_v2/digest_marginalia_v24_5book_parallel_fullwindow_20260704/analysis/digest_marginalia_v24_5book_parallel_fullwindow/review_packet/README.md"
       ],
       "catalog_status": "not_cataloged",
-      "notes": "Parent full-window run completed as partial on 2026-07-05, preserving 213 runner units and 392 Marginalia items; merged review packet now combines this parent with Nawaer retry1 and Xidaduo continuations into final five-book diagnostic evidence: 246 accepted units, 460 Marginalia items (355 Highlights, 105 Notes), all five segments at chapter_end, and detailed Ingest/Digest/Unit Memory retrieval review docs. Use the review packet for human U/R, Marginalia, Ingest, and memory-retrieval inspection; no evidence catalog promotion yet.",
+      "notes": "Parent full-window run completed as partial on 2026-07-05, preserving 213 runner units and 392 Marginalia items; merged review packet combines this parent with Nawaer retry1 and Xidaduo continuations into final five-book diagnostic evidence: 246 accepted units, 460 Marginalia items (355 Highlights, 105 Notes), all five segments at chapter_end, and detailed Ingest/Digest/Unit Memory retrieval review docs. Manual review later found Huochu unit 13 swallowed a Digest `network_blocked` failure into an empty `digest_complete` row, so Huochu unit 13 and downstream Huochu continuity are diagnostic / tainted until a Huochu-only repaired rerun is produced after DEC-152. Use the current packet for human U/R, Marginalia, Ingest, and memory-retrieval inspection only; no evidence catalog promotion yet.",
       "parent_run_id": "",
       "child_run_ids": [
         "digest_marginalia_v24_nawaer_fullwindow_retry1_20260705",
@@ -3320,7 +3320,7 @@
           "quote_too_broad": 33
         }
       },
-      "updated_at": "2026-07-05T09:43:29Z"
+      "updated_at": "2026-07-05T11:03:07Z"
     },
     {
       "run_id": "digest_marginalia_v24_nawaer_fullwindow_retry1_20260705",

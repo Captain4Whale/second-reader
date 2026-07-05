@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "updated_at": "2026-07-05T17:43:29+08:00",
+  "updated_at": "2026-07-05T19:03:07+08:00",
   "tasks": [
     {
       "id": "TASK-SECOND-READER-INGEST-DIGEST-REFRAME-AUDIT-20260530",
@@ -76,7 +76,8 @@
         "DEC-148",
         "DEC-149",
         "DEC-150",
-        "DEC-151"
+        "DEC-151",
+        "DEC-152"
       ],
       "job_refs": [
         "bgjob_ingest_digest_unit_memory_full_diagnostic_20260603_parallel5",
@@ -112,7 +113,7 @@
         "bgjob_digest_marginalia_v24_xidaduo_fullwindow_continue2_20260705"
       ],
       "acceptance_ref": "docs/implementation/new-reading-mechanism/ingest-select-next-unit-window-partition-draft-prompt.md",
-      "next_action": "Digest is live as `attentional_v2.digest.v24` / promptset `attentional_v2-phase6-v84` / output contract `digest_understanding_response_marginalia_json_v8`: canonical visible-note output remains `marginalia[]` with explicit `kind: \"highlight\" | \"note\"`, and Notes remain an independent pass with non-empty visible `content`. The five-book full-window diagnostic parent run preserved partial evidence, Nawaer retry1 reached `chapter_end`, Xidaduo continue1 preserved an `llm_contract` failure, and Xidaduo continue2 completed to `chapter_end`. The merged review packet is ready at `reading-companion-backend/eval/runs/attentional_v2/digest_marginalia_v24_5book_parallel_fullwindow_20260704/analysis/digest_marginalia_v24_5book_parallel_fullwindow/review_packet/README.md`, covering `246` accepted units, `460` Marginalia items, Ingest-selected spans/reasons/recall intents/retrieval results, Digest Understanding, Response / `reading_impression`, Marginalia audit flags, recovery history, and Unit Memory retrieval summaries. Next action is human review of U/R continuity, Marginalia quality, Ingest boundaries, and memory-retrieval usefulness; no full-window continuation job is currently active.",
+      "next_action": "Digest is live as `attentional_v2.digest.v24` / promptset `attentional_v2-phase6-v84` / output contract `digest_understanding_response_marginalia_json_v8`: canonical visible-note output remains `marginalia[]` with explicit `kind: \"highlight\" | \"note\"`, and Notes remain an independent pass with non-empty visible `content`. `DEC-152` closes the Digest silent-fallback gap: recoverable Digest failures now propagate to same-cursor recovery, and successful diagnostic units with `llm_fallbacks` or empty content-bearing U/R are hard failures. The merged five-book full-window review packet remains available at `reading-companion-backend/eval/runs/attentional_v2/digest_marginalia_v24_5book_parallel_fullwindow_20260704/analysis/digest_marginalia_v24_5book_parallel_fullwindow/review_packet/README.md`, covering `246` accepted units and `460` Marginalia items, but Huochu unit `13` and downstream Huochu continuity are diagnostic / tainted because the parent run swallowed a Digest `network_blocked` fallback as empty `digest_complete`. Next action is a Huochu-only repaired full-window rerun under `digest_marginalia_v24_huochu_fullwindow_reliability_fix_20260705`, then refresh the packet with clean Huochu evidence; no full-window continuation job is currently active.",
       "blocked_by": [],
       "evidence_refs": [
         "docs/current-state.md",

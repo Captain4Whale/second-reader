@@ -121,6 +121,13 @@ def _clean_text(value: object) -> str:
     return re.sub(r"\s+", " ", str(value or "")).strip()
 
 
+def _is_content_bearing_text(value: object) -> bool:
+    text = str(value or "").strip()
+    if not text:
+        return False
+    return bool(re.search(r"[A-Za-z0-9\u4e00-\u9fff]", text))
+
+
 def _json_dump(path: Path, value: object) -> None:
     path.parent.mkdir(parents=True, exist_ok=True)
     path.write_text(json.dumps(value, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
@@ -158,6 +165,27 @@ def _resolve_backend_path(value: str | os.PathLike[str]) -> Path:
 
 def _source_span_text(source_unit: Mapping[str, object]) -> str:
     return _clean_text(source_unit.get("source_text"))
+
+
+def _understanding_from_read_audit(latest_read: Mapping[str, object], digest_result: Mapping[str, object]) -> str:
+    understanding = _clean_text(latest_read.get("understanding")) or _clean_text(digest_result.get("understanding"))
+    if understanding:
+        return understanding
+    memory_uptake_ops = digest_result.get("memory_uptake_ops")
+    if not isinstance(memory_uptake_ops, list):
+        return ""
+    for operation in memory_uptake_ops:
+        if not isinstance(operation, Mapping):
+            continue
+        if _clean_text(operation.get("target_store")) != "recent_reading_memory":
+            continue
+        payload = operation.get("payload")
+        if not isinstance(payload, Mapping):
+            continue
+        memory_text = _clean_text(payload.get("memory_text"))
+        if memory_text:
+            return memory_text
+    return ""
 
 
 def _cursor_str(cursor: Mapping[str, object] | None) -> str:
@@ -1210,6 +1238,13 @@ def run_segment_units(
             marginalia=marginalia,
         )
         source_text = _source_span_text(selected_source_unit)
+        understanding = _understanding_from_read_audit(latest_read, digest_result)
+        reading_impression = _clean_text(latest_read.get("reading_impression"))
+        llm_fallbacks = [
+            dict(item)
+            for item in latest_read.get("llm_fallbacks", [])
+            if isinstance(item, Mapping)
+        ] if isinstance(latest_read.get("llm_fallbacks"), list) else []
         units.append(
             {
                 "unit_index": unit_index,
@@ -1229,21 +1264,16 @@ def run_segment_units(
                 "source_span": source_span,
                 "span": _span_str(source_span),
                 "source_text": source_text,
-                "reading_impression": _clean_text(latest_read.get("reading_impression")),
-                "understanding": _clean_text(
-                    (digest_result.get("memory_uptake_ops", [{}])[0].get("payload", {}) or {}).get("memory_text")
-                    if isinstance(digest_result.get("memory_uptake_ops"), list)
-                    and digest_result.get("memory_uptake_ops")
-                    and isinstance(digest_result.get("memory_uptake_ops", [{}])[0], Mapping)
-                    and isinstance(digest_result.get("memory_uptake_ops", [{}])[0].get("payload"), Mapping)
-                    else ""
-                ),
+                "content_bearing_source": _is_content_bearing_text(source_text),
+                "reading_impression": reading_impression,
+                "understanding": understanding,
+                "llm_fallbacks": llm_fallbacks,
                 "marginalia": marginalia,
                 "marginalia_review": _summarize_marginalia(
                     marginalia,
                     source_text=source_text,
-                    understanding=_clean_text(latest_read.get("reading_impression")),
-                    response=_clean_text(latest_read.get("reading_impression")),
+                    understanding=understanding,
+                    response=reading_impression,
                     marginalia_audit=marginalia_audit,
                 ),
                 "marginalia_count": len(marginalia),
@@ -1472,6 +1502,14 @@ def _hard_failures(direct_results: list[dict[str, object]], runner_results: list
         for unit in segment.get("units", []):
             if not isinstance(unit, Mapping) or unit.get("status") != "ok":
                 continue
+            if isinstance(unit.get("llm_fallbacks"), list) and unit.get("llm_fallbacks"):
+                failures.append(f"runner_llm_fallback:{segment.get('segment_id')}:unit{unit.get('unit_index')}")
+            source_text = _clean_text(unit.get("source_text"))
+            content_bearing = bool(unit.get("content_bearing_source")) or _is_content_bearing_text(source_text)
+            if content_bearing and not _clean_text(unit.get("understanding")):
+                failures.append(f"runner_empty_understanding:{segment.get('segment_id')}:unit{unit.get('unit_index')}")
+            if content_bearing and not _clean_text(unit.get("reading_impression")):
+                failures.append(f"runner_empty_response:{segment.get('segment_id')}:unit{unit.get('unit_index')}")
             for item in unit.get("marginalia_review", []):
                 if isinstance(item, Mapping) and not item.get("quote_found_in_unit"):
                     failures.append(f"runner_unresolved_quote:{segment.get('segment_id')}:unit{unit.get('unit_index')}:{item.get('index')}")

@@ -96,6 +96,39 @@ def test_unit_memory_entry_derives_weighted_surface_docs():
     assert "\n" in [doc for doc in docs if doc["surface"] == "unit_marginalia"][0]["text"]
 
 
+def test_unit_memory_prefers_explicit_understanding_but_keeps_legacy_fallback():
+    digest_result = _digest_result(
+        "Legacy memory-op understanding.",
+        response="quiet pressure",
+        annotation="火车",
+    )
+    digest_result["understanding"] = "Explicit Digest understanding."
+
+    entry = build_unit_memory_entry(
+        book_id="book-demo",
+        chapter_id=1,
+        chapter_ref="Chapter 1",
+        source_unit=_source_unit("u000001", 1, "火车站台上的告别"),
+        digest_result=digest_result,
+        memory_retrieval_mode="text_only",
+    )
+
+    assert entry["digest"]["understanding"]["content"] == "Explicit Digest understanding."
+    understanding_doc = [doc for doc in retrieval_docs_from_entry(entry) if doc["surface"] == "unit_understanding"][0]
+    assert understanding_doc["text"] == "Explicit Digest understanding."
+
+    legacy_entry = build_unit_memory_entry(
+        book_id="book-demo",
+        chapter_id=1,
+        chapter_ref="Chapter 1",
+        source_unit=_source_unit("u000002", 2, "旧格式仍可读取"),
+        digest_result=_digest_result("Legacy memory-op understanding.", response="quiet pressure"),
+        memory_retrieval_mode="text_only",
+    )
+
+    assert legacy_entry["digest"]["understanding"]["content"] == "Legacy memory-op understanding."
+
+
 def test_unit_memory_indexes_highlight_marginalia():
     entry = build_unit_memory_entry(
         book_id="book-demo",

@@ -127,6 +127,123 @@ def test_unit_recovery_retries_contract_failures_but_not_auth_failures():
     assert _unit_error_recoverable("llm_auth") is False
 
 
+def test_run_segment_units_retries_transient_digest_failure(monkeypatch, tmp_path):
+    segment_sources = tmp_path / "segment_sources"
+    segment_sources.mkdir()
+    (segment_sources / "demo.txt").write_text("标题\n\n第一句。第二句！", encoding="utf-8")
+    (tmp_path / "segments.jsonl").write_text(
+        json.dumps(
+            {
+                "segment_id": "demo_segment",
+                "source_id": "demo_source",
+                "book_title": "Demo Book",
+                "author": "Author",
+                "language_track": "zh",
+                "chapter_titles": ["标题"],
+                "segment_source_path": "segment_sources/demo.txt",
+            },
+            ensure_ascii=False,
+        )
+        + "\n",
+        encoding="utf-8",
+    )
+    settle_calls = {"count": 0}
+
+    def fake_prepare_next_source_unit_for_read(**_kwargs):
+        return {"prepared": True}
+
+    def fake_settle_next_unit(**kwargs):
+        settle_calls["count"] += 1
+        if settle_calls["count"] == 1:
+            raise smoke_runner.ReaderLLMError(
+                "Connection error.",
+                problem_code="network_blocked",
+                details={
+                    "provider_call_attempt_count": 3,
+                    "connection_error_kind": "remote_protocol_error",
+                    "provider_error_type": "APIConnectionError",
+                    "provider_error_cause_type": "RemoteProtocolError",
+                },
+            )
+        output_dir = kwargs["output_dir"]
+        start_cursor = {"chapter_id": 1, "chapter_ref": "标题", "paragraph_index": 1, "char_offset": 0}
+        end_cursor = {"chapter_id": 1, "chapter_ref": "标题", "paragraph_index": 1, "char_offset": 3}
+        source_span = {"start_cursor": start_cursor, "end_cursor": end_cursor}
+        source_unit = {
+            "source_span_id": "src:c1:p1@0-p1@3",
+            "source_span": source_span,
+            "source_text": "第一句。",
+        }
+        read_path = smoke_runner.read_audit_file(output_dir)
+        read_path.parent.mkdir(parents=True, exist_ok=True)
+        read_path.write_text(
+            json.dumps(
+                {
+                    "source_span_id": source_unit["source_span_id"],
+                    "source_span": source_span,
+                    "understanding": "第一句建立了开场动作。",
+                    "reading_impression": "这个开场很短，但清楚。",
+                    "marginalia": [],
+                    "digest_result": {
+                        "understanding": "第一句建立了开场动作。",
+                        "reading_impression": "这个开场很短，但清楚。",
+                        "marginalia": [],
+                        "memory_uptake_ops": [],
+                    },
+                    "llm_fallbacks": [],
+                },
+                ensure_ascii=False,
+            )
+            + "\n",
+            encoding="utf-8",
+        )
+        return {
+            "local_buffer": kwargs["local_buffer"],
+            "local_continuity": kwargs["local_continuity"],
+            "active_attention": kwargs["active_attention"],
+            "recent_reading_memory": kwargs["recent_reading_memory"],
+            "reflective_frames": kwargs["reflective_frames"],
+            "knowledge_activations": kwargs["knowledge_activations"],
+            "reaction_records": kwargs["reaction_records"],
+            "reconsolidation_records": kwargs["reconsolidation_records"],
+            "bundle": kwargs["bundle"],
+            "selected_source_unit": source_unit,
+            "source_span": source_span,
+            "source_cursor": end_cursor,
+            "emitted_reactions": [],
+        }
+
+    monkeypatch.setattr(smoke_runner, "prepare_next_source_unit_for_read", fake_prepare_next_source_unit_for_read)
+    monkeypatch.setattr(smoke_runner, "_settle_next_unit", fake_settle_next_unit)
+    monkeypatch.setattr(smoke_runner.time, "sleep", lambda _seconds: None)
+
+    result = smoke_runner.run_segment_units(
+        analysis_root=tmp_path / "analysis",
+        dataset_root=tmp_path,
+        segment_id="demo_segment",
+        unit_count=1,
+        profile_id="dataset_review_high_trust",
+        max_output_tokens=4096,
+        timeout_seconds=120,
+        retry_attempts=3,
+        failure_policy="partial",
+        unit_recovery_attempts=1,
+        unit_recovery_delay_seconds="0",
+    )
+
+    assert settle_calls["count"] == 2
+    assert result["status"] == "ok"
+    assert result["partial_failures"] == []
+    assert result["unit_recovery_attempts"] == 1
+    assert result["recovered_units"][0]["unit_index"] == 1
+    unit = result["units"][0]
+    assert unit["status"] == "ok"
+    assert unit["recovered"] is True
+    assert unit["unit_recovery_attempts"] == 1
+    assert unit["recovery_events"][0]["problem_code"] == "network_blocked"
+    assert unit["understanding"] == "第一句建立了开场动作。"
+
+
 def test_llm_overrides_do_not_force_single_call_concurrency():
     overrides = _llm_call_overrides(
         max_output_tokens=4096,
@@ -428,3 +545,34 @@ def test_hard_failures_catches_legacy_field_leak_and_unresolved_quote():
 
     assert "legacy_field_leak:probe:marginalia[0].search_intent" in failures
     assert "direct_unresolved_quote:probe:1" in failures
+
+
+def test_hard_failures_catches_runner_llm_fallback_and_empty_content_digest():
+    failures = _hard_failures(
+        [],
+        [
+            {
+                "segment_id": "demo_segment",
+                "status": "ok",
+                "stop_reason": "unit_limit",
+                "unit_count": 1,
+                "runtime_artifacts": {"read_audit_count": 1, "unit_memory_entry_count": 1},
+                "units": [
+                    {
+                        "unit_index": 13,
+                        "status": "ok",
+                        "source_text": "Content-bearing source text.",
+                        "content_bearing_source": True,
+                        "understanding": "",
+                        "reading_impression": "",
+                        "llm_fallbacks": [{"node": "digest", "problem_code": "network_blocked"}],
+                        "marginalia_review": [],
+                    }
+                ],
+            }
+        ],
+    )
+
+    assert "runner_llm_fallback:demo_segment:unit13" in failures
+    assert "runner_empty_understanding:demo_segment:unit13" in failures
+    assert "runner_empty_response:demo_segment:unit13" in failures

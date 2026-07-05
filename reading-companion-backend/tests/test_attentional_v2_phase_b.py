@@ -5,6 +5,8 @@ from __future__ import annotations
 import json
 from types import SimpleNamespace
 
+import pytest
+
 from src.attentional_v2 import llm_calls as llm_calls_module
 from src.attentional_v2 import runner as runner_module
 from src.attentional_v2.llm_calls import digest
@@ -19,6 +21,7 @@ from src.attentional_v2.schemas import (
 from src.attentional_v2.state_projection import build_carry_forward_context
 from src.attentional_v2.state_migration import migrate_reflective_summaries_to_frames
 from src.attentional_v2.storage import read_audit_file
+from src.iterator_reader.llm_utils import ReaderLLMError
 from src.reading_mechanisms.attentional_v2 import AttentionalV2Mechanism
 
 
@@ -85,10 +88,7 @@ def test_digest_projects_compact_packet_and_returns_f1_surface_contract(tmp_path
                     },
                 }
             ],
-            "understanding": {
-                "kind": "claim_or_argument",
-                "content": "The second sentence sharpens the first one.",
-            },
+            "understanding": "The second sentence sharpens the first one.",
         })
 
     monkeypatch.setattr(llm_calls_module, "invoke_structured_output", fake_structured_output)
@@ -185,7 +185,8 @@ def test_digest_projects_compact_packet_and_returns_f1_surface_contract(tmp_path
     assert "\"earlier_excerpts\"" not in captured["prompt"]
     assert "\"refs\": [" not in captured["prompt"]
     assert manifest["node_name"] == "digest"
-    assert manifest["prompt_version"] == "attentional_v2.digest.v15"
+    assert manifest["prompt_version"] == "attentional_v2.digest.v24"
+    assert result["understanding"] == "The second sentence sharpens the first one."
     assert result["reading_impression"] == "The second sentence sharpens the first one."
     assert result["surfaced_reactions"][0]["source_quote"] == "Beta sentence."
     assert "prior_link" not in result["surfaced_reactions"][0]
@@ -209,6 +210,7 @@ def test_run_digest_for_source_unit_reads_once_and_persists_read_cycle_audit(tmp
             }
         )
         return {
+            "understanding": "The unit becomes legible immediately.",
             "reading_impression": "The unit becomes legible immediately.",
             "surfaced_reactions": [
                 {
@@ -259,11 +261,58 @@ def test_run_digest_for_source_unit_reads_once_and_persists_read_cycle_audit(tmp
 
     assert llm_fallbacks == []
     assert len(calls) == 1
+    assert digest_result["understanding"] == "The unit becomes legible immediately."
     assert digest_result["surfaced_reactions"][0]["source_quote"] == "Beta sentence."
     assert digest_result["memory_uptake_ops"][0]["op"] == "append"
     assert audit_line["stop_reason"] == "digest_complete"
+    assert audit_line["understanding"] == "The unit becomes legible immediately."
+    assert audit_line["digest_result"]["understanding"] == "The unit becomes legible immediately."
     assert audit_line["surfaced_reaction_count"] == 1
     assert audit_line["surfaced_reactions"][0]["source_quote"] == "Beta sentence."
     assert audit_line["memory_uptake_op_count"] == 1
     assert audit_line["memory_uptake_ops"][0]["target_store"] == "recent_reading_memory"
     assert audit_line["memory_uptake_ops_by_target_store"] == {"recent_reading_memory": 1}
+
+
+def test_run_digest_for_source_unit_propagates_llm_error_without_empty_audit(tmp_path, monkeypatch):
+    """Digest failures should reach unit recovery instead of settling empty reads."""
+
+    output_dir = tmp_path / "output" / "demo-book"
+    AttentionalV2Mechanism().initialize_artifacts(output_dir)
+    book_document = _book_document()
+    chapter = book_document["chapters"][0]
+    reflective_frames = migrate_reflective_summaries_to_frames(build_empty_reflective_summaries())
+
+    def fake_digest(**_kwargs):
+        raise ReaderLLMError("Connection error.", problem_code="network_blocked")
+
+    monkeypatch.setattr(runner_module, "_call_digest", fake_digest)
+
+    with pytest.raises(ReaderLLMError) as exc_info:
+        runner_module._run_digest_for_source_unit(
+            chapter=chapter,
+            chosen_unit_sentences=[chapter["sentences"][1]],
+            unitize_decision={
+                "start_sentence_id": "c1-s2",
+                "end_sentence_id": "c1-s2",
+                "preview_range": {"start_sentence_id": "c1-s2", "end_sentence_id": "c1-s2"},
+                "evidence_sentence_ids": ["c1-s2"],
+                "reason": "phase-f1-test",
+            },
+            local_buffer=build_empty_local_buffer(),
+            continuation_capsule={},
+            active_attention=build_empty_active_attention(),
+            recent_reading_memory=build_empty_recent_reading_memory(),
+            reflective_frames=reflective_frames,
+            knowledge_activations=build_empty_knowledge_activations(),
+            reaction_records=build_empty_reaction_records(),
+            output_language="en",
+            output_dir=output_dir,
+            book_title="Demo Book",
+            author="Tester",
+            chapter_id=1,
+            chapter_ref="Chapter 1",
+        )
+
+    assert exc_info.value.problem_code == "network_blocked"
+    assert not read_audit_file(output_dir).exists()

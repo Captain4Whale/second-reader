@@ -534,8 +534,8 @@ The old Memory / Planning / Evaluation implementation guidance chain at `docs/im
   - zero-score ties from `mechanism_unavailable` fallback payloads are not valid comparison results
   - the correct next move is a quota-safe rerun, not product interpretation
 - Active eval runners should treat LLM fallback-backed reading outputs as invalid evidence.
-  - product/runtime runs may still record `llm_fallback` and degrade visibly instead of hard-failing immediately
-  - evaluation runs should fail fast before judging or reuse when reading-output traces show `llm_fallback`, all-failed LLM traces, or a recent retryable `network_blocked` / `llm_timeout` streak
+  - product/runtime runs may still record explicit failure or degraded-state evidence, but evaluation reports must not interpret fallback-backed rows as successful reading
+  - evaluation runs should fail fast before judging or reuse when reading-output traces show `llm_fallback`, all-failed LLM traces, successful units carrying `llm_fallbacks`, content-bearing units with empty `understanding` or empty `response`, or a recent retryable `network_blocked` / `llm_timeout` streak
   - PID liveness or paragraph-position progress is not enough to prove eval health; operators should inspect LLM health traces and expected outputs before interpreting progress
 
 ## Throughput Diagnosis Rule

@@ -1321,6 +1321,22 @@ def test_digest_validator_accepts_highlight_and_note_and_rejects_bad_items() -> 
         },
         current_unit_texts=["Alpha hinge."],
     ) == []
+    assert validate_digest_result(
+        {
+            "understanding": "",
+            "response": "The ending lands quietly.",
+            "marginalia": [],
+        },
+        current_unit_texts=["Alpha hinge."],
+    ) == ["understanding must be non-empty for content-bearing source text"]
+    assert validate_digest_result(
+        {
+            "understanding": "The unit establishes a clear movement.",
+            "response": "",
+            "marginalia": [],
+        },
+        current_unit_texts=["Alpha hinge."],
+    ) == ["response must be non-empty for content-bearing source text"]
 
 
 def test_digest_rejects_legacy_understanding_list_payload(tmp_path: Path, monkeypatch):

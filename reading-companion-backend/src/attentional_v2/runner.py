@@ -25,7 +25,7 @@ from src.reading_runtime.sequential_state import (
     write_run_state,
 )
 from src.reading_runtime.shell_state import load_runtime_shell, save_runtime_shell
-from src.iterator_reader.llm_utils import ReaderLLMError, llm_invocation_scope, runtime_trace_context
+from src.iterator_reader.llm_utils import llm_invocation_scope, runtime_trace_context
 
 from .evaluation import build_normalized_eval_bundle, persist_normalized_eval_bundle
 from .intake import process_sentence_intake  # noqa: F401 - legacy monkeypatch seam for older tests
@@ -2342,26 +2342,17 @@ def _run_digest_for_source_unit(
         continuation_capsule=continuation_capsule,
     )
     llm_fallbacks: list[dict[str, str]] = []
-    try:
-        digest_result = _call_digest(
-            current_unit_source=current_unit_source,
-            current_unit_sentences=chosen_unit_sentences,
-            reading_memory_lines=reading_memory_lines,
-            carry_forward_context=carry_forward_context,
-            output_language=output_language,
-            output_dir=output_dir,
-            book_title=book_title,
-            author=author,
-            chapter_title=_clean_text(chapter.get("title")),
-        )
-    except ReaderLLMError as exc:
-        llm_fallbacks.append({"node": "digest", "problem_code": exc.problem_code})
-        digest_result = {
-            "reading_impression": "",
-            "marginalia": [],
-            "surfaced_reactions": [],
-            "memory_uptake_ops": [],
-        }
+    digest_result = _call_digest(
+        current_unit_source=current_unit_source,
+        current_unit_sentences=chosen_unit_sentences,
+        reading_memory_lines=reading_memory_lines,
+        carry_forward_context=carry_forward_context,
+        output_language=output_language,
+        output_dir=output_dir,
+        book_title=book_title,
+        author=author,
+        chapter_title=_clean_text(chapter.get("title")),
+    )
     digest_result["memory_uptake_ops"] = _normalize_memory_uptake_ops_source_refs(
         digest_result.get("memory_uptake_ops", []),
         source_unit=current_unit_source,

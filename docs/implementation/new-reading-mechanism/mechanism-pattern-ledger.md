@@ -136,6 +136,28 @@ This file is a living working ledger. Stable rules still belong in `docs/backend
 
 ## Current High-Value Failure Memory
 
+### 12. Silent Digest fallback can corrupt continuous-reading evidence without stopping the run
+- Pattern kind: `failure_mode`
+- Source mechanism: `attentional_v2` Digest settlement / smoke diagnostics
+- Potential destination: `attentional_v2` reliability gates and future evaluation harnesses
+- Why it matters:
+  - Continuous reading evidence depends on every accepted unit having actually been read; an empty Digest row creates a memory gap while later units still look completed.
+  - This can make downstream Understanding / Response continuity look weaker or misleading without an obvious run-level failure.
+- Contributing causes:
+  - Digest `ReaderLLMError` was caught inside the Runner and normalized into `{reading_impression: "", marginalia: []}`.
+  - The smoke runner's same-cursor recovery loop never saw that error, so it could not retry the unit.
+  - `read_audit` and `runner_units.json` did not make missing explicit `understanding` visible enough for hard-failure detection.
+- Evidence:
+  - `digest_marginalia_v24_5book_parallel_fullwindow_20260704`
+  - Huochu unit `13` in the parent full-window runtime: Digest `network_blocked` appeared as `llm_fallbacks` while the unit was still accepted as `digest_complete`.
+  - `reading-companion-backend/src/attentional_v2/runner.py`
+  - `reading-companion-backend/src/attentional_v2/llm_calls.py`
+  - `reading-companion-backend/eval/attentional_v2/run_digest_marginalia_live_smoke.py`
+- Status: `adopted`
+- Next action:
+  - landed runtime fix: Digest failures now propagate to same-cursor recovery, content-bearing empty `understanding` / `response` is `llm_contract`, and smoke hard-failure detection rejects `llm_fallbacks` or empty U/R on successful units
+  - evidence follow-up remains: rerun Huochu-only full-window as `digest_marginalia_v24_huochu_fullwindow_reliability_fix_20260705` before treating the five-book packet as clean continuity evidence
+
 ### 4. Sparse but globally correct reading is not enough for strong `local_impact`
 - Pattern kind: `anti_pattern`
 - Source mechanism: `attentional_v2`

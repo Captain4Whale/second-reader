@@ -20,7 +20,7 @@ Use `docs/backend-reading-mechanism.md` for shared platform boundaries. Use `doc
 - `DEC-107` replaces the old `Navigate` LLM-call identity with `Ingest`.
 - `DEC-110` lands the Unit Memory ledger + hybrid retrieval bottom framework. The follow-through recall/tool slice now lets Ingest emit bounded prior-reading recalls, lets Reading Runner execute runtime-owned Unit Memory retrieval/selection, and renders selected Understanding lines into Digest `ReadingMemory`.
 - `DEC-128` promotes Marginalia as the canonical Digest visible-note concept. Live Digest now emits `marginalia[]`; legacy `annotations[]`, `surfaced_reactions`, `reaction_records`, and public `reaction_*` names remain compatibility/audit aliases unless a later cleanup retires them explicitly.
-- `DEC-148` keeps `network_blocked` as the compatibility problem code for provider connection failures while adding private provider exception diagnostics and delayed same-cursor unit recovery for focused diagnostics; `DEC-150` extends the default partial-mode recovery budget for long-running diagnostics; `DEC-151` adds bounded structured-output contract-failure audit rows and broad same-cursor recovery for diagnostic unit failures unless the problem is known non-recoverable.
+- `DEC-148` keeps `network_blocked` as the compatibility problem code for provider connection failures while adding private provider exception diagnostics and delayed same-cursor unit recovery for focused diagnostics; `DEC-150` extends the default partial-mode recovery budget for long-running diagnostics; `DEC-151` adds bounded structured-output contract-failure audit rows and broad same-cursor recovery for diagnostic unit failures unless the problem is known non-recoverable; `DEC-152` makes Digest failures propagate to that recovery loop instead of accepting empty reads.
 - Stable live behavior remains defined here and should be updated only when implementation lands.
 
 ## Mechanism-Internal Reading Runner Boundary
@@ -254,6 +254,8 @@ Use `docs/backend-reading-mechanism.md` for shared platform boundaries. Use `doc
     - if Ingest fails its structured-output contract or submits missing/empty `unit` fields, surface the LLM problem such as `llm_contract` instead of manufacturing an empty boundary for fallback settlement
   - retrieve/select prior Understanding when Ingest supplied recalls, then build a bounded prompt-facing `ReadingMemory` block from hot current-chapter Understanding plus selected long-distance Unit Memory Understanding
   - formally digest the accepted source unit through `Digest`
+    - Digest LLM/provider failures and content-bearing empty `understanding` or `response` are contract failures, not successful reads
+    - these failures propagate as `ReaderLLMError` to same-cursor recovery; settlement, memory writeback, `read_audit`, Unit Span Ledger append, and cursor advance happen only after a valid Digest result
   - let `Digest` produce three model-facing reading outputs for that exact unit: `understanding`, `response`, and `marginalia`
   - runtime maps those outputs into internal `memory_uptake_ops`, `reading_impression`, and canonical `marginalia`, with deprecated `surfaced_reactions` aliases for existing settlement/audit compatibility
   - `Reading Runner` post-Digest settlement closes the exact source unit, appends it to the Unit Span Ledger, and advances the cursor to `end_cursor`
@@ -298,8 +300,9 @@ Use `docs/backend-reading-mechanism.md` for shared platform boundaries. Use `doc
     - explicit chapter-targeted runs may still select them directly
 - `Digest` is the current formal unit interpretation LLM call, with a reader-first prompt role rather than a node-first role.
   - On the current live baseline, its model-facing output fields are `understanding`, `response`, and `marginalia`.
-  - The runtime converts the single `understanding` object into zero or one internal `memory_uptake_ops[]` before settlement.
+  - The runtime converts the single `understanding` string into zero or one internal `memory_uptake_ops[]` before settlement.
   - The runtime maps `response` to internal `DigestResult.reading_impression` and `marginalia[]` to canonical `DigestResult.marginalia`, while still exposing `DigestResult.surfaced_reactions` as a deprecated alias.
+  - New `read_audit` rows persist explicit `understanding` both top-level and inside `digest_result`; Unit Memory prefers that explicit field while retaining legacy memory-op fallback for older artifacts.
   - It should not behave like a control super-node or a checklist-filling state updater.
   - Its intended order is:
     - read the current unit as a reader

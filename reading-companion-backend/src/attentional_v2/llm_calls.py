@@ -1059,6 +1059,34 @@ def _digest_memory_ops_from_payload(payload: object) -> object:
     return _understanding_output_to_recent_memory_ops(payload.get("understanding"))
 
 
+def _is_content_bearing_text(texts: list[str]) -> bool:
+    text = "\n".join(str(item or "") for item in texts).strip()
+    if not text:
+        return False
+    return bool(re.search(r"[A-Za-z0-9\u4e00-\u9fff]", text))
+
+
+def _raise_if_empty_content_digest(
+    *,
+    current_unit_texts: list[str],
+    understanding: str,
+    response: str,
+) -> None:
+    if not _is_content_bearing_text(current_unit_texts):
+        return
+    errors: list[str] = []
+    if not _clean_text(understanding):
+        errors.append("understanding must be non-empty for content-bearing source text")
+    if not _clean_text(response):
+        errors.append("response must be non-empty for content-bearing source text")
+    if errors:
+        raise ReaderLLMError(
+            "Digest result missing required content for content-bearing source text.",
+            problem_code="llm_contract",
+            details={"structured_output_contract": {"validation_errors": errors}},
+        )
+
+
 def digest(
     *,
     carry_forward_context: CarryForwardContext,
@@ -1142,13 +1170,20 @@ def digest(
         allowed_ref_ids=allowed_ref_ids,
         legacy_selection_reasons=legacy_selection_reasons,
     )
+    understanding = _clean_text(payload.get("understanding")) if isinstance(payload, dict) else ""
     reading_impression = _clean_text(payload.get("response")) if isinstance(payload, dict) else ""
+    _raise_if_empty_content_digest(
+        current_unit_texts=current_unit_texts,
+        understanding=understanding,
+        response=reading_impression,
+    )
     raw_memory_ops = _digest_memory_ops_from_payload(payload)
     memory_uptake_ops, memory_uptake_admission_events = _normalize_state_operations_with_admission(
         raw_memory_ops,
         enforce_read_store_policy=True,
     )
     result: DigestResult = {
+        "understanding": understanding,
         "reading_impression": reading_impression,
         "marginalia": marginalia,
         "surfaced_reactions": marginalia,

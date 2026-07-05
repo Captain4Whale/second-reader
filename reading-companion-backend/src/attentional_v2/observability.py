@@ -137,6 +137,29 @@ def _memory_uptake_admission_events(digest_result: Mapping[str, object]) -> list
     return _normalized_operations(digest_result.get("memory_uptake_admission_events"))
 
 
+def _understanding_from_digest_result(
+    digest_result: Mapping[str, object],
+    memory_uptake_ops: list[dict[str, object]],
+) -> str:
+    """Return explicit Digest understanding with legacy memory-op fallback."""
+
+    explicit = _clean_text(digest_result.get("understanding"))
+    if explicit:
+        return explicit
+    for operation in memory_uptake_ops:
+        if not isinstance(operation, Mapping):
+            continue
+        if _clean_text(operation.get("target_store")) != "recent_reading_memory":
+            continue
+        payload = operation.get("payload")
+        if not isinstance(payload, Mapping):
+            continue
+        memory_text = _clean_text(payload.get("memory_text"))
+        if memory_text:
+            return memory_text
+    return ""
+
+
 def _memory_uptake_ops_by_target_store(memory_uptake_ops: list[dict[str, object]]) -> dict[str, int]:
     """Count read memory operations by their declared target store."""
 
@@ -358,7 +381,9 @@ def record_read(
     )
     memory_uptake_ops = _memory_uptake_ops(digest_result)
     memory_uptake_admission_events = _memory_uptake_admission_events(digest_result)
+    understanding = _understanding_from_digest_result(digest_result, memory_uptake_ops)
     compact_digest_result = {
+        "understanding": understanding,
         "reading_impression": _clean_text(digest_result.get("reading_impression")),
         "marginalia": marginalia,
         "surfaced_reactions": marginalia,
@@ -384,6 +409,7 @@ def record_read(
         "carry_forward_ref_ids": sorted(context_ref_ids(carry_forward_context)),
         "stop_reason": _clean_text(stop_reason),
         "budget_exhausted": bool(budget_exhausted),
+        "understanding": understanding,
         "reading_impression": _clean_text(digest_result.get("reading_impression")),
         "marginalia_count": len(marginalia),
         "marginalia": marginalia,

@@ -338,6 +338,21 @@ def _compact_retrieval_unit(item: Mapping[str, object]) -> dict[str, object]:
 
 
 def _understanding_from_digest_result(digest_result: Mapping[str, object]) -> dict[str, object]:
+    explicit = digest_result.get("understanding")
+    if isinstance(explicit, Mapping):
+        content = _clean_text(explicit.get("content"))
+        if content:
+            return {
+                "content": content,
+                "token_estimate": token_estimate_payload(content),
+            }
+    else:
+        content = _clean_text(explicit)
+        if content:
+            return {
+                "content": content,
+                "token_estimate": token_estimate_payload(content),
+            }
     for operation in digest_result.get("memory_uptake_ops", []):
         if not isinstance(operation, Mapping):
             continue
