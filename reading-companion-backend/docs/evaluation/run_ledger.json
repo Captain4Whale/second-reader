@@ -1,6 +1,6 @@
 {
   "schema_version": 1,
-  "updated_at": "2026-07-04T02:12:23.279979Z",
+  "updated_at": "2026-07-04T11:30:22.605182Z",
   "entries": [
     {
       "run_id": "attentional_v2_excerpt_surface_v1_1_judged_20260406",
@@ -3251,6 +3251,57 @@
       "local_missing_allowed": [],
       "metadata": {},
       "updated_at": "2026-07-04T02:12:23.279062Z"
+    },
+    {
+      "run_id": "digest_marginalia_v24_5book_parallel_fullwindow_20260704",
+      "date": "2026-07-04",
+      "surface": "digest_marginalia_fullwindow",
+      "lane": "mechanism_eval_smoke",
+      "status": "running",
+      "mechanisms": [
+        "attentional_v2"
+      ],
+      "dataset_or_manifest": [
+        "state/eval_local_datasets/user_level_benchmarks/attentional_v2_user_level_selective_v1_repaired_20260629_source_norm_v1_2_unique_notes"
+      ],
+      "run_dir": "reading-companion-backend/eval/runs/attentional_v2/digest_marginalia_v24_5book_parallel_fullwindow_20260704",
+      "summary_paths": {
+        "raw_summary": "reading-companion-backend/eval/runs/attentional_v2/digest_marginalia_v24_5book_parallel_fullwindow_20260704/analysis/digest_marginalia_v24_5book_parallel_fullwindow/raw/summary.json"
+      },
+      "job_ids": [
+        "bgjob_digest_marginalia_v24_5book_parallel_fullwindow_20260704"
+      ],
+      "report_paths": [
+        "reading-companion-backend/eval/runs/attentional_v2/digest_marginalia_v24_5book_parallel_fullwindow_20260704/analysis/digest_marginalia_v24_5book_parallel_fullwindow/marginalia_smoke_report.md"
+      ],
+      "catalog_status": "not_cataloged",
+      "notes": "Digest v24 / phase6-v84 five-book full dataset-window diagnostic launched with segment_workers=5, units-per-segment=9999 high cap, partial failure policy, and DEC-150 long unit recovery schedule. Focus: Ingest unit selection, Understanding/Response/Marginalia outputs, and Unit Memory retrieval audit surfaces.",
+      "parent_run_id": "",
+      "child_run_ids": [],
+      "synthetic": false,
+      "local_missing_allowed": [
+        "reading-companion-backend/eval/runs/attentional_v2/digest_marginalia_v24_5book_parallel_fullwindow_20260704",
+        "reading-companion-backend/eval/runs/attentional_v2/digest_marginalia_v24_5book_parallel_fullwindow_20260704/analysis/digest_marginalia_v24_5book_parallel_fullwindow/raw/summary.json",
+        "reading-companion-backend/eval/runs/attentional_v2/digest_marginalia_v24_5book_parallel_fullwindow_20260704/analysis/digest_marginalia_v24_5book_parallel_fullwindow/marginalia_smoke_report.md"
+      ],
+      "metadata": {
+        "prompt_version": "attentional_v2.digest.v24",
+        "promptset_version": "attentional_v2-phase6-v84",
+        "units_per_segment": 9999,
+        "segment_workers": 5,
+        "failure_policy": "partial",
+        "unit_recovery_attempts": 6,
+        "unit_recovery_delay_seconds": "0,120,300,600,900,1200",
+        "unit_recovery_max_elapsed_seconds": 3600,
+        "segment_ids": [
+          "xidaduo_private_zh__segment_1",
+          "huochu_shengming_de_yiyi_private_zh__segment_1",
+          "mangge_zhi_dao_private_zh__segment_1",
+          "nawaer_baodian_private_zh__segment_1",
+          "value_of_others_private_en__segment_1"
+        ]
+      },
+      "updated_at": "2026-07-04T11:30:22.604318Z"
     }
   ]
 }

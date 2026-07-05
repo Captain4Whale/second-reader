@@ -7,7 +7,7 @@ Update when: the current objective, active tasks, blockers, active jobs, open de
 
 This file is authoritative for durable current status. Do not keep unique active-state information only in `docs/agent-handoff.md`.
 
-Last verified: `2026-07-04T10:13:59+08:00`
+Last verified: `2026-07-04T19:43:48+08:00`
 
 ## Current Objective
 - The `Ingest -> Digest -> Reading Runner settlement` mechanism reframe is implemented; current work is fact alignment, smoke/diagnostic review, and calibration before any formal evaluation promotion.
@@ -22,6 +22,11 @@ Last verified: `2026-07-04T10:13:59+08:00`
     - `Ingest` determines the next reading unit and may express bounded prior-reading recall intentions; runtime owns retrieval execution and selection
     - `Digest` understands the target text and produces reader-facing `understanding / response / marginalia`
     - prefer retrieving relevant prior memory/source objects over live "回读" path steering
+  - current active diagnostic:
+    - run id: `digest_marginalia_v24_5book_parallel_fullwindow_20260704`
+    - job id: `bgjob_digest_marginalia_v24_5book_parallel_fullwindow_20260704`
+    - status: `running`
+    - purpose: run Digest v24 over all five active unique-note dataset windows with `segment_workers=5`, high cap `units-per-segment=9999`, and long partial-mode recovery so the review packet can inspect Ingest-selected units, Understanding, Response / `reading_impression`, Marginalia, and Unit Memory retrieval traces across the full window rather than the old 20-unit cap.
   - live cleanup landed:
     - `DEC-104` retires live Detour / source-backread behavior from `attentional_v2`
     - `DEC-105` hard-purges the retired Detour / source-backread / source-skill compatibility interfaces from current `attentional_v2` code, prompts, schemas, audits, and tests
@@ -3527,6 +3532,7 @@ Last verified: `2026-07-04T10:13:59+08:00`
 - Benchmark confidence can look stronger than it really is if corpus growth, promotion, and reviewed-slice confidence gates drift apart.
 
 ## Active Task IDs
+- `TASK-SECOND-READER-INGEST-DIGEST-REFRAME-AUDIT-20260530`
 - `TASK-ATTENTIONAL-V2-STRUCTURAL-REWORK`
 - `TASK-V2-NATIVE-READING-PRESENTATION`
 - `TASK-USER-LEVEL-SELECTIVE-V1`
@@ -3539,7 +3545,7 @@ Last verified: `2026-07-04T10:13:59+08:00`
 - none
 
 ## Active Job IDs
-- none
+- `bgjob_digest_marginalia_v24_5book_parallel_fullwindow_20260704`
 
 ## Recommended Reading Path
 1. `AGENTS.md`

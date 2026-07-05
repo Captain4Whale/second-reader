@@ -7,7 +7,7 @@ Update when: task status, priority, blockers, decision refs, job refs, evidence 
 
 This document is the human-readable companion to `docs/tasks/registry.json`.
 
-Last updated: `2026-07-04T10:13:59+08:00`
+Last updated: `2026-07-04T19:43:48+08:00`
 
 ## Status Values
 - `active`
@@ -25,7 +25,7 @@ Last updated: `2026-07-04T10:13:59+08:00`
 - Lane: `mechanism_runtime`
 - Priority: `high`
 - Detail: `docs/current-state.md`
-- Next: Digest is live as `attentional_v2.digest.v24` / promptset `attentional_v2-phase6-v84` / output contract `digest_understanding_response_marginalia_json_v8`: canonical visible-note output remains `marginalia[]` with explicit `kind: "highlight" | "note"`. Highlights now require intrinsic quote value: the quoted words themselves must already carry the portable cognitive gain, while private `selection_reason` may identify but not invent that value by abstracting a local scene/fact/testimony after the fact. Notes remain an independent pass with non-empty visible `content`. The v24 continuation diagnostic `bgjob_digest_marginalia_v24_5book_parallel_20units_continue1_20260704` completed as `partial`: it added `39` accepted units and combined with the prior partial run for `63` total accepted units; `mangge` and `value_of_others` reached `20`, while `xidaduo`, `huochu`, and `nawaer` stopped after repeated provider `RemoteProtocolError` / `network_blocked` recovery exhaustion. `DEC-150` now upgrades focused diagnostic transient recovery for long-running jobs to `6` extra same-cursor unit retries, delay schedule `0,120,300,600,900,1200`, and a `3600s` per-unit recovery budget, so the next continuation can wait through provider-side instability instead of giving up after a short outage.
+- Next: Digest is live as `attentional_v2.digest.v24` / promptset `attentional_v2-phase6-v84` / output contract `digest_understanding_response_marginalia_json_v8`: canonical visible-note output remains `marginalia[]` with explicit `kind: "highlight" | "note"`, and Notes remain an independent pass with non-empty visible `content`. The active diagnostic run `bgjob_digest_marginalia_v24_5book_parallel_fullwindow_20260704` is running over all five active unique-note dataset windows with `segment_workers=5`, high cap `units-per-segment=9999`, and `DEC-150` long partial-mode recovery (`6` extra same-cursor unit retries, delay schedule `0,120,300,600,900,1200`, `3600s` per-unit budget). After completion, inspect Ingest-selected units, Understanding, Response / `reading_impression`, Marginalia, and Unit Memory retrieval traces; if any segment ends `partial`, continue from the analysis root with a `..._continue1` run and preserve sibling-segment evidence.
 - Jobs:
   - `bgjob_ingest_digest_unit_memory_full_diagnostic_20260603_parallel5`
   - `bgjob_unit_memory_text_only_smoke_value_20260606`
@@ -54,6 +54,7 @@ Last updated: `2026-07-04T10:13:59+08:00`
   - `bgjob_digest_marginalia_v23_5book_parallel_20units_recovery_retry1_20260702`
   - `bgjob_digest_marginalia_v24_5book_parallel_20units_20260703`
   - `bgjob_digest_marginalia_v24_5book_parallel_20units_continue1_20260704`
+  - `bgjob_digest_marginalia_v24_5book_parallel_fullwindow_20260704`
 - Evidence:
   - `DEC-103`
   - `DEC-104`
