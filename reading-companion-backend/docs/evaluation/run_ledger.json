@@ -1,6 +1,6 @@
 {
   "schema_version": 1,
-  "updated_at": "2026-07-05T08:38:08.454526Z",
+  "updated_at": "2026-07-05T09:43:29Z",
   "entries": [
     {
       "run_id": "attentional_v2_excerpt_surface_v1_1_judged_20260406",
@@ -3266,16 +3266,19 @@
       ],
       "run_dir": "reading-companion-backend/eval/runs/attentional_v2/digest_marginalia_v24_5book_parallel_fullwindow_20260704",
       "summary_paths": {
-        "raw_summary": "reading-companion-backend/eval/runs/attentional_v2/digest_marginalia_v24_5book_parallel_fullwindow_20260704/analysis/digest_marginalia_v24_5book_parallel_fullwindow/raw/summary.json"
+        "raw_summary": "reading-companion-backend/eval/runs/attentional_v2/digest_marginalia_v24_5book_parallel_fullwindow_20260704/analysis/digest_marginalia_v24_5book_parallel_fullwindow/raw/summary.json",
+        "review_packet": "reading-companion-backend/eval/runs/attentional_v2/digest_marginalia_v24_5book_parallel_fullwindow_20260704/analysis/digest_marginalia_v24_5book_parallel_fullwindow/review_packet/README.md",
+        "review_packet_summary": "reading-companion-backend/eval/runs/attentional_v2/digest_marginalia_v24_5book_parallel_fullwindow_20260704/analysis/digest_marginalia_v24_5book_parallel_fullwindow/review_packet/summary.json"
       },
       "job_ids": [
         "bgjob_digest_marginalia_v24_5book_parallel_fullwindow_20260704"
       ],
       "report_paths": [
-        "reading-companion-backend/eval/runs/attentional_v2/digest_marginalia_v24_5book_parallel_fullwindow_20260704/analysis/digest_marginalia_v24_5book_parallel_fullwindow/marginalia_smoke_report.md"
+        "reading-companion-backend/eval/runs/attentional_v2/digest_marginalia_v24_5book_parallel_fullwindow_20260704/analysis/digest_marginalia_v24_5book_parallel_fullwindow/marginalia_smoke_report.md",
+        "reading-companion-backend/eval/runs/attentional_v2/digest_marginalia_v24_5book_parallel_fullwindow_20260704/analysis/digest_marginalia_v24_5book_parallel_fullwindow/review_packet/README.md"
       ],
       "catalog_status": "not_cataloged",
-      "notes": "Completed as partial on 2026-07-05: preserved 213 runner units and 392 Marginalia items (297 Highlights, 95 Notes). Huochu Shengming De Yiyi, Mangge Zhi Dao, and Value of Others reached chapter_end; Xidaduo stopped at unit 42 and Nawaer stopped at unit 1 after network_blocked RemoteProtocolError recovery exhaustion. Use as partial full-window evidence, with Nawaer retry1, Xidaduo continue1, and Xidaduo continue2 tracked as child runs.",
+      "notes": "Parent full-window run completed as partial on 2026-07-05, preserving 213 runner units and 392 Marginalia items; merged review packet now combines this parent with Nawaer retry1 and Xidaduo continuations into final five-book diagnostic evidence: 246 accepted units, 460 Marginalia items (355 Highlights, 105 Notes), all five segments at chapter_end, and detailed Ingest/Digest/Unit Memory retrieval review docs. Use the review packet for human U/R, Marginalia, Ingest, and memory-retrieval inspection; no evidence catalog promotion yet.",
       "parent_run_id": "",
       "child_run_ids": [
         "digest_marginalia_v24_nawaer_fullwindow_retry1_20260705",
@@ -3302,9 +3305,22 @@
           "mangge_zhi_dao_private_zh__segment_1",
           "nawaer_baodian_private_zh__segment_1",
           "value_of_others_private_en__segment_1"
-        ]
+        ],
+        "merged_review_packet": "reading-companion-backend/eval/runs/attentional_v2/digest_marginalia_v24_5book_parallel_fullwindow_20260704/analysis/digest_marginalia_v24_5book_parallel_fullwindow/review_packet/README.md",
+        "merged_unit_count": 246,
+        "merged_marginalia_count": 460,
+        "merged_marginalia_kind_counts": {
+          "highlight": 355,
+          "note": 105
+        },
+        "merged_retrieval_rows": 247,
+        "merged_selection_rows": 246,
+        "merged_quality_flag_counts": {
+          "possibly_generic": 6,
+          "quote_too_broad": 33
+        }
       },
-      "updated_at": "2026-07-05T08:38:08.325107Z"
+      "updated_at": "2026-07-05T09:43:29Z"
     },
     {
       "run_id": "digest_marginalia_v24_nawaer_fullwindow_retry1_20260705",
@@ -3326,10 +3342,11 @@
         "bgjob_digest_marginalia_v24_nawaer_fullwindow_retry1_20260705"
       ],
       "report_paths": [
-        "reading-companion-backend/eval/runs/attentional_v2/digest_marginalia_v24_nawaer_fullwindow_retry1_20260705/analysis/digest_marginalia_v24_nawaer_fullwindow_retry1/marginalia_smoke_report.md"
+        "reading-companion-backend/eval/runs/attentional_v2/digest_marginalia_v24_nawaer_fullwindow_retry1_20260705/analysis/digest_marginalia_v24_nawaer_fullwindow_retry1/marginalia_smoke_report.md",
+        "reading-companion-backend/eval/runs/attentional_v2/digest_marginalia_v24_5book_parallel_fullwindow_20260704/analysis/digest_marginalia_v24_5book_parallel_fullwindow/review_packet/README.md"
       ],
       "catalog_status": "not_cataloged",
-      "notes": "Single-segment Nawaer retry completed with summary status pass: 10 runner units, 26 Marginalia items, 0 hard/partial failures, and chapter_end reached. Awaiting merged full-window review packet.",
+      "notes": "Single-segment Nawaer retry completed with summary status pass: 10 runner units, 26 Marginalia items, 0 hard/partial failures, and chapter_end reached. Included in the merged five-book full-window review packet.",
       "parent_run_id": "digest_marginalia_v24_5book_parallel_fullwindow_20260704",
       "child_run_ids": [],
       "synthetic": false,
@@ -3350,7 +3367,7 @@
           "nawaer_baodian_private_zh__segment_1"
         ]
       },
-      "updated_at": "2026-07-05T05:21:58.218295Z"
+      "updated_at": "2026-07-05T09:43:29Z"
     },
     {
       "run_id": "digest_marginalia_v24_xidaduo_fullwindow_continue1_20260705",
@@ -3372,10 +3389,11 @@
         "bgjob_digest_marginalia_v24_xidaduo_fullwindow_continue1_20260705"
       ],
       "report_paths": [
-        "reading-companion-backend/eval/runs/attentional_v2/digest_marginalia_v24_xidaduo_fullwindow_continue1_20260705/analysis/digest_marginalia_v24_xidaduo_fullwindow_continue1/marginalia_smoke_report.md"
+        "reading-companion-backend/eval/runs/attentional_v2/digest_marginalia_v24_xidaduo_fullwindow_continue1_20260705/analysis/digest_marginalia_v24_xidaduo_fullwindow_continue1/marginalia_smoke_report.md",
+        "reading-companion-backend/eval/runs/attentional_v2/digest_marginalia_v24_5book_parallel_fullwindow_20260704/analysis/digest_marginalia_v24_5book_parallel_fullwindow/review_packet/README.md"
       ],
       "catalog_status": "not_cataloged",
-      "notes": "Single-segment Xidaduo continuation from parent fullwindow partial evidence. Failed with summary status fail after adding 4 runner units, bringing Xidaduo to 45 combined units; hard failure was runner_failed:xidaduo_private_zh__segment_1:llm_contract at unit 46 / final cursor paragraph 396. Evidence preserved; continue2 resumes from this analysis root.",
+      "notes": "Single-segment Xidaduo continuation from parent fullwindow partial evidence. Failed with summary status fail after adding 4 runner units, bringing Xidaduo to 45 combined units; hard failure was runner_failed:xidaduo_private_zh__segment_1:llm_contract at unit 46 / final cursor paragraph 396. Evidence preserved and included in the merged recovery history; continue2 completed the segment.",
       "parent_run_id": "digest_marginalia_v24_5book_parallel_fullwindow_20260704",
       "child_run_ids": [
         "digest_marginalia_v24_xidaduo_fullwindow_continue2_20260705"
@@ -3402,14 +3420,14 @@
           "xidaduo_private_zh__segment_1"
         ]
       },
-      "updated_at": "2026-07-05T08:38:08.385132Z"
+      "updated_at": "2026-07-05T09:43:29Z"
     },
     {
       "run_id": "digest_marginalia_v24_xidaduo_fullwindow_continue2_20260705",
       "date": "2026-07-05",
       "surface": "digest_marginalia_fullwindow_xidaduo_continue",
       "lane": "mechanism_eval_smoke",
-      "status": "running",
+      "status": "review_pending",
       "mechanisms": [
         "attentional_v2"
       ],
@@ -3424,18 +3442,15 @@
         "bgjob_digest_marginalia_v24_xidaduo_fullwindow_continue2_20260705"
       ],
       "report_paths": [
-        "reading-companion-backend/eval/runs/attentional_v2/digest_marginalia_v24_xidaduo_fullwindow_continue2_20260705/analysis/digest_marginalia_v24_xidaduo_fullwindow_continue2/marginalia_smoke_report.md"
+        "reading-companion-backend/eval/runs/attentional_v2/digest_marginalia_v24_xidaduo_fullwindow_continue2_20260705/analysis/digest_marginalia_v24_xidaduo_fullwindow_continue2/marginalia_smoke_report.md",
+        "reading-companion-backend/eval/runs/attentional_v2/digest_marginalia_v24_5book_parallel_fullwindow_20260704/analysis/digest_marginalia_v24_5book_parallel_fullwindow/review_packet/README.md"
       ],
       "catalog_status": "not_cataloged",
-      "notes": "Single-segment Xidaduo continuation from continue1 after continue1 failed at unit 46 with llm_contract. Continues from continue1 analysis root with target-total-units=9999 and the same DEC-150 long partial-mode recovery.",
+      "notes": "Single-segment Xidaduo continuation from continue1 completed with summary status pass: 19 newly accepted runner units, 34 Marginalia items, 1 recovered unit, no hard/partial failures, and chapter_end reached. Its cumulative runtime contains 64 accepted Xidaduo units and is the final Xidaduo source for the merged five-book review packet.",
       "parent_run_id": "digest_marginalia_v24_xidaduo_fullwindow_continue1_20260705",
       "child_run_ids": [],
       "synthetic": false,
-      "local_missing_allowed": [
-        "reading-companion-backend/eval/runs/attentional_v2/digest_marginalia_v24_xidaduo_fullwindow_continue2_20260705",
-        "reading-companion-backend/eval/runs/attentional_v2/digest_marginalia_v24_xidaduo_fullwindow_continue2_20260705/analysis/digest_marginalia_v24_xidaduo_fullwindow_continue2/raw/summary.json",
-        "reading-companion-backend/eval/runs/attentional_v2/digest_marginalia_v24_xidaduo_fullwindow_continue2_20260705/analysis/digest_marginalia_v24_xidaduo_fullwindow_continue2/marginalia_smoke_report.md"
-      ],
+      "local_missing_allowed": [],
       "metadata": {
         "prompt_version": "attentional_v2.digest.v24",
         "promptset_version": "attentional_v2-phase6-v84",
@@ -3450,9 +3465,16 @@
         "resume_from_analysis_root": "reading-companion-backend/eval/runs/attentional_v2/digest_marginalia_v24_xidaduo_fullwindow_continue1_20260705/analysis/digest_marginalia_v24_xidaduo_fullwindow_continue1",
         "segment_ids": [
           "xidaduo_private_zh__segment_1"
-        ]
+        ],
+        "runner_unit_count": 19,
+        "combined_runtime_unit_count": 64,
+        "marginalia_count": 34,
+        "recovered_unit_count": 1,
+        "summary_status": "pass",
+        "stop_reason": "chapter_end",
+        "merged_review_packet": "reading-companion-backend/eval/runs/attentional_v2/digest_marginalia_v24_5book_parallel_fullwindow_20260704/analysis/digest_marginalia_v24_5book_parallel_fullwindow/review_packet/README.md"
       },
-      "updated_at": "2026-07-05T08:38:08.453322Z"
+      "updated_at": "2026-07-05T09:43:29Z"
     }
   ]
 }

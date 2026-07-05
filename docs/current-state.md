@@ -7,7 +7,7 @@ Update when: the current objective, active tasks, blockers, active jobs, open de
 
 This file is authoritative for durable current status. Do not keep unique active-state information only in `docs/agent-handoff.md`.
 
-Last verified: `2026-07-05T17:15:38+08:00`
+Last verified: `2026-07-05T17:43:29+08:00`
 
 ## Current Objective
 - The `Ingest -> Digest -> Reading Runner settlement` mechanism reframe is implemented; current work is fact alignment, smoke/diagnostic review, and calibration before any formal evaluation promotion.
@@ -25,9 +25,10 @@ Last verified: `2026-07-05T17:15:38+08:00`
   - latest full-window diagnostic:
     - run id: `digest_marginalia_v24_5book_parallel_fullwindow_20260704`
     - job id: `bgjob_digest_marginalia_v24_5book_parallel_fullwindow_20260704`
-    - status: `partial`
+    - status: `partial` parent run; merged evidence is now `review_pending`
     - result: completed with `213` runner units and `392` Marginalia items; `huochu_shengming_de_yiyi_private_zh__segment_1`, `mangge_zhi_dao_private_zh__segment_1`, and `value_of_others_private_en__segment_1` reached `chapter_end`, while `xidaduo_private_zh__segment_1` stopped at unit `42` and `nawaer_baodian_private_zh__segment_1` stopped at unit `1` after `network_blocked` / `RemoteProtocolError` recovery exhaustion.
-    - purpose: preserve the partial full-window Digest v24 evidence so the review packet can inspect Ingest-selected units, Understanding, Response / `reading_impression`, Marginalia, and Unit Memory retrieval traces across the completed portions.
+    - merged review packet: `reading-companion-backend/eval/runs/attentional_v2/digest_marginalia_v24_5book_parallel_fullwindow_20260704/analysis/digest_marginalia_v24_5book_parallel_fullwindow/review_packet/README.md`
+    - merged result: final five-book evidence covers `246` accepted units and `460` Marginalia items (`355` Highlights, `105` Notes); all five segments reach `chapter_end` after merging Nawaer retry1 and Xidaduo continue2. The packet includes per-unit Ingest source spans/reasons/recall intents/retrieval results plus Digest Understanding, Response / `reading_impression`, Marginalia, audit flags, recovery history, and Unit Memory retrieval summaries.
   - completed Nawaer retry:
     - run id: `digest_marginalia_v24_nawaer_fullwindow_retry1_20260705`
     - job id: `bgjob_digest_marginalia_v24_nawaer_fullwindow_retry1_20260705`
@@ -38,12 +39,11 @@ Last verified: `2026-07-05T17:15:38+08:00`
     - job id: `bgjob_digest_marginalia_v24_xidaduo_fullwindow_continue1_20260705`
     - status: `failed`
     - result: added `4` runner units, bringing Xidaduo to `45` combined units, then failed at unit `46` / paragraph `396` with `llm_contract`; evidence is preserved.
-  - active Xidaduo continuation:
+  - completed Xidaduo continuation:
     - run id: `digest_marginalia_v24_xidaduo_fullwindow_continue2_20260705`
     - job id: `bgjob_digest_marginalia_v24_xidaduo_fullwindow_continue2_20260705`
-    - status: `running`
-    - purpose: continue only `xidaduo_private_zh__segment_1` from the continue1 analysis root after continue1 stopped at unit `46` with `llm_contract`; uses `target-total-units=9999` and the same `DEC-150` long partial-mode recovery.
-    - note: this process was launched before `DEC-151`, so the new structured-output contract-failure audit rows and broader recoverable-unit retry policy apply to later continuations / new runs rather than this already-running process.
+    - status: `review_pending`
+    - result: completed with summary status `pass`, `19` newly accepted runner units, `34` Marginalia items, `1` recovered unit, and `chapter_end`; the cumulative runtime for `xidaduo_private_zh__segment_1` now contains `64` accepted units. The process was launched before `DEC-151`, so the new structured-output contract-failure audit rows and broader recoverable-unit retry policy apply to later runs rather than this completed continuation.
   - live cleanup landed:
     - `DEC-104` retires live Detour / source-backread behavior from `attentional_v2`
     - `DEC-105` hard-purges the retired Detour / source-backread / source-skill compatibility interfaces from current `attentional_v2` code, prompts, schemas, audits, and tests
@@ -3563,7 +3563,7 @@ Last verified: `2026-07-05T17:15:38+08:00`
 - none
 
 ## Active Job IDs
-- `bgjob_digest_marginalia_v24_xidaduo_fullwindow_continue2_20260705`
+- none
 
 ## Recommended Reading Path
 1. `AGENTS.md`
