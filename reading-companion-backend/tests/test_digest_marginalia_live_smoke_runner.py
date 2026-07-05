@@ -15,6 +15,7 @@ from eval.attentional_v2.run_digest_marginalia_live_smoke import (
     _unit_recovery_budget_allows_retry,
     _unit_recovery_delay_for_attempt,
     _unit_recovery_delay_schedule,
+    _unit_error_recoverable,
     _unit_recovery_max_elapsed_seconds,
     _unit_recovery_timeout_seconds,
     build_summary,
@@ -117,6 +118,13 @@ def test_unit_recovery_budget_allows_retry_until_budget_is_exhausted():
     assert _unit_recovery_budget_allows_retry(elapsed_seconds=3599.9, max_elapsed_seconds=3600) is True
     assert _unit_recovery_budget_allows_retry(elapsed_seconds=3600.0, max_elapsed_seconds=3600) is False
     assert _unit_recovery_budget_allows_retry(elapsed_seconds=999999.0, max_elapsed_seconds=0) is True
+
+
+def test_unit_recovery_retries_contract_failures_but_not_auth_failures():
+    assert _unit_error_recoverable("llm_contract") is True
+    assert _unit_error_recoverable("network_blocked") is True
+    assert _unit_error_recoverable("exception:ValueError") is True
+    assert _unit_error_recoverable("llm_auth") is False
 
 
 def test_llm_overrides_do_not_force_single_call_concurrency():

@@ -4187,3 +4187,28 @@ This new direction is design frozen but not yet implemented as a formal benchmar
 - `docs/backend-reading-mechanisms/attentional_v2.md`
 - `docs/current-state.md`
 - `docs/tasks/registry.md`
+
+## Entry 149
+**ID**: DEC-151
+**Status**: active
+
+**Decision / Inflection**: Make structured-output contract failures auditable and recoverable in diagnostic reading runs unless the failure is known non-recoverable.
+
+**Period**: July 5, 2026, while diagnosing the five-book Digest v24 full-window continuation after `xidaduo_private_zh__segment_1` stopped at unit `46` with `llm_contract`. The provider calls returned successfully, but the final JSON object did not satisfy the local result contract, which made the run stop without enough raw final-response evidence to distinguish prompt drift, schema mismatch, provider transport behavior, or a one-off model emission.
+
+**Decision**: The shared LLM gateway now writes bounded structured-output contract-failure audit rows to `contract_failures.jsonl` next to the standard trace sink when a trace context exists. The audit captures the final response hash/excerpt, parsed payload excerpt, validation errors, transport path, output tool name, attempt index, and trace stage/node metadata, and the raised `ReaderLLMError` carries a compact `details.structured_output_contract` pointer. Focused Digest Marginalia diagnostics now separate `transient` from `recoverable`: provider transient codes remain recoverable, `llm_contract` and ordinary unexpected unit exceptions are also retried from the same cursor, and only known non-recoverable codes such as `llm_auth` are excluded from recovery.
+
+**Boundary**: This changes observability and diagnostic-runner recovery behavior only. It does not change Ingest or Digest prompts, output schemas, local validators, source-coordinate resolution, Unit Memory retrieval semantics, public API, frontend behavior, provider configuration, or formal acceptance rules. Invalid final results are still invalid; the runner may retry the same cursor or stop the segment as `partial`, but it must not accept the malformed result or advance over unread source text.
+
+**Why this path won**: Long reading diagnostics should not treat a single malformed final JSON result as both opaque and terminal when a same-cursor retry can often recover without corrupting coverage. At the same time, the project needs enough evidence to know whether the failure came from prompt/schema design, provider transport, parser behavior, or model emission. Bounded contract-failure audit rows preserve the necessary evidence without storing raw reasoning, while the recoverable/non-recoverable split avoids pretending every retryable problem is a provider transient.
+
+**Primary evidence**:
+- `reading-companion-backend/src/reading_runtime/llm_gateway.py`
+- `reading-companion-backend/eval/attentional_v2/run_digest_marginalia_live_smoke.py`
+- `reading-companion-backend/tests/test_llm_gateway.py`
+- `reading-companion-backend/tests/test_digest_marginalia_live_smoke_runner.py`
+- `docs/implementation/new-reading-mechanism/llm-structured-output-protocol-note.md`
+- `docs/backend-reading-mechanisms/attentional_v2.md`
+- `docs/backend-reader-evaluation.md`
+- `docs/current-state.md`
+- `docs/tasks/registry.md`

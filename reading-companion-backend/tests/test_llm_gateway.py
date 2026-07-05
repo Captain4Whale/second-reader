@@ -1223,6 +1223,69 @@ def test_invoke_structured_json_object_raises_llm_contract_after_failed_repair(
     assert exc_info.value.problem_code == "llm_contract"
 
 
+def test_invoke_structured_json_object_writes_contract_failure_audit(
+    monkeypatch: pytest.MonkeyPatch,
+    tmp_path: Path,
+):
+    _runtime_openai_json_registry(monkeypatch)
+    adapter = _SequencedRecordingAdapter(
+        [
+            (
+                "response",
+                json.dumps(
+                    {
+                        "submit_digest_result": {
+                            "understanding": "Alpha happens.",
+                            "response": "A brief response.",
+                            "marginalia": [],
+                        }
+                    }
+                ),
+            ),
+            ("response", "{}"),
+        ]
+    )
+    monkeypatch.setitem(CONTRACT_ADAPTERS, "openai_compatible", adapter)
+
+    with pytest.raises(ReaderLLMError) as exc_info:
+        with llm_invocation_scope(
+            trace_context=eval_trace_context(
+                tmp_path,
+                eval_target="contract_audit",
+                stage="focused_runner",
+                node="unit_001",
+            )
+        ):
+            invoke_structured_json_object(
+                "system",
+                "user",
+                output_tool={
+                    "name": "submit_digest_result",
+                    "description": "Submit Digest.",
+                    "input_schema": {"type": "object", "properties": {}, "required": []},
+                },
+                validator=lambda payload: [] if payload.get("understanding") else ["understanding is required"],
+            )
+
+    audit_rows = _read_jsonl(tmp_path / "llm_traces" / "contract_failures.jsonl")
+    assert len(audit_rows) == 2
+    assert audit_rows[0]["transport"] == "json_object"
+    assert audit_rows[0]["parsed_payload"] == {
+        "submit_digest_result": {
+            "understanding": "Alpha happens.",
+            "response": "A brief response.",
+            "marginalia": [],
+        }
+    }
+    assert audit_rows[0]["validation_errors"] == ["understanding is required"]
+    assert audit_rows[0]["stage"] == "focused_runner"
+    assert audit_rows[0]["node"] == "unit_001"
+    details = exc_info.value.details["structured_output_contract"]
+    assert details["audit_file"].endswith("llm_traces/contract_failures.jsonl")
+    assert details["parsed_payload"] == {}
+    assert details["validation_errors"] == ["understanding is required"]
+
+
 def test_invoke_tool_loop_with_structured_output_keeps_action_tool_auto_on_json_path(
     monkeypatch: pytest.MonkeyPatch,
 ):

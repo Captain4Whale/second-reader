@@ -2090,6 +2090,114 @@ def _write_debug_trace(
 
 
 _JSON_MALFORMED = object()
+_CONTRACT_AUDIT_TEXT_LIMIT = 20000
+_CONTRACT_AUDIT_JSON_LIMIT = 20000
+
+
+def _bounded_text(value: object, *, limit: int = _CONTRACT_AUDIT_TEXT_LIMIT) -> tuple[str, bool]:
+    text = str(value or "")
+    if len(text) <= limit:
+        return text, False
+    return text[: limit - 3].rstrip() + "...", True
+
+
+def _json_safe(value: Any) -> Any:
+    try:
+        return json.loads(json.dumps(value, ensure_ascii=False))
+    except TypeError:
+        return repr(value)
+
+
+def _bounded_json_value(value: Any, *, limit: int = _CONTRACT_AUDIT_JSON_LIMIT) -> tuple[Any, bool]:
+    safe_value = _json_safe(value)
+    text = json.dumps(safe_value, ensure_ascii=False, sort_keys=True)
+    if len(text) <= limit:
+        return safe_value, False
+    return {"_truncated_json_excerpt": text[: limit - 3].rstrip() + "..."}, True
+
+
+def _write_contract_failure_audit(
+    trace_context: LLMTraceContext | None,
+    payload: Mapping[str, Any],
+) -> str:
+    standard_sink = trace_context.standard_sink if trace_context is not None else None
+    if standard_sink is None:
+        return ""
+    audit_path = standard_sink.path.with_name("contract_failures.jsonl")
+    JsonlTraceSink(audit_path).write(payload)
+    return str(audit_path)
+
+
+def _json_object_contract_failure_audit(
+    *,
+    trace_context: LLMTraceContext | None,
+    output_tool_name: str,
+    transport: str,
+    attempt_number: int,
+    max_attempts: int,
+    repair_attempted: bool,
+    response_text_value: str,
+    parsed: Any,
+    validation_errors: list[str],
+    tool_results: list[dict[str, Any]] | None = None,
+) -> dict[str, Any]:
+    response_excerpt, response_truncated = _bounded_text(response_text_value)
+    parsed_payload: Any = None
+    parsed_truncated = False
+    parse_status = "malformed" if parsed is _JSON_MALFORMED else "parsed"
+    if parsed is not _JSON_MALFORMED:
+        parsed_payload, parsed_truncated = _bounded_json_value(parsed)
+    record: dict[str, Any] = {
+        "timestamp": _utc_now(),
+        "output_tool_name": output_tool_name,
+        "transport": transport,
+        "attempt": attempt_number,
+        "max_attempts": max_attempts,
+        "repair_attempted": repair_attempted,
+        "validation_errors": list(validation_errors),
+        "response_text_sha256": _prompt_hash(response_text_value),
+        "response_text": response_excerpt,
+        "response_text_truncated": response_truncated,
+        "parse_status": parse_status,
+        "parsed_payload_type": type(parsed).__name__ if parsed is not _JSON_MALFORMED else "malformed",
+        "parsed_payload": parsed_payload,
+        "parsed_payload_truncated": parsed_truncated,
+        "mechanism_key": trace_context.mechanism_key if trace_context else "",
+        "eval_target": trace_context.eval_target if trace_context else "",
+        "stage": trace_context.stage if trace_context else "",
+        "node": trace_context.node if trace_context else "",
+        "trace_extra": _json_safe(trace_context.extra) if trace_context else {},
+    }
+    if tool_results:
+        record["tool_results"] = _json_safe(tool_results)
+    audit_file = _write_contract_failure_audit(trace_context, record)
+    if audit_file:
+        record["audit_file"] = audit_file
+    return record
+
+
+def _contract_failure_error_details(audit_record: Mapping[str, Any] | None) -> dict[str, Any]:
+    if not isinstance(audit_record, Mapping):
+        return {}
+    keys = (
+        "audit_file",
+        "output_tool_name",
+        "transport",
+        "attempt",
+        "max_attempts",
+        "repair_attempted",
+        "validation_errors",
+        "response_text_sha256",
+        "response_text",
+        "response_text_truncated",
+        "parse_status",
+        "parsed_payload_type",
+        "parsed_payload",
+        "parsed_payload_truncated",
+        "stage",
+        "node",
+    )
+    return {"structured_output_contract": {key: audit_record.get(key) for key in keys if key in audit_record}}
 
 
 def _invoke_response(
@@ -2742,6 +2850,7 @@ def invoke_structured_json_object(
         output_tool_name=output_tool_name,
     )
     last_errors: list[str] = []
+    last_audit: dict[str, Any] | None = None
     repair_attempted = False
     attempts = max(1, 1 + max(0, int(max_repair_attempts)))
     for attempt_index in range(attempts):
@@ -2754,8 +2863,10 @@ def invoke_structured_json_object(
             expect_json=False,
             invocation_options=_json_object_invocation_options(),
         )
+        raw_response_text = response_text(response)
+        parsed_payload = parse_json_payload(raw_response_text, _JSON_MALFORMED)
         payload, errors = _json_object_contract_errors(
-            parsed=parse_json_payload(response_text(response), _JSON_MALFORMED),
+            parsed=parsed_payload,
             output_tool_name=output_tool_name,
             validator=validator,
         )
@@ -2769,6 +2880,18 @@ def invoke_structured_json_object(
                 validation_errors=[],
             )
         last_errors = errors
+        scope = current_llm_scope()
+        last_audit = _json_object_contract_failure_audit(
+            trace_context=scope.trace_context if scope else None,
+            output_tool_name=output_tool_name,
+            transport="json_object",
+            attempt_number=attempt_index + 1,
+            max_attempts=attempts,
+            repair_attempted=repair_attempted,
+            response_text_value=raw_response_text,
+            parsed=parsed_payload,
+            validation_errors=errors,
+        )
         prompt_text = _json_object_repair_prompt(
             user_prompt,
             output_tool=output_tool,
@@ -2779,6 +2902,7 @@ def invoke_structured_json_object(
     raise ReaderLLMError(
         f"Structured JSON object contract failed for {output_tool_name}: {'; '.join(last_errors)}",
         problem_code="llm_contract",
+        details=_contract_failure_error_details(last_audit),
     )
 
 
@@ -3042,9 +3166,12 @@ def invoke_tool_loop_with_json_object_output(
     )
     first_calls = _extract_tool_calls(first_response)
     all_calls: list[dict[str, Any]] = list(first_calls)
+    last_audit: dict[str, Any] | None = None
     if not first_calls:
+        raw_first_response_text = response_text(first_response)
+        parsed_first_payload = parse_json_payload(raw_first_response_text, _JSON_MALFORMED)
         payload, errors = _json_object_contract_errors(
-            parsed=parse_json_payload(response_text(first_response), _JSON_MALFORMED),
+            parsed=parsed_first_payload,
             output_tool_name=output_tool_name,
             validator=lambda payload: _validate(payload, []),
         )
@@ -3057,6 +3184,19 @@ def invoke_tool_loop_with_json_object_output(
                 repair_attempted=False,
                 validation_errors=[],
             )
+        scope = current_llm_scope()
+        last_audit = _json_object_contract_failure_audit(
+            trace_context=scope.trace_context if scope else None,
+            output_tool_name=output_tool_name,
+            transport="json_object_tool_loop_initial_response",
+            attempt_number=1,
+            max_attempts=1 + max(0, int(max_repair_attempts)),
+            repair_attempted=False,
+            response_text_value=raw_first_response_text,
+            parsed=parsed_first_payload,
+            validation_errors=errors,
+            tool_results=[],
+        )
         repaired = invoke_structured_json_object(
             system_prompt,
             _json_object_repair_prompt(
@@ -3164,8 +3304,10 @@ def invoke_tool_loop_with_json_object_output(
             messages_override=attempt_messages,
             invocation_options=_json_object_invocation_options(),
         )
+        raw_final_response_text = response_text(final_response)
+        parsed_final_payload = parse_json_payload(raw_final_response_text, _JSON_MALFORMED)
         payload, errors = _json_object_contract_errors(
-            parsed=parse_json_payload(response_text(final_response), _JSON_MALFORMED),
+            parsed=parsed_final_payload,
             output_tool_name=output_tool_name,
             validator=lambda payload: _validate(payload, tool_results),
         )
@@ -3179,10 +3321,24 @@ def invoke_tool_loop_with_json_object_output(
                 validation_errors=[],
             )
         last_errors = errors
+        scope = current_llm_scope()
+        last_audit = _json_object_contract_failure_audit(
+            trace_context=scope.trace_context if scope else None,
+            output_tool_name=output_tool_name,
+            transport="json_object_tool_loop_final_response",
+            attempt_number=attempt_index + 1,
+            max_attempts=attempts,
+            repair_attempted=repair_attempted,
+            response_text_value=raw_final_response_text,
+            parsed=parsed_final_payload,
+            validation_errors=errors,
+            tool_results=tool_results,
+        )
 
     raise ReaderLLMError(
         f"Structured JSON object contract failed for {output_tool_name}: {'; '.join(last_errors)}",
         problem_code="llm_contract",
+        details=_contract_failure_error_details(last_audit),
     )
 
 

@@ -1,9 +1,9 @@
 # LLM Structured Output Protocol Note
 
-Purpose: record the current OpenCode / DeepSeek structured-output calling policy and historical MiniMax transport compatibility notes for `attentional_v2`.
+Purpose: record the current OpenCode / DeepSeek structured-output calling policy, contract-failure audit policy, and historical MiniMax transport compatibility notes for `attentional_v2`.
 Use when: configuring LLM targets, changing `src/reading_runtime/llm_gateway.py`, or testing provider thinking / structured-output behavior.
 Not for: mechanism prompt wording, Unit Memory retrieval semantics, or product-facing evaluation criteria.
-Update when: a provider contract is re-tested and the default transport policy changes.
+Update when: a provider contract is re-tested, the default transport policy changes, or structured-output failure auditing changes.
 
 Status: current implementation note after `DEC-115`; local active operation now uses OpenCode Go only.
 
@@ -16,6 +16,7 @@ Current project-owned prompts and tools stay protocol-neutral. The active profil
 - `retrieve_unit_memory` remains an action tool. It is never forced merely to transport final structured output.
 - For Ingest, `retrieve_unit_memory` action-tool args are the only model-authored Unit Memory recall-intent surface; final structured output must not echo `memory_recalls[]`.
 - Standard runtime traces do not store raw thinking or reasoning content. Debug/probe code must opt in explicitly before preserving raw reasoning.
+- A provider-valid JSON object is not automatically a valid project result. Local validators remain the final business contract for Ingest/Digest outputs, and contract failures preserve bounded final-response evidence for diagnosis.
 
 ## Verified Matrix
 
@@ -59,6 +60,7 @@ OpenCode Go requires a normal OpenAI-like `User-Agent`; the shared OpenAI-compat
 - The gateway treats `response_format={"type":"json_object"}` on an `openai_compatible` profile as the final structured-output transport.
 - Do not force a final-output tool for that JSON-object profile.
 - Keep project validators and one repair attempt as the final business contract.
+- If JSON parses but fails the expected result shape, or if repair still fails, surface `problem_code="llm_contract"` and preserve the bounded final-response body plus parsed payload in contract-failure audit metadata.
 - Instructor is part of the OpenAI-compatible dependency surface and may be used by direct OpenAI SDK probes or future parser refinements, but it does not replace project validators.
 - For thinking-enabled profiles, use a larger output budget. If a selected profile omits `max_output_tokens` and either target/profile options enable thinking, the registry default is `8192`; explicit profile settings still win. `8192` is also the default engineering target for Ingest boundary probes so final JSON is not squeezed out by reasoning tokens.
 
@@ -74,6 +76,8 @@ OpenCode Go requires a normal OpenAI-like `User-Agent`; the shared OpenAI-compat
 
 - Standard LLM traces may record provider id, contract, status, usage, compact errors, and final normal content metadata.
 - Standard traces must not persist raw `thinking` blocks or `reasoning_content`.
+- Structured-output contract failures write bounded diagnostic rows to `contract_failures.jsonl` next to the standard trace sink when a trace context exists. Each row records transport path, output tool name, attempt index, validation errors, final response text hash/excerpt, parsed payload excerpt, and trace stage/node metadata; `ReaderLLMError.details.structured_output_contract` carries the compact pointer used by diagnostic runners.
+- Contract-failure audit rows are for final normal response content only, not raw provider thinking. The stored text/payload is bounded so long bad responses remain inspectable without turning traces into full transcript dumps.
 - Debug/probe scripts may print or persist raw reasoning only when explicitly designed for that purpose.
 - Historical run artifacts may contain older transport evidence; current stable docs and code should point to this note and `DEC-115`.
 

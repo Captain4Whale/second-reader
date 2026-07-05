@@ -531,6 +531,20 @@ def _unit_recovery_budget_allows_retry(*, elapsed_seconds: float, max_elapsed_se
     return max_elapsed_seconds <= 0 or elapsed_seconds < max_elapsed_seconds
 
 
+_NON_RECOVERABLE_UNIT_PROBLEM_CODES = frozenset({"llm_auth"})
+
+
+def _unit_error_recoverable(problem_code: object) -> bool:
+    """Return whether a same-cursor retry is allowed for diagnostic unit failures."""
+
+    return _clean_text(problem_code) not in _NON_RECOVERABLE_UNIT_PROBLEM_CODES
+
+
+def _structured_contract_details(details: Mapping[str, object]) -> dict[str, object]:
+    value = details.get("structured_output_contract")
+    return dict(value) if isinstance(value, Mapping) else {}
+
+
 def run_direct_digest_smoke(
     *,
     analysis_root: Path,
@@ -1049,13 +1063,16 @@ def run_segment_units(
             except ReaderLLMError as exc:
                 problem_code = _clean_text(getattr(exc, "problem_code", "")) or "reader_llm_error"
                 transient = is_transient_reader_llm_error(exc)
+                recoverable = _unit_error_recoverable(problem_code)
                 details = getattr(exc, "details", {})
                 provider_details = dict(details) if isinstance(details, Mapping) else {}
+                contract_details = _structured_contract_details(provider_details)
                 event = {
                     "attempt": unit_attempt + 1,
                     "recovery_attempt": unit_attempt,
                     "problem_code": problem_code,
                     "transient": transient,
+                    "recoverable": recoverable,
                     "delay_seconds": recovery_delay_seconds,
                     "timeout_seconds": attempt_timeout_seconds,
                     "provider_call_attempt_count": provider_details.get("provider_call_attempt_count"),
@@ -1064,16 +1081,18 @@ def run_segment_units(
                     "provider_error_cause_type": provider_details.get("provider_error_cause_type", ""),
                     "error": str(exc),
                 }
+                if contract_details:
+                    event["structured_output_contract"] = contract_details
                 unit_recovery_events.append(event)
                 elapsed = time.perf_counter() - unit_started
                 budget_allows_retry = _unit_recovery_budget_allows_retry(
                     elapsed_seconds=elapsed,
                     max_elapsed_seconds=recovery_max_elapsed_seconds,
                 )
-                if transient and unit_attempt + 1 < max_unit_attempts and budget_allows_retry:
+                if recoverable and unit_attempt + 1 < max_unit_attempts and budget_allows_retry:
                     unit_recovery_attempt_count += 1
                     continue
-                status = "partial" if transient and failure_policy == "partial" else "failed"
+                status = "partial" if recoverable and failure_policy == "partial" else "failed"
                 stop_reason = problem_code
                 failure_record = {
                     "unit_index": unit_index,
@@ -1081,6 +1100,7 @@ def run_segment_units(
                     "problem_code": stop_reason,
                     "error": str(exc),
                     "transient": transient,
+                    "recoverable": recoverable,
                     "failure_policy": failure_policy,
                     "start_cursor": dict(cursor),
                     "final_cursor": dict(cursor),
@@ -1091,7 +1111,7 @@ def run_segment_units(
                     "unit_recovery_max_elapsed_seconds": recovery_max_elapsed_seconds,
                     "unit_recovery_elapsed_seconds": round(elapsed, 3),
                     "unit_recovery_budget_exhausted": bool(
-                        transient
+                        recoverable
                         and unit_attempt + 1 < max_unit_attempts
                         and not budget_allows_retry
                     ),
@@ -1101,31 +1121,62 @@ def run_segment_units(
                     "provider_error_type": provider_details.get("provider_error_type", ""),
                     "provider_error_cause_type": provider_details.get("provider_error_cause_type", ""),
                 }
+                if contract_details:
+                    failure_record["structured_output_contract"] = contract_details
                 units.append(failure_record)
                 if status == "partial":
                     partial_failures.append(failure_record)
                 break
             except Exception as exc:  # noqa: BLE001 - smoke runner should record the failure class.
-                status = "failed"
-                stop_reason = f"exception:{type(exc).__name__}"
-                units.append(
-                    {
-                        "unit_index": unit_index,
-                        "status": "failed",
-                        "problem_code": stop_reason,
-                        "error": str(exc),
-                        "transient": False,
-                        "failure_policy": failure_policy,
-                        "start_cursor": dict(cursor),
-                        "final_cursor": dict(cursor),
-                        "duration_seconds": round(time.perf_counter() - unit_started, 3),
-                        "unit_recovery_attempts": len(unit_recovery_events),
-                        "unit_recovery_delay_schedule": recovery_delay_schedule,
-                        "unit_recovery_timeout_scale": unit_recovery_timeout_scale,
-                        "unit_recovery_max_elapsed_seconds": recovery_max_elapsed_seconds,
-                        "recovery_events": unit_recovery_events,
-                    }
+                problem_code = f"exception:{type(exc).__name__}"
+                recoverable = _unit_error_recoverable(problem_code)
+                event = {
+                    "attempt": unit_attempt + 1,
+                    "recovery_attempt": unit_attempt,
+                    "problem_code": problem_code,
+                    "transient": False,
+                    "recoverable": recoverable,
+                    "delay_seconds": recovery_delay_seconds,
+                    "timeout_seconds": attempt_timeout_seconds,
+                    "error": str(exc),
+                }
+                unit_recovery_events.append(event)
+                elapsed = time.perf_counter() - unit_started
+                budget_allows_retry = _unit_recovery_budget_allows_retry(
+                    elapsed_seconds=elapsed,
+                    max_elapsed_seconds=recovery_max_elapsed_seconds,
                 )
+                if recoverable and unit_attempt + 1 < max_unit_attempts and budget_allows_retry:
+                    unit_recovery_attempt_count += 1
+                    continue
+                status = "partial" if recoverable and failure_policy == "partial" else "failed"
+                stop_reason = problem_code
+                failure_record = {
+                    "unit_index": unit_index,
+                    "status": status,
+                    "problem_code": stop_reason,
+                    "error": str(exc),
+                    "transient": False,
+                    "recoverable": recoverable,
+                    "failure_policy": failure_policy,
+                    "start_cursor": dict(cursor),
+                    "final_cursor": dict(cursor),
+                    "duration_seconds": round(time.perf_counter() - unit_started, 3),
+                    "unit_recovery_attempts": len(unit_recovery_events) - 1,
+                    "unit_recovery_delay_schedule": recovery_delay_schedule,
+                    "unit_recovery_timeout_scale": unit_recovery_timeout_scale,
+                    "unit_recovery_max_elapsed_seconds": recovery_max_elapsed_seconds,
+                    "unit_recovery_elapsed_seconds": round(elapsed, 3),
+                    "unit_recovery_budget_exhausted": bool(
+                        recoverable
+                        and unit_attempt + 1 < max_unit_attempts
+                        and not budget_allows_retry
+                    ),
+                    "recovery_events": unit_recovery_events,
+                }
+                units.append(failure_record)
+                if status == "partial":
+                    partial_failures.append(failure_record)
                 break
         if settled_unit is None:
             break
@@ -1580,6 +1631,13 @@ def build_summary(
     }
 
 
+def _contract_audit_file(failure: Mapping[str, object]) -> str:
+    details = failure.get("structured_output_contract")
+    if not isinstance(details, Mapping):
+        return ""
+    return _clean_text(details.get("audit_file"))
+
+
 def render_report(
     *,
     summary: Mapping[str, object],
@@ -1632,6 +1690,8 @@ def render_report(
                 f"segment=`{failure.get('segment_id')}` "
                 f"unit=`{failure.get('unit_index')}` "
                 f"problem=`{failure.get('problem_code') or failure.get('stop_reason')}` "
+                f"transient=`{failure.get('transient', '')}` "
+                f"recoverable=`{failure.get('recoverable', '')}` "
                 f"connection_kind=`{failure.get('connection_error_kind', '')}` "
                 f"provider_error=`{failure.get('provider_error_type', '')}` "
                 f"provider_attempts=`{failure.get('provider_call_attempt_count', '')}` "
@@ -1639,6 +1699,7 @@ def render_report(
                 f"delay_schedule=`{json.dumps(failure.get('unit_recovery_delay_schedule', []), ensure_ascii=False)}` "
                 f"max_elapsed=`{failure.get('unit_recovery_max_elapsed_seconds', '')}` "
                 f"budget_exhausted=`{failure.get('unit_recovery_budget_exhausted', False)}` "
+                f"contract_audit=`{_contract_audit_file(failure)}` "
                 f"final_cursor=`{json.dumps(failure.get('final_cursor', {}), ensure_ascii=False)}`"
             )
         lines.append("")
@@ -1713,6 +1774,8 @@ def render_report(
                     "- "
                     f"unit=`{failure.get('unit_index')}` "
                     f"problem=`{failure.get('problem_code')}` "
+                    f"transient=`{failure.get('transient', '')}` "
+                    f"recoverable=`{failure.get('recoverable', '')}` "
                     f"attempts=`{failure.get('unit_recovery_attempts')}` "
                     f"connection_kind=`{failure.get('connection_error_kind', '')}` "
                     f"provider_error=`{failure.get('provider_error_type', '')}` "
@@ -1720,6 +1783,7 @@ def render_report(
                     f"delay_schedule=`{json.dumps(failure.get('unit_recovery_delay_schedule', []), ensure_ascii=False)}` "
                     f"max_elapsed=`{failure.get('unit_recovery_max_elapsed_seconds', '')}` "
                     f"budget_exhausted=`{failure.get('unit_recovery_budget_exhausted', False)}` "
+                    f"contract_audit=`{_contract_audit_file(failure)}` "
                     f"cursor=`{json.dumps(failure.get('final_cursor', {}), ensure_ascii=False)}`"
                 )
             lines.append("")

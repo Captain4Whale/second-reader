@@ -7,7 +7,7 @@ Update when: task status, priority, blockers, decision refs, job refs, evidence 
 
 This document is the human-readable companion to `docs/tasks/registry.json`.
 
-Last updated: `2026-07-05T16:36:36+08:00`
+Last updated: `2026-07-05T17:15:38+08:00`
 
 ## Status Values
 - `active`
@@ -25,7 +25,7 @@ Last updated: `2026-07-05T16:36:36+08:00`
 - Lane: `mechanism_runtime`
 - Priority: `high`
 - Detail: `docs/current-state.md`
-- Next: Digest is live as `attentional_v2.digest.v24` / promptset `attentional_v2-phase6-v84` / output contract `digest_understanding_response_marginalia_json_v8`: canonical visible-note output remains `marginalia[]` with explicit `kind: "highlight" | "note"`, and Notes remain an independent pass with non-empty visible `content`. The five-book full-window diagnostic `bgjob_digest_marginalia_v24_5book_parallel_fullwindow_20260704` completed as partial: it preserved `213` runner units and `392` Marginalia items, reached `chapter_end` for Huochu Shengming De Yiyi, Mangge Zhi Dao, and Value of Others, and stopped Xidaduo at unit `42` plus Nawaer at unit `1` after `network_blocked` / `RemoteProtocolError` recovery exhaustion. Nawaer retry `bgjob_digest_marginalia_v24_nawaer_fullwindow_retry1_20260705` completed with summary status `pass` and is `review_pending`. Xidaduo continue1 added `4` runner units but failed at unit `46` with `llm_contract`; active continue2 `bgjob_digest_marginalia_v24_xidaduo_fullwindow_continue2_20260705` is running from continue1's analysis root with `target-total-units=9999` and the same `DEC-150` long partial-mode recovery. After completion, inspect Ingest-selected units, Understanding, Response / `reading_impression`, Marginalia, and Unit Memory retrieval traces; merge the Nawaer retry and Xidaduo continuation evidence into the fullwindow review packet.
+- Next: Digest is live as `attentional_v2.digest.v24` / promptset `attentional_v2-phase6-v84` / output contract `digest_understanding_response_marginalia_json_v8`: canonical visible-note output remains `marginalia[]` with explicit `kind: "highlight" | "note"`, and Notes remain an independent pass with non-empty visible `content`. The five-book full-window diagnostic `bgjob_digest_marginalia_v24_5book_parallel_fullwindow_20260704` completed as partial: it preserved `213` runner units and `392` Marginalia items, reached `chapter_end` for Huochu Shengming De Yiyi, Mangge Zhi Dao, and Value of Others, and stopped Xidaduo at unit `42` plus Nawaer at unit `1` after `network_blocked` / `RemoteProtocolError` recovery exhaustion. Nawaer retry `bgjob_digest_marginalia_v24_nawaer_fullwindow_retry1_20260705` completed with summary status `pass` and is `review_pending`. Xidaduo continue1 added `4` runner units but failed at unit `46` with `llm_contract`; active continue2 `bgjob_digest_marginalia_v24_xidaduo_fullwindow_continue2_20260705` is running from continue1's analysis root with `target-total-units=9999` and the same `DEC-150` long partial-mode recovery. `DEC-151` has landed for later continuations / new runs: structured-output contract failures now write bounded `contract_failures.jsonl` audit rows and focused diagnostics retry recoverable unit failures such as `llm_contract` from the same cursor unless known non-recoverable. After completion, inspect Ingest-selected units, Understanding, Response / `reading_impression`, Marginalia, and Unit Memory retrieval traces; merge the Nawaer retry and Xidaduo continuation evidence into the fullwindow review packet.
 - Jobs:
   - `bgjob_ingest_digest_unit_memory_full_diagnostic_20260603_parallel5`
   - `bgjob_unit_memory_text_only_smoke_value_20260606`
@@ -105,6 +105,7 @@ Last updated: `2026-07-05T16:36:36+08:00`
   - `DEC-148`
   - `DEC-149`
   - `DEC-150`
+  - `DEC-151`
   - `docs/current-state.md`
   - `docs/backend-reader-evaluation.md`
   - `docs/implementation/new-reading-mechanism/ingest-context-and-navigate-mapping.md`

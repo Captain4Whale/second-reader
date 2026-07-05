@@ -509,13 +509,16 @@ The old Memory / Planning / Evaluation implementation guidance chain at `docs/im
   - preserve per-case failure payloads explicitly
   - still emit aggregate/report outputs from the cases that did complete
   - treat a run with no aggregate/report as harness failure, not as usable evaluation evidence
-- Diagnostic smoke runners may use a `partial` completion policy for transient LLM failures (`llm_timeout`, `network_blocked`, or exhausted `llm_quota`) after gateway call-level retries are exhausted.
-  - the runner may retry the same unit once from the same cursor with a bounded timeout increase
+- Diagnostic smoke runners may use a `partial` completion policy for recoverable unit failures after gateway call-level retries are exhausted.
+  - provider-transient failures such as `llm_timeout`, `network_blocked`, or exhausted `llm_quota` are recoverable
+  - structured-output contract failures such as `llm_contract` may also be recoverable in diagnostic lanes when the gateway preserves bounded final-response / parsed-payload audit details first
+  - known non-recoverable auth/configuration failures such as `llm_auth` should remain hard failures rather than long-wait retry candidates
+  - the runner may retry the same unit from the same cursor with a bounded delay and timeout budget
   - if recovery still fails, stop only that segment at the current cursor, record the final cursor and failed unit, let sibling segments continue, and emit a `partial` summary/report with `partial_failures[]`
-  - strict or formal acceptance lanes should opt into strict behavior so transient segment failure remains a nonzero hard failure
-  - non-transient mechanism failures such as `llm_contract`, invalid boundaries/schema, unresolved quotes, unexpected prompt/version/schema, or non-LLM exceptions remain hard failures
+  - strict or formal acceptance lanes should opt into strict behavior so recoverable segment failure remains a nonzero hard failure
+  - accepting an invalid boundary/schema, unresolved quote, unexpected prompt/version/schema, or malformed final result as successful output remains disallowed; recovery can retry or stop partial, but it must not advance over unread source text
 - When one chapter/window bundle fails on a recoverable transient runtime problem and the mechanism runtime exposes resume checkpoints, the comparison runner should preserve that mechanism output tree and allow one bounded resume-aware recovery pass before finalizing a failed payload.
-  - recoverable here means transient network, timeout, or quota-style failures rather than auth/configuration or logic errors
+  - recoverable here means transient network, timeout, quota-style failures, or audited structured-output contract failures that are safe to retry from the same cursor, rather than auth/configuration failures or accepted logic errors
   - a later targeted recovery launch should also be allowed to resume from the previously failed output tree instead of wiping it first
 - Multi-shard offline eval orchestrators should fail fast once one shard reaches terminal failure after its bounded local retry budget is exhausted.
   - do not keep the child job marked `running` just because sibling shards are still alive

@@ -7,7 +7,7 @@ Update when: the current objective, active tasks, blockers, active jobs, open de
 
 This file is authoritative for durable current status. Do not keep unique active-state information only in `docs/agent-handoff.md`.
 
-Last verified: `2026-07-05T16:36:36+08:00`
+Last verified: `2026-07-05T17:15:38+08:00`
 
 ## Current Objective
 - The `Ingest -> Digest -> Reading Runner settlement` mechanism reframe is implemented; current work is fact alignment, smoke/diagnostic review, and calibration before any formal evaluation promotion.
@@ -43,6 +43,7 @@ Last verified: `2026-07-05T16:36:36+08:00`
     - job id: `bgjob_digest_marginalia_v24_xidaduo_fullwindow_continue2_20260705`
     - status: `running`
     - purpose: continue only `xidaduo_private_zh__segment_1` from the continue1 analysis root after continue1 stopped at unit `46` with `llm_contract`; uses `target-total-units=9999` and the same `DEC-150` long partial-mode recovery.
+    - note: this process was launched before `DEC-151`, so the new structured-output contract-failure audit rows and broader recoverable-unit retry policy apply to later continuations / new runs rather than this already-running process.
   - live cleanup landed:
     - `DEC-104` retires live Detour / source-backread behavior from `attentional_v2`
     - `DEC-105` hard-purges the retired Detour / source-backread / source-skill compatibility interfaces from current `attentional_v2` code, prompts, schemas, audits, and tests
@@ -89,6 +90,7 @@ Last verified: `2026-07-05T16:36:36+08:00`
     - `DEC-148` repairs provider-connection diagnosis and focused diagnostic recovery: public/runtime `network_blocked` remains the compatibility problem code, but private LLM traces now record provider exception type/repr, cause type/repr, and `connection_error_kind`; Digest Marginalia focused diagnostics retry transient same-cursor unit failures with delayed recovery before marking only that segment `partial`
     - `DEC-149` tightens live Digest Highlights around intrinsic quote value: Digest prompt `attentional_v2.digest.v24` / XML spec v24 / promptset `attentional_v2-phase6-v84` keeps output contract `digest_understanding_response_marginalia_json_v8`, but now requires the quoted words themselves to already carry the portable cognitive gain; private `selection_reason` may identify that value but must not supply it by turning a local fact, scene, testimony, emotional shock, or book-specific event into a general lesson after the fact. Notes remain an independent pass rather than a fallback for failed Highlights.
     - `DEC-150` upgrades focused diagnostic transient recovery for long-running jobs: partial-mode diagnostics now default to `6` extra same-cursor unit retries, delay schedule `0,120,300,600,900,1200`, and a `3600s` per-unit transient recovery budget before preserving the segment as `partial`
+    - `DEC-151` makes structured-output contract failures auditable and recoverable in diagnostic reading runs: the LLM gateway writes bounded `contract_failures.jsonl` rows plus `ReaderLLMError.details.structured_output_contract`, and focused Digest Marginalia diagnostics retry recoverable unit failures such as `llm_contract` from the same cursor unless the code is known non-recoverable, such as `llm_auth`
     - current `llm_calls.ingest(...)` is the forward-only XML LLM boundary call: final output carries `unit.end_paragraph_n`, `unit.end_at`, `preview_partition[]`, and optional boundary-rationale `reason`; bounded Unit Memory recall intent is expressed only through the `retrieve_unit_memory` action tool
     - current LLM-call code now lives in `reading-companion-backend/src/attentional_v2/llm_calls.py`; the old ambiguous active module name is removed
     - current `attentional_v2` LLM calls keep project schemas/tools protocol-neutral; Anthropic-compatible profiles submit structured results through mechanism-private final-output tools such as `submit_ingest_result` and `submit_digest_result`, while OpenAI-compatible JSON-object profiles use JSON object plus validator/repair for Ingest/Digest final output; `retrieve_unit_memory` remains the only live action tool and is left to model `auto` choice; OpenAI-compatible DeepSeek/OpenCode JSON-object calls do not force final-output `tool_choice`
