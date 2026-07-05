@@ -7,7 +7,7 @@ Update when: the current objective, active tasks, blockers, active jobs, open de
 
 This file is authoritative for durable current status. Do not keep unique active-state information only in `docs/agent-handoff.md`.
 
-Last verified: `2026-07-05T13:25:44+08:00`
+Last verified: `2026-07-05T16:36:36+08:00`
 
 ## Current Objective
 - The `Ingest -> Digest -> Reading Runner settlement` mechanism reframe is implemented; current work is fact alignment, smoke/diagnostic review, and calibration before any formal evaluation promotion.
@@ -33,11 +33,16 @@ Last verified: `2026-07-05T13:25:44+08:00`
     - job id: `bgjob_digest_marginalia_v24_nawaer_fullwindow_retry1_20260705`
     - status: `review_pending`
     - result: completed with summary status `pass`, `10` runner units, `26` Marginalia items, no hard/partial failures, and `chapter_end`.
-  - active Xidaduo continuation:
+  - failed Xidaduo continuation:
     - run id: `digest_marginalia_v24_xidaduo_fullwindow_continue1_20260705`
     - job id: `bgjob_digest_marginalia_v24_xidaduo_fullwindow_continue1_20260705`
+    - status: `failed`
+    - result: added `4` runner units, bringing Xidaduo to `45` combined units, then failed at unit `46` / paragraph `396` with `llm_contract`; evidence is preserved.
+  - active Xidaduo continuation:
+    - run id: `digest_marginalia_v24_xidaduo_fullwindow_continue2_20260705`
+    - job id: `bgjob_digest_marginalia_v24_xidaduo_fullwindow_continue2_20260705`
     - status: `running`
-    - purpose: continue only `xidaduo_private_zh__segment_1` from the parent five-book fullwindow analysis root after Xidaduo stopped at unit `42` with `network_blocked` / `RemoteProtocolError`; uses `target-total-units=9999` and the same `DEC-150` long partial-mode recovery.
+    - purpose: continue only `xidaduo_private_zh__segment_1` from the continue1 analysis root after continue1 stopped at unit `46` with `llm_contract`; uses `target-total-units=9999` and the same `DEC-150` long partial-mode recovery.
   - live cleanup landed:
     - `DEC-104` retires live Detour / source-backread behavior from `attentional_v2`
     - `DEC-105` hard-purges the retired Detour / source-backread / source-skill compatibility interfaces from current `attentional_v2` code, prompts, schemas, audits, and tests
@@ -3556,7 +3561,7 @@ Last verified: `2026-07-05T13:25:44+08:00`
 - none
 
 ## Active Job IDs
-- `bgjob_digest_marginalia_v24_xidaduo_fullwindow_continue1_20260705`
+- `bgjob_digest_marginalia_v24_xidaduo_fullwindow_continue2_20260705`
 
 ## Recommended Reading Path
 1. `AGENTS.md`

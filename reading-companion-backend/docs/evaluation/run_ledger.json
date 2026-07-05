@@ -1,6 +1,6 @@
 {
   "schema_version": 1,
-  "updated_at": "2026-07-05T05:21:58.275222Z",
+  "updated_at": "2026-07-05T08:38:08.454526Z",
   "entries": [
     {
       "run_id": "attentional_v2_excerpt_surface_v1_1_judged_20260406",
@@ -3275,11 +3275,12 @@
         "reading-companion-backend/eval/runs/attentional_v2/digest_marginalia_v24_5book_parallel_fullwindow_20260704/analysis/digest_marginalia_v24_5book_parallel_fullwindow/marginalia_smoke_report.md"
       ],
       "catalog_status": "not_cataloged",
-      "notes": "Completed as partial on 2026-07-05: preserved 213 runner units and 392 Marginalia items (297 Highlights, 95 Notes). Huochu Shengming De Yiyi, Mangge Zhi Dao, and Value of Others reached chapter_end; Xidaduo stopped at unit 42 and Nawaer stopped at unit 1 after network_blocked RemoteProtocolError recovery exhaustion. Use as partial full-window evidence, with Nawaer retry1 and Xidaduo continue1 tracked as child runs.",
+      "notes": "Completed as partial on 2026-07-05: preserved 213 runner units and 392 Marginalia items (297 Highlights, 95 Notes). Huochu Shengming De Yiyi, Mangge Zhi Dao, and Value of Others reached chapter_end; Xidaduo stopped at unit 42 and Nawaer stopped at unit 1 after network_blocked RemoteProtocolError recovery exhaustion. Use as partial full-window evidence, with Nawaer retry1, Xidaduo continue1, and Xidaduo continue2 tracked as child runs.",
       "parent_run_id": "",
       "child_run_ids": [
         "digest_marginalia_v24_nawaer_fullwindow_retry1_20260705",
-        "digest_marginalia_v24_xidaduo_fullwindow_continue1_20260705"
+        "digest_marginalia_v24_xidaduo_fullwindow_continue1_20260705",
+        "digest_marginalia_v24_xidaduo_fullwindow_continue2_20260705"
       ],
       "synthetic": false,
       "local_missing_allowed": [],
@@ -3303,7 +3304,7 @@
           "value_of_others_private_en__segment_1"
         ]
       },
-      "updated_at": "2026-07-05T05:21:58.163391Z"
+      "updated_at": "2026-07-05T08:38:08.325107Z"
     },
     {
       "run_id": "digest_marginalia_v24_nawaer_fullwindow_retry1_20260705",
@@ -3356,7 +3357,7 @@
       "date": "2026-07-05",
       "surface": "digest_marginalia_fullwindow_xidaduo_continue",
       "lane": "mechanism_eval_smoke",
-      "status": "running",
+      "status": "failed",
       "mechanisms": [
         "attentional_v2"
       ],
@@ -3374,15 +3375,13 @@
         "reading-companion-backend/eval/runs/attentional_v2/digest_marginalia_v24_xidaduo_fullwindow_continue1_20260705/analysis/digest_marginalia_v24_xidaduo_fullwindow_continue1/marginalia_smoke_report.md"
       ],
       "catalog_status": "not_cataloged",
-      "notes": "Single-segment Xidaduo continuation from parent five-book fullwindow partial evidence after Xidaduo stopped at unit 42 with network_blocked RemoteProtocolError. Continues from the parent analysis root with target-total-units=9999 and the same DEC-150 long partial-mode recovery.",
+      "notes": "Single-segment Xidaduo continuation from parent fullwindow partial evidence. Failed with summary status fail after adding 4 runner units, bringing Xidaduo to 45 combined units; hard failure was runner_failed:xidaduo_private_zh__segment_1:llm_contract at unit 46 / final cursor paragraph 396. Evidence preserved; continue2 resumes from this analysis root.",
       "parent_run_id": "digest_marginalia_v24_5book_parallel_fullwindow_20260704",
-      "child_run_ids": [],
-      "synthetic": false,
-      "local_missing_allowed": [
-        "reading-companion-backend/eval/runs/attentional_v2/digest_marginalia_v24_xidaduo_fullwindow_continue1_20260705",
-        "reading-companion-backend/eval/runs/attentional_v2/digest_marginalia_v24_xidaduo_fullwindow_continue1_20260705/analysis/digest_marginalia_v24_xidaduo_fullwindow_continue1/raw/summary.json",
-        "reading-companion-backend/eval/runs/attentional_v2/digest_marginalia_v24_xidaduo_fullwindow_continue1_20260705/analysis/digest_marginalia_v24_xidaduo_fullwindow_continue1/marginalia_smoke_report.md"
+      "child_run_ids": [
+        "digest_marginalia_v24_xidaduo_fullwindow_continue2_20260705"
       ],
+      "synthetic": false,
+      "local_missing_allowed": [],
       "metadata": {
         "prompt_version": "attentional_v2.digest.v24",
         "promptset_version": "attentional_v2-phase6-v84",
@@ -3394,12 +3393,66 @@
         "unit_recovery_delay_seconds": "0,120,300,600,900,1200",
         "unit_recovery_max_elapsed_seconds": 3600,
         "parent_run_id": "digest_marginalia_v24_5book_parallel_fullwindow_20260704",
+        "runner_unit_count": 4,
+        "combined_runner_unit_count": 45,
+        "marginalia_count": 8,
+        "hard_failure": "runner_failed:xidaduo_private_zh__segment_1:llm_contract",
         "resume_from_analysis_root": "reading-companion-backend/eval/runs/attentional_v2/digest_marginalia_v24_5book_parallel_fullwindow_20260704/analysis/digest_marginalia_v24_5book_parallel_fullwindow",
         "segment_ids": [
           "xidaduo_private_zh__segment_1"
         ]
       },
-      "updated_at": "2026-07-05T05:21:58.274143Z"
+      "updated_at": "2026-07-05T08:38:08.385132Z"
+    },
+    {
+      "run_id": "digest_marginalia_v24_xidaduo_fullwindow_continue2_20260705",
+      "date": "2026-07-05",
+      "surface": "digest_marginalia_fullwindow_xidaduo_continue",
+      "lane": "mechanism_eval_smoke",
+      "status": "running",
+      "mechanisms": [
+        "attentional_v2"
+      ],
+      "dataset_or_manifest": [
+        "state/eval_local_datasets/user_level_benchmarks/attentional_v2_user_level_selective_v1_repaired_20260629_source_norm_v1_2_unique_notes"
+      ],
+      "run_dir": "reading-companion-backend/eval/runs/attentional_v2/digest_marginalia_v24_xidaduo_fullwindow_continue2_20260705",
+      "summary_paths": {
+        "raw_summary": "reading-companion-backend/eval/runs/attentional_v2/digest_marginalia_v24_xidaduo_fullwindow_continue2_20260705/analysis/digest_marginalia_v24_xidaduo_fullwindow_continue2/raw/summary.json"
+      },
+      "job_ids": [
+        "bgjob_digest_marginalia_v24_xidaduo_fullwindow_continue2_20260705"
+      ],
+      "report_paths": [
+        "reading-companion-backend/eval/runs/attentional_v2/digest_marginalia_v24_xidaduo_fullwindow_continue2_20260705/analysis/digest_marginalia_v24_xidaduo_fullwindow_continue2/marginalia_smoke_report.md"
+      ],
+      "catalog_status": "not_cataloged",
+      "notes": "Single-segment Xidaduo continuation from continue1 after continue1 failed at unit 46 with llm_contract. Continues from continue1 analysis root with target-total-units=9999 and the same DEC-150 long partial-mode recovery.",
+      "parent_run_id": "digest_marginalia_v24_xidaduo_fullwindow_continue1_20260705",
+      "child_run_ids": [],
+      "synthetic": false,
+      "local_missing_allowed": [
+        "reading-companion-backend/eval/runs/attentional_v2/digest_marginalia_v24_xidaduo_fullwindow_continue2_20260705",
+        "reading-companion-backend/eval/runs/attentional_v2/digest_marginalia_v24_xidaduo_fullwindow_continue2_20260705/analysis/digest_marginalia_v24_xidaduo_fullwindow_continue2/raw/summary.json",
+        "reading-companion-backend/eval/runs/attentional_v2/digest_marginalia_v24_xidaduo_fullwindow_continue2_20260705/analysis/digest_marginalia_v24_xidaduo_fullwindow_continue2/marginalia_smoke_report.md"
+      ],
+      "metadata": {
+        "prompt_version": "attentional_v2.digest.v24",
+        "promptset_version": "attentional_v2-phase6-v84",
+        "units_per_segment": 9999,
+        "target_total_units": 9999,
+        "segment_workers": 1,
+        "failure_policy": "partial",
+        "unit_recovery_attempts": 6,
+        "unit_recovery_delay_seconds": "0,120,300,600,900,1200",
+        "unit_recovery_max_elapsed_seconds": 3600,
+        "parent_run_id": "digest_marginalia_v24_xidaduo_fullwindow_continue1_20260705",
+        "resume_from_analysis_root": "reading-companion-backend/eval/runs/attentional_v2/digest_marginalia_v24_xidaduo_fullwindow_continue1_20260705/analysis/digest_marginalia_v24_xidaduo_fullwindow_continue1",
+        "segment_ids": [
+          "xidaduo_private_zh__segment_1"
+        ]
+      },
+      "updated_at": "2026-07-05T08:38:08.453322Z"
     }
   ]
 }
