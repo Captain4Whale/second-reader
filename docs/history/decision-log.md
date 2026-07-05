@@ -4241,3 +4241,27 @@ This new direction is design frozen but not yet implemented as a formal benchmar
 - `docs/backend-reader-evaluation.md`
 - `docs/current-state.md`
 - `docs/tasks/registry.md`
+
+## Entry 151
+**ID**: DEC-153
+**Status**: active
+
+**Decision / Inflection**: Remove the fixed `20 + 20` Unit Memory retrieval horizon and let relevance decide among all prior units outside prompt-visible hot memory.
+
+**Period**: July 5, 2026, after reviewing the five-book Digest v24 full-window packet and inspecting Unit Memory retrieval traces. The prior defaults combined `recent_neighbor_exclusion_unit_count = 20` with `min_retrievable_prior_units = 20`, which meant early windows and short books often skipped retrieval before search, and even longer books could suppress relevant nearby prior units that were not actually visible in Digest hot memory.
+
+**Decision**: Unit Memory retrieval now searches all completed prior units with `unit_index < current_unit_index`. Duplicate control is span-level: runtime still passes prompt-visible hot source spans into retrieval exclusion, so memory already present in Digest `ReadingMemory` does not consume long-distance selection slots. Historical nonzero horizon config values are kept only as configured-vs-applied audit fields; the applied recent-neighbor exclusion is `0`, the applied minimum prior count is `1`, and traces record prior-unit count, prompt-visible hot exclusion count, and selected candidate distance from the current unit.
+
+**Boundary**: This changes Unit Memory retrieval horizon semantics and audit metadata only. It does not change Ingest or Digest prompts, Digest output contracts, Marginalia selection, public API payloads, provider configuration, dense-distance filtering, lexical query construction, or the content-neutral selection quality gates that decide whether a candidate can enter prompt-facing `ReadingMemory`.
+
+**Why this path won**: The product goal is continuous reading, not arbitrary maturity gating. Hot memory overlap should be excluded because it is already in the prompt; nearby prior units outside that prompt-visible set should remain eligible when the recall query and selection thresholds say they matter. This preserves duplicate control while making retrieval useful in short windows, early chapters, and cases where continuity depends on a recent but no-longer-hot unit.
+
+**Primary evidence**:
+- `reading-companion-backend/src/attentional_v2/unit_memory.py`
+- `reading-companion-backend/tests/test_attentional_v2_unit_memory.py`
+- `docs/backend-reading-mechanisms/attentional_v2.md`
+- `docs/backend-reader-evaluation.md`
+- `docs/implementation/new-reading-mechanism/unit-memory-hybrid-retrieval-design.md`
+- `docs/implementation/new-reading-mechanism/unit-memory-retrieval-repair-validation-plan.md`
+- `docs/current-state.md`
+- `docs/tasks/registry.md`

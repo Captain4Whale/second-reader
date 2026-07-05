@@ -64,8 +64,8 @@ DEFAULT_RETRIEVAL_CONFIG: dict[str, object] = {
     "max_auxiliary_doc_rank_to_digest_context": 6,
     "min_auxiliary_backed_understanding_doc_score_to_digest_context": 0.017,
     "max_auxiliary_backed_understanding_doc_rank_to_digest_context": 20,
-    "recent_neighbor_exclusion_unit_count": 20,
-    "min_retrievable_prior_units": 20,
+    "recent_neighbor_exclusion_unit_count": 0,
+    "min_retrievable_prior_units": 1,
     "retrieval_total_timeout_ms": 800,
     "query_embedding_timeout_ms": 3000,
     "fts_timeout_ms": 100,
@@ -73,6 +73,9 @@ DEFAULT_RETRIEVAL_CONFIG: dict[str, object] = {
     "aggregation_timeout_ms": 50,
     "vector_index_write_budget_ms": 3000,
 }
+
+RETRIEVAL_HORIZON_POLICY = "all_prior_except_prompt_visible_hot"
+APPLIED_MIN_RETRIEVABLE_PRIOR_UNITS = 1
 
 SURFACE_CHANNEL_WEIGHTS: dict[str, dict[str, float]] = {
     "unit_understanding": {"lexical": 1.35, "dense": 1.35},
@@ -324,10 +327,41 @@ def _entry_understanding_content(entry: object) -> str:
     return ""
 
 
+def _retrieval_horizon(
+    config: Mapping[str, object],
+    *,
+    current_unit_index: int,
+    excluded_source_unit_span_count: int,
+) -> tuple[int, dict[str, object]]:
+    current_index = int(current_unit_index)
+    configured_recent_window = max(0, _coerce_int(config.get("recent_neighbor_exclusion_unit_count"), 0))
+    configured_min_prior = max(0, _coerce_int(config.get("min_retrievable_prior_units"), APPLIED_MIN_RETRIEVABLE_PRIOR_UNITS))
+    max_unit_index = current_index - 1
+    return max_unit_index, {
+        "current_unit_index": current_index,
+        "retrieval_horizon_policy": RETRIEVAL_HORIZON_POLICY,
+        "configured_recent_neighbor_exclusion_unit_count": configured_recent_window,
+        "applied_recent_neighbor_exclusion_unit_count": 0,
+        "max_retrievable_unit_index": max_unit_index,
+        "configured_min_retrievable_prior_units": configured_min_prior,
+        "applied_min_retrievable_prior_units": APPLIED_MIN_RETRIEVABLE_PRIOR_UNITS,
+        "excluded_prompt_visible_hot_source_span_count": max(0, int(excluded_source_unit_span_count)),
+    }
+
+
+def _annotate_distance_from_current_unit(items: list[dict[str, object]], *, current_unit_index: int) -> None:
+    current_index = int(current_unit_index)
+    for item in items:
+        unit_index = _coerce_int(item.get("unit_index"), 0)
+        if unit_index > 0:
+            item["distance_from_current_unit"] = max(0, current_index - unit_index)
+
+
 def _compact_retrieval_unit(item: Mapping[str, object]) -> dict[str, object]:
     return {
         "unit_id": item.get("unit_id"),
         "unit_index": item.get("unit_index"),
+        "distance_from_current_unit": item.get("distance_from_current_unit"),
         "score": item.get("score"),
         "quality": item.get("quality"),
         "matched_recalls": item.get("matched_recalls"),
@@ -1308,18 +1342,16 @@ class UnitMemoryIndex:
                 "trace": trace,
             }
 
-        recent_window = max(0, _coerce_int(self.config.get("recent_neighbor_exclusion_unit_count"), 20))
-        max_unit_index = int(current_unit_index) - recent_window
-        trace["horizon"] = {
-            "current_unit_index": int(current_unit_index),
-            "recent_neighbor_exclusion_unit_count": recent_window,
-            "max_retrievable_unit_index": max_unit_index,
-        }
+        max_unit_index, trace["horizon"] = _retrieval_horizon(
+            self.config,
+            current_unit_index=current_unit_index,
+            excluded_source_unit_span_count=len(excluded_source_unit_span_ids),
+        )
         if max_unit_index < 1:
-            trace["degradation_reason"] = "not_enough_prior_units_after_recent_exclusion"
+            trace["degradation_reason"] = "no_prior_units"
             trace["candidate_counts"] = {
                 "current_unit_index": int(current_unit_index),
-                "excluded_recent_neighbor_units": recent_window,
+                "retrieval_horizon_policy": RETRIEVAL_HORIZON_POLICY,
                 "remaining_retrievable_units": 0,
             }
             trace["latency_ms"] = int((time.monotonic() - started_at) * 1000)
@@ -1346,18 +1378,16 @@ class UnitMemoryIndex:
                     (book_id, max_unit_index),
                 ).fetchone()["count"]
             )
-            min_prior = max(0, _coerce_int(self.config.get("min_retrievable_prior_units"), 20))
             existing_horizon = trace.get("horizon")
             trace["horizon"] = {
                 **(dict(existing_horizon) if isinstance(existing_horizon, dict) else {}),
-                "prior_units_after_recent_exclusion": prior_count,
-                "min_retrievable_prior_units": min_prior,
+                "prior_units_available": prior_count,
             }
-            if prior_count < min_prior:
-                trace["degradation_reason"] = "below_min_retrievable_prior_units"
+            if prior_count < APPLIED_MIN_RETRIEVABLE_PRIOR_UNITS:
+                trace["degradation_reason"] = "no_prior_units"
                 trace["candidate_counts"] = {
                     "prior_units": prior_count,
-                    "min_retrievable_prior_units": min_prior,
+                    "applied_min_retrievable_prior_units": APPLIED_MIN_RETRIEVABLE_PRIOR_UNITS,
                     "remaining_retrievable_units": prior_count,
                 }
                 trace["latency_ms"] = int((time.monotonic() - started_at) * 1000)
@@ -1433,6 +1463,7 @@ class UnitMemoryIndex:
                 trace.setdefault("per_recall", []).append(per_recall)  # type: ignore[union-attr]
 
         aggregated_units = self._aggregate_units(all_candidates)
+        _annotate_distance_from_current_unit(aggregated_units, current_unit_index=current_unit_index)
         max_units_to_digest_context = max(1, _coerce_int(self.config.get("max_units_to_digest_context"), 40))
         max_units_per_recall = max(0, _coerce_int(self.config.get("max_units_per_recall_to_digest_context"), 6))
         selected_units, suppressed_units = self._select_renderable_units(
@@ -1445,6 +1476,7 @@ class UnitMemoryIndex:
         trace["degradation_reason"] = ";".join(degradation_reasons)
         trace["candidate_counts"] = {
             "recall_count": len(normalized_recalls),
+            "prior_units": prior_count,
             "lexical_docs": total_lexical,
             "dense_docs": total_dense,
             "dense_docs_filtered_by_distance": total_dense_filtered,
@@ -1515,18 +1547,16 @@ class UnitMemoryIndex:
             record_unit_memory_retrieval_trace(self.output_dir, trace)
             return {"query": dict(query), "query_source": query_source, "mode": mode, "effective_mode": mode, "selected_units": [], "trace": trace}
 
-        recent_window = max(0, _coerce_int(self.config.get("recent_neighbor_exclusion_unit_count"), 20))
-        max_unit_index = int(current_unit_index) - recent_window
-        trace["horizon"] = {
-            "current_unit_index": int(current_unit_index),
-            "recent_neighbor_exclusion_unit_count": recent_window,
-            "max_retrievable_unit_index": max_unit_index,
-        }
+        max_unit_index, trace["horizon"] = _retrieval_horizon(
+            self.config,
+            current_unit_index=current_unit_index,
+            excluded_source_unit_span_count=len(excluded_source_unit_span_ids),
+        )
         if max_unit_index < 1:
-            trace["degradation_reason"] = "not_enough_prior_units_after_recent_exclusion"
+            trace["degradation_reason"] = "no_prior_units"
             trace["candidate_counts"] = {
                 "current_unit_index": int(current_unit_index),
-                "excluded_recent_neighbor_units": recent_window,
+                "retrieval_horizon_policy": RETRIEVAL_HORIZON_POLICY,
                 "remaining_retrievable_units": 0,
             }
             trace["latency_ms"] = int((time.monotonic() - started_at) * 1000)
@@ -1540,18 +1570,16 @@ class UnitMemoryIndex:
                     (book_id, max_unit_index),
                 ).fetchone()["count"]
             )
-            min_prior = max(0, _coerce_int(self.config.get("min_retrievable_prior_units"), 20))
             existing_horizon = trace.get("horizon")
             trace["horizon"] = {
                 **(dict(existing_horizon) if isinstance(existing_horizon, dict) else {}),
-                "prior_units_after_recent_exclusion": prior_count,
-                "min_retrievable_prior_units": min_prior,
+                "prior_units_available": prior_count,
             }
-            if prior_count < min_prior:
-                trace["degradation_reason"] = "below_min_retrievable_prior_units"
+            if prior_count < APPLIED_MIN_RETRIEVABLE_PRIOR_UNITS:
+                trace["degradation_reason"] = "no_prior_units"
                 trace["candidate_counts"] = {
                     "prior_units": prior_count,
-                    "min_retrievable_prior_units": min_prior,
+                    "applied_min_retrievable_prior_units": APPLIED_MIN_RETRIEVABLE_PRIOR_UNITS,
                     "remaining_retrievable_units": prior_count,
                 }
                 trace["latency_ms"] = int((time.monotonic() - started_at) * 1000)
@@ -1598,6 +1626,7 @@ class UnitMemoryIndex:
                 "dense_docs_filtered_by_distance": dense_filtered_by_distance,
             }
             aggregated_units = self._aggregate_units([*lexical_candidates, *dense_candidates])
+            _annotate_distance_from_current_unit(aggregated_units, current_unit_index=current_unit_index)
             selected_units, suppressed_units = self._select_renderable_units(
                 aggregated_units,
                 limit=max(1, _coerce_int(self.config.get("max_units_to_digest_context"), 6)),

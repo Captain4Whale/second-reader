@@ -723,20 +723,21 @@ Repair direction:
 
 Symptom:
 
-- `recent_neighbor_exclusion_unit_count = 20`
-- `min_retrievable_prior_units = 20`
-- early and short windows produce many `not_enough_prior_units_after_recent_exclusion` and `below_min_retrievable_prior_units` rows
+- historical defaults used `recent_neighbor_exclusion_unit_count = 20` and `min_retrievable_prior_units = 20`
+- early and short windows produced many `not_enough_prior_units_after_recent_exclusion` and `below_min_retrievable_prior_units` rows
+- manual review showed this fixed `20 + 20` horizon can suppress relevant prior units that are outside prompt-visible hot memory
 
 Repair direction:
 
-- replace fixed `20 + 20` assumptions with a window-aware policy
-- make the gate explainable in trace:
+- replace fixed `20 + 20` assumptions with an all-prior retrieval horizon: once at least one prior unit exists, search all units with `unit_index < current_unit_index`
+- keep duplicate control at the prompt-visible hot source-span level, not at a fixed recent-neighbor window
+- make the horizon explainable in trace:
   - current unit index
+  - configured vs applied recent-neighbor exclusion
   - prior unit count
-  - excluded hot-neighbor count
-  - remaining retrievable count
+  - prompt-visible hot source-span exclusion count
+  - selected candidate distance from current unit
   - exact reason no retrieval was attempted
-- allow a shorter exclusion horizon in short windows or early chapters while still avoiding duplicate hot memory
 
 ### R5. Boundary unresolved blocks retrieval before search
 
@@ -1136,7 +1137,7 @@ Current evidence:
 
 - Runtime retrieval no longer returns the stale tool result when the only existing tool trace is `boundary_unresolved`.
 - After runtime accepts a source unit, the same `memory_recalls[]` can run through normal retrieval even if the tool-stage boundary anchor was unresolved.
-- Horizon gate traces now include `current_unit_index`, `recent_neighbor_exclusion_unit_count`, `max_retrievable_unit_index`, `prior_units_after_recent_exclusion`, and `min_retrievable_prior_units` where applicable.
+- Horizon traces now include `current_unit_index`, `retrieval_horizon_policy`, configured vs applied recent-neighbor exclusion, `max_retrievable_unit_index`, `prior_units_available`, configured vs applied minimum-prior count, prompt-visible hot source-span exclusion count, and selected candidate distance where applicable.
 
 Goal:
 

@@ -7,7 +7,7 @@ Update when: task status, priority, blockers, decision refs, job refs, evidence 
 
 This document is the human-readable companion to `docs/tasks/registry.json`.
 
-Last updated: `2026-07-05T19:03:07+08:00`
+Last updated: `2026-07-05T19:42:00+08:00`
 
 ## Status Values
 - `active`
@@ -25,7 +25,7 @@ Last updated: `2026-07-05T19:03:07+08:00`
 - Lane: `mechanism_runtime`
 - Priority: `high`
 - Detail: `docs/current-state.md`
-- Next: Digest is live as `attentional_v2.digest.v24` / promptset `attentional_v2-phase6-v84` / output contract `digest_understanding_response_marginalia_json_v8`: canonical visible-note output remains `marginalia[]` with explicit `kind: "highlight" | "note"`, and Notes remain an independent pass with non-empty visible `content`. `DEC-152` closes the Digest silent-fallback gap: recoverable Digest failures now propagate to same-cursor recovery, and successful diagnostic units with `llm_fallbacks` or empty content-bearing U/R are hard failures. The merged five-book full-window review packet remains available at `reading-companion-backend/eval/runs/attentional_v2/digest_marginalia_v24_5book_parallel_fullwindow_20260704/analysis/digest_marginalia_v24_5book_parallel_fullwindow/review_packet/README.md`, covering `246` accepted units and `460` Marginalia items, but Huochu unit `13` and downstream Huochu continuity are diagnostic / tainted because the parent run swallowed a Digest `network_blocked` fallback as empty `digest_complete`. Next action is a Huochu-only repaired full-window rerun under `digest_marginalia_v24_huochu_fullwindow_reliability_fix_20260705`, then refresh the packet with clean Huochu evidence; no full-window continuation job is currently active.
+- Next: Digest is live as `attentional_v2.digest.v24` / promptset `attentional_v2-phase6-v84` / output contract `digest_understanding_response_marginalia_json_v8`: canonical visible-note output remains `marginalia[]` with explicit `kind: "highlight" | "note"`, and Notes remain an independent pass with non-empty visible `content`. `DEC-152` closes the Digest silent-fallback gap: recoverable Digest failures now propagate to same-cursor recovery, and successful diagnostic units with `llm_fallbacks` or empty content-bearing U/R are hard failures. `DEC-153` changes Unit Memory retrieval to search all completed prior units while excluding only prompt-visible hot source spans, so relevance / quality thresholds rather than a fixed `20 + 20` maturity gate decide whether prior memory enters Digest `ReadingMemory`. The merged five-book full-window review packet remains available at `reading-companion-backend/eval/runs/attentional_v2/digest_marginalia_v24_5book_parallel_fullwindow_20260704/analysis/digest_marginalia_v24_5book_parallel_fullwindow/review_packet/README.md`, covering `246` accepted units and `460` Marginalia items, but Huochu unit `13` and downstream Huochu continuity are diagnostic / tainted because the parent run swallowed a Digest `network_blocked` fallback as empty `digest_complete`. Next action is a Huochu-only repaired full-window rerun under `digest_marginalia_v24_huochu_fullwindow_reliability_fix_20260705`, then refresh the packet with clean Huochu evidence; no full-window continuation job is currently active.
 - Jobs:
   - `bgjob_ingest_digest_unit_memory_full_diagnostic_20260603_parallel5`
   - `bgjob_unit_memory_text_only_smoke_value_20260606`
@@ -107,6 +107,7 @@ Last updated: `2026-07-05T19:03:07+08:00`
   - `DEC-150`
   - `DEC-151`
   - `DEC-152`
+  - `DEC-153`
   - `docs/current-state.md`
   - `docs/backend-reader-evaluation.md`
   - `docs/implementation/new-reading-mechanism/ingest-context-and-navigate-mapping.md`

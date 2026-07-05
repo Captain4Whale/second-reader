@@ -360,33 +360,68 @@ def test_text_only_retrieval_handles_english_concept_recall(tmp_path):
     assert trace["candidate_counts"]["lexical_docs"] >= 1
 
 
-def test_retrieval_trace_records_horizon_gate_counts(tmp_path):
+def test_retrieval_horizon_searches_all_prior_units_despite_legacy_gate_config(tmp_path):
     config = {
         "mode": "text_only",
         "min_retrievable_prior_units": 2,
         "recent_neighbor_exclusion_unit_count": 1,
+        "min_understanding_doc_score_to_digest_context": 0,
+        "max_understanding_doc_rank_to_digest_context": 100,
     }
     index = UnitMemoryIndex(tmp_path, config=config)
     index.write_entry(_entry("u000001", 1, "火车站台上的告别", "站台告别建立了旅程的起点。"), index_vectors=False)
 
     result = index.retrieve_for_recalls(
         book_id="book-demo",
-        recalls=[{"recall_id": "r1", "recall_text": "火车站台 告别", "basis": "selected_source_unit"}],
+        recalls=[{"recall_id": "r1", "recall_text": "火车站台上的告别", "basis": "selected_source_unit"}],
         query_source="tool_retrieve_unit_memory",
         current_unit_index=3,
     )
 
-    assert result["selected_units"] == []
+    assert result["selected_units"][0]["unit_id"] == "u000001"
     trace = json.loads(unit_memory_retrieval_trace_file(tmp_path).read_text(encoding="utf-8").strip().splitlines()[-1])
-    assert trace["degradation_reason"] == "below_min_retrievable_prior_units"
+    assert trace["degradation_reason"] == ""
     assert trace["horizon"] == {
         "current_unit_index": 3,
-        "recent_neighbor_exclusion_unit_count": 1,
+        "retrieval_horizon_policy": "all_prior_except_prompt_visible_hot",
+        "configured_recent_neighbor_exclusion_unit_count": 1,
+        "applied_recent_neighbor_exclusion_unit_count": 0,
         "max_retrievable_unit_index": 2,
-        "prior_units_after_recent_exclusion": 1,
-        "min_retrievable_prior_units": 2,
+        "configured_min_retrievable_prior_units": 2,
+        "applied_min_retrievable_prior_units": 1,
+        "excluded_prompt_visible_hot_source_span_count": 0,
+        "prior_units_available": 1,
     }
-    assert trace["candidate_counts"]["remaining_retrievable_units"] == 1
+    assert trace["candidate_counts"]["prior_units"] == 1
+    assert trace["selected_units"][0]["distance_from_current_unit"] == 2
+
+
+def test_retrieval_excludes_prompt_visible_hot_spans_but_keeps_other_prior_units(tmp_path):
+    config = {
+        "mode": "text_only",
+        "min_understanding_doc_score_to_digest_context": 0,
+        "max_understanding_doc_rank_to_digest_context": 100,
+        "max_units_to_digest_context": 5,
+    }
+    hot_text = "重复告别在火车站出现"
+    index = UnitMemoryIndex(tmp_path, config=config)
+    index.write_entry(_entry("u000001", 1, hot_text, "重复告别建立了旅程的起点。"), index_vectors=False)
+    index.write_entry(_entry("u000002", 2, "重复告别在码头出现", "重复告别让先前的离别感重新浮现。"), index_vectors=False)
+
+    result = index.retrieve_for_recalls(
+        book_id="book-demo",
+        recalls=[{"recall_id": "r1", "recall_text": "重复告别", "basis": "selected_source_unit"}],
+        query_source="tool_retrieve_unit_memory",
+        current_unit_index=3,
+        excluded_source_unit_span_ids={str(_source_unit("u000001", 1, hot_text)["source_span_id"])},
+    )
+
+    selected_ids = {item["unit_id"] for item in result["selected_units"]}
+    assert "u000001" not in selected_ids
+    assert "u000002" in selected_ids
+    trace = json.loads(unit_memory_retrieval_trace_file(tmp_path).read_text(encoding="utf-8").strip().splitlines()[-1])
+    assert trace["excluded_source_unit_span_count"] == 1
+    assert trace["horizon"]["excluded_prompt_visible_hot_source_span_count"] == 1
 
 
 def test_multi_recall_retrieval_aggregates_by_unit_and_records_matches(tmp_path):

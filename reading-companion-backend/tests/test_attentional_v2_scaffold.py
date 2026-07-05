@@ -89,6 +89,14 @@ from src.reading_runtime.artifacts import checkpoint_summary_file, mechanism_man
 from src.reading_runtime.shell_state import load_runtime_shell
 
 
+def _write_minimal_unit_span_ledger(output_dir: Path, count: int) -> None:
+    unit_span_ledger_file(output_dir).parent.mkdir(parents=True, exist_ok=True)
+    unit_span_ledger_file(output_dir).write_text(
+        "".join(f'{{"unit_id":"u{index:06d}"}}\n' for index in range(1, count + 1)),
+        encoding="utf-8",
+    )
+
+
 def test_prompt_template_xml_resolves_fragments_slots_and_literals() -> None:
     registry = PromptFragmentRegistry(
         [
@@ -954,6 +962,7 @@ def test_runner_retries_retrieval_after_tool_boundary_unresolved(tmp_path: Path)
         output_dir,
         config={"mode": "text_only", "min_retrievable_prior_units": 0, "recent_neighbor_exclusion_unit_count": 0},
     ).write_entry(entry, index_vectors=False)
+    _write_minimal_unit_span_ledger(output_dir, 1)
 
     result = runner_module._retrieve_unit_memory_for_prepared_source_unit(
         output_dir=output_dir,
@@ -1025,6 +1034,7 @@ def test_runner_renders_retrieved_unit_memory_from_real_index(tmp_path: Path) ->
         ),
         index_vectors=False,
     )
+    _write_minimal_unit_span_ledger(output_dir, 1)
 
     retrieval = runner_module._retrieve_unit_memory_for_prepared_source_unit(
         output_dir=output_dir,
@@ -1093,6 +1103,7 @@ def test_runner_does_not_exclude_all_active_recent_memory_from_retrieval(tmp_pat
         ),
         index_vectors=False,
     )
+    _write_minimal_unit_span_ledger(output_dir, 1)
 
     retrieval = runner_module._retrieve_unit_memory_for_prepared_source_unit(
         output_dir=output_dir,

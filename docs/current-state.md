@@ -7,7 +7,7 @@ Update when: the current objective, active tasks, blockers, active jobs, open de
 
 This file is authoritative for durable current status. Do not keep unique active-state information only in `docs/agent-handoff.md`.
 
-Last verified: `2026-07-05T19:03:07+08:00`
+Last verified: `2026-07-05T19:42:00+08:00`
 
 ## Current Objective
 - The `Ingest -> Digest -> Reading Runner settlement` mechanism reframe is implemented; current work is fact alignment, smoke/diagnostic review, and calibration before any formal evaluation promotion.
@@ -93,6 +93,7 @@ Last verified: `2026-07-05T19:03:07+08:00`
     - `DEC-150` upgrades focused diagnostic transient recovery for long-running jobs: partial-mode diagnostics now default to `6` extra same-cursor unit retries, delay schedule `0,120,300,600,900,1200`, and a `3600s` per-unit transient recovery budget before preserving the segment as `partial`
     - `DEC-151` makes structured-output contract failures auditable and recoverable in diagnostic reading runs: the LLM gateway writes bounded `contract_failures.jsonl` rows plus `ReaderLLMError.details.structured_output_contract`, and focused Digest Marginalia diagnostics retry recoverable unit failures such as `llm_contract` from the same cursor unless the code is known non-recoverable, such as `llm_auth`
     - `DEC-152` closes the Digest silent-fallback gap: Digest `ReaderLLMError` now propagates to same-cursor recovery instead of being normalized into empty `digest_complete`; content-bearing units require non-empty `understanding` and `response`; `read_audit` and smoke `runner_units.json` persist explicit `understanding` and flag `llm_fallbacks` / empty U/R as hard diagnostic failures
+    - `DEC-153` removes the fixed `20 + 20` Unit Memory retrieval horizon: retrieval now searches all completed prior units before the current unit, excludes only prompt-visible hot source spans, treats historical nonzero horizon config as audit compatibility, and records selected candidate distance for review
     - current `llm_calls.ingest(...)` is the forward-only XML LLM boundary call: final output carries `unit.end_paragraph_n`, `unit.end_at`, `preview_partition[]`, and optional boundary-rationale `reason`; bounded Unit Memory recall intent is expressed only through the `retrieve_unit_memory` action tool
     - current LLM-call code now lives in `reading-companion-backend/src/attentional_v2/llm_calls.py`; the old ambiguous active module name is removed
     - current `attentional_v2` LLM calls keep project schemas/tools protocol-neutral; Anthropic-compatible profiles submit structured results through mechanism-private final-output tools such as `submit_ingest_result` and `submit_digest_result`, while OpenAI-compatible JSON-object profiles use JSON object plus validator/repair for Ingest/Digest final output; `retrieve_unit_memory` remains the only live action tool and is left to model `auto` choice; OpenAI-compatible DeepSeek/OpenCode JSON-object calls do not force final-output `tool_choice`

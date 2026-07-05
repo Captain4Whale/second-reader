@@ -397,8 +397,9 @@ Initial aggregation defaults:
 - `channel_coverage_bonus = 0.03` when both lexical and dense channels matched
 - `exact_phrase_bonus = 0.0` by default; record exact phrase / quote matches for audit and later calibration, but do not add another boost until query fields are designed
 - dense distance gate = `dense_max_distance`; no additional distance penalty by default after the gate
-- `recent_neighbor_exclusion_unit_count = 20`
-- do not exclude the whole active Recent Reading Memory store from Unit Memory retrieval; hot current-chapter memory is deduped against retrieved memory during `ReadingMemory` rendering
+- `recent_neighbor_exclusion_unit_count = 0`
+- do not exclude a fixed recent-neighbor window from Unit Memory retrieval; search all completed prior units and let relevance / score thresholds decide selection
+- do not exclude the whole active Recent Reading Memory store from Unit Memory retrieval; exclude only prompt-visible hot source spans before candidate retrieval, then keep duplicate suppression during `ReadingMemory` rendering as a defensive audit guard
 - `max_units_after_aggregation = 20`
 - `max_units_to_digest_context = 40` as the total long-distance selected-unit ceiling before Digest `ReadingMemory` token-budget rendering
   - do not inherit the old `4` to `6` detailed-memory cap now that Digest context is Understanding-only
@@ -800,18 +801,19 @@ Use retrieval according to the selected `memory_retrieval_mode`:
 - `hybrid` mode also uses a semantic candidate set from sqlite-vec dense vector KNN over `unit_understanding` documents only
 - optional metadata filters:
   - same book
-  - only prior units
+  - only completed prior units, where `unit_index < current_unit_index`
   - exclude current unit
-  - exclude recent-neighbor units already carried directly
+  - exclude prompt-visible hot source spans that are already carried directly into Digest `ReadingMemory`
 
-The recent-neighbor exclusion is important: recent memory will be passed directly to Digest, so long-distance retrieval should avoid returning the same nearby units again unless explicitly requested.
+The hot-memory overlap exclusion is important: recent Understanding that is already visible in Digest should not spend a long-distance retrieval slot again. This is span-level duplicate control, not a hard recent-window cutoff. A nearby prior unit that is outside prompt-visible hot memory may be retrieved if its relevance and selection quality are strong enough.
 
-V1 recent-neighbor exclusion:
+V1 retrieval horizon:
 
-- exclude units with `unit_index > current_unit_index - recent_neighbor_exclusion_unit_count`
-- default `recent_neighbor_exclusion_unit_count = 20`
-- also exclude units whose ids appear in the prompt-facing `recent_reading_memory.active_entries[].source_unit_span_id`
-- if all candidates are excluded, return empty long-distance retrieval and rely on direct recent memory
+- search all completed prior units with `unit_index < current_unit_index`
+- default `recent_neighbor_exclusion_unit_count = 0`; historical nonzero config values are retained only as audit compatibility and should not cut the retrieval horizon
+- exclude units whose source span ids appear in the prompt-facing hot `ReadingMemory`
+- if no prior unit exists, return empty retrieval with `no_prior_units`; otherwise execute retrieval even in early or short windows
+- trace the configured vs applied horizon, prompt-visible hot exclusion count, prior-unit count, and selected candidate distance from the current unit
 
 ### Ranking And Aggregation
 
@@ -861,8 +863,8 @@ V1 read-time defaults:
 
 - `memory_retrieval_mode = hybrid`
 - `max_recalls_per_ingest = 3`
-- `min_retrievable_prior_units = 20`
-- `recent_neighbor_exclusion_unit_count = 20`
+- `min_retrievable_prior_units = 1`
+- `recent_neighbor_exclusion_unit_count = 0`
 - `retrieval_total_timeout_ms = 800`
 - `query_embedding_timeout_ms = 500`
 - `fts_timeout_ms = 100`
@@ -871,7 +873,9 @@ V1 read-time defaults:
 
 Execution rules:
 
-- If fewer than `min_retrievable_prior_units` have been completed, skip long-distance retrieval and rely on recent-neighbor memory.
+- If no prior unit has been completed, skip retrieval with `no_prior_units`.
+- Once at least one prior unit exists, search all prior units before the current unit; do not wait for an arbitrary maturity count and do not remove a fixed recent-neighbor window.
+- Exclude prompt-visible hot source spans before candidate retrieval so Digest does not receive the same memory twice.
 - In `text_only` mode, the retrieval budget is spent only on FTS5, unit aggregation, and packaging. No query embedding should be requested.
 - In `hybrid` mode, start FTS5 retrieval without waiting for query embedding; run vector retrieval only after the query embedding is available.
 - Cache query embeddings by `(query_text_hash, embedding_model, query_instruction_version)`.
