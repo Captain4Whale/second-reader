@@ -1,6 +1,6 @@
 {
   "schema_version": 1,
-  "updated_at": "2026-07-05T02:15:28.801790Z",
+  "updated_at": "2026-07-05T05:21:58.275222Z",
   "entries": [
     {
       "run_id": "attentional_v2_excerpt_surface_v1_1_judged_20260406",
@@ -3275,10 +3275,11 @@
         "reading-companion-backend/eval/runs/attentional_v2/digest_marginalia_v24_5book_parallel_fullwindow_20260704/analysis/digest_marginalia_v24_5book_parallel_fullwindow/marginalia_smoke_report.md"
       ],
       "catalog_status": "not_cataloged",
-      "notes": "Completed as partial on 2026-07-05: preserved 213 runner units and 392 Marginalia items (297 Highlights, 95 Notes). Huochu Shengming De Yiyi, Mangge Zhi Dao, and Value of Others reached chapter_end; Xidaduo stopped at unit 42 and Nawaer stopped at unit 1 after network_blocked RemoteProtocolError recovery exhaustion. Use as partial full-window evidence, with Nawaer retry tracked as child retry1.",
+      "notes": "Completed as partial on 2026-07-05: preserved 213 runner units and 392 Marginalia items (297 Highlights, 95 Notes). Huochu Shengming De Yiyi, Mangge Zhi Dao, and Value of Others reached chapter_end; Xidaduo stopped at unit 42 and Nawaer stopped at unit 1 after network_blocked RemoteProtocolError recovery exhaustion. Use as partial full-window evidence, with Nawaer retry1 and Xidaduo continue1 tracked as child runs.",
       "parent_run_id": "",
       "child_run_ids": [
-        "digest_marginalia_v24_nawaer_fullwindow_retry1_20260705"
+        "digest_marginalia_v24_nawaer_fullwindow_retry1_20260705",
+        "digest_marginalia_v24_xidaduo_fullwindow_continue1_20260705"
       ],
       "synthetic": false,
       "local_missing_allowed": [],
@@ -3302,14 +3303,14 @@
           "value_of_others_private_en__segment_1"
         ]
       },
-      "updated_at": "2026-07-05T02:15:28.734450Z"
+      "updated_at": "2026-07-05T05:21:58.163391Z"
     },
     {
       "run_id": "digest_marginalia_v24_nawaer_fullwindow_retry1_20260705",
       "date": "2026-07-05",
       "surface": "digest_marginalia_fullwindow_nawaer_retry",
       "lane": "mechanism_eval_smoke",
-      "status": "running",
+      "status": "review_pending",
       "mechanisms": [
         "attentional_v2"
       ],
@@ -3327,14 +3328,11 @@
         "reading-companion-backend/eval/runs/attentional_v2/digest_marginalia_v24_nawaer_fullwindow_retry1_20260705/analysis/digest_marginalia_v24_nawaer_fullwindow_retry1/marginalia_smoke_report.md"
       ],
       "catalog_status": "not_cataloged",
-      "notes": "Single-segment Nawaer retry for the Digest v24 full dataset-window diagnostic after the parent five-book fullwindow run exhausted Nawaer unit-1 recovery with network_blocked RemoteProtocolError and no accepted Nawaer units. Runs from the Nawaer dataset-window start; early check confirmed unit 1 Ingest and Digest completed successfully.",
+      "notes": "Single-segment Nawaer retry completed with summary status pass: 10 runner units, 26 Marginalia items, 0 hard/partial failures, and chapter_end reached. Awaiting merged full-window review packet.",
       "parent_run_id": "digest_marginalia_v24_5book_parallel_fullwindow_20260704",
       "child_run_ids": [],
       "synthetic": false,
-      "local_missing_allowed": [
-        "reading-companion-backend/eval/runs/attentional_v2/digest_marginalia_v24_nawaer_fullwindow_retry1_20260705/analysis/digest_marginalia_v24_nawaer_fullwindow_retry1/raw/summary.json",
-        "reading-companion-backend/eval/runs/attentional_v2/digest_marginalia_v24_nawaer_fullwindow_retry1_20260705/analysis/digest_marginalia_v24_nawaer_fullwindow_retry1/marginalia_smoke_report.md"
-      ],
+      "local_missing_allowed": [],
       "metadata": {
         "prompt_version": "attentional_v2.digest.v24",
         "promptset_version": "attentional_v2-phase6-v84",
@@ -3345,11 +3343,63 @@
         "unit_recovery_delay_seconds": "0,120,300,600,900,1200",
         "unit_recovery_max_elapsed_seconds": 3600,
         "parent_run_id": "digest_marginalia_v24_5book_parallel_fullwindow_20260704",
+        "runner_unit_count": 10,
+        "marginalia_count": 26,
         "segment_ids": [
           "nawaer_baodian_private_zh__segment_1"
         ]
       },
-      "updated_at": "2026-07-05T02:15:28.800373Z"
+      "updated_at": "2026-07-05T05:21:58.218295Z"
+    },
+    {
+      "run_id": "digest_marginalia_v24_xidaduo_fullwindow_continue1_20260705",
+      "date": "2026-07-05",
+      "surface": "digest_marginalia_fullwindow_xidaduo_continue",
+      "lane": "mechanism_eval_smoke",
+      "status": "running",
+      "mechanisms": [
+        "attentional_v2"
+      ],
+      "dataset_or_manifest": [
+        "state/eval_local_datasets/user_level_benchmarks/attentional_v2_user_level_selective_v1_repaired_20260629_source_norm_v1_2_unique_notes"
+      ],
+      "run_dir": "reading-companion-backend/eval/runs/attentional_v2/digest_marginalia_v24_xidaduo_fullwindow_continue1_20260705",
+      "summary_paths": {
+        "raw_summary": "reading-companion-backend/eval/runs/attentional_v2/digest_marginalia_v24_xidaduo_fullwindow_continue1_20260705/analysis/digest_marginalia_v24_xidaduo_fullwindow_continue1/raw/summary.json"
+      },
+      "job_ids": [
+        "bgjob_digest_marginalia_v24_xidaduo_fullwindow_continue1_20260705"
+      ],
+      "report_paths": [
+        "reading-companion-backend/eval/runs/attentional_v2/digest_marginalia_v24_xidaduo_fullwindow_continue1_20260705/analysis/digest_marginalia_v24_xidaduo_fullwindow_continue1/marginalia_smoke_report.md"
+      ],
+      "catalog_status": "not_cataloged",
+      "notes": "Single-segment Xidaduo continuation from parent five-book fullwindow partial evidence after Xidaduo stopped at unit 42 with network_blocked RemoteProtocolError. Continues from the parent analysis root with target-total-units=9999 and the same DEC-150 long partial-mode recovery.",
+      "parent_run_id": "digest_marginalia_v24_5book_parallel_fullwindow_20260704",
+      "child_run_ids": [],
+      "synthetic": false,
+      "local_missing_allowed": [
+        "reading-companion-backend/eval/runs/attentional_v2/digest_marginalia_v24_xidaduo_fullwindow_continue1_20260705",
+        "reading-companion-backend/eval/runs/attentional_v2/digest_marginalia_v24_xidaduo_fullwindow_continue1_20260705/analysis/digest_marginalia_v24_xidaduo_fullwindow_continue1/raw/summary.json",
+        "reading-companion-backend/eval/runs/attentional_v2/digest_marginalia_v24_xidaduo_fullwindow_continue1_20260705/analysis/digest_marginalia_v24_xidaduo_fullwindow_continue1/marginalia_smoke_report.md"
+      ],
+      "metadata": {
+        "prompt_version": "attentional_v2.digest.v24",
+        "promptset_version": "attentional_v2-phase6-v84",
+        "units_per_segment": 9999,
+        "target_total_units": 9999,
+        "segment_workers": 1,
+        "failure_policy": "partial",
+        "unit_recovery_attempts": 6,
+        "unit_recovery_delay_seconds": "0,120,300,600,900,1200",
+        "unit_recovery_max_elapsed_seconds": 3600,
+        "parent_run_id": "digest_marginalia_v24_5book_parallel_fullwindow_20260704",
+        "resume_from_analysis_root": "reading-companion-backend/eval/runs/attentional_v2/digest_marginalia_v24_5book_parallel_fullwindow_20260704/analysis/digest_marginalia_v24_5book_parallel_fullwindow",
+        "segment_ids": [
+          "xidaduo_private_zh__segment_1"
+        ]
+      },
+      "updated_at": "2026-07-05T05:21:58.274143Z"
     }
   ]
 }

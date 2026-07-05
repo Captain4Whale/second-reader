@@ -7,7 +7,7 @@ Update when: the current objective, active tasks, blockers, active jobs, open de
 
 This file is authoritative for durable current status. Do not keep unique active-state information only in `docs/agent-handoff.md`.
 
-Last verified: `2026-07-05T10:14:55+08:00`
+Last verified: `2026-07-05T13:25:44+08:00`
 
 ## Current Objective
 - The `Ingest -> Digest -> Reading Runner settlement` mechanism reframe is implemented; current work is fact alignment, smoke/diagnostic review, and calibration before any formal evaluation promotion.
@@ -28,11 +28,16 @@ Last verified: `2026-07-05T10:14:55+08:00`
     - status: `partial`
     - result: completed with `213` runner units and `392` Marginalia items; `huochu_shengming_de_yiyi_private_zh__segment_1`, `mangge_zhi_dao_private_zh__segment_1`, and `value_of_others_private_en__segment_1` reached `chapter_end`, while `xidaduo_private_zh__segment_1` stopped at unit `42` and `nawaer_baodian_private_zh__segment_1` stopped at unit `1` after `network_blocked` / `RemoteProtocolError` recovery exhaustion.
     - purpose: preserve the partial full-window Digest v24 evidence so the review packet can inspect Ingest-selected units, Understanding, Response / `reading_impression`, Marginalia, and Unit Memory retrieval traces across the completed portions.
-  - active Nawaer retry:
+  - completed Nawaer retry:
     - run id: `digest_marginalia_v24_nawaer_fullwindow_retry1_20260705`
     - job id: `bgjob_digest_marginalia_v24_nawaer_fullwindow_retry1_20260705`
+    - status: `review_pending`
+    - result: completed with summary status `pass`, `10` runner units, `26` Marginalia items, no hard/partial failures, and `chapter_end`.
+  - active Xidaduo continuation:
+    - run id: `digest_marginalia_v24_xidaduo_fullwindow_continue1_20260705`
+    - job id: `bgjob_digest_marginalia_v24_xidaduo_fullwindow_continue1_20260705`
     - status: `running`
-    - purpose: retry only `nawaer_baodian_private_zh__segment_1` from the dataset-window start after the parent five-book fullwindow run exhausted Nawaer unit-1 recovery with `network_blocked` / `RemoteProtocolError` and accepted `0` Nawaer units; early check confirmed unit `1` Ingest and Digest completed successfully.
+    - purpose: continue only `xidaduo_private_zh__segment_1` from the parent five-book fullwindow analysis root after Xidaduo stopped at unit `42` with `network_blocked` / `RemoteProtocolError`; uses `target-total-units=9999` and the same `DEC-150` long partial-mode recovery.
   - live cleanup landed:
     - `DEC-104` retires live Detour / source-backread behavior from `attentional_v2`
     - `DEC-105` hard-purges the retired Detour / source-backread / source-skill compatibility interfaces from current `attentional_v2` code, prompts, schemas, audits, and tests
@@ -3551,7 +3556,7 @@ Last verified: `2026-07-05T10:14:55+08:00`
 - none
 
 ## Active Job IDs
-- `bgjob_digest_marginalia_v24_nawaer_fullwindow_retry1_20260705`
+- `bgjob_digest_marginalia_v24_xidaduo_fullwindow_continue1_20260705`
 
 ## Recommended Reading Path
 1. `AGENTS.md`
