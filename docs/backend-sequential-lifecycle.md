@@ -45,6 +45,7 @@ Use `docs/backend-reading-mechanism.md` when the question is about shared mechan
 
 ## Main Lifecycle
 1. Upload accepts an EPUB and writes a provisional manifest plus an initial run-state shell so the book exists immediately.
+   - If provisioning cannot resolve that canonical book/output identity, the API returns the existing internal-error envelope and does not start a background worker. This prevents an identity-less worker from racing another upload into the same output directory.
 2. A canonical background job record is created in `state/job_registry/jobs/<job_id>.json` with `job_kind=parse` or `job_kind=read`.
   - When backend-internal rollout selected the non-default fallback mechanism, the job record also carries `mechanism_key`.
   - For `attentional_v2` read jobs, the job record also carries `memory_retrieval_mode`.
@@ -149,7 +150,12 @@ Promotion from user upload into the durable source library or evaluation corpus 
   - This changes default throughput for future jobs, but it does not mutate already-running Python workers in place.
 - Development boot mismatch
   - Development mode treats unfinished jobs from an older backend `boot_id` as untrusted.
-  - Those runs are abandoned, written into the internal system activity stream as `dev_run_abandoned`, and left for a fresh manual rerun instead of being auto-resumed.
+  - Those runs are written into the internal system activity stream as `dev_run_abandoned` and left for a fresh manual rerun instead of being auto-resumed.
+  - A current lease generation plus a verified PID birth identity is required before recovery signals a live process. Legacy bare-PID records remain paused if their exit cannot be proved; the backend does not risk signaling a reused unrelated PID.
+- Worker lease fencing
+  - Each managed start/resume receives a new run-attempt ID, generation, and private token in `state/job_registry/leases/`; a 10-second heartbeat renews a 45-second expiry window.
+  - Same-book live workers, unreadable/corrupt lease state, stale generations, and unverified live owners block replacement. A bounded transient filesystem error is tolerated by the sole current worker while launchers continue to fail closed.
+  - Manual resume checks the recorded PID birth identity twice, including immediately before signaling, then terminates and reaps the verified old process before rotating generation; an unavailable identity check fails closed. Post-launch registry/heartbeat failure terminates and reaps the exact new child before releasing its lease.
 - `resume_compat_version`
   - Demo/prod resume safety is governed by `resume_compat_version` across the job record, `run_state`, and `parse_state`.
   - If those versions do not match the current runtime, the backend archives the old run, clears live artifacts, emits `resume_incompatible` plus `fresh_rerun_started`, and launches a fresh run without `--continue`.
@@ -175,6 +181,23 @@ Promotion from user upload into the durable source library or evaluation corpus 
 - Runtime environment guard
   - Background jobs require Python 3.11+.
   - If the backend is launched under an older interpreter, the job is rejected early and the book records `runtime_environment_error`.
+
+## Optional Telemetry Overlay
+
+Runtime OpenTelemetry is a derived overlay on this lifecycle, not another lifecycle authority.
+
+- Export is disabled by default and is enabled only for a newly started backend process with `READING_OBSERVABILITY_OTLP_ENABLED=1` plus the optional backend observability dependencies.
+- Each lease-fenced worker execution creates `reading.run_attempt`; unit-bearing work uses `reading.chapter -> reading.unit_attempt -> llm.call -> llm.attempt`, while chapter-only survey/parse calls remain below `reading.chapter` without a fabricated unit. Individual provider requests stay separate so retries remain visible and billable-attempt usage is not collapsed.
+- The short HTTP upload/start/resume request does not stay open for the background job's lifetime. V1 correlates the worker through stable job/run/book/chapter/cycle/unit IDs; HTTP-request-to-worker OpenTelemetry links are explicitly deferred.
+- Book, chapter, job, mechanism, reading-cycle, and unit identifiers are span attributes rather than low-cardinality resource attributes. V1 does not claim source-text hashes or resume-lineage attributes that are not available at the shared observation hook.
+- The append-only runtime-observability JSONL ledger is the canonical source for observability facts and generated JSON/Markdown aggregates; Phoenix is its derived trace UI. Existing `_runtime/` artifacts and mechanism-private audits remain the source for accepted cursor movement, checkpoints, status, resume compatibility, and reader output. A trace may describe those transitions but cannot cause or certify them.
+- Exporter timeout, Phoenix absence, rejected spans, or local trace-data loss must not turn a valid parse/read into `paused` or `error`, block settlement, or consume the runtime auto-resume budget.
+- Provider-attempt usage and failure are recorded independently from logical-call outcome. Missing usage is unknown rather than zero, a failed attempt may still be billable, and a successful retry adds a separate attempt to token/cost totals.
+- The current shared gateway path is non-streaming. Streaming usage/TTFT semantics remain deferred; missing usage in the implemented path stays explicitly unknown.
+- Chapter/book aggregates report both wall time and cumulative provider-active time because parallel child spans are not additive wall latency.
+- When export is active, OTel IDs are copied into local LLM attempt/call facts for debugging. V1 does not write them into canonical job-registry records, and they never replace `job_id`, runtime state, checkpoints, or history records.
+
+The canonical implementation, privacy, aggregation, and version rules live in `docs/implementation/runtime-observability/README.md`.
 
 ## What The Frontend Depends On
 - `analysis-state.current_reading_activity`

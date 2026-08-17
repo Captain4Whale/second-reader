@@ -4,15 +4,23 @@ from __future__ import annotations
 
 import shutil
 import re
+from contextlib import nullcontext
 from datetime import datetime, timezone
 from pathlib import Path
-from typing import Callable, Mapping
+from typing import Callable, Iterator, Mapping
 
 from src.reading_core import BookDocument
 from src.reading_core.storage import book_document_file, save_book_document
 from src.reading_core.runtime_contracts import MechanismInfo, ParseRequest, ParseResult, ReadRequest, ReadResult, SharedRunCursor
 from src.reading_runtime import artifacts as runtime_artifacts
+from src.reading_runtime.job_lease import assert_current_lease
 from src.reading_runtime.llm_registry import DEFAULT_RUNTIME_PROFILE_ID
+from src.reading_runtime.observation_context import (
+    ObservationScope,
+    chapter_observation_scope,
+    product_run_observation_scope,
+    reading_cycle_scope,
+)
 from src.reading_runtime.provisioning import ProvisionedBook, ensure_canonical_parse
 from src.reading_runtime.sequential_state import (
     append_activity_event,
@@ -168,6 +176,17 @@ def _chapter_ref(chapter: dict[str, object]) -> str:
     """Return the stable chapter reference for one book-document chapter."""
 
     return chapter_reference(chapter)
+
+
+def _observed_chapters(
+    chapters: list[dict[str, object]],
+) -> Iterator[tuple[dict[str, object], ObservationScope]]:
+    """Keep one chapter scope active while the caller processes each yielded chapter."""
+
+    for chapter_index, chapter in enumerate(chapters):
+        chapter_id = str(int(chapter.get("id", 0) or 0))
+        with chapter_observation_scope(chapter_id, chapter_index=chapter_index) as observation:
+            yield chapter, observation
 
 
 def _chapter_matches_request(chapter: dict[str, object], requested_number: int) -> bool:
@@ -2358,6 +2377,7 @@ def _run_digest_for_source_unit(
         source_unit=current_unit_source,
     )
 
+    assert_current_lease()
     record_read(
         output_dir,
         chapter_id=chapter_id,
@@ -2628,6 +2648,7 @@ def _settle_next_unit(
         )
 
     memory_uptake_ops = digest_result.get("memory_uptake_ops", [])
+    assert_current_lease()
     before_active_attention = active_attention
     before_recent_reading_memory = recent_reading_memory
     before_reaction_records = reaction_records
@@ -2808,12 +2829,19 @@ def parse_attentional_v2(request: ParseRequest, mechanism: MechanismInfo) -> Par
 
     save_book_document(book_document_file(provisioned.output_dir), provisioned.book_document)
     created = not runtime_artifacts.book_manifest_file(provisioned.output_dir).exists()
-    with llm_invocation_scope(
-        profile_id=DEFAULT_RUNTIME_PROFILE_ID,
-        trace_context=runtime_trace_context(
+    with (
+        product_run_observation_scope(
             provisioned.output_dir,
             mechanism_key=mechanism.key,
             stage="parse",
+        ),
+        llm_invocation_scope(
+            profile_id=DEFAULT_RUNTIME_PROFILE_ID,
+            trace_context=runtime_trace_context(
+                provisioned.output_dir,
+                mechanism_key=mechanism.key,
+                stage="parse",
+            ),
         ),
     ):
         artifact_tree = initialize_artifact_tree(provisioned.output_dir)
@@ -2885,12 +2913,20 @@ def run_reading_runner(request: ReadRequest, mechanism: MechanismInfo) -> ReadRe
     output_dir = provisioned.output_dir
     save_book_document(book_document_file(output_dir), provisioned.book_document)
     created = not runtime_artifacts.book_manifest_file(output_dir).exists()
-    with llm_invocation_scope(
-        profile_id=DEFAULT_RUNTIME_PROFILE_ID,
-        trace_context=runtime_trace_context(
-            output_dir,
-            mechanism_key=mechanism.key,
-            stage="read",
+    observation_manager = (
+        nullcontext()
+        if bool(dict(request.mechanism_config).get("persist_normalized_eval_bundle"))
+        else product_run_observation_scope(output_dir, mechanism_key=mechanism.key, stage="read")
+    )
+    with (
+        observation_manager,
+        llm_invocation_scope(
+            profile_id=DEFAULT_RUNTIME_PROFILE_ID,
+            trace_context=runtime_trace_context(
+                output_dir,
+                mechanism_key=mechanism.key,
+                stage="read",
+            ),
         ),
     ):
         if not request.continue_mode:
@@ -2972,7 +3008,7 @@ def run_reading_runner(request: ReadRequest, mechanism: MechanismInfo) -> ReadRe
         )
         run_started_at = _timestamp()
 
-        for chapter in chapters:
+        for chapter, chapter_observation in _observed_chapters(chapters):
             chapter_id = int(chapter.get("id", 0) or 0)
             chapter_ref = _chapter_ref(chapter)
             reading_queue_stage = ""
@@ -3016,6 +3052,7 @@ def run_reading_runner(request: ReadRequest, mechanism: MechanismInfo) -> ReadRe
                     chapter_statuses,
                     scheduled_chapter_ids=scheduled_chapter_ids,
                 )
+                chapter_observation.settle("skipped")
                 continue
 
             cursor = _chapter_start_source_cursor(
@@ -3027,51 +3064,74 @@ def run_reading_runner(request: ReadRequest, mechanism: MechanismInfo) -> ReadRe
             while not cursor_at_or_after_chapter_end(chapter, cursor):
                 local_continuity["mainline_cursor"] = _shared_cursor_for_source_cursor(cursor)
                 bundle["local_continuity"] = local_continuity
-                prepared_source_unit = prepare_next_source_unit_for_read(
-                    current_chapter=chapter,
-                    current_cursor=cursor,
-                    local_buffer=local_buffer,
-                    continuation_capsule=dict(bundle.get("continuation_capsule", {})),
-                    active_attention=active_attention,
-                    recent_reading_memory=recent_reading_memory,
-                    reflective_frames=reflective_frames,
-                    reaction_records=reaction_records,
-                    local_continuity=local_continuity,
-                    reader_policy=reader_policy,
-                    output_language=provisioned.output_language,
-                    output_dir=output_dir,
-                    book_title=provisioned.title,
-                    author=provisioned.author,
-                    book_id=provisioned.output_dir.name,
-                    memory_retrieval_config=memory_retrieval_config,
-                )
-                settled_unit = _settle_next_unit(
-                    prepared_source_unit=prepared_source_unit,
-                    chapter_lookup=chapter_lookup,
-                    local_buffer=local_buffer,
-                    local_continuity=local_continuity,
-                    continuation_capsule=dict(bundle.get("continuation_capsule", {})),
-                    active_attention=active_attention,
-                    recent_reading_memory=recent_reading_memory,
-                    reflective_frames=reflective_frames,
-                    knowledge_activations=knowledge_activations,
-                    reaction_records=reaction_records,
-                    reconsolidation_records=reconsolidation_records,
-                    reader_policy=reader_policy,
-                    output_language=provisioned.output_language,
-                    output_dir=output_dir,
-                    provisioned=provisioned,
-                    bundle=bundle,
-                    memory_retrieval_config=memory_retrieval_config,
-                    reading_queue_stage=reading_queue_stage,
-                    total_chapters=total_chapters,
-                    completed_chapters=completed_chapters,
-                    memory_quality_probe_config=memory_quality_probe_config,
-                    ordered_probe_sentence_ids=ordered_probe_sentence_ids,
-                    meaning_units_in_chapter=meaning_units_in_chapter,
-                    already_ingested_sentence_ids=set(),
-                    capture_memory_probe=True,
-                )
+                with reading_cycle_scope(stage="phase4") as unit_observation:
+                    prepared_source_unit = prepare_next_source_unit_for_read(
+                        current_chapter=chapter,
+                        current_cursor=cursor,
+                        local_buffer=local_buffer,
+                        continuation_capsule=dict(bundle.get("continuation_capsule", {})),
+                        active_attention=active_attention,
+                        recent_reading_memory=recent_reading_memory,
+                        reflective_frames=reflective_frames,
+                        reaction_records=reaction_records,
+                        local_continuity=local_continuity,
+                        reader_policy=reader_policy,
+                        output_language=provisioned.output_language,
+                        output_dir=output_dir,
+                        book_title=provisioned.title,
+                        author=provisioned.author,
+                        book_id=provisioned.output_dir.name,
+                        memory_retrieval_config=memory_retrieval_config,
+                    )
+                    selected_source_unit = (
+                        dict(prepared_source_unit.get("selected_source_unit", {}))
+                        if isinstance(prepared_source_unit.get("selected_source_unit"), dict)
+                        else {}
+                    )
+                    if selected_source_unit:
+                        unit_index = next_unit_sequence_index(output_dir)
+                        source_text = re.sub(
+                            r"\s+",
+                            " ",
+                            str(selected_source_unit.get("source_text", "") or ""),
+                        ).strip()
+                        unit_observation.select_unit(
+                            f"u{unit_index:06d}",
+                            len(source_text)
+                            if source_text
+                            else int(selected_source_unit.get("char_count", 0) or 0),
+                            unit_index,
+                        )
+                    settled_unit = _settle_next_unit(
+                        prepared_source_unit=prepared_source_unit,
+                        chapter_lookup=chapter_lookup,
+                        local_buffer=local_buffer,
+                        local_continuity=local_continuity,
+                        continuation_capsule=dict(bundle.get("continuation_capsule", {})),
+                        active_attention=active_attention,
+                        recent_reading_memory=recent_reading_memory,
+                        reflective_frames=reflective_frames,
+                        knowledge_activations=knowledge_activations,
+                        reaction_records=reaction_records,
+                        reconsolidation_records=reconsolidation_records,
+                        reader_policy=reader_policy,
+                        output_language=provisioned.output_language,
+                        output_dir=output_dir,
+                        provisioned=provisioned,
+                        bundle=bundle,
+                        memory_retrieval_config=memory_retrieval_config,
+                        reading_queue_stage=reading_queue_stage,
+                        total_chapters=total_chapters,
+                        completed_chapters=completed_chapters,
+                        memory_quality_probe_config=memory_quality_probe_config,
+                        ordered_probe_sentence_ids=ordered_probe_sentence_ids,
+                        meaning_units_in_chapter=meaning_units_in_chapter,
+                        already_ingested_sentence_ids=set(),
+                        capture_memory_probe=True,
+                    )
+                    unit_observation.settle(
+                        "accepted" if int(settled_unit.get("units_read_delta", 0) or 0) > 0 else "skipped"
+                    )
                 local_buffer = settled_unit["local_buffer"]  # type: ignore[assignment]
                 local_continuity = settled_unit["local_continuity"]  # type: ignore[assignment]
                 active_attention = settled_unit["active_attention"]  # type: ignore[assignment]
@@ -3093,6 +3153,7 @@ def run_reading_runner(request: ReadRequest, mechanism: MechanismInfo) -> ReadRe
                     break
 
             if audit_window_stop_reason:
+                chapter_observation.settle("partial")
                 break
 
             end_cursor = chapter_end_cursor(chapter)

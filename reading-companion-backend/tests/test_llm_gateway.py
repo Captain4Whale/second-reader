@@ -20,6 +20,12 @@ from src.iterator_reader import llm_utils
 from src.reading_runtime import artifacts as runtime_artifacts
 from src.reading_runtime import llm_registry as llm_registry_module
 from src.reading_runtime.job_concurrency import resolve_worker_policy
+from src.reading_runtime.observation_context import (
+    chapter_observation_scope,
+    reading_cycle_scope,
+    run_observation_scope,
+)
+from src.reading_runtime.observation_ledger import load_observation_events, observation_ledger_file
 from src.reading_runtime.llm_gateway import (
     AnthropicContractAdapter,
     CONTRACT_ADAPTERS,
@@ -57,6 +63,35 @@ from src.reading_runtime.llm_registry import (
 @dataclass
 class _FakeResponse:
     content: str
+
+
+class _UsageSequencedAdapter:
+    def __init__(self, response_contents: list[str]) -> None:
+        self.response_contents = list(response_contents)
+        self.calls: list[str] = []
+
+    def invoke(
+        self,
+        messages: list[Any],
+        *,
+        provider: Any,
+        profile: Any,
+        api_key: str,
+        timeout_seconds: int,
+        invocation_options: dict[str, Any] | None = None,
+    ) -> Any:
+        del messages, timeout_seconds, invocation_options
+        self.calls.append(provider.provider_id)
+        response = _FakeResponse(self.response_contents.pop(0))
+        response.usage_metadata = {
+            "input_tokens": 1_000,
+            "output_tokens": 100,
+            "total_tokens": 1_100,
+            "input_token_details": {"cache_read": 200},
+            "output_token_details": {"reasoning": 20},
+        }
+        response.response_metadata = {"model_provider": "openai"}
+        return response
 
 
 @dataclass
@@ -2082,6 +2117,138 @@ def test_standard_trace_records_malformed_json_error_details(
     assert standard_rows[-1]["problem_code"] == "network_blocked"
     assert standard_rows[-1]["error_type"] == "RuntimeError"
     assert standard_rows[-1]["error_message"] == "malformed json payload"
+
+
+def test_runtime_observation_records_each_physical_retry_and_prices_actual_target(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+):
+    target_id = "opencode_deepseek_v4_flash"
+    _set_targets_and_bindings(
+        monkeypatch,
+        targets={
+            "targets": [
+                {
+                    "target_id": target_id,
+                    "contract": "openai_compatible",
+                    "base_url": "https://opencode.ai/zen/go/v1",
+                    "model": "deepseek-v4-flash",
+                    "credentials": [{"credential_id": "primary", "api_key": "runtime-key"}],
+                    "retry_attempts": 2,
+                }
+            ]
+        },
+        bindings=_required_bindings(target_id),
+    )
+    adapter = _UsageSequencedAdapter(["not valid json", '{"ok": true}'])
+    monkeypatch.setitem(CONTRACT_ADAPTERS, "openai_compatible", adapter)
+
+    output_dir = tmp_path / "output" / "observed-runtime"
+    with run_observation_scope(
+        output_dir,
+        "job-observed",
+        run_attempt_id="attempt-observed",
+        book_id="observed-runtime",
+        mechanism_key="attentional_v2",
+        job_kind="read",
+        stage="read",
+    ):
+        with chapter_observation_scope("chapter-1", chapter_index=0):
+            with reading_cycle_scope("cycle-1") as cycle:
+                cycle.select_unit("unit-1", 500, 0)
+                with llm_invocation_scope(
+                    profile_id=DEFAULT_RUNTIME_PROFILE_ID,
+                    trace_context=runtime_trace_context(
+                        output_dir,
+                        mechanism_key="attentional_v2",
+                        stage="digest",
+                        node="reaction",
+                    ),
+                ):
+                    assert invoke_json("system", "user", {}) == {"ok": True}
+                cycle.settle("accepted")
+
+    ledger_path = observation_ledger_file(output_dir, "job-observed")
+    events, malformed = load_observation_events(ledger_path)
+    attempts = [
+        event
+        for event in events
+        if event.get("event_kind") == "llm_provider_attempt_finished"
+    ]
+    attempt_starts = [
+        event
+        for event in events
+        if event.get("event_kind") == "llm_provider_attempt_started"
+    ]
+    calls = [
+        event
+        for event in events
+        if event.get("event_kind") == "llm_logical_call_finished"
+    ]
+    assert malformed == 0
+    assert len(adapter.calls) == 2
+    assert len(attempt_starts) == 2
+    assert [event["attempt_id"] for event in attempt_starts] == [
+        event["attempt_id"] for event in attempts
+    ]
+    assert [event["attempt_index"] for event in attempts] == [1, 2]
+    assert all(event["status"] == "ok" for event in attempts)
+    assert all(event["usage"]["status"] == "complete" for event in attempts)
+    assert all(event["pricing"]["target_id"] == target_id for event in attempts)
+    assert all(event["cost"]["estimated_usage_value_usd"] == "0.00014056" for event in attempts)
+    assert all(event["cost"]["actual_billed_cost"] is None for event in attempts)
+    assert all(event["stage"] == "digest" and event["node"] == "reaction" for event in attempts)
+    assert len(calls) == 1 and calls[0]["attempt_count"] == 2
+
+    standard = _read_jsonl(runtime_artifacts.llm_standard_trace_file(output_dir))[-1]
+    assert standard["physical_attempt_count"] == 2
+    assert standard["correlation"]["unit_id"] == "unit-1"
+    assert standard["cost"]["estimated_usage_value_usd"] == "0.00014056"
+    metrics = json.loads((ledger_path.parent / "metrics.json").read_text(encoding="utf-8"))
+    assert metrics["retry_amplification"] == "2"
+    assert metrics["data_quality"]["provider_attempt_finish_coverage"] == "1"
+    assert metrics["retry_waste"]["attempt_count"] == 1
+
+
+def test_observation_ledger_failure_does_not_retry_or_change_provider_result(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+):
+    target_id = "opencode_deepseek_v4_flash"
+    _set_targets_and_bindings(
+        monkeypatch,
+        targets={
+            "targets": [
+                {
+                    "target_id": target_id,
+                    "contract": "openai_compatible",
+                    "base_url": "https://opencode.ai/zen/go/v1",
+                    "model": "deepseek-v4-flash",
+                    "credentials": [{"credential_id": "primary", "api_key": "runtime-key"}],
+                    "retry_attempts": 2,
+                }
+            ]
+        },
+        bindings=_required_bindings(target_id),
+    )
+    adapter = _UsageSequencedAdapter(['{"ok": true}'])
+    monkeypatch.setitem(CONTRACT_ADAPTERS, "openai_compatible", adapter)
+    gateway_module = sys.modules["src.reading_runtime.llm_gateway"]
+    monkeypatch.setattr(
+        gateway_module,
+        "record_llm_attempt",
+        lambda **_values: (_ for _ in ()).throw(OSError("ledger unavailable")),
+    )
+
+    output_dir = tmp_path / "output" / "ledger-failure"
+    with run_observation_scope(output_dir, "job-ledger-failure", mechanism_key="attentional_v2"):
+        with llm_invocation_scope(
+            profile_id=DEFAULT_RUNTIME_PROFILE_ID,
+            trace_context=runtime_trace_context(output_dir, mechanism_key="attentional_v2"),
+        ):
+            assert invoke_json("system", "user", {}) == {"ok": True}
+
+    assert adapter.calls == [target_id]
 
 
 def test_openai_connection_error_records_private_provider_diagnostics(

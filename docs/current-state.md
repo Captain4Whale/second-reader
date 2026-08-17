@@ -7,9 +7,16 @@ Update when: the current objective, active tasks, blockers, active jobs, open de
 
 This file is authoritative for durable current status. Do not keep unique active-state information only in `docs/agent-handoff.md`.
 
-Last verified: `2026-07-05T19:42:00+08:00`
+Last verified: `2026-08-17T09:42:00+08:00`
 
 ## Current Objective
+- Runtime observability v1 is implemented as an infrastructure lane under `TASK-RUNTIME-OBSERVABILITY-COST-V1` and `DEC-154`; only the final live-provider whole-book acceptance remains externally blocked.
+  - the canonical observability record is a local append-only JSONL fact ledger with deterministic JSON/Markdown reports; Phoenix is an optional derived trace UI rather than job/checkpoint truth
+  - unit-bearing work uses `reading.run_attempt -> reading.chapter -> reading.unit_attempt -> llm.call -> llm.attempt`; survey/parse/chapter-consolidation work may be chapter-only without a fabricated unit span
+  - OTLP/HTTP export is disabled by default and uses the explicit `READING_OBSERVABILITY_*` environment boundary when enabled
+  - the local Python Phoenix sidecar is isolated under `reading-companion-backend/state/phoenix/`, binds only to loopback, and is never installed or started by normal app commands
+  - OpenCode Go subscription targets keep `actual_billed_cost = null`, while official published reference rates still support versioned `estimated_usage_value_usd`; unknown usage/cost coverage must remain explicit
+  - deterministic product-path and loopback Phoenix proofs now cover accounting, aggregation, privacy, persistence, and non-fatal collector loss; the remaining public-book proof is blocked because the configured DeepSeek target requires a regional workspace opt-in and the configured Mimo fallback reports insufficient credits
 - The `Ingest -> Digest -> Reading Runner settlement` mechanism reframe is implemented; current work is fact alignment, smoke/diagnostic review, and calibration before any formal evaluation promotion.
   - decision ref:
     - `DEC-103`
@@ -2087,6 +2094,7 @@ Last verified: `2026-07-05T19:42:00+08:00`
 - Treat runtime viability, broader local pairwise comparison, durable-trace / re-entry comparison, and most mechanism-specific judged attribution families as paused unless one of the three kept dimensions later requires them.
 
 ## Now
+- Keep runtime observability opt-in and evidence-first: finish the manual ledger/export wiring, then verify one bounded local trace/report without changing mechanism behavior or making Phoenix part of app readiness.
 - Treat `attentional_v2` as the current default mechanism and `iterator_v1` as the supported fallback / legacy-resume path.
 - The active Phase 9 move is now split across two coordinated surfaces:
   - the completed notes-guided retry3 judged lane is now available as partial evidence only
@@ -3473,6 +3481,7 @@ Last verified: `2026-07-05T19:42:00+08:00`
   - `reading-companion-backend/src/attentional_v2/resume.py` now recreates the thin `runtime_shell.json` envelope if it is missing during position persistence
 
 ## Next
+- After provider access is restored, finish the one remaining public-book live acceptance and inspect its canonical ledger/report before treating the first measured efficiency figures as a baseline; do not change region or billing settings automatically.
 - Launch the next decisive chapter/excerpt comparison on the frozen clustered benchmark:
   - chapter lane:
     - run the judged `chapter_core` comparison on the `4` frozen clustered chapters
@@ -3502,6 +3511,7 @@ Last verified: `2026-07-05T19:42:00+08:00`
   - run `make library-source-intake`
 
 ## Blocked
+- `TASK-RUNTIME-OBSERVABILITY-COST-V1` has passed deterministic product-path and Phoenix smoke validation, but its final live public-book acceptance is blocked by external provider access: DeepSeek returns a regional opt-in error and Mimo returns insufficient credits. No eval runner is involved.
 - No gate-review blocker remains ahead of the remaining decisive mechanism-eval lane.
 - Formal curated promotion from the modern private-library supplement remains intentionally paused under the recorded `hold_for_backlog_rescue` outcome and requires genuinely new benchmark-strengthening evidence before reopening.
 - The later frontend/API retirement of section-first chapter/detail and marks surfaces remains blocked on completion of the compatibility cutover, not on reopening Phase 9 scope.
@@ -3564,7 +3574,7 @@ Last verified: `2026-07-05T19:42:00+08:00`
 - none
 
 ## Blocked Task IDs
-- none
+- `TASK-RUNTIME-OBSERVABILITY-COST-V1`
 
 ## Active Job IDs
 - none
@@ -3588,7 +3598,7 @@ Last verified: `2026-07-05T19:42:00+08:00`
 ## Machine-Readable Appendix
 ```json
 {
-  "updated_at": "2026-07-01T11:49:40Z",
+  "updated_at": "2026-08-17T00:55:00Z",
   "last_updated_by": "codex",
   "active_task_ids": [
     "TASK-ATTENTIONAL-V2-STRUCTURAL-REWORK",
@@ -3597,10 +3607,13 @@ Last verified: `2026-07-05T19:42:00+08:00`
     "TASK-ACCUMULATION-BENCHMARK-V2"
   ],
   "waiting_task_ids": [],
-  "blocked_task_ids": [],
+  "blocked_task_ids": [
+    "TASK-RUNTIME-OBSERVABILITY-COST-V1"
+  ],
   "active_job_ids": [],
   "open_decision_ids": [],
   "detail_refs": [
+    "docs/implementation/runtime-observability/README.md",
     "docs/backend-reader-evaluation.md",
     "reading-companion-backend/docs/evaluation/README.md",
     "reading-companion-backend/docs/evaluation/user_level/README.md",
@@ -3690,6 +3703,7 @@ Last verified: `2026-07-05T19:42:00+08:00`
     "reading-companion-backend/eval/review_packets/archive/attentional_v2_private_library_excerpt_en_question_aligned_v1__scratch__closed_loop_full_smoke_en_broader_compactadjudication_repeat_20260330__initial_review__closed_loop_full_smoke_en_broader_compactadjudication_repeat_20260330/llm_review_runs/llm_review__20260330-175048__ae50caff2084/summary.json"
   ],
   "truth_refs": [
+    "docs/implementation/runtime-observability/README.md",
     "docs/source-of-truth-map.md",
     "docs/product-overview.md",
     "docs/backend-reading-mechanism.md",

@@ -14,7 +14,6 @@ from src.iterator_reader.prompts import ITERATOR_V1_PROMPTS
 from src.prompts.capabilities.book_analysis import BOOK_ANALYSIS_PROMPTS
 from src.iterator_reader.storage import (
     existing_activity_file,
-    existing_book_manifest_file,
     existing_chapter_result_file,
     existing_reader_memory_file,
     existing_run_state_file,
@@ -90,6 +89,9 @@ class IteratorV1Mechanism:
             analysis_policy=analysis_policy,  # type: ignore[arg-type]
             prompt_set=ITERATOR_V1_PROMPTS,
             book_analysis_prompt_set=BOOK_ANALYSIS_PROMPTS,
+            runtime_observability_enabled=not bool(
+                mechanism_config.get("persist_normalized_eval_bundle")
+            ),
         )
         book_document = load_book_document(existing_book_document_file(output_dir))
         normalized_eval_bundle = _normalized_eval_bundle(

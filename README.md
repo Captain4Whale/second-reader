@@ -30,12 +30,19 @@ The project is maintained as one product with two sub-applications:
    - `make start-local-stack`
    - `make status-local-stack`
    - `make stop-local-stack`
+9. Optional local runtime traces use a separately managed Phoenix sidecar:
+   - `make setup-phoenix`
+   - `make start-phoenix`
+   - `make status-phoenix`
+   - `make stop-phoenix`
 
 ## Default Local URLs
 - Frontend: `http://localhost:5173`
 - Backend: `http://localhost:8000`
 - Backend docs: `http://localhost:8000/docs`
 - Backend health: `http://localhost:8000/api/health`
+- Optional Phoenix UI: `http://127.0.0.1:6006`
+- Optional Phoenix OTLP/HTTP collector: `http://127.0.0.1:6006/v1/traces`
 
 ## Environment
 Backend environment lives in `reading-companion-backend/.env`.
@@ -55,6 +62,11 @@ Important backend variables:
 - `BACKEND_CORS_ORIGINS`
 - `BACKEND_HOST`
 - `BACKEND_PORT`
+- optional runtime telemetry switch: `READING_OBSERVABILITY_OTLP_ENABLED`
+- optional OTLP/HTTP endpoint: `READING_OBSERVABILITY_OTLP_ENDPOINT`
+- optional trace project: `READING_OBSERVABILITY_PROJECT`
+- optional OpenTelemetry service identity: `OTEL_SERVICE_NAME`
+- privacy controls: `OPENINFERENCE_HIDE_INPUTS`, `OPENINFERENCE_HIDE_OUTPUTS`, `OPENINFERENCE_HIDE_LLM_INVOCATION_PARAMETERS`, `OPENINFERENCE_HIDE_LLM_TOOLS`, `OPENINFERENCE_HIDE_EMBEDDING_VECTORS`
 
 Relative backend config paths resolve from `reading-companion-backend/`, not from the shell cwd.
 - this applies to `BACKEND_RUNTIME_ROOT`, `LLM_TARGETS_PATH`, `LLM_PROFILE_BINDINGS_PATH`, and `LLM_REGISTRY_PATH`
@@ -259,6 +271,10 @@ Important frontend variables:
 - `make start-local-stack`: start both detached services so they survive Codex or terminal restarts
 - `make status-local-stack`: show detached backend/frontend status
 - `make stop-local-stack`: stop the detached backend/frontend services
+- `make setup-phoenix`: create the isolated repo-local Phoenix virtualenv and install pinned server `20.2.1`
+- `make start-phoenix`: explicitly start the loopback-only Phoenix collector/UI; never called by normal app launchers
+- `make status-phoenix`: show installation, PID, UI readiness, endpoints, and state path without starting Phoenix
+- `make stop-phoenix`: stop only the PID verified as the repo-local Phoenix sidecar and preserve its data
 - `make test`: run backend tests, frontend typecheck/build, and contract drift checks
 - `make contract-check`: verify docs appendix, backend OpenAPI snapshot, and frontend contract guards
 - `make e2e`: run the fixture-backed upload -> analysis -> book -> chapter -> marks Playwright flow
@@ -285,6 +301,39 @@ Behavior:
 - both services write logs and pid files under `reading-companion-backend/state/local_stack/`
 - this mode is detached from the current shell, but it is not a full supervisor
 - if one service crashes, it stays down until you restart it
+
+## Optional Local Runtime Observability
+
+Phoenix is an optional local sidecar for inspecting OpenTelemetry/OpenInference-compatible runtime traces. It is deliberately separate from the backend/frontend stack.
+
+Install and operate it explicitly:
+
+```bash
+make setup-phoenix
+make start-phoenix
+make status-phoenix
+make stop-phoenix
+```
+
+Behavior and boundaries:
+
+- `make setup-phoenix` installs `arize-phoenix==20.2.1` into `reading-companion-backend/state/phoenix/venv/`; the sidecar uses Python `>=3.12,<3.15` (or `PHOENIX_SETUP_PYTHON`) and does not modify the backend runtime virtualenv
+- Phoenix data, logs, and PID state stay under the ignored `reading-companion-backend/state/phoenix/` directory
+- the launcher binds only to loopback, keeps SQLite data across stops, disables Phoenix product telemetry, external resources, MCP, agent-assistant web/bash, sandbox-provider, and provider-playground surfaces, and does not forward backend provider credentials
+- `make dev`, `make run-demo`, and `make start-local-stack` neither install nor start Phoenix
+- normal `make setup` does not install the backend observability clients; install them explicitly with `cd reading-companion-backend && .venv/bin/python -m pip install -e ".[observability]"`
+- backend export remains off unless `READING_OBSERVABILITY_OTLP_ENABLED=1`; the sidecar may run while the application emits no traces
+- the default exporter target is the full OTLP/HTTP endpoint `http://127.0.0.1:6006/v1/traces`
+- the privacy-first exporter omits book/prompt/output content and embedding vectors while preserving allowlisted model identity, timing, usage, error type, and domain IDs
+- the append-only local fact ledger and generated JSON/Markdown reports remain runtime-observability truth; Phoenix is a derived operator view, and collector failure must not change ledger/report writes, reading status, or resume behavior
+
+Optional local port override:
+
+```bash
+PHOENIX_PORT=6007 PHOENIX_GRPC_PORT=4318 make start-phoenix
+```
+
+If the HTTP port changes, update `READING_OBSERVABILITY_OTLP_ENDPOINT` to the matching `/v1/traces` URL before starting a telemetry-enabled backend process. The full span hierarchy, aggregation, privacy, retry, and cost rules live in `docs/implementation/runtime-observability/README.md`.
 
 ## Dataset Source Intake
 Use the managed library inbox for future private/public source additions.

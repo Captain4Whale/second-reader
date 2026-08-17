@@ -22,6 +22,7 @@ from src.reading_runtime import (
     parse_book,
     read_book,
 )
+from src.reading_runtime.job_lease import JobLeaseLost, lease_context_from_environment
 
 MIN_SUPPORTED_PYTHON = (3, 11)
 
@@ -362,7 +363,12 @@ def main() -> int:
     _require_supported_python()
     parser = build_parser()
     args = parser.parse_args()
-    return args.func(args)
+    try:
+        with lease_context_from_environment():
+            return args.func(args)
+    except JobLeaseLost as exc:
+        print(f"Error: {exc}", file=sys.stderr)
+        return 75
 
 
 if __name__ == "__main__":

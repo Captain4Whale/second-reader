@@ -7,7 +7,7 @@ Update when: task status, priority, blockers, decision refs, job refs, evidence 
 
 This document is the human-readable companion to `docs/tasks/registry.json`.
 
-Last updated: `2026-07-05T19:42:00+08:00`
+Last updated: `2026-08-17T09:42:00+08:00`
 
 ## Status Values
 - `active`
@@ -783,6 +783,44 @@ Last updated: `2026-07-05T19:42:00+08:00`
   - `reading-companion-backend/state/job_registry/jobs/bgjob_full_long_span_vnext_post_slice8h_20260518_parallel5.json`
   - `reading-companion-backend/state/job_registry/logs/bgjob_full_long_span_vnext_post_slice8h_20260518_parallel5.log`
   - `reading-companion-backend/eval/runs/attentional_v2/attentional_v2_full_long_span_vnext_post_slice8h_20260518_parallel5/meta/selected_windows.json`
+
+## Blocked
+
+### `TASK-RUNTIME-OBSERVABILITY-COST-V1` — Land and validate runtime observability and cost v1
+- Status: `blocked`
+- Lane: `runtime_observability`
+- Priority: `high`
+- Detail: `docs/implementation/runtime-observability/README.md`
+- Blocked by: final live public-book acceptance requires provider-account action outside the repository. DeepSeek returned a regional workspace opt-in error; the configured Mimo fallback returned insufficient credits. Codex must not change region or billing settings automatically.
+- Next: After the operator restores one configured provider, rerun the ordinary product entrypoint on `reading-companion-backend/state/library_sources/zh/beiying_public_v2.epub`, then inspect its ledger, reports, and Phoenix trace. Do not invoke any eval runner, dataset, Judge, or evaluation ledger.
+- Jobs: none
+- Evidence:
+  - `DEC-154`
+  - `Makefile`
+  - `README.md`
+  - `scripts/phoenix-common.sh`
+  - `scripts/setup-phoenix.sh`
+  - `scripts/start-phoenix.sh`
+  - `scripts/status-phoenix.sh`
+  - `scripts/stop-phoenix.sh`
+  - `reading-companion-backend/.env.example`
+  - `reading-companion-backend/pyproject.toml`
+  - `reading-companion-backend/config/llm_pricing.json`
+  - `reading-companion-backend/src/reading_runtime/job_lease.py`
+  - `reading-companion-backend/src/reading_runtime/llm_telemetry.py`
+  - `reading-companion-backend/src/reading_runtime/llm_usage.py`
+  - `reading-companion-backend/src/reading_runtime/llm_pricing.py`
+  - `reading-companion-backend/src/reading_runtime/observation_context.py`
+  - `reading-companion-backend/src/reading_runtime/observation_ledger.py`
+  - `reading-companion-backend/src/reading_runtime/observation_metrics.py`
+  - `reading-companion-backend/src/reading_runtime/observability.py`
+  - `reading-companion-backend/tests/test_runtime_observability_core.py`
+  - `reading-companion-backend/tests/test_runtime_observability_e2e.py`
+  - `docs/implementation/runtime-observability/README.md`
+  - `docs/runtime-modes.md`
+  - `docs/backend-sequential-lifecycle.md`
+  - `docs/source-of-truth-map.md`
+  - `docs/history/decision-log.md`
 
 ## Waiting
 

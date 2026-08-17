@@ -77,9 +77,11 @@ def test_iterator_mechanism_read_uses_iterator_and_book_analysis_prompt_bundles(
         analysis_policy=None,
         prompt_set=ITERATOR_V1_PROMPTS,
         book_analysis_prompt_set=BOOK_ANALYSIS_PROMPTS,
+        runtime_observability_enabled=True,
     ):
         captured["prompt_set"] = prompt_set
         captured["book_analysis_prompt_set"] = book_analysis_prompt_set
+        captured["runtime_observability_enabled"] = runtime_observability_enabled
         return {"book": "Demo", "author": "Author", "chapters": []}, tmp_path, False
 
     monkeypatch.setattr(iterator_v1_module, "iterator_read_book", fake_read_book)
@@ -98,5 +100,5 @@ def test_iterator_mechanism_read_uses_iterator_and_book_analysis_prompt_bundles(
 
     assert captured["prompt_set"] is ITERATOR_V1_PROMPTS
     assert captured["book_analysis_prompt_set"] is BOOK_ANALYSIS_PROMPTS
+    assert captured["runtime_observability_enabled"] is True
     assert result.mechanism.key == "iterator_v1"
-

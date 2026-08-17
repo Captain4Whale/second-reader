@@ -1,6 +1,6 @@
 SHELL := /bin/bash
 
-.PHONY: doctor setup dev-backend dev-frontend dev run-demo start-backend-detached start-frontend-detached start-local-stack stop-local-stack status-local-stack test build contract-check agent-check agent-context e2e preview-reactions backfill-covers dataset-review-pipeline library-source-intake closed-loop-benchmark-curation
+.PHONY: doctor setup setup-phoenix dev-backend dev-frontend dev run-demo start-backend-detached start-frontend-detached start-local-stack stop-local-stack status-local-stack start-phoenix stop-phoenix status-phoenix test build contract-check agent-check agent-context e2e preview-reactions backfill-covers dataset-review-pipeline library-source-intake closed-loop-benchmark-curation
 
 DATASET_REVIEW_PIPELINE_ARGS ?=
 LIBRARY_SOURCE_INTAKE_ARGS ?=
@@ -11,6 +11,9 @@ doctor:
 
 setup:
 	./scripts/setup.sh
+
+setup-phoenix:
+	./scripts/setup-phoenix.sh
 
 dev-backend:
 	./scripts/dev-backend.sh
@@ -38,6 +41,15 @@ stop-local-stack:
 
 status-local-stack:
 	./scripts/status-local-stack.sh
+
+start-phoenix:
+	./scripts/start-phoenix.sh
+
+stop-phoenix:
+	./scripts/stop-phoenix.sh
+
+status-phoenix:
+	./scripts/status-phoenix.sh
 
 test:
 	./scripts/test.sh

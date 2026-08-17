@@ -4265,3 +4265,45 @@ This new direction is design frozen but not yet implemented as a formal benchmar
 - `docs/implementation/new-reading-mechanism/unit-memory-retrieval-repair-validation-plan.md`
 - `docs/current-state.md`
 - `docs/tasks/registry.md`
+
+## Entry 152
+**ID**: DEC-154
+**Status**: active
+
+**Decision / Inflection**: Establish runtime observability v1 as a canonical local fact ledger plus optional manual OTLP export to a repo-local Phoenix sidecar.
+
+**Period**: August 16, 2026, when the project needed credible book/chapter/unit/LLM latency, usage, retry, and cost evidence without turning a third-party trace UI into lifecycle truth or letting observability change long-running reader behavior.
+
+**Problem**: Existing mechanism-private audits and LLM diagnostics are useful for reader debugging but do not provide one retry-safe cross-provider accounting model from actual model attempt through unit, chapter, and book run. Framework auto-instrumentation would make duplicate model spans and retry billing hard to audit, while relying only on Phoenix would lose canonical evidence whenever export is disabled or the collector is unavailable. Subscription-backed provider access also requires separating official reference usage value from actual billed cash cost.
+
+**Decision**: Runtime observability v1 uses a project-owned append-only JSONL fact ledger as canonical observability truth and deterministic JSON/Markdown reports as its rollups. Unit-bearing manual spans use `reading.run_attempt -> reading.chapter -> reading.unit_attempt -> llm.call -> llm.attempt`; legitimate survey/parse/chapter-only work omits the unit layer instead of fabricating one. Automatic LangChain, provider-SDK, and FastAPI instrumentors are not part of v1. OTLP/HTTP export is best-effort, disabled by default through `READING_OBSERVABILITY_OTLP_ENABLED=0`, and targets an optional Phoenix UI/collector when explicitly enabled. Phoenix server `20.2.1` lives in its own repo-local Python virtualenv under `reading-companion-backend/state/phoenix/`, binds only to loopback, preserves SQLite data, and is installed/started/stopped only by explicit operator commands. Provider pricing uses effective-dated official USD source snapshots: OpenCode Go reference rates can produce `estimated_usage_value_usd`, while `actual_billed_cost` remains null unless invoice evidence supports a defensible allocation.
+
+**Boundary**: This does not make Phoenix, OpenTelemetry, or the observability ledger authoritative for product job state, checkpoint validity, cursor settlement, reader output, or resume compatibility. It does not change public API contracts or evaluation methodology. Normal `make setup`, backend/frontend launchers, demo mode, and detached app-stack mode never install or start Phoenix. Collector/export failure must remain non-fatal and cannot suppress canonical ledger/report writes or trigger another provider call.
+
+**Why this path won**: A small append-only domain ledger makes retries, unknown/provider-specific usage, effective-dated pricing, and partial-cost completeness reviewable with ordinary files. Manual spans keep the same identities visible in Phoenix without duplicate framework traces. Integrating Phoenix avoids building a bespoke dashboard/query service, while keeping the sidecar optional and derived preserves local operation, privacy, and recovery correctness when it is absent.
+
+**Primary evidence**:
+- `reading-companion-backend/src/reading_runtime/job_lease.py`
+- `reading-companion-backend/src/reading_runtime/observation_context.py`
+- `reading-companion-backend/src/reading_runtime/observation_ledger.py`
+- `reading-companion-backend/src/reading_runtime/observation_metrics.py`
+- `reading-companion-backend/src/reading_runtime/llm_usage.py`
+- `reading-companion-backend/src/reading_runtime/llm_pricing.py`
+- `reading-companion-backend/src/reading_runtime/observability.py`
+- `reading-companion-backend/src/reading_runtime/llm_telemetry.py`
+- `reading-companion-backend/config/llm_pricing.json`
+- `reading-companion-backend/pyproject.toml`
+- `reading-companion-backend/.env.example`
+- `scripts/phoenix-common.sh`
+- `scripts/setup-phoenix.sh`
+- `scripts/start-phoenix.sh`
+- `scripts/status-phoenix.sh`
+- `scripts/stop-phoenix.sh`
+- `Makefile`
+- `README.md`
+- `docs/implementation/runtime-observability/README.md`
+- `docs/runtime-modes.md`
+- `docs/backend-sequential-lifecycle.md`
+- `docs/source-of-truth-map.md`
+- `docs/current-state.md`
+- `docs/tasks/registry.md`

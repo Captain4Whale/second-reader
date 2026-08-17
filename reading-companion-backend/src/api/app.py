@@ -11,7 +11,6 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import FileResponse
 
 from src.api.contract import (
-    canonical_book_path,
     resolve_book_id,
     resolve_reaction_id,
     to_api_book_id,
@@ -162,6 +161,12 @@ async def upload_epub(
     if mechanism_key:
         provision_kwargs["mechanism_key"] = mechanism_key
     provisional_book_id = provision_uploaded_book(upload_path, **provision_kwargs)
+    if not provisional_book_id:
+        raise ApiError(
+            status=500,
+            code="INTERNAL_ERROR",
+            message="Uploaded book could not be provisioned safely; no background worker was started.",
+        )
     if get_backend_test_mode() and get_backend_test_fixture_profile() == "e2e":
         record = launch_e2e_fixture_job(upload_path, upload_filename=filename, root=_root(), start_mode=start_mode)
     else:

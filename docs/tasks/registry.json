@@ -1,7 +1,58 @@
 {
   "version": 1,
-  "updated_at": "2026-07-05T19:42:00+08:00",
+  "updated_at": "2026-08-17T09:42:00+08:00",
   "tasks": [
+    {
+      "id": "TASK-RUNTIME-OBSERVABILITY-COST-V1",
+      "title": "Land and validate runtime observability and cost v1",
+      "status": "blocked",
+      "lane": "runtime_observability",
+      "priority": "high",
+      "detail_ref": "docs/implementation/runtime-observability/README.md",
+      "truth_refs": [
+        "docs/implementation/runtime-observability/README.md",
+        "docs/runtime-modes.md",
+        "docs/backend-sequential-lifecycle.md",
+        "docs/source-of-truth-map.md"
+      ],
+      "decision_refs": [
+        "DEC-154"
+      ],
+      "job_refs": [],
+      "acceptance_ref": "docs/implementation/runtime-observability/README.md",
+      "next_action": "After the operator restores one configured provider, rerun the ordinary product entrypoint on `reading-companion-backend/state/library_sources/zh/beiying_public_v2.epub`, then inspect its ledger, reports, and Phoenix trace. Do not invoke any eval runner, dataset, Judge, or evaluation ledger.",
+      "blocked_by": [],
+      "blocking_reason": "Final live public-book acceptance requires provider-account action outside the repository: DeepSeek returned a regional workspace opt-in error and the configured Mimo fallback returned insufficient credits.",
+      "evidence_refs": [
+        "Makefile",
+        "README.md",
+        "scripts/phoenix-common.sh",
+        "scripts/setup-phoenix.sh",
+        "scripts/start-phoenix.sh",
+        "scripts/status-phoenix.sh",
+        "scripts/stop-phoenix.sh",
+        "reading-companion-backend/.env.example",
+        "reading-companion-backend/pyproject.toml",
+        "reading-companion-backend/config/llm_pricing.json",
+        "reading-companion-backend/src/reading_runtime/job_lease.py",
+        "reading-companion-backend/src/reading_runtime/llm_telemetry.py",
+        "reading-companion-backend/src/reading_runtime/llm_usage.py",
+        "reading-companion-backend/src/reading_runtime/llm_pricing.py",
+        "reading-companion-backend/src/reading_runtime/observation_context.py",
+        "reading-companion-backend/src/reading_runtime/observation_ledger.py",
+        "reading-companion-backend/src/reading_runtime/observation_metrics.py",
+        "reading-companion-backend/src/reading_runtime/observability.py",
+        "reading-companion-backend/tests/test_runtime_observability_core.py",
+        "reading-companion-backend/tests/test_runtime_observability_e2e.py",
+        "docs/implementation/runtime-observability/README.md",
+        "docs/runtime-modes.md",
+        "docs/backend-sequential-lifecycle.md",
+        "docs/source-of-truth-map.md",
+        "docs/history/decision-log.md"
+      ],
+      "last_updated": "2026-08-17T09:42:00+08:00",
+      "last_updated_by": "codex"
+    },
     {
       "id": "TASK-SECOND-READER-INGEST-DIGEST-REFRAME-AUDIT-20260530",
       "title": "Maintain the implemented Ingest/Digest and Unit Memory mechanism track",
@@ -4099,5 +4150,5 @@
       "last_updated_by": "codex"
     }
   ],
-  "last_updated": "2026-07-05T17:43:29+08:00"
+  "last_updated": "2026-08-17T09:42:00+08:00"
 }

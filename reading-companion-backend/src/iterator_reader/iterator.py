@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import contextvars
 from concurrent.futures import FIRST_COMPLETED, Future, ThreadPoolExecutor, wait
 from contextlib import nullcontext
 from dataclasses import dataclass
@@ -17,8 +18,15 @@ from src.config import (
     get_backend_version,
     get_reader_resume_compat_version,
 )
-from src.reading_runtime.job_concurrency import resolve_runtime_tuning_defaults
+from src.reading_runtime.job_concurrency import resolve_runtime_tuning_defaults, submit_inherited_context
+from src.reading_runtime.job_lease import assert_current_lease
 from src.reading_runtime.llm_registry import DEFAULT_RUNTIME_PROFILE_ID
+from src.reading_runtime.observation_context import (
+    chapter_observation_scope,
+    current_observation_context,
+    product_run_observation_scope,
+    reading_cycle_scope,
+)
 from .frontend_artifacts import (
     append_activity_event,
     append_deduped_activity_event,
@@ -80,7 +88,6 @@ from .storage import (
     save_structure,
     save_json,
     segment_reference,
-    segment_checkpoint_file,
     structure_file,
 )
 
@@ -775,10 +782,26 @@ class BackgroundSegmentationCoordinator:
         self.io_lock = io_lock
         self.condition = threading.Condition(io_lock)
         self.stop_event = threading.Event()
-        self.thread = threading.Thread(target=self._run_loop, name=f"segmenter-{output_dir.name}", daemon=True)
+        inherited_context = (
+            contextvars.copy_context() if current_observation_context() is not None else None
+        )
+        thread_target = (
+            (lambda: inherited_context.run(self._run_loop))
+            if inherited_context is not None
+            else self._run_loop
+        )
+        self.thread = threading.Thread(
+            target=thread_target,
+            name=f"segmenter-{output_dir.name}",
+            daemon=True,
+        )
         self.chapter_by_id = {
             int(chapter.get("id", 0)): chapter
             for chapter in selected_chapters
+        }
+        self.chapter_index_by_id = {
+            int(chapter.get("id", 0)): index
+            for index, chapter in enumerate(selected_chapters)
         }
         self.segmented_ids = {
             int(chapter.get("id", 0))
@@ -814,12 +837,12 @@ class BackgroundSegmentationCoordinator:
         self.thread.start()
 
     def stop(self) -> None:
-        """Stop the background scheduler and wait for the thread to exit."""
+        """Stop scheduling and drain started workers before the product run exits."""
         self.stop_event.set()
         with self.condition:
             self.condition.notify_all()
         if self.thread.is_alive():
-            self.thread.join(timeout=1.0)
+            self.thread.join()
 
     def raise_if_failed(self) -> None:
         """Raise the first stored segmentation failure."""
@@ -933,6 +956,29 @@ class BackgroundSegmentationCoordinator:
             },
         )
 
+    def _segment_chapter(
+        self,
+        chapter_id: int,
+        context: dict[str, object],
+        chapter_ref: str,
+    ) -> StructureChapter:
+        """Run one parse-stage call with inherited product correlation."""
+
+        with chapter_observation_scope(
+            str(chapter_id),
+            chapter_index=self.chapter_index_by_id.get(chapter_id),
+            stage="parse",
+            node="semantic_segmentation",
+        ):
+            return segment_context_into_chapter(
+                self.output_dir,
+                context,
+                progress=lambda message: print(
+                    f"  ├─ [{chapter_ref}] {message}",
+                    flush=True,
+                ),
+            )
+
     def _run_loop(self) -> None:
         executor = ThreadPoolExecutor(max_workers=self.tuning.segment_workers_when_reader_blocked, thread_name_prefix="segment")
         futures: dict[Future[StructureChapter], int] = {}
@@ -941,6 +987,10 @@ class BackgroundSegmentationCoordinator:
                 with self.condition:
                     if self.error is not None:
                         self.condition.notify_all()
+                        return
+                    if self.stop_event.is_set():
+                        for future in futures:
+                            future.cancel()
                         return
 
                     worker_limit = self._current_worker_limit_locked()
@@ -966,14 +1016,12 @@ class BackgroundSegmentationCoordinator:
                         )
                         self._persist_parse_state_locked()
                         futures[
-                            executor.submit(
-                                segment_context_into_chapter,
-                                self.output_dir,
+                            submit_inherited_context(
+                                executor,
+                                self._segment_chapter,
+                                chapter_id,
                                 context,
-                                progress=lambda message, chapter_ref=chapter_reference(chapter): print(
-                                    f"  ├─ [{chapter_ref}] {message}",
-                                    flush=True,
-                                ),
+                                chapter_reference(chapter),
                             )
                         ] = chapter_id
 
@@ -1028,7 +1076,10 @@ class BackgroundSegmentationCoordinator:
                         )
                         self.condition.notify_all()
         finally:
-            executor.shutdown(wait=False, cancel_futures=True)
+            # A running provider call cannot be cancelled safely. Drain it so
+            # its finished observation is written before the enclosing run
+            # emits final metrics and closes the root span.
+            executor.shutdown(wait=True, cancel_futures=True)
 
 
 def _run_single_chapter(
@@ -1108,7 +1159,7 @@ def _run_single_chapter(
     elif checkpoint_path.exists():
         checkpoint_path.unlink(missing_ok=True)
 
-    for segment in chapter.get("segments", []):
+    for segment_index, segment in enumerate(chapter.get("segments", [])):
         segment_id = segment.get("id", "")
         if allow_resume and segment_id in resumed_segment_map:
             rendered = resumed_segment_map[segment_id]
@@ -1169,82 +1220,92 @@ def _run_single_chapter(
 
         progress(_read_progress_event(shown_segment_id, str(segment.get("text", "") or ""), str(segment.get("summary", "") or "")))
         chapter_index, total_chapters, nearby_outline = _chapter_position_context(structure, chapter)
-        state = create_reader_state(
-            book_title=str(structure.get("book", "") or ""),
-            author=str(structure.get("author", "") or ""),
-            chapter_title=chapter.get("title", ""),
-            chapter_ref=chapter_reference(chapter),
-            chapter_index=chapter_index,
-            total_chapters=total_chapters,
-            segment_id=segment.get("id", ""),
-            segment_ref=shown_segment_id,
-            segment_summary=segment.get("summary", ""),
-            segment_text=segment.get("text", ""),
-            memory=memory,
-            output_language=structure.get("output_language", "en"),
-            user_intent=user_intent,
-            skill_policy=skill_policy,
-            budget=segment_budget(chapter_budget_state, budget_policy),
-            max_revisions=int(budget_policy.get("max_revisions", 2)),
-            primary_role=str(chapter.get("primary_role", "body") or "body"),
-            role_tags=list(chapter.get("role_tags", [])),
-            role_confidence=str(chapter.get("role_confidence", "low") or "low"),
-            section_heading=str(segment.get("section_heading", "") or ""),
-            nearby_outline=nearby_outline,
-            prompt_set=prompt_set,
-        )
-        rendered, final_state = run_reader_segment(state, progress=progress)
-        rendered_segments.append(rendered)
-        memory = update_memory(
-            memory,
-            rendered,
-            chapter_ref=chapter_reference(chapter),
-            primary_role=str(chapter.get("primary_role", "body") or "body"),
-            role_tags=list(chapter.get("role_tags", [])),
-        )
-        final_budget = final_state.get("budget") or {}
-        chapter_budget_state["search_queries_remaining_in_chapter"] = max(
-            0,
-            int(
-                final_budget.get(
-                    "search_queries_remaining_in_chapter",
-                    chapter_budget_state.get("search_queries_remaining_in_chapter", 0),
-                )
-            ),
-        )
-        segment["status"] = "skipped" if rendered.get("verdict") == "skip" else "done"
-        with write_context:
-            checkpointed_at = _timestamp()
-            save_structure(structure_file(output_dir), structure)
-            save_json(
-                checkpoint_path,
-                {
-                    "backend_version": get_backend_version(),
-                    "resume_compat_version": get_reader_resume_compat_version(),
-                    "last_checkpoint_at": checkpointed_at,
-                    "checkpointed_at": checkpointed_at,
-                    "chapter_id": chapter.get("id", 0),
-                    "chapter_title": chapter.get("title", ""),
-                    "rendered_segments": rendered_segments,
-                    "memory": memory,
-                    "chapter_budget": chapter_budget_state,
-                },
+        with reading_cycle_scope(stage="reader") as unit_observation:
+            source_text = re.sub(r"\s+", " ", str(segment.get("text", "") or "")).strip()
+            unit_observation.select_unit(
+                str(segment_id or shown_segment_id),
+                len(source_text),
+                segment_index + 1,
             )
-            tracker["last_checkpoint_at"] = checkpointed_at
-        tracker["current_completed_segments"] = len(rendered_segments)
-        with write_context:
-            _write_sequential_run_state(structure, output_dir, tracker, stage="deep_reading")
-        visible_reactions = _segment_visible_reactions(rendered)
-        if visible_reactions:
+            state = create_reader_state(
+                book_title=str(structure.get("book", "") or ""),
+                author=str(structure.get("author", "") or ""),
+                chapter_title=chapter.get("title", ""),
+                chapter_ref=chapter_reference(chapter),
+                chapter_index=chapter_index,
+                total_chapters=total_chapters,
+                segment_id=segment.get("id", ""),
+                segment_ref=shown_segment_id,
+                segment_summary=segment.get("summary", ""),
+                segment_text=segment.get("text", ""),
+                memory=memory,
+                output_language=structure.get("output_language", "en"),
+                user_intent=user_intent,
+                skill_policy=skill_policy,
+                budget=segment_budget(chapter_budget_state, budget_policy),
+                max_revisions=int(budget_policy.get("max_revisions", 2)),
+                primary_role=str(chapter.get("primary_role", "body") or "body"),
+                role_tags=list(chapter.get("role_tags", [])),
+                role_confidence=str(chapter.get("role_confidence", "low") or "low"),
+                section_heading=str(segment.get("section_heading", "") or ""),
+                nearby_outline=nearby_outline,
+                prompt_set=prompt_set,
+            )
+            rendered, final_state = run_reader_segment(state, progress=progress)
+            assert_current_lease()
+            rendered_segments.append(rendered)
+            memory = update_memory(
+                memory,
+                rendered,
+                chapter_ref=chapter_reference(chapter),
+                primary_role=str(chapter.get("primary_role", "body") or "body"),
+                role_tags=list(chapter.get("role_tags", [])),
+            )
+            final_budget = final_state.get("budget") or {}
+            chapter_budget_state["search_queries_remaining_in_chapter"] = max(
+                0,
+                int(
+                    final_budget.get(
+                        "search_queries_remaining_in_chapter",
+                        chapter_budget_state.get("search_queries_remaining_in_chapter", 0),
+                    )
+                ),
+            )
+            segment["status"] = "skipped" if rendered.get("verdict") == "skip" else "done"
+            assert_current_lease()
             with write_context:
-                for activity_event in _sentence_level_mindstream_events(
-                    rendered,
-                    chapter_id=int(chapter.get("id", 0)),
-                    chapter_ref=chapter_reference(chapter),
-                    segment_id=str(segment_id),
-                    segment_ref=shown_segment_id,
-                ):
-                    append_activity_event(output_dir, activity_event)
+                checkpointed_at = _timestamp()
+                save_structure(structure_file(output_dir), structure)
+                save_json(
+                    checkpoint_path,
+                    {
+                        "backend_version": get_backend_version(),
+                        "resume_compat_version": get_reader_resume_compat_version(),
+                        "last_checkpoint_at": checkpointed_at,
+                        "checkpointed_at": checkpointed_at,
+                        "chapter_id": chapter.get("id", 0),
+                        "chapter_title": chapter.get("title", ""),
+                        "rendered_segments": rendered_segments,
+                        "memory": memory,
+                        "chapter_budget": chapter_budget_state,
+                    },
+                )
+                tracker["last_checkpoint_at"] = checkpointed_at
+            tracker["current_completed_segments"] = len(rendered_segments)
+            with write_context:
+                _write_sequential_run_state(structure, output_dir, tracker, stage="deep_reading")
+            visible_reactions = _segment_visible_reactions(rendered)
+            if visible_reactions:
+                with write_context:
+                    for activity_event in _sentence_level_mindstream_events(
+                        rendered,
+                        chapter_id=int(chapter.get("id", 0)),
+                        chapter_ref=chapter_reference(chapter),
+                        segment_id=str(segment_id),
+                        segment_ref=shown_segment_id,
+                    ):
+                        append_activity_event(output_dir, activity_event)
+            unit_observation.settle("accepted")
 
     output_language = structure.get("output_language", "en")
     chapter_reflection = run_chapter_reflection(
@@ -1485,21 +1546,22 @@ def _read_book_sequential(
                     },
                 )
             try:
-                memory = _run_single_chapter(
-                    structure=structure,
-                    output_dir=output_dir,
-                    chapter=chapter,
-                    memory=memory,
-                    user_intent=user_intent,
-                    index=index,
-                    total=total,
-                    skill_profile=skill_profile,
-                    budget_policy=budget_policy,
-                    allow_resume=continue_mode,
-                    tracker=tracker,
-                    io_lock=io_lock,
-                    prompt_set=prompt_set,
-                )
+                with chapter_observation_scope(str(chapter_id), chapter_index=index - 1):
+                    memory = _run_single_chapter(
+                        structure=structure,
+                        output_dir=output_dir,
+                        chapter=chapter,
+                        memory=memory,
+                        user_intent=user_intent,
+                        index=index,
+                        total=total,
+                        skill_profile=skill_profile,
+                        budget_policy=budget_policy,
+                        allow_resume=continue_mode,
+                        tracker=tracker,
+                        io_lock=io_lock,
+                        prompt_set=prompt_set,
+                    )
             except Exception as exc:
                 with io_lock:
                     chapter["status"] = "in_progress"
@@ -1532,8 +1594,8 @@ def _read_book_sequential(
             )
         return structure
     finally:
-        heartbeat.stop()
         coordinator.stop()
+        heartbeat.stop()
 
 
 def read_book(
@@ -1548,6 +1610,7 @@ def read_book(
     analysis_policy: BookAnalysisPolicy | None = None,
     prompt_set: IteratorV1PromptSet = ITERATOR_V1_PROMPTS,
     book_analysis_prompt_set: BookAnalysisPromptSet = BOOK_ANALYSIS_PROMPTS,
+    runtime_observability_enabled: bool = True,
 ) -> tuple[BookStructure, Path, bool]:
     """Run the outer iterator, writing checkpointed chapter markdown files."""
     structure, output_dir, created = ensure_structure_for_book(
@@ -1557,13 +1620,21 @@ def read_book(
         require_segments=False,
         prompt_set=prompt_set,
     )
-    with llm_invocation_scope(
-        profile_id=DEFAULT_RUNTIME_PROFILE_ID,
-        trace_context=runtime_trace_context(
-            output_dir,
-            mechanism_key="iterator_v1",
-            stage="read",
-            extra={"read_mode": read_mode},
+    observation_manager = (
+        product_run_observation_scope(output_dir, mechanism_key="iterator_v1", stage="read")
+        if runtime_observability_enabled
+        else nullcontext()
+    )
+    with (
+        observation_manager,
+        llm_invocation_scope(
+            profile_id=DEFAULT_RUNTIME_PROFILE_ID,
+            trace_context=runtime_trace_context(
+                output_dir,
+                mechanism_key="iterator_v1",
+                stage="read",
+                extra={"read_mode": read_mode},
+            ),
         ),
     ):
         selected_chapters = _chapter_selection(structure, chapter_number, continue_mode)

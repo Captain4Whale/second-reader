@@ -40,6 +40,11 @@ from .llm_registry import (
     get_llm_profile,
     get_llm_registry,
 )
+from .job_lease import JobLeaseLost, assert_current_lease
+from .llm_telemetry import TelemetrySpan, current_telemetry_span, telemetry_span
+from .observation_context import ObservationContext, current_observation_context
+from .observation_ledger import ObservationRecordResult
+from .observability import record_llm_attempt, record_llm_attempt_started, record_llm_call
 
 try:  # pragma: no cover - platform import guard
     import fcntl
@@ -2200,7 +2205,143 @@ def _contract_failure_error_details(audit_record: Mapping[str, Any] | None) -> d
     return {"structured_output_contract": {key: audit_record.get(key) for key in keys if key in audit_record}}
 
 
+def _record_llm_attempt_best_effort(**values: Any) -> ObservationRecordResult | None:
+    """Keep local observation failures outside provider error/retry semantics."""
+
+    if current_observation_context() is None:
+        return None
+    try:
+        return record_llm_attempt(**values)
+    except Exception:
+        return None
+
+
+def _record_llm_attempt_started_best_effort(**values: Any) -> ObservationRecordResult | None:
+    """Persist pre-dispatch evidence without changing provider call semantics."""
+
+    if current_observation_context() is None:
+        return None
+    try:
+        return record_llm_attempt_started(**values)
+    except Exception:
+        return None
+
+
+def _record_llm_call_best_effort(**values: Any) -> ObservationRecordResult | None:
+    """Keep logical-call observation failures outside reader control flow."""
+
+    if current_observation_context() is None:
+        return None
+    try:
+        return record_llm_call(**values)
+    except Exception:
+        return None
+
+
+def _observation_trace_fields(
+    context: ObservationContext | None,
+    result: ObservationRecordResult | None,
+    *,
+    physical_attempt_count: int,
+    call_span: TelemetrySpan | None,
+) -> dict[str, Any]:
+    """Build additive runtime-only fields for the compatible standard trace."""
+
+    if context is None:
+        return {}
+    event = result.event if result is not None and isinstance(result.event, Mapping) else {}
+    return {
+        "correlation": context.event_fields(),
+        "usage": _json_safe(event.get("usage")) if event.get("usage") is not None else None,
+        "pricing": _json_safe(event.get("pricing")) if event.get("pricing") is not None else None,
+        "cost": _json_safe(event.get("cost")) if event.get("cost") is not None else None,
+        "otel": {
+            "trace_id": call_span.trace_id or None,
+            "span_id": call_span.span_id or None,
+        }
+        if call_span is not None
+        else None,
+        "physical_attempt_count": max(0, int(physical_attempt_count)),
+        "observation_ledger_written": bool(result.written) if result is not None else False,
+        "observation_error": result.error if result is not None else None,
+    }
+
+
+def _set_attempt_span_facts(span: TelemetrySpan, result: ObservationRecordResult | None) -> None:
+    """Attach numeric facts only; prompts and responses never reach the exporter."""
+
+    if result is None or not isinstance(result.event, Mapping):
+        return
+    event = result.event
+    usage = event.get("usage") if isinstance(event.get("usage"), Mapping) else {}
+    cost = event.get("cost") if isinstance(event.get("cost"), Mapping) else {}
+    attributes: dict[str, object] = {
+        "llm.token_count.prompt": usage.get("input_tokens"),
+        "llm.token_count.completion": usage.get("output_tokens"),
+        "llm.token_count.total": usage.get("total_tokens"),
+        "gen_ai.usage.input_tokens": usage.get("input_tokens"),
+        "gen_ai.usage.output_tokens": usage.get("output_tokens"),
+        "llm.token_count.cache_read": usage.get("cache_read_input_tokens"),
+        "llm.token_count.cache_write": usage.get("cache_write_input_tokens"),
+        "llm.token_count.reasoning": usage.get("reasoning_tokens"),
+        "llm.usage.status": usage.get("status"),
+        "llm.cost.estimated_usage_value_usd": cost.get("estimated_usage_value_usd")
+        or cost.get("estimated_cost"),
+        "llm.cost.actual_billed_cost_usd": cost.get("actual_billed_cost_usd")
+        or cost.get("actual_billed_cost"),
+        "llm.billing.model": cost.get("billing_model"),
+    }
+    span.set_attributes({key: value for key, value in attributes.items() if value is not None})
+
+
 def _invoke_response(
+    system_prompt: str,
+    user_prompt: str,
+    *,
+    explicit_profile_id: str | None = None,
+    expect_json: bool = False,
+    messages_override: list[Any] | None = None,
+    tools: list[Mapping[str, Any]] | None = None,
+    tool_choice: str | Mapping[str, Any] | None = None,
+    invocation_options: Mapping[str, Any] | None = None,
+) -> Any:
+    observation_context = current_observation_context()
+    if observation_context is None:
+        return _invoke_response_inner(
+            system_prompt,
+            user_prompt,
+            explicit_profile_id=explicit_profile_id,
+            expect_json=expect_json,
+            messages_override=messages_override,
+            tools=tools,
+            tool_choice=tool_choice,
+            invocation_options=invocation_options,
+        )
+    with telemetry_span(
+        "llm.call",
+        span_kind="CHAIN",
+        attributes={
+            "reading.job.id": observation_context.job_id,
+            "reading.run_attempt.id": observation_context.run_attempt_id,
+            "reading.book.id": observation_context.book_id,
+            "reading.chapter.id": observation_context.chapter_id,
+            "reading.cycle.id": observation_context.reading_cycle_id,
+            "reading.unit.id": observation_context.unit_id,
+        },
+    ):
+        return _invoke_response_inner(
+            system_prompt,
+            user_prompt,
+            explicit_profile_id=explicit_profile_id,
+            expect_json=expect_json,
+            messages_override=messages_override,
+            tools=tools,
+            tool_choice=tool_choice,
+            invocation_options=invocation_options,
+        )
+
+
+def _invoke_response_inner(
     system_prompt: str,
     user_prompt: str,
     *,
@@ -2225,7 +2366,23 @@ def _invoke_response(
     call_id = uuid.uuid4().hex
     started_at = _utc_now()
     started_perf = time.perf_counter()
+    observation_context = current_observation_context()
+    call_span = current_telemetry_span() if observation_context is not None else None
+    if call_span is not None:
+        call_span.set_attributes(
+            {
+                "llm.call.id": call_id,
+                "llm.profile.id": profile.profile_id,
+                "llm.model_name": profile.model,
+                "reading.mechanism.id": trace_context.mechanism_key if trace_context else None,
+                "reading.stage.id": trace_context.stage if trace_context else None,
+                "reading.node.id": trace_context.node if trace_context else None,
+                "llm.input_messages.count": len(messages),
+            }
+        )
     attempts: list[dict[str, Any]] = []
+    physical_attempt_count = 0
+    latest_attempt_observation: ObservationRecordResult | None = None
     final_provider_id = ""
     final_contract = ""
     final_slot_id = ""
@@ -2392,7 +2549,114 @@ def _invoke_response(
                         if tools is not None or tool_choice is not None:
                             invoke_kwargs["tools"] = tools
                             invoke_kwargs["tool_choice"] = tool_choice
-                        response = adapter.invoke(messages, **invoke_kwargs)
+                        assert_current_lease()
+                        physical_attempt_count += 1
+                        provider_attempt_id = uuid.uuid4().hex
+                        provider_call_started_at = _utc_now()
+                        provider_call_started_perf = time.perf_counter()
+                        attempt_telemetry = (
+                            telemetry_span(
+                                "llm.attempt",
+                                span_kind="LLM",
+                                attributes={
+                                    "llm.call.id": call_id,
+                                    "llm.attempt.id": provider_attempt_id,
+                                    "llm.attempt.index": physical_attempt_count,
+                                    "llm.profile.id": profile.profile_id,
+                                    "llm.provider.id": provider.provider_id,
+                                    "llm.target.id": provider.provider_id,
+                                    "llm.model_name": attempt_profile.model,
+                                    "gen_ai.provider.name": provider.contract,
+                                    "gen_ai.operation.name": "chat",
+                                    "gen_ai.request.model": attempt_profile.model,
+                                },
+                            )
+                            if observation_context is not None
+                            else contextlib.nullcontext(TelemetrySpan())
+                        )
+                        with attempt_telemetry as attempt_span:
+                            _record_llm_attempt_started_best_effort(
+                                call_id=call_id,
+                                attempt_id=provider_attempt_id,
+                                attempt_index=physical_attempt_count,
+                                profile_id=profile.profile_id,
+                                provider_id=provider.provider_id,
+                                provider_contract=provider.contract,
+                                target_id=provider.provider_id,
+                                model=attempt_profile.model,
+                                stage=trace_context.stage if trace_context else None,
+                                node=trace_context.node if trace_context else None,
+                                started_at=provider_call_started_at,
+                                otel_trace_id=attempt_span.trace_id or None,
+                                otel_span_id=attempt_span.span_id or None,
+                                otel_parent_span_id=call_span.span_id
+                                if call_span is not None
+                                else None,
+                            )
+                            try:
+                                response = adapter.invoke(messages, **invoke_kwargs)
+                            except Exception as provider_exc:
+                                provider_call_completed_at = _utc_now()
+                                provider_duration_ms = int(
+                                    round((time.perf_counter() - provider_call_started_perf) * 1000)
+                                )
+                                latest_attempt_observation = _record_llm_attempt_best_effort(
+                                    call_id=call_id,
+                                    attempt_id=provider_attempt_id,
+                                    attempt_index=physical_attempt_count,
+                                    status="error",
+                                    response=None,
+                                    profile_id=profile.profile_id,
+                                    provider_id=provider.provider_id,
+                                    provider_contract=provider.contract,
+                                    target_id=provider.provider_id,
+                                    model=attempt_profile.model,
+                                    stage=trace_context.stage if trace_context else None,
+                                    node=trace_context.node if trace_context else None,
+                                    started_at=provider_call_started_at,
+                                    completed_at=provider_call_completed_at,
+                                    duration_ms=provider_duration_ms,
+                                    problem_code=_classify_llm_problem(provider_exc),
+                                    quota_wait_ms=quota_wait_ms_before_attempt,
+                                    provider_gate_wait_ms=provider_gate_wait_ms,
+                                    profile_gate_wait_ms=profile_gate_wait_ms,
+                                    otel_trace_id=attempt_span.trace_id or None,
+                                    otel_span_id=attempt_span.span_id or None,
+                                    otel_parent_span_id=call_span.span_id if call_span is not None else None,
+                                )
+                                _set_attempt_span_facts(attempt_span, latest_attempt_observation)
+                                attempt_span.set_status("error", error_type=type(provider_exc).__name__)
+                                raise
+                            else:
+                                provider_call_completed_at = _utc_now()
+                                provider_duration_ms = int(
+                                    round((time.perf_counter() - provider_call_started_perf) * 1000)
+                                )
+                                latest_attempt_observation = _record_llm_attempt_best_effort(
+                                    call_id=call_id,
+                                    attempt_id=provider_attempt_id,
+                                    attempt_index=physical_attempt_count,
+                                    status="ok",
+                                    response=response,
+                                    profile_id=profile.profile_id,
+                                    provider_id=provider.provider_id,
+                                    provider_contract=provider.contract,
+                                    target_id=provider.provider_id,
+                                    model=attempt_profile.model,
+                                    stage=trace_context.stage if trace_context else None,
+                                    node=trace_context.node if trace_context else None,
+                                    started_at=provider_call_started_at,
+                                    completed_at=provider_call_completed_at,
+                                    duration_ms=provider_duration_ms,
+                                    quota_wait_ms=quota_wait_ms_before_attempt,
+                                    provider_gate_wait_ms=provider_gate_wait_ms,
+                                    profile_gate_wait_ms=profile_gate_wait_ms,
+                                    otel_trace_id=attempt_span.trace_id or None,
+                                    otel_span_id=attempt_span.span_id or None,
+                                    otel_parent_span_id=call_span.span_id if call_span is not None else None,
+                                )
+                                _set_attempt_span_facts(attempt_span, latest_attempt_observation)
+                                attempt_span.set_status("ok")
                     finally:
                         profile_gate.release()
                         provider_controller.release()
@@ -2416,6 +2680,38 @@ def _invoke_response(
                     )
                     attempts.append(attempt)
                     duration_ms = int((time.perf_counter() - started_perf) * 1000)
+                    _record_llm_call_best_effort(
+                        call_id=call_id,
+                        status="ok",
+                        attempt_count=physical_attempt_count,
+                        profile_id=profile.profile_id,
+                        target_id=provider.provider_id,
+                        model=attempt_profile.model,
+                        stage=trace_context.stage if trace_context else None,
+                        node=trace_context.node if trace_context else None,
+                        started_at=started_at,
+                        completed_at=attempt["completed_at"],
+                        duration_ms=duration_ms,
+                        quota_wait_ms_total=quota_wait_ms_total,
+                        otel_trace_id=call_span.trace_id if call_span is not None else None,
+                        otel_span_id=call_span.span_id if call_span is not None else None,
+                        otel_parent_span_id=observation_context.span_id if observation_context is not None else None,
+                    )
+                    if call_span is not None:
+                        call_span.set_attributes(
+                            {
+                                "llm.provider.id": provider.provider_id,
+                                "llm.target.id": provider.provider_id,
+                                "llm.model_name": attempt_profile.model,
+                                "gen_ai.provider.name": provider.contract,
+                                "gen_ai.operation.name": "chat",
+                                "gen_ai.request.model": attempt_profile.model,
+                                "llm.attempt.count": physical_attempt_count,
+                                "llm.retry.count": max(0, physical_attempt_count - 1),
+                                "llm.quota_wait_ms_total": quota_wait_ms_total,
+                            }
+                        )
+                        call_span.set_status("ok")
                     standard_payload = {
                         "call_id": call_id,
                         "profile_id": profile.profile_id,
@@ -2453,6 +2749,12 @@ def _invoke_response(
                             "key_slots_tried": [item["key_slot_id"] for item in attempts],
                         },
                         **(trace_context.extra if trace_context else {}),
+                        **_observation_trace_fields(
+                            observation_context,
+                            latest_attempt_observation,
+                            physical_attempt_count=physical_attempt_count,
+                            call_span=call_span,
+                        ),
                     }
                     _write_standard_trace(trace_context, standard_payload)
                     _write_debug_trace(
@@ -2469,6 +2771,32 @@ def _invoke_response(
                     )
                     return response
                 except Exception as exc:  # pragma: no cover - runtime/provider behavior
+                    if isinstance(exc, JobLeaseLost):
+                        completed_at = _utc_now()
+                        duration_ms = int((time.perf_counter() - started_perf) * 1000)
+                        _record_llm_call_best_effort(
+                            call_id=call_id,
+                            status="fenced",
+                            attempt_count=physical_attempt_count,
+                            profile_id=profile.profile_id,
+                            target_id=final_provider_id or profile.selected_target_id or None,
+                            model=final_model,
+                            stage=trace_context.stage if trace_context else None,
+                            node=trace_context.node if trace_context else None,
+                            started_at=started_at,
+                            completed_at=completed_at,
+                            duration_ms=duration_ms,
+                            problem_code="worker_lease_lost",
+                            quota_wait_ms_total=quota_wait_ms_total,
+                            otel_trace_id=call_span.trace_id if call_span is not None else None,
+                            otel_span_id=call_span.span_id if call_span is not None else None,
+                            otel_parent_span_id=observation_context.span_id
+                            if observation_context is not None
+                            else None,
+                        )
+                        if call_span is not None:
+                            call_span.set_status("fenced", error_type=type(exc).__name__)
+                        raise
                     classified = _classify_llm_problem(exc)
                     final_problem_code = classified
                     last_error = exc
@@ -2510,6 +2838,42 @@ def _invoke_response(
 
     completed_at = _utc_now()
     duration_ms = int((time.perf_counter() - started_perf) * 1000)
+    _record_llm_call_best_effort(
+        call_id=call_id,
+        status="error",
+        attempt_count=physical_attempt_count,
+        profile_id=profile.profile_id,
+        target_id=final_provider_id or profile.selected_target_id or None,
+        model=final_model,
+        stage=trace_context.stage if trace_context else None,
+        node=trace_context.node if trace_context else None,
+        started_at=started_at,
+        completed_at=completed_at,
+        duration_ms=duration_ms,
+        problem_code=final_problem_code or "network_blocked",
+        quota_wait_ms_total=quota_wait_ms_total,
+        otel_trace_id=call_span.trace_id if call_span is not None else None,
+        otel_span_id=call_span.span_id if call_span is not None else None,
+        otel_parent_span_id=observation_context.span_id if observation_context is not None else None,
+    )
+    if call_span is not None:
+        call_span.set_attributes(
+            {
+                "llm.provider.id": final_provider_id,
+                "llm.target.id": final_provider_id or profile.selected_target_id or "",
+                "llm.model_name": final_model,
+                "gen_ai.provider.name": final_contract,
+                "gen_ai.operation.name": "chat",
+                "gen_ai.request.model": final_model,
+                "llm.attempt.count": physical_attempt_count,
+                "llm.retry.count": max(0, physical_attempt_count - 1),
+                "llm.quota_wait_ms_total": quota_wait_ms_total,
+            }
+        )
+        call_span.set_status(
+            "error",
+            error_type=last_error.__class__.__name__ if last_error is not None else "ReaderLLMError",
+        )
     standard_payload = {
         "call_id": call_id,
         "profile_id": profile.profile_id,
@@ -2550,6 +2914,12 @@ def _invoke_response(
             "key_slots_tried": [item["key_slot_id"] for item in attempts],
         },
         **(trace_context.extra if trace_context else {}),
+        **_observation_trace_fields(
+            observation_context,
+            latest_attempt_observation,
+            physical_attempt_count=physical_attempt_count,
+            call_span=call_span,
+        ),
     }
     _write_standard_trace(trace_context, standard_payload)
     _write_debug_trace(

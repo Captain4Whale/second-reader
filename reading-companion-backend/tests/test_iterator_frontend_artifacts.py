@@ -5,6 +5,7 @@ from __future__ import annotations
 import json
 from pathlib import Path
 import threading
+import time
 
 import pytest
 
@@ -22,7 +23,6 @@ from src.iterator_reader.storage import (
     chapter_qa_file,
     chapter_markdown_file,
     chapter_result_file,
-    structure_file,
     run_state_file,
 )
 
@@ -423,10 +423,14 @@ def test_read_book_sequential_starts_after_first_segmented_chapter(tmp_path, mon
     )
 
     events: list[str] = []
+    observed_contexts: list[tuple[str, str | None, str | None]] = []
     first_chapter_read_started = threading.Event()
 
     def _segment_context(_output_dir, context, *, progress=None):
         chapter_id = int(context["id"])
+        observation = iterator_module.current_observation_context()
+        assert observation is not None
+        observed_contexts.append(("segment", observation.chapter_id, observation.stage))
         events.append(f"segment-start-{chapter_id}")
         if chapter_id == 2:
             assert first_chapter_read_started.wait(timeout=2.0), "reader never started after chapter 1 became ready"
@@ -470,6 +474,9 @@ def test_read_book_sequential_starts_after_first_segmented_chapter(tmp_path, mon
     monkeypatch.setattr(iterator_module, "segment_context_into_chapter", _segment_context)
 
     def _run_reader_segment(state, progress=None):
+        observation = iterator_module.current_observation_context()
+        assert observation is not None
+        observed_contexts.append(("reader", observation.unit_id, observation.stage))
         events.append(f"read-{state['segment_id']}")
         if state.get("segment_id") == "1.1":
             first_chapter_read_started.set()
@@ -493,9 +500,82 @@ def test_read_book_sequential_starts_after_first_segmented_chapter(tmp_path, mon
     assert events.index("segment-complete-1") < events.index("read-1.1")
     assert events.index("read-1.1") < events.index("segment-complete-2")
     assert events.index("segment-complete-2") < events.index("read-2.1")
+    assert ("segment", "1", "parse") in observed_contexts
+    assert ("segment", "2", "parse") in observed_contexts
+    assert ("reader", "1.1", "reader") in observed_contexts
+    assert ("reader", "2.1", "reader") in observed_contexts
     assert {"reader_waiting_for_segments", "parse_chapter_started", "parse_chapter_completed", "run_completed"} <= {
         item["type"] for item in activity
     }
+
+
+def test_background_segmentation_stop_drains_started_worker(tmp_path, monkeypatch):
+    """A foreground failure must not close reports while one inherited worker still records facts."""
+
+    output_dir = tmp_path / "output" / "demo-book"
+    output_dir.mkdir(parents=True)
+    chapter = {
+        "id": 1,
+        "title": "Chapter 1",
+        "chapter_number": 1,
+        "status": "pending",
+        "level": 1,
+        "segments": [],
+    }
+    structure = {
+        "book": "Demo Book",
+        "author": "Tester",
+        "book_language": "en",
+        "output_language": "en",
+        "source_file": "demo.epub",
+        "output_dir": str(output_dir),
+        "chapters": [chapter],
+    }
+    worker_started = threading.Event()
+    worker_release = threading.Event()
+    worker_finished = threading.Event()
+
+    monkeypatch.setattr(
+        iterator_module,
+        "chapter_contexts_for_book",
+        lambda *args, **kwargs: [{"id": 1, "title": "Chapter 1"}],
+    )
+    monkeypatch.setattr(iterator_module, "append_activity_event", lambda *args, **kwargs: None)
+
+    def _slow_segment(_output_dir, _context, *, progress=None):
+        del progress
+        worker_started.set()
+        assert worker_release.wait(timeout=3.0)
+        worker_finished.set()
+        return dict(chapter)
+
+    monkeypatch.setattr(iterator_module, "segment_context_into_chapter", _slow_segment)
+    coordinator = iterator_module.BackgroundSegmentationCoordinator(
+        structure=structure,
+        output_dir=output_dir,
+        book_path=Path("demo.epub"),
+        selected_chapters=[chapter],
+        tuning=iterator_module.SequentialPipelineTuning(
+            segment_workers=1,
+            segment_workers_when_reader_blocked=1,
+            prefetch_window=1,
+        ),
+        io_lock=threading.RLock(),
+    )
+    monkeypatch.setattr(coordinator, "_persist_parse_state_locked", lambda **kwargs: None)
+    coordinator.start()
+    assert worker_started.wait(timeout=2.0)
+
+    release_timer = threading.Timer(1.1, worker_release.set)
+    release_timer.start()
+    started_at = time.monotonic()
+    coordinator.stop()
+    elapsed = time.monotonic() - started_at
+    release_timer.join(timeout=2.0)
+
+    assert elapsed >= 1.0
+    assert worker_finished.is_set()
+    assert not coordinator.thread.is_alive()
 
 
 def test_estimate_eta_seconds_stays_null_until_one_chapter_finishes():

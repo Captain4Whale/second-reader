@@ -4,8 +4,12 @@ from __future__ import annotations
 
 import importlib
 import json
+import threading
+from concurrent.futures import ThreadPoolExecutor
 from pathlib import Path
+from types import SimpleNamespace
 
+import pytest
 from fastapi.testclient import TestClient
 from src.api.contract import to_api_book_id, to_api_reaction_id
 from src.attentional_v2.storage import chapter_result_compatibility_file
@@ -24,6 +28,18 @@ from src.library.storage import upload_file
 from src.library.user_marks import delete_mark, list_book_marks, load_marks_state, put_mark
 from src.reading_runtime.artifacts import runtime_shell_file
 from src.reading_runtime.background_job_registry import job_record_file
+from src.reading_runtime.job_lease import (
+    ENV_BOOK_ID,
+    ENV_JOB_ID,
+    ENV_JOB_KIND,
+    ENV_LEASE_GENERATION,
+    ENV_LEASE_TOKEN,
+    ENV_MECHANISM_KEY,
+    ENV_RUN_ATTEMPT_ID,
+    ENV_RUNTIME_ROOT,
+    JobLeaseConflict,
+    job_lease_file,
+)
 
 
 api_module = importlib.import_module("src.api.app")
@@ -524,7 +540,7 @@ def test_refresh_job_auto_resumes_reaped_child(tmp_path, monkeypatch):
     monkeypatch.setattr(
         jobs_module.subprocess,
         "Popen",
-        lambda command, cwd, stdout, stderr: launched.append(command) or _FakeProcess(),
+        lambda command, cwd, stdout, stderr, env=None: launched.append(command) or _FakeProcess(),
     )
 
     save_job(
@@ -586,7 +602,7 @@ def test_launch_sequential_job_persists_non_default_mechanism_key(tmp_path, monk
     monkeypatch.setattr(
         jobs_module.subprocess,
         "Popen",
-        lambda command, cwd, stdout, stderr: launched.append(command) or _FakeProcess(),
+        lambda command, cwd, stdout, stderr, env=None: launched.append(command) or _FakeProcess(),
     )
 
     record = jobs_module.launch_sequential_job(
@@ -609,6 +625,921 @@ def test_launch_sequential_job_persists_non_default_mechanism_key(tmp_path, monk
     assert job_record_file(str(record["job_id"]), tmp_path).exists()
 
 
+def test_launch_sequential_job_persists_fenced_attempt_and_private_worker_environment(tmp_path, monkeypatch):
+    """Managed launches should persist token-free metadata and pass the private grant only through env."""
+
+    jobs_module = importlib.import_module("src.library.jobs")
+    lease_module = importlib.import_module("src.reading_runtime.job_lease")
+    monkeypatch.setattr(lease_module, "process_birth_identity", lambda pid=None: f"birth-{pid}")
+    upload_path = upload_file("job-leased", tmp_path)
+    upload_path.parent.mkdir(parents=True, exist_ok=True)
+    upload_path.write_bytes(b"epub")
+    observed: dict[str, object] = {}
+
+    class _FakeProcess:
+        pid = 5656
+
+    def _launch(command, cwd, stdout, stderr, env=None):
+        observed.update({"command": command, "env": env})
+        return _FakeProcess()
+
+    monkeypatch.setattr(jobs_module.subprocess, "Popen", _launch)
+
+    record = jobs_module.launch_sequential_job(upload_path, root=tmp_path, book_id="book-leased")
+    environment = observed["env"]
+    assert isinstance(environment, dict)
+
+    assert record["run_attempt_id"] == environment[ENV_RUN_ATTEMPT_ID]
+    assert record["lease"]["generation"] == 1
+    assert record["lease"]["owner_pid"] == 5656
+    assert record["lease"]["owner_birth_identity"] == "birth-5656"
+    assert record["lease"]["valid"] is True
+    assert environment[ENV_JOB_ID] == "job-leased"
+    assert environment[ENV_LEASE_GENERATION] == "1"
+    assert environment[ENV_RUNTIME_ROOT] == str(tmp_path.resolve())
+    assert environment[ENV_BOOK_ID] == "book-leased"
+    assert environment[ENV_JOB_KIND] == "read"
+    assert environment[ENV_MECHANISM_KEY] == "attentional_v2"
+    assert environment[ENV_LEASE_TOKEN]
+    assert environment[ENV_LEASE_TOKEN] not in json.dumps(record)
+    assert environment[ENV_LEASE_TOKEN] not in str(record["command"])
+    assert environment[ENV_LEASE_TOKEN] not in job_record_file("job-leased", tmp_path).read_text(encoding="utf-8")
+    assert environment[ENV_LEASE_TOKEN] not in (tmp_path / "state" / "jobs" / "job-leased.json").read_text(encoding="utf-8")
+
+
+def test_process_running_fails_closed_on_permission_or_transient_probe_error(monkeypatch):
+    jobs_module = importlib.import_module("src.library.jobs")
+    monkeypatch.setattr(jobs_module.os, "waitpid", lambda *_args: (_ for _ in ()).throw(ChildProcessError()))
+
+    monkeypatch.setattr(
+        jobs_module.os,
+        "kill",
+        lambda *_args: (_ for _ in ()).throw(PermissionError("not our process")),
+    )
+    assert jobs_module._process_running(1234) is True
+
+    monkeypatch.setattr(
+        jobs_module.os,
+        "kill",
+        lambda *_args: (_ for _ in ()).throw(InterruptedError("retry later")),
+    )
+    assert jobs_module._process_running(1234) is True
+
+    monkeypatch.setattr(
+        jobs_module.os,
+        "kill",
+        lambda *_args: (_ for _ in ()).throw(ProcessLookupError()),
+    )
+    assert jobs_module._process_running(1234) is False
+
+
+def test_prelaunch_registry_failure_releases_fresh_lease_without_starting_child(
+    tmp_path,
+    monkeypatch,
+):
+    jobs_module = importlib.import_module("src.library.jobs")
+    upload_path = upload_file("job-prelaunch-registry-failure", tmp_path)
+    upload_path.parent.mkdir(parents=True, exist_ok=True)
+    upload_path.write_bytes(b"epub")
+    popen_called = False
+
+    def _popen(*_args, **_kwargs):
+        nonlocal popen_called
+        popen_called = True
+        raise AssertionError("child must not start before the initial registry record is durable")
+
+    monkeypatch.setattr(jobs_module.subprocess, "Popen", _popen)
+    monkeypatch.setattr(
+        jobs_module,
+        "save_job",
+        lambda *_args, **_kwargs: (_ for _ in ()).throw(
+            RuntimeError("initial registry persistence failed")
+        ),
+    )
+
+    with pytest.raises(RuntimeError, match="initial registry persistence failed"):
+        jobs_module.launch_sequential_job(upload_path, root=tmp_path)
+
+    assert popen_called is False
+    assert jobs_module.load_job_lease(
+        "job-prelaunch-registry-failure",
+        root=tmp_path,
+    )["state"] == "released"
+
+
+def test_distinct_upload_jobs_with_identical_source_bytes_share_one_worker_lock(
+    tmp_path,
+    monkeypatch,
+):
+    """Pre-provision uploads must not bypass duplicate-book fencing when book_id is unknown."""
+
+    jobs_module = importlib.import_module("src.library.jobs")
+    first_upload = upload_file("job-source-lock-first", tmp_path)
+    second_upload = upload_file("job-source-lock-second", tmp_path)
+    first_upload.parent.mkdir(parents=True, exist_ok=True)
+    first_upload.write_bytes(b"same-epub-bytes")
+    second_upload.write_bytes(b"same-epub-bytes")
+    popen_calls = 0
+    job_lease_module = importlib.import_module("src.reading_runtime.job_lease")
+
+    monkeypatch.setattr(
+        jobs_module,
+        "inspect_book",
+        lambda *_args, **_kwargs: (_ for _ in ()).throw(ValueError("invalid epub")),
+    )
+    monkeypatch.setattr(job_lease_module, "process_birth_identity", lambda _pid: "test-birth")
+
+    class _FakeProcess:
+        pid = 5655
+
+    def _popen(*_args, **_kwargs):
+        nonlocal popen_calls
+        popen_calls += 1
+        return _FakeProcess()
+
+    monkeypatch.setattr(jobs_module.subprocess, "Popen", _popen)
+
+    first = jobs_module.launch_sequential_job(first_upload, root=tmp_path)
+    with pytest.raises(JobLeaseConflict, match="already has a worker"):
+        jobs_module.launch_sequential_job(second_upload, root=tmp_path)
+
+    assert popen_calls == 1
+    assert first["book_id"] is None
+    assert jobs_module.load_job_lease(first["job_id"], root=tmp_path)[
+        "book_id"
+    ].startswith("source-sha256:")
+
+
+def test_distinct_sources_resolving_to_same_output_share_one_worker_lock(
+    tmp_path,
+    monkeypatch,
+):
+    """Different EPUB bytes with one canonical output id must not run concurrently."""
+
+    jobs_module = importlib.import_module("src.library.jobs")
+    first_upload = upload_file("job-title-lock-first", tmp_path)
+    second_upload = upload_file("job-title-lock-second", tmp_path)
+    first_upload.parent.mkdir(parents=True, exist_ok=True)
+    first_upload.write_bytes(b"first-epub")
+    second_upload.write_bytes(b"second-epub")
+    popen_calls = 0
+    job_lease_module = importlib.import_module("src.reading_runtime.job_lease")
+
+    monkeypatch.setattr(
+        jobs_module,
+        "inspect_book",
+        lambda *_args, **_kwargs: SimpleNamespace(output_dir=Path("output/shared-title")),
+    )
+    monkeypatch.setattr(job_lease_module, "process_birth_identity", lambda _pid: "test-birth")
+
+    class _FakeProcess:
+        pid = 5656
+
+    def _popen(*_args, **_kwargs):
+        nonlocal popen_calls
+        popen_calls += 1
+        return _FakeProcess()
+
+    monkeypatch.setattr(jobs_module.subprocess, "Popen", _popen)
+
+    first = jobs_module.launch_sequential_job(first_upload, root=tmp_path)
+    with pytest.raises(JobLeaseConflict, match="already has a worker"):
+        jobs_module.launch_sequential_job(second_upload, root=tmp_path)
+
+    assert popen_calls == 1
+    assert jobs_module.load_job_lease(first["job_id"], root=tmp_path)["book_id"] == "shared-title"
+
+
+def test_launch_heartbeat_failure_terminates_and_reaps_child_before_releasing_lease(tmp_path, monkeypatch):
+    jobs_module = importlib.import_module("src.library.jobs")
+    upload_path = upload_file("job-heartbeat-failure", tmp_path)
+    upload_path.parent.mkdir(parents=True, exist_ok=True)
+    upload_path.write_bytes(b"epub")
+    events: list[str] = []
+
+    class _FakeProcess:
+        pid = 5666
+
+        def poll(self):
+            events.append("poll")
+            return None
+
+        def terminate(self):
+            events.append("terminate")
+
+        def wait(self, *, timeout):
+            events.append(f"wait:{timeout}")
+            return -15
+
+        def kill(self):
+            raise AssertionError("graceful termination should have been enough")
+
+    original_release = jobs_module.release_job_lease
+
+    def _release(grant):
+        events.append("release")
+        return original_release(grant)
+
+    monkeypatch.setattr(jobs_module.subprocess, "Popen", lambda *args, **kwargs: _FakeProcess())
+    monkeypatch.setattr(
+        jobs_module,
+        "heartbeat_job_lease",
+        lambda *args, **kwargs: (_ for _ in ()).throw(RuntimeError("heartbeat persistence failed")),
+    )
+    monkeypatch.setattr(jobs_module, "release_job_lease", _release)
+
+    with pytest.raises(RuntimeError, match="heartbeat persistence failed"):
+        jobs_module.launch_sequential_job(upload_path, root=tmp_path)
+
+    assert events == ["poll", "terminate", "wait:5.0", "release"]
+    assert jobs_module.load_job_lease("job-heartbeat-failure", root=tmp_path)["state"] == "released"
+
+
+def test_post_launch_registry_failure_terminates_and_reaps_child_before_releasing_lease(tmp_path, monkeypatch):
+    jobs_module = importlib.import_module("src.library.jobs")
+    upload_path = upload_file("job-registry-failure", tmp_path)
+    upload_path.parent.mkdir(parents=True, exist_ok=True)
+    upload_path.write_bytes(b"epub")
+    events: list[str] = []
+
+    class _FakeProcess:
+        pid = 5677
+
+        def poll(self):
+            events.append("poll")
+            return None
+
+        def terminate(self):
+            events.append("terminate")
+
+        def wait(self, *, timeout):
+            events.append(f"wait:{timeout}")
+            return -15
+
+        def kill(self):
+            raise AssertionError("graceful termination should have been enough")
+
+    original_save = jobs_module.save_job
+    original_release = jobs_module.release_job_lease
+    save_count = 0
+
+    def _save(record, root=None):
+        nonlocal save_count
+        save_count += 1
+        if save_count == 2:
+            raise RuntimeError("canonical registry persistence failed")
+        return original_save(record, root)
+
+    def _release(grant):
+        events.append("release")
+        return original_release(grant)
+
+    monkeypatch.setattr(jobs_module.subprocess, "Popen", lambda *args, **kwargs: _FakeProcess())
+    monkeypatch.setattr(jobs_module, "save_job", _save)
+    monkeypatch.setattr(jobs_module, "release_job_lease", _release)
+
+    with pytest.raises(RuntimeError, match="canonical registry persistence failed"):
+        jobs_module.launch_sequential_job(upload_path, root=tmp_path)
+
+    assert save_count == 2
+    assert events == ["poll", "terminate", "wait:5.0", "release"]
+    assert jobs_module.load_job_lease("job-registry-failure", root=tmp_path)["state"] == "released"
+
+
+def test_resume_registry_failure_terminates_and_reaps_new_child_before_releasing_lease(tmp_path, monkeypatch):
+    jobs_module = importlib.import_module("src.library.jobs")
+    upload_path = upload_file("job-resume-registry-failure", tmp_path)
+    upload_path.parent.mkdir(parents=True, exist_ok=True)
+    upload_path.write_bytes(b"epub")
+    events: list[str] = []
+
+    class _FakeProcess:
+        pid = 5688
+
+        def poll(self):
+            events.append("poll")
+            return None
+
+        def terminate(self):
+            events.append("terminate")
+
+        def wait(self, *, timeout):
+            events.append(f"wait:{timeout}")
+            return -15
+
+        def kill(self):
+            raise AssertionError("graceful termination should have been enough")
+
+    record = {
+        "job_id": "job-resume-registry-failure",
+        "status": "paused",
+        "job_kind": "read",
+        "upload_path": str(upload_path),
+        "book_id": None,
+        "pid": None,
+        "run_attempt_id": None,
+        "lease": {},
+        "created_at": "2026-03-07T00:00:00Z",
+        "updated_at": "2026-03-07T00:00:00Z",
+        "error": None,
+    }
+    original_release = jobs_module.release_job_lease
+
+    def _release(grant):
+        events.append("release")
+        return original_release(grant)
+
+    monkeypatch.setattr(jobs_module, "find_book_id_by_source", lambda *args, **kwargs: None)
+    monkeypatch.setattr(jobs_module, "_resume_target_status", lambda *args, **kwargs: "deep_reading")
+    monkeypatch.setattr(jobs_module, "_resume_mechanism_key", lambda *args, **kwargs: "attentional_v2")
+    monkeypatch.setattr(jobs_module, "_worker_liveness", lambda *args, **kwargs: (False, None, {}, False))
+    monkeypatch.setattr(jobs_module, "_fence_and_terminate", lambda *args, **kwargs: ({}, True))
+    monkeypatch.setattr(jobs_module.subprocess, "Popen", lambda *args, **kwargs: _FakeProcess())
+    monkeypatch.setattr(
+        jobs_module,
+        "save_job",
+        lambda *args, **kwargs: (_ for _ in ()).throw(RuntimeError("resume registry persistence failed")),
+    )
+    monkeypatch.setattr(jobs_module, "release_job_lease", _release)
+
+    with pytest.raises(RuntimeError, match="resume registry persistence failed"):
+        jobs_module._resume_job(record, tmp_path, automatic=False)
+
+    assert events == ["poll", "terminate", "wait:5.0", "release"]
+    assert jobs_module.load_job_lease("job-resume-registry-failure", root=tmp_path)["state"] == "released"
+
+
+def test_failed_resume_with_newer_released_generation_can_retry(tmp_path, monkeypatch):
+    """A failed resume must not leave the older registry generation permanently fenced out."""
+
+    jobs_module = importlib.import_module("src.library.jobs")
+    lease_module = importlib.import_module("src.reading_runtime.job_lease")
+    upload_path = upload_file("job-resume-retry", tmp_path)
+    upload_path.parent.mkdir(parents=True, exist_ok=True)
+    upload_path.write_bytes(b"epub")
+    first = jobs_module._acquire_worker_lease(
+        job_id="job-resume-retry",
+        job_kind="read",
+        mechanism_key="attentional_v2",
+        book_id=None,
+        root=tmp_path,
+    )
+    first_payload = jobs_module.load_job_lease(first.job_id, root=tmp_path)
+    original_record = jobs_module.save_job(
+        {
+            "job_id": first.job_id,
+            "status": "paused",
+            "job_kind": "read",
+            "upload_path": str(upload_path),
+            "book_id": None,
+            "pid": None,
+            "run_attempt_id": first.run_attempt_id,
+            "lease": jobs_module.sanitized_lease_metadata(first_payload),
+        },
+        tmp_path,
+    )
+    pids = iter((5689, 5690))
+    terminated: list[int] = []
+
+    class _FakeProcess:
+        def __init__(self, pid: int):
+            self.pid = pid
+
+        def poll(self):
+            return None
+
+        def terminate(self):
+            terminated.append(self.pid)
+
+        def wait(self, *, timeout):
+            return -15
+
+        def kill(self):
+            raise AssertionError("graceful termination should have been enough")
+
+    monkeypatch.setattr(lease_module, "process_birth_identity", lambda pid=None: f"birth-{pid}")
+    monkeypatch.setattr(jobs_module, "find_book_id_by_source", lambda *args, **kwargs: None)
+    monkeypatch.setattr(jobs_module, "_resume_target_status", lambda *args, **kwargs: "deep_reading")
+    monkeypatch.setattr(jobs_module, "_resume_mechanism_key", lambda *args, **kwargs: "attentional_v2")
+    monkeypatch.setattr(
+        jobs_module.subprocess,
+        "Popen",
+        lambda *args, **kwargs: _FakeProcess(next(pids)),
+    )
+
+    with monkeypatch.context() as failed_registry:
+        failed_registry.setattr(
+            jobs_module,
+            "save_job",
+            lambda *args, **kwargs: (_ for _ in ()).throw(RuntimeError("registry unavailable")),
+        )
+        with pytest.raises(RuntimeError, match="registry unavailable"):
+            jobs_module._resume_job(original_record, tmp_path, automatic=False)
+
+    persisted = jobs_module.load_job(first.job_id, root=tmp_path)
+    released = jobs_module.load_job_lease(first.job_id, root=tmp_path)
+    resumed = jobs_module._resume_job(persisted, tmp_path, automatic=False)
+
+    assert persisted["lease"]["generation"] == 1
+    assert released["generation"] == 2
+    assert released["state"] == "released"
+    assert resumed["lease"]["generation"] == 3
+    assert resumed["run_attempt_id"] not in {first.run_attempt_id, released["run_attempt_id"]}
+    assert terminated == [5689]
+
+
+def test_refresh_job_uses_fresh_process_lease_instead_of_mechanism_heartbeat(tmp_path, monkeypatch):
+    """A fresh process lease should keep an active job live even when run_state itself is quiet."""
+
+    jobs_module = importlib.import_module("src.library.jobs")
+    book_id = _bootstrap_book(tmp_path, stage="deep_reading")
+    output_dir = tmp_path / "output" / book_id
+    run_state_path = _run_state_path(output_dir)
+    run_state = json.loads(run_state_path.read_text(encoding="utf-8"))
+    run_state["updated_at"] = "2026-03-07T00:00:00Z"
+    run_state_path.write_text(json.dumps(run_state, ensure_ascii=False, indent=2), encoding="utf-8")
+    upload_path = upload_file("job-fresh-lease", tmp_path)
+    upload_path.parent.mkdir(parents=True, exist_ok=True)
+    upload_path.write_bytes(b"epub")
+
+    class _FakeProcess:
+        pid = 5757
+
+    monkeypatch.setattr(
+        jobs_module.subprocess,
+        "Popen",
+        lambda command, cwd, stdout, stderr, env=None: _FakeProcess(),
+    )
+    jobs_module.launch_sequential_job(upload_path, root=tmp_path, book_id=book_id)
+    monkeypatch.setattr(jobs_module, "_process_running", lambda pid: pid == 5757)
+    monkeypatch.setattr(jobs_module, "ACTIVE_RUNTIME_STALE_SECONDS", 1)
+    monkeypatch.setattr(jobs_module, "_seconds_since", lambda _value: 120.0)
+
+    refreshed = refresh_job("job-fresh-lease", root=tmp_path)
+
+    assert refreshed["status"] == "deep_reading"
+    assert refreshed["pid"] == 5757
+    assert refreshed["lease"]["valid"] is True
+    assert "job_lease_heartbeat_lost" not in {item["type"] for item in _load_jsonl(existing_activity_file(output_dir))}
+
+
+def test_refresh_job_pauses_but_does_not_kill_worker_with_expired_lease(tmp_path, monkeypatch):
+    """Refresh is observational: an alive PID with a lost lease must await explicit recovery."""
+
+    jobs_module = importlib.import_module("src.library.jobs")
+    book_id = _bootstrap_book(tmp_path, stage="deep_reading")
+    upload_path = upload_file("job-expired-lease", tmp_path)
+    upload_path.parent.mkdir(parents=True, exist_ok=True)
+    upload_path.write_bytes(b"epub")
+    launches: list[list[str]] = []
+
+    class _FakeProcess:
+        pid = 5858
+
+    monkeypatch.setattr(
+        jobs_module.subprocess,
+        "Popen",
+        lambda command, cwd, stdout, stderr, env=None: launches.append(command) or _FakeProcess(),
+    )
+    jobs_module.launch_sequential_job(upload_path, root=tmp_path, book_id=book_id)
+    lease_path = job_lease_file("job-expired-lease", root=tmp_path)
+    lease_payload = json.loads(lease_path.read_text(encoding="utf-8"))
+    lease_payload["expires_at"] = "2026-03-07T00:00:00Z"
+    _write_json(lease_path, lease_payload)
+    terminated: list[int] = []
+    monkeypatch.setattr(jobs_module, "_process_running", lambda pid: pid == 5858)
+    monkeypatch.setattr(jobs_module.os, "kill", lambda pid, sig: terminated.append(pid))
+
+    refreshed = refresh_job("job-expired-lease", root=tmp_path)
+    activity = _load_jsonl(existing_activity_file(tmp_path / "output" / book_id))
+
+    assert refreshed["status"] == "paused"
+    assert refreshed["pid"] == 5858
+    assert refreshed["lease"]["valid"] is False
+    assert refreshed["lease"]["status_reason"] == "heartbeat_lost"
+    assert len(launches) == 1
+    assert terminated == []
+    assert activity[-1]["type"] == "job_lease_heartbeat_lost"
+
+
+def test_manual_resume_fences_old_attempt_waits_for_exit_and_rotates_generation(tmp_path, monkeypatch):
+    """An explicit resume may replace an expired owner only after its PID is confirmed gone."""
+
+    jobs_module = importlib.import_module("src.library.jobs")
+    lease_module = importlib.import_module("src.reading_runtime.job_lease")
+    def birth_identity(pid=None):
+        return f"birth-{pid}"
+
+    monkeypatch.setattr(lease_module, "process_birth_identity", birth_identity)
+    monkeypatch.setattr(jobs_module, "process_birth_identity", birth_identity)
+    book_id = _bootstrap_book(tmp_path, stage="paused")
+    upload_path = upload_file("job-manual-resume", tmp_path)
+    upload_path.parent.mkdir(parents=True, exist_ok=True)
+    upload_path.write_bytes(b"epub")
+    launched_envs: list[dict[str, str]] = []
+    pids = iter((5959, 5960))
+
+    class _FakeProcess:
+        def __init__(self, pid):
+            self.pid = pid
+
+    def _launch(command, cwd, stdout, stderr, env=None):
+        launched_envs.append(dict(env or {}))
+        return _FakeProcess(next(pids))
+
+    monkeypatch.setattr(jobs_module.subprocess, "Popen", _launch)
+    initial = jobs_module.launch_sequential_job(upload_path, root=tmp_path, book_id=book_id)
+    lease_path = job_lease_file("job-manual-resume", root=tmp_path)
+    lease_payload = json.loads(lease_path.read_text(encoding="utf-8"))
+    lease_payload["expires_at"] = "2026-03-07T00:00:00Z"
+    _write_json(lease_path, lease_payload)
+    alive = {5959: True, 5960: True}
+    terminated: list[int] = []
+    monkeypatch.setattr(jobs_module, "_process_running", lambda pid: bool(pid and alive.get(pid, False)))
+
+    def _terminate(pid, sig):
+        terminated.append(pid)
+        alive[pid] = False
+
+    monkeypatch.setattr(jobs_module.os, "kill", _terminate)
+
+    resumed = jobs_module.resume_job_for_book(book_id, root=tmp_path)
+
+    assert terminated == [5959]
+    assert len(launched_envs) == 2
+    assert resumed["pid"] == 5960
+    assert resumed["resume_count"] == 1
+    assert resumed["run_attempt_id"] != initial["run_attempt_id"]
+    assert resumed["lease"]["generation"] == 2
+    assert launched_envs[1][ENV_RUN_ATTEMPT_ID] == resumed["run_attempt_id"]
+    assert launched_envs[1][ENV_LEASE_GENERATION] == "2"
+
+
+def test_manual_resume_does_not_launch_when_old_worker_will_not_exit(tmp_path, monkeypatch):
+    """A fenced but still-live PID must block the replacement launch."""
+
+    jobs_module = importlib.import_module("src.library.jobs")
+    lease_module = importlib.import_module("src.reading_runtime.job_lease")
+    def birth_identity(pid=None):
+        return f"birth-{pid}"
+
+    monkeypatch.setattr(lease_module, "process_birth_identity", birth_identity)
+    monkeypatch.setattr(jobs_module, "process_birth_identity", birth_identity)
+    book_id = _bootstrap_book(tmp_path, stage="paused")
+    upload_path = upload_file("job-resume-blocked", tmp_path)
+    upload_path.parent.mkdir(parents=True, exist_ok=True)
+    upload_path.write_bytes(b"epub")
+    launches = 0
+
+    class _FakeProcess:
+        pid = 6060
+
+    def _launch(command, cwd, stdout, stderr, env=None):
+        nonlocal launches
+        launches += 1
+        return _FakeProcess()
+
+    monkeypatch.setattr(jobs_module.subprocess, "Popen", _launch)
+    jobs_module.launch_sequential_job(upload_path, root=tmp_path, book_id=book_id)
+    lease_path = job_lease_file("job-resume-blocked", root=tmp_path)
+    lease_payload = json.loads(lease_path.read_text(encoding="utf-8"))
+    lease_payload["expires_at"] = "2026-03-07T00:00:00Z"
+    _write_json(lease_path, lease_payload)
+    monkeypatch.setattr(jobs_module, "_process_running", lambda pid: pid == 6060)
+    monkeypatch.setattr(jobs_module, "WORKER_TERMINATION_TIMEOUT_SECONDS", 0)
+    monkeypatch.setattr(jobs_module.os, "kill", lambda pid, sig: None)
+
+    with pytest.raises(RuntimeError, match="did not exit"):
+        jobs_module.resume_job_for_book(book_id, root=tmp_path)
+
+    persisted = jobs_module.load_job("job-resume-blocked", root=tmp_path)
+    assert launches == 1
+    assert persisted["status"] == "paused"
+    assert persisted["pid"] == 6060
+
+
+def test_concurrent_resume_decisions_launch_exactly_one_worker(tmp_path, monkeypatch):
+    """The per-job lease lock should let one concurrent resume win before Popen."""
+
+    jobs_module = importlib.import_module("src.library.jobs")
+    book_id = _bootstrap_book(tmp_path, stage="paused")
+    upload_path = upload_file("job-concurrent-resume", tmp_path)
+    upload_path.parent.mkdir(parents=True, exist_ok=True)
+    upload_path.write_bytes(b"epub")
+    save_job(
+        {
+            "job_id": "job-concurrent-resume",
+            "status": "paused",
+            "job_kind": "read",
+            "upload_path": str(upload_path),
+            "book_id": book_id,
+            "pid": None,
+            "created_at": "2026-03-07T00:00:00Z",
+            "updated_at": "2026-03-07T00:00:00Z",
+            "error": None,
+        },
+        tmp_path,
+    )
+    record = jobs_module.load_job("job-concurrent-resume", root=tmp_path)
+    acquire_barrier = threading.Barrier(2)
+    original_acquire = jobs_module._acquire_worker_lease
+    launch_count = 0
+    launch_guard = threading.Lock()
+
+    def _synchronized_acquire(**kwargs):
+        acquire_barrier.wait(timeout=1)
+        return original_acquire(**kwargs)
+
+    class _FakeProcess:
+        pid = 6161
+
+    def _launch(command, cwd, stdout, stderr, env=None):
+        nonlocal launch_count
+        with launch_guard:
+            launch_count += 1
+        return _FakeProcess()
+
+    monkeypatch.setattr(jobs_module, "_acquire_worker_lease", _synchronized_acquire)
+    monkeypatch.setattr(jobs_module, "_process_running", lambda _pid: False)
+    monkeypatch.setattr(jobs_module.subprocess, "Popen", _launch)
+
+    def _resume():
+        try:
+            return jobs_module._resume_job(record, tmp_path, automatic=False)
+        except JobLeaseConflict:
+            return "conflict"
+
+    with ThreadPoolExecutor(max_workers=2) as executor:
+        results = [future.result() for future in [executor.submit(_resume), executor.submit(_resume)]]
+
+    assert launch_count == 1
+    assert results.count("conflict") == 1
+    winner = next(result for result in results if result != "conflict")
+    assert winner["run_attempt_id"]
+    assert winner["lease"]["generation"] == 1
+
+
+def test_refresh_does_not_overwrite_a_newer_resume_generation(tmp_path, monkeypatch):
+    """A refresh snapshot may persist only while its lease generation remains current."""
+
+    jobs_module = importlib.import_module("src.library.jobs")
+    upload_path = upload_file("job-refresh-cas", tmp_path)
+    upload_path.parent.mkdir(parents=True, exist_ok=True)
+    upload_path.write_bytes(b"epub")
+    first = jobs_module._acquire_worker_lease(
+        job_id="job-refresh-cas",
+        job_kind="read",
+        mechanism_key="attentional_v2",
+        book_id=None,
+        root=tmp_path,
+    )
+    first_payload = jobs_module.heartbeat_job_lease(
+        first,
+        owner_pid=6162,
+        owner_birth_identity="birth-old",
+    )
+    first_record = jobs_module.save_job(
+        {
+            "job_id": first.job_id,
+            "status": "queued",
+            "job_kind": "read",
+            "upload_path": str(upload_path),
+            "book_id": None,
+            "pid": 6162,
+            "run_attempt_id": first.run_attempt_id,
+            "lease": jobs_module.sanitized_lease_metadata(first_payload),
+        },
+        tmp_path,
+    )
+    snapshot_loaded = threading.Event()
+    allow_refresh_save = threading.Event()
+
+    def _blocked_liveness(*_args, **_kwargs):
+        snapshot_loaded.set()
+        assert allow_refresh_save.wait(timeout=1)
+        return True, 6162, first_payload, True
+
+    monkeypatch.setattr(jobs_module, "_worker_liveness", _blocked_liveness)
+    monkeypatch.setattr(jobs_module, "find_book_id_by_source", lambda *args, **kwargs: None)
+
+    with ThreadPoolExecutor(max_workers=1) as executor:
+        future = executor.submit(jobs_module.refresh_job, first.job_id, tmp_path)
+        assert snapshot_loaded.wait(timeout=1)
+        try:
+            jobs_module.fence_job_lease(
+                first.job_id,
+                root=tmp_path,
+                expected_run_attempt_id=first.run_attempt_id,
+                expected_generation=first.generation,
+            )
+            second = jobs_module._acquire_worker_lease(
+                job_id=first.job_id,
+                job_kind="read",
+                mechanism_key="attentional_v2",
+                book_id=None,
+                root=tmp_path,
+            )
+            second_payload = jobs_module.heartbeat_job_lease(
+                second,
+                owner_pid=6163,
+                owner_birth_identity="birth-new",
+            )
+            jobs_module.save_job(
+                {
+                    **first_record,
+                    "status": "deep_reading",
+                    "pid": 6163,
+                    "run_attempt_id": second.run_attempt_id,
+                    "lease": jobs_module.sanitized_lease_metadata(second_payload),
+                },
+                tmp_path,
+            )
+        finally:
+            allow_refresh_save.set()
+        refreshed = future.result(timeout=1)
+
+    persisted = jobs_module.load_job(first.job_id, root=tmp_path)
+    assert refreshed["run_attempt_id"] == second.run_attempt_id
+    assert persisted["run_attempt_id"] == second.run_attempt_id
+    assert persisted["lease"]["generation"] == 2
+
+
+def test_stale_resume_fence_never_terminates_newer_generation_owner(tmp_path, monkeypatch):
+    """A losing resume decision must not signal the worker that won the next lease generation."""
+
+    jobs_module = importlib.import_module("src.library.jobs")
+    first = jobs_module._acquire_worker_lease(
+        job_id="job-stale-resume",
+        job_kind="read",
+        mechanism_key="attentional_v2",
+        book_id="book-stale-resume",
+        root=tmp_path,
+    )
+    jobs_module.heartbeat_job_lease(first, owner_pid=6261)
+    stale_record = {
+        "job_id": first.job_id,
+        "run_attempt_id": first.run_attempt_id,
+        "lease": {"generation": first.generation},
+        "pid": 6261,
+    }
+    jobs_module.fence_job_lease(
+        first.job_id,
+        root=tmp_path,
+        expected_run_attempt_id=first.run_attempt_id,
+        expected_generation=first.generation,
+    )
+    second = jobs_module._acquire_worker_lease(
+        job_id=first.job_id,
+        job_kind="read",
+        mechanism_key="attentional_v2",
+        book_id="book-stale-resume",
+        root=tmp_path,
+    )
+    jobs_module.heartbeat_job_lease(second, owner_pid=6262)
+    terminated: list[int] = []
+    monkeypatch.setattr(jobs_module, "_process_running", lambda pid: pid in {6261, 6262})
+    monkeypatch.setattr(jobs_module, "_terminate_process", terminated.append)
+
+    with pytest.raises(JobLeaseConflict, match="newer worker lease"):
+        jobs_module._fence_and_terminate(stale_record, root=tmp_path)
+
+    assert terminated == []
+
+
+def test_stale_resume_does_not_reconcile_a_released_but_still_live_newer_owner(
+    tmp_path,
+    monkeypatch,
+):
+    """Released generations are recoverable only after their exact owner is gone."""
+
+    jobs_module = importlib.import_module("src.library.jobs")
+    first = jobs_module._acquire_worker_lease(
+        job_id="job-newer-released-live",
+        job_kind="read",
+        mechanism_key="attentional_v2",
+        book_id=None,
+        root=tmp_path,
+    )
+    stale_record = {
+        "job_id": first.job_id,
+        "run_attempt_id": first.run_attempt_id,
+        "lease": {"generation": first.generation},
+        "pid": None,
+    }
+    jobs_module.fence_job_lease(
+        first.job_id,
+        root=tmp_path,
+        expected_run_attempt_id=first.run_attempt_id,
+        expected_generation=first.generation,
+    )
+    second = jobs_module._acquire_worker_lease(
+        job_id=first.job_id,
+        job_kind="read",
+        mechanism_key="attentional_v2",
+        book_id=None,
+        root=tmp_path,
+    )
+    jobs_module.heartbeat_job_lease(
+        second,
+        owner_pid=6263,
+        owner_birth_identity="birth-newer-live",
+    )
+    jobs_module.release_job_lease(second)
+    terminated: list[int] = []
+    monkeypatch.setattr(jobs_module, "_process_running", lambda pid: pid == 6263)
+    monkeypatch.setattr(jobs_module, "process_birth_identity", lambda pid: "birth-newer-live")
+    monkeypatch.setattr(jobs_module, "_terminate_process", terminated.append)
+
+    with pytest.raises(JobLeaseConflict, match="newer worker lease"):
+        jobs_module._fence_and_terminate(stale_record, root=tmp_path)
+
+    assert terminated == []
+
+
+def test_resume_fence_never_signals_a_reused_pid(tmp_path, monkeypatch):
+    """A stale integer PID must not authorize SIGTERM of a different process incarnation."""
+
+    jobs_module = importlib.import_module("src.library.jobs")
+    grant = jobs_module._acquire_worker_lease(
+        job_id="job-pid-reused",
+        job_kind="read",
+        mechanism_key="attentional_v2",
+        book_id="book-pid-reused",
+        root=tmp_path,
+    )
+    lease_payload = jobs_module.heartbeat_job_lease(
+        grant,
+        owner_pid=6363,
+        owner_birth_identity="birth-original-worker",
+    )
+    record = {
+        "job_id": grant.job_id,
+        "run_attempt_id": grant.run_attempt_id,
+        "lease": jobs_module.sanitized_lease_metadata(lease_payload),
+        "pid": 6363,
+    }
+    terminated: list[int] = []
+    monkeypatch.setattr(jobs_module, "_process_running", lambda pid: pid == 6363)
+    monkeypatch.setattr(jobs_module, "process_birth_identity", lambda _pid: "birth-unrelated-process")
+    monkeypatch.setattr(jobs_module, "_terminate_process", terminated.append)
+
+    _fenced, stopped = jobs_module._fence_and_terminate(record, root=tmp_path)
+
+    assert stopped is True
+    assert terminated == []
+
+
+def test_resume_fence_rechecks_pid_identity_immediately_before_signal(
+    tmp_path,
+    monkeypatch,
+):
+    """A worker that exits after the first probe must not transfer SIGTERM to its reused PID."""
+
+    jobs_module = importlib.import_module("src.library.jobs")
+    grant = jobs_module._acquire_worker_lease(
+        job_id="job-pid-reused-during-fence",
+        job_kind="read",
+        mechanism_key="attentional_v2",
+        book_id="book-pid-reused-during-fence",
+        root=tmp_path,
+    )
+    lease_payload = jobs_module.heartbeat_job_lease(
+        grant,
+        owner_pid=6364,
+        owner_birth_identity="birth-original-worker",
+    )
+    record = {
+        "job_id": grant.job_id,
+        "run_attempt_id": grant.run_attempt_id,
+        "lease": jobs_module.sanitized_lease_metadata(lease_payload),
+        "pid": 6364,
+    }
+    identities = iter(("birth-original-worker", "birth-reused-process"))
+    terminated: list[int] = []
+    monkeypatch.setattr(jobs_module, "_process_running", lambda pid: pid == 6364)
+    monkeypatch.setattr(jobs_module, "process_birth_identity", lambda _pid: next(identities))
+    monkeypatch.setattr(jobs_module, "_terminate_process", terminated.append)
+
+    _fenced, stopped = jobs_module._fence_and_terminate(record, root=tmp_path)
+
+    assert stopped is True
+    assert terminated == []
+
+
+def test_legacy_record_never_authorizes_signal_from_pid_alone(monkeypatch):
+    jobs_module = importlib.import_module("src.library.jobs")
+    terminated: list[int] = []
+    monkeypatch.setattr(jobs_module, "_process_running", lambda pid: pid == 6464)
+    monkeypatch.setattr(jobs_module, "_terminate_process", terminated.append)
+
+    _fenced, stopped = jobs_module._fence_and_terminate(
+        {"job_id": "legacy-job", "pid": 6464}
+    )
+
+    assert stopped is False
+    assert terminated == []
+
+
 def test_launch_parse_job_records_memory_retrieval_mode_without_cli_flag(tmp_path, monkeypatch):
     """Deferred parse jobs may remember the later read mode without passing read-only CLI args."""
 
@@ -624,7 +1555,7 @@ def test_launch_parse_job_records_memory_retrieval_mode_without_cli_flag(tmp_pat
     monkeypatch.setattr(
         jobs_module.subprocess,
         "Popen",
-        lambda command, cwd, stdout, stderr: launched.append(command) or _FakeProcess(),
+        lambda command, cwd, stdout, stderr, env=None: launched.append(command) or _FakeProcess(),
     )
 
     record = jobs_module.launch_parse_job(
@@ -654,7 +1585,7 @@ def test_launch_existing_book_read_job_omits_default_mechanism_flag_for_attentio
     monkeypatch.setattr(
         jobs_module.subprocess,
         "Popen",
-        lambda command, cwd, stdout, stderr: launched.append(command) or _FakeProcess(),
+        lambda command, cwd, stdout, stderr, env=None: launched.append(command) or _FakeProcess(),
     )
 
     record = jobs_module.launch_existing_book_read_job(
@@ -686,7 +1617,7 @@ def test_launch_existing_book_read_job_allows_iterator_v1_fallback(tmp_path, mon
     monkeypatch.setattr(
         jobs_module.subprocess,
         "Popen",
-        lambda command, cwd, stdout, stderr: launched.append(command) or _FakeProcess(),
+        lambda command, cwd, stdout, stderr, env=None: launched.append(command) or _FakeProcess(),
     )
 
     record = jobs_module.launch_existing_book_read_job(book_id, root=tmp_path, mechanism_key="iterator_v1")
@@ -897,19 +1828,26 @@ def test_refresh_job_abandons_old_dev_boot_runs(tmp_path, monkeypatch):
     )
 
     terminated: list[int] = []
+    process_alive = True
 
-    monkeypatch.setattr(jobs_module, "_process_running", lambda _pid: True)
+    monkeypatch.setattr(jobs_module, "_process_running", lambda _pid: process_alive)
     monkeypatch.setattr(jobs_module, "get_backend_run_mode", lambda: "dev")
     monkeypatch.setattr(jobs_module, "get_backend_boot_id", lambda: "new-boot")
-    monkeypatch.setattr(jobs_module.os, "kill", lambda pid, sig: terminated.append(pid))
+    def _terminate(pid, sig):
+        nonlocal process_alive
+        terminated.append(pid)
+        process_alive = False
+
+    monkeypatch.setattr(jobs_module.os, "kill", _terminate)
 
     refreshed = refresh_job("job-old-dev", root=tmp_path)
     activity = _load_jsonl(existing_activity_file(tmp_path / "output" / book_id))
 
     assert refreshed["status"] == "paused"
-    assert refreshed["pid"] is None
+    assert refreshed["pid"] == 1234
     assert "older development boot" in str(refreshed["error"])
-    assert terminated == [1234]
+    assert "did not exit" in str(refreshed["error"])
+    assert terminated == []
     assert activity[-1]["type"] == "dev_run_abandoned"
 
 
@@ -952,7 +1890,7 @@ def test_refresh_job_fresh_reruns_incompatible_prod_checkpoint(tmp_path, monkeyp
     monkeypatch.setattr(
         jobs_module.subprocess,
         "Popen",
-        lambda command, cwd, stdout, stderr: launched.append(command) or _FakeProcess(),
+        lambda command, cwd, stdout, stderr, env=None: launched.append(command) or _FakeProcess(),
     )
 
     refreshed = refresh_job("job-incompat", root=tmp_path)
@@ -1027,7 +1965,7 @@ def test_refresh_job_fresh_rerun_prefers_runtime_shell_mechanism_key(tmp_path, m
     monkeypatch.setattr(
         jobs_module.subprocess,
         "Popen",
-        lambda command, cwd, stdout, stderr: launched.append(command) or _FakeProcess(),
+        lambda command, cwd, stdout, stderr, env=None: launched.append(command) or _FakeProcess(),
     )
 
     refreshed = refresh_job("job-incompat-attn", root=tmp_path)
@@ -1037,8 +1975,8 @@ def test_refresh_job_fresh_rerun_prefers_runtime_shell_mechanism_key(tmp_path, m
     assert refreshed["mechanism_key"] == "attentional_v2"
 
 
-def test_refresh_job_auto_resumes_stalled_runtime_once_in_prod(tmp_path, monkeypatch):
-    """Stalled prod/demo jobs should auto-resume once from the latest checkpoint."""
+def test_refresh_job_pauses_stalled_live_worker_instead_of_auto_resuming(tmp_path, monkeypatch):
+    """A stale runtime with a live PID must pause instead of launching a duplicate worker."""
     jobs_module = importlib.import_module("src.library.jobs")
     compat_version = get_reader_resume_compat_version()
     book_id = _bootstrap_book(tmp_path, stage="deep_reading")
@@ -1080,17 +2018,18 @@ def test_refresh_job_auto_resumes_stalled_runtime_once_in_prod(tmp_path, monkeyp
     monkeypatch.setattr(
         jobs_module.subprocess,
         "Popen",
-        lambda command, cwd, stdout, stderr: launched.append(command) or _FakeProcess(),
+        lambda command, cwd, stdout, stderr, env=None: launched.append(command) or _FakeProcess(),
     )
 
     refreshed = refresh_job("job-prod-stalled", root=tmp_path)
     activity = _load_jsonl(existing_activity_file(output_dir))
 
-    assert refreshed["status"] == "deep_reading"
-    assert refreshed["pid"] == 2222
-    assert refreshed["auto_resume_count"] == 1
-    assert launched and "--continue" in launched[0]
-    assert {item["type"] for item in activity} >= {"runtime_stalled", "job_paused_by_runtime_guard", "resume_detected"}
+    assert refreshed["status"] == "paused"
+    assert refreshed["pid"] == 1234
+    assert refreshed["auto_resume_count"] == 0
+    assert launched == []
+    assert {item["type"] for item in activity} >= {"runtime_stalled", "job_paused_by_runtime_guard"}
+    assert "resume_detected" not in {item["type"] for item in activity}
 
 
 def test_refresh_job_auto_resume_prefers_runtime_shell_mechanism_key(tmp_path, monkeypatch):
@@ -1146,14 +2085,14 @@ def test_refresh_job_auto_resume_prefers_runtime_shell_mechanism_key(tmp_path, m
     class _FakeProcess:
         pid = 3333
 
-    monkeypatch.setattr(jobs_module, "_process_running", lambda _pid: True)
+    monkeypatch.setattr(jobs_module, "_process_running", lambda _pid: False)
     monkeypatch.setattr(jobs_module, "get_backend_run_mode", lambda: "prod")
     monkeypatch.setattr(jobs_module, "ACTIVE_RUNTIME_STALE_SECONDS", 1)
     monkeypatch.setattr(jobs_module, "_seconds_since", lambda _value: 120.0)
     monkeypatch.setattr(
         jobs_module.subprocess,
         "Popen",
-        lambda command, cwd, stdout, stderr: launched.append(command) or _FakeProcess(),
+        lambda command, cwd, stdout, stderr, env=None: launched.append(command) or _FakeProcess(),
     )
 
     refreshed = refresh_job("job-prod-stalled-attn", root=tmp_path)
@@ -1211,14 +2150,14 @@ def test_refresh_job_auto_resume_preserves_legacy_iterator_when_metadata_is_miss
     class _FakeProcess:
         pid = 4446
 
-    monkeypatch.setattr(jobs_module, "_process_running", lambda _pid: True)
+    monkeypatch.setattr(jobs_module, "_process_running", lambda _pid: False)
     monkeypatch.setattr(jobs_module, "get_backend_run_mode", lambda: "prod")
     monkeypatch.setattr(jobs_module, "ACTIVE_RUNTIME_STALE_SECONDS", 1)
     monkeypatch.setattr(jobs_module, "_seconds_since", lambda _value: 120.0)
     monkeypatch.setattr(
         jobs_module.subprocess,
         "Popen",
-        lambda command, cwd, stdout, stderr: launched.append(command) or _FakeProcess(),
+        lambda command, cwd, stdout, stderr, env=None: launched.append(command) or _FakeProcess(),
     )
 
     refreshed = refresh_job("job-prod-stalled-legacy-iterator", root=tmp_path)
@@ -1693,6 +2632,42 @@ def test_api_upload_and_job_polling(tmp_path, monkeypatch):
     assert job_response.status_code == 200
     assert job_response.json()["book_id"] == to_api_book_id("demo-book")
     assert job_response.json()["status"] == "deep_reading"
+
+
+def test_api_upload_does_not_launch_when_provisioning_cannot_resolve_a_book(
+    tmp_path,
+    monkeypatch,
+):
+    api_module.app.state.root = tmp_path
+    client = TestClient(api_module.app)
+    launched = False
+
+    monkeypatch.setattr(
+        api_module,
+        "create_upload_job",
+        lambda root: ("job-unprovisioned", root / "state" / "uploads" / "job.epub"),
+    )
+    monkeypatch.setattr(
+        api_module,
+        "provision_uploaded_book",
+        lambda *_args, **_kwargs: None,
+    )
+
+    def _launch(*_args, **_kwargs):
+        nonlocal launched
+        launched = True
+        raise AssertionError("an unprovisioned upload must not launch a worker")
+
+    monkeypatch.setattr(api_module, "launch_sequential_job", _launch)
+
+    response = client.post(
+        "/api/uploads/epub",
+        files={"file": ("broken.epub", b"epub-bytes", "application/epub+zip")},
+    )
+
+    assert response.status_code == 500
+    assert response.json()["code"] == "INTERNAL_ERROR"
+    assert launched is False
 
 
 def test_api_upload_propagates_internal_mechanism_fallback_override(tmp_path, monkeypatch):

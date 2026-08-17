@@ -19,6 +19,7 @@ This workspace is repo-first. Chat, Notion, and other tools may incubate work, b
 | Public API contract | `docs/api-contract.md` | fenced JSON appendix | `make contract-check` | public routes, fields, enums, IDs, or stable request/response shapes change |
 | Frontend/backend integration wiring | `docs/api-integration.md` | fenced JSON appendix | `make contract-check` | frontend-used endpoints, polling, realtime wiring, or runtime data flow change |
 | Runtime modes and recovery rules | `docs/runtime-modes.md` | none | `make agent-check` | launcher behavior, healthchecks, deployment entrypoints, or resume rules change |
+| Runtime observability implementation and local Phoenix sidecar | `docs/implementation/runtime-observability/README.md` | `output/<book_id>/_history/runs/<job_id>/observability/events.jsonl` plus rebuildable JSON/Markdown reports in the same directory | `bash -n scripts/*phoenix*.sh`, `make status-phoenix`, `make agent-check` | fact-ledger/report schema, exporter/sidecar lifecycle, span hierarchy, privacy defaults, usage/cost normalization, or observability pins change |
 | Shared backend mechanism platform | `docs/backend-reading-mechanism.md` | none | `make agent-check` | shared mechanism boundaries, status model, or doc routing change |
 | Current mechanism internals | `docs/backend-reading-mechanisms/<mechanism>.md` | fenced JSON appendix when maintained for that mechanism | `make contract-check` for the default mechanism, `make agent-check` otherwise | a mechanism's ontology, loop, prompt assembly, memory model, or private artifacts change |
 | Reader evaluation constitution | `docs/backend-reader-evaluation.md` | none | `make agent-check` | quality dimensions, evaluation workflow, judge policy, or artifact routing change |
@@ -38,6 +39,7 @@ This workspace is repo-first. Chat, Notion, and other tools may incubate work, b
 
 ## Operating Rules
 - Keep mutable runtime job state only in the backend job registry.
+- Keep the append-only local ledger as runtime-observability fact truth and Phoenix/OpenTelemetry traces as derived operational views; job/checkpoint/runtime artifacts remain lifecycle truth.
 - Keep durable current state in `docs/current-state.md`, not in `docs/agent-handoff.md`.
 - Keep workspace task routing in `docs/tasks/registry.*`, and link each task outward to detailed trackers, truth docs, decisions, jobs, and evidence.
 - Keep the Memory / Planning optimization design chain in its initiative-local implementation workspace. It is implementation-facing handoff material for the existing `attentional_v2` mechanism and does not replace stable mechanism or evaluation docs; stable behavior changes still need promotion to the relevant stable docs.

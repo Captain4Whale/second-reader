@@ -97,6 +97,38 @@ Use cases:
 - `demo`: local stable backend without autoreload
 - `prod`: deployment entrypoint for platforms like Railway
 
+### Optional Phoenix sidecar mode
+
+Use when you want a local OTLP collector and trace UI for an explicitly telemetry-enabled backend process.
+
+Commands:
+
+- `make setup-phoenix`
+- `make start-phoenix`
+- `make status-phoenix`
+- `make stop-phoenix`
+
+Behavior:
+
+- Phoenix is a separately managed Python sidecar pinned to `arize-phoenix==20.2.1`
+- its isolated virtualenv, persistent SQLite working data, logs, and PID live under `reading-companion-backend/state/phoenix/`
+- default UI/OTLP HTTP share loopback port `6006`; default OTLP gRPC uses loopback port `4317`
+- status checks the managed PID and UI separately, so an unmanaged listener is not mistaken for the repo sidecar
+- stop sends a bounded graceful termination only after verifying that the PID command belongs to the repo-local Phoenix executable
+- stopping Phoenix preserves its local data
+- the launcher disables Phoenix product telemetry, external UI resources, provider/sandbox playground entries, the agent assistant and its web/bash access, and the built-in MCP server; it forwards only an allowlisted child environment
+
+Important:
+
+- this local launcher is unauthenticated and refuses non-loopback hosts
+- normal workspace setup and all backend/frontend launch modes ignore Phoenix
+- backend trace export is independently opt-in through `READING_OBSERVABILITY_OTLP_ENABLED=1`
+- enabling export requires the optional backend `observability` dependencies and a full `READING_OBSERVABILITY_OTLP_ENDPOINT`, normally `http://127.0.0.1:6006/v1/traces`
+- exporter/collector failure is observational only and must not change product job, checkpoint, cursor, or resume state
+- Phoenix is not the production deployment plan; remote/shared use requires a separate authentication, TLS, storage, retention, and access-control decision
+
+Use `docs/implementation/runtime-observability/README.md` for the span, usage, cost, privacy, and version-pinning contract.
+
 ## Healthcheck
 
 Endpoint:
@@ -143,6 +175,7 @@ If a task changes:
 - supervision/restart behavior
 - deploy entrypoints
 - healthcheck behavior
+- Phoenix sidecar lifecycle or exporter enablement behavior
 
 then update this document in the same task.
 

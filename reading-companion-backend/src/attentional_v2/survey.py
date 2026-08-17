@@ -11,6 +11,7 @@ from typing import Literal, TypedDict
 
 from src.reading_core import BookDocument, build_sentence_records
 from src.iterator_reader.llm_utils import LLMTraceContext, current_llm_scope, invoke_structured_output, llm_invocation_scope
+from src.reading_runtime.observation_context import chapter_observation_scope
 
 from .llm_output_tools import SURVEY_CHAPTER_ZONE_RESULT_TOOL, require_mapping_fields
 from .schemas import ATTENTIONAL_V2_MECHANISM_VERSION, ATTENTIONAL_V2_SCHEMA_VERSION
@@ -286,7 +287,20 @@ def _classify_chapter_zone(
     )
 
     try:
-        with llm_invocation_scope(trace_context=LLMTraceContext(stage="survey", node="chapter_zone_classifier")):
+        with (
+            chapter_observation_scope(
+                str(int(chapter_entry.get("chapter_id", 0) or 0)),
+                chapter_index=max(0, int(chapter_position) - 1),
+                stage="survey",
+                node="chapter_zone_classifier",
+            ),
+            llm_invocation_scope(
+                trace_context=LLMTraceContext(
+                    stage="survey",
+                    node="chapter_zone_classifier",
+                )
+            ),
+        ):
             payload = invoke_structured_output(
                 prompts.survey_chapter_zone_system,
                 user_prompt,

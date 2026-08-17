@@ -3,7 +3,9 @@
 from __future__ import annotations
 
 import json
+from contextlib import contextmanager
 from pathlib import Path
+from types import SimpleNamespace
 
 import pytest
 
@@ -45,6 +47,31 @@ def test_cli_memory_retrieval_mode_is_explicit_only():
     args = parser.parse_args(["read", "demo.epub", "--memory-retrieval-mode", "text_only"])
 
     assert args.memory_retrieval_mode == "text_only"
+
+
+def test_cli_main_wraps_command_in_outer_worker_lease_context(monkeypatch):
+    """The process lease should wrap mechanism dispatch without changing parser or command functions."""
+
+    events: list[str] = []
+
+    @contextmanager
+    def _lease_context():
+        events.append("lease-enter")
+        try:
+            yield None
+        finally:
+            events.append("lease-exit")
+
+    class _Parser:
+        @staticmethod
+        def parse_args():
+            return SimpleNamespace(func=lambda _args: events.append("command") or 0)
+
+    monkeypatch.setattr(main_module, "build_parser", lambda: _Parser())
+    monkeypatch.setattr(main_module, "lease_context_from_environment", _lease_context)
+
+    assert main_module.main() == 0
+    assert events == ["lease-enter", "command", "lease-exit"]
 
 
 def test_backend_reading_mechanism_override_only_returns_explicit_fallback(monkeypatch):
@@ -272,10 +299,16 @@ def test_iterator_v1_can_persist_normalized_eval_bundle_for_eval_runs(tmp_path, 
             "chapters": [],
         },
     )
+    invocation_options: dict[str, object] = {}
+
+    def _read_book(*args, **kwargs):
+        invocation_options.update(kwargs)
+        return structure, output_dir, False
+
     monkeypatch.setattr(
         iterator_v1_module,
         "iterator_read_book",
-        lambda *args, **kwargs: (structure, output_dir, False),
+        _read_book,
     )
 
     IteratorV1Mechanism().read_book(
@@ -287,3 +320,4 @@ def test_iterator_v1_can_persist_normalized_eval_bundle_for_eval_runs(tmp_path, 
     )
 
     assert normalized_eval_bundle_file(output_dir).exists()
+    assert invocation_options["runtime_observability_enabled"] is False
