@@ -1,7 +1,38 @@
 {
   "version": 1,
-  "updated_at": "2026-08-17T09:42:00+08:00",
+  "updated_at": "2026-08-23T16:03:46+08:00",
   "tasks": [
+    {
+      "id": "TASK-ANNOTATION-PACK-V0-IMPLEMENTATION",
+      "title": "Implement the Second Reader Annotation Pack v0 contract and exporter",
+      "status": "waiting",
+      "lane": "product_contract",
+      "priority": "high",
+      "detail_ref": "docs/implementation/annotation-pack/second-reader-annotation-pack-v0-detailed-design-and-implementation-handoff.md",
+      "truth_refs": [
+        "docs/tasks/registry.md",
+        "docs/implementation/annotation-pack/second-reader-annotation-pack-v0-detailed-design-and-implementation-handoff.md"
+      ],
+      "decision_refs": [
+        "DEC-155"
+      ],
+      "job_refs": [],
+      "acceptance_ref": "docs/implementation/annotation-pack/second-reader-annotation-pack-v0-detailed-design-and-implementation-handoff.md#20-definition-of-done",
+      "next_action": "After owner confirmation of the project-controlled sr: namespace and schema IRI, and separate authorization to implement, implement only Slice 1 (Contract skeleton + canonical schema authority). Keep the root contract, generic backend module, Second Reader producer adapter, and public artifact boundary separate; do not modify Agent prompts, Digest, Memory, the reading loop, Readest, or Library surfaces.",
+      "blocked_by": [],
+      "blocking_reason": "Implementation requires owner confirmation of the project-controlled sr: namespace and schema IRI; implementation authorization remains a separate user decision.",
+      "evidence_refs": [
+        "docs/history/decision-log.md",
+        "docs/implementation/annotation-pack/second-reader-annotation-pack-v0-detailed-design-and-implementation-handoff.md",
+        "reading-companion-backend/src/reading_core/book_document.py",
+        "reading-companion-backend/src/attentional_v2/source_spans.py",
+        "reading-companion-backend/src/attentional_v2/schemas.py",
+        "reading-companion-backend/src/attentional_v2/runner.py",
+        "reading-companion-backend/src/reading_runtime/artifacts.py"
+      ],
+      "last_updated": "2026-08-23T16:03:46+08:00",
+      "last_updated_by": "codex"
+    },
     {
       "id": "TASK-RUNTIME-OBSERVABILITY-COST-V1",
       "title": "Land and validate runtime observability and cost v1",
@@ -4150,5 +4181,5 @@
       "last_updated_by": "codex"
     }
   ],
-  "last_updated": "2026-08-17T09:42:00+08:00"
+  "last_updated": "2026-08-23T16:03:46+08:00"
 }

@@ -4307,3 +4307,36 @@ This new direction is design frozen but not yet implemented as a formal benchmar
 - `docs/source-of-truth-map.md`
 - `docs/current-state.md`
 - `docs/tasks/registry.md`
+
+## Entry 153
+**ID**: DEC-155
+**Status**: active
+
+**Decision / Inflection**: Establish Annotation Pack v0 as the producer-neutral, public, detached contract between Second Reader, future annotation-library surfaces, and Reader adapters.
+
+**Period**: August 23, 2026, after `attentional_v2` had converged on native `highlight | note` Marginalia and the project needed a durable artifact that could outlive the Agent runtime without exposing its private memory, settlement, compatibility taxonomy, or audit state.
+
+**Problem**: Current settled Marginalia is trustworthy only inside a mechanism-private reaction ledger, while source text/locator evidence is split across that ledger and the shared `public/book_document.json`. The current `SourceRef` does not actually contain href or CFI, current CFI values are element-level rather than verified text ranges, publication/file fingerprints do not exist, and public manifests can contain absolute local paths or claim a source EPUB that is missing. Reusing chapter compatibility cards would also turn native Notes back into the retired `association` taxonomy and make a future Reader depend on `attentional_v2` internals.
+
+**Decision**: One Annotation Pack represents one normalized textual edition and one creator-owned annotation track. It is a detached sidecar containing only `highlight` and `note`, never the EPUB itself. The canonical wire shape is a Second Reader JSON-LD profile aligned to the W3C Web Annotation Data Model Recommendation and version-pinned to the EPUB Annotations 1.0 Working Draft dated May 21, 2026; it does not claim complete Working Draft conformance. A root `contract/annotation-pack/v0/` JSON Schema will be canonical, generated Python bindings will follow it, the generic implementation will live in a bounded `src/annotation_pack/` module, and the current mechanism will be isolated behind `SecondReaderProducerAdapter`. Public artifacts will land under `public/annotation-packs/`, not `_mechanisms/attentional_v2/`.
+
+The v0 identity and anchor contract combines exact EPUB byte SHA-256, a versioned normalized BookDocument content fingerprint, versioned chapter fingerprints, relative EPUB href, bounded text quote/prefix/suffix, required paragraph-char coordinates, structural chapter context, and an optional CFI only after quote round-trip verification. IDs use deterministic UUIDv5 inputs. Strict export fails closed on publication/substrate mismatch or unreliable anchors; explicit partial/skip/empty policies are separate and must remain visible in a sanitized validation report rather than in the Pack's product ontology. Public publication uses immutable digest-addressed revisions and a schema-validated, single-file atomic `current.json` pointer so JSON-only and later packaged deliverables never require in-place directory mutation.
+
+**Boundary**: This decision approves a design and implementation handoff, not product code. It does not modify Agent prompts, Digest, Memory, settlement, the reading loop, public HTTP APIs, Readest, Library, evaluation, or automatic completion behavior. Full fuzzy cross-edition or cross-translation alignment remains outside v0. The `sr:` namespace and schema IRI still require a project-controlled hosting confirmation before Slice 1 publishes the contract.
+
+**Why this path won**: A narrow edition-by-track sidecar preserves the current product-native Marginalia while giving future consumers stable publication identity and redundant anchors. Keeping the schema, generic builder, and producer adapter separate prevents compatibility debt from becoming the public ontology. Fail-closed source verification is necessary because current artifacts do not yet prove that the copied EPUB, persisted BookDocument, and settled source spans refer to the same bytes and text.
+
+**Primary evidence**:
+- `7889be4` — current Digest Marginalia native `highlight | note` implementation lineage
+- `c7db33f` — current markup-aware shared source substrate normalization lineage
+- `docs/implementation/annotation-pack/second-reader-annotation-pack-v0-detailed-design-and-implementation-handoff.md`
+- `docs/backend-reading-mechanisms/attentional_v2.md`
+- `reading-companion-backend/src/reading_core/book_document.py`
+- `reading-companion-backend/src/iterator_reader/parse.py`
+- `reading-companion-backend/src/attentional_v2/source_spans.py`
+- `reading-companion-backend/src/attentional_v2/schemas.py`
+- `reading-companion-backend/src/attentional_v2/runner.py`
+- `reading-companion-backend/src/attentional_v2/slow_cycle.py`
+- `reading-companion-backend/src/reading_runtime/artifacts.py`
+- `reading-companion-backend/src/reading_runtime/sequential_state.py`
+- `docs/tasks/registry.md`
