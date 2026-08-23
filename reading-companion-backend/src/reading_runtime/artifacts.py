@@ -98,6 +98,20 @@ def annotation_pack_annotations_file(
     return annotation_pack_revision_dir(output_dir, track_slug, revision_id) / "annotations.json"
 
 
+def annotation_pack_detached_file(
+    output_dir: Path,
+    track_slug: str,
+    revision_id: str,
+) -> Path:
+    """Path to the detached ``.annotations`` artifact for one revision."""
+
+    safe_track_slug = _validated_annotation_pack_track_slug(track_slug)
+    return (
+        annotation_pack_revision_dir(output_dir, safe_track_slug, revision_id)
+        / f"{safe_track_slug}.annotations"
+    )
+
+
 def annotation_pack_validation_report_file(
     output_dir: Path,
     track_slug: str,

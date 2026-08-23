@@ -30,12 +30,28 @@ Unknown unprefixed fields are rejected. The second `@context` object requires `"
 
 Source-derived quote strings are not normalized during serialization because their Unicode code-point coordinates must continue to match the source substrate. Metadata, creator names, and Note bodies are normalized by their builders before schema validation.
 
+## Detached package profile
+
+The formal detached artifact uses media type `application/zip;profile="https://www.w3.org/TR/epub-anno-10/"` and contains exactly one root entry:
+
+```text
+/
+└── annotations.json
+```
+
+`annotations.json` is the same complete canonical JSON-LD `AnnotationSet` that can be retained as a development artifact. The package must not contain the source EPUB, XHTML, cover, validation report, a `mimetype` entry, a custom manifest, optional assets, or private runtime data.
+
+Second Reader v0 writes a deliberately narrow classic single-disk ZIP: root filename `annotations.json`, DEFLATED level 9, timestamp `1980-01-01T00:00:00`, Unix regular-file mode `0644`, flags zero, and no archive/entry comments or extra fields. The validator rejects ZIP64, multi-disk, prefixed/trailing data, extra entries, unsafe paths or modes, encryption/data descriptors, local/central-header disagreement, package bytes over 8 MiB, entry bytes over 16 MiB, compression ratios over 100, malformed DEFLATE/CRC, and noncanonical or semantically invalid JSON. It validates in memory and never extracts to disk.
+
+These reproducibility and security restrictions are the Second Reader package profile, not general requirements asserted by the W3C drafts. Repeated generation is byte-stable within the supported compressor toolchain; independent validation does not require re-compressing with the local zlib version, because DEFLATE bitstreams are not guaranteed to remain identical across zlib versions.
+
 ## Version axes
 
 - `sr:specVersion`: `0.1.0`
 - `sr:schemaVersion`: `0.1.0`
 - `sr:extensionVersion`: `0.1`
 - canonical JSON: `sr-canonical-json-v1`
+- detached package: canonical classic ZIP profile described above
 - validation report JSON: `sr-annotation-validation-report-json-v1`
 
 Any wire schema edit bumps `sr:schemaVersion`. A new required semantic, ID input change, target meaning change, or Highlight/Note body rule change requires a new major contract directory. Standards URLs never move to an undated or newer draft without an explicit conformance delta review.

@@ -7,7 +7,7 @@ Update when: task status, priority, blockers, decision refs, job refs, evidence 
 
 This document is the human-readable companion to `docs/tasks/registry.json`.
 
-Last updated: `2026-08-23T23:19:05+08:00`
+Last updated: `2026-08-23T23:55:33+08:00`
 
 ## Status Values
 - `active`
@@ -25,7 +25,7 @@ Last updated: `2026-08-23T23:19:05+08:00`
 - Lane: `product_contract`
 - Priority: `high`
 - Detail: `docs/implementation/annotation-pack/second-reader-annotation-pack-v0-detailed-design-and-implementation-handoff.md`
-- Next: Slices 1–6 are accepted. Begin and accept Slice 7 (detached package generation) from the immutable JSON-publication checkpoint, then commit and push it independently. Produce the pinned single-entry `.annotations` form together with canonical JSON, validate/inspect the package independently and safely, derive a new complete deliverable-set revision without modifying the Slice 6 JSON-only revision, and retain the same atomic pointer and failure semantics. Continue through all eight Slices until the Section 20 Definition of Done is satisfied, preserve Agent/Digest/Memory/reading-loop/Readest/Library/public-HTTP boundaries, and keep unrelated baseline issues separate.
+- Next: Slices 1–7 are accepted. Begin and accept Slice 8 (public-safe real EPUB fixture, golden outputs, anchor round-trip proof, full checks, and documentation closure), then commit and push it independently. Rebuild the tracked fixture deterministically, export at least one Highlight and one Note through the real adapter/exporter path, verify every href/quote/paragraph-char anchor against the exact EPUB, and close every Section 20 item that is locally satisfiable without claiming external Reader interoperability or a live Pages IRI. Preserve Agent/Digest/Memory/reading-loop/Readest/Library/public-HTTP boundaries and keep unrelated baseline issues separate.
 - Evidence:
   - `DEC-155`
   - `contract/annotation-pack/v0/README.md`
@@ -43,6 +43,7 @@ Last updated: `2026-08-23T23:19:05+08:00`
   - `reading-companion-backend/src/annotation_pack/serialization.py`
   - `reading-companion-backend/src/annotation_pack/builder.py`
   - `reading-companion-backend/src/annotation_pack/validation.py`
+  - `reading-companion-backend/src/annotation_pack/packaging.py`
   - `reading-companion-backend/src/annotation_pack/producers/__init__.py`
   - `reading-companion-backend/src/annotation_pack/producers/second_reader.py`
   - `reading-companion-backend/src/annotation_pack/exporter.py`
@@ -61,6 +62,7 @@ Last updated: `2026-08-23T23:19:05+08:00`
   - `reading-companion-backend/tests/annotation_pack/test_serialization.py`
   - `reading-companion-backend/tests/annotation_pack/test_builder.py`
   - `reading-companion-backend/tests/annotation_pack/test_validation.py`
+  - `reading-companion-backend/tests/annotation_pack/test_packaging.py`
   - `reading-companion-backend/tests/annotation_pack/test_second_reader_adapter.py`
   - `reading-companion-backend/tests/annotation_pack/test_exporter.py`
   - `reading-companion-backend/tests/annotation_pack/test_annotation_pack_cli.py`

@@ -9,6 +9,7 @@ import pytest
 from src.reading_runtime.artifacts import (
     annotation_pack_annotations_file,
     annotation_pack_current_pointer_file,
+    annotation_pack_detached_file,
     annotation_pack_last_failed_report_file,
     annotation_pack_revision_dir,
     annotation_pack_revisions_dir,
@@ -42,6 +43,11 @@ def test_annotation_pack_helpers_build_the_public_immutable_revision_layout(
         TRACK_SLUG,
         REVISION_ID,
     ) == revision_dir / "annotations.json"
+    assert annotation_pack_detached_file(
+        tmp_path,
+        TRACK_SLUG,
+        REVISION_ID,
+    ) == revision_dir / f"{TRACK_SLUG}.annotations"
     assert annotation_pack_validation_report_file(
         tmp_path,
         TRACK_SLUG,

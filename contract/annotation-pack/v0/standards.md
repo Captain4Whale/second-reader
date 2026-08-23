@@ -10,6 +10,6 @@ The EPUB document is a Working Draft, not a Recommendation. Its JSON Schema and 
 
 The project profile intentionally narrows two draft-era localization shapes: publication title/creator and annotation creator names are simple strings, and Note bodies use the stable Web Annotation sibling `language` field rather than the EPUB draft's localizable `value` object example.
 
-The detached artifact planned for the completed v0 follows the pinned draft's ZIP shape: media type `application/zip;profile="https://www.w3.org/TR/epub-anno-10/"` and one root `annotations.json`. Reproducible ZIP bytes are a Second Reader project rule, not a W3C requirement.
+The implemented detached artifact follows the pinned draft's ZIP shape: media type `application/zip;profile="https://www.w3.org/TR/epub-anno-10/"` and one root `annotations.json`. Second Reader further narrows it to a bounded canonical classic-ZIP envelope with fixed writer metadata and no optional assets. Those reproducibility and security restrictions are project profile rules, not W3C requirements; cross-zlib DEFLATE bitstream identity is not claimed.
 
 The stable Web Annotation context IRI accepted in Pack documents is `https://www.w3.org/ns/epub-anno.jsonld`. Validators use a committed allowlist and do not dereference it while validating.

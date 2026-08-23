@@ -209,8 +209,9 @@ def _parser() -> argparse.ArgumentParser:
     parser.add_argument("--creator-name", required=True)
     parser.add_argument(
         "--deliverables",
-        required=True,
+        default="detached",
         choices=("json", "detached"),
+        help="publish detached JSON+package by default; use json for development-only output",
     )
     parser.add_argument("--allow-partial", action="store_true")
     parser.add_argument("--allow-skips", action="store_true")

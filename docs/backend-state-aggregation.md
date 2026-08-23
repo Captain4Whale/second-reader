@@ -25,8 +25,8 @@ Use `docs/api-contract.md` for exact fields and routes. Use this file to underst
   - Current public API surfaces do not expose it directly, but runtime and future eval tooling can rely on it as the mechanism-neutral text source.
 - `public/annotation-packs/<track_slug>/current.json` and `public/annotation-packs/<track_slug>/revisions/<revision_id>/`
   - Explicit Annotation Pack export creates this public-safe publication source; it is not written by normal reading completion.
-  - `current.json` is a small atomically replaced pointer to one complete immutable revision. The revision contains canonical `annotations.json` plus its validation report in Slice 6.
-  - Slice 6 is JSON-only. A formal detached `.annotations` artifact is neither emitted nor implied, and a detached request fails instead of downgrading.
+  - `current.json` is a small atomically replaced pointer to one complete immutable revision. A detached revision contains canonical `annotations.json`, `<track_slug>.annotations`, and `validation-report.json`; a development JSON-only revision remains supported.
+  - The `.annotations` file is an independently valid, bounded single-entry package containing only root `annotations.json`. Its sibling report stays local and is not inside the package. JSON-only-to-detached upgrade creates a new revision without modifying the old directory.
   - This tree is exporter-owned normalized publication output. It is not reading runtime state, mechanism truth, checkpoint/resume truth, or a replacement for the settled producer ledger.
   - No current frontend, Library discovery flow, REST route, or WebSocket surface reads or exposes this tree. Its placement under `public/` denotes content-safety and future product-facing eligibility, not current HTTP availability.
 - `_mechanisms/iterator_v1/derived/structure.json`
@@ -200,7 +200,7 @@ Use `docs/api-contract.md` for exact fields and routes. Use this file to underst
 - Annotation Pack publication vs runtime truth
   - The exporter is the only boundary that may turn verified publication identity, canonical BookDocument anchors, and producer-adapter drafts into the public Annotation Pack wire shape.
   - `public/annotation-packs/` contains immutable, validated publication snapshots selected by `current.json`; it never feeds job activity, progress, checkpoint, lease, or resume decisions.
-  - Slice 6 supports canonical JSON publication only and intentionally has no frontend/API discovery contract. Later packaging or discovery work must preserve this exporter-only normalization boundary.
+  - Canonical JSON and detached package publication are implemented, but there is intentionally no frontend/API/Library discovery contract. Later discovery work must preserve this exporter-only normalization boundary.
 - Additive locus/source-ref fields vs section compatibility
   - Public aggregation may now expose richer additive fields such as `reading_locus`, `primary_source_ref`, `related_source_refs`, and `supersedes_marginalia_id`.
   - Existing `segment_ref` / `section_ref` fields remain temporary compatibility sidecars for current frontend surfaces.

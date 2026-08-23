@@ -47,8 +47,8 @@ def _summary(stream: str) -> dict[str, Any]:
     return json.loads(lines[0])
 
 
-def _export_args(*, deliverables: str = "json") -> list[str]:
-    return [
+def _export_args(*, deliverables: str | None = "json") -> list[str]:
+    values = [
         "--book-id",
         "safe-book-id",
         "--track-key",
@@ -61,13 +61,14 @@ def _export_args(*, deliverables: str = "json") -> list[str]:
         "urn:uuid:c8d82077-7433-5fe9-9075-01f3e3100656",
         "--creator-name",
         "Second Reader",
-        "--deliverables",
-        deliverables,
         "--allow-partial",
         "--allow-skips",
         "--allow-empty",
         "--force-regenerate",
     ]
+    if deliverables is not None:
+        values.extend(("--deliverables", deliverables))
+    return values
 
 
 class _FakePolicy:
@@ -110,16 +111,19 @@ def _fake_exporter(monkeypatch: pytest.MonkeyPatch) -> tuple[ModuleType, dict[st
     def export_annotation_pack(**values: object) -> SimpleNamespace:
         calls["export"] = values
         policy = values["policy"]
-        failed = policy.deliverables == "detached"
         return SimpleNamespace(
-            status="failed" if failed else "published",
+            status="published",
             pack=None,
             annotations_json=None,
-            detached_package=None,
-            validation=_validation(failed=failed),
+            detached_package=(
+                Path("/isolated/public/pack.annotations")
+                if policy.deliverables == "detached"
+                else None
+            ),
+            validation=_validation(),
             validation_report=None,
             current_pointer=None,
-            revision_id=None if failed else DIGEST_C,
+            revision_id=DIGEST_C,
         )
 
     module.ExportPolicy = _FakePolicy
@@ -176,21 +180,34 @@ def test_export_cli_json_success_and_independent_policy_flags(
     assert policy.force_regenerate is True
 
 
-def test_export_cli_detached_fails_without_downgrade(
+def test_export_cli_detached_succeeds_without_downgrade(
     monkeypatch: pytest.MonkeyPatch,
     capsys: pytest.CaptureFixture[str],
 ) -> None:
     _module, calls = _fake_exporter(monkeypatch)
 
-    assert EXPORT_CLI.main(_export_args(deliverables="detached")) == 1
+    assert EXPORT_CLI.main(_export_args(deliverables="detached")) == 0
 
     captured = capsys.readouterr()
-    assert captured.out == ""
-    summary = _summary(captured.err)
-    assert summary["status"] == "failed"
-    assert summary["findings"][0]["code"] == "deliverable_not_implemented"
+    assert captured.err == ""
+    summary = _summary(captured.out)
+    assert summary["status"] == "published"
     assert calls["export"]["policy"].deliverables == "detached"
-    assert PRIVATE_TEXT not in captured.err
+    assert PRIVATE_TEXT not in captured.out
+
+
+def test_export_cli_defaults_to_detached(
+    monkeypatch: pytest.MonkeyPatch,
+    capsys: pytest.CaptureFixture[str],
+) -> None:
+    _module, calls = _fake_exporter(monkeypatch)
+
+    assert EXPORT_CLI.main(_export_args(deliverables=None)) == 0
+
+    captured = capsys.readouterr()
+    assert captured.err == ""
+    assert _summary(captured.out)["status"] == "published"
+    assert calls["export"]["policy"].deliverables == "detached"
 
 
 def test_export_cli_unexpected_error_is_fixed_and_private_safe(
@@ -366,6 +383,71 @@ def test_inspect_cli_uses_real_safe_inspector_for_canonical_pack(
         "sr:ParagraphCharSelector",
     ]
     assert str(source) not in captured.out
+
+
+def test_validate_and_inspect_clis_accept_independent_detached_package(
+    tmp_path: Path,
+    capsys: pytest.CaptureFixture[str],
+) -> None:
+    from src.annotation_pack.packaging import build_detached_annotations
+    from src.annotation_pack.serialization import canonical_json_bytes
+    from tests.annotation_pack.test_validation import _valid_pack
+
+    json_bytes = canonical_json_bytes(_valid_pack())
+    package = build_detached_annotations(json_bytes)
+    source = tmp_path / "public-safe.annotations"
+    source.write_bytes(package.package_bytes)
+    json_source = tmp_path / "annotations.json"
+    json_source.write_bytes(json_bytes)
+
+    assert VALIDATE_CLI.main([str(source)]) == 0
+    validation_output = capsys.readouterr()
+    assert validation_output.err == ""
+    assert _summary(validation_output.out)["status"] == "valid"
+
+    assert VALIDATE_CLI.main(["--schema-only", str(source)]) == 0
+    schema_output = capsys.readouterr()
+    assert schema_output.err == ""
+    assert _summary(schema_output.out)["status"] == "valid"
+
+    assert INSPECT_CLI.main([str(source)]) == 0
+    inspection_output = capsys.readouterr()
+    assert inspection_output.err == ""
+    summary = _summary(inspection_output.out)
+    assert summary["valid"] is True
+    assert summary["item_counts"] == {"highlight": 1, "note": 1, "total": 2}
+    assert str(source) not in inspection_output.out
+
+    assert INSPECT_CLI.main([str(json_source)]) == 0
+    json_inspection_output = capsys.readouterr()
+    assert json_inspection_output.err == ""
+    assert _summary(json_inspection_output.out) == summary
+
+
+def test_detached_empty_pack_still_requires_validate_cli_allow_empty(
+    tmp_path: Path,
+    capsys: pytest.CaptureFixture[str],
+) -> None:
+    from src.annotation_pack.packaging import build_detached_annotations
+    from src.annotation_pack.serialization import canonical_json_bytes
+    from tests.annotation_pack.test_validation import _refresh_digest, _valid_pack
+
+    pack = _valid_pack()
+    pack["items"] = []
+    _refresh_digest(pack)
+    source = tmp_path / "empty.annotations"
+    source.write_bytes(
+        build_detached_annotations(canonical_json_bytes(pack)).package_bytes
+    )
+
+    assert VALIDATE_CLI.main([str(source)]) == 1
+    rejected = capsys.readouterr()
+    assert _summary(rejected.err)["findings"][0]["code"] == "empty_track"
+
+    assert VALIDATE_CLI.main(["--allow-empty", str(source)]) == 0
+    accepted = capsys.readouterr()
+    assert accepted.err == ""
+    assert _summary(accepted.out)["findings"][0]["code"] == "empty_track"
 
 
 def test_inspect_cli_preserves_safe_invalid_summary_when_counts_include_bad_rows(
@@ -606,7 +688,7 @@ def test_validate_cli_rejects_oversize_and_nonregular_sources(
 ) -> None:
     oversize = tmp_path / "oversize.json"
     oversize.write_bytes(b" " * (VALIDATE_CLI.MAX_ANNOTATION_PACK_JSON_BYTES + 1))
-    directory = tmp_path / "not-a-file"
+    directory = tmp_path / "not-a-file.json"
     directory.mkdir()
 
     assert VALIDATE_CLI.main([str(oversize)]) == 1

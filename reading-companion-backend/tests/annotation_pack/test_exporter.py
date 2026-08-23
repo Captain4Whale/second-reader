@@ -13,6 +13,7 @@ import subprocess
 import sys
 import threading
 import unicodedata
+import zipfile
 
 import pytest
 
@@ -217,6 +218,8 @@ def _export(
     output_dir: Path,
     **policy_values: object,
 ):  # type: ignore[no-untyped-def]
+    values = dict(policy_values)
+    deliverables = values.pop("deliverables", "json")
     return export_annotation_pack(
         output_dir=output_dir,
         output_root=output_root,
@@ -224,7 +227,7 @@ def _export(
         track_key="second-reader-agent",
         creator=CREATOR,
         generated_at=NOW,
-        policy=ExportPolicy(deliverables="json", **policy_values),
+        policy=ExportPolicy(deliverables=deliverables, **values),  # type: ignore[arg-type]
     )
 
 
@@ -352,6 +355,159 @@ def test_json_export_publishes_immutable_revision_then_is_unchanged(tmp_path: Pa
     assert canonical_json_bytes(second.pack) == second.annotations_json.read_bytes()
 
 
+def test_json_only_revision_upgrades_byte_preservingly_to_detached(
+    tmp_path: Path,
+) -> None:
+    runtime_root, output_root, output_dir, _ledger_value = _fixture(tmp_path)
+    json_only = _export(runtime_root, output_root, output_dir)
+    assert json_only.annotations_json is not None
+    assert json_only.validation_report is not None
+    assert json_only.revision_id is not None
+    old_revision = json_only.annotations_json.parent
+    old_contents = {
+        child.name: child.read_bytes()
+        for child in old_revision.iterdir()
+        if child.is_file()
+    }
+    json_bytes = json_only.annotations_json.read_bytes()
+
+    detached = _export(
+        runtime_root,
+        output_root,
+        output_dir,
+        deliverables="detached",
+    )
+
+    assert detached.status == "published"
+    assert detached.revision_id is not None
+    assert detached.revision_id != json_only.revision_id
+    assert detached.annotations_json is not None
+    assert detached.annotations_json.read_bytes() == json_bytes
+    assert detached.detached_package is not None
+    assert detached.detached_package.name == (
+        f"{detached.current_pointer.parent.name}.annotations"
+    )
+    with zipfile.ZipFile(detached.detached_package) as archive:
+        assert archive.namelist() == ["annotations.json"]
+        assert archive.read("annotations.json") == json_bytes
+    pointer = json.loads(detached.current_pointer.read_bytes())
+    assert pointer["detached_package"].endswith(detached.detached_package.name)
+    assert pointer["detached_package_sha256"] == hashlib.sha256(
+        detached.detached_package.read_bytes()
+    ).hexdigest()
+    report = json.loads(detached.validation_report.read_bytes())
+    assert report["package_sha256"] == pointer["detached_package_sha256"]
+    assert {
+        child.name: child.read_bytes()
+        for child in old_revision.iterdir()
+        if child.is_file()
+    } == old_contents
+
+    repeated = _export(
+        runtime_root,
+        output_root,
+        output_dir,
+        deliverables="detached",
+    )
+    assert repeated.status == "unchanged"
+    assert repeated.revision_id == detached.revision_id
+    assert repeated.detached_package == detached.detached_package
+
+
+def test_json_request_accepts_current_detached_superset_as_unchanged(
+    tmp_path: Path,
+) -> None:
+    runtime_root, output_root, output_dir, _ledger_value = _fixture(tmp_path)
+    detached = _export(
+        runtime_root,
+        output_root,
+        output_dir,
+        deliverables="detached",
+    )
+    requested_json = _export(runtime_root, output_root, output_dir)
+
+    assert detached.status == "published"
+    assert requested_json.status == "unchanged"
+    assert requested_json.revision_id == detached.revision_id
+    assert requested_json.detached_package == detached.detached_package
+
+
+def test_package_build_failure_preserves_json_only_current(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    from src.annotation_pack.packaging import PackageError
+
+    runtime_root, output_root, output_dir, _ledger_value = _fixture(tmp_path)
+    json_only = _export(runtime_root, output_root, output_dir)
+    assert json_only.current_pointer is not None
+    old_pointer = json_only.current_pointer.read_bytes()
+    old_revision = json_only.annotations_json.parent
+    old_files = {
+        child.name: child.read_bytes()
+        for child in old_revision.iterdir()
+        if child.is_file()
+    }
+
+    def fail_package(_annotations_json: bytes) -> None:
+        raise PackageError()
+
+    monkeypatch.setattr(exporter_module, "build_detached_annotations", fail_package)
+    failed = _export(
+        runtime_root,
+        output_root,
+        output_dir,
+        deliverables="detached",
+    )
+
+    assert failed.status == "failed"
+    assert failed.validation.findings[0].code == "package_entry_invalid"
+    assert json_only.current_pointer.read_bytes() == old_pointer
+    assert {
+        child.name: child.read_bytes()
+        for child in old_revision.iterdir()
+        if child.is_file()
+    } == old_files
+
+
+def test_package_write_failure_preserves_current_and_cleans_owned_temp(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    runtime_root, output_root, output_dir, _ledger_value = _fixture(tmp_path)
+    json_only = _export(runtime_root, output_root, output_dir)
+    assert json_only.current_pointer is not None
+    old_pointer = json_only.current_pointer.read_bytes()
+    original_write = exporter_module._write_exclusive_file_at
+
+    def fail_package_write(
+        directory_descriptor: int,
+        name: str,
+        content: bytes,
+    ) -> exporter_module._FileIdentity:
+        if name.endswith(".annotations"):
+            raise OSError("simulated package write failure")
+        return original_write(directory_descriptor, name, content)
+
+    monkeypatch.setattr(
+        exporter_module,
+        "_write_exclusive_file_at",
+        fail_package_write,
+    )
+    failed = _export(
+        runtime_root,
+        output_root,
+        output_dir,
+        deliverables="detached",
+    )
+
+    assert failed.status == "failed"
+    assert failed.validation.findings[0].code == "publication_write_failed"
+    assert json_only.current_pointer.read_bytes() == old_pointer
+    revisions = json_only.annotations_json.parents[1]
+    assert not [child for child in revisions.iterdir() if child.name.startswith(".tmp-")]
+
+
 def test_force_regenerate_reuses_identical_immutable_revision(tmp_path: Path) -> None:
     runtime_root, output_root, output_dir, _ledger_value = _fixture(tmp_path)
     first = _export(runtime_root, output_root, output_dir)
@@ -363,6 +519,30 @@ def test_force_regenerate_reuses_identical_immutable_revision(tmp_path: Path) ->
     )
     assert forced.status == "published"
     assert forced.revision_id == first.revision_id
+
+
+def test_force_json_request_does_not_retract_existing_detached_deliverable(
+    tmp_path: Path,
+) -> None:
+    runtime_root, output_root, output_dir, _ledger_value = _fixture(tmp_path)
+    detached = _export(
+        runtime_root,
+        output_root,
+        output_dir,
+        deliverables="detached",
+    )
+    forced = _export(
+        runtime_root,
+        output_root,
+        output_dir,
+        force_regenerate=True,
+    )
+
+    assert detached.status == "published"
+    assert forced.status == "published"
+    assert forced.detached_package is not None
+    pointer = json.loads(forced.current_pointer.read_bytes())
+    assert pointer["detached_package"].endswith(forced.detached_package.name)
 
 
 @pytest.mark.parametrize(
@@ -462,7 +642,7 @@ def test_strict_row_error_fails_and_allow_skips_publishes_degraded(tmp_path: Pat
     assert degraded.validation.skipped_count == 1
 
 
-def test_detached_request_fails_without_writing_publication(tmp_path: Path) -> None:
+def test_default_export_publishes_detached_revision(tmp_path: Path) -> None:
     runtime_root, output_root, output_dir, _ledger_value = _fixture(tmp_path)
     result = export_annotation_pack(
         output_dir=output_dir,
@@ -471,9 +651,13 @@ def test_detached_request_fails_without_writing_publication(tmp_path: Path) -> N
         track_key="second-reader-agent",
         creator=CREATOR,
     )
-    assert result.status == "failed"
-    assert result.validation.findings[0].code == "deliverable_not_implemented"
-    assert not (output_dir / "public" / "annotation-packs").exists()
+    assert result.status == "published"
+    assert result.detached_package is not None
+    assert result.detached_package.is_file()
+    assert result.annotations_json is not None
+    with zipfile.ZipFile(result.detached_package) as archive:
+        assert archive.namelist() == ["annotations.json"]
+        assert archive.read("annotations.json") == result.annotations_json.read_bytes()
 
 
 def test_active_writer_precedes_run_state_and_deliverable_checks(
@@ -718,7 +902,7 @@ def test_current_pointer_path_or_declared_digest_mismatch_is_fatal(
     assert first.current_pointer.read_bytes() == corrupted
 
 
-def test_slice6_rejects_current_pointer_declaring_detached_package(
+def test_current_pointer_cannot_declare_a_missing_detached_package(
     tmp_path: Path,
 ) -> None:
     runtime_root, output_root, output_dir, _ledger_value = _fixture(tmp_path)
@@ -737,6 +921,105 @@ def test_slice6_rejects_current_pointer_declaring_detached_package(
     assert result.status == "failed"
     assert result.validation.findings[0].code == "publication_pointer_invalid"
     assert first.current_pointer.read_bytes() == declared
+
+
+@pytest.mark.parametrize("corruption", ["path", "digest", "missing_pair"])
+def test_packaged_pointer_path_digest_and_pair_are_revalidated(
+    tmp_path: Path,
+    corruption: str,
+) -> None:
+    runtime_root, output_root, output_dir, _ledger_value = _fixture(tmp_path)
+    first = _export(
+        runtime_root,
+        output_root,
+        output_dir,
+        deliverables="detached",
+    )
+    assert first.current_pointer is not None
+    pointer = json.loads(first.current_pointer.read_bytes())
+    if corruption == "path":
+        pointer["detached_package"] = (
+            f"revisions/{pointer['revision_id']}/other.annotations"
+        )
+    elif corruption == "digest":
+        pointer["detached_package_sha256"] = "0" * 64
+    else:
+        del pointer["detached_package_sha256"]
+    corrupted = canonical_json_bytes(pointer)
+    first.current_pointer.write_bytes(corrupted)
+
+    result = _export(
+        runtime_root,
+        output_root,
+        output_dir,
+        deliverables="detached",
+    )
+
+    assert result.status == "failed"
+    assert result.validation.findings[0].code == "publication_pointer_invalid"
+    assert first.current_pointer.read_bytes() == corrupted
+
+
+def test_packaged_report_must_bind_the_exact_package_digest(tmp_path: Path) -> None:
+    runtime_root, output_root, output_dir, _ledger_value = _fixture(tmp_path)
+    first = _export(
+        runtime_root,
+        output_root,
+        output_dir,
+        deliverables="detached",
+    )
+    assert first.current_pointer is not None
+    assert first.validation_report is not None
+    report = json.loads(first.validation_report.read_bytes())
+    report["package_sha256"] = "f" * 64
+    report_bytes = canonical_json_bytes(report)
+    first.validation_report.chmod(0o644)
+    first.validation_report.write_bytes(report_bytes)
+    pointer = json.loads(first.current_pointer.read_bytes())
+    pointer["validation_report_sha256"] = hashlib.sha256(report_bytes).hexdigest()
+    first.current_pointer.write_bytes(canonical_json_bytes(pointer))
+
+    result = _export(
+        runtime_root,
+        output_root,
+        output_dir,
+        deliverables="detached",
+    )
+
+    assert result.status == "failed"
+    assert result.validation.findings[0].code == "validation_report_invalid"
+
+
+def test_packaged_entry_bytes_must_equal_sibling_annotations_json(
+    tmp_path: Path,
+) -> None:
+    runtime_root, output_root, output_dir, _ledger_value = _fixture(tmp_path)
+    first = _export(
+        runtime_root,
+        output_root,
+        output_dir,
+        deliverables="detached",
+    )
+    assert first.current_pointer is not None
+    assert first.detached_package is not None
+    corrupted_package = first.detached_package.read_bytes() + b"trailing-junk"
+    first.detached_package.chmod(0o644)
+    first.detached_package.write_bytes(corrupted_package)
+    pointer = json.loads(first.current_pointer.read_bytes())
+    pointer["detached_package_sha256"] = hashlib.sha256(
+        corrupted_package
+    ).hexdigest()
+    first.current_pointer.write_bytes(canonical_json_bytes(pointer))
+
+    result = _export(
+        runtime_root,
+        output_root,
+        output_dir,
+        deliverables="detached",
+    )
+
+    assert result.status == "failed"
+    assert result.validation.findings[0].code == "package_entry_invalid"
 
 
 @pytest.mark.parametrize(
@@ -787,6 +1070,48 @@ def test_current_artifacts_are_reasserted_after_late_validation(
     assert result.status == "failed"
     assert result.validation.findings[0].code == expected_code
     assert result.status != "unchanged"
+
+
+def test_current_package_is_reasserted_after_late_validation(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    runtime_root, output_root, output_dir, _ledger_value = _fixture(tmp_path)
+    first = _export(
+        runtime_root,
+        output_root,
+        output_dir,
+        deliverables="detached",
+    )
+    assert first.detached_package is not None
+    original_validate = exporter_module.validate_pack
+    calls = 0
+
+    def validate_then_mutate_package(*args: object, **kwargs: object):  # type: ignore[no-untyped-def]
+        nonlocal calls
+        calls += 1
+        result = original_validate(*args, **kwargs)
+        if calls == 2:
+            first.detached_package.chmod(0o644)
+            first.detached_package.write_bytes(
+                first.detached_package.read_bytes() + b"late-mutation"
+            )
+        return result
+
+    monkeypatch.setattr(
+        exporter_module,
+        "validate_pack",
+        validate_then_mutate_package,
+    )
+    result = _export(
+        runtime_root,
+        output_root,
+        output_dir,
+        deliverables="detached",
+    )
+
+    assert result.status == "failed"
+    assert result.validation.findings[0].code == "package_entry_invalid"
 
 
 def test_current_revision_symlink_to_fifo_fails_without_following_or_blocking(
@@ -1184,6 +1509,61 @@ def test_post_switch_revision_corruption_rolls_pointer_back_with_cas(
     assert first.annotations_json.read_bytes() == old_annotations
 
 
+def test_post_switch_package_corruption_rolls_pointer_back_with_cas(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    runtime_root, output_root, output_dir, ledger = _fixture(tmp_path)
+    first = _export(
+        runtime_root,
+        output_root,
+        output_dir,
+        deliverables="detached",
+    )
+    assert first.current_pointer is not None
+    assert first.detached_package is not None
+    old_pointer = first.current_pointer.read_bytes()
+    old_package = first.detached_package.read_bytes()
+    changed = deepcopy(ledger)
+    changed["records"][0]["search_query"] = "new detached snapshot"  # type: ignore[index]
+    reaction_records_file(output_dir).write_bytes(_json_bytes(changed))
+    original_replace = exporter_module._atomic_replace_file_at
+    corrupted = False
+
+    def replace_then_corrupt_package(
+        directory_descriptor: int,
+        destination_name: str,
+        content: bytes,
+    ) -> exporter_module._FileIdentity:
+        nonlocal corrupted
+        snapshot = original_replace(directory_descriptor, destination_name, content)
+        if destination_name == "current.json":
+            pointer = json.loads(content)
+            package = first.current_pointer.parent / pointer["detached_package"]
+            package.chmod(0o644)
+            package.write_bytes(package.read_bytes() + b"corrupt")
+            corrupted = True
+        return snapshot
+
+    monkeypatch.setattr(
+        exporter_module,
+        "_atomic_replace_file_at",
+        replace_then_corrupt_package,
+    )
+    result = _export(
+        runtime_root,
+        output_root,
+        output_dir,
+        deliverables="detached",
+    )
+
+    assert corrupted
+    assert result.status == "failed"
+    assert result.validation.findings[0].code == "publication_write_failed"
+    assert first.current_pointer.read_bytes() == old_pointer
+    assert first.detached_package.read_bytes() == old_package
+
+
 def test_post_switch_third_party_pointer_is_detected_but_never_overwritten(
     tmp_path: Path,
     monkeypatch: pytest.MonkeyPatch,
@@ -1402,6 +1782,39 @@ def test_existing_empty_revision_directory_is_never_replaced(
     assert list(revisions[0].iterdir()) == []
 
 
+@pytest.mark.parametrize("corruption", ["content", "writable"])
+def test_existing_detached_revision_must_match_and_remain_frozen(
+    tmp_path: Path,
+    corruption: str,
+) -> None:
+    runtime_root, output_root, output_dir, _ledger_value = _fixture(tmp_path)
+    first = _export(
+        runtime_root,
+        output_root,
+        output_dir,
+        deliverables="detached",
+    )
+    assert first.current_pointer is not None
+    assert first.detached_package is not None
+    first.current_pointer.unlink()
+    first.detached_package.chmod(0o644)
+    if corruption == "content":
+        first.detached_package.write_bytes(
+            first.detached_package.read_bytes() + b"conflict"
+        )
+
+    result = _export(
+        runtime_root,
+        output_root,
+        output_dir,
+        deliverables="detached",
+    )
+
+    assert result.status == "failed"
+    assert result.validation.findings[0].code == "publication_write_failed"
+    assert not first.current_pointer.exists()
+
+
 def test_unexpected_guarded_export_failure_is_not_reported_as_active_writer(
     tmp_path: Path,
     monkeypatch: pytest.MonkeyPatch,
@@ -1482,7 +1895,7 @@ def test_export_never_publishes_an_artifact_larger_than_its_reader_limit(
     assert result.current_pointer is None
 
 
-def test_real_clis_export_repeat_validate_and_inspect_safe_fixture(
+def test_real_clis_upgrade_validate_and_inspect_detached_safe_fixture(
     tmp_path: Path,
 ) -> None:
     runtime_root, _output_root, output_dir, _ledger_value = _fixture(tmp_path)
@@ -1527,6 +1940,7 @@ def test_real_clis_export_repeat_validate_and_inspect_safe_fixture(
     pointer = json.loads(current_paths[0].read_bytes())
     annotations_path = current_paths[0].parent / pointer["annotations_json"]
     assert annotations_path.is_file()
+    json_only_bytes = annotations_path.read_bytes()
 
     repeated = subprocess.run(
         export_command,
@@ -1541,11 +1955,47 @@ def test_real_clis_export_repeat_validate_and_inspect_safe_fixture(
     assert repeated.stderr == ""
     assert json.loads(repeated.stdout)["status"] == "unchanged"
 
+    detached_command = [*export_command[:-1], "detached"]
+    upgraded = subprocess.run(
+        detached_command,
+        cwd=BACKEND,
+        env=environment,
+        capture_output=True,
+        text=True,
+        timeout=30,
+        check=False,
+    )
+    assert upgraded.returncode == 0
+    assert upgraded.stderr == ""
+    assert json.loads(upgraded.stdout)["status"] == "published"
+
+    detached_repeat = subprocess.run(
+        detached_command,
+        cwd=BACKEND,
+        env=environment,
+        capture_output=True,
+        text=True,
+        timeout=30,
+        check=False,
+    )
+    assert detached_repeat.returncode == 0
+    assert detached_repeat.stderr == ""
+    assert json.loads(detached_repeat.stdout)["status"] == "unchanged"
+
+    pointer = json.loads(current_paths[0].read_bytes())
+    annotations_path = current_paths[0].parent / pointer["annotations_json"]
+    detached_path = current_paths[0].parent / pointer["detached_package"]
+    assert annotations_path.read_bytes() == json_only_bytes
+    assert detached_path.is_file()
+    with zipfile.ZipFile(detached_path) as archive:
+        assert archive.namelist() == ["annotations.json"]
+        assert archive.read("annotations.json") == json_only_bytes
+
     validated = subprocess.run(
         [
             sys.executable,
             str(BACKEND / "scripts" / "validate_annotation_pack.py"),
-            str(annotations_path),
+            str(detached_path),
         ],
         cwd=BACKEND,
         env=environment,
@@ -1558,7 +2008,7 @@ def test_real_clis_export_repeat_validate_and_inspect_safe_fixture(
         [
             sys.executable,
             str(BACKEND / "scripts" / "inspect_annotation_pack.py"),
-            str(annotations_path),
+            str(detached_path),
         ],
         cwd=BACKEND,
         env=environment,
@@ -1580,6 +2030,10 @@ def test_real_clis_export_repeat_validate_and_inspect_safe_fixture(
             first.stderr,
             repeated.stdout,
             repeated.stderr,
+            upgraded.stdout,
+            upgraded.stderr,
+            detached_repeat.stdout,
+            detached_repeat.stderr,
             validated.stdout,
             validated.stderr,
             inspected.stdout,

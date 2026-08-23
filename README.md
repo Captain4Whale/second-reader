@@ -288,9 +288,9 @@ Important frontend variables:
 - `make closed-loop-benchmark-curation CLOSED_LOOP_BENCHMARK_CURATION_ARGS="..."`: run the first scratch-safe closed-loop benchmark-curation pass for the managed local supplement
 - `cd reading-companion-frontend && npm run generate-api-types`: refresh generated frontend API types after the backend OpenAPI snapshot changes
 
-## Annotation Pack v0 Explicit JSON Export
+## Annotation Pack v0 Explicit Export
 
-Annotation Pack export is an opt-in operator action. It is not called by normal reading completion and does not change the Agent, Digest, Memory, reading loop, Library, Reader, or public HTTP API. Slice 6 publishes canonical JSON only; it does **not** create or claim a formal detached `.annotations` package.
+Annotation Pack export is an opt-in operator action. It is not called by normal reading completion and does not change the Agent, Digest, Memory, reading loop, Library, Reader, or public HTTP API. The default deliverable is the formal detached `.annotations` package together with its canonical development JSON.
 
 From the backend directory, export one completed book by its existing output id:
 
@@ -303,28 +303,36 @@ BOOK_ID="replace-with-existing-book-id"
   --track-name "Second Reader" \
   --creator-type Software \
   --creator-id urn:uuid:c8d82077-7433-5fe9-9075-01f3e3100656 \
-  --creator-name "Second Reader" \
-  --deliverables json
+  --creator-name "Second Reader"
 ```
 
-`--book-output-dir` is the mutually exclusive operator/testing alternative to `--book-id`; it must still resolve inside the configured `<BACKEND_RUNTIME_ROOT>/output` tree. A successful Slice 6 export writes an immutable revision under:
+`--book-output-dir` is the mutually exclusive operator/testing alternative to `--book-id`; it must still resolve inside the configured `<BACKEND_RUNTIME_ROOT>/output` tree. A successful detached export writes one complete immutable revision under:
 
 ```text
-<BACKEND_RUNTIME_ROOT>/output/<book_id>/public/annotation-packs/<track_slug>/revisions/<revision_id>/annotations.json
+<BACKEND_RUNTIME_ROOT>/output/<book_id>/public/annotation-packs/<track_slug>/
+├── current.json
+└── revisions/<revision_id>/
+    ├── annotations.json
+    ├── <track_slug>.annotations
+    └── validation-report.json
 ```
 
-and atomically selects it through the sibling `public/annotation-packs/<track_slug>/current.json` pointer. The JSON summary printed by the command contains safe ids, digests, counts, and finding codes; it intentionally omits local paths and annotation text.
+The exporter writes and freezes the full revision before atomically selecting it through `current.json`. The pointer binds the relative paths and SHA-256 digests of JSON, package, and report. The command summary contains safe ids, digests, counts, and finding codes; it intentionally omits local paths and annotation text.
 
-Validate and inspect the published JSON independently:
+Validate and inspect either artifact independently, without the source EPUB, BookDocument, or producer ledger:
 
 ```bash
 cd reading-companion-backend
 ANNOTATIONS_JSON="/absolute/path/to/public/annotation-packs/track/revisions/revision/annotations.json"
+ANNOTATIONS_PACKAGE="/absolute/path/to/public/annotation-packs/track/revisions/revision/track.annotations"
 .venv/bin/python scripts/validate_annotation_pack.py "$ANNOTATIONS_JSON"
-.venv/bin/python scripts/inspect_annotation_pack.py "$ANNOTATIONS_JSON"
+.venv/bin/python scripts/validate_annotation_pack.py "$ANNOTATIONS_PACKAGE"
+.venv/bin/python scripts/inspect_annotation_pack.py "$ANNOTATIONS_PACKAGE"
 ```
 
-Normal validation requires exact canonical JSON bytes as well as full schema, identity, semantic-digest, and privacy validity. An intentionally empty export must be revalidated with explicit `--allow-empty`; that policy flag is semantic-only and cannot be combined with `--schema-only`.
+The detached artifact has media type `application/zip;profile="https://www.w3.org/TR/epub-anno-10/"` and exactly one root entry, `annotations.json`. It never contains the EPUB, validation report, XHTML, cover, source assets, or private runtime state. Validation performs bounded classic-ZIP envelope/DEFLATE/CRC checks and full canonical Pack validation without extracting to disk. `--schema-only` never bypasses package security or canonical-byte checks. An intentionally empty export must be revalidated with explicit `--allow-empty`; that policy flag is semantic-only and cannot be combined with `--schema-only`.
+
+Use `--deliverables json` only when a development JSON-only revision is intentionally required. `json` is a minimum requirement: once a track has a detached current revision, later JSON requests do not retract the package. A non-forced JSON-only-to-detached upgrade packages the exact already-published `annotations.json` bytes in a new complete revision, revalidates the package and report, and leaves the old JSON-only revision unchanged. Repeating the same request verifies the selected revision and returns `unchanged` instead of rewriting it.
 
 Standalone contract `Annotation` examples are schema fragments rather than full semantic Packs, so validate them only with the explicit schema-only mode:
 
@@ -339,9 +347,9 @@ The policy flags are independent:
 - `--allow-partial` permits a stable settled snapshot from a paused/error run; it does not permit invalid-row skips.
 - `--allow-skips` permits annotation-level invalid rows to be skipped when a valid item remains; it does not permit partial or empty exports.
 - `--allow-empty` permits an explicitly empty Track where the run-state policy allows it; it is not a quality claim.
-- `--force-regenerate` requests a fresh publication pass rather than the ordinary verified no-op path.
+- `--force-regenerate` requests a fresh publication pass rather than the ordinary verified no-op path; it does not retract an already-published detached deliverable.
 
-`--deliverables detached` is accepted as an explicit request but fails with stable `deliverable_not_implemented` status in Slice 6; the exporter never silently downgrades it to JSON or renames JSON as `.annotations`. The approved namespace and schema IRIs use the GitHub Pages location, but they are not live until the workflow reaches `main`, Pages is enabled, deployment succeeds, and the served bytes pass HTTP comparison against the canonical contract files.
+Package generation fixes the root name, timestamp, Unix regular-file mode, DEFLATE level, entry order, and comments/extra fields. Byte reproducibility is a Second Reader project rule within the supported toolchain, not a W3C requirement or a promise that different zlib versions emit the same DEFLATE bitstream. Independent validation checks the observable safe envelope and uncompressed canonical JSON rather than requiring local recompression byte equality. The approved namespace and schema IRIs use the GitHub Pages location, but they are not live until the workflow reaches `main`, Pages is enabled, deployment succeeds, and the served bytes pass HTTP comparison against the canonical contract files.
 
 All three tools reserve exit code `0` for a successful operation (`published`, `degraded`, or verified `unchanged` for export; valid for validate/inspect), `1` for an operational or validation failure, and `2` for a fixed-shape CLI usage error. Each invocation emits machine-readable JSON only: one line per validated source, and exactly one line for export or inspect.
 

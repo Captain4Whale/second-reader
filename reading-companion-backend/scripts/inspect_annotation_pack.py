@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Inspect one Annotation Pack JSON file and emit only public-safe metadata."""
+"""Inspect one Annotation Pack JSON or package and emit public-safe metadata."""
 
 from __future__ import annotations
 

@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Safely validate Annotation Pack v0 JSON without network access.
+"""Safely validate Annotation Pack v0 JSON or detached packages offline.
 
 Normal mode performs the complete AnnotationSet semantic validation. The
 contract's standalone Annotation examples intentionally require
@@ -417,12 +417,27 @@ def validate_path(
 
     mode = "schema-only" if schema_only else "semantic"
     try:
-        document, source_bytes = _strict_json_document(path)
+        if path.suffix == ".annotations":
+            from src.annotation_pack.packaging import (
+                PackageError,
+                validate_detached_annotations,
+            )
+
+            try:
+                package = validate_detached_annotations(path)
+            except PackageError:
+                return _failed_summary("package_entry_invalid", mode=mode)
+            document = package.document
+            source_bytes = package.annotations_json
+        elif path.suffix == ".json":
+            document, source_bytes = _strict_json_document(path)
+        else:
+            return _failed_summary("schema_validation_failed", mode=mode)
     except _SafeInputError as exc:
         return _failed_summary(exc.code, mode=mode)
     except Exception:
         return _failed_summary("source_unavailable", mode=mode)
-    if type(document) is not dict:
+    if not isinstance(document, Mapping):
         return _failed_summary("root_not_object", mode=mode)
     if schema_only:
         return _schema_summary(document)

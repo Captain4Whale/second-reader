@@ -1,9 +1,9 @@
-"""Explicit, crash-safe JSON publication orchestration for Annotation Pack v0.
+"""Explicit, crash-safe publication orchestration for Annotation Pack v0.
 
-Slice 6 intentionally publishes only canonical ``annotations.json`` revisions.
-It is not part of the normal reading runner and it does not expose arbitrary
-producer paths.  All producer-specific knowledge remains behind the
-``SecondReaderProducerAdapter`` boundary.
+The exporter can publish canonical development JSON or the complete detached
+deliverable set.  It is not part of the normal reading runner and it does not
+expose arbitrary producer paths.  All producer-specific knowledge remains
+behind the ``SecondReaderProducerAdapter`` boundary.
 """
 
 from __future__ import annotations
@@ -54,6 +54,12 @@ from src.annotation_pack.identity import (
     PublicationIdentityResult,
 )
 from src.annotation_pack.ids import default_generator_id, track_id as derive_track_id
+from src.annotation_pack.packaging import (
+    MAX_DETACHED_PACKAGE_BYTES,
+    PackageError,
+    build_detached_annotations,
+    validate_detached_annotations,
+)
 from src.annotation_pack.producers.second_reader import (
     ADAPTER_VERSION,
     SecondReaderProducerAdapter,
@@ -82,6 +88,7 @@ from src.reading_core.storage import book_document_file
 from src.reading_runtime.artifacts import (
     annotation_pack_annotations_file,
     annotation_pack_current_pointer_file,
+    annotation_pack_detached_file,
     annotation_pack_last_failed_report_file,
     annotation_pack_revision_dir,
     annotation_pack_revisions_dir,
@@ -206,12 +213,20 @@ class _JsonSnapshot:
 
 
 @dataclass(frozen=True, slots=True)
+class _BinarySnapshot:
+    content: bytes
+    sha256: str
+    file: _FileSnapshot
+
+
+@dataclass(frozen=True, slots=True)
 class _CurrentPublication:
     pointer_path: Path
     track_root: Path
     revisions_root: Path
     revision_dir: Path
     annotations_path: Path
+    package_path: Path | None
     report_path: Path
     revision_id: str
     document: Mapping[str, Any]
@@ -219,6 +234,7 @@ class _CurrentPublication:
     report: ValidationReport
     pointer_snapshot: _JsonSnapshot
     annotations_snapshot: _JsonSnapshot
+    package_snapshot: _BinarySnapshot | None
     report_snapshot: _JsonSnapshot
     expected_files: frozenset[str]
     track_descriptor: int
@@ -424,7 +440,7 @@ def export_annotation_pack(
     runtime_root: Path | None = None,
     track_name: str | None = None,
 ) -> ExportResult:
-    """Build, validate, and atomically publish one explicit JSON revision."""
+    """Build, validate, and atomically publish one explicit deliverable set."""
 
     try:
         if not isinstance(output_dir, Path):
@@ -474,7 +490,7 @@ def export_annotation_pack(
 
 
 def inspect_annotation_pack(source: Path) -> InspectionResult:
-    """Inspect one bare JSON Pack without returning source text or local paths."""
+    """Inspect one JSON or detached Pack without returning text or local paths."""
 
     empty_counts = MappingProxyType({"total": 0, "highlight": 0, "note": 0})
     if not isinstance(source, Path):
@@ -489,21 +505,40 @@ def inspect_annotation_pack(source: Path) -> InspectionResult:
             findings=validation.findings,
         )
     try:
-        snapshot = _read_json_snapshot(
-            source,
-            maximum_bytes=MAX_ANNOTATIONS_JSON_BYTES,
-            unavailable_code="schema_validation_failed",
-            invalid_code="schema_validation_failed",
-            limit_code="document_limit_exceeded",
-            mutation_code="schema_validation_failed",
-            maximum_depth=MAX_AUXILIARY_JSON_DEPTH,
-            maximum_nodes=MAX_AUXILIARY_JSON_NODES,
-        )
-        if canonical_json_bytes(snapshot.value) != snapshot.content:
+        if source.suffix == ".annotations":
+            package = validate_detached_annotations(source)
+            document = package.document
+            validation = package.validation
+        elif source.suffix == ".json":
+            snapshot = _read_json_snapshot(
+                source,
+                maximum_bytes=MAX_ANNOTATIONS_JSON_BYTES,
+                unavailable_code="schema_validation_failed",
+                invalid_code="schema_validation_failed",
+                limit_code="document_limit_exceeded",
+                mutation_code="schema_validation_failed",
+                maximum_depth=MAX_AUXILIARY_JSON_DEPTH,
+                maximum_nodes=MAX_AUXILIARY_JSON_NODES,
+            )
+            if canonical_json_bytes(snapshot.value) != snapshot.content:
+                raise _ExportFailure("schema_validation_failed")
+            document = snapshot.value
+            validation = validate_pack(
+                document,
+                context=ValidationContext(allow_empty=True),
+            )
+        else:
             raise _ExportFailure("schema_validation_failed")
-        validation = validate_pack(
-            snapshot.value,
-            context=ValidationContext(allow_empty=True),
+    except PackageError:
+        validation = make_validation_failure("package_entry_invalid")
+        return InspectionResult(
+            valid=False,
+            pack_id=None,
+            track_id=None,
+            semantic_digest=None,
+            item_counts=empty_counts,
+            anchor_capabilities=(),
+            findings=validation.findings,
         )
     except _ExportFailure as exc:
         validation = make_validation_failure(exc.code)
@@ -528,9 +563,9 @@ def inspect_annotation_pack(source: Path) -> InspectionResult:
             findings=validation.findings,
         )
 
-    counts = _inspection_counts(snapshot.value)
-    capabilities = _inspection_capabilities(snapshot.value) if validation.publishable else ()
-    track_identifier = _nested_string(snapshot.value, "sr:track", "id")
+    counts = _inspection_counts(document)
+    capabilities = _inspection_capabilities(document) if validation.publishable else ()
+    track_identifier = _nested_string(document, "sr:track", "id")
     return InspectionResult(
         valid=validation.publishable,
         pack_id=validation.pack_id,
@@ -556,9 +591,6 @@ def _export_under_writer_guard(
     input_count = 0
     pack_identity: tuple[str | None, str | None, str | None] = (None, None, None)
     try:
-        if policy.deliverables != "json":
-            raise _ExportFailure("deliverable_not_implemented")
-
         run_stage = _load_run_stage(output_dir)
         if run_stage in {"parsing_structure", "deep_reading"}:
             raise _ExportFailure("run_state_not_exportable")
@@ -683,6 +715,16 @@ def _export_under_writer_guard(
 
         def assert_reversible_boundary() -> None:
             _assert_writer_exclusion_current(writer_exclusion)
+            _assert_file_unchanged(
+                book_document_file(output_dir),
+                expected_digest=book_snapshot.sha256,
+                expected_snapshot=book_snapshot.file,
+                maximum_bytes=MAX_BOOK_DOCUMENT_BYTES,
+                unavailable_code="input_changed_during_export",
+            )
+            if adapter.load_drafts(output_dir=output_dir) != producer_snapshot:
+                raise _ExportFailure("input_changed_during_export")
+            verified_source.assert_unchanged()
             latest_run_stage = _load_run_stage(output_dir)
             _require_exportable_run_state(
                 latest_run_stage,
@@ -694,6 +736,19 @@ def _export_under_writer_guard(
             output_dir=output_dir,
             track_slug_value=known_track_slug,
             expected_track_id=track_identifier,
+        )
+        publication_annotations_bytes = annotations_bytes
+        publication_annotations_digest = annotations_digest
+        publication_pack = pack
+        publication_validation = validation
+        # ``json`` is a minimum deliverable requirement, not a request to
+        # retract an already-published package.  Force still rebuilds from the
+        # fresh candidate, while publication remains monotonic once a track has
+        # a detached deliverable.
+        effective_deliverables: Deliverables = (
+            "detached"
+            if current is not None and current.package_path is not None
+            else policy.deliverables
         )
         try:
             if current is not None and not policy.force_regenerate:
@@ -721,54 +776,86 @@ def _export_under_writer_guard(
                     # path.  Reassert the complete selected revision after the
                     # final semantic validation and immediately before exposing
                     # it as unchanged.
+                    if (
+                        policy.deliverables == "json"
+                        or current.package_path is not None
+                    ):
+                        assert_reversible_boundary()
+                        _assert_current_publication_unchanged(current)
+                        return ExportResult(
+                            status="unchanged",
+                            pack=_freeze_current_pack(current.document),
+                            annotations_json=current.annotations_path,
+                            detached_package=current.package_path,
+                            validation=current_with_fresh_context,
+                            validation_report=current.report_path,
+                            current_pointer=current.pointer_path,
+                            revision_id=current.revision_id,
+                        )
+
+                    # Byte-preserving JSON-only -> detached upgrade.  The old
+                    # revision remains immutable; the exact already-published
+                    # JSON bytes are packaged into a new complete revision and
+                    # validated again with the current validator.
                     _assert_current_publication_unchanged(current)
-                    assert_reversible_boundary()
-                    return ExportResult(
-                        status="unchanged",
-                        pack=_freeze_current_pack(current.document),
-                        annotations_json=current.annotations_path,
-                        detached_package=None,
-                        validation=validation,
-                        validation_report=current.report_path,
-                        current_pointer=current.pointer_path,
-                        revision_id=current.revision_id,
-                    )
+                    publication_annotations_bytes = current.annotations_snapshot.content
+                    publication_annotations_digest = current.annotations_snapshot.sha256
+                    publication_pack = _freeze_current_pack(current.document)
+                    publication_validation = current_with_fresh_context
         finally:
             if current is not None:
                 _close_current_publication(current)
 
+        package_bytes: bytes | None = None
+        package_digest: str | None = None
+        if effective_deliverables == "detached":
+            try:
+                packaged = build_detached_annotations(publication_annotations_bytes)
+            except PackageError:
+                raise _ExportFailure("package_entry_invalid") from None
+            if packaged.annotations_json_sha256 != publication_annotations_digest:
+                raise _ExportFailure("package_entry_invalid")
+            package_bytes = packaged.package_bytes
+            package_digest = packaged.sha256
+
         report = finalize_validation_report(
-            validation,
-            annotations_json_sha256=annotations_digest,
-            package_sha256=None,
+            publication_validation,
+            annotations_json_sha256=publication_annotations_digest,
+            package_sha256=package_digest,
         )
         report_bytes = serialize_validation_report(report)
         if len(report_bytes) > MAX_VALIDATION_REPORT_BYTES:
             raise _ExportFailure("validation_report_invalid")
         report_digest = hashlib.sha256(report_bytes).hexdigest()
         revision_id = publication_revision_id(
-            annotations_json_sha256=annotations_digest,
-            package_sha256=None,
+            annotations_json_sha256=publication_annotations_digest,
+            package_sha256=package_digest,
             validation_report_sha256=report_digest,
         )
-        annotations_path, report_path, pointer_path = _publish_json_revision(
+        annotations_path, package_path, report_path, pointer_path = _publish_json_revision(
             output_dir=output_dir,
             track_slug_value=known_track_slug,
             track_identifier=track_identifier,
             revision_id=revision_id,
-            semantic_digest=cast(str, validation.semantic_digest),
-            annotations_bytes=annotations_bytes,
-            annotations_sha256=annotations_digest,
+            semantic_digest=cast(str, publication_validation.semantic_digest),
+            annotations_bytes=publication_annotations_bytes,
+            annotations_sha256=publication_annotations_digest,
+            package_bytes=package_bytes,
+            package_sha256=package_digest,
             report_bytes=report_bytes,
             report_sha256=report_digest,
             assert_reversible_boundary=assert_reversible_boundary,
         )
         return ExportResult(
-            status="degraded" if validation.status == "degraded" else "published",
-            pack=pack,
+            status=(
+                "degraded"
+                if publication_validation.status == "degraded"
+                else "published"
+            ),
+            pack=publication_pack,
             annotations_json=annotations_path,
-            detached_package=None,
-            validation=validation,
+            detached_package=package_path,
+            validation=publication_validation,
             validation_report=report_path,
             current_pointer=pointer_path,
             revision_id=revision_id,
@@ -1013,10 +1100,14 @@ def _load_current_publication(
             or pointer.get("validation_report") != expected_report_relative
         ):
             raise _ExportFailure("publication_pointer_invalid")
-        if (
-            pointer.get("detached_package") is not None
-            or "detached_package_sha256" in pointer
-        ):
+        has_package = "detached_package" in pointer
+        if has_package:
+            expected_package_relative = (
+                f"revisions/{revision}/{track_slug_value}.annotations"
+            )
+            if pointer.get("detached_package") != expected_package_relative:
+                raise _ExportFailure("publication_pointer_invalid")
+        elif "detached_package_sha256" in pointer:
             raise _ExportFailure("publication_pointer_invalid")
 
         revisions_descriptor = _open_child_directory(
@@ -1028,7 +1119,11 @@ def _load_current_publication(
             revision,
         )
         expected_files = frozenset(
-            {"annotations.json", "validation-report.json"}
+            {
+                "annotations.json",
+                "validation-report.json",
+                *({f"{track_slug_value}.annotations"} if has_package else set()),
+            }
         )
         if frozenset(os.listdir(revision_descriptor)) != expected_files:
             raise _ExportFailure("publication_pointer_invalid")
@@ -1064,6 +1159,43 @@ def _load_current_publication(
         if pointer.get("annotations_json_sha256") != annotations_snapshot.sha256:
             raise _ExportFailure("publication_pointer_invalid")
 
+        package_path: Path | None = None
+        package_snapshot: _BinarySnapshot | None = None
+        if has_package:
+            package_path = annotation_pack_detached_file(
+                output_dir,
+                track_slug_value,
+                revision,
+            )
+            try:
+                package_content, package_sha256, package_file = _read_regular_bytes_at(
+                    revision_descriptor,
+                    package_path.name,
+                    maximum_bytes=MAX_DETACHED_PACKAGE_BYTES,
+                )
+            except OSError:
+                raise _ExportFailure("publication_pointer_invalid") from None
+            if pointer.get("detached_package_sha256") != package_sha256:
+                raise _ExportFailure("publication_pointer_invalid")
+            try:
+                validated_package = validate_detached_annotations(
+                    package_content,
+                    expected_annotations_json=annotations_snapshot.content,
+                )
+            except PackageError:
+                raise _ExportFailure("package_entry_invalid") from None
+            if (
+                validated_package.package_sha256 != package_sha256
+                or validated_package.annotations_json_sha256
+                != annotations_snapshot.sha256
+            ):
+                raise _ExportFailure("package_entry_invalid")
+            package_snapshot = _BinarySnapshot(
+                content=package_content,
+                sha256=package_sha256,
+                file=package_file,
+            )
+
         report_snapshot = _read_json_snapshot_at(
             revision_descriptor,
             report_path.name,
@@ -1080,13 +1212,16 @@ def _load_current_publication(
         report = _validated_report(report_snapshot.value, report_snapshot.content)
         if (
             report.annotations_json_sha256 != annotations_snapshot.sha256
-            or report.package_sha256 is not None
+            or report.package_sha256
+            != (package_snapshot.sha256 if package_snapshot is not None else None)
         ):
             raise _ExportFailure("validation_report_invalid")
 
         recomputed_revision = publication_revision_id(
             annotations_json_sha256=annotations_snapshot.sha256,
-            package_sha256=None,
+            package_sha256=(
+                package_snapshot.sha256 if package_snapshot is not None else None
+            ),
             validation_report_sha256=report_snapshot.sha256,
         )
         if recomputed_revision != revision:
@@ -1108,7 +1243,9 @@ def _load_current_publication(
         expected_report = finalize_validation_report(
             current_validation,
             annotations_json_sha256=annotations_snapshot.sha256,
-            package_sha256=None,
+            package_sha256=(
+                package_snapshot.sha256 if package_snapshot is not None else None
+            ),
         )
         if serialize_validation_report(expected_report) != report_snapshot.content:
             raise _ExportFailure("validation_report_invalid")
@@ -1135,6 +1272,7 @@ def _load_current_publication(
             revisions_root=revisions_root,
             revision_dir=revision_dir,
             annotations_path=annotations_path,
+            package_path=package_path,
             report_path=report_path,
             revision_id=revision,
             document=annotations_snapshot.value,
@@ -1142,6 +1280,7 @@ def _load_current_publication(
             report=report,
             pointer_snapshot=pointer_snapshot,
             annotations_snapshot=annotations_snapshot,
+            package_snapshot=package_snapshot,
             report_snapshot=report_snapshot,
             expected_files=expected_files,
             track_descriptor=track_descriptor,
@@ -1191,6 +1330,24 @@ def _assert_current_publication_unchanged(current: _CurrentPublication) -> None:
         maximum_bytes=MAX_VALIDATION_REPORT_BYTES,
         unavailable_code="validation_report_invalid",
     )
+    expected_revision_files = {
+        current.annotations_path.name: current.annotations_snapshot.content,
+        current.report_path.name: current.report_snapshot.content,
+    }
+    if current.package_path is not None and current.package_snapshot is not None:
+        _assert_file_unchanged_at(
+            current.revision_descriptor,
+            current.package_path.name,
+            expected_digest=current.package_snapshot.sha256,
+            expected_snapshot=current.package_snapshot.file,
+            maximum_bytes=MAX_DETACHED_PACKAGE_BYTES,
+            unavailable_code="package_entry_invalid",
+        )
+        expected_revision_files[current.package_path.name] = (
+            current.package_snapshot.content
+        )
+    elif current.package_path is not None or current.package_snapshot is not None:
+        raise _ExportFailure("publication_pointer_invalid")
     try:
         names = frozenset(os.listdir(current.revision_descriptor))
     except OSError:
@@ -1199,10 +1356,7 @@ def _assert_current_publication_unchanged(current: _CurrentPublication) -> None:
         names != current.expected_files
         or not _revision_is_frozen_at(
             current.revision_descriptor,
-            {
-                current.annotations_path.name: current.annotations_snapshot.content,
-                current.report_path.name: current.report_snapshot.content,
-            },
+            expected_revision_files,
         )
         or not _named_directory_matches(
             current.track_descriptor,
@@ -1338,16 +1492,30 @@ def _publish_json_revision(
     semantic_digest: str,
     annotations_bytes: bytes,
     annotations_sha256: str,
+    package_bytes: bytes | None,
+    package_sha256: str | None,
     report_bytes: bytes,
     report_sha256: str,
     assert_reversible_boundary: Callable[[], None],
-) -> tuple[Path, Path, Path]:
+) -> tuple[Path, Path | None, Path, Path]:
+    if (package_bytes is None) != (package_sha256 is None):
+        raise _ExportFailure("package_entry_invalid")
+    if package_bytes is not None and (
+        len(package_bytes) > MAX_DETACHED_PACKAGE_BYTES
+        or hashlib.sha256(package_bytes).hexdigest() != package_sha256
+    ):
+        raise _ExportFailure("package_entry_invalid")
+    package_name = (
+        f"{track_slug_value}.annotations" if package_bytes is not None else None
+    )
     track_root = annotation_pack_track_dir(output_dir, track_slug_value)
     revisions_root = annotation_pack_revisions_dir(output_dir, track_slug_value)
     expected_files = {
         "annotations.json": annotations_bytes,
         "validation-report.json": report_bytes,
     }
+    if package_name is not None and package_bytes is not None:
+        expected_files[package_name] = package_bytes
     _ensure_directory_chain(output_dir, revisions_root)
     track_descriptor = _open_directory_nofollow(
         track_root,
@@ -1377,6 +1545,12 @@ def _publish_json_revision(
             "validation-report.json",
             report_bytes,
         )
+        if package_name is not None and package_bytes is not None:
+            _write_exclusive_file_at(
+                temp_descriptor,
+                package_name,
+                package_bytes,
+            )
         os.fsync(temp_descriptor)
 
         try:
@@ -1401,6 +1575,7 @@ def _publish_json_revision(
                 revisions_descriptor,
                 temp_name,
                 temp_descriptor,
+                allowed_names=frozenset(expected_files),
             )
             temp_exists = False
             os.close(temp_descriptor)
@@ -1428,6 +1603,7 @@ def _publish_json_revision(
                     revisions_descriptor,
                     temp_name,
                     temp_descriptor,
+                    allowed_names=frozenset(expected_files),
                 )
                 temp_exists = False
                 os.close(temp_descriptor)
@@ -1466,6 +1642,11 @@ def _publish_json_revision(
             "validation_report": f"revisions/{revision_id}/validation-report.json",
             "validation_report_sha256": report_sha256,
         }
+        if package_name is not None and package_sha256 is not None:
+            pointer["detached_package"] = (
+                f"revisions/{revision_id}/{package_name}"
+            )
+            pointer["detached_package_sha256"] = package_sha256
         if tuple(auxiliary_validator(PUBLICATION_POINTER_SCHEMA_ID).iter_errors(pointer)):
             raise _ExportFailure("publication_write_failed")
         pointer_bytes = canonical_json_bytes(pointer)
@@ -1522,6 +1703,15 @@ def _publish_json_revision(
             annotation_pack_annotations_file(
                 output_dir, track_slug_value, revision_id
             ),
+            (
+                annotation_pack_detached_file(
+                    output_dir,
+                    track_slug_value,
+                    revision_id,
+                )
+                if package_name is not None
+                else None
+            ),
             annotation_pack_validation_report_file(
                 output_dir, track_slug_value, revision_id
             ),
@@ -1540,6 +1730,7 @@ def _publish_json_revision(
                     revisions_descriptor,
                     temp_name,
                     temp_descriptor if temp_descriptor >= 0 else None,
+                    allowed_names=frozenset(expected_files),
                 )
         for descriptor in (
             selected_descriptor,
@@ -1907,6 +2098,8 @@ def _remove_owned_temp_revision_at(
     revisions_descriptor: int,
     name: str,
     descriptor: int | None = None,
+    *,
+    allowed_names: frozenset[str],
 ) -> None:
     if not name.startswith(".tmp-") or not _safe_publication_leaf(name):
         raise OSError("refusing to remove an unowned revision")
@@ -1917,8 +2110,7 @@ def _remove_owned_temp_revision_at(
         close_owned = True
     try:
         entries = set(os.listdir(owned_descriptor))
-        allowed = {"annotations.json", "validation-report.json"}
-        if not entries <= allowed:
+        if not entries <= allowed_names:
             raise OSError("temporary revision contains an unowned entry")
         for entry in entries:
             os.unlink(entry, dir_fd=owned_descriptor)
