@@ -288,6 +288,63 @@ Important frontend variables:
 - `make closed-loop-benchmark-curation CLOSED_LOOP_BENCHMARK_CURATION_ARGS="..."`: run the first scratch-safe closed-loop benchmark-curation pass for the managed local supplement
 - `cd reading-companion-frontend && npm run generate-api-types`: refresh generated frontend API types after the backend OpenAPI snapshot changes
 
+## Annotation Pack v0 Explicit JSON Export
+
+Annotation Pack export is an opt-in operator action. It is not called by normal reading completion and does not change the Agent, Digest, Memory, reading loop, Library, Reader, or public HTTP API. Slice 6 publishes canonical JSON only; it does **not** create or claim a formal detached `.annotations` package.
+
+From the backend directory, export one completed book by its existing output id:
+
+```bash
+cd reading-companion-backend
+BOOK_ID="replace-with-existing-book-id"
+.venv/bin/python scripts/export_annotation_pack.py \
+  --book-id "$BOOK_ID" \
+  --track-key second-reader-agent \
+  --track-name "Second Reader" \
+  --creator-type Software \
+  --creator-id urn:uuid:c8d82077-7433-5fe9-9075-01f3e3100656 \
+  --creator-name "Second Reader" \
+  --deliverables json
+```
+
+`--book-output-dir` is the mutually exclusive operator/testing alternative to `--book-id`; it must still resolve inside the configured `<BACKEND_RUNTIME_ROOT>/output` tree. A successful Slice 6 export writes an immutable revision under:
+
+```text
+<BACKEND_RUNTIME_ROOT>/output/<book_id>/public/annotation-packs/<track_slug>/revisions/<revision_id>/annotations.json
+```
+
+and atomically selects it through the sibling `public/annotation-packs/<track_slug>/current.json` pointer. The JSON summary printed by the command contains safe ids, digests, counts, and finding codes; it intentionally omits local paths and annotation text.
+
+Validate and inspect the published JSON independently:
+
+```bash
+cd reading-companion-backend
+ANNOTATIONS_JSON="/absolute/path/to/public/annotation-packs/track/revisions/revision/annotations.json"
+.venv/bin/python scripts/validate_annotation_pack.py "$ANNOTATIONS_JSON"
+.venv/bin/python scripts/inspect_annotation_pack.py "$ANNOTATIONS_JSON"
+```
+
+Normal validation requires exact canonical JSON bytes as well as full schema, identity, semantic-digest, and privacy validity. An intentionally empty export must be revalidated with explicit `--allow-empty`; that policy flag is semantic-only and cannot be combined with `--schema-only`.
+
+Standalone contract `Annotation` examples are schema fragments rather than full semantic Packs, so validate them only with the explicit schema-only mode:
+
+```bash
+cd reading-companion-backend
+.venv/bin/python scripts/validate_annotation_pack.py \
+  --schema-only ../contract/annotation-pack/v0/examples/*.json
+```
+
+The policy flags are independent:
+
+- `--allow-partial` permits a stable settled snapshot from a paused/error run; it does not permit invalid-row skips.
+- `--allow-skips` permits annotation-level invalid rows to be skipped when a valid item remains; it does not permit partial or empty exports.
+- `--allow-empty` permits an explicitly empty Track where the run-state policy allows it; it is not a quality claim.
+- `--force-regenerate` requests a fresh publication pass rather than the ordinary verified no-op path.
+
+`--deliverables detached` is accepted as an explicit request but fails with stable `deliverable_not_implemented` status in Slice 6; the exporter never silently downgrades it to JSON or renames JSON as `.annotations`. The approved namespace and schema IRIs use the GitHub Pages location, but they are not live until the workflow reaches `main`, Pages is enabled, deployment succeeds, and the served bytes pass HTTP comparison against the canonical contract files.
+
+All three tools reserve exit code `0` for a successful operation (`published`, `degraded`, or verified `unchanged` for export; valid for validate/inspect), `1` for an operational or validation failure, and `2` for a fixed-shape CLI usage error. Each invocation emits machine-readable JSON only: one line per validated source, and exactly one line for export or inspect.
+
 ## Detached Local Stack
 Use this when you want the project to keep running after you close the current shell or restart Codex.
 

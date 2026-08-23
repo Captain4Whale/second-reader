@@ -251,7 +251,23 @@ FUTURE_PIPELINE_CODES = frozenset(
         "package_entry_invalid",
     }
 )
-ERROR_CATALOG = PACK_VALIDATOR_CODES | UPSTREAM_VALIDATION_CODES | FUTURE_PIPELINE_CODES
+EXPORT_PIPELINE_CODES = frozenset(
+    {
+        "output_path_invalid",
+        "book_document_unavailable",
+        "book_document_invalid_json",
+        "book_document_limit_exceeded",
+        "export_configuration_invalid",
+        "export_internal_error",
+        "publication_write_failed",
+    }
+)
+ERROR_CATALOG = (
+    PACK_VALIDATOR_CODES
+    | UPSTREAM_VALIDATION_CODES
+    | FUTURE_PIPELINE_CODES
+    | EXPORT_PIPELINE_CODES
+)
 
 _ROW_ERROR_CODES = frozenset(
     {
@@ -304,9 +320,16 @@ _MESSAGES: dict[str, str] = {
     "reaction_ledger_limit_exceeded": "The producer reaction ledger exceeds a safety limit.",
     "active_writer_present": "An active writer prevents a stable export snapshot.",
     "run_state_not_exportable": "The current run state is not exportable.",
+    "output_path_invalid": "The configured book output path is invalid.",
+    "book_document_unavailable": "The persisted BookDocument is unavailable or unsafe to read.",
+    "book_document_invalid_json": "The persisted BookDocument is not valid strict JSON.",
+    "book_document_limit_exceeded": "The persisted BookDocument exceeds a safety limit.",
+    "export_configuration_invalid": "The Annotation Pack export configuration is invalid.",
+    "export_internal_error": "The Annotation Pack export failed internally.",
     "deliverable_not_implemented": "The requested deliverable is not implemented.",
     "publication_pointer_invalid": "The publication pointer is invalid.",
     "validation_report_invalid": "The validation report is invalid.",
+    "publication_write_failed": "The Annotation Pack publication could not be written safely.",
     "duplicate_pack_or_track_id_semantics": "The Pack or track identity does not match its semantics.",
     "duplicate_annotation_id": "An annotation identity is duplicated or inconsistent.",
     "duplicate_anchor_semantics": "An anchor identity is duplicated or inconsistent.",
@@ -1850,6 +1873,44 @@ def make_validation_finding(
     )
 
 
+def make_validation_failure(
+    code: str,
+    *,
+    input_count: int = 0,
+    pack_id: str | None = None,
+    semantic_digest: str | None = None,
+    input_snapshot_digest: str | None = None,
+) -> ValidationResult:
+    """Build one deterministic pre-artifact failure from a catalog code.
+
+    Export and inspection preflights often fail before a Pack-shaped mapping
+    exists.  Routing those failures through ``validate_pack({})`` would add
+    unrelated schema diagnostics and make reports depend on schema traversal
+    order.  This narrow factory preserves the same catalog and coherence gates
+    as ordinary validation without accepting caller-provided text or findings.
+    """
+
+    if type(input_count) is not int or input_count < 0:
+        raise ValueError("validation failure input count must be non-negative")
+    finding = make_validation_finding(code, "fatal")
+    result = ValidationResult(
+        schema_version=VALIDATION_RESULT_SCHEMA_VERSION,
+        validator_version=VALIDATOR_VERSION,
+        status="failed",
+        pack_id=pack_id,
+        semantic_digest=semantic_digest,
+        input_snapshot_digest=input_snapshot_digest,
+        input_count=input_count,
+        exported_count=0,
+        skipped_count=0,
+        warning_count=0,
+        error_count=1,
+        findings=(finding,),
+    )
+    _validate_result_coherence(result)
+    return result
+
+
 def _finding_wire(finding: ValidationFinding) -> dict[str, JSONValue]:
     return {
         "code": finding.code,
@@ -2363,6 +2424,7 @@ def _canonical_epub_href(value: object) -> bool:
 
 __all__ = [
     "ERROR_CATALOG",
+    "EXPORT_PIPELINE_CODES",
     "FUTURE_PIPELINE_CODES",
     "PACK_VALIDATOR_CODES",
     "UPSTREAM_VALIDATION_CODES",
@@ -2375,6 +2437,7 @@ __all__ = [
     "ValidationResult",
     "finalize_validation_report",
     "make_validation_finding",
+    "make_validation_failure",
     "serialize_validation_report",
     "validate_pack",
     "validation_report_wire",

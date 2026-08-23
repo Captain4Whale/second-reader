@@ -6,7 +6,8 @@ import os
 import subprocess
 import sys
 import threading
-from concurrent.futures import ThreadPoolExecutor
+import traceback
+from concurrent.futures import ThreadPoolExecutor, TimeoutError as FutureTimeoutError
 from datetime import datetime, timedelta, timezone
 from pathlib import Path
 
@@ -27,12 +28,15 @@ from src.reading_runtime.job_lease import (
     JobLeaseConflict,
     JobLeaseLost,
     JobLeaseReadError,
+    MAX_JOB_LEASE_BYTES,
     acquire_job_lease,
     assert_current_lease,
     current_lease,
     fence_job_lease,
+    guard_book_writer_exclusion,
     grant_from_environment,
     heartbeat_job_lease,
+    job_lease_file,
     job_lease_is_valid,
     lease_context,
     lease_context_from_environment,
@@ -156,16 +160,43 @@ def test_corrupt_existing_lease_fails_closed_but_missing_lease_is_distinct(tmp_p
     assert corrupt_path.read_text(encoding="utf-8") == "{not-json"
 
 
+def test_job_ids_cannot_escape_the_lease_directory(tmp_path) -> None:
+    runtime_root = tmp_path / "runtime"
+    absolute_target = tmp_path / "outside-job"
+    invalid_ids: tuple[object, ...] = (
+        str(absolute_target),
+        "../outside-job",
+        "nested/outside-job",
+        "nested\\outside-job",
+        ".",
+        "..",
+        " leading-space",
+        "control\x00id",
+        "control\u0085id",
+        True,
+    )
+
+    for invalid_job_id in invalid_ids:
+        with pytest.raises((TypeError, ValueError)):
+            acquire_job_lease(invalid_job_id, root=runtime_root)  # type: ignore[arg-type]
+
+    assert not absolute_target.with_suffix(".lock").exists()
+    assert not absolute_target.with_suffix(".json").exists()
+    assert not (runtime_root / "state").exists()
+
+
 def test_transient_lease_read_error_is_not_treated_as_missing(tmp_path, monkeypatch) -> None:
     target = tmp_path / "state" / "job_registry" / "leases" / "job-unreadable.json"
-    original_read_text = Path.read_text
+    target.parent.mkdir(parents=True, exist_ok=True)
+    target.write_text("{}", encoding="utf-8")
+    original_open = os.open
 
-    def _read_text(path: Path, *args, **kwargs) -> str:
-        if path == target:
+    def _open(path, *args, **kwargs):  # type: ignore[no-untyped-def]
+        if os.fspath(path) in {os.fspath(target), target.name}:
             raise PermissionError("temporary filesystem failure")
-        return original_read_text(path, *args, **kwargs)
+        return original_open(path, *args, **kwargs)
 
-    monkeypatch.setattr(Path, "read_text", _read_text)
+    monkeypatch.setattr(os, "open", _open)
 
     with pytest.raises(JobLeaseReadError, match="could not be read safely"):
         load_job_lease("job-unreadable", root=tmp_path)
@@ -236,6 +267,369 @@ def test_book_scoped_launch_guard_blocks_expired_but_live_owner(tmp_path) -> Non
             enforce_book_exclusivity=True,
             now=now + timedelta(seconds=4),
         )
+
+
+def test_book_writer_exclusion_guard_accepts_a_valid_unowned_book(tmp_path) -> None:
+    entered = False
+
+    with guard_book_writer_exclusion("book-export", root=tmp_path):
+        entered = True
+
+    assert entered is True
+
+
+@pytest.mark.parametrize("book_id", ["", "   "])
+def test_book_writer_exclusion_guard_rejects_empty_book_ids(tmp_path, book_id) -> None:
+    with pytest.raises(ValueError, match="must not be empty"):
+        with guard_book_writer_exclusion(book_id, root=tmp_path):
+            pytest.fail("invalid book id entered the writer guard")
+
+
+@pytest.mark.parametrize("book_id", [None, 1, True, ["book"]])
+def test_book_writer_exclusion_guard_rejects_non_string_book_ids(
+    tmp_path,
+    book_id,
+) -> None:
+    with pytest.raises(TypeError, match="exact string"):
+        with guard_book_writer_exclusion(book_id, root=tmp_path):
+            pytest.fail("invalid book id entered the writer guard")
+
+
+def test_book_writer_exclusion_guard_rejects_string_subclasses(tmp_path) -> None:
+    class BookId(str):
+        pass
+
+    with pytest.raises(TypeError, match="exact string"):
+        with guard_book_writer_exclusion(BookId("book-export"), root=tmp_path):
+            pytest.fail("string subclass entered the writer guard")
+
+
+def test_book_writer_exclusion_guard_conflicts_with_active_valid_lease(tmp_path) -> None:
+    acquire_job_lease(
+        "job-active-export",
+        root=tmp_path,
+        book_id="book-export",
+        enforce_book_exclusivity=True,
+    )
+
+    with pytest.raises(
+        JobLeaseConflict,
+        match="Book writer exclusion could not be acquired safely",
+    ):
+        with guard_book_writer_exclusion("book-export", root=tmp_path):
+            pytest.fail("active worker lease did not block the writer guard")
+
+
+@pytest.mark.parametrize("sidecar_contents", ["{not-json", "{}"])
+def test_book_writer_exclusion_guard_fails_closed_on_malformed_sidecar(
+    tmp_path,
+    sidecar_contents,
+) -> None:
+    sidecar = tmp_path / "state" / "job_registry" / "leases" / "unknown.json"
+    sidecar.parent.mkdir(parents=True, exist_ok=True)
+    sidecar.write_text(sidecar_contents, encoding="utf-8")
+
+    with pytest.raises(
+        JobLeaseConflict,
+        match="Book writer exclusion could not be acquired safely",
+    ):
+        with guard_book_writer_exclusion("book-export", root=tmp_path):
+            pytest.fail("malformed sidecar did not fail closed")
+
+
+def test_book_writer_exclusion_guard_rejects_duplicate_lease_keys(tmp_path) -> None:
+    grant = acquire_job_lease(
+        "job-duplicate-key",
+        root=tmp_path,
+        book_id="book-export",
+    )
+    sidecar = job_lease_file(grant.job_id, tmp_path)
+    original = sidecar.read_text(encoding="utf-8")
+    tampered = original.replace(
+        '"book_id": "book-export"',
+        '"book_id": "book-export",\n  "book_id": "other"',
+        1,
+    )
+    assert tampered != original
+    sidecar.write_text(tampered, encoding="utf-8")
+
+    with pytest.raises(
+        JobLeaseConflict,
+        match="Book writer exclusion could not be acquired safely",
+    ):
+        with guard_book_writer_exclusion("book-export", root=tmp_path):
+            pytest.fail("duplicate lease keys bypassed the writer guard")
+
+
+def test_book_writer_exclusion_guard_fails_closed_on_unreadable_sidecar(
+    tmp_path,
+    monkeypatch,
+) -> None:
+    sidecar = tmp_path / "state" / "job_registry" / "leases" / "unknown.json"
+    sidecar.parent.mkdir(parents=True, exist_ok=True)
+    sidecar.write_text("{}", encoding="utf-8")
+    original_open = os.open
+
+    def _open(path, *args, **kwargs):  # type: ignore[no-untyped-def]
+        if os.fspath(path) in {os.fspath(sidecar), sidecar.name}:
+            raise PermissionError(f"private filesystem detail at {sidecar}")
+        return original_open(path, *args, **kwargs)
+
+    monkeypatch.setattr(os, "open", _open)
+
+    with pytest.raises(
+        JobLeaseConflict,
+        match="Book writer exclusion could not be acquired safely",
+    ) as error:
+        with guard_book_writer_exclusion("book-export", root=tmp_path):
+            pytest.fail("unreadable sidecar did not fail closed")
+    rendered_traceback = "".join(
+        traceback.format_exception(error.type, error.value, error.tb)
+    )
+    assert error.value.__cause__ is None
+    assert "private filesystem detail" not in rendered_traceback
+    assert str(sidecar) not in rendered_traceback
+
+
+@pytest.mark.parametrize("sidecar_kind", ["fifo", "symlink", "oversized"])
+def test_book_writer_exclusion_guard_rejects_unsafe_sidecars_without_blocking(
+    tmp_path,
+    sidecar_kind,
+) -> None:
+    leases = tmp_path / "state" / "job_registry" / "leases"
+    leases.mkdir(parents=True, exist_ok=True)
+    sidecar = leases / "unsafe.json"
+    if sidecar_kind == "fifo":
+        os.mkfifo(sidecar)
+    elif sidecar_kind == "symlink":
+        target = tmp_path / "private-lease.json"
+        target.write_text("{}", encoding="utf-8")
+        sidecar.symlink_to(target)
+    else:
+        sidecar.write_bytes(b" " * (MAX_JOB_LEASE_BYTES + 1))
+
+    script = """
+from pathlib import Path
+import sys
+from src.reading_runtime.job_lease import JobLeaseConflict, guard_book_writer_exclusion
+try:
+    with guard_book_writer_exclusion("book-export", root=Path(sys.argv[1])):
+        pass
+except JobLeaseConflict:
+    raise SystemExit(0)
+raise SystemExit(1)
+"""
+    completed = subprocess.run(
+        [sys.executable, "-c", script, str(tmp_path)],
+        cwd=Path(__file__).resolve().parents[1],
+        capture_output=True,
+        text=True,
+        timeout=2,
+        check=False,
+    )
+    assert completed.returncode == 0
+    assert str(sidecar) not in completed.stdout
+    assert str(sidecar) not in completed.stderr
+
+
+def test_book_writer_exclusion_guard_rejects_symlinked_lease_directory(
+    tmp_path,
+) -> None:
+    registry = tmp_path / "state" / "job_registry"
+    registry.mkdir(parents=True)
+    outside = tmp_path / "outside-leases"
+    outside.mkdir()
+    (registry / "leases").symlink_to(outside, target_is_directory=True)
+
+    with pytest.raises(JobLeaseReadError, match="opened safely"):
+        with guard_book_writer_exclusion("book-export", root=tmp_path):
+            pytest.fail("a symlinked lease registry acquired the writer guard")
+    assert list(outside.iterdir()) == []
+
+
+def test_book_writer_exclusion_guard_blocks_book_exclusive_acquisition_until_release(
+    tmp_path,
+) -> None:
+    acquisition_started = threading.Event()
+
+    def _acquire() -> str:
+        acquisition_started.set()
+        return acquire_job_lease(
+            "job-after-export",
+            root=tmp_path,
+            book_id="book-export",
+            enforce_book_exclusivity=True,
+        ).job_id
+
+    with ThreadPoolExecutor(max_workers=1) as executor:
+        with guard_book_writer_exclusion("book-export", root=tmp_path):
+            future = executor.submit(_acquire)
+            assert acquisition_started.wait(timeout=1)
+            with pytest.raises(FutureTimeoutError):
+                future.result(timeout=0.05)
+        assert future.result(timeout=1) == "job-after-export"
+
+
+def test_book_writer_guard_survives_leases_directory_swap_across_processes(
+    tmp_path,
+) -> None:
+    leases = tmp_path / "state" / "job_registry" / "leases"
+    leases.mkdir(parents=True)
+    parked = leases.with_name("leases-parked")
+    replacement = leases.with_name("leases-replacement")
+    script = """
+from pathlib import Path
+import sys
+from src.reading_runtime.job_lease import acquire_job_lease
+grant = acquire_job_lease(
+    "job-after-swap",
+    root=Path(sys.argv[1]),
+    book_id="book-export",
+    enforce_book_exclusivity=True,
+)
+print(grant.generation)
+"""
+    process: subprocess.Popen[str] | None = None
+    try:
+        with guard_book_writer_exclusion("book-export", root=tmp_path):
+            leases.rename(parked)
+            leases.mkdir()
+            process = subprocess.Popen(
+                [sys.executable, "-c", script, str(tmp_path)],
+                cwd=Path(__file__).resolve().parents[1],
+                stdout=subprocess.PIPE,
+                stderr=subprocess.PIPE,
+                text=True,
+            )
+            with pytest.raises(subprocess.TimeoutExpired):
+                process.wait(timeout=0.2)
+            assert not (leases / "job-after-swap.json").exists()
+
+            leases.rename(replacement)
+            parked.rename(leases)
+
+        assert process is not None
+        stdout, stderr = process.communicate(timeout=2)
+        assert process.returncode == 0
+        assert stdout.strip() == "1"
+        assert stderr == ""
+        assert (leases / "job-after-swap.json").is_file()
+        assert list(replacement.iterdir()) == []
+    finally:
+        if process is not None and process.poll() is None:
+            process.terminate()
+            process.wait(timeout=2)
+
+
+def test_book_writer_guard_does_not_block_other_book_heartbeat(tmp_path) -> None:
+    grant = acquire_job_lease(
+        "job-other-book",
+        root=tmp_path,
+        book_id="book-other",
+        enforce_book_exclusivity=True,
+    )
+
+    with guard_book_writer_exclusion("book-export", root=tmp_path):
+        renewed = heartbeat_job_lease(
+            grant,
+            owner_pid=os.getpid(),
+        )
+
+    assert renewed["state"] == "active"
+    assert renewed["owner_pid"] == os.getpid()
+
+
+def test_book_writer_guard_exposes_explicit_namespace_revalidation(tmp_path) -> None:
+    leases = tmp_path / "state" / "job_registry" / "leases"
+    leases.mkdir(parents=True)
+
+    with guard_book_writer_exclusion("book-export", root=tmp_path) as exclusion:
+        leases.rename(leases.with_name("leases-parked"))
+        leases.mkdir()
+        with pytest.raises(JobLeaseReadError, match="namespace changed"):
+            exclusion.assert_current()
+
+
+@pytest.mark.parametrize("lease_state", ["active", "fenced"])
+def test_book_writer_exclusion_guard_conflicts_when_live_owner_cannot_be_disproved(
+    tmp_path,
+    lease_state,
+) -> None:
+    now = datetime.now(timezone.utc)
+    grant = acquire_job_lease(
+        f"job-{lease_state}-owner",
+        root=tmp_path,
+        book_id="book-export",
+        ttl_seconds=3,
+        heartbeat_interval_seconds=1,
+        enforce_book_exclusivity=True,
+        now=now,
+    )
+    heartbeat_job_lease(
+        grant,
+        owner_pid=os.getpid(),
+        ttl_seconds=3,
+        now=now,
+    )
+    if lease_state == "fenced":
+        fence_job_lease(
+            grant.job_id,
+            root=tmp_path,
+            expected_run_attempt_id=grant.run_attempt_id,
+            expected_generation=grant.generation,
+            now=now,
+        )
+
+    with pytest.raises(
+        JobLeaseConflict,
+        match="Book writer exclusion could not be acquired safely",
+    ):
+        with guard_book_writer_exclusion(
+            "book-export",
+            root=tmp_path,
+            now=now + timedelta(seconds=4),
+        ):
+            pytest.fail("possibly live PID incarnation did not block export")
+
+
+def test_book_writer_exclusion_guard_blocks_expired_ownerless_starting_grant(
+    tmp_path,
+) -> None:
+    now = datetime.now(timezone.utc)
+    grant = acquire_job_lease(
+        "job-ownerless-starting",
+        root=tmp_path,
+        book_id="book-export",
+        ttl_seconds=3,
+        heartbeat_interval_seconds=1,
+        enforce_book_exclusivity=True,
+        now=now,
+    )
+
+    with pytest.raises(
+        JobLeaseConflict,
+        match="Book writer exclusion could not be acquired safely",
+    ):
+        with guard_book_writer_exclusion(
+            "book-export",
+            root=tmp_path,
+            now=now + timedelta(seconds=4),
+        ):
+            pytest.fail("an ownerless grant could revive inside the writer guard")
+
+    fence_job_lease(
+        grant.job_id,
+        root=tmp_path,
+        expected_run_attempt_id=grant.run_attempt_id,
+        expected_generation=grant.generation,
+        now=now + timedelta(seconds=4),
+    )
+    with guard_book_writer_exclusion(
+        "book-export",
+        root=tmp_path,
+        now=now + timedelta(seconds=4),
+    ):
+        pass
 
 
 def test_expired_current_grant_can_renew_but_stale_generation_cannot_revive(tmp_path) -> None:
@@ -610,3 +1004,6 @@ def test_direct_cli_environment_remains_unmanaged() -> None:
 
     with pytest.raises(JobLeaseLost, match="incomplete"):
         grant_from_environment({ENV_JOB_ID: "job-incomplete"})
+
+    with pytest.raises(JobLeaseLost, match="job id is invalid"):
+        grant_from_environment({ENV_JOB_ID: "../escaped-job"})

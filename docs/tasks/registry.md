@@ -7,7 +7,7 @@ Update when: task status, priority, blockers, decision refs, job refs, evidence 
 
 This document is the human-readable companion to `docs/tasks/registry.json`.
 
-Last updated: `2026-08-23T22:08:00+08:00`
+Last updated: `2026-08-23T23:19:05+08:00`
 
 ## Status Values
 - `active`
@@ -25,7 +25,7 @@ Last updated: `2026-08-23T22:08:00+08:00`
 - Lane: `product_contract`
 - Priority: `high`
 - Detail: `docs/implementation/annotation-pack/second-reader-annotation-pack-v0-detailed-design-and-implementation-handoff.md`
-- Next: Slices 1–5 are accepted. Begin and accept Slice 6 (CLI export / inspect / validate tools) from the Slice 5 checkpoint, then commit and push it independently. Publish only explicit JSON deliverables in this Slice; hold the neutral book-scoped writer/lease guard through snapshot-to-pointer switch; derive input-snapshot `R` frames only from final resolved/published rows; require semantic + input snapshot + deliverables + current pointer/JSON/report equivalence for `unchanged`; and fail stably on requested detached output rather than silently downgrading. Continue through all eight Slices until the Section 20 Definition of Done is satisfied, preserve Agent/Digest/Memory/reading-loop/Readest/Library/public-HTTP boundaries, and keep unrelated baseline issues separate.
+- Next: Slices 1–6 are accepted. Begin and accept Slice 7 (detached package generation) from the immutable JSON-publication checkpoint, then commit and push it independently. Produce the pinned single-entry `.annotations` form together with canonical JSON, validate/inspect the package independently and safely, derive a new complete deliverable-set revision without modifying the Slice 6 JSON-only revision, and retain the same atomic pointer and failure semantics. Continue through all eight Slices until the Section 20 Definition of Done is satisfied, preserve Agent/Digest/Memory/reading-loop/Readest/Library/public-HTTP boundaries, and keep unrelated baseline issues separate.
 - Evidence:
   - `DEC-155`
   - `contract/annotation-pack/v0/README.md`
@@ -45,6 +45,12 @@ Last updated: `2026-08-23T22:08:00+08:00`
   - `reading-companion-backend/src/annotation_pack/validation.py`
   - `reading-companion-backend/src/annotation_pack/producers/__init__.py`
   - `reading-companion-backend/src/annotation_pack/producers/second_reader.py`
+  - `reading-companion-backend/src/annotation_pack/exporter.py`
+  - `reading-companion-backend/src/reading_runtime/artifacts.py`
+  - `reading-companion-backend/src/reading_runtime/job_lease.py`
+  - `reading-companion-backend/scripts/export_annotation_pack.py`
+  - `reading-companion-backend/scripts/validate_annotation_pack.py`
+  - `reading-companion-backend/scripts/inspect_annotation_pack.py`
   - `reading-companion-backend/tests/annotation_pack/test_contract.py`
   - `reading-companion-backend/tests/annotation_pack/test_ids.py`
   - `reading-companion-backend/tests/annotation_pack/test_epub_source.py`
@@ -56,7 +62,13 @@ Last updated: `2026-08-23T22:08:00+08:00`
   - `reading-companion-backend/tests/annotation_pack/test_builder.py`
   - `reading-companion-backend/tests/annotation_pack/test_validation.py`
   - `reading-companion-backend/tests/annotation_pack/test_second_reader_adapter.py`
+  - `reading-companion-backend/tests/annotation_pack/test_exporter.py`
+  - `reading-companion-backend/tests/annotation_pack/test_annotation_pack_cli.py`
+  - `reading-companion-backend/tests/test_job_lease.py`
+  - `reading-companion-backend/tests/test_reading_runtime_artifacts.py`
   - `reading-companion-backend/tests/annotation_pack/fixtures/current-reaction-records.json`
+  - `docs/source-of-truth-map.md`
+  - `docs/backend-state-aggregation.md`
   - `docs/implementation/annotation-pack/baseline-observations.md`
   - `docs/implementation/annotation-pack/second-reader-annotation-pack-v0-detailed-design-and-implementation-handoff.md`
 

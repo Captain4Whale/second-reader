@@ -9,7 +9,7 @@ echo "Checking Annotation Pack generated bindings and runtime schemas..."
 (cd "$BACKEND_DIR" && .venv/bin/python scripts/generate_annotation_pack_bindings.py --check)
 
 echo "Checking Annotation Pack contract examples..."
-(cd "$BACKEND_DIR" && .venv/bin/python scripts/validate_annotation_pack.py ../contract/annotation-pack/v0/examples/*.json)
+(cd "$BACKEND_DIR" && .venv/bin/python scripts/validate_annotation_pack.py --schema-only ../contract/annotation-pack/v0/examples/*.json)
 
 echo "Checking Annotation Pack contract tests..."
 (cd "$BACKEND_DIR" && .venv/bin/pytest tests/annotation_pack/test_contract.py -q)

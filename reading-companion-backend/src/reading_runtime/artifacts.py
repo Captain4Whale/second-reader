@@ -3,10 +3,32 @@
 from __future__ import annotations
 
 import json
+import re
 from pathlib import Path
 
 
 MECHANISM_ARTIFACT_SCHEMA_VERSION = 1
+_ANNOTATION_PACK_TRACK_SLUG_PATTERN = re.compile(
+    r"[a-z0-9][a-z0-9._-]{0,80}",
+    flags=re.ASCII,
+)
+_ANNOTATION_PACK_REVISION_ID_PATTERN = re.compile(r"[0-9a-f]{64}", flags=re.ASCII)
+
+
+def _validated_annotation_pack_track_slug(track_slug: str) -> str:
+    if type(track_slug) is not str:
+        raise TypeError("Annotation Pack track slug must be an exact string.")
+    if _ANNOTATION_PACK_TRACK_SLUG_PATTERN.fullmatch(track_slug) is None:
+        raise ValueError("Annotation Pack track slug is invalid.")
+    return track_slug
+
+
+def _validated_annotation_pack_revision_id(revision_id: str) -> str:
+    if type(revision_id) is not str:
+        raise TypeError("Annotation Pack revision id must be an exact string.")
+    if _ANNOTATION_PACK_REVISION_ID_PATTERN.fullmatch(revision_id) is None:
+        raise ValueError("Annotation Pack revision id is invalid.")
+    return revision_id
 
 
 def book_id_from_output_dir(output_dir: Path) -> str:
@@ -19,6 +41,74 @@ def public_dir(output_dir: Path) -> Path:
     """Directory storing user-visible stable artifacts."""
 
     return output_dir / "public"
+
+
+def annotation_packs_dir(output_dir: Path) -> Path:
+    """Directory storing public Annotation Pack publication tracks."""
+
+    return public_dir(output_dir) / "annotation-packs"
+
+
+def annotation_pack_track_dir(output_dir: Path, track_slug: str) -> Path:
+    """Directory storing one safely named Annotation Pack track."""
+
+    safe_track_slug = _validated_annotation_pack_track_slug(track_slug)
+    return annotation_packs_dir(output_dir) / safe_track_slug
+
+
+def annotation_pack_revisions_dir(output_dir: Path, track_slug: str) -> Path:
+    """Directory storing immutable revisions for one Annotation Pack track."""
+
+    return annotation_pack_track_dir(output_dir, track_slug) / "revisions"
+
+
+def annotation_pack_revision_dir(
+    output_dir: Path,
+    track_slug: str,
+    revision_id: str,
+) -> Path:
+    """Directory storing one immutable Annotation Pack revision."""
+
+    safe_revision_id = _validated_annotation_pack_revision_id(revision_id)
+    return annotation_pack_revisions_dir(output_dir, track_slug) / safe_revision_id
+
+
+def annotation_pack_current_pointer_file(output_dir: Path, track_slug: str) -> Path:
+    """Path to one Annotation Pack track's atomic current pointer."""
+
+    return annotation_pack_track_dir(output_dir, track_slug) / "current.json"
+
+
+def annotation_pack_last_failed_report_file(output_dir: Path, track_slug: str) -> Path:
+    """Path to one Annotation Pack track's replaceable failed report."""
+
+    return (
+        annotation_pack_track_dir(output_dir, track_slug)
+        / "last-failed-validation-report.json"
+    )
+
+
+def annotation_pack_annotations_file(
+    output_dir: Path,
+    track_slug: str,
+    revision_id: str,
+) -> Path:
+    """Path to the canonical JSON bytes for one Annotation Pack revision."""
+
+    return annotation_pack_revision_dir(output_dir, track_slug, revision_id) / "annotations.json"
+
+
+def annotation_pack_validation_report_file(
+    output_dir: Path,
+    track_slug: str,
+    revision_id: str,
+) -> Path:
+    """Path to the validation report for one Annotation Pack revision."""
+
+    return (
+        annotation_pack_revision_dir(output_dir, track_slug, revision_id)
+        / "validation-report.json"
+    )
 
 
 def public_chapters_dir(output_dir: Path) -> Path:

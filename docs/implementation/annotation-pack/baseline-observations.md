@@ -53,3 +53,13 @@ Observed while running the broader Slice 5 affected-regression set on `2026-08-2
 - Slice 5 does not modify `src/attentional_v2/slow_cycle.py`, Agent prompts, Digest, Memory, the reading loop, frontend, public HTTP APIs, Readest, or Library
 
 The two failures remain unrelated baseline debt. They are not counted as Slice 5 regressions and were not repaired as part of the strict current-native producer adapter.
+
+Observed while running the broader Slice 6 affected-regression set on `2026-08-23`:
+
+- the existing-mechanism regression command completed with `134 passed, 2 failed`; both failures are the same two `tests/test_attentional_v2_slow_cycle.py` monkeypatch/interface-drift cases already reproduced at base `2d8aac2`
+- Slice 6 focused exporter/CLI/lease/artifact acceptance completed with `174 passed`, and the full Annotation Pack suite completed separately with `782 passed`
+- root `annotation-pack-contract-check` completed with `42 passed` plus a valid Pages projection; `contract-check` and `agent-check` exited `0`
+- the root checks still emit the already recorded dependency deprecations, history reminder, and warning-only agent-switching traceability debt; these warnings are not described as clean or fixed
+- Slice 6 does not modify `src/attentional_v2/slow_cycle.py`, Agent prompts, Digest, Memory, the reading loop, frontend, public HTTP APIs, Readest, or Library discovery/completion behavior
+
+The two failures remain unrelated baseline debt. They are not counted as Slice 6 regressions and were not repaired as part of explicit JSON Annotation Pack publication.

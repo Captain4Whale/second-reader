@@ -23,6 +23,12 @@ Use `docs/api-contract.md` for exact fields and routes. Use this file to underst
   - Sentence records are parse-time, source-order, mechanism-neutral substrate entries grounded back to paragraph locators with character offsets.
   - Load/build helpers may backfill missing sentence inventories into older paragraph-only `book_document.json` payloads when the canonical document is reloaded.
   - Current public API surfaces do not expose it directly, but runtime and future eval tooling can rely on it as the mechanism-neutral text source.
+- `public/annotation-packs/<track_slug>/current.json` and `public/annotation-packs/<track_slug>/revisions/<revision_id>/`
+  - Explicit Annotation Pack export creates this public-safe publication source; it is not written by normal reading completion.
+  - `current.json` is a small atomically replaced pointer to one complete immutable revision. The revision contains canonical `annotations.json` plus its validation report in Slice 6.
+  - Slice 6 is JSON-only. A formal detached `.annotations` artifact is neither emitted nor implied, and a detached request fails instead of downgrading.
+  - This tree is exporter-owned normalized publication output. It is not reading runtime state, mechanism truth, checkpoint/resume truth, or a replacement for the settled producer ledger.
+  - No current frontend, Library discovery flow, REST route, or WebSocket surface reads or exposes this tree. Its placement under `public/` denotes content-safety and future product-facing eligibility, not current HTTP availability.
 - `_mechanisms/iterator_v1/derived/structure.json`
   - Current `iterator_v1`-owned derived traversal artifact.
   - Carries chapter section trees, `segment_ref`, and iterator-specific traversal metadata.
@@ -153,6 +159,10 @@ Use `docs/api-contract.md` for exact fields and routes. Use this file to underst
 - `reading-companion-backend/src/library/runtime_truth.py`
   - Owns the shared helper that decides whether a runtime snapshot is truly active, stale-orphaned, or only last-known.
   - Keeps bookshelf, detail, analysis-state, and job polling aligned on the same `status_reason` and resumability truth.
+- `reading-companion-backend/src/annotation_pack/exporter.py`
+  - Owns the explicit source verification, producer-to-public normalization, validation, immutable revision publication, and atomic current-pointer switch for Annotation Packs.
+  - It may read settled mechanism data only through the producer adapter boundary. Catalog/API aggregation must not reinterpret private producer rows into Annotation Pack wire data independently.
+  - Its public-safe files are currently operated only by the export, validate, and inspect tools; they are not an automatic catalog or API input.
 
 ## Normalization Boundary
 - Internal ids vs public ids
@@ -187,6 +197,10 @@ Use `docs/api-contract.md` for exact fields and routes. Use this file to underst
   - Top-level `_runtime/` contains only cross-mechanism live shell state.
   - `_mechanisms/<mechanism_key>/` contains mechanism-private derived structures, runtime memory/checkpoints, diagnostics, and optional eval exports.
   - `_mechanisms/iterator_v1/derived/structure.json` remains a current-mechanism artifact that aggregation may still consult for `iterator_v1`-shaped section views and compatibility backfill.
+- Annotation Pack publication vs runtime truth
+  - The exporter is the only boundary that may turn verified publication identity, canonical BookDocument anchors, and producer-adapter drafts into the public Annotation Pack wire shape.
+  - `public/annotation-packs/` contains immutable, validated publication snapshots selected by `current.json`; it never feeds job activity, progress, checkpoint, lease, or resume decisions.
+  - Slice 6 supports canonical JSON publication only and intentionally has no frontend/API discovery contract. Later packaging or discovery work must preserve this exporter-only normalization boundary.
 - Additive locus/source-ref fields vs section compatibility
   - Public aggregation may now expose richer additive fields such as `reading_locus`, `primary_source_ref`, `related_source_refs`, and `supersedes_marginalia_id`.
   - Existing `segment_ref` / `section_ref` fields remain temporary compatibility sidecars for current frontend surfaces.
