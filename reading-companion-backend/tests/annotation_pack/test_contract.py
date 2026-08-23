@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import ast
 import hashlib
 import json
 from pathlib import Path
@@ -455,6 +456,10 @@ def test_validation_report_status_and_artifact_conditionals() -> None:
     half_published["annotations_json_sha256"] = None
     _assert_invalid(validator, half_published)
 
+    orphan_package_digest = _report(status="failed", packaged=True)
+    assert orphan_package_digest["annotations_json_sha256"] is None
+    _assert_invalid(validator, orphan_package_digest)
+
     invalid_valid_counts = _report(status="valid")
     invalid_valid_counts["counts"]["errors"] = 1
     _assert_invalid(validator, invalid_valid_counts)
@@ -502,12 +507,57 @@ def test_validation_report_finding_sort_is_protocol_deterministic() -> None:
 
 def test_contract_module_has_no_producer_or_mechanism_dependency() -> None:
     source_root = BACKEND_ROOT / "src" / "annotation_pack"
-    source = "\n".join(
-        path.read_text(encoding="utf-8") for path in sorted(source_root.glob("*.py"))
-    )
-    assert "attentional_v2" not in source
-    assert "iterator_reader" not in source
-    assert "reading_mechanisms" not in source
+    forbidden_module_segments = {
+        "attentional_v2",
+        "iterator_reader",
+        "reading_mechanisms",
+    }
+    for path in sorted(source_root.glob("*.py")):
+        tree = ast.parse(path.read_text(encoding="utf-8"), filename=str(path))
+        imported_modules = {
+            alias.name
+            for node in ast.walk(tree)
+            if isinstance(node, ast.Import)
+            for alias in node.names
+        }
+        imported_modules.update(
+            node.module or ""
+            for node in ast.walk(tree)
+            if isinstance(node, ast.ImportFrom)
+        )
+        assert not any(
+            forbidden in imported.split(".")
+            for imported in imported_modules
+            for forbidden in forbidden_module_segments
+        ), path
+
+    for filename in ("builder.py", "validation.py"):
+        path = source_root / filename
+        tree = ast.parse(path.read_text(encoding="utf-8"), filename=str(path))
+        imported_modules = {
+            alias.name
+            for node in ast.walk(tree)
+            if isinstance(node, ast.Import)
+            for alias in node.names
+        }
+        imported_modules.update(
+            node.module or ""
+            for node in ast.walk(tree)
+            if isinstance(node, ast.ImportFrom)
+        )
+        assert not any(
+            "producers" in imported.split(".") for imported in imported_modules
+        ), path
+        referenced_names = {
+            node.id
+            for node in ast.walk(tree)
+            if isinstance(node, ast.Name)
+        } | {
+            node.attr
+            for node in ast.walk(tree)
+            if isinstance(node, ast.Attribute)
+        }
+        assert not any(name.endswith("ProducerAdapter") for name in referenced_names)
 
 
 def test_pages_projection_builds_exact_authority_bytes() -> None:

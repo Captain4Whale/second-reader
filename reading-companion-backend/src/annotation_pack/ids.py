@@ -9,6 +9,7 @@ from __future__ import annotations
 
 from collections.abc import Iterable, Sequence
 import re
+from typing import Literal
 import unicodedata
 from uuid import NAMESPACE_URL, RFC_4122, UUID, uuid5
 
@@ -27,6 +28,7 @@ __all__ = [
     "TRACK_NAMESPACE",
     "WORK_NAMESPACE",
     "anchor_id",
+    "annotation_id",
     "asserted_work_id",
     "default_creator_id",
     "default_generator_id",
@@ -184,7 +186,7 @@ def track_id(edition: str, creator: str, track_key: str) -> str:
     """Derive the logical Annotation Track id within an Edition."""
 
     canonical_edition = _canonical_uuid5_urn(edition, "edition")
-    canonical_creator = _canonical_uuid5_urn(creator, "creator")
+    canonical_creator = _canonical_absolute_iri(creator, "creator")
     canonical_track_key = _nfc_required(track_key, "track_key")
     return uuid5_urn(
         TRACK_NAMESPACE,
@@ -268,6 +270,38 @@ def anchor_id(
     )
 
 
+def annotation_id(
+    track: str,
+    kind: Literal["highlight", "note"],
+    anchor: str,
+    body_sha256: str | None = None,
+) -> str:
+    """Derive an annotation identity from its complete public semantics.
+
+    Highlight has an intentionally empty final NUL-framed field.  Note uses
+    the SHA-256 of the builder-normalized body.  The empty field is part of the
+    v0 protocol name and must not be replaced with a sentinel token.
+    """
+
+    canonical_track = _canonical_uuid5_urn(track, "track")
+    canonical_anchor = _canonical_uuid5_urn(anchor, "anchor")
+    if kind == "highlight":
+        if body_sha256 is not None:
+            raise ValueError("highlight annotation identity must not include a body digest")
+        body_digest = ""
+    elif kind == "note":
+        if body_sha256 is None:
+            raise ValueError("note annotation identity requires a body digest")
+        body_digest = _lowercase_sha256(body_sha256, "body_sha256")
+    else:
+        raise ValueError("kind must be 'highlight' or 'note'")
+
+    canonical_name = "\0".join(
+        ("annotation", canonical_track, kind, canonical_anchor, body_digest)
+    )
+    return uuid5_urn(ANNOTATION_NAMESPACE, canonical_name)
+
+
 def _nul_frame(*fields: str) -> str:
     for position, field in enumerate(fields):
         if not isinstance(field, str):
@@ -317,6 +351,20 @@ def _canonical_uuid5_urn(value: str, field: str) -> str:
         raise ValueError(f"{field} must be a lowercase canonical UUID URN")
     if parsed.version != 5 or parsed.variant != RFC_4122:
         raise ValueError(f"{field} must be an RFC-4122 UUIDv5 URN")
+    return candidate
+
+
+def _canonical_absolute_iri(value: str, field: str) -> str:
+    candidate = _nfc_required(value, field)
+    if candidate != value:
+        raise ValueError(f"{field} must already be NFC-normalized")
+    if re.match(r"^[A-Za-z][A-Za-z0-9+.-]*:", candidate) is None:
+        raise ValueError(f"{field} must be an absolute IRI")
+    if any(
+        character.isspace() or unicodedata.category(character) in {"Cc", "Cs"}
+        for character in candidate
+    ):
+        raise ValueError(f"{field} must not contain whitespace or control characters")
     return candidate
 
 

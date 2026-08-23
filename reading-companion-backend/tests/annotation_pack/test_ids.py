@@ -18,6 +18,7 @@ from src.annotation_pack.ids import (
     TRACK_NAMESPACE,
     WORK_NAMESPACE,
     anchor_id,
+    annotation_id,
     asserted_work_id,
     default_creator_id,
     default_generator_id,
@@ -45,6 +46,8 @@ GENERATOR_VECTOR = "urn:uuid:7da1165a-bf3f-5d18-b2a3-89feb37e9c4e"
 TRACK_VECTOR = "urn:uuid:b922476c-c729-51c8-b969-847f87e32b4b"
 PACK_VECTOR = "urn:uuid:d52bc66a-c561-5664-b0d0-ccf38ad520bc"
 ANCHOR_VECTOR = "urn:uuid:32d136f5-00a1-5883-8f8b-964327d2f004"
+ANNOTATION_HIGHLIGHT_VECTOR = "urn:uuid:f16ada0d-9071-5555-ab37-55d8463d3fdf"
+ANNOTATION_NOTE_VECTOR = "urn:uuid:ce9b7fb9-fb39-5c7f-aa6b-dcfede5921b4"
 
 
 def test_namespace_uuid_literals_match_the_immutable_iri_vectors() -> None:
@@ -220,6 +223,59 @@ def test_anchor_id_has_separately_framed_coordinate_fixed_vector() -> None:
         "c" * 64,
         **{**arguments, "end_char_offset": 57},
     )
+
+
+def test_annotation_id_has_empty_highlight_and_note_body_digest_vectors() -> None:
+    highlight = annotation_id(TRACK_VECTOR, "highlight", ANCHOR_VECTOR)
+    note = annotation_id(TRACK_VECTOR, "note", ANCHOR_VECTOR, "e" * 64)
+
+    assert highlight == ANNOTATION_HIGHLIGHT_VECTOR
+    assert note == ANNOTATION_NOTE_VECTOR
+    assert highlight == uuid5(
+        ANNOTATION_NAMESPACE,
+        "\0".join(("annotation", TRACK_VECTOR, "highlight", ANCHOR_VECTOR, "")),
+    ).urn
+    assert note == uuid5(
+        ANNOTATION_NAMESPACE,
+        "\0".join(("annotation", TRACK_VECTOR, "note", ANCHOR_VECTOR, "e" * 64)),
+    ).urn
+    with pytest.raises(ValueError, match="must not include"):
+        annotation_id(TRACK_VECTOR, "highlight", ANCHOR_VECTOR, "e" * 64)
+    with pytest.raises(ValueError, match="requires"):
+        annotation_id(TRACK_VECTOR, "note", ANCHOR_VECTOR)
+    with pytest.raises(ValueError, match="kind"):
+        annotation_id(TRACK_VECTOR, "bookmark", ANCHOR_VECTOR)  # type: ignore[arg-type]
+
+
+@pytest.mark.parametrize(
+    "creator_iri",
+    [
+        "https://example.org/people/alice",
+        "https://example.org/organizations/reader-lab",
+        "urn:example:software:reader",
+    ],
+)
+def test_track_id_accepts_canonical_absolute_creator_iris(creator_iri: str) -> None:
+    first = track_id(EDITION_VECTOR, creator_iri, "public-track")
+    second = track_id(EDITION_VECTOR, creator_iri, "public-track")
+
+    assert first == second
+    assert UUID(first).version == 5
+    assert first != track_id(EDITION_VECTOR, creator_iri, "other-track")
+
+
+@pytest.mark.parametrize(
+    "creator_iri",
+    [
+        "relative/path",
+        "https://example.org/white space",
+        "urn:example:bad\x00value",
+        "https://example.org/Cafe\u0301",
+    ],
+)
+def test_track_id_rejects_noncanonical_creator_iris(creator_iri: str) -> None:
+    with pytest.raises(ValueError, match="IRI|NUL|NFC|whitespace"):
+        track_id(EDITION_VECTOR, creator_iri, "public-track")
 
 
 @pytest.mark.parametrize(

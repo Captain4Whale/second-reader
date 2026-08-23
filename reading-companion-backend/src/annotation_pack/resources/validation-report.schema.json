@@ -160,6 +160,25 @@
           }
         }
       }
+    },
+    {
+      "if": {
+        "properties": {
+          "package_sha256": {
+            "$ref": "#/$defs/sha256Hex"
+          }
+        },
+        "required": [
+          "package_sha256"
+        ]
+      },
+      "then": {
+        "properties": {
+          "annotations_json_sha256": {
+            "$ref": "#/$defs/sha256Hex"
+          }
+        }
+      }
     }
   ],
   "additionalProperties": false,

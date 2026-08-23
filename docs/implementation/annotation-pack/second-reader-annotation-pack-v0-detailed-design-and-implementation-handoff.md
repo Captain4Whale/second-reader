@@ -1057,7 +1057,7 @@ cd reading-companion-backend
 - `--allow-skips`：仅 annotation-level errors可 skip，至少剩一条 valid item时发布 `degraded-but-valid` Pack；report含 counts/codes与 source row index/hash，不含 private内容/path。
 - pack-level identity/schema/security/private-leak错误永远不能降级。
 - partial 与 skip是两种独立许可：`--allow-partial` 不等于 `--allow-skips`。
-- empty current track默认 `empty_track` failure；显式 `--allow-empty` 才发布合法 `items: []`，report warning `empty_track_explicitly_allowed`。它适合 contract/integration，不应被误作“Agent无观点”的质量结论。
+- empty current track默认 `empty_track` failure；显式 `--allow-empty` 才把同一 `empty_track` finding降为 warning并发布合法 `items: []`。它适合 contract/integration，不应被误作“Agent无观点”的质量结论。
 
 ### 11.5 Public artifact layout
 
@@ -1216,6 +1216,12 @@ class ValidationResult:
     findings: tuple[ValidationFinding, ...]
 
 @dataclass(frozen=True)
+class ValidationContext:
+    input_count: int | None = None
+    findings: tuple[ValidationFinding, ...] = ()
+    allow_empty: bool = False
+
+@dataclass(frozen=True)
 class ValidationReport:
     schema_version: str
     validator_version: str
@@ -1319,6 +1325,7 @@ def validate_pack(
     *,
     mode: Literal["strict", "compatible"] = "strict",
     verify_ids: bool = True,
+    context: ValidationContext | None = None,
 ) -> ValidationResult: ...
 
 def finalize_validation_report(
@@ -1519,7 +1526,7 @@ Scan不把普通 quote中偶然出现一个单词判为泄漏；它检查 field 
   "input_snapshot_digest": "82f72cf3651f3c1c6b96e7a170da1302a7cf0e86bf8d57db37e5ed66005a40d8",
   "annotations_json_sha256": "9c9c9c9c9c9c9c9c9c9c9c9c9c9c9c9c9c9c9c9c9c9c9c9c9c9c9c9c9c9c9c",
   "package_sha256": "adadadadadadadadadadadadadadadadadadadadadadadadadadadadadadadad",
-  "counts": {"input": 10, "exported": 9, "skipped": 1, "warnings": 2, "errors": 1},
+  "counts": {"input": 10, "exported": 9, "skipped": 1, "warnings": 0, "errors": 0},
   "findings": [
     {
       "code": "ambiguous_source_quote",
@@ -1534,7 +1541,7 @@ Scan不把普通 quote中偶然出现一个单词判为泄漏；它检查 field 
 }
 ```
 
-Canonical auxiliary schema是 `contract/annotation-pack/v0/schema/validation-report.schema.json`；它与 pointer schema一样不定义 Pack wire，也不生成 Pydantic Pack binding。`ValidationResult` 不是可落盘报告；`finalize_validation_report()` 在 JSON/package bytes及其校验结果都已确定后一次性构造 frozen `ValidationReport`。`status` 只允许 `valid | degraded | failed`：immutable revision里的 `validation-report.json` 只能是 `valid | degraded`；`failed` 只能写 track root的 `last-failed-validation-report.json`。Repeated export的 `unchanged` 只属于 `ExportResult.status`，返回既有 revision report path，绝不修改 report或创建“unchanged revision”。
+Canonical auxiliary schema是 `contract/annotation-pack/v0/schema/validation-report.schema.json`；它与 pointer schema一样不定义 Pack wire，也不生成 Pydantic Pack binding。`ValidationResult` 不是可落盘报告；`finalize_validation_report()` 在 JSON/package bytes及其校验结果都已确定后一次性构造 frozen `ValidationReport`。`package_sha256` 只要非 null，`annotations_json_sha256` 就必须同时是有效 digest，不能产生只声称 package 而不绑定其中 JSON 的报告。`status` 只允许 `valid | degraded | failed`：immutable revision里的 `validation-report.json` 只能是 `valid | degraded`；`failed` 只能写 track root的 `last-failed-validation-report.json`。Repeated export的 `unchanged` 只属于 `ExportResult.status`，返回既有 revision report path，绝不修改 report或创建“unchanged revision”。
 
 Report bytes使用 `sr-annotation-validation-report-json-v1`：所有 entity strings先按各自 domain rule normalization；object keys按 Unicode code point排序；无额外空白；末尾一个 LF。`findings` 在 serialize前按 `(severity_rank, code, source_record_index_or_-1, json_pointer_or_empty, annotation_id_or_empty, source_record_digest_or_empty, message)` 排序，其中 rank固定 `fatal=0,error=1,skipped=2,warning=3`；`counts` 由排序前集合重算，不能由 caller声称。Schema用 conditionals要求 published report有 pack/semantic/JSON digest，JSON-only report的 `package_sha256=null`，packaged report必须是64-hex package digest；failed preflight允许这些 fields为null。
 
@@ -2052,8 +2059,10 @@ make agent-check
 
 **Slice 3 — Anchor model + serialization primitives** 已验收：exact verified-handle XHTML resource stream/ranges、strict paragraph-char→href/quote/context/chapter anchors、grapheme boundary gate、optional verified-CFI seam、Anchor UUID fixed vectors、`sr-canonical-json-v1`和 semantic digest均已实现。Canonical JSON现明确拒绝 float并限制为 interoperable safe integers，六个 Anchor坐标各自使用独立 NUL field；XHTML element/depth/parse-memory/traversal-amplification gates和 auxiliary cross-href adversarial tests均已通过两轮独立审查。Focused acceptance为 `543 passed`；完整 affected regression set为 `612 passed, 2 failed`，仍只有已单列的两条 pre-existing `attentional_v2.slow_cycle`测试/接口漂移。Default路径不生成 CFI，当前只证明 protocol seam与exact range guard，不声称 Reader/CFI interoperability。本 Slice只落实既有 `DEC-155`的已批准协议框架，没有改变产品方向、默认机制、runtime或公共路由，因此不新增 decision-log entry。
 
-外部 IRI 仍须等待 workflow 进入 `main`、Pages 启用并成功部署后做 HTTP byte comparison，当前不得称为 live。下一实现单元是 **Slice 4 — Generic Pack Builder and validator**；它不得顺便读取 producer ledger、实现 exporter/publication writes、detached package或机制行为。
+**Slice 4 — Generic Pack Builder and validator** 已验收：producer-neutral `AnnotationPackBuilder` 可从 immutable identity/anchor inputs构建 Highlight/Note完整 Pack，支持 Software/Person/Organization creator、deterministic Pack/Track/Annotation IDs、NFC/second-precision gates、canonical item sort和递归只读输出；caller-owned publication/target mappings各做一次 detached snapshot，ID、digest、validation与freeze共用同一份数据。纯 validator实现 canonical schema、cross-object ID/semantic、strict/compatible extension、bounded privacy、public IRI和有限 numeric-step CFI gate、empty/degraded accounting、frozen pre-artifact `ValidationResult`与一次性 final `ValidationReport`；兼容 extension内嵌 authority与report trust boundary也经构造性反例复核。`serialize_pack()` 对 caller state只取一次 canonical snapshot，并验证后返回同一 bytes；validator preflight只信任 exact built-in JSON scalar/key并把容器单次脱离，report schema同时锁定 package digest不得脱离 annotations JSON digest。Focused acceptance为 `636 passed`；完整 affected regression set为 `770 passed, 2 failed`，仍只有已单列的两条 pre-existing `attentional_v2.slow_cycle`测试/接口漂移。Contract与agent checks exit `0`，warning-only历史 traceability和依赖 deprecation继续单列。本 Slice落实既有 `DEC-155`而未改变产品方向、默认机制、runtime或公共路由，因此不新增 decision-log entry。
+
+外部 IRI 仍须等待 workflow 进入 `main`、Pages 启用并成功部署后做 HTTP byte comparison，当前不得称为 live。下一实现单元是 **Slice 5 — `SecondReaderProducerAdapter`**；它只能读取 current native settled ledger并输出中性 drafts，不得顺便实现 exporter/publication writes、detached package或机制行为。
 
 ### Explicit non-goals confirmation
 
-截至 Slice 3，仓库已实现 contract/schema/context/examples、producer-neutral 离线 schema loader、deterministic generated bindings/runtime resources、focused checks/Pages projection、verified EPUB publication identity/fingerprints/coherence gate、exact XHTML resource index、strict anchors、canonical serialization和 semantic digest primitives；尚未实现 producer adapter、full Pack builder/semantic validator、exporter/publication、detached package或真实 Annotation Pack publication。Default CFI resolver仍不存在，因此不声称真实 CFI互操作。Agent prompt、Digest、Memory、reading loop、Readest、Library 和 public HTTP API 均未修改。
+截至 Slice 4，仓库已实现 contract/schema/context/examples、producer-neutral 离线 schema loader、deterministic generated bindings/runtime resources、focused checks/Pages projection、verified EPUB publication identity/fingerprints/coherence gate、exact XHTML resource index、strict anchors、canonical serialization/semantic digest、generic Pack builder以及 bounded schema/semantic/privacy validator和 final report primitives；尚未实现 producer adapter、exporter/publication、safe inspector、detached package、真 EPUB golden export或真实 Annotation Pack publication。Default CFI resolver仍不存在，因此不声称真实 CFI互操作。Agent prompt、Digest、Memory、reading loop、Readest、Library 和 public HTTP API 均未修改。

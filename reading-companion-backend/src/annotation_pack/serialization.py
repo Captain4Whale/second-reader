@@ -37,6 +37,7 @@ __all__ = [
     "canonical_json_bytes",
     "semantic_digest",
     "semantic_projection",
+    "serialize_pack",
     "validate_json_value",
 ]
 
@@ -116,6 +117,63 @@ def semantic_digest(pack: Mapping[str, object]) -> str:
     """Return the lowercase SHA-256 of the canonical semantic projection."""
 
     return hashlib.sha256(canonical_json_bytes(semantic_projection(pack))).hexdigest()
+
+
+def serialize_pack(
+    pack: Mapping[str, object] | object,
+    *,
+    canonicalization: str = CANONICALIZATION,
+) -> bytes:
+    """Validate and encode a complete Annotation Pack document.
+
+    The local import keeps the lower-level canonical JSON primitives reusable by
+    the semantic validator without a module-import cycle.  Empty documents are
+    structurally serializable here; whether publishing an empty track is allowed
+    remains an explicit exporter policy.
+    """
+
+    if canonicalization != CANONICALIZATION:
+        raise CanonicalJsonError("unsupported Annotation Pack canonicalization")
+    document: object = pack
+    if not isinstance(document, Mapping):
+        try:
+            model_dump = getattr(document, "model_dump", None)
+        except Exception:
+            raise CanonicalJsonError(
+                "Annotation Pack wire model could not be read safely"
+            ) from None
+        if not callable(model_dump):
+            raise CanonicalJsonError("Annotation Pack must be a mapping or wire model")
+        try:
+            document = model_dump(by_alias=True, exclude_none=True)
+        except Exception:
+            raise CanonicalJsonError(
+                "Annotation Pack wire model could not be read safely"
+            ) from None
+    if not isinstance(document, Mapping):
+        raise CanonicalJsonError("Annotation Pack wire model did not produce an object")
+
+    try:
+        snapshot_bytes = canonical_json_bytes(document)
+        snapshot = json.loads(snapshot_bytes)
+    except Exception:
+        raise CanonicalJsonError(
+            "Annotation Pack could not be snapshotted safely"
+        ) from None
+    if not isinstance(snapshot, dict):  # pragma: no cover - Mapping root above
+        raise CanonicalJsonError("Annotation Pack snapshot did not produce an object")
+
+    from src.annotation_pack.validation import ValidationContext, validate_pack
+
+    result = validate_pack(
+        snapshot,
+        context=ValidationContext(allow_empty=True),
+    )
+    if not result.publishable:
+        raise CanonicalJsonError(
+            "Annotation Pack failed schema or semantic validation"
+        )
+    return snapshot_bytes
 
 
 def _to_plain_json(value: object, *, path: str, active: set[int]) -> JSONValue:

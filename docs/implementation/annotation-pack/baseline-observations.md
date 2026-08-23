@@ -35,3 +35,12 @@ Observed while running the broader Slice 3 affected-regression set on `2026-08-2
 - Slice 3 does not modify `src/attentional_v2/slow_cycle.py`, the failing tests, Agent prompts, Digest, Memory, or the reading loop
 
 The two failures remain unrelated baseline debt. They are not counted as Slice 3 regressions and were not repaired as part of the producer-neutral anchor/serialization work.
+
+Observed while running the broader Slice 4 affected-regression set on `2026-08-23`:
+
+- the combined set completed with `770 passed, 2 failed`; both failures are the same two `tests/test_attentional_v2_slow_cycle.py` monkeypatch/interface-drift cases already reproduced at base `2d8aac2`
+- the full focused Annotation Pack suite completed separately with `636 passed`
+- root `annotation-pack-contract-check`, `contract-check`, and `agent-check` exited `0`; the existing warning-only traceability and dependency deprecation output remains unchanged
+- Slice 4 does not modify `src/attentional_v2/slow_cycle.py`, Agent prompts, Digest, Memory, the reading loop, frontend, or public HTTP APIs
+
+The two failures remain unrelated baseline debt. They are not counted as Slice 4 regressions and were not repaired as part of the generic builder/validator work.
