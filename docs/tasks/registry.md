@@ -7,7 +7,7 @@ Update when: task status, priority, blockers, decision refs, job refs, evidence 
 
 This document is the human-readable companion to `docs/tasks/registry.json`.
 
-Last updated: `2026-08-23T19:35:39+08:00`
+Last updated: `2026-08-23T20:14:59+08:00`
 
 ## Status Values
 - `active`
@@ -25,7 +25,7 @@ Last updated: `2026-08-23T19:35:39+08:00`
 - Lane: `product_contract`
 - Priority: `high`
 - Detail: `docs/implementation/annotation-pack/second-reader-annotation-pack-v0-detailed-design-and-implementation-handoff.md`
-- Next: Slices 1–2 are accepted. Begin and accept Slice 3 (`Anchor model + serialization primitives`) from the Slice 2 checkpoint, then commit and push it independently. Continue through all eight Slices until the Section 20 Definition of Done is satisfied. Keep Agent prompts, Digest, Memory, the reading loop, Readest, Library, and public HTTP surfaces unchanged; keep unrelated baseline issues in their separate record.
+- Next: Slices 1–3 are accepted. Begin and accept Slice 4 (`Generic Pack Builder and validator`) from the Slice 3 checkpoint, then commit and push it independently. Continue through all eight Slices until the Section 20 Definition of Done is satisfied. Keep producer input out of the generic builder, keep Agent prompts, Digest, Memory, the reading loop, Readest, Library, and public HTTP surfaces unchanged, and keep unrelated baseline issues in their separate record.
 - Evidence:
   - `DEC-155`
   - `contract/annotation-pack/v0/README.md`
@@ -36,12 +36,19 @@ Last updated: `2026-08-23T19:35:39+08:00`
   - `reading-companion-backend/src/annotation_pack/ids.py`
   - `reading-companion-backend/src/annotation_pack/epub_source.py`
   - `reading-companion-backend/src/annotation_pack/identity.py`
+  - `reading-companion-backend/src/annotation_pack/epub_resources.py`
   - `reading-companion-backend/src/reading_core/epub_document.py`
+  - `reading-companion-backend/src/annotation_pack/drafts.py`
+  - `reading-companion-backend/src/annotation_pack/anchors.py`
+  - `reading-companion-backend/src/annotation_pack/serialization.py`
   - `reading-companion-backend/tests/annotation_pack/test_contract.py`
   - `reading-companion-backend/tests/annotation_pack/test_ids.py`
   - `reading-companion-backend/tests/annotation_pack/test_epub_source.py`
   - `reading-companion-backend/tests/annotation_pack/test_identity.py`
   - `reading-companion-backend/tests/annotation_pack/test_epub_document.py`
+  - `reading-companion-backend/tests/annotation_pack/test_epub_resources.py`
+  - `reading-companion-backend/tests/annotation_pack/test_anchors.py`
+  - `reading-companion-backend/tests/annotation_pack/test_serialization.py`
   - `docs/implementation/annotation-pack/baseline-observations.md`
   - `docs/implementation/annotation-pack/second-reader-annotation-pack-v0-detailed-design-and-implementation-handoff.md`
 

@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "updated_at": "2026-08-23T19:35:39+08:00",
+  "updated_at": "2026-08-23T20:14:59+08:00",
   "tasks": [
     {
       "id": "TASK-ANNOTATION-PACK-V0-IMPLEMENTATION",
@@ -18,7 +18,7 @@
       ],
       "job_refs": [],
       "acceptance_ref": "docs/implementation/annotation-pack/second-reader-annotation-pack-v0-detailed-design-and-implementation-handoff.md#20-definition-of-done",
-      "next_action": "Slices 1-2 are accepted. Begin and accept Slice 3 (Anchor model + serialization primitives) from the Slice 2 checkpoint, then commit and push it independently. Continue through all eight Slices until the Section 20 Definition of Done is satisfied. Keep Agent prompts, Digest, Memory, the reading loop, Readest, Library, and public HTTP surfaces unchanged; keep unrelated baseline issues in their separate record.",
+      "next_action": "Slices 1-3 are accepted. Begin and accept Slice 4 (Generic Pack Builder and validator) from the Slice 3 checkpoint, then commit and push it independently. Continue through all eight Slices until the Section 20 Definition of Done is satisfied. Keep producer input out of the generic builder, keep Agent prompts, Digest, Memory, the reading loop, Readest, Library, and public HTTP surfaces unchanged, and keep unrelated baseline issues in their separate record.",
       "blocked_by": [],
       "evidence_refs": [
         ".github/workflows/annotation-pack-pages.yml",
@@ -29,17 +29,24 @@
         "docs/history/decision-log.md",
         "docs/implementation/annotation-pack/second-reader-annotation-pack-v0-detailed-design-and-implementation-handoff.md",
         "reading-companion-backend/src/annotation_pack/epub_source.py",
+        "reading-companion-backend/src/annotation_pack/epub_resources.py",
         "reading-companion-backend/src/annotation_pack/identity.py",
         "reading-companion-backend/src/annotation_pack/ids.py",
+        "reading-companion-backend/src/annotation_pack/anchors.py",
+        "reading-companion-backend/src/annotation_pack/drafts.py",
         "reading-companion-backend/src/annotation_pack/schema.py",
+        "reading-companion-backend/src/annotation_pack/serialization.py",
         "reading-companion-backend/src/reading_core/epub_document.py",
         "reading-companion-backend/tests/annotation_pack/test_contract.py",
         "reading-companion-backend/tests/annotation_pack/test_epub_document.py",
+        "reading-companion-backend/tests/annotation_pack/test_epub_resources.py",
         "reading-companion-backend/tests/annotation_pack/test_epub_source.py",
+        "reading-companion-backend/tests/annotation_pack/test_anchors.py",
         "reading-companion-backend/tests/annotation_pack/test_identity.py",
-        "reading-companion-backend/tests/annotation_pack/test_ids.py"
+        "reading-companion-backend/tests/annotation_pack/test_ids.py",
+        "reading-companion-backend/tests/annotation_pack/test_serialization.py"
       ],
-      "last_updated": "2026-08-23T19:35:39+08:00",
+      "last_updated": "2026-08-23T20:14:59+08:00",
       "last_updated_by": "codex"
     },
     {

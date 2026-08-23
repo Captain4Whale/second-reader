@@ -1,6 +1,6 @@
 # Second Reader Annotation Pack v0：详细设计与实施交接
 
-状态：`implementation_active_slice_3`（Slices 1–2 已验收；进入 anchor model/serialization primitives）
+状态：`implementation_active_slice_4`（Slices 1–3 已验收；进入 generic Pack builder/validator）
 
 协议代号：`second-reader-annotation-pack/0.1`
 
@@ -880,7 +880,7 @@ Canonical name 使用 UTF-8、NUL (`\0`) field separator；metadata/track/body�
 | `generator_id` current reference | `generator\0software\0second-reader-annotation-pack-exporter\0<generator-contract-major>` | 软件产品 identity稳定；build version另写 `sr:version` |
 | `track_id` | `track\0<edition_id>\0<creator_id>\0<track_key>` | edition/creator/logical track变化才变化 |
 | `pack_id` | `pack\0<spec-major>\0<edition_id>\0<track_id>` | 同 edition×track在 v0 内稳定；partial/新增 items不换 pack id |
-| `anchor_id` | `anchor\0<edition_id>\0<href>\0<chapter_fp>\0<start tuple>\0<end tuple>\0<quote_sha256>` | target/content变化即变化；CFI不参与，避免 optional locator改变 identity |
+| `anchor_id` | `anchor\0<edition_id>\0<href>\0<chapter_fp>\0<start chapter id>\0<start paragraph index>\0<start char offset>\0<end chapter id>\0<end paragraph index>\0<end char offset>\0<quote_sha256>` | 六个坐标整数各自是独立 NUL field；target/content变化即变化；CFI不参与，避免 optional locator改变 identity |
 | `annotation_id` | `annotation\0<track_id>\0<kind>\0<anchor_id>\0<body_sha256-or-empty>` | 同 creator/track语义重复稳定；Note正文变化、kind/anchor变化即新 ID |
 
 v0 不额外序列化 `source_id`：`target.source` 已在 `edition_id` scope内唯一，新增一个无人消费的 wire id只会增加漂移。内部可按 `UUIDv5(EDITION_NAMESPACE, "resource\0" + edition_id + "\0" + href)` 派生，但不是 v0 contract field。current `source_span_id` 和 `reaction_id` 都不是 canonical id。
@@ -964,7 +964,9 @@ Track root的 `current.json` 是 Second Reader本地发布 pointer，不在 `.an
 
 - entity-specific builder先完成 normalization：metadata/creator/Note body用 NFC，source-derived exact/prefix/suffix保持与 BookDocument坐标一致；serializer本身绝不改 string；JSON UTF-8，无 BOM；
 - object keys按 Unicode code-point lexicographic order；arrays保持协议规定顺序（items预排序、context/selector固定顺序）；
-- separators为 `,` / `:`，无额外空白，禁止 NaN/Infinity，文件末尾一个 LF；
+- v0 number domain只接受 `[-(2^53-1), 2^53-1]` 内的 JSON integer；拒绝所有 float（包括 finite、NaN和Infinity），避免把任一 runtime的浮点格式暗中变成协议；
+- string原始 code points不做 normalization；`"`、`\\`和 U+0008/U+0009/U+000A/U+000C/U+000D使用 JSON short escapes，其余 U+0000–U+001F使用 lowercase `\\u00xx`，`/`不转义，其余合法 Unicode直接写 UTF-8；lone surrogate拒绝；
+- separators为 `,` / `:`，无额外空白，文件末尾一个 LF；
 - datetime统一 UTC `YYYY-MM-DDTHH:MM:SSZ`；SHA/UUID lowercase；
 - serializer只接受已经 schema + semantic valid 的 document。
 
@@ -1083,7 +1085,7 @@ from datetime import datetime
 from pathlib import Path
 from typing import Any, Literal
 
-JSONValue = None | bool | int | float | str | list["JSONValue"] | dict[str, "JSONValue"]
+JSONValue = None | bool | int | str | list["JSONValue"] | dict[str, "JSONValue"]
 
 @dataclass(frozen=True)
 class CreatorInput:
@@ -1147,12 +1149,13 @@ class EpubResourceIndex:
     manifest: EpubManifestIndex
     resource_texts: Mapping[str, str]  # sr-epub-resource-text-v1
     paragraph_ranges: Mapping[tuple[int, int], tuple[str, int, int]]
+    unverifiable_hrefs: frozenset[str]  # parsed/mapping-incoherent resources; anchors fail closed
 
 @dataclass(frozen=True)
 class PublicationIdentityResult:
     wire: Mapping[str, JSONValue]   # complete canonical `about` object
     rebuilt_book_document: Mapping[str, Any]  # in-memory only; source_file is fixed safe relative ref
-    epub_index: EpubManifestIndex
+    epub_index: EpubResourceIndex
     file_sha256: str
     content_sha256: str
     substrate_sha256: str
@@ -2047,8 +2050,10 @@ make agent-check
 
 **Slice 2 — Publication identity + fingerprinting** 已验收：strict verifier把 raw File identity与同一 verified handle上的 exact BookDocument reparse绑定；Work/Edition/File、content/chapter/substrate fingerprints、fixed UUID vectors、manifest text-resource gate、safe metadata/URI gates与 neutral no-write EPUB builder均已实现。Slice 2 + iterator acceptance为 `439 passed`；完整 affected regression set为 `538 passed, 2 failed`，两条 `attentional_v2.slow_cycle`测试/接口漂移已确认存在于 base `2d8aac2`并单列在 baseline observations。Contract/governance checks exit `0`，warning-only历史 traceability、LangChain deprecation与 decision-log reminder不冒充本 Slice缺陷；本 Slice落实既有 `DEC-155`，未建立新的产品/架构方向，因此不新增 decision-log entry。
 
-外部 IRI 仍须等待 workflow 进入 `main`、Pages 启用并成功部署后做 HTTP byte comparison，当前不得称为 live。下一实现单元是 **Slice 3 — Anchor model + serialization primitives**；它不得顺便实现 producer adapter、full Pack validator/builder或 exporter。
+**Slice 3 — Anchor model + serialization primitives** 已验收：exact verified-handle XHTML resource stream/ranges、strict paragraph-char→href/quote/context/chapter anchors、grapheme boundary gate、optional verified-CFI seam、Anchor UUID fixed vectors、`sr-canonical-json-v1`和 semantic digest均已实现。Canonical JSON现明确拒绝 float并限制为 interoperable safe integers，六个 Anchor坐标各自使用独立 NUL field；XHTML element/depth/parse-memory/traversal-amplification gates和 auxiliary cross-href adversarial tests均已通过两轮独立审查。Focused acceptance为 `543 passed`；完整 affected regression set为 `612 passed, 2 failed`，仍只有已单列的两条 pre-existing `attentional_v2.slow_cycle`测试/接口漂移。Default路径不生成 CFI，当前只证明 protocol seam与exact range guard，不声称 Reader/CFI interoperability。本 Slice只落实既有 `DEC-155`的已批准协议框架，没有改变产品方向、默认机制、runtime或公共路由，因此不新增 decision-log entry。
+
+外部 IRI 仍须等待 workflow 进入 `main`、Pages 启用并成功部署后做 HTTP byte comparison，当前不得称为 live。下一实现单元是 **Slice 4 — Generic Pack Builder and validator**；它不得顺便读取 producer ledger、实现 exporter/publication writes、detached package或机制行为。
 
 ### Explicit non-goals confirmation
 
-截至 Slice 2，仓库已实现 contract/schema/context/examples、producer-neutral 离线 schema loader/validator、deterministic generated bindings/runtime resources、focused checks/Pages projection，以及 verified EPUB publication identity、fingerprints、coherence gate和 neutral no-write BookDocument rebuild seam；尚未实现 anchors、serialization primitives、producer adapter、full Pack builder/validator、exporter、detached package或真实 Annotation Pack publication。Agent prompt、Digest、Memory、reading loop、Readest、Library 和 public HTTP API 均未修改。
+截至 Slice 3，仓库已实现 contract/schema/context/examples、producer-neutral 离线 schema loader、deterministic generated bindings/runtime resources、focused checks/Pages projection、verified EPUB publication identity/fingerprints/coherence gate、exact XHTML resource index、strict anchors、canonical serialization和 semantic digest primitives；尚未实现 producer adapter、full Pack builder/semantic validator、exporter/publication、detached package或真实 Annotation Pack publication。Default CFI resolver仍不存在，因此不声称真实 CFI互操作。Agent prompt、Digest、Memory、reading loop、Readest、Library 和 public HTTP API 均未修改。

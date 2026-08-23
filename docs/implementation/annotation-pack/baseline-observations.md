@@ -27,3 +27,11 @@ Observed while running the broader Slice 2 affected-regression set on `2026-08-2
 - the final combined affected set completed with `538 passed, 2 failed`; the Annotation Pack plus iterator parser acceptance set completed separately with `439 passed`
 
 Slice 2 does not touch `attentional_v2/slow_cycle.py` or these tests. The two failures remain unrelated baseline test/interface drift and are not counted as Annotation Pack regressions.
+
+Observed while running the broader Slice 3 affected-regression set on `2026-08-23`:
+
+- the combined set completed with `612 passed, 2 failed`; both failures are the same two `tests/test_attentional_v2_slow_cycle.py` monkeypatch/interface-drift cases already reproduced at base `2d8aac2`
+- the focused Annotation Pack + iterator parser + source-span set completed separately with `543 passed`
+- Slice 3 does not modify `src/attentional_v2/slow_cycle.py`, the failing tests, Agent prompts, Digest, Memory, or the reading loop
+
+The two failures remain unrelated baseline debt. They are not counted as Slice 3 regressions and were not repaired as part of the producer-neutral anchor/serialization work.

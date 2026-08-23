@@ -10,7 +10,7 @@ import json
 from pathlib import Path, PurePosixPath
 import re
 from types import MappingProxyType
-from typing import Any, Literal, cast
+from typing import Any, BinaryIO, Literal, cast
 import unicodedata
 from urllib.parse import urlsplit
 
@@ -31,6 +31,13 @@ from src.annotation_pack.ids import (
     file_id,
     provisional_work_id,
 )
+from src.annotation_pack.epub_resources import (
+    EpubManifestIndex,
+    EpubResourceIndex,
+    EpubResourceIndexError,
+    build_epub_manifest_index,
+    build_epub_resource_index,
+)
 from src.parsers import parse_epub_stream
 from src.reading_core.epub_document import build_book_document_from_chapters
 from src.reading_runtime.source_normalization import normalize_book_document_source
@@ -46,6 +53,7 @@ __all__ = [
     "SUBSTRATE_FINGERPRINT_VERSION",
     "ChapterFingerprint",
     "EpubManifestIndex",
+    "EpubResourceIndex",
     "Fingerprint",
     "IdentityFinding",
     "PublicationIdentityBuilder",
@@ -217,15 +225,6 @@ class SubstrateComparison:
 
 
 @dataclass(frozen=True, slots=True)
-class EpubManifestIndex:
-    """Safe EPUB-internal manifest membership for later anchor resolution."""
-
-    opf_path: str
-    manifest_hrefs: frozenset[str]
-    text_resource_hrefs: frozenset[str]
-
-
-@dataclass(frozen=True, slots=True)
 class IdentityFinding:
     """One sanitized, deterministic publication-identity warning."""
 
@@ -241,7 +240,7 @@ class PublicationIdentityResult:
 
     wire: Mapping[str, object]
     rebuilt_book_document: Mapping[str, Any] = field(repr=False)
-    epub_index: EpubManifestIndex
+    epub_index: EpubResourceIndex
     file_sha256: str
     content_sha256: str
     substrate_sha256: str
@@ -289,44 +288,48 @@ class PublicationIdentityBuilder:
             verified_source,
             persisted_metadata,
         )
-        rebuilt = _rebuild_book_document(
-            verified_source,
-            title=title,
-            creators=creators,
-            language=language,
-            persisted_metadata=persisted_metadata,
-        )
-        href_resolver = _manifest_href_resolver(verified_source)
-        rebuilt = _canonicalize_book_document_hrefs(rebuilt, href_resolver)
-        persisted_for_comparison = _canonicalize_book_document_hrefs(
-            persisted_book_document,
-            href_resolver,
-        )
-        substrate = compare_book_document_substrates(
-            rebuilt,
-            persisted_for_comparison,
-        )
-        content = book_content_fingerprint(rebuilt)
-        chapters = chapter_fingerprints(rebuilt)
-        for chapter in chapters:
-            if chapter.title and not is_public_display_metadata(chapter.title):
-                raise PublicationIdentityError(
-                    "invalid_publication_metadata",
-                    "canonical chapter title is not eligible for publication identity",
-                    json_pointer=f"/chapters/{chapter.order - 1}/title",
+        manifest_index = build_epub_manifest_index(verified_source)
+        try:
+            with verified_source.open_verified() as source_handle:
+                rebuilt = _rebuild_book_document(
+                    verified_source,
+                    source_handle=source_handle,
+                    title=title,
+                    creators=creators,
+                    language=language,
+                    persisted_metadata=persisted_metadata,
                 )
-        manifest_index = EpubManifestIndex(
-            opf_path=verified_source.opf_path,
-            manifest_hrefs=frozenset(
-                item.href for item in verified_source.manifest_items
-            ),
-            text_resource_hrefs=frozenset(
-                item.href
-                for item in verified_source.manifest_items
-                if item.media_type in {"application/xhtml+xml", "text/html"}
-            ),
-        )
-        _require_chapter_resources_in_manifest(chapters, manifest_index)
+                href_resolver = _manifest_href_resolver(verified_source)
+                rebuilt = _canonicalize_book_document_hrefs(rebuilt, href_resolver)
+                persisted_for_comparison = _canonicalize_book_document_hrefs(
+                    persisted_book_document,
+                    href_resolver,
+                )
+                substrate = compare_book_document_substrates(
+                    rebuilt,
+                    persisted_for_comparison,
+                )
+                content = book_content_fingerprint(rebuilt)
+                chapters = chapter_fingerprints(rebuilt)
+                for chapter in chapters:
+                    if chapter.title and not is_public_display_metadata(chapter.title):
+                        raise PublicationIdentityError(
+                            "invalid_publication_metadata",
+                            "canonical chapter title is not eligible for publication identity",
+                            json_pointer=f"/chapters/{chapter.order - 1}/title",
+                        )
+                _require_chapter_resources_in_manifest(chapters, manifest_index)
+                epub_index = build_epub_resource_index(
+                    source=verified_source,
+                    source_handle=source_handle,
+                    rebuilt_book_document=rebuilt,
+                    manifest=manifest_index,
+                )
+        except EpubResourceIndexError as exc:
+            raise PublicationIdentityError(
+                "source_asset_missing_or_not_epub",
+                "verified source EPUB could not be indexed for exact resource text",
+            ) from exc
 
         if normalized_work_identifiers:
             work_identifier_pairs = tuple(
@@ -389,7 +392,7 @@ class PublicationIdentityBuilder:
         return PublicationIdentityResult(
             wire=cast(Mapping[str, object], _freeze_json(wire)),
             rebuilt_book_document=cast(Mapping[str, Any], _freeze_json(rebuilt)),
-            epub_index=manifest_index,
+            epub_index=epub_index,
             file_sha256=verified_source.sha256,
             content_sha256=content.value,
             substrate_sha256=substrate.digest,
@@ -808,14 +811,14 @@ def _identity_finding_from_source_warning(
 def _rebuild_book_document(
     source: VerifiedEpubSource,
     *,
+    source_handle: BinaryIO,
     title: str,
     creators: tuple[str, ...],
     language: str | None,
     persisted_metadata: Mapping[str, object],
 ) -> Mapping[str, Any]:
     try:
-        with source.open_verified() as handle:
-            raw_chapters = parse_epub_stream(handle)
+        raw_chapters = parse_epub_stream(source_handle)
         book_language = language or _safe_language_value(
             persisted_metadata.get("book_language")
         )

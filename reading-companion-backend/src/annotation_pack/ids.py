@@ -26,6 +26,7 @@ __all__ = [
     "PACK_NAMESPACE",
     "TRACK_NAMESPACE",
     "WORK_NAMESPACE",
+    "anchor_id",
     "asserted_work_id",
     "default_creator_id",
     "default_generator_id",
@@ -207,6 +208,66 @@ def pack_id(
     )
 
 
+def anchor_id(
+    edition: str,
+    href: str,
+    chapter_fingerprint: str,
+    *,
+    start_chapter_id: int,
+    start_paragraph_index: int,
+    start_char_offset: int,
+    end_chapter_id: int,
+    end_paragraph_index: int,
+    end_char_offset: int,
+    quote_sha256: str,
+) -> str:
+    """Derive an exact target id from frozen paragraph-char coordinates.
+
+    Each coordinate integer is a separate NUL-framed field.  Optional CFI is
+    deliberately absent so adding or omitting a verified locator never changes
+    the identity of the required href/quote/paragraph anchor.
+    """
+
+    canonical_edition = _canonical_uuid5_urn(edition, "edition")
+    canonical_href = _nfc_required(href, "href")
+    chapter_digest = _lowercase_sha256(
+        chapter_fingerprint,
+        "chapter_fingerprint",
+    )
+    quote_digest = _lowercase_sha256(quote_sha256, "quote_sha256")
+    start_chapter = _integer_token(start_chapter_id, "start_chapter_id")
+    start_paragraph = _positive_integer_token(
+        start_paragraph_index,
+        "start_paragraph_index",
+    )
+    start_offset = _non_negative_integer_token(
+        start_char_offset,
+        "start_char_offset",
+    )
+    end_chapter = _integer_token(end_chapter_id, "end_chapter_id")
+    end_paragraph = _positive_integer_token(
+        end_paragraph_index,
+        "end_paragraph_index",
+    )
+    end_offset = _non_negative_integer_token(end_char_offset, "end_char_offset")
+    return uuid5_urn(
+        ANCHOR_NAMESPACE,
+        _nul_frame(
+            "anchor",
+            canonical_edition,
+            canonical_href,
+            chapter_digest,
+            start_chapter,
+            start_paragraph,
+            start_offset,
+            end_chapter,
+            end_paragraph,
+            end_offset,
+            quote_digest,
+        ),
+    )
+
+
 def _nul_frame(*fields: str) -> str:
     for position, field in enumerate(fields):
         if not isinstance(field, str):
@@ -265,3 +326,23 @@ def _major_token(value: int, field: str) -> str:
     if value < 0:
         raise ValueError(f"{field} must be a non-negative integer")
     return str(value)
+
+
+def _integer_token(value: int, field: str) -> str:
+    if isinstance(value, bool) or not isinstance(value, int):
+        raise TypeError(f"{field} must be an integer")
+    return str(value)
+
+
+def _non_negative_integer_token(value: int, field: str) -> str:
+    token = _integer_token(value, field)
+    if value < 0:
+        raise ValueError(f"{field} must be a non-negative integer")
+    return token
+
+
+def _positive_integer_token(value: int, field: str) -> str:
+    token = _integer_token(value, field)
+    if value < 1:
+        raise ValueError(f"{field} must be a positive integer")
+    return token

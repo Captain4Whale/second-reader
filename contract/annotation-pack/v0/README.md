@@ -51,3 +51,5 @@ make annotation-pack-contract-check
 The check is network-free: it validates the three schemas against Draft 2020-12, validates examples, verifies generated bindings and byte-identical runtime copies, and stages the exact GitHub Pages projection without fetching remote contexts.
 
 The examples are schema-valid protocol examples. Fixed identity, fingerprint, canonical-byte, package, and anchor golden vectors are added by the later implementation slices using the tracked tiny EPUB fixture; these examples must not be treated as external-reader interoperability proof.
+
+`sr-canonical-json-v1` sorts object keys by Unicode code point, preserves array and string code-point order, emits UTF-8 without BOM or optional whitespace, uses lowercase JSON control escapes with `/` unescaped, and terminates with exactly one LF. Its numeric domain is limited to JSON integers in `[-(2^53-1), 2^53-1]`; floating-point values and lone Unicode surrogates are semantic errors. This restriction also applies to declared extension values before they can participate in a canonical Pack or semantic digest.

@@ -17,6 +17,7 @@ from src.annotation_pack.ids import (
     PACK_NAMESPACE,
     TRACK_NAMESPACE,
     WORK_NAMESPACE,
+    anchor_id,
     asserted_work_id,
     default_creator_id,
     default_generator_id,
@@ -43,6 +44,7 @@ CREATOR_VECTOR = "urn:uuid:c8d82077-7433-5fe9-9075-01f3e3100656"
 GENERATOR_VECTOR = "urn:uuid:7da1165a-bf3f-5d18-b2a3-89feb37e9c4e"
 TRACK_VECTOR = "urn:uuid:b922476c-c729-51c8-b969-847f87e32b4b"
 PACK_VECTOR = "urn:uuid:d52bc66a-c561-5664-b0d0-ccf38ad520bc"
+ANCHOR_VECTOR = "urn:uuid:32d136f5-00a1-5883-8f8b-964327d2f004"
 
 
 def test_namespace_uuid_literals_match_the_immutable_iri_vectors() -> None:
@@ -175,6 +177,82 @@ def test_creator_generator_track_and_pack_change_only_on_identity_inputs() -> No
     assert pack_id(edition, track) == pack_id(edition, track, 0)
     assert pack_id(edition, track) != pack_id(edition, track, 1)
     assert pack_id(edition, track) != pack_id(other_edition, track)
+
+
+def test_anchor_id_has_separately_framed_coordinate_fixed_vector() -> None:
+    arguments = {
+        "start_chapter_id": 1,
+        "start_paragraph_index": 2,
+        "start_char_offset": 19,
+        "end_chapter_id": 1,
+        "end_paragraph_index": 2,
+        "end_char_offset": 56,
+        "quote_sha256": "d" * 64,
+    }
+
+    actual = anchor_id(
+        EDITION_VECTOR,
+        "Text/chapter-01.xhtml",
+        "c" * 64,
+        **arguments,
+    )
+    canonical_name = "\0".join(
+        (
+            "anchor",
+            EDITION_VECTOR,
+            "Text/chapter-01.xhtml",
+            "c" * 64,
+            "1",
+            "2",
+            "19",
+            "1",
+            "2",
+            "56",
+            "d" * 64,
+        )
+    )
+
+    assert actual == ANCHOR_VECTOR
+    assert actual == uuid5(ANCHOR_NAMESPACE, canonical_name).urn
+    assert actual != anchor_id(
+        EDITION_VECTOR,
+        "Text/chapter-01.xhtml",
+        "c" * 64,
+        **{**arguments, "end_char_offset": 57},
+    )
+
+
+@pytest.mark.parametrize(
+    ("overrides", "error_type", "message"),
+    [
+        ({"start_paragraph_index": 0}, ValueError, "positive"),
+        ({"start_char_offset": -1}, ValueError, "non-negative"),
+        ({"end_char_offset": True}, TypeError, "integer"),
+        ({"quote_sha256": "D" * 64}, ValueError, "lowercase"),
+    ],
+)
+def test_anchor_id_rejects_noncanonical_inputs(
+    overrides: dict[str, object],
+    error_type: type[Exception],
+    message: str,
+) -> None:
+    arguments: dict[str, object] = {
+        "start_chapter_id": 1,
+        "start_paragraph_index": 2,
+        "start_char_offset": 0,
+        "end_chapter_id": 1,
+        "end_paragraph_index": 2,
+        "end_char_offset": 1,
+        "quote_sha256": "d" * 64,
+        **overrides,
+    }
+    with pytest.raises(error_type, match=message):
+        anchor_id(
+            EDITION_VECTOR,
+            "Text/chapter-01.xhtml",
+            "c" * 64,
+            **arguments,  # type: ignore[arg-type]
+        )
 
 
 @pytest.mark.parametrize(
