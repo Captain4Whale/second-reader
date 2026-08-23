@@ -7,10 +7,10 @@ Update when: the current objective, active tasks, blockers, active jobs, open de
 
 This file is authoritative for durable current status. Do not keep unique active-state information only in `docs/agent-handoff.md`.
 
-Last verified: `2026-08-23T17:41:00+08:00`
+Last verified: `2026-08-23T19:35:39+08:00`
 
 ## Current Objective
-- Annotation Pack v0 implementation is active under `TASK-ANNOTATION-PACK-V0-IMPLEMENTATION` and `DEC-155` on branch `codex/annotation-pack-v0`. The owner confirmed the GitHub Pages namespace/schema IRIs, per-Slice acceptance commits and pushes, Section 20 as the Epic completion boundary, and separate reporting for unrelated baseline issues. Slice 1 is accepted: the root contract owns the canonical schemas/context/examples, backend bindings and runtime resources are reproducible offline derivatives, the focused check is wired into root checks, and the allowlisted Pages projection is deterministic. Slice 2 publication identity/fingerprinting is next. Agent, Digest, Memory, the reading loop, Readest, Library, and public HTTP APIs remain unchanged. GitHub Pages is still an external activation gate: the repository currently reports Pages disabled and the approved stable IRIs remain 404 until main deployment and HTTP byte verification succeed.
+- Annotation Pack v0 implementation is active under `TASK-ANNOTATION-PACK-V0-IMPLEMENTATION` and `DEC-155` on branch `codex/annotation-pack-v0`. The owner confirmed the GitHub Pages namespace/schema IRIs, per-Slice acceptance commits and pushes, Section 20 as the Epic completion boundary, and separate reporting for unrelated baseline issues. Slices 1–2 are accepted: the root contract owns canonical schemas/context/examples and reproducible offline derivatives; strict EPUB verification, same-handle exact BookDocument rebuild, Work/Edition/File identities, fixed UUID/fingerprint vectors, substrate coherence, safe metadata/URI gates, and the neutral no-write EPUB builder are implemented. Slice 2 acceptance is `439 passed`; the broader affected set is `538 passed, 2 failed`, with both failures confirmed pre-existing `attentional_v2.slow_cycle` test/interface drift and recorded separately. Slice 3 anchor model/serialization primitives is next. Agent, Digest, Memory, the reading loop, Readest, Library, and public HTTP APIs remain unchanged. GitHub Pages is still an external activation gate: the repository currently reports Pages disabled and the approved stable IRIs remain 404 until main deployment and HTTP byte verification succeed.
 - Runtime observability v1 is implemented as an infrastructure lane under `TASK-RUNTIME-OBSERVABILITY-COST-V1` and `DEC-154`; only the final live-provider whole-book acceptance remains externally blocked.
   - the canonical observability record is a local append-only JSONL fact ledger with deterministic JSON/Markdown reports; Phoenix is an optional derived trace UI rather than job/checkpoint truth
   - unit-bearing work uses `reading.run_attempt -> reading.chapter -> reading.unit_attempt -> llm.call -> llm.attempt`; survey/parse/chapter-consolidation work may be chapter-only without a fabricated unit span
@@ -2095,7 +2095,7 @@ Last verified: `2026-08-23T17:41:00+08:00`
 - Treat runtime viability, broader local pairwise comparison, durable-trace / re-entry comparison, and most mechanism-specific judged attribution families as paused unless one of the three kept dimensions later requires them.
 
 ## Now
-- Begin and accept Annotation Pack Slice 2 publication identity/fingerprinting from the accepted Slice 1 checkpoint, then commit and push Slice 2 independently.
+- Begin and accept Annotation Pack Slice 3 anchor model/serialization primitives from the accepted Slice 2 checkpoint, then commit and push Slice 3 independently.
 - Keep runtime observability opt-in and evidence-first: finish the manual ledger/export wiring, then verify one bounded local trace/report without changing mechanism behavior or making Phoenix part of app readiness.
 - Treat `attentional_v2` as the current default mechanism and `iterator_v1` as the supported fallback / legacy-resume path.
 - The active Phase 9 move is now split across two coordinated surfaces:
@@ -3604,7 +3604,7 @@ Last verified: `2026-08-23T17:41:00+08:00`
 ## Machine-Readable Appendix
 ```json
 {
-  "updated_at": "2026-08-23T09:41:00Z",
+  "updated_at": "2026-08-23T11:35:39Z",
   "last_updated_by": "codex",
   "active_task_ids": [
     "TASK-ANNOTATION-PACK-V0-IMPLEMENTATION",

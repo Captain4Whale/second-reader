@@ -1,6 +1,6 @@
 # Second Reader Annotation Pack v0：详细设计与实施交接
 
-状态：`implementation_active_slice_2`（Slice 1 contract authority 已验收；进入 publication identity/fingerprinting）
+状态：`implementation_active_slice_3`（Slices 1–2 已验收；进入 anchor model/serialization primitives）
 
 协议代号：`second-reader-annotation-pack/0.1`
 
@@ -649,9 +649,11 @@ WorkIdentity
 2. resolved path 必须 containment 在 book output dir 内，且是非 symlink regular file；拒绝绝对路径、`..`、device/FIFO。
 3. 验证 ZIP magic、无 unsafe entry、root `mimetype` 内容为 `application/epub+zip`、`META-INF/container.xml` 可解析、rootfile OPF 存在且 target href 在其 manifest。
 4. 以 binary streaming 每块 1 MiB 计算 SHA-256 和 byte length；不读 manifest 的声称值。
-5. hash 前后比较 file stat，再在 publish 前复核 digest；变化即 `input_changed_during_export` fatal。
+5. hash 前后比较 file stat，再在 publish 前复核 digest；变化即 `input_changed_during_export` fatal。Exact-source BookDocument reparse必须消费与 digest复核相同的 already-open handle或不可变 bytes snapshot，不能按 pathname重新打开；否则短暂 directory swap再还原会产生 File(A)+Edition(B)的混合 identity。
 
 Pack 不写入本机 source path、mtime、inode 或 upload id。
+
+Identity boundary必须覆盖 verified-handle parse、neutral BookDocument build与 deterministic source normalization整个 exact rebuild阶段。任何来自 verifier-accepted但 parser/builder不可规范处理的 navigation metadata或内容结构异常，除既有 structured `EpubSourceError` / `PublicationIdentityError` 外，都映射为不回显输入的稳定 `source_asset_missing_or_not_epub`；不得把 `ValueError`, Unicode error或第三方 parser exception裸露给调用方。Normal parser路径本身不因该 identity wrapper改变行为。
 
 ### 7.3 v0 normalized content fingerprint
 
@@ -681,6 +683,8 @@ STREAM:
 
 digest = SHA256(STREAM)
 ```
+
+v0 的 `Unicode White_Space` 不跟随 runtime 的 `re \s` / `str.isspace()` 漂移，而固定为 Unicode White_Space code points：`U+0009..U+000D`, `U+0020`, `U+0085`, `U+00A0`, `U+1680`, `U+2000..U+200A`, `U+2028`, `U+2029`, `U+202F`, `U+205F`, `U+3000`。因此 `U+200B` 与 `U+001C` 不折叠。Chapter stream使用相同的 `C/P/E` framing，包括末尾 `E LF`。
 
 该算法：
 
@@ -715,7 +719,43 @@ chapters[] in list order:
     readable = bool(non-empty text and text_role != "auxiliary")
 ```
 
-Canonical encoding使用 length-prefixed UTF-8 frames，null与empty严格区分。`start_cfi/end_cfi`、HTML classes、source-normalization diagnostics不参与 equality，因为 required anchor不依赖它们，且旧 artifacts可合法缺失；optional CFI永远从 exact source现场验证，不信 persisted值。
+Canonical encoding使用以下 frozen typed length frame，null与empty严格区分：
+
+```text
+TFRAME(tag, value):
+  null   -> ASCII(tag) ":n:0:" LF
+  bool   -> ASCII(tag) ":b:1:" ("1" | "0") LF
+  int    -> payload = canonical base-10 ASCII with optional leading "-" and no leading zero
+            ASCII(tag) ":i:" ASCII(decimal(len(payload))) ":" payload LF
+  string -> payload = exact UTF-8 bytes without Unicode/whitespace normalization
+            ASCII(tag) ":s:" ASCII(decimal(len(payload))) ":" payload LF
+
+STREAM:
+  "SECOND-READER-BOOK-DOCUMENT-SUBSTRATE-V1" LF
+  TFRAME("chapterCount", len(chapters))
+  for each projected chapter:
+    TFRAME("chapter.listOrder", ...)
+    TFRAME("chapter.id", ...)
+    TFRAME("chapter.chapterNumber", ...)
+    TFRAME("chapter.title", ...)
+    TFRAME("chapter.href", ...)
+    TFRAME("chapter.itemId", ...)
+    TFRAME("chapter.spineIndex", ...)
+    TFRAME("chapter.paragraphCount", len(paragraphs))
+    for each projected paragraph:
+      TFRAME("paragraph.listOrder", ...)
+      TFRAME("paragraph.paragraphIndex", ...)
+      TFRAME("paragraph.text", ...)
+      TFRAME("paragraph.href", ...)
+      TFRAME("paragraph.textRole", ...)
+      TFRAME("paragraph.readable", ...)
+```
+
+Missing optional `chapter_number`, `href`, `item_id`, `spine_index` 归一为 null；显式 empty string仍是 empty string。Missing `text_role`归一为 `"body"`；`readable` 中的 non-empty 指 exact code-point length非零，不做 trim。Normalized href 的 exact rule由同 Slice的 strict EPUB path normalizer固定并由 vectors锁定。`start_cfi/end_cfi`、HTML classes、sentences、source-normalization diagnostics不参与 equality，因为 required anchor不依赖它们，且旧 artifacts可合法缺失；optional CFI永远从 exact source现场验证，不信 persisted值。
+
+`normalize_epub_href` 的 v0 exact rule：输入必须是 package-local/OPF-relative href；fragment先移除，最前面的 `./`允许并折叠；各 segment必须是严格 UTF-8 percent decoding，随后 NFC并以 canonical UTF-8 percent encoding输出（raw space变 `%20`，unreserved escape例如 `%7E`变 `~`）。拒绝 scheme/authority、query、absolute或drive path、backslash/NUL、空 segment、内部 `.`、任何 `..`，以及 encoded slash/backslash/NUL。用于 strict OPF manifest的 `normalize_opf_relative_href` 额外拒绝 fragment，并把 canonical href解析为不得逃出 OPF directory的 archive member path。
+
+ebooklib可能把 manifest href中的 `%23` / `%3F` filename字符解码成 literal `#` / `?`。Slice 2 因此用 verified manifest建立有优先级的 resolver：canonical OPF href与 decoded OPF-relative archive name是 primary aliases；full archive member只能是不覆盖 primary的低优先级 fallback。Source-rebuilt与 persisted BookDocument必须先经同一 resolver canonicalize再做 substrate comparison，且合法 nested OPF中一个 item的 canonical href与另一个 item的 full archive path重名时不得误报 ambiguous。
 
 Equality至少保证 reaction所依赖的 `chapter_id + paragraph_index + exact text + readable filtering` 与 target所依赖的 href没有漂移。任一 chapter/paragraph reorder、id/index、exact code point、href或readability变化都产生 `publication_substrate_mismatch` fatal，并在 report中给 first differing JSON pointer与两侧 field digests，不复制正文。老 artifact若失败必须重建/rerun source substrate；不能用 title/content digest相同或 `allow_skips`绕过。
 
@@ -729,6 +769,8 @@ Equality至少保证 reaction所依赖的 `chapter_id + paragraph_index + exact 
 4. 没有 work-level authority时，work name用 `provisional\0<N(title)>\0<ordered N(creators)>` 生成 deterministic UUID，并标 `identityStrength="provisional"`。Importer MUST NOT 仅因 provisional ID相同而自动合并 Work。
 
 Work identity不纳入 edition/file digest；edition identity不纳入 filename/slug。Publication identifier的新增/纠正可能改变 Edition metadata，但 normalized content相同仍保持同一 `edition_id`；若业务未来需要区分相同正文的不同出版 manifestation，应在 v1增加独立 Manifestation层，而不是滥用 Work。
+
+显式 v0 `work-uri` 只接受 public-safe absolute `http`, `https`, `urn` URI；拒绝 credentials、query secrets/任何 query、`file:`/script schemes、localhost/private/link-local/reserved addresses、local path和 whitespace/control characters。URI与 public display scanner必须在最多四轮 percent decode后达到稳定 NFC text，并在该稳定视图再次执行结构、query、whitespace、path与secret检查；未在界限内稳定或任何轮次产生非法 UTF-8均拒绝，不能让双编码隐藏 query/space/path/secret。OPF/persisted display metadata在进入 wire或 safe rebuilt result前也必须是 string并通过该 scanner；不能把 mapping/list用 Python `repr`字符串化，unsafe optional creator应 sanitized warning + omit，unsafe/missing required title应 fail closed或使用另一个已验证 safe fallback。Verified OPF与 persisted BookDocument中同时存在的合法 title/creator/language不一致时使用 verified值并产生 generic sanitized `publication_metadata_mismatch`；`output_language`不参与 publication metadata比较。
 
 ### 7.6 Chapter fingerprints
 
@@ -745,6 +787,7 @@ Pack-level fatal：
 - exact-source rebuilt 与 persisted BookDocument 的 `sr-book-document-substrate-v1` projection不同（content digest相同也不能放行）；
 - edition/file digest计算期间 input变化；
 - title 缺失且没有可用 OPF metadata；
+- canonical chapter title不满足 public display metadata gate；该 title参与 content/chapter/substrate fingerprints，不能先用原值计算 identity再在 result中改写或清空，否则 `PublicationIdentityResult`会内部脱节；
 - fingerprint algorithm/version 不受当前 validator支持。
 
 现存 v24 eval segment 可能 manifest 宣称 `_assets/source.epub`，实际文件不存在或 source 是 `.txt` segment；这些输出必须得到 `source_asset_missing_or_not_epub`，不能生成一个声称可导入原 EPUB 的 Pack。
@@ -811,13 +854,25 @@ Exporter 无法生成可靠 required anchor 时：strict 默认整次 export失�
 
 ### 9.1 UUID strategy
 
-所有 canonical ids 使用 RFC 4122 UUIDv5，并以 `urn:uuid:<lowercase>` 序列化。Slice 1 生成并提交以下独立 namespace UUID constants；一旦 contract 发布不可改变：`WORK_NAMESPACE`, `EDITION_NAMESPACE`, `FILE_NAMESPACE`, `TRACK_NAMESPACE`, `PACK_NAMESPACE`, `ANCHOR_NAMESPACE`, `ANNOTATION_NAMESPACE`, `CREATOR_NAMESPACE`, `GENERATOR_NAMESPACE`。
+所有 canonical ids 使用 RFC 4122 UUIDv5，并以 `urn:uuid:<lowercase>` 序列化。Slice 2 生成并提交以下独立 namespace UUID constants；一旦 contract 发布不可改变：`WORK_NAMESPACE`, `EDITION_NAMESPACE`, `FILE_NAMESPACE`, `TRACK_NAMESPACE`, `PACK_NAMESPACE`, `ANCHOR_NAMESPACE`, `ANNOTATION_NAMESPACE`, `CREATOR_NAMESPACE`, `GENERATOR_NAMESPACE`。每个 constant 固定为 `UUIDv5(NAMESPACE_URL, "https://captain4whale.github.io/second-reader/ns/annotation-pack/uuid/<kind>/v0")` 的结果，代码硬编码实值、tests复核 derivation与 fixed vectors；不能在 runtime临时换 root/name。
+
+| Namespace constant | Immutable UUID literal |
+|---|---|
+| `WORK_NAMESPACE` | `e818f38e-2894-5910-a94f-afec1212f840` |
+| `EDITION_NAMESPACE` | `82f700a5-7f2d-5c1d-902c-7ff9fe327044` |
+| `FILE_NAMESPACE` | `9755ee25-0dad-51a9-a36d-63589e35707c` |
+| `TRACK_NAMESPACE` | `011c6a5f-2255-5b98-b86a-8f1a55548652` |
+| `PACK_NAMESPACE` | `15a1b369-656b-55cb-bfa1-55a529a1f39e` |
+| `ANCHOR_NAMESPACE` | `3a26c857-f475-506c-a16a-219763fd1ce9` |
+| `ANNOTATION_NAMESPACE` | `ab5c7848-4a52-5b43-a01b-f76dbce62959` |
+| `CREATOR_NAMESPACE` | `e0d4d5df-e315-5db3-9667-3f89a814f602` |
+| `GENERATOR_NAMESPACE` | `dc17bd39-4e7c-574f-9aa0-87d4fe7e927b` |
 
 Canonical name 使用 UTF-8、NUL (`\0`) field separator；metadata/track/body等由 builder定义为 NFC，source quote/hash则使用 wire中与 BookDocument坐标一致的原始 code-point序列。禁止依赖 Python repr、dict insertion order、本地 path 或当前时间。
 
 | ID | Canonical name | Stability/change rule |
 |---|---|---|
-| `work_id` asserted | `work\0asserted\0<sorted scheme:value identifiers>` | 相同权威 identifier set稳定；identifier修正会变化 |
+| `work_id` asserted | `work\0asserted\0<sorted scheme:value id 1>\0<sorted scheme:value id 2>...` | 每个 deduplicated identifier是独立 NUL field；相同权威 identifier set稳定；identifier修正会变化 |
 | `work_id` provisional | `work\0provisional\0<N(title)>\0<ordered N(creators)>` | metadata相同稳定，但不可当自动 merge authority |
 | `edition_id` | `edition\0sr-book-document-text-v1\0<content_sha256>` | normalized textual structure变化即变化；file repack可不变 |
 | `file_id` | `file\0application/epub+zip\0sha256\0<file_sha256>` | media type或任一 byte变化即变化；与第 4 节规则一致 |
@@ -1075,21 +1130,34 @@ class ResolvedAnchor:
     findings: tuple["ValidationFinding", ...]
 
 @dataclass(frozen=True)
-class EpubResourceIndex:
+class IdentityFinding:
+    code: str
+    message: str
+    json_pointer: str | None = None
+    severity: Literal["warning"] = "warning"
+
+@dataclass(frozen=True)
+class EpubManifestIndex:
     opf_path: str                   # safe EPUB-internal path, never local path
     manifest_hrefs: frozenset[str]
+    text_resource_hrefs: frozenset[str]  # XHTML/HTML subset eligible for chapters
+
+@dataclass(frozen=True)
+class EpubResourceIndex:
+    manifest: EpubManifestIndex
     resource_texts: Mapping[str, str]  # sr-epub-resource-text-v1
     paragraph_ranges: Mapping[tuple[int, int], tuple[str, int, int]]
 
 @dataclass(frozen=True)
 class PublicationIdentityResult:
     wire: Mapping[str, JSONValue]   # complete canonical `about` object
-    rebuilt_book_document: Mapping[str, Any]
-    epub_index: EpubResourceIndex
+    rebuilt_book_document: Mapping[str, Any]  # in-memory only; source_file is fixed safe relative ref
+    epub_index: EpubManifestIndex
     file_sha256: str
     content_sha256: str
     substrate_sha256: str
     chapter_fingerprints: Mapping[int, str]
+    findings: tuple["IdentityFinding", ...]  # sanitized warnings only
 
 @dataclass(frozen=True)
 class ProducerDraftResult:
@@ -1189,6 +1257,8 @@ class InspectionResult:
     findings: tuple[ValidationFinding, ...]
 ```
 
+Slice 2 的 `EpubManifestIndex` 只证明 safe OPF/manifest membership与 chapter资源属于 XHTML/HTML subset；Slice 3 才从它构建 `sr-epub-resource-text-v1` 与 paragraph ranges，不能用 empty mapping伪装已实现。Strict verifier持有的 local `Path`/stat snapshot是 builder-scope private handle，不进入 `PublicationIdentityResult`；result内用于后续 anchor resolution 的 rebuilt BookDocument把 `metadata.source_file` 固定成 verified manifest-relative source reference（canonical current layout为 `_assets/source.epub`）。Unsafe canonical chapter title必须在构建 result前 fail closed；不能在计算 substrate/content/chapter fingerprints后改写返回文档。成功 result的 rebuilt BookDocument必须仍能重算出 result中的全部三类 digest，并从 repr隐藏整份 BookDocument以避免日志复制正文。递归 privacy tests必须证明 local-path-shaped navigation metadata不进入 wire或成功 result。`wire`与 rebuilt BookDocument在 result内递归只读，避免 gate通过后被调用方修改而令 identity/anchors脱节；只读容器仍必须被 JSON encoder、JSON Schema与 generated bindings直接接受。
+
 ### 12.1 Core classes
 
 ```python
@@ -1196,8 +1266,11 @@ class PublicationIdentityBuilder:
     def build(
         self,
         *,
-        source_epub: Path,
+        output_dir: Path,
         persisted_book_document: Mapping[str, Any],
+        manifest: Mapping[str, Any] | None = None,
+        source_asset_file: str | None = None,
+        work_identifiers: Sequence[tuple[str, str]] = (),
     ) -> "PublicationIdentityResult": ...
 
 class AnchorBuilder:
@@ -1970,8 +2043,12 @@ make agent-check
 
 ### Current implementation checkpoint
 
-**Slice 1 — Contract skeleton + canonical schema authority** 已验收：稳定 namespace/schema IRI 已确认，字段约束已经成为 canonical schema/examples/offline drift check，Pages publication mapping 可重复构建。外部 IRI 仍须等待 workflow 进入 `main`、Pages 启用并成功部署后做 HTTP byte comparison，当前不得称为 live。下一实现单元是 **Slice 2 — Publication identity + fingerprinting**；它不得顺便实现 adapter 或 exporter。
+**Slice 1 — Contract skeleton + canonical schema authority** 已验收：稳定 namespace/schema IRI 已确认，字段约束已经成为 canonical schema/examples/offline drift check，Pages publication mapping 可重复构建。
+
+**Slice 2 — Publication identity + fingerprinting** 已验收：strict verifier把 raw File identity与同一 verified handle上的 exact BookDocument reparse绑定；Work/Edition/File、content/chapter/substrate fingerprints、fixed UUID vectors、manifest text-resource gate、safe metadata/URI gates与 neutral no-write EPUB builder均已实现。Slice 2 + iterator acceptance为 `439 passed`；完整 affected regression set为 `538 passed, 2 failed`，两条 `attentional_v2.slow_cycle`测试/接口漂移已确认存在于 base `2d8aac2`并单列在 baseline observations。Contract/governance checks exit `0`，warning-only历史 traceability、LangChain deprecation与 decision-log reminder不冒充本 Slice缺陷；本 Slice落实既有 `DEC-155`，未建立新的产品/架构方向，因此不新增 decision-log entry。
+
+外部 IRI 仍须等待 workflow 进入 `main`、Pages 启用并成功部署后做 HTTP byte comparison，当前不得称为 live。下一实现单元是 **Slice 3 — Anchor model + serialization primitives**；它不得顺便实现 producer adapter、full Pack validator/builder或 exporter。
 
 ### Explicit non-goals confirmation
 
-截至 Slice 1，仓库已实现 contract/schema/context/examples、producer-neutral 离线 schema loader/validator、deterministic generated bindings/runtime resources、focused checks 与 Pages projection；尚未实现 producer adapter、identity/fingerprint builder、exporter、detached package 或真实 Annotation Pack publication。Agent prompt、Digest、Memory、reading loop、Readest、Library 和 public HTTP API 均未修改。
+截至 Slice 2，仓库已实现 contract/schema/context/examples、producer-neutral 离线 schema loader/validator、deterministic generated bindings/runtime resources、focused checks/Pages projection，以及 verified EPUB publication identity、fingerprints、coherence gate和 neutral no-write BookDocument rebuild seam；尚未实现 anchors、serialization primitives、producer adapter、full Pack builder/validator、exporter、detached package或真实 Annotation Pack publication。Agent prompt、Digest、Memory、reading loop、Readest、Library 和 public HTTP API 均未修改。

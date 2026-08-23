@@ -69,6 +69,8 @@ Update when: backend-local constraints, recurring pitfalls, or stable implementa
 - Keep mechanism-private prompt bundles with the mechanism implementation that owns them.
 - Keep tool definitions under `src/tools/`.
 - Keep canonical book substrate, shared runtime contracts, and cross-mechanism normalized output types in `src/reading_core/`.
+- Keep the deterministic EPUB-to-`BookDocument` builder in `src/reading_core/epub_document.py`; normal parsing and publication-identity reparse must reuse it. The builder stays free of filesystem writes, LLM calls, source normalization, and existing-artifact reuse.
+- Publication-identity EPUB parsing must consume the same verified open handle or immutable byte snapshot used for its digest gate; never reopen the source by pathname between File and Edition identity construction.
 - Put shared runtime/mechanism boundaries in backend-level infrastructure instead of burying them inside one mechanism package.
 - Keep shared canonical parse/provisioning and shared sequential manifest/run-state builders in `src/reading_runtime/`.
 - Keep the shared LLM provider registry, invocation gateway, and cross-runtime/eval trace contract in `src/reading_runtime/`.

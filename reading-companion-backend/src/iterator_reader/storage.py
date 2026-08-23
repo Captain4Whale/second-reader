@@ -7,6 +7,7 @@ import re
 import shutil
 from pathlib import Path
 
+from src.reading_core.epub_document import infer_chapter_number as infer_chapter_number
 from src.reading_runtime import artifacts as runtime_artifacts
 from src.reading_runtime.output_dir_overrides import get_output_dir_override
 
@@ -21,20 +22,6 @@ def slugify(value: str) -> str:
     cleaned = re.sub(r"[^\w\s-]", "", value, flags=re.UNICODE).strip().lower()
     cleaned = re.sub(r"[-\s]+", "-", cleaned)
     return cleaned or "book"
-
-
-def infer_chapter_number(title: str) -> int | None:
-    """Infer a human-facing chapter number from a chapter title."""
-    normalized = (title or "").strip()
-    patterns = (
-        r"^chapter\s+(\d+)\b",
-        r"^第\s*(\d+)\s*章\b",
-    )
-    for pattern in patterns:
-        match = re.match(pattern, normalized, flags=re.IGNORECASE)
-        if match:
-            return int(match.group(1))
-    return None
 
 
 def chapter_reference(chapter: StructureChapter) -> str:

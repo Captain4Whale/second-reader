@@ -4,7 +4,7 @@ from __future__ import annotations
 
 import os
 from pathlib import Path
-from typing import Optional, TypedDict
+from typing import Any, BinaryIO, Optional, TypedDict
 
 import ebooklib
 from ebooklib import epub
@@ -58,6 +58,19 @@ def parse_ebook(file_path: str) -> list[Chapter]:
 def _parse_epub(file_path: str) -> list[Chapter]:
     """Parse EPUB file and extract chapters from TOC."""
     book = epub.read_epub(file_path)
+    return _chapters_from_epub_book(book)
+
+
+def parse_epub_stream(source: BinaryIO) -> list[Chapter]:
+    """Parse EPUB chapters from one already-open, seekable binary handle."""
+
+    source.seek(0)
+    book = epub.read_epub(source)
+    return _chapters_from_epub_book(book)
+
+
+def _chapters_from_epub_book(book: Any) -> list[Chapter]:
+    """Build the legacy chapter sequence from one loaded ebooklib EPUB."""
 
     chapters = []
     spine_index_by_id = {
@@ -67,11 +80,11 @@ def _parse_epub(file_path: str) -> list[Chapter]:
     }
 
     # Try to get TOC (Table of Contents)
-    toc_id = None
+    _toc_id = None
     try:
         toc = book.get_metadata('NCX', 'toc')
         if toc:
-            toc_id = toc[0][0] if toc else None
+            _toc_id = toc[0][0] if toc else None
     except (KeyError, AttributeError):
         pass  # NCX metadata not available in newer EPUB format
 
@@ -297,8 +310,6 @@ def _parse_mobi(file_path: str) -> list[Chapter]:
 
     # Extract MOBI to a temporary directory
     import tempfile
-    import shutil
-
     with tempfile.TemporaryDirectory() as tmpdir:
         # Extract the MOBI file
         headers = mobi.parse(file_path)
