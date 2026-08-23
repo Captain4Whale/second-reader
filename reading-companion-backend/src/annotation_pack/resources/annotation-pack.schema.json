@@ -1,0 +1,988 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://captain4whale.github.io/second-reader/schema/annotation-pack/v0/annotation-pack.schema.json",
+  "title": "Second Reader Annotation Pack v0",
+  "description": "Second Reader's W3C Web Annotation-aligned AnnotationSet profile. This is a project schema, not a W3C schema or a claim of full EPUB Annotations conformance.",
+  "type": "object",
+  "required": [
+    "@context",
+    "id",
+    "type",
+    "generator",
+    "generated",
+    "about",
+    "items",
+    "sr:specVersion",
+    "sr:schemaVersion",
+    "sr:extensionVersion",
+    "sr:profile",
+    "sr:track",
+    "sr:provenance",
+    "sr:semanticDigest"
+  ],
+  "properties": {
+    "@context": {
+      "type": "array",
+      "prefixItems": [
+        {
+          "const": "https://www.w3.org/ns/epub-anno.jsonld"
+        },
+        {
+          "type": "object",
+          "required": [
+            "@protected",
+            "sr"
+          ],
+          "properties": {
+            "@protected": {
+              "const": true
+            },
+            "sr": {
+              "const": "https://captain4whale.github.io/second-reader/ns/annotation-pack#"
+            }
+          },
+          "patternProperties": {
+            "^[A-Za-z][A-Za-z0-9._-]*$": {
+              "$ref": "#/$defs/absoluteIri"
+            }
+          },
+          "additionalProperties": false
+        }
+      ],
+      "items": false,
+      "minItems": 2,
+      "maxItems": 2
+    },
+    "id": {
+      "$ref": "#/$defs/uuidUrn"
+    },
+    "type": {
+      "const": "AnnotationSet"
+    },
+    "generator": {
+      "$ref": "#/$defs/generator"
+    },
+    "generated": {
+      "$ref": "#/$defs/utcDateTime"
+    },
+    "about": {
+      "$ref": "#/$defs/publicationIdentity"
+    },
+    "items": {
+      "type": "array",
+      "items": {
+        "$ref": "#/$defs/annotation"
+      }
+    },
+    "sr:specVersion": {
+      "const": "0.1.0"
+    },
+    "sr:schemaVersion": {
+      "const": "0.1.0"
+    },
+    "sr:extensionVersion": {
+      "const": "0.1"
+    },
+    "sr:profile": {
+      "$ref": "#/$defs/profileReference"
+    },
+    "sr:track": {
+      "$ref": "#/$defs/annotationTrack"
+    },
+    "sr:provenance": {
+      "$ref": "#/$defs/provenance"
+    },
+    "sr:semanticDigest": {
+      "$ref": "#/$defs/semanticDigest"
+    }
+  },
+  "patternProperties": {
+    "^[A-Za-z][A-Za-z0-9._-]*:[A-Za-z][A-Za-z0-9._-]*$": {}
+  },
+  "additionalProperties": false,
+  "$defs": {
+    "uuidUrn": {
+      "type": "string",
+      "pattern": "^urn:uuid:[0-9a-f]{8}-[0-9a-f]{4}-5[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$"
+    },
+    "absoluteIri": {
+      "type": "string",
+      "format": "iri",
+      "pattern": "^[A-Za-z][A-Za-z0-9+.-]*:"
+    },
+    "utcDateTime": {
+      "type": "string",
+      "format": "date-time",
+      "pattern": "^[0-9]{4}-[0-9]{2}-[0-9]{2}T[0-9]{2}:[0-9]{2}:[0-9]{2}Z$"
+    },
+    "sha256Hex": {
+      "type": "string",
+      "pattern": "^[0-9a-f]{64}$"
+    },
+    "semver": {
+      "type": "string",
+      "pattern": "^(0|[1-9][0-9]*)\\.(0|[1-9][0-9]*)\\.(0|[1-9][0-9]*)(?:-[0-9A-Za-z.-]+)?(?:\\+[0-9A-Za-z.-]+)?$"
+    },
+    "languageTag": {
+      "type": "string",
+      "pattern": "^[A-Za-z]{2,8}(?:-[A-Za-z0-9]{1,8})*$"
+    },
+    "relativeEpubHref": {
+      "type": "string",
+      "minLength": 1,
+      "pattern": "^(?![A-Za-z][A-Za-z0-9+.-]*:)(?!/)(?!.*(?:^|/)\\.\\.(?:/|$))(?!.*[?#\\\\])[^\\s]+$"
+    },
+    "identifier": {
+      "type": "object",
+      "required": [
+        "type",
+        "sr:scheme",
+        "sr:value"
+      ],
+      "properties": {
+        "type": {
+          "const": "sr:Identifier"
+        },
+        "sr:scheme": {
+          "enum": [
+            "isbn-10",
+            "isbn-13",
+            "uri",
+            "opf-identifier",
+            "work-uri"
+          ]
+        },
+        "sr:value": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 2048
+        }
+      },
+      "patternProperties": {
+        "^[A-Za-z][A-Za-z0-9._-]*:[A-Za-z][A-Za-z0-9._-]*$": {}
+      },
+      "additionalProperties": false
+    },
+    "fingerprint": {
+      "type": "object",
+      "required": [
+        "type",
+        "sr:algorithm",
+        "sr:algorithmVersion",
+        "sr:value"
+      ],
+      "properties": {
+        "type": {
+          "const": "sr:Fingerprint"
+        },
+        "sr:algorithm": {
+          "const": "sha256"
+        },
+        "sr:algorithmVersion": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 128
+        },
+        "sr:value": {
+          "$ref": "#/$defs/sha256Hex"
+        }
+      },
+      "patternProperties": {
+        "^[A-Za-z][A-Za-z0-9._-]*:[A-Za-z][A-Za-z0-9._-]*$": {}
+      },
+      "additionalProperties": false
+    },
+    "editionContentFingerprint": {
+      "allOf": [
+        {
+          "$ref": "#/$defs/fingerprint"
+        },
+        {
+          "type": "object",
+          "properties": {
+            "sr:algorithmVersion": {
+              "const": "sr-book-document-text-v1"
+            }
+          }
+        }
+      ]
+    },
+    "chapterFingerprint": {
+      "type": "object",
+      "required": [
+        "type",
+        "sr:chapterId",
+        "sr:order",
+        "sr:algorithm",
+        "sr:algorithmVersion",
+        "sr:value"
+      ],
+      "properties": {
+        "type": {
+          "const": "sr:ChapterFingerprint"
+        },
+        "sr:chapterId": {
+          "type": "integer"
+        },
+        "sr:order": {
+          "type": "integer",
+          "minimum": 1
+        },
+        "sr:title": {
+          "type": "string",
+          "maxLength": 512
+        },
+        "sr:resourceHrefs": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/relativeEpubHref"
+          },
+          "minItems": 1,
+          "uniqueItems": true
+        },
+        "sr:algorithm": {
+          "const": "sha256"
+        },
+        "sr:algorithmVersion": {
+          "const": "sr-book-document-chapter-v1"
+        },
+        "sr:value": {
+          "$ref": "#/$defs/sha256Hex"
+        }
+      },
+      "patternProperties": {
+        "^[A-Za-z][A-Za-z0-9._-]*:[A-Za-z][A-Za-z0-9._-]*$": {}
+      },
+      "additionalProperties": false
+    },
+    "workIdentity": {
+      "type": "object",
+      "required": [
+        "id",
+        "type",
+        "sr:identityStrength"
+      ],
+      "properties": {
+        "id": {
+          "$ref": "#/$defs/uuidUrn"
+        },
+        "type": {
+          "const": "sr:WorkIdentity"
+        },
+        "sr:identityStrength": {
+          "enum": [
+            "asserted",
+            "provisional"
+          ]
+        },
+        "sr:identifiers": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/identifier"
+          },
+          "minItems": 1,
+          "uniqueItems": true
+        }
+      },
+      "allOf": [
+        {
+          "if": {
+            "properties": {
+              "sr:identityStrength": {
+                "const": "asserted"
+              }
+            },
+            "required": [
+              "sr:identityStrength"
+            ]
+          },
+          "then": {
+            "required": [
+              "sr:identifiers"
+            ]
+          }
+        }
+      ],
+      "patternProperties": {
+        "^[A-Za-z][A-Za-z0-9._-]*:[A-Za-z][A-Za-z0-9._-]*$": {}
+      },
+      "additionalProperties": false
+    },
+    "editionIdentity": {
+      "type": "object",
+      "required": [
+        "id",
+        "type",
+        "sr:contentFingerprint",
+        "sr:chapterFingerprints"
+      ],
+      "properties": {
+        "id": {
+          "$ref": "#/$defs/uuidUrn"
+        },
+        "type": {
+          "const": "sr:EditionIdentity"
+        },
+        "sr:contentFingerprint": {
+          "$ref": "#/$defs/editionContentFingerprint"
+        },
+        "sr:publicationIdentifiers": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/identifier"
+          },
+          "uniqueItems": true
+        },
+        "sr:language": {
+          "$ref": "#/$defs/languageTag"
+        },
+        "sr:chapterFingerprints": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/chapterFingerprint"
+          },
+          "minItems": 1
+        }
+      },
+      "patternProperties": {
+        "^[A-Za-z][A-Za-z0-9._-]*:[A-Za-z][A-Za-z0-9._-]*$": {}
+      },
+      "additionalProperties": false
+    },
+    "fileIdentity": {
+      "type": "object",
+      "required": [
+        "id",
+        "type",
+        "dc:format",
+        "sr:sha256",
+        "sr:byteLength"
+      ],
+      "properties": {
+        "id": {
+          "$ref": "#/$defs/uuidUrn"
+        },
+        "type": {
+          "const": "sr:FileIdentity"
+        },
+        "dc:format": {
+          "const": "application/epub+zip"
+        },
+        "sr:sha256": {
+          "$ref": "#/$defs/sha256Hex"
+        },
+        "sr:byteLength": {
+          "type": "integer",
+          "minimum": 0
+        }
+      },
+      "patternProperties": {
+        "^[A-Za-z][A-Za-z0-9._-]*:[A-Za-z][A-Za-z0-9._-]*$": {}
+      },
+      "additionalProperties": false
+    },
+    "publicationIdentity": {
+      "type": "object",
+      "required": [
+        "dc:format",
+        "dc:title",
+        "dc:identifier",
+        "sr:work",
+        "sr:edition",
+        "sr:file"
+      ],
+      "properties": {
+        "dc:format": {
+          "const": "application/epub+zip"
+        },
+        "dc:title": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 1024
+        },
+        "dc:creator": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 512
+          },
+          "minItems": 1,
+          "uniqueItems": true
+        },
+        "dc:identifier": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 2048
+          },
+          "minItems": 3,
+          "uniqueItems": true
+        },
+        "sr:work": {
+          "$ref": "#/$defs/workIdentity"
+        },
+        "sr:edition": {
+          "$ref": "#/$defs/editionIdentity"
+        },
+        "sr:file": {
+          "$ref": "#/$defs/fileIdentity"
+        }
+      },
+      "patternProperties": {
+        "^[A-Za-z][A-Za-z0-9._-]*:[A-Za-z][A-Za-z0-9._-]*$": {}
+      },
+      "additionalProperties": false
+    },
+    "creator": {
+      "type": "object",
+      "required": [
+        "id",
+        "type",
+        "name"
+      ],
+      "properties": {
+        "id": {
+          "$ref": "#/$defs/absoluteIri"
+        },
+        "type": {
+          "enum": [
+            "Person",
+            "Organization",
+            "Software"
+          ]
+        },
+        "name": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 256
+        }
+      },
+      "patternProperties": {
+        "^[A-Za-z][A-Za-z0-9._-]*:[A-Za-z][A-Za-z0-9._-]*$": {}
+      },
+      "additionalProperties": false
+    },
+    "generator": {
+      "type": "object",
+      "required": [
+        "id",
+        "type",
+        "name",
+        "sr:version"
+      ],
+      "properties": {
+        "id": {
+          "$ref": "#/$defs/absoluteIri"
+        },
+        "type": {
+          "const": "Software"
+        },
+        "name": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 256
+        },
+        "sr:version": {
+          "$ref": "#/$defs/semver"
+        }
+      },
+      "patternProperties": {
+        "^[A-Za-z][A-Za-z0-9._-]*:[A-Za-z][A-Za-z0-9._-]*$": {}
+      },
+      "additionalProperties": false
+    },
+    "annotationTrack": {
+      "type": "object",
+      "required": [
+        "id",
+        "type",
+        "sr:key",
+        "creator"
+      ],
+      "properties": {
+        "id": {
+          "$ref": "#/$defs/uuidUrn"
+        },
+        "type": {
+          "const": "sr:AnnotationTrack"
+        },
+        "sr:key": {
+          "type": "string",
+          "pattern": "^[a-z0-9][a-z0-9._-]{0,63}$"
+        },
+        "name": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 128
+        },
+        "creator": {
+          "$ref": "#/$defs/creator"
+        }
+      },
+      "patternProperties": {
+        "^[A-Za-z][A-Za-z0-9._-]*:[A-Za-z][A-Za-z0-9._-]*$": {}
+      },
+      "additionalProperties": false
+    },
+    "profileReference": {
+      "type": "object",
+      "required": [
+        "type",
+        "sr:webAnnotation",
+        "sr:epubAnnotations",
+        "sr:conformance"
+      ],
+      "properties": {
+        "type": {
+          "const": "sr:ProfileReference"
+        },
+        "sr:webAnnotation": {
+          "const": "https://www.w3.org/TR/2017/REC-annotation-model-20170223/"
+        },
+        "sr:epubAnnotations": {
+          "const": "https://www.w3.org/TR/2026/WD-epub-anno-10-20260521/"
+        },
+        "sr:conformance": {
+          "const": "aligned"
+        }
+      },
+      "patternProperties": {
+        "^[A-Za-z][A-Za-z0-9._-]*:[A-Za-z][A-Za-z0-9._-]*$": {}
+      },
+      "additionalProperties": false
+    },
+    "digest": {
+      "type": "object",
+      "required": [
+        "type",
+        "sr:algorithm",
+        "sr:value"
+      ],
+      "properties": {
+        "type": {
+          "const": "sr:Digest"
+        },
+        "sr:algorithm": {
+          "const": "sha256"
+        },
+        "sr:canonicalization": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 128
+        },
+        "sr:value": {
+          "$ref": "#/$defs/sha256Hex"
+        }
+      },
+      "patternProperties": {
+        "^[A-Za-z][A-Za-z0-9._-]*:[A-Za-z][A-Za-z0-9._-]*$": {}
+      },
+      "additionalProperties": false
+    },
+    "semanticDigest": {
+      "allOf": [
+        {
+          "$ref": "#/$defs/digest"
+        },
+        {
+          "type": "object",
+          "required": [
+            "sr:canonicalization"
+          ],
+          "properties": {
+            "sr:canonicalization": {
+              "const": "sr-canonical-json-v1"
+            }
+          }
+        }
+      ]
+    },
+    "inputSnapshotDigest": {
+      "type": "object",
+      "required": [
+        "type",
+        "sr:algorithm",
+        "sr:value"
+      ],
+      "properties": {
+        "type": {
+          "const": "sr:Digest"
+        },
+        "sr:algorithm": {
+          "const": "sha256"
+        },
+        "sr:canonicalization": false,
+        "sr:value": {
+          "$ref": "#/$defs/sha256Hex"
+        }
+      },
+      "patternProperties": {
+        "^[A-Za-z][A-Za-z0-9._-]*:[A-Za-z][A-Za-z0-9._-]*$": {}
+      },
+      "additionalProperties": false
+    },
+    "provenance": {
+      "type": "object",
+      "required": [
+        "type",
+        "sr:producer",
+        "sr:adapterVersion",
+        "sr:inputSnapshotDigest",
+        "sr:inputSnapshotAlgorithmVersion"
+      ],
+      "properties": {
+        "type": {
+          "const": "sr:Provenance"
+        },
+        "sr:producer": {
+          "$ref": "#/$defs/absoluteIri"
+        },
+        "sr:adapterVersion": {
+          "$ref": "#/$defs/semver"
+        },
+        "sr:inputSnapshotDigest": {
+          "$ref": "#/$defs/inputSnapshotDigest"
+        },
+        "sr:inputSnapshotAlgorithmVersion": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 128
+        }
+      },
+      "patternProperties": {
+        "^[A-Za-z][A-Za-z0-9._-]*:[A-Za-z][A-Za-z0-9._-]*$": {}
+      },
+      "additionalProperties": false
+    },
+    "textualBody": {
+      "type": "object",
+      "required": [
+        "type",
+        "value",
+        "format"
+      ],
+      "properties": {
+        "type": {
+          "const": "TextualBody"
+        },
+        "value": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 16384
+        },
+        "format": {
+          "const": "text/plain"
+        },
+        "language": {
+          "$ref": "#/$defs/languageTag"
+        }
+      },
+      "patternProperties": {
+        "^[A-Za-z][A-Za-z0-9._-]*:[A-Za-z][A-Za-z0-9._-]*$": {}
+      },
+      "additionalProperties": false
+    },
+    "textQuoteSelector": {
+      "type": "object",
+      "required": [
+        "type",
+        "exact",
+        "prefix",
+        "suffix",
+        "sr:normalization"
+      ],
+      "properties": {
+        "type": {
+          "const": "TextQuoteSelector"
+        },
+        "exact": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 1024
+        },
+        "prefix": {
+          "type": "string",
+          "maxLength": 128
+        },
+        "suffix": {
+          "type": "string",
+          "maxLength": 128
+        },
+        "sr:normalization": {
+          "const": "sr-epub-resource-text-v1"
+        }
+      },
+      "patternProperties": {
+        "^[A-Za-z][A-Za-z0-9._-]*:[A-Za-z][A-Za-z0-9._-]*$": {}
+      },
+      "additionalProperties": false
+    },
+    "paragraphPosition": {
+      "type": "object",
+      "required": [
+        "sr:chapterId",
+        "sr:paragraphIndex",
+        "sr:charOffset"
+      ],
+      "properties": {
+        "sr:chapterId": {
+          "type": "integer"
+        },
+        "sr:paragraphIndex": {
+          "type": "integer",
+          "minimum": 1
+        },
+        "sr:charOffset": {
+          "type": "integer",
+          "minimum": 0
+        }
+      },
+      "patternProperties": {
+        "^[A-Za-z][A-Za-z0-9._-]*:[A-Za-z][A-Za-z0-9._-]*$": {}
+      },
+      "additionalProperties": false
+    },
+    "paragraphCharSelector": {
+      "type": "object",
+      "required": [
+        "type",
+        "sr:coordinateSystem",
+        "sr:offsetUnit",
+        "sr:start",
+        "sr:end"
+      ],
+      "properties": {
+        "type": {
+          "const": "sr:ParagraphCharSelector"
+        },
+        "sr:coordinateSystem": {
+          "const": "sr-book-document-paragraph-char-v1"
+        },
+        "sr:offsetUnit": {
+          "const": "unicode-code-point"
+        },
+        "sr:start": {
+          "$ref": "#/$defs/paragraphPosition"
+        },
+        "sr:end": {
+          "$ref": "#/$defs/paragraphPosition"
+        }
+      },
+      "patternProperties": {
+        "^[A-Za-z][A-Za-z0-9._-]*:[A-Za-z][A-Za-z0-9._-]*$": {}
+      },
+      "additionalProperties": false
+    },
+    "epubCfiSelector": {
+      "type": "object",
+      "required": [
+        "type",
+        "value",
+        "sr:verification"
+      ],
+      "properties": {
+        "type": {
+          "const": "sr:EpubCfiSelector"
+        },
+        "value": {
+          "type": "string",
+          "pattern": "^epubcfi\\(.+\\)$",
+          "maxLength": 2048
+        },
+        "sr:verification": {
+          "const": "quote-round-trip"
+        }
+      },
+      "patternProperties": {
+        "^[A-Za-z][A-Za-z0-9._-]*:[A-Za-z][A-Za-z0-9._-]*$": {}
+      },
+      "additionalProperties": false
+    },
+    "chapterContext": {
+      "type": "object",
+      "required": [
+        "type",
+        "sr:chapterId",
+        "sr:order",
+        "sr:fingerprint"
+      ],
+      "properties": {
+        "type": {
+          "const": "sr:ChapterContext"
+        },
+        "sr:chapterId": {
+          "type": "integer"
+        },
+        "sr:order": {
+          "type": "integer",
+          "minimum": 1
+        },
+        "name": {
+          "type": "string",
+          "maxLength": 512
+        },
+        "sr:fingerprint": {
+          "allOf": [
+            {
+              "$ref": "#/$defs/fingerprint"
+            },
+            {
+              "type": "object",
+              "properties": {
+                "sr:algorithmVersion": {
+                  "const": "sr-book-document-chapter-v1"
+                }
+              }
+            }
+          ]
+        }
+      },
+      "patternProperties": {
+        "^[A-Za-z][A-Za-z0-9._-]*:[A-Za-z][A-Za-z0-9._-]*$": {}
+      },
+      "additionalProperties": false
+    },
+    "annotationTarget": {
+      "type": "object",
+      "required": [
+        "type",
+        "source",
+        "selector",
+        "sr:anchorId",
+        "sr:chapter"
+      ],
+      "properties": {
+        "type": {
+          "const": "SpecificResource"
+        },
+        "source": {
+          "$ref": "#/$defs/relativeEpubHref"
+        },
+        "selector": {
+          "type": "array",
+          "minItems": 2,
+          "maxItems": 3,
+          "prefixItems": [
+            {
+              "$ref": "#/$defs/textQuoteSelector"
+            },
+            {
+              "$ref": "#/$defs/paragraphCharSelector"
+            }
+          ],
+          "items": {
+            "$ref": "#/$defs/epubCfiSelector"
+          }
+        },
+        "sr:anchorId": {
+          "$ref": "#/$defs/uuidUrn"
+        },
+        "sr:chapter": {
+          "$ref": "#/$defs/chapterContext"
+        }
+      },
+      "patternProperties": {
+        "^[A-Za-z][A-Za-z0-9._-]*:[A-Za-z][A-Za-z0-9._-]*$": {}
+      },
+      "additionalProperties": false
+    },
+    "annotation": {
+      "type": "object",
+      "required": [
+        "id",
+        "type",
+        "motivation",
+        "creator",
+        "created",
+        "target",
+        "sr:kind"
+      ],
+      "properties": {
+        "id": {
+          "$ref": "#/$defs/uuidUrn"
+        },
+        "type": {
+          "const": "Annotation"
+        },
+        "motivation": {
+          "enum": [
+            "highlighting",
+            "commenting"
+          ]
+        },
+        "creator": {
+          "$ref": "#/$defs/creator"
+        },
+        "created": {
+          "$ref": "#/$defs/utcDateTime"
+        },
+        "body": {
+          "$ref": "#/$defs/textualBody"
+        },
+        "target": {
+          "$ref": "#/$defs/annotationTarget"
+        },
+        "sr:kind": {
+          "enum": [
+            "highlight",
+            "note"
+          ]
+        }
+      },
+      "allOf": [
+        {
+          "if": {
+            "properties": {
+              "sr:kind": {
+                "const": "highlight"
+              }
+            },
+            "required": [
+              "sr:kind"
+            ]
+          },
+          "then": {
+            "properties": {
+              "motivation": {
+                "const": "highlighting"
+              }
+            },
+            "not": {
+              "required": [
+                "body"
+              ]
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "sr:kind": {
+                "const": "note"
+              }
+            },
+            "required": [
+              "sr:kind"
+            ]
+          },
+          "then": {
+            "required": [
+              "body"
+            ],
+            "properties": {
+              "motivation": {
+                "const": "commenting"
+              }
+            }
+          }
+        }
+      ],
+      "patternProperties": {
+        "^[A-Za-z][A-Za-z0-9._-]*:[A-Za-z][A-Za-z0-9._-]*$": {}
+      },
+      "additionalProperties": false
+    }
+  }
+}

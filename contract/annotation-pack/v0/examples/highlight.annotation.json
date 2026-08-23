@@ -1,0 +1,53 @@
+{
+  "id": "urn:uuid:2e95ed39-c078-5c63-93fe-48ae17f13b18",
+  "type": "Annotation",
+  "motivation": "highlighting",
+  "creator": {
+    "id": "urn:uuid:95a909f2-658f-50c5-9c2b-8ef0e6dc7512",
+    "type": "Software",
+    "name": "Second Reader"
+  },
+  "created": "2026-07-03T08:30:00Z",
+  "target": {
+    "type": "SpecificResource",
+    "source": "Text/chapter-01.xhtml",
+    "selector": [
+      {
+        "type": "TextQuoteSelector",
+        "exact": "A durable idea is worth returning to.",
+        "prefix": "The reader paused. ",
+        "suffix": " Then the argument moved on.",
+        "sr:normalization": "sr-epub-resource-text-v1"
+      },
+      {
+        "type": "sr:ParagraphCharSelector",
+        "sr:coordinateSystem": "sr-book-document-paragraph-char-v1",
+        "sr:offsetUnit": "unicode-code-point",
+        "sr:start": {
+          "sr:chapterId": 1,
+          "sr:paragraphIndex": 2,
+          "sr:charOffset": 19
+        },
+        "sr:end": {
+          "sr:chapterId": 1,
+          "sr:paragraphIndex": 2,
+          "sr:charOffset": 56
+        }
+      }
+    ],
+    "sr:anchorId": "urn:uuid:c9718883-d248-59ab-8fa2-44886bd0afd0",
+    "sr:chapter": {
+      "type": "sr:ChapterContext",
+      "sr:chapterId": 1,
+      "sr:order": 1,
+      "name": "A Small Beginning",
+      "sr:fingerprint": {
+        "type": "sr:Fingerprint",
+        "sr:algorithm": "sha256",
+        "sr:algorithmVersion": "sr-book-document-chapter-v1",
+        "sr:value": "3cfdb8b1ff4a08b274836fded5205374d485351c4c5863c2bf066690391b4cbb"
+      }
+    }
+  },
+  "sr:kind": "highlight"
+}

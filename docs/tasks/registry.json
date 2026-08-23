@@ -1,11 +1,11 @@
 {
   "version": 1,
-  "updated_at": "2026-08-23T16:03:46+08:00",
+  "updated_at": "2026-08-23T17:41:00+08:00",
   "tasks": [
     {
       "id": "TASK-ANNOTATION-PACK-V0-IMPLEMENTATION",
       "title": "Implement the Second Reader Annotation Pack v0 contract and exporter",
-      "status": "waiting",
+      "status": "active",
       "lane": "product_contract",
       "priority": "high",
       "detail_ref": "docs/implementation/annotation-pack/second-reader-annotation-pack-v0-detailed-design-and-implementation-handoff.md",
@@ -18,19 +18,20 @@
       ],
       "job_refs": [],
       "acceptance_ref": "docs/implementation/annotation-pack/second-reader-annotation-pack-v0-detailed-design-and-implementation-handoff.md#20-definition-of-done",
-      "next_action": "After owner confirmation of the project-controlled sr: namespace and schema IRI, and separate authorization to implement, implement only Slice 1 (Contract skeleton + canonical schema authority). Keep the root contract, generic backend module, Second Reader producer adapter, and public artifact boundary separate; do not modify Agent prompts, Digest, Memory, the reading loop, Readest, or Library surfaces.",
+      "next_action": "Slice 1 (Contract skeleton + canonical schema authority) is accepted. Begin and accept Slice 2 (Publication identity + fingerprinting) from that checkpoint, then commit and push it independently. Continue through all eight Slices until the Section 20 Definition of Done is satisfied. Keep Agent prompts, Digest, Memory, the reading loop, Readest, Library, and public HTTP surfaces unchanged; keep unrelated baseline issues in their separate record.",
       "blocked_by": [],
-      "blocking_reason": "Implementation requires owner confirmation of the project-controlled sr: namespace and schema IRI; implementation authorization remains a separate user decision.",
       "evidence_refs": [
+        ".github/workflows/annotation-pack-pages.yml",
+        "contract/annotation-pack/v0/README.md",
+        "contract/annotation-pack/v0/context/second-reader-annotation-context.jsonld",
+        "contract/annotation-pack/v0/schema/annotation-pack.schema.json",
+        "docs/implementation/annotation-pack/baseline-observations.md",
         "docs/history/decision-log.md",
         "docs/implementation/annotation-pack/second-reader-annotation-pack-v0-detailed-design-and-implementation-handoff.md",
-        "reading-companion-backend/src/reading_core/book_document.py",
-        "reading-companion-backend/src/attentional_v2/source_spans.py",
-        "reading-companion-backend/src/attentional_v2/schemas.py",
-        "reading-companion-backend/src/attentional_v2/runner.py",
-        "reading-companion-backend/src/reading_runtime/artifacts.py"
+        "reading-companion-backend/src/annotation_pack/schema.py",
+        "reading-companion-backend/tests/annotation_pack/test_contract.py"
       ],
-      "last_updated": "2026-08-23T16:03:46+08:00",
+      "last_updated": "2026-08-23T17:41:00+08:00",
       "last_updated_by": "codex"
     },
     {

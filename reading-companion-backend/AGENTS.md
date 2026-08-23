@@ -13,6 +13,7 @@ Update when: backend-local constraints, recurring pitfalls, or stable implementa
 - Use `../docs/backend-reading-mechanisms/attentional_v2.md` for the current default mechanism's ontology, control loop, prompt assembly, and live attention-projection semantics.
 - Use `../docs/backend-reading-mechanisms/iterator_v1.md` for the supported fallback mechanism's section/subsegment internals.
 - Use `../docs/backend-reader-evaluation.md` for reader-quality goals, evaluation layers, and offline eval methodology.
+- Use `../contract/annotation-pack/v0/README.md` and its schema for Annotation Pack wire authority; use `../docs/implementation/annotation-pack/second-reader-annotation-pack-v0-detailed-design-and-implementation-handoff.md` for slice sequencing and acceptance.
 
 ## Stable Defaults
 - Default to improving `sequential` deep-reading quality.
@@ -61,6 +62,8 @@ Update when: backend-local constraints, recurring pitfalls, or stable implementa
   - treat manual human review as optional future escalation for higher-trust `gold` slices, not as the default blocker for current benchmark hardening
 
 ## Local Structure Rules
+- Keep `../contract/annotation-pack/v0/schema/annotation-pack.schema.json` authoritative for the Annotation Pack wire contract. Generated models and `src/annotation_pack/resources/` are checked offline copies, not competing authorities.
+- Keep `src/annotation_pack/` producer-neutral. Only explicit producer adapters may depend on a reading mechanism; schema, validation, identity, packaging, and publication code must not import mechanism internals.
 - Keep each major LangGraph or workflow node as an independent function when possible.
 - Keep shared prompt fragments and cross-mechanism capability prompt families under `src/prompts/`.
 - Keep mechanism-private prompt bundles with the mechanism implementation that owns them.

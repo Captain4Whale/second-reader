@@ -1,0 +1,286 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://captain4whale.github.io/second-reader/schema/annotation-pack/v0/validation-report.schema.json",
+  "title": "Second Reader Annotation Pack validation report v0",
+  "description": "Deterministic local validation companion. This auxiliary schema does not define or embed the Annotation Pack wire document.",
+  "type": "object",
+  "required": [
+    "schema_version",
+    "validator_version",
+    "status",
+    "pack_id",
+    "semantic_digest",
+    "input_snapshot_digest",
+    "annotations_json_sha256",
+    "package_sha256",
+    "counts",
+    "findings"
+  ],
+  "properties": {
+    "schema_version": {
+      "const": "annotation-pack-validation-report/0.1"
+    },
+    "validator_version": {
+      "type": "string",
+      "pattern": "^(0|[1-9][0-9]*)\\.(0|[1-9][0-9]*)\\.(0|[1-9][0-9]*)(?:-[0-9A-Za-z.-]+)?(?:\\+[0-9A-Za-z.-]+)?$"
+    },
+    "status": {
+      "enum": [
+        "valid",
+        "degraded",
+        "failed"
+      ]
+    },
+    "pack_id": {
+      "oneOf": [
+        {
+          "$ref": "#/$defs/uuidUrn"
+        },
+        {
+          "type": "null"
+        }
+      ]
+    },
+    "semantic_digest": {
+      "$ref": "#/$defs/nullableDigest"
+    },
+    "input_snapshot_digest": {
+      "$ref": "#/$defs/nullableDigest"
+    },
+    "annotations_json_sha256": {
+      "$ref": "#/$defs/nullableDigest"
+    },
+    "package_sha256": {
+      "$ref": "#/$defs/nullableDigest"
+    },
+    "counts": {
+      "$ref": "#/$defs/counts"
+    },
+    "findings": {
+      "type": "array",
+      "items": {
+        "$ref": "#/$defs/finding"
+      }
+    }
+  },
+  "allOf": [
+    {
+      "if": {
+        "properties": {
+          "status": {
+            "enum": [
+              "valid",
+              "degraded"
+            ]
+          }
+        },
+        "required": [
+          "status"
+        ]
+      },
+      "then": {
+        "properties": {
+          "pack_id": {
+            "$ref": "#/$defs/uuidUrn"
+          },
+          "semantic_digest": {
+            "$ref": "#/$defs/sha256Hex"
+          },
+          "input_snapshot_digest": {
+            "$ref": "#/$defs/sha256Hex"
+          },
+          "annotations_json_sha256": {
+            "$ref": "#/$defs/sha256Hex"
+          }
+        }
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "status": {
+            "const": "valid"
+          }
+        },
+        "required": [
+          "status"
+        ]
+      },
+      "then": {
+        "properties": {
+          "counts": {
+            "properties": {
+              "skipped": {
+                "const": 0
+              },
+              "errors": {
+                "const": 0
+              }
+            }
+          }
+        }
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "status": {
+            "const": "degraded"
+          }
+        },
+        "required": [
+          "status"
+        ]
+      },
+      "then": {
+        "properties": {
+          "counts": {
+            "anyOf": [
+              {
+                "properties": {
+                  "skipped": {
+                    "minimum": 1
+                  }
+                },
+                "required": [
+                  "skipped"
+                ]
+              },
+              {
+                "properties": {
+                  "errors": {
+                    "minimum": 1
+                  }
+                },
+                "required": [
+                  "errors"
+                ]
+              }
+            ]
+          }
+        }
+      }
+    }
+  ],
+  "additionalProperties": false,
+  "$defs": {
+    "uuidUrn": {
+      "type": "string",
+      "pattern": "^urn:uuid:[0-9a-f]{8}-[0-9a-f]{4}-5[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$"
+    },
+    "sha256Hex": {
+      "type": "string",
+      "pattern": "^[0-9a-f]{64}$"
+    },
+    "nullableDigest": {
+      "oneOf": [
+        {
+          "$ref": "#/$defs/sha256Hex"
+        },
+        {
+          "type": "null"
+        }
+      ]
+    },
+    "counts": {
+      "type": "object",
+      "required": [
+        "input",
+        "exported",
+        "skipped",
+        "warnings",
+        "errors"
+      ],
+      "properties": {
+        "input": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "exported": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "skipped": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "warnings": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "errors": {
+          "type": "integer",
+          "minimum": 0
+        }
+      },
+      "additionalProperties": false
+    },
+    "finding": {
+      "type": "object",
+      "required": [
+        "code",
+        "severity",
+        "source_record_index",
+        "source_record_digest",
+        "json_pointer",
+        "annotation_id",
+        "message"
+      ],
+      "properties": {
+        "code": {
+          "type": "string",
+          "pattern": "^[a-z][a-z0-9_]{0,127}$"
+        },
+        "severity": {
+          "enum": [
+            "fatal",
+            "error",
+            "skipped",
+            "warning"
+          ]
+        },
+        "source_record_index": {
+          "oneOf": [
+            {
+              "type": "integer",
+              "minimum": 0
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "source_record_digest": {
+          "$ref": "#/$defs/nullableDigest"
+        },
+        "json_pointer": {
+          "oneOf": [
+            {
+              "type": "string",
+              "pattern": "^(?:/(?:[^~/]|~0|~1)*)*$"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "annotation_id": {
+          "oneOf": [
+            {
+              "$ref": "#/$defs/uuidUrn"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "message": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 512
+        }
+      },
+      "additionalProperties": false
+    }
+  }
+}

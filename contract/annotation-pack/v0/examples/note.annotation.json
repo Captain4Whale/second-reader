@@ -1,0 +1,59 @@
+{
+  "id": "urn:uuid:6cc4f771-cc56-5a0c-a05c-7c75f9743758",
+  "type": "Annotation",
+  "motivation": "commenting",
+  "creator": {
+    "id": "urn:uuid:95a909f2-658f-50c5-9c2b-8ef0e6dc7512",
+    "type": "Software",
+    "name": "Second Reader"
+  },
+  "created": "2026-07-03T08:31:00Z",
+  "body": {
+    "type": "TextualBody",
+    "value": "This turns rereading into a deliberate test, not repetition.",
+    "format": "text/plain",
+    "language": "en"
+  },
+  "target": {
+    "type": "SpecificResource",
+    "source": "Text/chapter-01.xhtml",
+    "selector": [
+      {
+        "type": "TextQuoteSelector",
+        "exact": "Return with a better question.",
+        "prefix": "Do not merely repeat. ",
+        "suffix": " The page may answer differently.",
+        "sr:normalization": "sr-epub-resource-text-v1"
+      },
+      {
+        "type": "sr:ParagraphCharSelector",
+        "sr:coordinateSystem": "sr-book-document-paragraph-char-v1",
+        "sr:offsetUnit": "unicode-code-point",
+        "sr:start": {
+          "sr:chapterId": 1,
+          "sr:paragraphIndex": 3,
+          "sr:charOffset": 22
+        },
+        "sr:end": {
+          "sr:chapterId": 1,
+          "sr:paragraphIndex": 3,
+          "sr:charOffset": 52
+        }
+      }
+    ],
+    "sr:anchorId": "urn:uuid:006bb1e4-7e83-5d97-98aa-c606207f93f8",
+    "sr:chapter": {
+      "type": "sr:ChapterContext",
+      "sr:chapterId": 1,
+      "sr:order": 1,
+      "name": "A Small Beginning",
+      "sr:fingerprint": {
+        "type": "sr:Fingerprint",
+        "sr:algorithm": "sha256",
+        "sr:algorithmVersion": "sr-book-document-chapter-v1",
+        "sr:value": "3cfdb8b1ff4a08b274836fded5205374d485351c4c5863c2bf066690391b4cbb"
+      }
+    }
+  },
+  "sr:kind": "note"
+}

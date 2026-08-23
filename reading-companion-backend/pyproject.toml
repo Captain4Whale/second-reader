@@ -19,6 +19,7 @@ dependencies = [
     "websockets>=15.0",
     "python-multipart>=0.0.9",
     "python-dotenv>=1.0",
+    "jsonschema[format-nongpl]>=4.23,<5",
     "socksio>=1.0.0",
     "ebooklib>=0.5",
     "pymupdf>=1.23",
@@ -31,7 +32,8 @@ dependencies = [
 dev = [
     "pytest>=8.0",
     "pytest-asyncio>=0.23",
-    "ruff>=0.4",
+    "ruff==0.15.5",
+    "datamodel-code-generator==0.74.0",
 ]
 observability = [
     "arize-phoenix-otel==0.17.1",

@@ -1,6 +1,6 @@
 # Second Reader Annotation Pack v0：详细设计与实施交接
 
-状态：`design_complete_pending_namespace_confirmation`（仅设计，尚未实现）
+状态：`implementation_active_slice_2`（Slice 1 contract authority 已验收；进入 publication identity/fingerprinting）
 
 协议代号：`second-reader-annotation-pack/0.1`
 
@@ -18,7 +18,7 @@
 - **Accepted decision**：本任务输入已经确定，不在本设计中重新讨论。
 - **Proposed v0**：本设计固定、由后续 implementation slice 实现。
 - **Future-reserved**：v0 不实现，只保证不堵死演进。
-- **Open confirmation**：实现前仍需一次产品/治理确认；未确认时不得偷偷选择。
+- **Resolved confirmation**：owner 已于 `2026-08-23` 确认 GitHub Pages IRI、分支、逐 Slice commit/push 和第 20 节完成条件。
 
 ## 1. Executive Summary
 
@@ -438,13 +438,13 @@ Future consumers 可用已声明 JSON-LD prefix 添加 optional extension。未�
 
 ### 5.4 Complete minimal Pack with both items
 
-为避免正文重复，下面用较短的 fixture text，但仍展示所有 required top-level identity/version/provenance fields。这里的 UUID、digest、byte length 与 offset 是结构示意值，不是已经由 fixture重算的 semantic test vector；Slice 1 必须从最终 tiny EPUB fixture重新生成正式 example，并由 schema + semantic validator锁定，不能复制这些示意 digest充当 golden。
+为避免正文重复，下面用较短的 fixture text，但仍展示所有 required top-level identity/version/provenance fields。这里的 UUID、digest、byte length 与 offset 是 schema-valid 协议示例值，不是已经由 fixture重算的 semantic test vector，也不得被引用为 golden。Slice 1 只由 schema/contract tests锁定其 wire shape；Slice 2 提交 identity/fingerprint fixed vectors，Slice 8 再从最终 tiny EPUB fixture重建并由 semantic validator锁定正式 golden，不能复制这些示意 digest冒充已验证事实。
 
 ```json
 {
   "@context": [
     "https://www.w3.org/ns/epub-anno.jsonld",
-    {"sr": "https://captain4whale.github.io/second-reader/ns/annotation-pack#"}
+    {"@protected": true, "sr": "https://captain4whale.github.io/second-reader/ns/annotation-pack#"}
   ],
   "id": "urn:uuid:31f414c4-32f3-50d6-85e1-9382e47c6390",
   "type": "AnnotationSet",
@@ -489,6 +489,7 @@ Future consumers 可用已声明 JSON-LD prefix 添加 optional extension。未�
           "sr:order": 1,
           "sr:title": "A Small Beginning",
           "sr:resourceHrefs": ["Text/chapter-01.xhtml"],
+          "sr:algorithm": "sha256",
           "sr:algorithmVersion": "sr-book-document-chapter-v1",
           "sr:value": "3cfdb8b1ff4a08b274836fded5205374d485351c4c5863c2bf066690391b4cbb"
         }
@@ -561,7 +562,7 @@ Future consumers 可用已声明 JSON-LD prefix 添加 optional extension。未�
     "type": "sr:Provenance",
     "sr:producer": "urn:uuid:da94868b-ce7f-56d6-9c77-c5b959f15f5a",
     "sr:adapterVersion": "0.1.0",
-    "sr:inputSnapshotDigest": {"type": "sr:Digest", "sr:algorithm": "sha256", "sr:canonicalization": "sr-second-reader-input-snapshot-v1", "sr:value": "82f72cf3651f3c1c6b96e7a170da1302a7cf0e86bf8d57db37e5ed66005a40d8"},
+    "sr:inputSnapshotDigest": {"type": "sr:Digest", "sr:algorithm": "sha256", "sr:value": "82f72cf3651f3c1c6b96e7a170da1302a7cf0e86bf8d57db37e5ed66005a40d8"},
     "sr:inputSnapshotAlgorithmVersion": "sr-second-reader-input-snapshot-v1"
   },
   "sr:semanticDigest": {
@@ -621,7 +622,7 @@ https://captain4whale.github.io/second-reader/ns/annotation-pack#
 3. term 使用 lower camel case；class/selector type 使用 UpperCamelCase。
 4. contract 提交 context 文档并固定 SHA-256；validator 不联网拉取 context，只接受 committed allowlist，避免 SSRF/供应链漂移。
 5. Adapter-specific data先归一化到 draft，不能新增 `sr:attentionalV2*` wire fields。
-6. 实现 Slice 1 前须确认并真正托管该 namespace，或一次性替换全部示例/schema/context。未托管前它只是 **Open confirmation**，不能对外宣称可解析。
+6. owner 已确认使用该 namespace 和 GitHub Pages托管。Slice 1提交 allowlisted Pages workflow与可重复 staging check；只有 workflow进入 `main`、Pages部署成功并完成HTTP byte comparison后，才可对外宣称该 IRI 已上线可解析。
 
 本设计不引入 RDF store、JSON-LD expansion/compaction framework。v0 serializer 生成固定 compact JSON-LD；validator 做 JSON Schema + 项目语义检查即可。
 
@@ -844,7 +845,7 @@ JSON-only→detached upgrade写死为 byte-preserving path：当 fresh candidate
 
 semantic projection 从完整 Pack 删除：`generated`, `generator`, `sr:provenance`, `sr:semanticDigest`；将 `items` 按 id排序，再按 `sr-canonical-json-v1`编码，计算 SHA-256。这样 exporter build升级但语义不变时可比较；creator/publication/annotation任何改变都会改变 digest。
 
-`sr:inputSnapshotDigest` 对 producer input使用独立 `sr-second-reader-input-snapshot-v1` framing：header后依次 length-frame exact source EPUB SHA-256、persisted BookDocument bytes SHA-256、`sr-book-document-substrate-v1` digest、exact reaction-ledger bytes SHA-256，以及 accepted source-record digests按 input index的有序列表。它不包含 path、run/job status、clock或creator display。Digest object写 `sr:canonicalization="sr-second-reader-input-snapshot-v1"`；任何 framing字段变化必须换 v2。
+`sr:inputSnapshotDigest` 对 producer input使用独立 `sr-second-reader-input-snapshot-v1` framing：header后依次 length-frame exact source EPUB SHA-256、persisted BookDocument bytes SHA-256、`sr-book-document-substrate-v1` digest、exact reaction-ledger bytes SHA-256，以及 accepted source-record digests按 input index的有序列表。它不包含 path、run/job status、clock或creator display。该 Digest object不写 `sr:canonicalization`；framing名称由 sibling `sr:inputSnapshotAlgorithmVersion`声明。任何 framing字段变化必须换 v2。
 
 ## 10. File And Packaging Format
 
@@ -1305,7 +1306,7 @@ Schema draft固定为 JSON Schema 2020-12，带稳定 `$id`：
 https://captain4whale.github.io/second-reader/schema/annotation-pack/v0/annotation-pack.schema.json
 ```
 
-它与 namespace URL 一样必须在 Slice 1 确认/托管后才对外宣称可解析。
+owner 已确认它与 namespace URL 使用 GitHub Pages托管；在 workflow进入 `main`、Pages部署和HTTP byte comparison完成前仍不得对外宣称已上线可解析。
 
 ### 13.2 Committed and generated artifacts
 
@@ -1600,7 +1601,7 @@ Reader不得依赖 generator version、provenance、item order、validation repo
 
 | Existing file | Planned change | When / why |
 |---|---|---|
-| `reading-companion-backend/pyproject.toml` | direct `jsonschema>=4.23,<5` runtime + dev-only `datamodel-code-generator==0.74.0`；Slice 3若stdlib不足则显式pin经过测试的 Unicode grapheme segmenter | Slice 1/3 |
+| `reading-companion-backend/pyproject.toml` | direct `jsonschema[format-nongpl]>=4.23,<5` runtime + dev-only `datamodel-code-generator==0.74.0` / `ruff==0.15.5` deterministic generation toolchain；Slice 3若stdlib不足则显式pin经过测试的 Unicode grapheme segmenter | Slice 1/3 |
 | `reading-companion-backend/src/reading_runtime/artifacts.py` | neutral `annotation_packs_dir`, track dir/file helpers | Slice 6；public artifact ownership |
 | `reading-companion-backend/src/iterator_reader/parse.py` / new reading_core helper | only if needed，提炼 no-write canonical rebuild path | Slice 2；must preserve parse behavior |
 | `Makefile`, `scripts/contract-check.sh` | `annotation-pack-contract-check` | Slice 1/8 |
@@ -1609,26 +1610,26 @@ Reader不得依赖 generator version、provenance、item order、validation repo
 | `docs/workspace-overview.md` | annotation contract/backend module/public artifact ownership | Slice 1/7 when real |
 | `docs/backend-state-aggregation.md` | new public artifact source/normalization boundary | Slice 6/7 when emitted |
 | `docs/current-state.md` | only when implementation becomes active/blocked/done | first authorized implementation slice；本设计不伪造 active work |
-| `docs/tasks/registry.md/.json` | waiting Epic now；每 slice更新 status/evidence | 本设计 + future slices |
+| `docs/tasks/registry.md/.json` | active Epic；每 slice更新 status/evidence | first authorized implementation slice + future slices |
 | `docs/history/decision-log.md` | `DEC-155` stable seam decision | 本设计 |
 | `.gitignore` | only if implementation creates new generated scratch under tracked territory | same slice；normal output已ignored |
 
 本 Epic 不修改 `docs/api-contract.md` / `docs/api-integration.md`，因为没有新 public HTTP route；未来 Library/Reader API另立任务。也不修改 mechanism doc、Digest contract或 prompt，因为 adapter只读现有 settled truth。若实现过程中发现必须改变 native mechanism，停止并重新拆决策，不能把改动藏进 Pack slice。
 
-### 17.5 Open confirmations before Slice 1
+### 17.5 Resolved confirmations before Slice 1
 
-唯一需要用户/项目 owner确认的协议治理项：是否正式采用并托管：
+owner 已于 `2026-08-23` 确认正式采用并通过 GitHub Pages托管：
 
 ```text
 https://captain4whale.github.io/second-reader/ns/annotation-pack#
 https://captain4whale.github.io/second-reader/schema/annotation-pack/v0/annotation-pack.schema.json
 ```
 
-若当前没有 GitHub Pages发布约定，Slice 1 必须先选择项目确实控制的稳定绝对 IRI；不得保留 `<project-controlled-host>` placeholder，也不得把 GitHub blob/raw易漂移 URL当长期 namespace。其余 v0 产品/架构决策在本文已固定，不需要重新讨论。
+Slice 1建立 GitHub Actions Pages发布约定和本地 byte-identical staging check；feature branch只证明构建映射，正式托管仍以进入 `main`后的成功部署和HTTP复验为准。不得使用 GitHub blob/raw易漂移 URL替代长期 namespace。其余 v0 产品/架构决策已固定，不需要重新讨论。
 
 ## 18. Implementation Slices
 
-每个 slice 独立 review、运行 focused + governance checks、更新 `TASK-ANNOTATION-PACK-V0-IMPLEMENTATION` evidence，并按 workspace rule单独 commit；不自动 push。下一 slice 只能建立在前一 slice acceptance 通过的 commit上。
+每个 slice 独立 review、运行 focused + governance checks、更新 `TASK-ANNOTATION-PACK-V0-IMPLEMENTATION` evidence，并按 workspace rule单独 commit。owner 已明确授权本 Epic 每个 Slice验收后 push `codex/annotation-pack-v0`；下一 Slice只能建立在前一 Slice acceptance通过且已 commit/push的提交上。
 
 ### Slice 1 — Contract skeleton + canonical schema authority
 
@@ -1646,7 +1647,7 @@ https://captain4whale.github.io/second-reader/schema/annotation-pack/v0/annotati
 
 **Implementation steps**：
 
-1. owner确认 namespace/schema IRI；把 context term逐一映射，不联网扩展。
+1. owner确认 namespace/schema IRI；固定 protected `sr` prefix binding。Wire已使用完整 `sr:*` compact IRI key，因此 committed context不创建会重定义 WA/DC bare terms的别名，也不联网扩展。
 2. 将第 4–6 节转成 canonical Pack JSON Schema 2020-12 `$defs`；另建不参与 wire/codegen 的 publication-pointer与validation-report auxiliary schemas；core unprefixed fields strict，declared extensions受控。
 3. 写 three examples与最小 negative fixtures；验证 UUID/URL/date/conditional highlight/note规则能被 schema表达的部分。
 4. 按第 13 节固定 `jsonschema`范围、`datamodel-code-generator==0.74.0`和CLI参数；实现 deterministic generate/`--check`，用extension probe验证aliases/extra不会丢失。
@@ -1965,12 +1966,12 @@ make agent-check
 - [ ] public Pack与report无 Agent Understanding、Memory、selection reason、prompt/reasoning、runtime trace/audit/job/progress/feedback/rating/download/rank、compat taxonomy、local path或private book content。
 - [ ] normal Agent mechanism、prompt、Digest、Memory、reading loop和completion success path没有变化；Pack export失败不影响阅读完成。
 - [ ] 没有 Readest、Library、Hypothesis、KOReader、Readwise、database、community或cross-edition fuzzy dependency。
-- [ ] README/source-of-truth/state aggregation/current-state/task registry/decision evidence按实际 landed能力最小同步；每 slice有focused checks与commit，未获授权不push。
+- [ ] README/source-of-truth/state aggregation/current-state/task registry/decision evidence按实际 landed能力最小同步；每个 Slice 都有 focused checks、独立 commit，并按 owner 授权 push 到 `codex/annotation-pack-v0`。
 
-### Recommended first implementation slice
+### Current implementation checkpoint
 
-从 **Slice 1 — Contract skeleton + canonical schema authority** 开始。它首先关闭唯一 open governance item（稳定 namespace/schema IRI），把本文字段约束变成可执行 schema/examples/drift check；在此之前写 fingerprint/exporter会让 Python shape先于 contract固化，增加返工风险。Slice 1 不应顺便实现 adapter或导出逻辑。
+**Slice 1 — Contract skeleton + canonical schema authority** 已验收：稳定 namespace/schema IRI 已确认，字段约束已经成为 canonical schema/examples/offline drift check，Pages publication mapping 可重复构建。外部 IRI 仍须等待 workflow 进入 `main`、Pages 启用并成功部署后做 HTTP byte comparison，当前不得称为 live。下一实现单元是 **Slice 2 — Publication identity + fingerprinting**；它不得顺便实现 adapter 或 exporter。
 
 ### Explicit non-goals confirmation
 
-本文只定义协议与实施交接。本次文档任务没有实现产品代码、没有修改 Agent prompt/Digest/Memory/reading loop，没有生成或发布任何真实 Annotation Pack，也没有引入 Readest或Library依赖。
+截至 Slice 1，仓库已实现 contract/schema/context/examples、producer-neutral 离线 schema loader/validator、deterministic generated bindings/runtime resources、focused checks 与 Pages projection；尚未实现 producer adapter、identity/fingerprint builder、exporter、detached package 或真实 Annotation Pack publication。Agent prompt、Digest、Memory、reading loop、Readest、Library 和 public HTTP API 均未修改。

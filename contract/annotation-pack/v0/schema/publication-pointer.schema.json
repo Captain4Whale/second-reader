@@ -1,0 +1,71 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://captain4whale.github.io/second-reader/schema/annotation-pack/v0/publication-pointer.schema.json",
+  "title": "Second Reader Annotation Pack publication pointer v0",
+  "description": "Local immutable-revision pointer. This auxiliary schema does not define or embed the Annotation Pack wire document.",
+  "type": "object",
+  "required": [
+    "schema_version",
+    "track_id",
+    "revision_id",
+    "semantic_digest",
+    "annotations_json",
+    "annotations_json_sha256",
+    "validation_report",
+    "validation_report_sha256"
+  ],
+  "properties": {
+    "schema_version": {
+      "const": "annotation-pack-publication-pointer/0.1"
+    },
+    "track_id": {
+      "$ref": "#/$defs/uuidUrn"
+    },
+    "revision_id": {
+      "$ref": "#/$defs/sha256Hex"
+    },
+    "semantic_digest": {
+      "$ref": "#/$defs/sha256Hex"
+    },
+    "annotations_json": {
+      "type": "string",
+      "pattern": "^revisions/[0-9a-f]{64}/annotations\\.json$"
+    },
+    "annotations_json_sha256": {
+      "$ref": "#/$defs/sha256Hex"
+    },
+    "detached_package": {
+      "type": "string",
+      "pattern": "^revisions/[0-9a-f]{64}/[a-z0-9][a-z0-9._-]{0,80}\\.annotations$"
+    },
+    "detached_package_sha256": {
+      "$ref": "#/$defs/sha256Hex"
+    },
+    "validation_report": {
+      "type": "string",
+      "pattern": "^revisions/[0-9a-f]{64}/validation-report\\.json$"
+    },
+    "validation_report_sha256": {
+      "$ref": "#/$defs/sha256Hex"
+    }
+  },
+  "dependentRequired": {
+    "detached_package": [
+      "detached_package_sha256"
+    ],
+    "detached_package_sha256": [
+      "detached_package"
+    ]
+  },
+  "additionalProperties": false,
+  "$defs": {
+    "uuidUrn": {
+      "type": "string",
+      "pattern": "^urn:uuid:[0-9a-f]{8}-[0-9a-f]{4}-5[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$"
+    },
+    "sha256Hex": {
+      "type": "string",
+      "pattern": "^[0-9a-f]{64}$"
+    }
+  }
+}

@@ -276,6 +276,7 @@ Important frontend variables:
 - `make status-phoenix`: show installation, PID, UI readiness, endpoints, and state path without starting Phoenix
 - `make stop-phoenix`: stop only the PID verified as the repo-local Phoenix sidecar and preserve its data
 - `make test`: run backend tests, frontend typecheck/build, and contract drift checks
+- `make annotation-pack-contract-check`: verify the Annotation Pack v0 schemas, examples, generated bindings/runtime copies, and GitHub Pages projection without network access
 - `make contract-check`: verify docs appendix, backend OpenAPI snapshot, and frontend contract guards
 - `make e2e`: run the fixture-backed upload -> analysis -> book -> chapter -> marks Playwright flow
 - `make build`: build the frontend bundle
@@ -465,6 +466,7 @@ Registry files live under `reading-companion-backend/state/job_registry/`:
 - `history_jobs.jsonl`: archived terminal jobs
 
 ## Validation
+- `make annotation-pack-contract-check` is the focused, offline-after-install guard for the root Annotation Pack v0 contract and its derived Python/Pages artifacts.
 - `make contract-check` is the first guard for public contract drift.
 - `make agent-check` is the canonical switching-memory guard for current state, task routing, and handoff hygiene.
 - `make e2e` is the canonical upload -> analysis -> book -> chapter -> marks regression.

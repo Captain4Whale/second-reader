@@ -116,6 +116,8 @@ Update when: document layering, reading order, task routing, or cross-project co
 - backend mechanism-specific internals such as the current default reader: `docs/backend-reading-mechanisms/<mechanism>.md`
 - backend reader quality goals, evaluation layers, and offline eval methodology: `docs/backend-reader-evaluation.md`
 - backend artifact aggregation, state surfaces, normalization boundary: `docs/backend-state-aggregation.md`
+- Annotation Pack wire authority, stable IRIs, context, and examples: `contract/annotation-pack/v0/README.md`, `contract/annotation-pack/v0/schema/annotation-pack.schema.json`
+- Annotation Pack implementation sequence, slice acceptance, and Definition of Done: `docs/implementation/annotation-pack/second-reader-annotation-pack-v0-detailed-design-and-implementation-handoff.md`
 
 ### History Tasks
 - design evolution, rejected alternatives, key decision history: `docs/history/README.md`
@@ -147,6 +149,8 @@ Update when: document layering, reading order, task routing, or cross-project co
 - backend one-mechanism internals such as ontology, reading loop, prompt assembly, or memory -> `docs/backend-reading-mechanisms/<mechanism>.md`
 - backend reader quality goals, evaluation methodology, LLM-as-judge usage, and local-vs-broad eval planning -> `docs/backend-reader-evaluation.md`
 - backend artifact aggregation, analysis-state sourcing, normalization boundary -> `docs/backend-state-aggregation.md`
+- Annotation Pack wire/schema/context authority -> `contract/annotation-pack/v0/README.md`, `contract/annotation-pack/v0/schema/annotation-pack.schema.json`
+- Annotation Pack implementation sequencing, acceptance evidence, and completion boundary -> `docs/implementation/annotation-pack/second-reader-annotation-pack-v0-detailed-design-and-implementation-handoff.md`
 - session-only scratch notes that have not yet been promoted -> `docs/agent-handoff.md`
 - design evolution, rejected alternatives, key decision history -> `docs/history/README.md`
 
@@ -327,4 +331,6 @@ Update when: document layering, reading order, task routing, or cross-project co
 - `reading-companion-frontend/AGENTS.md` when the task touches frontend routes, API adapters, UI copy, or generated structure
 - `docs/backend-reading-mechanism.md` when the task touches shared backend mechanism boundaries or mechanism doc routing
 - `docs/backend-reading-mechanisms/iterator_v1.md` when the task touches the current live/default reader internals
+- `contract/annotation-pack/v0/README.md` and its canonical schema when the task touches Annotation Pack wire data, IRIs, context, or examples
+- `docs/implementation/annotation-pack/second-reader-annotation-pack-v0-detailed-design-and-implementation-handoff.md` when implementing or accepting an Annotation Pack slice
 - Then load only the task-gated stable doc that matches the work at hand

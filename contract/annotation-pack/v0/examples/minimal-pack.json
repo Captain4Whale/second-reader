@@ -1,0 +1,225 @@
+{
+  "@context": [
+    "https://www.w3.org/ns/epub-anno.jsonld",
+    {
+      "@protected": true,
+      "sr": "https://captain4whale.github.io/second-reader/ns/annotation-pack#"
+    }
+  ],
+  "id": "urn:uuid:31f414c4-32f3-50d6-85e1-9382e47c6390",
+  "type": "AnnotationSet",
+  "generator": {
+    "id": "urn:uuid:8aef6a01-c757-51b3-8245-5fcdff08f737",
+    "type": "Software",
+    "name": "Second Reader Annotation Pack Exporter",
+    "sr:version": "0.1.0"
+  },
+  "generated": "2026-08-23T00:00:00Z",
+  "about": {
+    "dc:format": "application/epub+zip",
+    "dc:title": "The Tiny Reader Fixture",
+    "dc:creator": [
+      "Second Reader Test Authors"
+    ],
+    "dc:identifier": [
+      "urn:uuid:eb86ac5d-92e7-5306-b891-0ab1d7b2c713",
+      "urn:uuid:c0493acf-8277-574b-968d-801d8fe77768",
+      "urn:uuid:1cbdcba1-1388-5a11-abf0-852ddca6d1c9"
+    ],
+    "sr:work": {
+      "id": "urn:uuid:eb86ac5d-92e7-5306-b891-0ab1d7b2c713",
+      "type": "sr:WorkIdentity",
+      "sr:identityStrength": "provisional"
+    },
+    "sr:edition": {
+      "id": "urn:uuid:c0493acf-8277-574b-968d-801d8fe77768",
+      "type": "sr:EditionIdentity",
+      "sr:contentFingerprint": {
+        "type": "sr:Fingerprint",
+        "sr:algorithm": "sha256",
+        "sr:algorithmVersion": "sr-book-document-text-v1",
+        "sr:value": "36c9a5c98a7a9a2bf3425d96e9c993839acd63ae676b77ba2efffd635d5f774d"
+      },
+      "sr:publicationIdentifiers": [
+        {
+          "type": "sr:Identifier",
+          "sr:scheme": "opf-identifier",
+          "sr:value": "urn:uuid:fixture-edition"
+        }
+      ],
+      "sr:language": "en",
+      "sr:chapterFingerprints": [
+        {
+          "type": "sr:ChapterFingerprint",
+          "sr:chapterId": 1,
+          "sr:order": 1,
+          "sr:title": "A Small Beginning",
+          "sr:resourceHrefs": [
+            "Text/chapter-01.xhtml"
+          ],
+          "sr:algorithm": "sha256",
+          "sr:algorithmVersion": "sr-book-document-chapter-v1",
+          "sr:value": "3cfdb8b1ff4a08b274836fded5205374d485351c4c5863c2bf066690391b4cbb"
+        }
+      ]
+    },
+    "sr:file": {
+      "id": "urn:uuid:1cbdcba1-1388-5a11-abf0-852ddca6d1c9",
+      "type": "sr:FileIdentity",
+      "dc:format": "application/epub+zip",
+      "sr:sha256": "c6b708b231994f2c768e0462011e764782512f0f749b83743122d243b8e74247",
+      "sr:byteLength": 4096
+    }
+  },
+  "items": [
+    {
+      "id": "urn:uuid:2e95ed39-c078-5c63-93fe-48ae17f13b18",
+      "type": "Annotation",
+      "motivation": "highlighting",
+      "creator": {
+        "id": "urn:uuid:95a909f2-658f-50c5-9c2b-8ef0e6dc7512",
+        "type": "Software",
+        "name": "Second Reader"
+      },
+      "created": "2026-07-03T08:30:00Z",
+      "target": {
+        "type": "SpecificResource",
+        "source": "Text/chapter-01.xhtml",
+        "selector": [
+          {
+            "type": "TextQuoteSelector",
+            "exact": "A durable idea is worth returning to.",
+            "prefix": "The reader paused. ",
+            "suffix": " Then the argument moved on.",
+            "sr:normalization": "sr-epub-resource-text-v1"
+          },
+          {
+            "type": "sr:ParagraphCharSelector",
+            "sr:coordinateSystem": "sr-book-document-paragraph-char-v1",
+            "sr:offsetUnit": "unicode-code-point",
+            "sr:start": {
+              "sr:chapterId": 1,
+              "sr:paragraphIndex": 2,
+              "sr:charOffset": 19
+            },
+            "sr:end": {
+              "sr:chapterId": 1,
+              "sr:paragraphIndex": 2,
+              "sr:charOffset": 56
+            }
+          }
+        ],
+        "sr:anchorId": "urn:uuid:c9718883-d248-59ab-8fa2-44886bd0afd0",
+        "sr:chapter": {
+          "type": "sr:ChapterContext",
+          "sr:chapterId": 1,
+          "sr:order": 1,
+          "name": "A Small Beginning",
+          "sr:fingerprint": {
+            "type": "sr:Fingerprint",
+            "sr:algorithm": "sha256",
+            "sr:algorithmVersion": "sr-book-document-chapter-v1",
+            "sr:value": "3cfdb8b1ff4a08b274836fded5205374d485351c4c5863c2bf066690391b4cbb"
+          }
+        }
+      },
+      "sr:kind": "highlight"
+    },
+    {
+      "id": "urn:uuid:6cc4f771-cc56-5a0c-a05c-7c75f9743758",
+      "type": "Annotation",
+      "motivation": "commenting",
+      "creator": {
+        "id": "urn:uuid:95a909f2-658f-50c5-9c2b-8ef0e6dc7512",
+        "type": "Software",
+        "name": "Second Reader"
+      },
+      "created": "2026-07-03T08:31:00Z",
+      "body": {
+        "type": "TextualBody",
+        "value": "This turns rereading into a deliberate test, not repetition.",
+        "format": "text/plain",
+        "language": "en"
+      },
+      "target": {
+        "type": "SpecificResource",
+        "source": "Text/chapter-01.xhtml",
+        "selector": [
+          {
+            "type": "TextQuoteSelector",
+            "exact": "Return with a better question.",
+            "prefix": "Do not merely repeat. ",
+            "suffix": " The page may answer differently.",
+            "sr:normalization": "sr-epub-resource-text-v1"
+          },
+          {
+            "type": "sr:ParagraphCharSelector",
+            "sr:coordinateSystem": "sr-book-document-paragraph-char-v1",
+            "sr:offsetUnit": "unicode-code-point",
+            "sr:start": {
+              "sr:chapterId": 1,
+              "sr:paragraphIndex": 3,
+              "sr:charOffset": 22
+            },
+            "sr:end": {
+              "sr:chapterId": 1,
+              "sr:paragraphIndex": 3,
+              "sr:charOffset": 52
+            }
+          }
+        ],
+        "sr:anchorId": "urn:uuid:006bb1e4-7e83-5d97-98aa-c606207f93f8",
+        "sr:chapter": {
+          "type": "sr:ChapterContext",
+          "sr:chapterId": 1,
+          "sr:order": 1,
+          "name": "A Small Beginning",
+          "sr:fingerprint": {
+            "type": "sr:Fingerprint",
+            "sr:algorithm": "sha256",
+            "sr:algorithmVersion": "sr-book-document-chapter-v1",
+            "sr:value": "3cfdb8b1ff4a08b274836fded5205374d485351c4c5863c2bf066690391b4cbb"
+          }
+        }
+      },
+      "sr:kind": "note"
+    }
+  ],
+  "sr:specVersion": "0.1.0",
+  "sr:schemaVersion": "0.1.0",
+  "sr:extensionVersion": "0.1",
+  "sr:profile": {
+    "type": "sr:ProfileReference",
+    "sr:webAnnotation": "https://www.w3.org/TR/2017/REC-annotation-model-20170223/",
+    "sr:epubAnnotations": "https://www.w3.org/TR/2026/WD-epub-anno-10-20260521/",
+    "sr:conformance": "aligned"
+  },
+  "sr:track": {
+    "id": "urn:uuid:04ace963-40ef-5247-90d2-1cc55d925afa",
+    "type": "sr:AnnotationTrack",
+    "sr:key": "second-reader-agent",
+    "name": "Second Reader",
+    "creator": {
+      "id": "urn:uuid:95a909f2-658f-50c5-9c2b-8ef0e6dc7512",
+      "type": "Software",
+      "name": "Second Reader"
+    }
+  },
+  "sr:provenance": {
+    "type": "sr:Provenance",
+    "sr:producer": "urn:uuid:da94868b-ce7f-56d6-9c77-c5b959f15f5a",
+    "sr:adapterVersion": "0.1.0",
+    "sr:inputSnapshotDigest": {
+      "type": "sr:Digest",
+      "sr:algorithm": "sha256",
+      "sr:value": "82f72cf3651f3c1c6b96e7a170da1302a7cf0e86bf8d57db37e5ed66005a40d8"
+    },
+    "sr:inputSnapshotAlgorithmVersion": "sr-second-reader-input-snapshot-v1"
+  },
+  "sr:semanticDigest": {
+    "type": "sr:Digest",
+    "sr:algorithm": "sha256",
+    "sr:canonicalization": "sr-canonical-json-v1",
+    "sr:value": "6a48c77d9e08a46b3340727932cd35fef7a72486ce4f7b5c521931389f834ce8"
+  }
+}

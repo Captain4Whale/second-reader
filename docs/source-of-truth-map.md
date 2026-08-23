@@ -17,6 +17,7 @@ This workspace is repo-first. Chat, Notion, and other tools may incubate work, b
 | Product truths and guardrails | `docs/product-overview.md` | none | `make agent-check` | product essence, value channels, or canonical-vs-emerging territory changes |
 | Product interaction model | `docs/product-interaction-model.md` | none | `make agent-check` | user journey, route responsibilities, or core UX conventions change |
 | Public API contract | `docs/api-contract.md` | fenced JSON appendix | `make contract-check` | public routes, fields, enums, IDs, or stable request/response shapes change |
+| Annotation Pack v0 protocol | `contract/annotation-pack/v0/schema/annotation-pack.schema.json` | pointer/report auxiliary schemas, committed context/examples, generated backend bindings/runtime copies, and derived GitHub Pages projection | `make annotation-pack-contract-check`, `make contract-check` | Pack wire shape, auxiliary publication contracts, context/vocabulary, versions, standards pins, or hosting projection changes |
 | Frontend/backend integration wiring | `docs/api-integration.md` | fenced JSON appendix | `make contract-check` | frontend-used endpoints, polling, realtime wiring, or runtime data flow change |
 | Runtime modes and recovery rules | `docs/runtime-modes.md` | none | `make agent-check` | launcher behavior, healthchecks, deployment entrypoints, or resume rules change |
 | Runtime observability implementation and local Phoenix sidecar | `docs/implementation/runtime-observability/README.md` | `output/<book_id>/_history/runs/<job_id>/observability/events.jsonl` plus rebuildable JSON/Markdown reports in the same directory | `bash -n scripts/*phoenix*.sh`, `make status-phoenix`, `make agent-check` | fact-ledger/report schema, exporter/sidecar lifecycle, span hierarchy, privacy defaults, usage/cost normalization, or observability pins change |
@@ -39,6 +40,7 @@ This workspace is repo-first. Chat, Notion, and other tools may incubate work, b
 
 ## Operating Rules
 - Keep mutable runtime job state only in the backend job registry.
+- Keep `contract/annotation-pack/v0/schema/annotation-pack.schema.json` as the sole Pack wire authority. Generated Python/runtime copies and the GitHub Pages site are byte-checked derivatives and must never become a second source of truth.
 - Keep the append-only local ledger as runtime-observability fact truth and Phoenix/OpenTelemetry traces as derived operational views; job/checkpoint/runtime artifacts remain lifecycle truth.
 - Keep durable current state in `docs/current-state.md`, not in `docs/agent-handoff.md`.
 - Keep workspace task routing in `docs/tasks/registry.*`, and link each task outward to detailed trackers, truth docs, decisions, jobs, and evidence.

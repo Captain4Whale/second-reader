@@ -7,9 +7,10 @@ Update when: the current objective, active tasks, blockers, active jobs, open de
 
 This file is authoritative for durable current status. Do not keep unique active-state information only in `docs/agent-handoff.md`.
 
-Last verified: `2026-08-17T09:42:00+08:00`
+Last verified: `2026-08-23T17:41:00+08:00`
 
 ## Current Objective
+- Annotation Pack v0 implementation is active under `TASK-ANNOTATION-PACK-V0-IMPLEMENTATION` and `DEC-155` on branch `codex/annotation-pack-v0`. The owner confirmed the GitHub Pages namespace/schema IRIs, per-Slice acceptance commits and pushes, Section 20 as the Epic completion boundary, and separate reporting for unrelated baseline issues. Slice 1 is accepted: the root contract owns the canonical schemas/context/examples, backend bindings and runtime resources are reproducible offline derivatives, the focused check is wired into root checks, and the allowlisted Pages projection is deterministic. Slice 2 publication identity/fingerprinting is next. Agent, Digest, Memory, the reading loop, Readest, Library, and public HTTP APIs remain unchanged. GitHub Pages is still an external activation gate: the repository currently reports Pages disabled and the approved stable IRIs remain 404 until main deployment and HTTP byte verification succeed.
 - Runtime observability v1 is implemented as an infrastructure lane under `TASK-RUNTIME-OBSERVABILITY-COST-V1` and `DEC-154`; only the final live-provider whole-book acceptance remains externally blocked.
   - the canonical observability record is a local append-only JSONL fact ledger with deterministic JSON/Markdown reports; Phoenix is an optional derived trace UI rather than job/checkpoint truth
   - unit-bearing work uses `reading.run_attempt -> reading.chapter -> reading.unit_attempt -> llm.call -> llm.attempt`; survey/parse/chapter-consolidation work may be chapter-only without a fabricated unit span
@@ -2094,6 +2095,7 @@ Last verified: `2026-08-17T09:42:00+08:00`
 - Treat runtime viability, broader local pairwise comparison, durable-trace / re-entry comparison, and most mechanism-specific judged attribution families as paused unless one of the three kept dimensions later requires them.
 
 ## Now
+- Begin and accept Annotation Pack Slice 2 publication identity/fingerprinting from the accepted Slice 1 checkpoint, then commit and push Slice 2 independently.
 - Keep runtime observability opt-in and evidence-first: finish the manual ledger/export wiring, then verify one bounded local trace/report without changing mechanism behavior or making Phoenix part of app readiness.
 - Treat `attentional_v2` as the current default mechanism and `iterator_v1` as the supported fallback / legacy-resume path.
 - The active Phase 9 move is now split across two coordinated surfaces:
@@ -3530,6 +3532,7 @@ Last verified: `2026-08-17T09:42:00+08:00`
 - whether to keep the old V1 presentation as a co-equal product path is no longer open; it is now compatibility-only
 
 ## Active Risks
+- The approved GitHub Pages mapping can be built and checked on the feature branch, but the stable IRIs remain externally unhosted until this workflow lands on `main`, Pages is configured to use GitHub Actions, deployment succeeds, and the published schema bytes are compared with the canonical contract.
 - The new question-aligned private-library builder now keeps the live `v2` review-truth datasets as feedback input instead of overwriting them, but the new question-aligned outputs are still seed candidates rather than reviewed benchmark truth.
 - Pre-fix parallel comparison artifacts can misassign case-to-output mappings, so partial outputs from the earlier round-3 reruns must be sanity-checked before they are treated as evidence.
 - Malformed-JSON handling in the reading path can still terminate a bounded rerun after substantial partial output has already been written.
@@ -3564,6 +3567,7 @@ Last verified: `2026-08-17T09:42:00+08:00`
 - Benchmark confidence can look stronger than it really is if corpus growth, promotion, and reviewed-slice confidence gates drift apart.
 
 ## Active Task IDs
+- `TASK-ANNOTATION-PACK-V0-IMPLEMENTATION`
 - `TASK-SECOND-READER-INGEST-DIGEST-REFRAME-AUDIT-20260530`
 - `TASK-ATTENTIONAL-V2-STRUCTURAL-REWORK`
 - `TASK-V2-NATIVE-READING-PRESENTATION`
@@ -3594,13 +3598,16 @@ Last verified: `2026-08-17T09:42:00+08:00`
 12. `reading-companion-backend/docs/evaluation/long_span/target_centered_candidate_review.md`
 13. `docs/backend-reading-mechanisms/attentional_v2.md`
 14. `docs/implementation/new-reading-mechanism/attentional_v2_structural_rework_plan.md` (historical/reference only after `DEC-108`)
+15. `docs/implementation/annotation-pack/second-reader-annotation-pack-v0-detailed-design-and-implementation-handoff.md`
+16. `contract/annotation-pack/v0/README.md`
 
 ## Machine-Readable Appendix
 ```json
 {
-  "updated_at": "2026-08-17T00:55:00Z",
+  "updated_at": "2026-08-23T09:41:00Z",
   "last_updated_by": "codex",
   "active_task_ids": [
+    "TASK-ANNOTATION-PACK-V0-IMPLEMENTATION",
     "TASK-ATTENTIONAL-V2-STRUCTURAL-REWORK",
     "TASK-V2-NATIVE-READING-PRESENTATION",
     "TASK-USER-LEVEL-SELECTIVE-V1",
@@ -3613,6 +3620,8 @@ Last verified: `2026-08-17T09:42:00+08:00`
   "active_job_ids": [],
   "open_decision_ids": [],
   "detail_refs": [
+    "docs/implementation/annotation-pack/second-reader-annotation-pack-v0-detailed-design-and-implementation-handoff.md",
+    "contract/annotation-pack/v0/README.md",
     "docs/implementation/runtime-observability/README.md",
     "docs/backend-reader-evaluation.md",
     "reading-companion-backend/docs/evaluation/README.md",
@@ -3703,6 +3712,7 @@ Last verified: `2026-08-17T09:42:00+08:00`
     "reading-companion-backend/eval/review_packets/archive/attentional_v2_private_library_excerpt_en_question_aligned_v1__scratch__closed_loop_full_smoke_en_broader_compactadjudication_repeat_20260330__initial_review__closed_loop_full_smoke_en_broader_compactadjudication_repeat_20260330/llm_review_runs/llm_review__20260330-175048__ae50caff2084/summary.json"
   ],
   "truth_refs": [
+    "contract/annotation-pack/v0/schema/annotation-pack.schema.json",
     "docs/implementation/runtime-observability/README.md",
     "docs/source-of-truth-map.md",
     "docs/product-overview.md",

@@ -7,7 +7,7 @@ Update when: task status, priority, blockers, decision refs, job refs, evidence 
 
 This document is the human-readable companion to `docs/tasks/registry.json`.
 
-Last updated: `2026-08-23T16:03:46+08:00`
+Last updated: `2026-08-23T17:41:00+08:00`
 
 ## Status Values
 - `active`
@@ -19,6 +19,23 @@ Last updated: `2026-08-23T16:03:46+08:00`
 - `cancelled`
 
 ## Active
+
+### `TASK-ANNOTATION-PACK-V0-IMPLEMENTATION` — Implement the Second Reader Annotation Pack v0 contract and exporter
+- Status: `active`
+- Lane: `product_contract`
+- Priority: `high`
+- Detail: `docs/implementation/annotation-pack/second-reader-annotation-pack-v0-detailed-design-and-implementation-handoff.md`
+- Next: Slice 1 (`Contract skeleton + canonical schema authority`) is accepted. Begin and accept Slice 2 (`Publication identity + fingerprinting`) from that checkpoint, then commit and push it independently. Continue through all eight Slices until the Section 20 Definition of Done is satisfied. Keep Agent prompts, Digest, Memory, the reading loop, Readest, Library, and public HTTP surfaces unchanged; keep unrelated baseline issues in their separate record.
+- Evidence:
+  - `DEC-155`
+  - `contract/annotation-pack/v0/README.md`
+  - `contract/annotation-pack/v0/schema/annotation-pack.schema.json`
+  - `contract/annotation-pack/v0/context/second-reader-annotation-context.jsonld`
+  - `.github/workflows/annotation-pack-pages.yml`
+  - `reading-companion-backend/src/annotation_pack/schema.py`
+  - `reading-companion-backend/tests/annotation_pack/test_contract.py`
+  - `docs/implementation/annotation-pack/baseline-observations.md`
+  - `docs/implementation/annotation-pack/second-reader-annotation-pack-v0-detailed-design-and-implementation-handoff.md`
 
 ### `TASK-SECOND-READER-INGEST-DIGEST-REFRAME-AUDIT-20260530` — Maintain the implemented Ingest/Digest and Unit Memory mechanism track
 - Status: `active`
@@ -823,22 +840,6 @@ Last updated: `2026-08-23T16:03:46+08:00`
   - `docs/history/decision-log.md`
 
 ## Waiting
-
-### `TASK-ANNOTATION-PACK-V0-IMPLEMENTATION` — Implement the Second Reader Annotation Pack v0 contract and exporter
-- Status: `waiting`
-- Lane: `product_contract`
-- Priority: `high`
-- Detail: `docs/implementation/annotation-pack/second-reader-annotation-pack-v0-detailed-design-and-implementation-handoff.md`
-- Blocking reason: implementation requires owner confirmation of the project-controlled `sr:` namespace and schema IRI; implementation authorization remains a separate user decision
-- Next: after those confirmations, implement only Slice 1 (`Contract skeleton + canonical schema authority`). Keep the root contract, generic backend module, Second Reader producer adapter, and public artifact boundary separate; do not modify Agent prompts, Digest, Memory, the reading loop, Readest, or Library surfaces.
-- Evidence:
-  - `DEC-155`
-  - `docs/implementation/annotation-pack/second-reader-annotation-pack-v0-detailed-design-and-implementation-handoff.md`
-  - `reading-companion-backend/src/reading_core/book_document.py`
-  - `reading-companion-backend/src/attentional_v2/source_spans.py`
-  - `reading-companion-backend/src/attentional_v2/schemas.py`
-  - `reading-companion-backend/src/attentional_v2/runner.py`
-  - `reading-companion-backend/src/reading_runtime/artifacts.py`
 
 ### `TASK-SECOND-READER-MEMORY-PLANNING-EVAL1-RETRY1-HIGH-PARALLEL-REPORT-REVIEW` — Review Eval-1 Retry1 high-parallel full active evaluation report
 - Status: `waiting`
