@@ -7,10 +7,10 @@ Update when: the current objective, active tasks, blockers, active jobs, open de
 
 This file is authoritative for durable current status. Do not keep unique active-state information only in `docs/agent-handoff.md`.
 
-Last verified: `2026-08-23T23:55:33+08:00`
+Last verified: `2026-08-24T00:20:50+08:00`
 
 ## Current Objective
-- Annotation Pack v0 implementation is active under `TASK-ANNOTATION-PACK-V0-IMPLEMENTATION` and `DEC-155` on branch `codex/annotation-pack-v0`. The owner confirmed the GitHub Pages namespace/schema IRIs, per-Slice acceptance commits and pushes, Section 20 as the Epic completion boundary, and separate reporting for unrelated baseline issues. Slices 1–7 are accepted in the working tree: contract/offline derivatives, verified publication identity/resources, deterministic identities/anchors/canonical serialization, producer-neutral builder/validator, strict current-native adapter, and crash-safe explicit publication are implemented. Slice 7 adds the default detached `<track_slug>.annotations` deliverable: a deterministic bounded classic ZIP with exactly root `annotations.json`, independent safe validate/inspect support, and no EPUB/report/assets. JSON-only remains an explicit development option and upgrades byte-preservingly to a new JSON/package/report revision without modifying the old revision; current loading rechecks package path/digest, sibling JSON equality, report binding, J/P/R revision identity, exact file set, freeze state, and late mutation before `unchanged` or publication. Focused package/exporter/CLI/artifact acceptance is `221 passed`; the full Annotation Pack suite is `876 passed`; the affected existing regression set remains `134 passed, 2 failed`, with both failures confirmed pre-existing `attentional_v2.slow_cycle` test/interface drift and recorded separately. Slice 8 public-safe real EPUB fixture, golden outputs, anchor round-trip proof, and final Section 20 closure are next. Default CFI remains omitted and the bounded CFI gate is not a claim of general CFI interoperability. Agent, Digest, Memory, the reading loop, Readest, Library, catalog, frontend, and public HTTP APIs remain unchanged. GitHub Pages is still an external activation gate: the approved stable IRIs must not be called live until the workflow reaches main, Pages is enabled, deployment succeeds, and HTTP bytes are verified.
+- Annotation Pack v0 first implementation Epic is complete under `TASK-ANNOTATION-PACK-V0-IMPLEMENTATION` and `DEC-155` on branch `codex/annotation-pack-v0`. Slices 1–8 now cover the canonical root contract and offline derivatives, verified EPUB publication identity/resources, deterministic ids/anchors/canonical serialization, producer-neutral builder/validator, strict current-native Highlight/Note adapter, crash-safe immutable JSON/package/report publication, independent validate/inspect, and the tracked Tiny Reader real-EPUB end-to-end golden. Tiny Reader is an original/CC0 deterministic EPUB 3 (`3158` bytes; SHA-256 `1325ba2f76406fb22a1bb0f02edd735983cc150f64cc4af5bb00fbf6d873f7a7`) whose real parser substrate and current-shaped ledger produce one Highlight and one Note; every href, chapter fingerprint, quote, prefix/suffix, and paragraph-character selector is checked against exact XHTML bytes, while unverified CFI remains omitted. Golden/lease/concurrent-resume focused acceptance is `55 passed`; the full Annotation Pack suite is `882 passed`; the required affected set is `183 passed, 2 failed`; the full backend suite is `1882 passed, 9 failed`. All remaining failures were reproduced by exact test selection at base `2d8aac2` and are recorded separately. One non-baseline concurrent-resume race exposed by the first full run was repaired by serializing strict lease-sidecar reads with the existing per-job lock under the book lock; final focused/full runs contain no such failure. Section 20 is locally closed. Agent, prompt, Digest, Memory, reading loop, completion behavior, Readest, Library/catalog, frontend, and public HTTP APIs remain outside the Epic. The approved GitHub Pages IRIs are selected and locally staged but still not live; the workflow must reach `main`, Pages must be enabled and deployed, and served bytes must pass HTTP comparison before that external claim is made.
 - Runtime observability v1 is implemented as an infrastructure lane under `TASK-RUNTIME-OBSERVABILITY-COST-V1` and `DEC-154`; only the final live-provider whole-book acceptance remains externally blocked.
   - the canonical observability record is a local append-only JSONL fact ledger with deterministic JSON/Markdown reports; Phoenix is an optional derived trace UI rather than job/checkpoint truth
   - unit-bearing work uses `reading.run_attempt -> reading.chapter -> reading.unit_attempt -> llm.call -> llm.attempt`; survey/parse/chapter-consolidation work may be chapter-only without a fabricated unit span
@@ -3567,7 +3567,6 @@ Last verified: `2026-08-23T23:55:33+08:00`
 - Benchmark confidence can look stronger than it really is if corpus growth, promotion, and reviewed-slice confidence gates drift apart.
 
 ## Active Task IDs
-- `TASK-ANNOTATION-PACK-V0-IMPLEMENTATION`
 - `TASK-SECOND-READER-INGEST-DIGEST-REFRAME-AUDIT-20260530`
 - `TASK-ATTENTIONAL-V2-STRUCTURAL-REWORK`
 - `TASK-V2-NATIVE-READING-PRESENTATION`
@@ -3604,10 +3603,9 @@ Last verified: `2026-08-23T23:55:33+08:00`
 ## Machine-Readable Appendix
 ```json
 {
-  "updated_at": "2026-08-23T15:19:05Z",
+  "updated_at": "2026-08-23T16:20:50Z",
   "last_updated_by": "codex",
   "active_task_ids": [
-    "TASK-ANNOTATION-PACK-V0-IMPLEMENTATION",
     "TASK-ATTENTIONAL-V2-STRUCTURAL-REWORK",
     "TASK-V2-NATIVE-READING-PRESENTATION",
     "TASK-USER-LEVEL-SELECTIVE-V1",

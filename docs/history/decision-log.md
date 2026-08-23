@@ -4326,11 +4326,16 @@ The v0 identity and anchor contract combines exact EPUB byte SHA-256, a versione
 
 **Implementation authorization update (2026-08-23)**: The owner confirmed `https://captain4whale.github.io/second-reader/ns/annotation-pack#` and the matching `/schema/annotation-pack/v0/` GitHub Pages IRIs, authorized branch `codex/annotation-pack-v0`, required acceptance plus commit/push after every Slice, and retained Section 20 as the complete Epic boundary. Pages staging on a feature branch is not evidence that the IRI is live; deployment and byte comparison remain required after the workflow reaches `main`.
 
+**Implementation closure update (2026-08-24)**: Slices 1–8 now satisfy the Section 20 local/repository Definition of Done. The landed evidence includes the sole root schema authority and offline derivatives, verified publication identity and exact EPUB resources, deterministic ids/anchors/serialization, the generic builder/validator, strict current-native producer adapter, crash-safe immutable JSON/package/report publication, and the tracked Tiny Reader real-EPUB Highlight+Note golden. This closes the first implementation Epic without adding Reader/Library discovery, changing the Agent/prompt/Digest/Memory/reading loop, or claiming external Reader interoperability. The approved Pages IRIs remain selected and locally staged but not live; `main` deployment, Pages enablement, and HTTP byte comparison remain an external activation gate.
+
 **Why this path won**: A narrow edition-by-track sidecar preserves the current product-native Marginalia while giving future consumers stable publication identity and redundant anchors. Keeping the schema, generic builder, and producer adapter separate prevents compatibility debt from becoming the public ontology. Fail-closed source verification is necessary because current artifacts do not yet prove that the copied EPUB, persisted BookDocument, and settled source spans refer to the same bytes and text.
 
 **Primary evidence**:
 - `7889be4` — current Digest Marginalia native `highlight | note` implementation lineage
 - `c7db33f` — current markup-aware shared source substrate normalization lineage
+- `contract/annotation-pack/v0/README.md`
+- `reading-companion-backend/tests/annotation_pack/fixtures/tiny-reader/README.md`
+- `reading-companion-backend/tests/annotation_pack/test_tiny_reader_golden.py`
 - `docs/implementation/annotation-pack/second-reader-annotation-pack-v0-detailed-design-and-implementation-handoff.md`
 - `docs/backend-reading-mechanisms/attentional_v2.md`
 - `reading-companion-backend/src/reading_core/book_document.py`

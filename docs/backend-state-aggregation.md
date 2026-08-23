@@ -29,6 +29,7 @@ Use `docs/api-contract.md` for exact fields and routes. Use this file to underst
   - The `.annotations` file is an independently valid, bounded single-entry package containing only root `annotations.json`. Its sibling report stays local and is not inside the package. JSON-only-to-detached upgrade creates a new revision without modifying the old directory.
   - This tree is exporter-owned normalized publication output. It is not reading runtime state, mechanism truth, checkpoint/resume truth, or a replacement for the settled producer ledger.
   - No current frontend, Library discovery flow, REST route, or WebSocket surface reads or exposes this tree. Its placement under `public/` denotes content-safety and future product-facing eligibility, not current HTTP availability.
+  - `tests/annotation_pack/fixtures/tiny-reader/` is the tracked public-safe rebuild/golden proof for this layout and its real-EPUB anchors; it is test evidence, not an additional runtime source or discovery surface.
 - `_mechanisms/iterator_v1/derived/structure.json`
   - Current `iterator_v1`-owned derived traversal artifact.
   - Carries chapter section trees, `segment_ref`, and iterator-specific traversal metadata.

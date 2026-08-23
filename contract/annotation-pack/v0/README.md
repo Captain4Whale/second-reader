@@ -1,6 +1,6 @@
 # Second Reader Annotation Pack v0
 
-Status: implementation active; contract version `0.1.0`.
+Status: reference implementation complete; contract version `0.1.0`.
 
 This directory is the protocol authority for Second Reader Annotation Pack v0. The Pack is a compact JSON-LD `AnnotationSet` aligned with the W3C Web Annotation Data Model and the pinned EPUB Annotations Working Draft. The word **aligned** is deliberate: this project schema is not a W3C schema and does not claim full EPUB Annotations conformance.
 
@@ -64,8 +64,8 @@ After backend development dependencies are installed:
 make annotation-pack-contract-check
 ```
 
-The check is network-free: it validates the three schemas against Draft 2020-12, validates examples, verifies generated bindings and byte-identical runtime copies, and stages the exact GitHub Pages projection without fetching remote contexts.
+The check is network-free: it validates the three schemas against Draft 2020-12, validates examples, verifies generated bindings and byte-identical runtime copies, rebuilds and byte-checks the tracked Tiny Reader real-EPUB golden, and stages the exact GitHub Pages projection without fetching remote contexts.
 
-The examples are schema-valid protocol examples. Fixed identity, fingerprint, canonical-byte, package, and anchor golden vectors are added by the later implementation slices using the tracked tiny EPUB fixture; these examples must not be treated as external-reader interoperability proof.
+The examples are schema-valid protocol examples. Fixed identity, fingerprint, canonical-byte, package, and anchor vectors are implemented in backend tests; the end-to-end public-safe reference lives under `reading-companion-backend/tests/annotation_pack/fixtures/tiny-reader/`. These examples and goldens prove the Second Reader reference implementation offline, not external Reader interoperability.
 
 `sr-canonical-json-v1` sorts object keys by Unicode code point, preserves array and string code-point order, emits UTF-8 without BOM or optional whitespace, uses lowercase JSON control escapes with `/` unescaped, and terminates with exactly one LF. Its numeric domain is limited to JSON integers in `[-(2^53-1), 2^53-1]`; floating-point values and lone Unicode surrogates are semantic errors. This restriction also applies to declared extension values before they can participate in a canonical Pack or semantic digest.

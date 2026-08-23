@@ -730,6 +730,7 @@ def _process_exists(pid: int | None) -> bool:
 def _book_worker_conflict(
     book_id: str,
     *,
+    root: Path,
     leases_descriptor: int,
     now: datetime,
     confirmed_stopped_attempt: tuple[str, str, int] | None = None,
@@ -749,7 +750,13 @@ def _book_worker_conflict(
         raise JobLeaseReadError("Lease sidecars could not be listed safely.") from None
     for name in sidecar_names:
         job_id = name[: -len(".json")]
-        payload = _read_job_lease_at(job_id, leases_descriptor)
+        # Heartbeats and launch finalization replace a sidecar atomically while
+        # holding its job lock.  Take the same lock before the strict stable
+        # snapshot so a legitimate concurrent replacement is serialized rather
+        # than misclassified as an unsafe pathname race.  The enclosing book
+        # lock keeps the global lock order book -> job consistent with acquire.
+        with _locked_job_lease(job_id, root):
+            payload = _read_job_lease_at(job_id, leases_descriptor)
         if not isinstance(payload, dict) or str(payload.get("book_id", "") or "").strip() != normalized_book_id:
             continue
         if confirmed_stopped_attempt is not None:
@@ -818,6 +825,7 @@ def guard_book_writer_exclusion(
             try:
                 conflict = _book_worker_conflict(
                     normalized_book_id,
+                    root=resolved_root,
                     leases_descriptor=leases_descriptor,
                     now=reference,
                 )
@@ -911,6 +919,7 @@ def acquire_job_lease(
             ) as leases_descriptor:
                 conflict = _book_worker_conflict(
                     normalized_book_id,
+                    root=resolved_root,
                     leases_descriptor=leases_descriptor,
                     now=reference,
                     confirmed_stopped_attempt=confirmed_stopped_attempt,

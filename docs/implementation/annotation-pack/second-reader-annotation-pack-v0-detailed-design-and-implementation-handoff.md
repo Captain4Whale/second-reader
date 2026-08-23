@@ -2054,22 +2054,22 @@ make agent-check
 
 第一实现 Epic 只有在以下条件全部满足时才是 `done`：
 
-- [ ] `contract/annotation-pack/v0/` 中有一个 canonical spec入口、一个 canonical Pack wire JSON Schema、不重定义 wire 的 publication-pointer/validation-report auxiliary schemas、一个 committed SR context、pinned W3C standards说明；无三套手写事实。
-- [ ] Python reference implementation可从 producer-neutral inputs构建、验证、canonical serialize Pack；generated bindings/schema drift check通过。
-- [ ] `SecondReaderProducerAdapter` 只读 current native settled Marginalia，正确输出至少一 Highlight和一 Note；compatibility/historical rows不被误识别。
-- [ ] publication Work/Edition/File identity、raw file SHA-256、normalized content/chapter fingerprints和 deterministic IDs有 fixed vectors。
-- [ ] required href/quote/prefix/suffix/paragraph-char/chapter anchors可回查 exact fixture EPUB；current不可靠 CFI省略，verified CFI才可发出。
-- [ ] explicit exporter CLI支持 completed与显式 partial政策、strict/degraded/empty政策、snapshot/idempotent/atomic publish。
-- [ ] validator与safe inspector同时支持 `annotations.json` 和 `.annotations`，提供 stable machine-readable report/error codes。
-- [ ] 正式 `<track>.annotations` 是可独立打开/验证的 detached artifact，只含 root `annotations.json`，不含 EPUB。
-- [ ] 一个 public-safe、可重建、可确定 hash 的真 EPUB golden fixture被提交，含至少一 Highlight/一 Note且anchors resolve。
-- [ ] unit/contract/artifact/golden/security tests与相关 existing regressions通过；root `contract-check` / `agent-check`通过或清楚记录无关 baseline blocker。
-- [ ] public output位于 `output/<book_id>/public/annotation-packs/<track_slug>/`，不依赖 `_mechanisms/attentional_v2` 才能被独立理解。
-- [ ] public revisions immutable，`current.json` 单文件原子切换且所有 relative paths/digests可验证；JSON-only升级到 packaged revision不修改旧目录。
-- [ ] public Pack与report无 Agent Understanding、Memory、selection reason、prompt/reasoning、runtime trace/audit/job/progress/feedback/rating/download/rank、compat taxonomy、local path或private book content。
-- [ ] normal Agent mechanism、prompt、Digest、Memory、reading loop和completion success path没有变化；Pack export失败不影响阅读完成。
-- [ ] 没有 Readest、Library、Hypothesis、KOReader、Readwise、database、community或cross-edition fuzzy dependency。
-- [ ] README/source-of-truth/state aggregation/current-state/task registry/decision evidence按实际 landed能力最小同步；每个 Slice 都有 focused checks、独立 commit，并按 owner 授权 push 到 `codex/annotation-pack-v0`。
+- [x] `contract/annotation-pack/v0/` 中有一个 canonical spec入口、一个 canonical Pack wire JSON Schema、不重定义 wire 的 publication-pointer/validation-report auxiliary schemas、一个 committed SR context、pinned W3C standards说明；无三套手写事实。
+- [x] Python reference implementation可从 producer-neutral inputs构建、验证、canonical serialize Pack；generated bindings/schema drift check通过。
+- [x] `SecondReaderProducerAdapter` 只读 current native settled Marginalia，正确输出至少一 Highlight和一 Note；compatibility/historical rows不被误识别。
+- [x] publication Work/Edition/File identity、raw file SHA-256、normalized content/chapter fingerprints和 deterministic IDs有 fixed vectors。
+- [x] required href/quote/prefix/suffix/paragraph-char/chapter anchors可回查 exact fixture EPUB；current不可靠 CFI省略，verified CFI才可发出。
+- [x] explicit exporter CLI支持 completed与显式 partial政策、strict/degraded/empty政策、snapshot/idempotent/atomic publish。
+- [x] validator与safe inspector同时支持 `annotations.json` 和 `.annotations`，提供 stable machine-readable report/error codes。
+- [x] 正式 `<track>.annotations` 是可独立打开/验证的 detached artifact，只含 root `annotations.json`，不含 EPUB。
+- [x] 一个 public-safe、可重建、可确定 hash 的真 EPUB golden fixture被提交，含至少一 Highlight/一 Note且anchors resolve。
+- [x] unit/contract/artifact/golden/security tests与相关 existing regressions通过；root `contract-check` / `agent-check`通过或清楚记录无关 baseline blocker。
+- [x] public output位于 `output/<book_id>/public/annotation-packs/<track_slug>/`，不依赖 `_mechanisms/attentional_v2` 才能被独立理解。
+- [x] public revisions immutable，`current.json` 单文件原子切换且所有 relative paths/digests可验证；JSON-only升级到 packaged revision不修改旧目录。
+- [x] public Pack与report无 Agent Understanding、Memory、selection reason、prompt/reasoning、runtime trace/audit/job/progress/feedback/rating/download/rank、compat taxonomy、local path或private book content。
+- [x] normal Agent mechanism、prompt、Digest、Memory、reading loop和completion success path没有变化；Pack export失败不影响阅读完成。
+- [x] 没有 Readest、Library、Hypothesis、KOReader、Readwise、database、community或cross-edition fuzzy dependency。
+- [x] README/source-of-truth/state aggregation/current-state/task registry/decision evidence按实际 landed能力最小同步；每个 Slice 都有 focused checks、独立 commit，并按 owner 授权 push 到 `codex/annotation-pack-v0`。
 
 ### Current implementation checkpoint
 
@@ -2087,8 +2087,12 @@ make agent-check
 
 **Slice 7 — Detached package generation** 已验收：默认export现发布canonical JSON、`<track_slug>.annotations`与deterministic validation report组成的完整immutable revision；显式`deliverables=json`仍保留development模式且被定义为最低要求，不会撤回已经存在的package。Package层是producer-neutral bounded classic-ZIP实现，只允许root `annotations.json`，固定timestamp/mode/flags/DEFLATE level且拒绝ZIP64、multi-disk、prefix/trailing bytes、extra/comment、unsafe entry/mode、encryption/data descriptor、local-central drift、8 MiB outer limit、16 MiB entry limit、ratio>100、raw-DEFLATE/CRC/EOF异常与noncanonical/semantic-invalid JSON；独立validator不以本机zlib重压缩bytes作为合法性条件。Path reader全组件no-follow、regular-only、bounded并重验path/inode；standalone O_EXCL writer只conditional cleanup自己创建的identity，第三方replacement不被unlink。JSON-only→detached默认复用旧revision exact JSON bytes，新建J/P/R revision且旧目录不变；packaged current重验package path/digest、sibling JSON、report binding、revision framing、exact file set、`0444/0555`与late mutation。Package build/write、pointer前失败保留current，post-switch package corruption执行candidate CAS rollback且不覆盖third-party pointer。Validate/inspect可在无EPUB/BookDocument/ledger时独立处理JSON或package，输出相同safe metadata且不extract/泄露正文路径。Focused package/exporter/CLI/artifact acceptance为`221 passed`，完整Annotation Pack suite为`876 passed`；affected existing regressions为`134 passed, 2 failed`，仍只有已单列的pre-existing `attentional_v2.slow_cycle` drift。Compileall/Ruff clean；本Slice只是落实既有`DEC-155`，未改变产品方向、默认机制、runtime lifecycle、prompt或公共API，因此不新增decision-log entry。
 
-外部 IRI 仍须等待 workflow 进入 `main`、Pages 启用并成功部署后做 HTTP byte comparison，当前不得称为 live。下一实现单元是 **Slice 8 — Golden fixtures, full tests, docs and contract checks**；它必须提交public-safe可重建真EPUB与current-shaped producer/golden outputs，完成Highlight/Note anchor回查和Section 20最终闭环。
+**Slice 8 — Golden fixtures, full tests, docs and contract checks** 已验收：tracked Tiny Reader提交项目原创/CC0、可离线重建的真实EPUB 3（`3158` bytes，SHA-256 `1325ba2f76406fb22a1bb0f02edd735983cc150f64cc4af5bb00fbf6d873f7a7`）、真实parser生成并复验的BookDocument、current-shaped settled Highlight+Note ledger，以及canonical JSON、single-root detached package、report、pointer和digest goldens。固定generator重建并byte-check九个generated files；path/stream parse等价、两个XHTML href、chapter fingerprint、TextQuote exact/prefix/suffix、paragraph-char与exact resource bytes逐项回查，happy path只含两个required selectors且不依赖CFI。临时真实fragment-nav EPUB继续暴露duplicate same-resource/spine-zero/CFI-null warning；旧substrate缺optional locator/HTML/sentence fields仍能CFI-free resolve，缺required href则被真实identity coherence gate拒绝。Public JSON/package/report/pointer对完整private vocabulary和local path做负向扫描，独立validate/inspect不需要producer artifacts。
+
+Slice 8同时修复完整backend suite发现的一条Slice 6 lease-scan竞争：在已持有book lock时，逐sidecar读取复用现有job lock，保持`book -> job`锁序和原no-follow/identity gates，使合法heartbeat原子替换不再被误判为攻击性pathname race。Focused golden/lease/concurrent-resume为`55 passed`，完整Annotation Pack suite为`882 passed`；required affected regression set为`183 passed, 2 failed`，完整backend为`1882 passed, 9 failed`。剩余九项均以exact test replay在base `2d8aac2`复现并单列；新增concurrent-resume failure已消失。Ruff、compileall、fixture rebuild和diff checks通过；root Annotation Pack contract check保持`42 passed`且Pages projection有效，`contract-check`与`agent-check`均exit `0`，历史traceability和dependency warnings继续单列。全部Section 20本地DoD已闭环，Slices 1–8各自独立commit/push；本Slice更新既有`DEC-155`的落地证据，不建立新产品方向。
+
+外部 IRI 仍须等待 workflow 进入 `main`、Pages 启用并成功部署后做 HTTP byte comparison，当前不得称为 live。Annotation Pack v0第一实现Epic在本地与仓库范围内已完成；Reader/Library discovery或第三方互操作属于另立任务。
 
 ### Explicit non-goals confirmation
 
-截至 Slice 7，仓库已实现 contract/schema/context/examples、producer-neutral 离线 schema loader、deterministic generated bindings/runtime resources、focused checks/Pages projection、verified EPUB publication identity/fingerprints/coherence gate、exact XHTML resource index、strict anchors、canonical serialization/semantic digest、generic Pack builder、bounded schema/semantic/privacy validator/final report primitives、只读current native settled ledger的strict producer adapter，以及显式JSON/detached exporter、独立validator/safe inspector与immutable public revision/atomic pointer publication。尚未提交Slice 8要求的public-safe真EPUB、current-shaped Highlight+Note golden end-to-end fixture/outputs、完整anchor回查或catalog/API/UI discovery。Default CFI resolver仍不存在，因此不声称真实 CFI互操作。Agent prompt、Digest、Memory、reading loop、Readest、Library 和 public HTTP API 均未修改。
+截至 Slice 8，仓库已实现 contract/schema/context/examples、producer-neutral离线schema loader、deterministic generated bindings/runtime resources、focused checks/Pages projection、verified EPUB publication identity/fingerprints/coherence gate、exact XHTML resource index、strict anchors、canonical serialization/semantic digest、generic Pack builder、bounded schema/semantic/privacy validator/final report primitives、只读current native settled ledger的strict producer adapter、显式JSON/detached exporter、独立validator/safe inspector、immutable public revision/atomic pointer publication，以及public-safe真实EPUB/current-shaped Highlight+Note end-to-end golden与完整anchor回查。Catalog/API/UI discovery仍未实现。Default CFI resolver仍不存在，因此不声称真实CFI或外部Reader互操作。Agent prompt、Digest、Memory、reading loop、Readest、Library和public HTTP API均未修改。

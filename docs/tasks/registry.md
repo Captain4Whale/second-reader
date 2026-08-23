@@ -7,7 +7,7 @@ Update when: task status, priority, blockers, decision refs, job refs, evidence 
 
 This document is the human-readable companion to `docs/tasks/registry.json`.
 
-Last updated: `2026-08-23T23:55:33+08:00`
+Last updated: `2026-08-24T00:20:50+08:00`
 
 ## Status Values
 - `active`
@@ -18,14 +18,14 @@ Last updated: `2026-08-23T23:55:33+08:00`
 - `done`
 - `cancelled`
 
-## Active
+## Done
 
 ### `TASK-ANNOTATION-PACK-V0-IMPLEMENTATION` — Implement the Second Reader Annotation Pack v0 contract and exporter
-- Status: `active`
+- Status: `done`
 - Lane: `product_contract`
 - Priority: `high`
 - Detail: `docs/implementation/annotation-pack/second-reader-annotation-pack-v0-detailed-design-and-implementation-handoff.md`
-- Next: Slices 1–7 are accepted. Begin and accept Slice 8 (public-safe real EPUB fixture, golden outputs, anchor round-trip proof, full checks, and documentation closure), then commit and push it independently. Rebuild the tracked fixture deterministically, export at least one Highlight and one Note through the real adapter/exporter path, verify every href/quote/paragraph-char anchor against the exact EPUB, and close every Section 20 item that is locally satisfiable without claiming external Reader interoperability or a live Pages IRI. Preserve Agent/Digest/Memory/reading-loop/Readest/Library/public-HTTP boundaries and keep unrelated baseline issues separate.
+- Next: The first implementation Epic is complete through Slice 8 and every Section 20 local/repository item is closed. Preserve the contract and golden through `make annotation-pack-contract-check`; keep the approved Pages IRIs labeled staged/not-live until the workflow reaches `main`, Pages is enabled and deployed, and HTTP bytes match the canonical contract. Reader/Library discovery or external interoperability requires a separate future task.
 - Evidence:
   - `DEC-155`
   - `contract/annotation-pack/v0/README.md`
@@ -69,10 +69,16 @@ Last updated: `2026-08-23T23:55:33+08:00`
   - `reading-companion-backend/tests/test_job_lease.py`
   - `reading-companion-backend/tests/test_reading_runtime_artifacts.py`
   - `reading-companion-backend/tests/annotation_pack/fixtures/current-reaction-records.json`
+  - `reading-companion-backend/tests/annotation_pack/fixtures/tiny-reader/README.md`
+  - `reading-companion-backend/tests/annotation_pack/fixtures/tiny-reader/source.epub`
+  - `reading-companion-backend/tests/annotation_pack/fixtures/tiny-reader/golden/digests.json`
+  - `reading-companion-backend/tests/annotation_pack/test_tiny_reader_golden.py`
   - `docs/source-of-truth-map.md`
   - `docs/backend-state-aggregation.md`
   - `docs/implementation/annotation-pack/baseline-observations.md`
   - `docs/implementation/annotation-pack/second-reader-annotation-pack-v0-detailed-design-and-implementation-handoff.md`
+
+## Active
 
 ### `TASK-SECOND-READER-INGEST-DIGEST-REFRAME-AUDIT-20260530` — Maintain the implemented Ingest/Digest and Unit Memory mechanism track
 - Status: `active`
@@ -893,7 +899,7 @@ Last updated: `2026-08-23T23:55:33+08:00`
   - `reading-companion-backend/eval/runs/attentional_v2/attentional_v2_eval1_long_span_post_slice8h_20260519_value_of_others/summary/aggregate.json`
   - `reading-companion-backend/eval/runs/attentional_v2/attentional_v2_eval1_long_span_post_slice8h_20260519_xidaduo/summary/aggregate.json`
 
-## Done
+## Earlier Done
 
 ### `TASK-SECOND-READER-RECENT-READING-MEMORY-DESIGN-20260523` — Design and implement first-half Recent Reading Memory formation
 - Status: `done`

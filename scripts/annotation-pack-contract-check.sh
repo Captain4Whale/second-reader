@@ -11,6 +11,9 @@ echo "Checking Annotation Pack generated bindings and runtime schemas..."
 echo "Checking Annotation Pack contract examples..."
 (cd "$BACKEND_DIR" && .venv/bin/python scripts/validate_annotation_pack.py --schema-only ../contract/annotation-pack/v0/examples/*.json)
 
+echo "Checking Annotation Pack Tiny Reader golden fixture..."
+(cd "$BACKEND_DIR" && .venv/bin/python tests/annotation_pack/fixtures/tiny-reader/build_fixture.py --check)
+
 echo "Checking Annotation Pack contract tests..."
 (cd "$BACKEND_DIR" && .venv/bin/pytest tests/annotation_pack/test_contract.py -q)
 

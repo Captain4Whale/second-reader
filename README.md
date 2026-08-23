@@ -276,7 +276,7 @@ Important frontend variables:
 - `make status-phoenix`: show installation, PID, UI readiness, endpoints, and state path without starting Phoenix
 - `make stop-phoenix`: stop only the PID verified as the repo-local Phoenix sidecar and preserve its data
 - `make test`: run backend tests, frontend typecheck/build, and contract drift checks
-- `make annotation-pack-contract-check`: verify the Annotation Pack v0 schemas, examples, generated bindings/runtime copies, and GitHub Pages projection without network access
+- `make annotation-pack-contract-check`: verify the Annotation Pack v0 schemas, examples, generated bindings/runtime copies, tracked Tiny Reader golden, and GitHub Pages projection without network access
 - `make contract-check`: verify docs appendix, backend OpenAPI snapshot, and frontend contract guards
 - `make e2e`: run the fixture-backed upload -> analysis -> book -> chapter -> marks Playwright flow
 - `make build`: build the frontend bundle
@@ -350,6 +350,15 @@ The policy flags are independent:
 - `--force-regenerate` requests a fresh publication pass rather than the ordinary verified no-op path; it does not retract an already-published detached deliverable.
 
 Package generation fixes the root name, timestamp, Unix regular-file mode, DEFLATE level, entry order, and comments/extra fields. Byte reproducibility is a Second Reader project rule within the supported toolchain, not a W3C requirement or a promise that different zlib versions emit the same DEFLATE bitstream. Independent validation checks the observable safe envelope and uncompressed canonical JSON rather than requiring local recompression byte equality. The approved namespace and schema IRIs use the GitHub Pages location, but they are not live until the workflow reaches `main`, Pages is enabled, deployment succeeds, and the served bytes pass HTTP comparison against the canonical contract files.
+
+The tracked public-safe end-to-end proof lives at `reading-companion-backend/tests/annotation_pack/fixtures/tiny-reader/`. Its deterministic builder creates a real two-resource EPUB 3 publication, parses it through the production neutral BookDocument path, writes one current-native Highlight and one Note, and runs the real exporter. The committed golden proves exact href, quote, prefix/suffix, and paragraph-character round trips while deliberately omitting unverified CFI. Rebuild or byte-check it offline from the backend directory:
+
+```bash
+.venv/bin/python tests/annotation_pack/fixtures/tiny-reader/build_fixture.py --write
+.venv/bin/python tests/annotation_pack/fixtures/tiny-reader/build_fixture.py --check
+```
+
+The EPUB bytes are ZIP_STORED and reproducible across the supported Python ZIP implementation. Exact detached-package bytes are golden evidence for the supported compressor toolchain recorded by the fixture; validators remain interoperable across zlib versions because they verify the safe envelope and decompressed canonical JSON instead of re-compressing it.
 
 All three tools reserve exit code `0` for a successful operation (`published`, `degraded`, or verified `unchanged` for export; valid for validate/inspect), `1` for an operational or validation failure, and `2` for a fixed-shape CLI usage error. Each invocation emits machine-readable JSON only: one line per validated source, and exactly one line for export or inspect.
 

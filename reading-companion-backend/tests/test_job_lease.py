@@ -320,6 +320,38 @@ def test_book_writer_exclusion_guard_conflicts_with_active_valid_lease(tmp_path)
             pytest.fail("active worker lease did not block the writer guard")
 
 
+def test_book_conflict_scan_serializes_with_sidecar_writer_lock(tmp_path) -> None:
+    grant = acquire_job_lease(
+        "job-active-export",
+        root=tmp_path,
+        book_id="book-export",
+    )
+    writer_entered = threading.Event()
+    release_writer = threading.Event()
+
+    def _hold_sidecar_writer_lock() -> None:
+        with job_lease_module._locked_job_lease(grant.job_id, tmp_path):
+            writer_entered.set()
+            assert release_writer.wait(timeout=1)
+
+    def _guard_result() -> str:
+        try:
+            with guard_book_writer_exclusion("book-export", root=tmp_path):
+                return "entered"
+        except JobLeaseConflict:
+            return "conflict"
+
+    with ThreadPoolExecutor(max_workers=2) as executor:
+        writer = executor.submit(_hold_sidecar_writer_lock)
+        assert writer_entered.wait(timeout=1)
+        guard = executor.submit(_guard_result)
+        with pytest.raises(FutureTimeoutError):
+            guard.result(timeout=0.05)
+        release_writer.set()
+        writer.result(timeout=1)
+        assert guard.result(timeout=1) == "conflict"
+
+
 @pytest.mark.parametrize("sidecar_contents", ["{not-json", "{}"])
 def test_book_writer_exclusion_guard_fails_closed_on_malformed_sidecar(
     tmp_path,

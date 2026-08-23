@@ -72,3 +72,16 @@ Observed while running the broader Slice 7 affected-regression set on `2026-08-2
 - Slice 7 does not modify `src/attentional_v2/slow_cycle.py`, Agent prompts, Digest, Memory, the reading loop, frontend, public HTTP APIs, Readest, or Library discovery/completion behavior
 
 The two failures remain unrelated baseline debt. They are not counted as Slice 7 regressions and were not repaired as part of detached Annotation Pack packaging or publication.
+
+Observed while closing Slice 8 on `2026-08-24`:
+
+- the Tiny Reader golden plus job-lease/concurrent-resume focused set completed with `55 passed`; the full Annotation Pack suite completed with `882 passed`
+- the required existing-mechanism/parser/lease regression set completed with `183 passed, 2 failed`; both failures are the same two `attentional_v2.slow_cycle` monkeypatch/interface-drift cases already reproduced at base `2d8aac2`
+- the full backend suite completed with `1882 passed, 9 failed`; an exact replay at base `2d8aac2` reproduced all nine failures:
+  - three `attentional_v2.bridge` tests, two `attentional_v2.survey` tests, and the two already recorded `attentional_v2.slow_cycle` tests still monkeypatch removed `invoke_structured_output_tool` module attributes
+  - one minimal-eval inventory test expects an older active dataset pointer than the tracked manifest now declares
+  - one F4A quality-audit test expects two default targets while the current environment/config exposes one
+- the first pre-Slice-8 full-suite run also exposed one additional concurrent-resume failure in `test_library_api.py` that did **not** reproduce at base. Investigation traced it to the Slice 6 strict lease scan racing a legitimate heartbeat sidecar replacement. The final patch takes the existing per-job lock while reading each sidecar under the already-held book lock, preserving the established `book -> job` order and all no-follow/identity checks. Its focused suite passed `49` tests, twenty isolated repetitions passed, and the final full backend suite no longer contains that failure.
+- `annotation-pack-contract-check`, `contract-check`, and `agent-check` all exited `0`; the golden rebuild verified nine generated files and the contract slice remained `42 passed`. Agent check still reports only the historical traceability issues cataloged at the top of this document, and dependency imports still emit the recorded deprecation warnings.
+
+The nine remaining full-suite failures are separately evidenced historical baseline drift and are not described as passing. The concurrency failure was an Annotation Pack regression and was repaired before Slice 8 acceptance rather than being relabeled as baseline.

@@ -1,0 +1,48 @@
+{
+  "format": "sr-annotation-pack-tiny-reader-golden-v1",
+  "generated_at": "2026-08-24T00:00:00Z",
+  "golden": {
+    "annotations.json": {
+      "bytes": 5819,
+      "sha256": "a49b3b88884013f42b973c8dc6df209a5dd32137b741613a8a92ab13c8a2fb26"
+    },
+    "current.json": {
+      "bytes": 940,
+      "sha256": "5bb508bf07f7eae5354c26f0dfaecfcd371cdd3e0a61bc72baf9aaeca5d41fb7"
+    },
+    "tiny-reader.annotations": {
+      "bytes": 2165,
+      "sha256": "ae3d689dfb8b2efd9df2d46d7d4300cef6fb158f6dae1e05e2f55927502cd614"
+    },
+    "validation-report.json": {
+      "bytes": 599,
+      "sha256": "e4e1af7609d1c0e0213805b10c67cdadbd82ca2174cc942d5b4f6c88431223aa"
+    }
+  },
+  "pack": {
+    "annotation_count": 2,
+    "input_snapshot_sha256": "249cbf286bf3cf54479291ca8b2bcc20db70c68c4d1073d0b4c0a0afb7edde6c",
+    "published_package_filename": "second-reader-agent-04f55dd82c11.annotations",
+    "revision_id": "c291e90bb33303172e22e86feb612c587de411feb5ed7db6b9a754e0778aa5c2",
+    "semantic_sha256": "1a626accf4ef3986de9763e7dc98e5c325ef1070cd51c239c72039644eed4d32",
+    "track_slug": "second-reader-agent-04f55dd82c11"
+  },
+  "producer": {
+    "_mechanisms/attentional_v2/runtime/reaction_records.json": {
+      "bytes": 3016,
+      "sha256": "7d1cfd7d00d8d66aab32d2594d0f3387fac50d6b68e8b4c6cbc20024b724f175"
+    },
+    "_runtime/run_state.json": {
+      "bytes": 27,
+      "sha256": "5d3b14f8365a20d29aff60f7367922198c0c1804f344b3a80aa3782a8215da19"
+    },
+    "public/book_document.json": {
+      "bytes": 18934,
+      "sha256": "707385ed055193ff941d2b07b220710b0054b76f69d69569731ea7cab8e9d657"
+    }
+  },
+  "source_epub": {
+    "bytes": 3158,
+    "sha256": "1325ba2f76406fb22a1bb0f02edd735983cc150f64cc4af5bb00fbf6d873f7a7"
+  }
+}

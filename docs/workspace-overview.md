@@ -71,6 +71,7 @@ Update when: workspace structure, ownership boundaries, or primary shared entryp
 - Canonical live project status: `docs/current-state.md`
 - Canonical workspace task index: `docs/tasks/registry.md`, `docs/tasks/registry.json`
 - Annotation Pack v0 protocol entrypoint and wire authority: `contract/annotation-pack/v0/README.md`, `contract/annotation-pack/v0/schema/annotation-pack.schema.json`
+- Annotation Pack public-safe end-to-end golden: `reading-companion-backend/tests/annotation_pack/fixtures/tiny-reader/README.md`, rebuilt by its colocated `build_fixture.py`
 - Annotation Pack focused verification: `make annotation-pack-contract-check`
 - Product-purpose authority: `docs/product-overview.md`
 - Product journey and surface authority: `docs/product-interaction-model.md`
