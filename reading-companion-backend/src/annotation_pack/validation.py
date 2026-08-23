@@ -209,6 +209,10 @@ UPSTREAM_VALIDATION_CODES = frozenset(
         "publication_substrate_mismatch",
         "publication_identity_missing",
         "input_changed_during_export",
+        "reaction_ledger_unavailable",
+        "reaction_ledger_invalid_json",
+        "reaction_ledger_schema_unsupported",
+        "reaction_ledger_limit_exceeded",
         "active_writer_present",
         "run_state_not_exportable",
         "unsupported_kind",
@@ -294,6 +298,10 @@ _MESSAGES: dict[str, str] = {
     "publication_substrate_mismatch": "The persisted and source-rebuilt publication substrates differ.",
     "publication_identity_missing": "The publication identity is missing or inconsistent.",
     "input_changed_during_export": "An input changed during export.",
+    "reaction_ledger_unavailable": "The producer reaction ledger is unavailable or unsafe to read.",
+    "reaction_ledger_invalid_json": "The producer reaction ledger is not valid strict JSON.",
+    "reaction_ledger_schema_unsupported": "The producer reaction ledger schema is unsupported.",
+    "reaction_ledger_limit_exceeded": "The producer reaction ledger exceeds a safety limit.",
     "active_writer_present": "An active writer prevents a stable export snapshot.",
     "run_state_not_exportable": "The current run state is not exportable.",
     "deliverable_not_implemented": "The requested deliverable is not implemented.",
@@ -1819,6 +1827,29 @@ def _finding(
     )
 
 
+def make_validation_finding(
+    code: str,
+    severity: Literal["fatal", "error", "warning", "skipped"],
+    *,
+    source_record_index: int | None = None,
+    json_pointer: str | None = None,
+    annotation_id: str | None = None,
+    source_record_digest: str | None = None,
+) -> ValidationFinding:
+    """Build one catalog-owned, context-safe upstream finding."""
+
+    if code not in ERROR_CATALOG or not _allowed_context_severity(code, severity):
+        raise ValueError("validation finding code or severity is not context-safe")
+    return _finding(
+        code,
+        severity,
+        source_record_index=source_record_index,
+        json_pointer=json_pointer,
+        annotation_id=annotation_id,
+        source_record_digest=source_record_digest,
+    )
+
+
 def _finding_wire(finding: ValidationFinding) -> dict[str, JSONValue]:
     return {
         "code": finding.code,
@@ -2343,6 +2374,7 @@ __all__ = [
     "ValidationReport",
     "ValidationResult",
     "finalize_validation_report",
+    "make_validation_finding",
     "serialize_validation_report",
     "validate_pack",
     "validation_report_wire",

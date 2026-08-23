@@ -1,0 +1,112 @@
+{
+  "schema_version": 1,
+  "mechanism_version": "attentional_v2-phase9",
+  "updated_at": "2026-08-23T09:00:00.123456Z",
+  "records": [
+    {
+      "reaction_id": "private-highlight-id",
+      "chapter_id": 1,
+      "chapter_ref": "Chapter One",
+      "emitted_at_source_span_id": "src:c1:p1@0-p1@31",
+      "record_source": "read_surface",
+      "type": "highlight",
+      "compat_family": "highlight",
+      "marginalia_kind": "highlight",
+      "thought": "",
+      "source_quote": "Durable ideas survive rereading.",
+      "primary_source_ref": {
+        "source_span_id": "src:c1:p1@0-p1@31",
+        "source_span": {
+          "start_cursor": {
+            "chapter_id": 1,
+            "chapter_ref": "Chapter One",
+            "paragraph_index": 1,
+            "char_offset": 0
+          },
+          "end_cursor": {
+            "chapter_id": 1,
+            "chapter_ref": "Chapter One",
+            "paragraph_index": 1,
+            "char_offset": 31
+          }
+        },
+        "quote": "Durable ideas survive rereading.",
+        "role": "reaction_anchor",
+        "resolution": {
+          "status": "matched",
+          "method": "exact_text",
+          "match_count": 1
+        }
+      },
+      "related_source_refs": [],
+      "reconsolidation_record_id": "",
+      "supersedes_reaction_id": "",
+      "compatibility_section_ref": "section-private-1",
+      "prior_link": null,
+      "outside_link": null,
+      "search_intent": null,
+      "search_query": "",
+      "search_results": [],
+      "created_at": "2026-08-23T09:01:02Z"
+    },
+    {
+      "reaction_id": "private-note-id",
+      "chapter_id": 1,
+      "chapter_ref": "Chapter One",
+      "emitted_at_source_span_id": "src:c1:p2@4-p3@12",
+      "record_source": "read_surface",
+      "type": "association",
+      "compat_family": "association",
+      "marginalia_kind": "note",
+      "thought": "The question redirects attention to what changes on return.",
+      "source_quote": "A better question\n\nchanges the return.",
+      "primary_source_ref": {
+        "source_span_id": "src:c1:p2@4-p3@12",
+        "source_span": {
+          "start_cursor": {
+            "chapter_id": 1,
+            "chapter_ref": "Chapter One",
+            "paragraph_index": 2,
+            "char_offset": 4
+          },
+          "end_cursor": {
+            "chapter_id": 1,
+            "chapter_ref": "Chapter One",
+            "paragraph_index": 3,
+            "char_offset": 12
+          }
+        },
+        "quote": "A better question\n\nchanges the return.",
+        "role": "reaction_anchor",
+        "resolution": {
+          "status": "matched",
+          "method": "exact_text",
+          "match_count": 1
+        }
+      },
+      "related_source_refs": [
+        {
+          "ignored": "compatibility-only value"
+        }
+      ],
+      "reconsolidation_record_id": "private-reconsolidation-id",
+      "supersedes_reaction_id": "private-prior-id",
+      "compatibility_section_ref": "section-private-2",
+      "prior_link": {
+        "ref_ids": [
+          "private-prior-id"
+        ],
+        "relation": "callback",
+        "note": "compatibility-only note"
+      },
+      "outside_link": null,
+      "search_intent": {
+        "query": "compatibility-only query",
+        "rationale": "compatibility-only rationale"
+      },
+      "search_query": "compatibility-only query",
+      "search_results": [],
+      "created_at": "2026-08-23T09:02:03.987654Z"
+    }
+  ]
+}

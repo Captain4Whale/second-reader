@@ -60,6 +60,35 @@ class ValidationFinding:
     source_record_digest: str | None = None
 
 
+class ProducerAdapterError(ValueError):
+    """One sanitized, pack-level producer snapshot failure."""
+
+    __slots__ = ("code", "finding")
+
+    def __init__(self, code: str) -> None:
+        if type(code) is not str:
+            raise TypeError("producer adapter errors require one safe fatal code")
+        # Local import avoids the module cycle: validation owns the message
+        # catalog, while ValidationFinding's neutral shape lives here.
+        from src.annotation_pack.validation import make_validation_finding
+
+        finding = make_validation_finding(code, "fatal")
+        self.code = finding.code
+        self.finding = finding
+        super().__init__(finding.message)
+
+
+@dataclass(frozen=True, slots=True)
+class ProducerDraftResult:
+    """Neutral drafts and exact provenance from one stable producer ledger."""
+
+    drafts: tuple[AnnotationDraft, ...]
+    reaction_ledger_sha256: str
+    accepted_record_digests: tuple[str, ...]
+    findings: tuple[ValidationFinding, ...]
+    input_count: int
+
+
 @dataclass(frozen=True, slots=True)
 class ResolvedAnchor:
     """A canonical, exact-source-backed annotation target."""
@@ -87,6 +116,8 @@ __all__ = [
     "AnnotationDraft",
     "AnnotationKind",
     "FindingSeverity",
+    "ProducerAdapterError",
+    "ProducerDraftResult",
     "ResolvedAnchor",
     "ResolvedAnnotationDraft",
     "SourceCoordinate",

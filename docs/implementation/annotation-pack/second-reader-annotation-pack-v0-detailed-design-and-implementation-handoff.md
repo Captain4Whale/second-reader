@@ -148,7 +148,7 @@ reaction_records.json -------------------+        public/book_document.json
 
 | Layer | Input | Output | Owner | 禁止依赖 | Failure boundary |
 |---|---|---|---|---|---|
-| `SecondReaderProducerAdapter` | output dir、BookDocument、verified EPUB、current reaction ledger snapshot、export policy | producer-neutral `AnnotationDraft[]`, identity/track inputs, sanitized diagnostics | `src/annotation_pack/producers/second_reader.py` | compatibility chapter result、audit、prompt、Memory、public five-family ontology | private shape/legacy row/anchor resolution failure在这里分类；不写 public artifact |
+| `SecondReaderProducerAdapter` | output dir下 exact current reaction ledger snapshot | producer-neutral `AnnotationDraft[]`、exact ledger digest、accepted-row digests、input count、sanitized row diagnostics | `src/annotation_pack/producers/second_reader.py` | BookDocument/EPUB、export policy、compatibility chapter result、audit、prompt、Memory、public five-family ontology | ledger不可信时 pack-level fatal；private shape/legacy row在这里分类；不解析anchor、不写 public artifact |
 | `PublicationIdentityBuilder` | verified EPUB bytes/OPF metadata、ephemeral + persisted BookDocument | Work/Edition/File identity | generic `annotation_pack.identity` | `attentional_v2`、book slug 作为 authority | source/EPUB/document mismatch 是 pack-level fatal |
 | `AnchorBuilder` | `AnnotationDraft` + verified canonical BookDocument/resource index | `ResolvedAnnotationDraft`，内含 one canonical target with multiple selectors | generic `annotation_pack.anchors` | `SourceRef` private class；Reader-specific runtime | 不可靠 quote/span/href/CFI 被拒；不能降级成错误精确锚点 |
 | `AnnotationPackBuilder` | publication/track + `ResolvedAnnotationDraft[]` | in-memory `AnnotationPackDocument` | generic `annotation_pack.builder` | producer branches、BookDocument/EPUB、artifact paths、runtime state | domain invariant violation立即失败；不进行 I/O |
@@ -888,7 +888,7 @@ v0 不额外序列化 `source_id`：`target.source` 已在 `edition_id` scope内
 ### 9.2 Repeated export behavior
 
 - 同一 settled input snapshot、schema、creator/track options产生相同 publication/track/pack/anchor/annotation IDs与 `sr:semanticDigest`。
-- `generated` 表示真正 serialization time，不参与 IDs或 semantic digest。若 current revision有相同 semantic digest、通过所有 digest/schema复验、并已具备本次命令要求的 deliverables（例如 packaging启用时必须已有 valid `.annotations`），默认返回 `unchanged` 并保留现有 bytes/timestamp，从而做到幂等。JSON-only current不能阻止后续 packaged revision生成。
+- `generated` 表示真正 serialization time，不参与 IDs或 semantic digest。只有 current revision同时满足相同 semantic digest、相同 input snapshot digest、相同请求 deliverables、pointer/JSON/report现场完整复验，以及 report status/counts/findings与 fresh validation一致，才默认返回 `unchanged`并保留现有 bytes/timestamp。semantic digest单独相同不足以证明幂等；JSON-only current也不能阻止后续 packaged revision生成。
 - `--force-regenerate` 可重写 `generated`，但 semantic digest仍相同；golden tests通过 injected clock固定它。
 - items按 annotation id排序；AnnotationSet语义上无序，排序只是 SR canonicalization rule。
 - 同一 track、anchor、kind、body产生同一 annotation id，应视为 semantic duplicate并 fatal，而不是靠 ordinal造新 ID。
@@ -900,7 +900,21 @@ JSON-only→detached upgrade写死为 byte-preserving path：当 fresh candidate
 
 semantic projection 从完整 Pack 删除：`generated`, `generator`, `sr:provenance`, `sr:semanticDigest`；将 `items` 按 id排序，再按 `sr-canonical-json-v1`编码，计算 SHA-256。这样 exporter build升级但语义不变时可比较；creator/publication/annotation任何改变都会改变 digest。
 
-`sr:inputSnapshotDigest` 对 producer input使用独立 `sr-second-reader-input-snapshot-v1` framing：header后依次 length-frame exact source EPUB SHA-256、persisted BookDocument bytes SHA-256、`sr-book-document-substrate-v1` digest、exact reaction-ledger bytes SHA-256，以及 accepted source-record digests按 input index的有序列表。它不包含 path、run/job status、clock或creator display。该 Digest object不写 `sr:canonicalization`；framing名称由 sibling `sr:inputSnapshotAlgorithmVersion`声明。任何 framing字段变化必须换 v2。
+`sr:inputSnapshotDigest` 对 producer input使用独立 `sr-second-reader-input-snapshot-v1` framing：
+
+```text
+SECOND-READER-INPUT-SNAPSHOT-V1
+E:64:<exact source EPUB SHA-256>
+B:64:<exact persisted BookDocument bytes SHA-256>
+S:64:<sr-book-document-substrate-v1 digest>
+L:64:<exact reaction-ledger bytes SHA-256>
+R:64:<successful resolved/published source-record digest>
+...
+```
+
+每一 frame都是 exact ASCII `tag:length:value`加 LF；`R` frames按 `source_record_index`排序，且只覆盖最终成功 anchor-resolved并实际进入 Pack的 rows。Adapter的 `accepted_record_digests`仍包含所有 adapter-accepted drafts，exporter必须在 anchor resolution/skip policy之后缩减为最终 published subset，不能直接照搬。
+
+每个 source-record digest是 strict-parsed单条 row的稳定 JSON bytes SHA-256：object keys按 Unicode code point排序，array保留输入顺序，UTF-8不 escape非 ASCII，无额外空白，保留有限 JSON numbers，末尾一个 LF；source strings不做 NFC。这个 producer-private row编码允许 ignored compatibility payload中的有限 float，因此不是 public `sr-canonical-json-v1`。整个 input snapshot不包含 path、run/job status、clock或creator display。Digest object不写 `sr:canonicalization`；framing名称由 sibling `sr:inputSnapshotAlgorithmVersion`声明。任何 framing字段或row编码变化必须换 v2。
 
 ## 10. File And Packaging Format
 
@@ -1168,6 +1182,7 @@ class ProducerDraftResult:
     reaction_ledger_sha256: str
     accepted_record_digests: tuple[str, ...]
     findings: tuple["ValidationFinding", ...]
+    input_count: int
 
 @dataclass(frozen=True)
 class GeneratorInput:
@@ -1244,7 +1259,8 @@ class ExportResult:
     pack: "AnnotationPackDocument | None"
     annotations_json: Path | None
     detached_package: Path | None
-    validation_report: Path
+    validation: ValidationResult
+    validation_report: Path | None
     current_pointer: Path | None
     revision_id: str | None
 
@@ -1310,12 +1326,10 @@ class SecondReaderProducerAdapter:
         self,
         *,
         output_dir: Path,
-        book_document: Mapping[str, Any],
-        policy: ExportPolicy,
     ) -> "ProducerDraftResult": ...
 ```
 
-`SecondReaderProducerAdapter` 可 import `attentional_v2.storage` 的 path helper，或在 producer module内读取支持版本的 JSON envelope；它的 public return type只能是上面的中性 dataclasses。`AnchorBuilder` 只使用同一个已经通过 substrate-equivalence gate 的 `PublicationIdentityResult.rebuilt_book_document` 与 `epub_index`，不再接受调用方传入另一份可漂移的 BookDocument/index。`AnnotationPackBuilder`, `AnchorBuilder`, identity/validation/serialization modules绝不能 import mechanism package。
+`SecondReaderProducerAdapter` 只可 import `attentional_v2.storage.reaction_records_file` 这个 path helper，并在 producer module内读取 exact支持版本的 JSON envelope；它不接收 BookDocument或export policy，public return type只能是上面的中性 dataclasses。`ProducerAdapterError`只从 catalog code重建固定 fatal finding，不能接受 caller-supplied message/finding。`AnchorBuilder` 只使用同一个已经通过 substrate-equivalence gate 的 `PublicationIdentityResult.rebuilt_book_document` 与 `epub_index`，不再接受调用方传入另一份可漂移的 BookDocument/index。`AnnotationPackBuilder`, `AnchorBuilder`, identity/validation/serialization modules绝不能 import mechanism package。
 
 ### 12.2 Functional API
 
@@ -1474,6 +1488,10 @@ Drift prevention tests：
 | `publication_substrate_mismatch` | pack | fatal | source-rebuilt与persisted BookDocument的anchor-bearing substrate projection不同；content digest相同也不豁免 |
 | `publication_identity_missing` | pack | fatal | file/content identity/title minimum不足 |
 | `input_changed_during_export` | pack | fatal | snapshot recheck失败 |
+| `reaction_ledger_unavailable` | producer input | fatal | ledger missing、symlink/non-regular、全路径no-follow或安全打开失败 |
+| `reaction_ledger_invalid_json` | producer input | fatal | BOM、UTF-8、duplicate key、NaN/Infinity或strict JSON解析失败 |
+| `reaction_ledger_schema_unsupported` | producer input | fatal | envelope keys/schema/mechanism version不等于exact支持版本 |
+| `reaction_ledger_limit_exceeded` | producer input | fatal | byte/record/depth/node/string/single-row任一安全上限超出；不得row-skip |
 | `active_writer_present` | pack | fatal | neutral job/lease truth显示当前仍有有效 writer |
 | `run_state_not_exportable` | pack | fatal | current RunStage不满足 completed/explicit partial/explicit empty policy |
 | `deliverable_not_implemented` | export | fatal | 当前 slice/runtime不支持请求的 explicit deliverables；不得静默降级 |
@@ -1850,10 +1868,12 @@ Slice 1建立 GitHub Actions Pages发布约定和本地 byte-identical staging c
 2. gate `record_source=read_surface`, explicit `marginalia_kind`, timestamp，Highlight/Note body invariants。
 3. strict gate unique `matched/exact_text` primary source ref；把 private source span复制进 `SourceRange` value，不透传类型。
 4. drop compat/search/lineage/selection/memory fields；source record仅生成 local index+hash。
-5. 调用 generic identity/anchor/builder，不在 adapter复制 schema/ID逻辑。
-6. 将 historical/mixed ledger分类为可预测 error codes；不 heuristic migrate。
+5. 返回 exact ledger SHA、真实 `input_count`与adapter成功 rows的ordered digests；不在 adapter读取 BookDocument、解析anchor、应用export policy或调用builder。
+6. 将 historical/mixed ledger分类为可预测 row error codes；ledger unavailable/invalid/schema/limit/mutation一律 pack-level fail closed，不 heuristic migrate。
 
-**Tests/checks**：current highlight/note、Note compat=`association`仍映射note、legacy缺kind、`primary_anchor` old shape、fallback/ambiguous、wrong quote、mixed rows、no private leakage、跨段 source ref、adapter import boundary。
+防御上限固定为：`MAX_REACTION_LEDGER_BYTES=16 MiB`、`MAX_REACTION_RECORDS=2000`、`MAX_REACTION_LEDGER_JSON_DEPTH=64`、`MAX_REACTION_LEDGER_JSON_NODES=100000`、single/total string code points=`65536/16777216`、`MAX_REACTION_RECORD_CANONICAL_BYTES=128 KiB`、hash chunk=`1 MiB`。读取必须逐路径组件 `O_NOFOLLOW`、只接 regular UTF-8无 BOM file，拒绝 duplicate keys和non-finite numbers，并在read前后以及全路径重开时核对fd/path identity；任何 limit或snapshot mutation都不能降级为row skip。
+
+**Tests/checks**：current highlight/note、Note compat=`association`仍映射note、legacy缺kind、non-string discriminator、`primary_anchor` old shape、fallback/ambiguous、wrong quote、mixed rows、timestamp floor、NFC-before-limit、strict JSON/limits、leaf/parent symlink、pathname/in-place mutation、forged error privacy、no private leakage、跨段 source ref、adapter import boundary、multiple hash seeds。
 
 **Acceptance criteria**：一个真实 current-shaped ledger至少导出一 Highlight/一 Note；compat fields改变不影响 canonical item；old rows不会伪装成current；generic builder无 attentional import。
 
@@ -2061,8 +2081,10 @@ make agent-check
 
 **Slice 4 — Generic Pack Builder and validator** 已验收：producer-neutral `AnnotationPackBuilder` 可从 immutable identity/anchor inputs构建 Highlight/Note完整 Pack，支持 Software/Person/Organization creator、deterministic Pack/Track/Annotation IDs、NFC/second-precision gates、canonical item sort和递归只读输出；caller-owned publication/target mappings各做一次 detached snapshot，ID、digest、validation与freeze共用同一份数据。纯 validator实现 canonical schema、cross-object ID/semantic、strict/compatible extension、bounded privacy、public IRI和有限 numeric-step CFI gate、empty/degraded accounting、frozen pre-artifact `ValidationResult`与一次性 final `ValidationReport`；兼容 extension内嵌 authority与report trust boundary也经构造性反例复核。`serialize_pack()` 对 caller state只取一次 canonical snapshot，并验证后返回同一 bytes；validator preflight只信任 exact built-in JSON scalar/key并把容器单次脱离，report schema同时锁定 package digest不得脱离 annotations JSON digest。Focused acceptance为 `636 passed`；完整 affected regression set为 `770 passed, 2 failed`，仍只有已单列的两条 pre-existing `attentional_v2.slow_cycle`测试/接口漂移。Contract与agent checks exit `0`，warning-only历史 traceability和依赖 deprecation继续单列。本 Slice落实既有 `DEC-155`而未改变产品方向、默认机制、runtime或公共路由，因此不新增 decision-log entry。
 
-外部 IRI 仍须等待 workflow 进入 `main`、Pages 启用并成功部署后做 HTTP byte comparison，当前不得称为 live。下一实现单元是 **Slice 5 — `SecondReaderProducerAdapter`**；它只能读取 current native settled ledger并输出中性 drafts，不得顺便实现 exporter/publication writes、detached package或机制行为。
+**Slice 5 — `SecondReaderProducerAdapter`** 已验收：唯一 producer-specific module只 import `attentional_v2.storage.reaction_records_file`，从 exact phase9 ledger envelope读取 current native settled rows并返回中性 `AnnotationDraft`、exact ledger SHA、真实 `input_count`、adapter成功 row digests和固定 catalog findings。Adapter只接受 `record_source=read_surface`、显式 `marginalia_kind`、unique `matched/exact_text` primary SourceRef、primitive same-chapter coordinates与Z-only 0–6 fractional timestamp；Note body在限长前NFC，Highlight不伪造body，compat/type/search/lineage/private IDs均不进入draft，也不从compat aliases推断kind。Ledger读取逐路径组件no-follow、regular-only、strict UTF-8 JSON、bounded bytes/records/depth/nodes/strings/row size，并通过fd/path前后核对与全路径重开拒绝symlink、pathname replacement和原位mutation；ledger-level异常不得row-skip。`ProducerAdapterError`只接safe code并重建catalog finding，forged finding/message不能泄露。Focused acceptance为 `46 passed`，multiple hash seeds和独立动态对抗审计均PASS；完整 Annotation Pack suite为 `682 passed`，完整 affected regression set为 `816 passed, 2 failed`，仍只有已单列的两条 pre-existing `attentional_v2.slow_cycle`测试/接口漂移。Root annotation contract、contract和agent checks均exit `0`，既有warning-only traceability与依赖deprecation继续单列。本 Slice只落实既有 `DEC-155`的producer boundary，未改变产品方向、默认机制、runtime、prompt或公共路由，因此不新增 decision-log entry。
+
+外部 IRI 仍须等待 workflow 进入 `main`、Pages 启用并成功部署后做 HTTP byte comparison，当前不得称为 live。下一实现单元是 **Slice 6 — CLI export / inspect / validate tools**；它必须复用book-scoped writer/lease truth，在锁内完成snapshot→validation→immutable JSON revision→atomic pointer切换，并只接受显式 `--deliverables json`；不得提前声称detached packaging已实现。
 
 ### Explicit non-goals confirmation
 
-截至 Slice 4，仓库已实现 contract/schema/context/examples、producer-neutral 离线 schema loader、deterministic generated bindings/runtime resources、focused checks/Pages projection、verified EPUB publication identity/fingerprints/coherence gate、exact XHTML resource index、strict anchors、canonical serialization/semantic digest、generic Pack builder以及 bounded schema/semantic/privacy validator和 final report primitives；尚未实现 producer adapter、exporter/publication、safe inspector、detached package、真 EPUB golden export或真实 Annotation Pack publication。Default CFI resolver仍不存在，因此不声称真实 CFI互操作。Agent prompt、Digest、Memory、reading loop、Readest、Library 和 public HTTP API 均未修改。
+截至 Slice 5，仓库已实现 contract/schema/context/examples、producer-neutral 离线 schema loader、deterministic generated bindings/runtime resources、focused checks/Pages projection、verified EPUB publication identity/fingerprints/coherence gate、exact XHTML resource index、strict anchors、canonical serialization/semantic digest、generic Pack builder、bounded schema/semantic/privacy validator/final report primitives，以及只读current native settled ledger的strict producer adapter；尚未实现 exporter/publication、safe inspector、detached package、真 EPUB golden export或真实 Annotation Pack publication。Default CFI resolver仍不存在，因此不声称真实 CFI互操作。Agent prompt、Digest、Memory、reading loop、Readest、Library 和 public HTTP API 均未修改。
