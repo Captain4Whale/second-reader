@@ -7,7 +7,7 @@ Update when: task status, priority, blockers, decision refs, job refs, evidence 
 
 This document is the human-readable companion to `docs/tasks/registry.json`.
 
-Last updated: `2026-08-25T20:59:17+08:00`
+Last updated: `2026-08-25T21:45:54+08:00`
 
 ## Status Values
 - `active`
@@ -84,15 +84,16 @@ Last updated: `2026-08-25T20:59:17+08:00`
 - Lane: `product_contract`
 - Priority: `high`
 - Detail: `docs/implementation/annotation-pack/recent-real-agent-artifact-contract-audit-2026-08-25.md`
-- Next: the newest completed product artifact, `reading-companion-backend/output/悉达多`, was audited without rerunning the Agent. Exact EPUB verification and all `63` UTC settlement times pass, but the phase8 ledger has no neutral kind/SourceRef handoff, all `15` legacy Highlight rows carry non-empty thoughts, persisted `BookDocument` coherence fails, and all `22` text resources are unverifiable by the current exact-resource index. The current adapter correctly returns `reaction_ledger_schema_unsupported`; no exporter or package write was attempted. Preserve this negative result and use a current-native coherent real-book artifact for the next positive proof, or authorize a separate explicit historical migration.
+- Next: the corrected audit selects the July 5 phase9 Xidaduo evaluation segment rather than the April phase8 product output. Its `112` records contain `83` bodyless Highlights and `29` body-bearing Notes; every stored quote/range and UTC timestamp round-trips. The current adapter accepts `111` and rejects only record index `44`, whose five-code-point quote occurs twice in its source unit. The exact EPUB/full `BookDocument` are traceable and all `112` ranges deterministically remap to exact EPUB hrefs, but the eval artifact does not persist that map or co-locate the EPUB, leaves export-facing runtime state non-terminal, and hits a confirmed blanket-doctype parser false positive. Implement the narrow safe-doctype repair, persist an audited segment-to-source map/final state, explicitly resolve or skip record `44`, then run the real exporter. Do not call this a whole-book proof: the segment covers source chapters `3–14`.
 - Evidence:
   - `DEC-157`
   - `contract/annotation-pack/v0/README.md`
   - `docs/implementation/annotation-pack/recent-real-agent-artifact-contract-audit-2026-08-25.md`
-  - `reading-companion-backend/output/悉达多/_assets/source.epub`
-  - `reading-companion-backend/output/悉达多/public/book_document.json`
-  - `reading-companion-backend/output/悉达多/_mechanisms/attentional_v2/runtime/reaction_records.json`
-  - `reading-companion-backend/output/悉达多/_runtime/run_state.json`
+  - `reading-companion-backend/eval/runs/attentional_v2/digest_marginalia_v24_xidaduo_fullwindow_continue2_20260705`
+  - `reading-companion-backend/state/eval_local_datasets/user_level_benchmarks/attentional_v2_user_level_selective_v1_repaired_20260629_source_norm_v1_2_unique_notes`
+  - `reading-companion-backend/src/attentional_v2/llm_output_tools.py`
+  - `reading-companion-backend/src/attentional_v2/source_spans.py`
+  - `reading-companion-backend/src/annotation_pack/epub_resources.py`
   - `reading-companion-backend/src/annotation_pack/identity.py`
   - `reading-companion-backend/src/annotation_pack/producers/second_reader.py`
 

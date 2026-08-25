@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "updated_at": "2026-08-25T20:59:17+08:00",
+  "updated_at": "2026-08-25T21:45:54+08:00",
   "tasks": [
     {
       "id": "TASK-ANNOTATION-PACK-V0-IMPLEMENTATION",
@@ -20,7 +20,7 @@
       ],
       "job_refs": [],
       "acceptance_ref": "docs/implementation/annotation-pack/second-reader-annotation-pack-v0-detailed-design-and-implementation-handoff.md#20-definition-of-done",
-      "next_action": "Implementation is closed after three accepted slices. DEC-157 now fixes the producer-neutral responsibility model without changing the wire. Preserve the Tiny Reader-only completion boundary; validate a recent real Agent artifact separately under TASK-ANNOTATION-PACK-RECENT-AGENT-ARTIFACT-VALIDATION. Any public Pages activation or product integration is another separate task.",
+      "next_action": "Implementation is closed after three accepted slices. DEC-157 fixes the producer-neutral responsibility model without changing the wire. The separate recent real-Agent audit is complete and shows current phase9 semantic data substantially passes while eval source packaging still needs a coordinate bridge, safe-doctype repair, terminal run state, and one explicit ambiguity decision. Preserve the Tiny Reader-only completion claim until a real export is completed. Any public Pages activation or product integration is another separate task.",
       "blocked_by": [],
       "evidence_refs": [
         ".github/workflows/annotation-pack-pages.yml",
@@ -119,22 +119,23 @@
       ],
       "job_refs": [],
       "acceptance_ref": "contract/annotation-pack/v0/README.md#producer-neutral-information-responsibility",
-      "next_action": "The newest completed product artifact, reading-companion-backend/output/悉达多, was audited without rerunning the Agent. Exact EPUB verification and all 63 UTC settlement times pass, but the phase8 ledger has no neutral kind/SourceRef handoff, all 15 legacy Highlight rows carry non-empty thoughts, persisted BookDocument coherence fails, and all 22 text resources are unverifiable by the current exact-resource index. The current adapter correctly returns reaction_ledger_schema_unsupported; no exporter or package write was attempted. Preserve this negative result and use a current-native coherent real-book artifact for the next positive proof, or authorize a separate explicit historical migration.",
+      "next_action": "The corrected audit selects the July 5 phase9 Xidaduo evaluation segment rather than the April phase8 product output. Its 112 records contain 83 bodyless Highlights and 29 body-bearing Notes; every stored quote/range and UTC timestamp round-trips. The current adapter accepts 111 and rejects only record index 44, whose five-code-point quote occurs twice in its source unit. The exact EPUB/full BookDocument are traceable and all 112 ranges deterministically remap to exact EPUB hrefs, but the eval artifact does not persist that map or co-locate the EPUB, leaves export-facing runtime state non-terminal, and hits a confirmed blanket-doctype parser false positive. Implement the narrow safe-doctype repair, persist an audited segment-to-source map/final state, explicitly resolve or skip record 44, then run the real exporter. Do not call this a whole-book proof: the segment covers source chapters 3-14.",
       "blocked_by": [],
       "evidence_refs": [
         "docs/history/decision-log.md",
         "contract/annotation-pack/v0/README.md",
         "docs/implementation/annotation-pack/recent-real-agent-artifact-contract-audit-2026-08-25.md",
-        "reading-companion-backend/output/悉达多/_assets/source.epub",
-        "reading-companion-backend/output/悉达多/public/book_document.json",
-        "reading-companion-backend/output/悉达多/_mechanisms/attentional_v2/runtime/reaction_records.json",
-        "reading-companion-backend/output/悉达多/_runtime/run_state.json",
+        "reading-companion-backend/eval/runs/attentional_v2/digest_marginalia_v24_xidaduo_fullwindow_continue2_20260705",
+        "reading-companion-backend/state/eval_local_datasets/user_level_benchmarks/attentional_v2_user_level_selective_v1_repaired_20260629_source_norm_v1_2_unique_notes",
+        "reading-companion-backend/src/attentional_v2/llm_output_tools.py",
+        "reading-companion-backend/src/attentional_v2/source_spans.py",
+        "reading-companion-backend/src/annotation_pack/epub_resources.py",
         "reading-companion-backend/src/annotation_pack/drafts.py",
         "reading-companion-backend/src/annotation_pack/identity.py",
         "reading-companion-backend/src/annotation_pack/producers/second_reader.py",
         "reading-companion-backend/tests/annotation_pack/test_second_reader_adapter.py"
       ],
-      "last_updated": "2026-08-25T20:59:17+08:00",
+      "last_updated": "2026-08-25T21:45:54+08:00",
       "last_updated_by": "codex"
     },
     {
