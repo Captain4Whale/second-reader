@@ -1,11 +1,11 @@
 {
   "version": 1,
-  "updated_at": "2026-08-24T00:20:50+08:00",
+  "updated_at": "2026-08-25T19:37:10+08:00",
   "tasks": [
     {
       "id": "TASK-ANNOTATION-PACK-V0-IMPLEMENTATION",
       "title": "Implement the Second Reader Annotation Pack v0 contract and exporter",
-      "status": "done",
+      "status": "active",
       "lane": "product_contract",
       "priority": "high",
       "detail_ref": "docs/implementation/annotation-pack/second-reader-annotation-pack-v0-detailed-design-and-implementation-handoff.md",
@@ -14,11 +14,12 @@
         "docs/implementation/annotation-pack/second-reader-annotation-pack-v0-detailed-design-and-implementation-handoff.md"
       ],
       "decision_refs": [
-        "DEC-155"
+        "DEC-155",
+        "DEC-156"
       ],
       "job_refs": [],
       "acceptance_ref": "docs/implementation/annotation-pack/second-reader-annotation-pack-v0-detailed-design-and-implementation-handoff.md#20-definition-of-done",
-      "next_action": "The first implementation Epic is complete through Slice 8 and every Section 20 local/repository item is closed. Preserve the contract and golden through make annotation-pack-contract-check; keep the approved Pages IRIs labeled staged/not-live until the workflow reaches main, Pages is enabled and deployed, and HTTP bytes match the canonical contract. Reader/Library discovery or external interoperability requires a separate future task.",
+      "next_action": "Accept and commit/push the DEC-156 authority reset, then perform the atomic minimal-v0 wire cutover in one Slice: canonical schema/examples/standards, generated copies, Pages projection, implementation, adapter, and Tiny Reader goldens must move together with zero sr:* terms, no old-wire compatibility, and direct phase8 rejection. Section 20 is the current Definition of Done.",
       "blocked_by": [],
       "evidence_refs": [
         ".github/workflows/annotation-pack-pages.yml",
@@ -72,7 +73,35 @@
         "reading-companion-backend/tests/annotation_pack/fixtures/tiny-reader/golden/digests.json",
         "reading-companion-backend/tests/annotation_pack/test_tiny_reader_golden.py"
       ],
-      "last_updated": "2026-08-24T00:20:50+08:00",
+      "last_updated": "2026-08-25T19:37:10+08:00",
+      "last_updated_by": "codex"
+    },
+    {
+      "id": "TASK-ANNOTATION-HUB-V0-MINIMAL-PACK-MIGRATION",
+      "title": "Migrate Annotation Hub to the minimal Annotation Pack v0",
+      "status": "waiting",
+      "lane": "migration",
+      "priority": "high",
+      "detail_ref": "docs/implementation/annotation-pack/second-reader-annotation-pack-v0-detailed-design-and-implementation-handoff.md",
+      "truth_refs": [
+        "docs/tasks/registry.md",
+        "docs/implementation/annotation-pack/second-reader-annotation-pack-v0-detailed-design-and-implementation-handoff.md"
+      ],
+      "decision_refs": [
+        "DEC-156"
+      ],
+      "job_refs": [],
+      "acceptance_ref": "docs/implementation/annotation-pack/second-reader-annotation-pack-v0-detailed-design-and-implementation-handoff.md#204-implementation-slices-and-acceptance",
+      "next_action": "After the minimal v0 atomic cutover and close-out are accepted on codex/annotation-pack-v0, update the separate Annotation Hub consumer branch/worktree to consume the standards-only AnnotationSet, exact EPUB nih identity, TextQuote+TextPosition targets, and new goldens. Do not copy producer-private shapes, restore sr:* terms, or modify the Hub worktree as part of the Pack cutover.",
+      "blocked_by": [
+        "TASK-ANNOTATION-PACK-V0-IMPLEMENTATION"
+      ],
+      "evidence_refs": [
+        "contract/annotation-pack/v0/schema/annotation-pack.schema.json",
+        "docs/history/decision-log.md",
+        "docs/implementation/annotation-pack/second-reader-annotation-pack-v0-detailed-design-and-implementation-handoff.md"
+      ],
+      "last_updated": "2026-08-25T19:37:10+08:00",
       "last_updated_by": "codex"
     },
     {

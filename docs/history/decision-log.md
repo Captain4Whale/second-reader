@@ -4310,7 +4310,7 @@ This new direction is design frozen but not yet implemented as a formal benchmar
 
 ## Entry 153
 **ID**: DEC-155
-**Status**: active
+**Status**: partially superseded by `DEC-156`
 
 **Decision / Inflection**: Establish Annotation Pack v0 as the producer-neutral, public, detached contract between Second Reader, future annotation-library surfaces, and Reader adapters.
 
@@ -4327,6 +4327,8 @@ The v0 identity and anchor contract combines exact EPUB byte SHA-256, a versione
 **Implementation authorization update (2026-08-23)**: The owner confirmed `https://captain4whale.github.io/second-reader/ns/annotation-pack#` and the matching `/schema/annotation-pack/v0/` GitHub Pages IRIs, authorized branch `codex/annotation-pack-v0`, required acceptance plus commit/push after every Slice, and retained Section 20 as the complete Epic boundary. Pages staging on a feature branch is not evidence that the IRI is live; deployment and byte comparison remain required after the workflow reaches `main`.
 
 **Implementation closure update (2026-08-24)**: Slices 1–8 now satisfy the Section 20 local/repository Definition of Done. The landed evidence includes the sole root schema authority and offline derivatives, verified publication identity and exact EPUB resources, deterministic ids/anchors/serialization, the generic builder/validator, strict current-native producer adapter, crash-safe immutable JSON/package/report publication, and the tracked Tiny Reader real-EPUB Highlight+Note golden. This closes the first implementation Epic without adding Reader/Library discovery, changing the Agent/prompt/Digest/Memory/reading loop, or claiming external Reader interoperability. The approved Pages IRIs remain selected and locally staged but not live; `main` deployment, Pages enablement, and HTTP byte comparison remain an external activation gate.
+
+**Partial supersession update (2026-08-25)**: `DEC-156` replaces the unreleased v0 public wire before activation. It supersedes this entry's Work/Edition/File identity hierarchy, normalized content/chapter fingerprints in the Pack, creator-owned Track, structural chapter context, paragraph-character selector, optional CFI, custom `sr:*` vocabulary/context, public provenance, and public semantic digest. It retains the detached producer-neutral seam, canonical root schema, exact EPUB verification, current-producer adapter isolation, deterministic generation, independent packaging/validation, immutable publication, public/private boundary, and external-activation gate.
 
 **Why this path won**: A narrow edition-by-track sidecar preserves the current product-native Marginalia while giving future consumers stable publication identity and redundant anchors. Keeping the schema, generic builder, and producer adapter separate prevents compatibility debt from becoming the public ontology. Fail-closed source verification is necessary because current artifacts do not yet prove that the copied EPUB, persisted BookDocument, and settled source spans refer to the same bytes and text.
 
@@ -4346,4 +4348,33 @@ The v0 identity and anchor contract combines exact EPUB byte SHA-256, a versione
 - `reading-companion-backend/src/attentional_v2/slow_cycle.py`
 - `reading-companion-backend/src/reading_runtime/artifacts.py`
 - `reading-companion-backend/src/reading_runtime/sequential_state.py`
+- `docs/tasks/registry.md`
+
+## Entry 154
+**ID**: DEC-156
+**Status**: active
+
+**Decision / Inflection**: Replace the not-yet-public Annotation Pack v0 wire in place with a minimal, standards-vocabulary-only profile before any compatibility promise is created.
+
+**Period**: August 25, 2026, after the first local implementation proved the detached export path but before the GitHub Pages schema IRI or any Reader/Library consumer had been publicly activated.
+
+**Problem**: The first v0 implementation exposed more public concepts than the product or current career evidence needs: Work/Edition/File layers, Track, chapter fingerprints/context, custom anchor ids, `sr:*` terms, provenance, and public digests. Those fields increased producer and consumer coupling without improving the two decisions the artifact must answer now: which exact EPUB file the annotations describe, and what source passage each Highlight or Note targets. Because the wire was not public, retaining a compatibility layer would preserve accidental complexity rather than protect a real consumer.
+
+**Decision**: Replace the existing v0 at its current schema path; do not retain the old wire and do not add a phase8 migration path. The public document is one `AnnotationSet` with the EPUB Annotations JSON-LD context, deterministic set identity, fixed software generator, generation time, one `about` object, and deterministically sorted `items`. `about` contains exactly one RFC 6920 `nih:sha-256;<64 lowercase hex>` identifier for the exact EPUB bytes, `dc:format = application/epub+zip`, `dc:title`, and optional source authors in `dc:creator`. Every item is an `Annotation` whose `motivation` is `highlighting` or `commenting`; a Highlight has no body, while a Note has one non-empty `TextualBody`. Every target contains only a relative EPUB-manifest XHTML `source` and two selectors in fixed order: `TextQuoteSelector` with required `exact` and optional `prefix`/`suffix`, then `TextPositionSelector` with Unicode-code-point, start-inclusive/end-exclusive `start`/`end` coordinates over the fixed normalized text stream for that EPUB resource. All object layers use strict property allowlists and the public Pack contains no `sr:*` term.
+
+Pack UUIDv5 input is the exact EPUB hash plus the fixed generator identity. Annotation UUIDv5 input is the EPUB hash, target href, start/end, motivation, and Note body when present. Semantic duplicates remain invalid. The profile requires `generator`, `generated`, exact-file metadata, motivation, both selectors, and deterministic ordering even where the underlying W3C/EPUB specifications are looser. It uses W3C Web Annotation and Dublin Core vocabulary and is described as aligned with the Web Annotation Recommendation and the May 21, 2026 EPUB Annotations Working Draft; it does not claim conformance to that Working Draft.
+
+`SecondReaderProducerAdapter` accepts only `schema_version=1`, `mechanism_version=attentional_v2-phase9`, `record_source=read_surface`, native Highlight/Note rows, and a uniquely resolved exact SourceRef. Optional compatibility sidecars may be ignored but are not required; phase8 is rejected. The public simplification does not remove internal safety: exact verified EPUB handles, EPUB/BookDocument coherence, quote round-trip, privacy scanning, canonical bytes, hostile-ZIP rejection, immutable revisions, atomic pointer switching, no-op/idempotence, mutation detection, crash recovery, and concurrency protection remain required. Snapshot/content digests, adapter details, and findings may remain only in the validation report/current pointer, never in `.annotations`.
+
+**Boundary**: This is an in-place v0 replacement, not a v1 migration. It does not change Agent prompts, Digest, Memory, settlement, reading loop, completion behavior, Library, HTTP API, frontend, Reader integration, or live-model execution. The Annotation Hub consumer lives on a separate worktree and must be migrated in a follow-up task after this Pack cutover; this decision does not authorize modifying that worktree. The existing schema IRI remains selected but cannot be called publicly available until the workflow reaches `main`, Pages is enabled and deployed, and served bytes match the canonical schema.
+
+**Why this path won**: With no released wire to preserve, the cheapest trustworthy contract is the one that keeps only exact publication identity, user-visible annotation content, and independently resolvable source evidence. Standard vocabulary lowers explanation and consumer cost, while preserving the mature internal exporter and publication defenses retains the technically meaningful evidence already earned.
+
+**Primary evidence**:
+- `contract/annotation-pack/v0/schema/annotation-pack.schema.json`
+- `contract/annotation-pack/v0/README.md`
+- `docs/implementation/annotation-pack/second-reader-annotation-pack-v0-detailed-design-and-implementation-handoff.md`
+- `reading-companion-backend/tests/annotation_pack/fixtures/tiny-reader/README.md`
+- `reading-companion-backend/tests/annotation_pack/test_tiny_reader_golden.py`
+- `docs/current-state.md`
 - `docs/tasks/registry.md`

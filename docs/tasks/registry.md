@@ -7,7 +7,7 @@ Update when: task status, priority, blockers, decision refs, job refs, evidence 
 
 This document is the human-readable companion to `docs/tasks/registry.json`.
 
-Last updated: `2026-08-24T00:20:50+08:00`
+Last updated: `2026-08-25T19:37:10+08:00`
 
 ## Status Values
 - `active`
@@ -18,16 +18,17 @@ Last updated: `2026-08-24T00:20:50+08:00`
 - `done`
 - `cancelled`
 
-## Done
+## Active
 
 ### `TASK-ANNOTATION-PACK-V0-IMPLEMENTATION` — Implement the Second Reader Annotation Pack v0 contract and exporter
-- Status: `done`
+- Status: `active`
 - Lane: `product_contract`
 - Priority: `high`
 - Detail: `docs/implementation/annotation-pack/second-reader-annotation-pack-v0-detailed-design-and-implementation-handoff.md`
-- Next: The first implementation Epic is complete through Slice 8 and every Section 20 local/repository item is closed. Preserve the contract and golden through `make annotation-pack-contract-check`; keep the approved Pages IRIs labeled staged/not-live until the workflow reaches `main`, Pages is enabled and deployed, and HTTP bytes match the canonical contract. Reader/Library discovery or external interoperability requires a separate future task.
+- Next: Accept and commit/push the `DEC-156` authority reset, then perform the atomic minimal-v0 wire cutover in one Slice: canonical schema/examples/standards, generated copies, Pages projection, implementation, adapter, and Tiny Reader goldens must move together with zero `sr:*`, no old-wire compatibility, and direct phase8 rejection. Section 20 is the current Definition of Done.
 - Evidence:
   - `DEC-155`
+  - `DEC-156`
   - `contract/annotation-pack/v0/README.md`
   - `contract/annotation-pack/v0/schema/annotation-pack.schema.json`
   - `contract/annotation-pack/v0/context/second-reader-annotation-context.jsonld`
@@ -77,8 +78,6 @@ Last updated: `2026-08-24T00:20:50+08:00`
   - `docs/backend-state-aggregation.md`
   - `docs/implementation/annotation-pack/baseline-observations.md`
   - `docs/implementation/annotation-pack/second-reader-annotation-pack-v0-detailed-design-and-implementation-handoff.md`
-
-## Active
 
 ### `TASK-SECOND-READER-INGEST-DIGEST-REFRAME-AUDIT-20260530` — Maintain the implemented Ingest/Digest and Unit Memory mechanism track
 - Status: `active`
@@ -883,6 +882,18 @@ Last updated: `2026-08-24T00:20:50+08:00`
   - `docs/history/decision-log.md`
 
 ## Waiting
+
+### `TASK-ANNOTATION-HUB-V0-MINIMAL-PACK-MIGRATION` — Migrate Annotation Hub to the minimal Annotation Pack v0
+- Status: `waiting`
+- Lane: `migration`
+- Priority: `high`
+- Detail: `docs/implementation/annotation-pack/second-reader-annotation-pack-v0-detailed-design-and-implementation-handoff.md`
+- Blocked by: `TASK-ANNOTATION-PACK-V0-IMPLEMENTATION`
+- Next: after the minimal v0 atomic cutover and close-out are accepted on `codex/annotation-pack-v0`, update the separate Annotation Hub consumer branch/worktree to consume the standards-only `AnnotationSet`, exact EPUB `nih` identity, TextQuote+TextPosition targets, and new goldens. Do not copy producer-private shapes, restore `sr:*`, or modify the Hub worktree as part of the Pack cutover.
+- Evidence:
+  - `DEC-156`
+  - `contract/annotation-pack/v0/schema/annotation-pack.schema.json`
+  - `docs/implementation/annotation-pack/second-reader-annotation-pack-v0-detailed-design-and-implementation-handoff.md`
 
 ### `TASK-SECOND-READER-MEMORY-PLANNING-EVAL1-RETRY1-HIGH-PARALLEL-REPORT-REVIEW` — Review Eval-1 Retry1 high-parallel full active evaluation report
 - Status: `waiting`
