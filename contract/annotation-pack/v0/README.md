@@ -50,6 +50,33 @@ Each target contains only:
 
 The schema owns object whitelists, required fields, enums, scalar formats, limits, selector order, and Highlight/Note body conditionals. The offline semantic validator owns `start < end`, quote-length/position coherence, deterministic ID recomputation, item ordering, and semantic duplicate rejection. Manifest membership and actual quote/prefix/suffix round-trip require the exact EPUB, so the EPUB-backed anchor/export acceptance path owns those checks; standalone validation never claims to have performed them.
 
+## Producer-neutral information responsibility
+
+This section is the canonical responsibility contract between a reading mechanism and Annotation Pack export. The JSON Schema remains the sole authority for the public wire. This section answers which facts must exist before that wire can be built and who is allowed to supply them.
+
+| Responsibility | Required facts | Owner | Public result |
+| --- | --- | --- | --- |
+| Source publication facts | exact EPUB bytes; EPUB SHA-256; media type; title; usable authors when present; manifest XHTML/HTML hrefs; deterministic resource text; coherent mapping from the shared `BookDocument` to those resources | verified EPUB/parser substrate, never the LLM or reading mechanism | `about`, target `source`, and the text stream against which selectors are checked |
+| Annotation intent | `highlight` or `note`; one exact contiguous selected source span; the exact source text for that span; non-empty note text only for a Note | the reading mechanism as a whole; the model may choose the span/content, while runtime may resolve or copy exact source text | `motivation`, optional `body`, and the semantic choice of target passage |
+| Settlement event | one valid UTC creation time for the accepted annotation | reading runtime/settlement, not necessarily model-authored | Annotation `created` |
+| Pack derivation | fixed generator identity; Pack generation time; exact href and TextQuote/TextPosition projection; motivations and body wrapper; deterministic IDs, ordering, validation, serialization, packaging, pointer/report metadata | producer adapter plus generic Annotation Pack resolver/builder/exporter | every remaining public field and all local publication companions |
+
+The minimum normalized handoff from any mechanism adapter to the generic Pack pipeline is one `AnnotationDraft` per candidate:
+
+| Neutral value | Requirement |
+| --- | --- |
+| `kind` | exactly `highlight` or `note` |
+| `source_range` | one start-inclusive/end-exclusive range in the canonical shared `BookDocument` coordinate system; the current representation is same-chapter paragraph/character coordinates |
+| `source_quote` | non-empty exact source text for that range; it must round-trip against the verified source and is not free-form commentary |
+| `body_text` | absent for Highlight; non-empty for Note |
+| `created_at` | the runtime settlement timestamp carried into public `created` |
+
+Adapter bookkeeping such as source-record index/digest, ledger digest, findings, and adapter version may accompany this handoff for safe export and reporting, but it is neither Agent semantic output nor public Pack data.
+
+`attentional_v2-phase9` is only the private input contract supported by the current `SecondReaderProducerAdapter`. It is not an Annotation Pack version and is not a universal requirement on future mechanisms. A future mechanism may use a different prompt, ontology, ledger, version, or source-citation representation, but its adapter must produce the same neutral values above. It must not pretend to be phase9, and the generic exporter must not infer annotation kind, source selection, or Note content from compatibility taxonomies.
+
+Consequently, a reading mechanism does **not** need to generate EPUB hashes, book metadata, manifest hrefs, resource-wide TextPosition offsets, W3C JSON-LD, UUIDs, motivations, generator metadata, package files, or public digests. Those are verified or derived outside the mechanism. What the mechanism must preserve is the user-visible annotation decision: which exact source span is marked, whether it is a Highlight or Note, and the Note text when present.
+
 ## Resource text and TextPosition
 
 `TextPositionSelector` offsets are zero-based Unicode code-point indexes into one deterministic logical text stream for `target.source`. `start` is inclusive and `end` is exclusive. The v0 stream is built as follows:

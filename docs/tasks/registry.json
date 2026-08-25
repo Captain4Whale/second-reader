@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "updated_at": "2026-08-25T20:27:43+08:00",
+  "updated_at": "2026-08-25T20:42:47+08:00",
   "tasks": [
     {
       "id": "TASK-ANNOTATION-PACK-V0-IMPLEMENTATION",
@@ -15,11 +15,12 @@
       ],
       "decision_refs": [
         "DEC-155",
-        "DEC-156"
+        "DEC-156",
+        "DEC-157"
       ],
       "job_refs": [],
       "acceptance_ref": "docs/implementation/annotation-pack/second-reader-annotation-pack-v0-detailed-design-and-implementation-handoff.md#20-definition-of-done",
-      "next_action": "Implementation is closed after three accepted slices. Preserve the completion boundary: current-format producer data can generate, validate, and independently package the Tiny Reader real-EPUB fixture; do not reinterpret this as prior whole-book conversion, a real current whole-book Agent-to-Pack run, live Pages, or Library/API/frontend/Reader integration. Any public Pages activation or product integration is a separate task.",
+      "next_action": "Implementation is closed after three accepted slices. DEC-157 now fixes the producer-neutral responsibility model without changing the wire. Preserve the Tiny Reader-only completion boundary; validate a recent real Agent artifact separately under TASK-ANNOTATION-PACK-RECENT-AGENT-ARTIFACT-VALIDATION. Any public Pages activation or product integration is another separate task.",
       "blocked_by": [],
       "evidence_refs": [
         ".github/workflows/annotation-pack-pages.yml",
@@ -72,7 +73,7 @@
         "reading-companion-backend/tests/annotation_pack/fixtures/tiny-reader/golden/digests.json",
         "reading-companion-backend/tests/annotation_pack/test_tiny_reader_golden.py"
       ],
-      "last_updated": "2026-08-25T20:27:43+08:00",
+      "last_updated": "2026-08-25T20:42:47+08:00",
       "last_updated_by": "codex"
     },
     {
@@ -99,6 +100,34 @@
         "docs/implementation/annotation-pack/second-reader-annotation-pack-v0-detailed-design-and-implementation-handoff.md"
       ],
       "last_updated": "2026-08-25T20:27:43+08:00",
+      "last_updated_by": "codex"
+    },
+    {
+      "id": "TASK-ANNOTATION-PACK-RECENT-AGENT-ARTIFACT-VALIDATION",
+      "title": "Validate a recent real Agent artifact against the producer-neutral Pack handoff",
+      "status": "queued",
+      "lane": "product_contract",
+      "priority": "high",
+      "detail_ref": "contract/annotation-pack/v0/README.md#producer-neutral-information-responsibility",
+      "truth_refs": [
+        "contract/annotation-pack/v0/README.md",
+        "docs/tasks/registry.md"
+      ],
+      "decision_refs": [
+        "DEC-157"
+      ],
+      "job_refs": [],
+      "acceptance_ref": "contract/annotation-pack/v0/README.md#producer-neutral-information-responsibility",
+      "next_action": "Select the most recent completed real Agent output, identify its exact source EPUB and coherent BookDocument, audit its settled producer data against the neutral kind/source range/quote/conditional Note text/settlement-time handoff, then run an actual export only if those inputs pass. Report the exact artifact inspected; do not reuse Tiny Reader as proof of that real artifact and do not rerun the Agent before checking the existing output.",
+      "blocked_by": [],
+      "evidence_refs": [
+        "docs/history/decision-log.md",
+        "contract/annotation-pack/v0/README.md",
+        "reading-companion-backend/src/annotation_pack/drafts.py",
+        "reading-companion-backend/src/annotation_pack/producers/second_reader.py",
+        "reading-companion-backend/tests/annotation_pack/test_second_reader_adapter.py"
+      ],
+      "last_updated": "2026-08-25T20:42:47+08:00",
       "last_updated_by": "codex"
     },
     {

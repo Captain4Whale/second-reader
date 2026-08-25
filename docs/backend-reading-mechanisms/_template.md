@@ -45,5 +45,11 @@ Use `docs/backend-reading-mechanism.md` for shared platform boundaries. Use `doc
 - Describe how this mechanism projects its internal state into shared public surfaces such as `current_reading_activity`.
 - Clarify any compatibility fields that remain adapter-owned rather than native mechanism terms.
 
+## Annotation Pack Handoff
+- State whether this mechanism currently supports Annotation Pack export.
+- If supported, identify the adapter and explain how native output maps to neutral `kind`, exact shared-source range/quote, conditional Note text, and runtime creation time.
+- If unsupported, say so explicitly; do not borrow another mechanism's private ledger/version or capability claim.
+- Point to `contract/annotation-pack/v0/README.md#producer-neutral-information-responsibility` instead of redefining the shared contract.
+
 ## Known Limits / Drift Notes
 - Capture important limitations, unresolved questions, and areas where code may drift from the document over time.

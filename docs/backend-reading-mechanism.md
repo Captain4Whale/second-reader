@@ -38,6 +38,12 @@ Use `docs/backend-sequential-lifecycle.md` for the job-level workflow over time.
 - Shared public-state surface
   - Public API and websocket surfaces are allowed to expose stable compatibility fields such as `segment_ref`.
   - Internal mechanism structure must be adapted into shared public-state surfaces instead of leaking through directly.
+- Shared Annotation Pack handoff
+  - `contract/annotation-pack/v0/README.md#producer-neutral-information-responsibility` is authoritative for the mechanism-independent annotation handoff.
+  - A product-default reading mechanism that produces visible annotations must settle, directly or through its adapter, one neutral candidate containing `highlight | note`, an exact shared-`BookDocument` source range and quote, conditional non-empty Note text, and a runtime creation time.
+  - Exact EPUB identity/metadata, manifest hrefs, resource-wide TextPosition offsets, W3C wire fields, UUIDs, ordering, and packaging are source-verifier/exporter responsibilities rather than mechanism output.
+  - Private ledger versions such as `attentional_v2-phase9` are adapter bindings only. A new mechanism must map its own private output to the neutral handoff instead of copying another mechanism's version marker or asking the generic exporter to infer semantics from compatibility data.
+  - A fallback or experimental mechanism that lacks such an adapter must state that Annotation Pack export is unsupported; it cannot inherit another mechanism's capability claim.
 - Shared evaluation seam
   - Mechanisms are compared through the shared evaluation frame and normalized runtime outputs, not by forcing one internal ontology.
 
@@ -58,6 +64,7 @@ Use `docs/backend-sequential-lifecycle.md` for the job-level workflow over time.
   - fallback and drift notes
 - Design-only mechanisms belong in the same stable mechanism-doc system as implemented mechanisms, but must be clearly labeled `design-only`.
 - Experimental mechanisms should document their live parse/read entrypoints, runtime artifact root, and any intentionally unsupported retired legacy modes such as `book_analysis`.
+- Every mechanism doc must state its Annotation Pack handoff status: supported adapter and neutral mapping, or explicitly unsupported. Promoting a mechanism to product default requires this status to be reviewed whenever that mechanism emits user-visible annotations.
 
 ## Terminology Discipline
 - Shared docs should prefer neutral terms such as:

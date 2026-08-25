@@ -247,6 +247,11 @@ Use `docs/backend-reading-mechanism.md` for shared mechanism-platform boundaries
   - When older runtime snapshots only retain a shortened `current_excerpt`, catalog can backfill the normalized full section text by resolving `segment_ref` against `_mechanisms/iterator_v1/derived/structure.json`.
   - Public state therefore reflects the runtime attention target as best effort, not as a strict copy of the current subsegment payload.
 
+## Annotation Pack Handoff
+- Currently unsupported. `iterator_v1` has no producer adapter that maps its private section/subsegment artifacts into the neutral Annotation Pack handoff.
+- It must not reuse the `attentional_v2-phase9` marker or current adapter. If `iterator_v1` or a successor is expected to produce Packs, a dedicated adapter must supply neutral `kind`, exact shared-source range/quote, conditional Note text, and runtime creation time, then pass the same generic anchor/export validation.
+- This unsupported status does not affect its fallback reading/resume role, but it prevents an Annotation Pack capability claim for `iterator_v1` outputs.
+
 ## Known Limits / Drift Notes
 - The active reader path is `run_reader_segment()`.
   - Graph-shaped helpers remain in the codebase, but they are not the authoritative description of the current live section execution path.

@@ -116,7 +116,7 @@ Update when: document layering, reading order, task routing, or cross-project co
 - backend mechanism-specific internals such as the current default reader: `docs/backend-reading-mechanisms/<mechanism>.md`
 - backend reader quality goals, evaluation layers, and offline eval methodology: `docs/backend-reader-evaluation.md`
 - backend artifact aggregation, state surfaces, normalization boundary: `docs/backend-state-aggregation.md`
-- Annotation Pack minimal W3C/DC wire authority, exact EPUB NIH identity, Quote/Position rules, schema IRI, and examples: `contract/annotation-pack/v0/README.md`, `contract/annotation-pack/v0/schema/annotation-pack.schema.json`; minimal v0 has no project context or namespace
+- Annotation Pack minimal W3C/DC wire authority, producer-neutral information responsibility, exact EPUB NIH identity, Quote/Position rules, schema IRI, and examples: `contract/annotation-pack/v0/README.md`, `contract/annotation-pack/v0/schema/annotation-pack.schema.json`; minimal v0 has no project context or namespace
 - Annotation Pack implementation sequence, slice acceptance, and Definition of Done: `docs/implementation/annotation-pack/second-reader-annotation-pack-v0-detailed-design-and-implementation-handoff.md`
 
 ### History Tasks
@@ -286,6 +286,7 @@ Update when: document layering, reading order, task routing, or cross-project co
 - If a backend change materially alters the sequential deep-reading job lifecycle, upload/start/resume semantics, or runtime recovery behavior, update `docs/backend-sequential-lifecycle.md` in the same task.
 - If a backend change materially alters shared mechanism boundaries, mechanism status routing, or which docs own mechanism internals, update `docs/backend-reading-mechanism.md` in the same task.
 - If a backend change materially alters one mechanism's ontology, reading loop, prompt assembly, memory model, or private artifacts, update `docs/backend-reading-mechanisms/<mechanism>.md` in the same task.
+- If a mechanism changes how it produces Highlights/Notes or source grounding, verify and document its mapping to the producer-neutral handoff in `contract/annotation-pack/v0/README.md`; do not make a generic exporter depend on that mechanism's phase/version or infer missing annotation intent.
 - If a backend change adds a mechanism, archives one, or changes which mechanism is default, update `docs/backend-reading-mechanisms/README.md` in the same task.
 - If a backend change changes which mechanism is default, update `docs/backend-reading-mechanism.md`, `docs/workspace-overview.md`, `docs/backend-sequential-lifecycle.md`, `docs/backend-state-aggregation.md`, `reading-companion-backend/AGENTS.md`, and `docs/history/decision-log.md` in the same task.
 - If a backend change materially alters reader-quality dimensions, evaluation workflow, offline judge usage, or evaluation artifact routing, update `docs/backend-reader-evaluation.md` in the same task.

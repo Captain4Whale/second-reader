@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import ast
 from copy import deepcopy
+from dataclasses import fields
 from datetime import datetime, timezone
 import hashlib
 import json
@@ -11,7 +12,11 @@ import traceback
 
 import pytest
 
-from src.annotation_pack.drafts import ProducerAdapterError, ValidationFinding
+from src.annotation_pack.drafts import (
+    AnnotationDraft,
+    ProducerAdapterError,
+    ValidationFinding,
+)
 from src.annotation_pack.producers import second_reader as adapter_module
 from src.annotation_pack.producers.second_reader import (
     MAX_REACTION_LEDGER_BYTES,
@@ -90,6 +95,24 @@ def test_adapter_defensive_limits_are_protocol_locked() -> None:
     assert MAX_REACTION_LEDGER_SINGLE_STRING_CODE_POINTS == 64 * 1024
     assert MAX_REACTION_RECORD_CANONICAL_BYTES == 128 * 1024
     assert REACTION_LEDGER_HASH_CHUNK_BYTES == 1024 * 1024
+
+
+def test_neutral_draft_contract_does_not_embed_one_mechanism_version() -> None:
+    names = {field.name for field in fields(AnnotationDraft)}
+
+    assert {
+        "kind",
+        "source_range",
+        "source_quote",
+        "body_text",
+        "created_at",
+    }.issubset(names)
+    assert {
+        "mechanism_version",
+        "record_source",
+        "prompt",
+        "memory",
+    }.isdisjoint(names)
 
 
 def test_adapter_loads_sanitized_current_highlight_and_note_fixture(

@@ -308,7 +308,7 @@ BOOK_ID="replace-with-existing-book-id"
   --creator-name "Second Reader"
 ```
 
-The track/creator arguments select and validate the local publication lane; minimal v0 does not copy them into the public Pack. Historical phase8 or otherwise unsupported producer records fail closed rather than being upgraded. This command is an operator entrypoint, not evidence that every existing full-book output is currently exportable.
+The track/creator arguments select and validate the local publication lane; minimal v0 does not copy them into the public Pack. Historical phase8 or otherwise unsupported producer records fail closed rather than being upgraded. The current `attentional_v2-phase9` requirement belongs only to `SecondReaderProducerAdapter`: future mechanisms may use different private formats, but must map `kind`, exact shared-source range/quote, conditional Note text, and settlement time into the producer-neutral handoff defined by the canonical contract README. This command is an operator entrypoint, not evidence that every existing full-book output is currently exportable.
 
 `--book-output-dir` is the mutually exclusive operator/testing alternative to `--book-id`; it must still resolve inside the configured `<BACKEND_RUNTIME_ROOT>/output` tree. A successful detached export writes one complete immutable revision under:
 

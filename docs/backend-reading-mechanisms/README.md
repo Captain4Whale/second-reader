@@ -50,6 +50,7 @@ Every mechanism doc must use these top-level sections:
 - `Memory And Revisit Logic`
 - `Runtime Artifacts`
 - `Public-State Projection`
+- `Annotation Pack Handoff`
 - `Known Limits / Drift Notes`
 
 Additional mechanism-specific sections are allowed when they clarify the design, but the shared structure above must remain present.
@@ -61,6 +62,7 @@ Additional mechanism-specific sections are allowed when they clarify the design,
 - Experimental docs should state which runtime path is live, what remains unsupported, and why the mechanism is still non-default.
 - Fallback docs should state why the mechanism is still supported, how it is selected, and which legacy or compatibility responsibilities still depend on it.
 - If one mechanism depends on shared fields or artifact boundaries, describe the dependency briefly and point back to `docs/backend-reading-mechanism.md` or `docs/backend-state-aggregation.md` instead of redefining them.
+- Each mechanism must say whether it has an adapter that produces the neutral Annotation Pack handoff. A mechanism-specific ledger/version is not the shared contract; unsupported mechanisms must say so explicitly.
 - If the mechanism changes in a way that alters shared boundaries or defaultness, update the shared docs in the same task.
 
 ## When To Update Which Doc

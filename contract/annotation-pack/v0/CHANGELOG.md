@@ -1,5 +1,11 @@
 # Changelog
 
+## Producer responsibility clarification - 2026-08-25
+
+- recorded the mechanism-neutral `AnnotationDraft` handoff and separated source-publication facts, annotation intent, runtime settlement facts, and exporter-derived wire data under `DEC-157`
+- clarified that `attentional_v2-phase9` is one current private adapter binding, not a Pack version or a requirement that future mechanisms must imitate
+- made no public wire, schema, deterministic identity, package, or compatibility change
+
 ## 0.1.0 minimal reset - 2026-08-25
 
 - directly replaced the unpublished heavy v0 wire under `DEC-156`; no old-wire compatibility or migration surface was retained

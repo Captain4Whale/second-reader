@@ -202,6 +202,8 @@ Use `docs/api-contract.md` for exact fields and routes. Use this file to underst
   - `_mechanisms/iterator_v1/derived/structure.json` remains a current-mechanism artifact that aggregation may still consult for `iterator_v1`-shaped section views and compatibility backfill.
 - Annotation Pack publication vs runtime truth
   - The exporter is the only boundary that may turn exact verified EPUB identity, coherent `BookDocument` source coordinates, and producer-adapter drafts into the minimal public Annotation Pack wire shape.
+  - Responsibility is deliberately split: the verified source substrate owns book/file facts; a mechanism adapter owns only the normalized annotation choice (`kind`, exact source range/quote, conditional Note text, settlement time); the generic resolver/builder owns href/TextPosition projection, W3C shaping, IDs, ordering, validation, and packaging.
+  - `attentional_v2-phase9` is the current private adapter input contract, not the shared seam. Future mechanisms must map their own outputs into `AnnotationDraft`; aggregation/export code must not inspect mechanism-private ledgers directly or infer missing annotation semantics.
   - `public/annotation-packs/` contains immutable, validated local publication snapshots selected by the internal `current.json`; it never feeds job activity, progress, checkpoint, lease, or resume decisions.
   - Canonical JSON and detached package publication are implemented and verified by Tiny Reader, but there is intentionally no frontend/API/Library discovery contract and no live Pages serving claim. Later discovery work must preserve this exporter-only normalization boundary.
 - Additive locus/source-ref fields vs section compatibility

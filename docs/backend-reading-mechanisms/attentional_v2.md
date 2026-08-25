@@ -777,6 +777,17 @@ Use `docs/backend-reading-mechanism.md` for shared platform boundaries. Use `doc
   - the current focal span
   - or the current interpretive question if that better explains what the mechanism is doing now
 
+## Annotation Pack Handoff
+- Supported through `SecondReaderProducerAdapter` for the current settled `schema_version=1`, `attentional_v2-phase9`, `record_source=read_surface` reaction ledger.
+- Native settled Marginalia maps to the shared neutral handoff as follows:
+  - explicit Marginalia `kind` becomes neutral `highlight | note`
+  - the uniquely resolved exact `primary_source_ref.source_span` becomes the canonical `BookDocument` source range
+  - `source_quote` must equal the uniquely resolved SourceRef quote
+  - Note `thought` becomes non-empty `body_text`; Highlight carries no body
+  - runtime `created_at` becomes the neutral settlement time
+- `phase9` is only this adapter's private input binding. It is not the Annotation Pack version and must not be copied by a future mechanism. Book/EPUB identity, manifest href, public TextPosition, W3C fields, IDs, and packaging remain outside `attentional_v2` ownership.
+- This section describes implemented format compatibility, not proof that a recent real whole-book output has already been exported. That claim requires an artifact-specific export and report.
+
 ## Evaluation Questions
 - These are the enduring mechanism-specific questions `attentional_v2` should eventually be able to answer well.
 - They are not the same thing as benchmark case lists or current temporary thresholds.

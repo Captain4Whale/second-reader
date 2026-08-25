@@ -36,7 +36,12 @@ class SourceRange:
 
 @dataclass(frozen=True, slots=True)
 class AnnotationDraft:
-    """One producer-neutral Highlight or Note candidate."""
+    """One producer-neutral Highlight or Note candidate.
+
+    Mechanism adapters own the kind, exact shared-source range/quote, and
+    conditional Note body. Runtime settlement owns ``created_at``. Record
+    index/digest fields are private export controls, never public Pack data.
+    """
 
     kind: AnnotationKind
     source_range: SourceRange

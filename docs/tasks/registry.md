@@ -7,7 +7,7 @@ Update when: task status, priority, blockers, decision refs, job refs, evidence 
 
 This document is the human-readable companion to `docs/tasks/registry.json`.
 
-Last updated: `2026-08-25T20:27:43+08:00`
+Last updated: `2026-08-25T20:42:47+08:00`
 
 ## Status Values
 - `active`
@@ -29,6 +29,7 @@ Last updated: `2026-08-25T20:27:43+08:00`
 - Evidence:
   - `DEC-155`
   - `DEC-156`
+  - `DEC-157`
   - `contract/annotation-pack/v0/README.md`
   - `contract/annotation-pack/v0/schema/annotation-pack.schema.json`
   - `.github/workflows/annotation-pack-pages.yml`
@@ -1158,6 +1159,19 @@ Last updated: `2026-08-25T20:27:43+08:00`
   - `bgjob_closed_loop_bilingual_broader_auditcoherencefix_20260330` (`completed`)
 
 ## Queued
+
+### `TASK-ANNOTATION-PACK-RECENT-AGENT-ARTIFACT-VALIDATION` — Validate a recent real Agent artifact against the producer-neutral Pack handoff
+- Status: `queued`
+- Lane: `product_contract`
+- Priority: `high`
+- Detail: `contract/annotation-pack/v0/README.md#producer-neutral-information-responsibility`
+- Next: select the most recent completed real Agent output, identify its exact source EPUB and coherent `BookDocument`, audit its settled producer data against the neutral `kind`/source range/quote/conditional Note text/settlement-time handoff, then run an actual export only if those inputs pass. Report the exact artifact inspected; do not reuse Tiny Reader as proof of that real artifact and do not rerun the Agent before checking the existing output.
+- Evidence:
+  - `DEC-157`
+  - `contract/annotation-pack/v0/README.md`
+  - `reading-companion-backend/src/annotation_pack/drafts.py`
+  - `reading-companion-backend/src/annotation_pack/producers/second_reader.py`
+  - `reading-companion-backend/tests/annotation_pack/test_second_reader_adapter.py`
 
 ### `TASK-FE-SECTION-RETIREMENT` — Retire section-first chapter/detail and marks surfaces
 - Status: `queued`
