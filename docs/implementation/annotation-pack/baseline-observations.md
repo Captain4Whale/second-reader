@@ -85,3 +85,23 @@ Observed while closing Slice 8 on `2026-08-24`:
 - `annotation-pack-contract-check`, `contract-check`, and `agent-check` all exited `0`; the golden rebuild verified nine generated files and the contract slice remained `42 passed`. Agent check still reports only the historical traceability issues cataloged at the top of this document, and dependency imports still emit the recorded deprecation warnings.
 
 The nine remaining full-suite failures are separately evidenced historical baseline drift and are not described as passing. The concurrency failure was an Annotation Pack regression and was repaired before Slice 8 acceptance rather than being relabeled as baseline.
+
+Observed while accepting the minimal-v0 atomic replacement in Slice 2 on `2026-08-25`:
+
+- authority reset `012788d` and atomic wire cutover `b44ba7d` were committed separately and pushed to `origin/codex/annotation-pack-v0`
+- `make annotation-pack-contract-check` completed with `55 passed`; the complete Annotation Pack suite completed with `794 passed`
+- `b44ba7d` replaced the canonical wire, runtime copies, producer/export/package path and Tiny Reader goldens together; it removed the custom JSON-LD context publication surface and did not retain an old-wire or phase8 compatibility layer
+- Slice 2 did not modify `src/attentional_v2/slow_cycle.py` or `tests/test_attentional_v2_slow_cycle.py`
+
+Observed for the minimal-v0 Slice 3 final candidate on `2026-08-25`:
+
+- the required related Agent/source regression set completed with `134 passed, 2 failed`
+- both failures are the same pre-existing `tests/test_attentional_v2_slow_cycle.py` cases that monkeypatch the removed `slow_cycle.invoke_structured_output_tool` module attribute; this test/interface drift was already reproduced at pre-Annotation-Pack base `2d8aac2`
+- the two failures remain unrelated baseline debt: they are not counted as Annotation Pack regressions, were not repaired in the minimal-wire replacement, and are not described as passing
+- the complete backend suite completed with `1794 passed, 9 failed`; the nine failures match the existing baseline categories already cataloged in this document: three `attentional_v2.bridge`, two `attentional_v2.survey` and two `attentional_v2.slow_cycle` cases monkeypatch the removed `invoke_structured_output_tool` module attributes, one minimal-eval inventory case expects an older active pointer, and one F4A quality-audit case expects two default targets while the current environment/config exposes one
+- the minimal replacement did not touch those mechanisms, evaluation inventory or F4A target configuration; the nine failures are recorded explicitly and the full backend result is not represented as green
+- no real whole-book Agent run or conversion of the historical Siddhartha/Naval artifacts was performed; Pages was not deployed or served-byte verified; Library, HTTP API, frontend and Reader integration were not implemented or claimed
+
+Final minimal-v0 governance on `2026-08-25` completed with both `make contract-check` and `make agent-check` exiting `0`. The commands still emitted the historical traceability and LangChain warnings cataloged above. The contract check also emitted its warning-only high-signal-document reminder because close-out synchronizes `AGENTS.md`, backend aggregation, and backend rules; no additional decision entry was added because `DEC-156` already records the minimal-v0 direction and this Slice introduces no new product or architecture decision.
+
+This evidence supports only the repo-local Tiny Reader fixture claim. Slice 3 is closed by the commit containing this acceptance record, followed by a non-force push and local/remote HEAD comparison recorded in the final handoff.

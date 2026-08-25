@@ -25,11 +25,12 @@ Use `docs/api-contract.md` for exact fields and routes. Use this file to underst
   - Current public API surfaces do not expose it directly, but runtime and future eval tooling can rely on it as the mechanism-neutral text source.
 - `public/annotation-packs/<track_slug>/current.json` and `public/annotation-packs/<track_slug>/revisions/<revision_id>/`
   - Explicit Annotation Pack export creates this public-safe publication source; it is not written by normal reading completion.
-  - `current.json` is a small atomically replaced pointer to one complete immutable revision. A detached revision contains canonical `annotations.json`, `<track_slug>.annotations`, and `validation-report.json`; a development JSON-only revision remains supported.
-  - The `.annotations` file is an independently valid, bounded single-entry package containing only root `annotations.json`. Its sibling report stays local and is not inside the package. JSON-only-to-detached upgrade creates a new revision without modifying the old directory.
+  - Minimal `annotations.json` is a strict W3C/EPUB/Dublin Core `AnnotationSet`: `about` identifies the exact EPUB with one RFC 6920 `nih:sha-256` name, and each Highlight/Note uses ordered TextQuote plus resource-wide Unicode-code-point TextPosition selectors. It contains zero `sr:*` and has no project context or namespace.
+  - `current.json` is a small atomically replaced internal pointer to one complete immutable revision. A detached revision contains canonical `annotations.json`, `<track_slug>.annotations`, and internal-only `validation-report.json`; a development JSON-only revision remains supported.
+  - The `.annotations` file is an independently valid, bounded single-entry package containing only root `annotations.json`. The pointer/report, producer/adapter metadata, source digests, and findings stay outside the Pack and package. JSON-only-to-detached upgrade creates a new revision without modifying the old directory.
   - This tree is exporter-owned normalized publication output. It is not reading runtime state, mechanism truth, checkpoint/resume truth, or a replacement for the settled producer ledger.
   - No current frontend, Library discovery flow, REST route, or WebSocket surface reads or exposes this tree. Its placement under `public/` denotes content-safety and future product-facing eligibility, not current HTTP availability.
-  - `tests/annotation_pack/fixtures/tiny-reader/` is the tracked public-safe rebuild/golden proof for this layout and its real-EPUB anchors; it is test evidence, not an additional runtime source or discovery surface.
+  - `tests/annotation_pack/fixtures/tiny-reader/` is the tracked public-safe rebuild/golden proof for this layout, current phase9 producer shape, exact EPUB identity, and Quote/Position round trips. It is bounded small-fixture evidence, not an additional runtime source, a successful prior full-book conversion, or an external Reader/public-service claim.
 - `_mechanisms/iterator_v1/derived/structure.json`
   - Current `iterator_v1`-owned derived traversal artifact.
   - Carries chapter section trees, `segment_ref`, and iterator-specific traversal metadata.
@@ -163,7 +164,8 @@ Use `docs/api-contract.md` for exact fields and routes. Use this file to underst
 - `reading-companion-backend/src/annotation_pack/exporter.py`
   - Owns the explicit source verification, producer-to-public normalization, validation, immutable revision publication, and atomic current-pointer switch for Annotation Packs.
   - It may read settled mechanism data only through the producer adapter boundary. Catalog/API aggregation must not reinterpret private producer rows into Annotation Pack wire data independently.
-  - Its public-safe files are currently operated only by the export, validate, and inspect tools; they are not an automatic catalog or API input.
+  - It binds the Pack to exact EPUB bytes, resolves quotes into the verified resource-wide TextPosition coordinate system, and strips producer/private metadata from `annotations.json`; sanitized metadata belongs only to the report/pointer companions.
+  - Its public-safe files are currently operated only by the export, validate, and inspect tools; they are not an automatic catalog or API input, and the GitHub Pages schema IRI is still not live.
 
 ## Normalization Boundary
 - Internal ids vs public ids
@@ -199,9 +201,9 @@ Use `docs/api-contract.md` for exact fields and routes. Use this file to underst
   - `_mechanisms/<mechanism_key>/` contains mechanism-private derived structures, runtime memory/checkpoints, diagnostics, and optional eval exports.
   - `_mechanisms/iterator_v1/derived/structure.json` remains a current-mechanism artifact that aggregation may still consult for `iterator_v1`-shaped section views and compatibility backfill.
 - Annotation Pack publication vs runtime truth
-  - The exporter is the only boundary that may turn verified publication identity, canonical BookDocument anchors, and producer-adapter drafts into the public Annotation Pack wire shape.
-  - `public/annotation-packs/` contains immutable, validated publication snapshots selected by `current.json`; it never feeds job activity, progress, checkpoint, lease, or resume decisions.
-  - Canonical JSON and detached package publication are implemented, but there is intentionally no frontend/API/Library discovery contract. Later discovery work must preserve this exporter-only normalization boundary.
+  - The exporter is the only boundary that may turn exact verified EPUB identity, coherent `BookDocument` source coordinates, and producer-adapter drafts into the minimal public Annotation Pack wire shape.
+  - `public/annotation-packs/` contains immutable, validated local publication snapshots selected by the internal `current.json`; it never feeds job activity, progress, checkpoint, lease, or resume decisions.
+  - Canonical JSON and detached package publication are implemented and verified by Tiny Reader, but there is intentionally no frontend/API/Library discovery contract and no live Pages serving claim. Later discovery work must preserve this exporter-only normalization boundary.
 - Additive locus/source-ref fields vs section compatibility
   - Public aggregation may now expose richer additive fields such as `reading_locus`, `primary_source_ref`, `related_source_refs`, and `supersedes_marginalia_id`.
   - Existing `segment_ref` / `section_ref` fields remain temporary compatibility sidecars for current frontend surfaces.

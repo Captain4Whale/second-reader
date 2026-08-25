@@ -276,7 +276,7 @@ Important frontend variables:
 - `make status-phoenix`: show installation, PID, UI readiness, endpoints, and state path without starting Phoenix
 - `make stop-phoenix`: stop only the PID verified as the repo-local Phoenix sidecar and preserve its data
 - `make test`: run backend tests, frontend typecheck/build, and contract drift checks
-- `make annotation-pack-contract-check`: verify the Annotation Pack v0 schemas, examples, generated bindings/runtime copies, tracked Tiny Reader golden, and GitHub Pages projection without network access
+- `make annotation-pack-contract-check`: verify the minimal Annotation Pack v0 W3C/DC schema, examples, generated bindings/runtime copies, tracked Tiny Reader JSON/package golden, and strict GitHub Pages projection without network access
 - `make contract-check`: verify docs appendix, backend OpenAPI snapshot, and frontend contract guards
 - `make e2e`: run the fixture-backed upload -> analysis -> book -> chapter -> marks Playwright flow
 - `make build`: build the frontend bundle
@@ -292,7 +292,9 @@ Important frontend variables:
 
 Annotation Pack export is an opt-in operator action. It is not called by normal reading completion and does not change the Agent, Digest, Memory, reading loop, Library, Reader, or public HTTP API. The default deliverable is the formal detached `.annotations` package together with its canonical development JSON.
 
-From the backend directory, export one completed book by its existing output id:
+Minimal v0 emits a strict W3C Web Annotation/Dublin Core `AnnotationSet`: one exact EPUB is identified by `dc:identifier = ["nih:sha-256;<exact EPUB SHA-256>"]`, and each Highlight or Note targets a relative EPUB XHTML href with an exact `TextQuoteSelector` followed by a Unicode-code-point `TextPositionSelector`. The public Pack has no `sr:*`, custom context/namespace, Work/Edition/File hierarchy, Track, chapter fingerprint, provenance, or public digest. The local validation report and `current.json` pointer remain internal publication companions; neither is part of `annotations.json` or the detached package.
+
+From the backend directory, attempt an explicit export for one existing output that has an exact source EPUB, a coherent parser-built `BookDocument`, and a supported current phase9 settled producer ledger:
 
 ```bash
 cd reading-companion-backend
@@ -306,6 +308,8 @@ BOOK_ID="replace-with-existing-book-id"
   --creator-name "Second Reader"
 ```
 
+The track/creator arguments select and validate the local publication lane; minimal v0 does not copy them into the public Pack. Historical phase8 or otherwise unsupported producer records fail closed rather than being upgraded. This command is an operator entrypoint, not evidence that every existing full-book output is currently exportable.
+
 `--book-output-dir` is the mutually exclusive operator/testing alternative to `--book-id`; it must still resolve inside the configured `<BACKEND_RUNTIME_ROOT>/output` tree. A successful detached export writes one complete immutable revision under:
 
 ```text
@@ -317,7 +321,7 @@ BOOK_ID="replace-with-existing-book-id"
     └── validation-report.json
 ```
 
-The exporter writes and freezes the full revision before atomically selecting it through `current.json`. The pointer binds the relative paths and SHA-256 digests of JSON, package, and report. The command summary contains safe ids, digests, counts, and finding codes; it intentionally omits local paths and annotation text.
+The exporter writes and freezes the full revision before atomically selecting it through `current.json`. The internal pointer binds the relative paths and SHA-256 digests of JSON, package, and report; the internal validation report carries sanitized producer/adapter metadata and findings. The command summary contains safe ids, digests, counts, and finding codes; it intentionally omits local paths and annotation text.
 
 Validate and inspect either artifact independently, without the source EPUB, BookDocument, or producer ledger:
 
@@ -346,12 +350,12 @@ The policy flags are independent:
 
 - `--allow-partial` permits a stable settled snapshot from a paused/error run; it does not permit invalid-row skips.
 - `--allow-skips` permits annotation-level invalid rows to be skipped when a valid item remains; it does not permit partial or empty exports.
-- `--allow-empty` permits an explicitly empty Track where the run-state policy allows it; it is not a quality claim.
+- `--allow-empty` permits an explicitly empty Pack for the selected internal publication lane where the run-state policy allows it; it is not a quality claim.
 - `--force-regenerate` requests a fresh publication pass rather than the ordinary verified no-op path; it does not retract an already-published detached deliverable.
 
-Package generation fixes the root name, timestamp, Unix regular-file mode, DEFLATE level, entry order, and comments/extra fields. Byte reproducibility is a Second Reader project rule within the supported toolchain, not a W3C requirement or a promise that different zlib versions emit the same DEFLATE bitstream. Independent validation checks the observable safe envelope and uncompressed canonical JSON rather than requiring local recompression byte equality. The approved namespace and schema IRIs use the GitHub Pages location, but they are not live until the workflow reaches `main`, Pages is enabled, deployment succeeds, and the served bytes pass HTTP comparison against the canonical contract files.
+Package generation fixes the root name, timestamp, Unix regular-file mode, DEFLATE level, entry order, and comments/extra fields. Byte reproducibility is a Second Reader project rule within the supported toolchain, not a W3C requirement or a promise that different zlib versions emit the same DEFLATE bitstream. Independent validation checks the observable safe envelope and uncompressed canonical JSON rather than requiring local recompression byte equality. Minimal v0 has no project JSON-LD namespace or custom context. Its approved schema IRI uses the GitHub Pages location, but that IRI is not live until the workflow reaches `main`, Pages is enabled, deployment succeeds, and the served bytes pass HTTP comparison against the canonical contract file.
 
-The tracked public-safe end-to-end proof lives at `reading-companion-backend/tests/annotation_pack/fixtures/tiny-reader/`. Its deterministic builder creates a real two-resource EPUB 3 publication, parses it through the production neutral BookDocument path, writes one current-native Highlight and one Note, and runs the real exporter. The committed golden proves exact href, quote, prefix/suffix, and paragraph-character round trips while deliberately omitting unverified CFI. Rebuild or byte-check it offline from the backend directory:
+The tracked public-safe end-to-end proof lives at `reading-companion-backend/tests/annotation_pack/fixtures/tiny-reader/`. Its deterministic builder creates a small real two-resource EPUB 3 publication, parses it through the production neutral `BookDocument` path, writes one current phase9-native Highlight and one Note, and runs the real exporter. The current golden proves the minimal W3C/DC shape, exact EPUB NIH identity, exact href/quote/prefix/suffix, resource-wide Unicode-code-point TextPosition round trips, single-root package, and internal report/pointer binding. It is bounded fixture evidence, not a claim that a prior real full-book Agent artifact has been converted or that an external Reader/public service is interoperating with it. Rebuild or byte-check it offline from the backend directory:
 
 ```bash
 .venv/bin/python tests/annotation_pack/fixtures/tiny-reader/build_fixture.py --write

@@ -1,6 +1,6 @@
 # Second Reader Annotation Pack v0：详细设计与实施交接
 
-状态：`implementation_active_minimal_reset_slice_1`（未公开 v0 原路径极简替换；Authority reset 待验收）
+状态：`implementation_active_minimal_reset_slice_3_candidate`（Authority reset 与 atomic wire cutover 已验收；最终文档与分支收口中）
 
 协议代号：`second-reader-annotation-pack/0.1`
 
@@ -2082,29 +2082,29 @@ AnnotationSet
             └── TextPositionSelector: start/end
 ```
 
-- [ ] `@context` 必须是上述 W3C EPUB Annotations context 字符串；Pack 中零 `sr:*`，各层均使用严格属性白名单。
-- [ ] `generator` 使用固定的 Second Reader 软件身份，`generated` 为每个 Pack 必备时间。
-- [ ] `about.dc:identifier` 必须是恰好一项的数组，唯一值是 RFC 6920 `nih:sha-256;` 加 exact EPUB bytes 的 64 位小写十六进制 SHA-256；不接受分隔符、缩写或校验位。
-- [ ] `about` 必须有 `dc:format=application/epub+zip` 和非空 `dc:title`；源 EPUB 有作者时必须输出非空 `dc:creator[]`。
-- [ ] Highlight 必须为 `motivation=highlighting` 且禁止 `body`；Note 必须为 `motivation=commenting` 且只有一个 `type=TextualBody`、非空 `value` 的 body。
-- [ ] `target` 只有 `source` 与 `selector`；selector 恰好两项且顺序固定为 TextQuote 后 TextPosition。`TextQuoteSelector.exact` 必备，`prefix`/`suffix` 可省略。
-- [ ] TextPosition 使用 Unicode code point，`start` 包含、`end` 不包含，坐标针对当前 EPUB resource 的固定规范化文本流；规范化算法在 v0 README 中唯一定义，不逐条重复。
-- [ ] `items` 按 Annotation `id` 确定性排序；Pack ID 是 exact EPUB hash 与固定 generator identity 的 UUIDv5，Annotation ID 是 EPUB hash、href、start/end、motivation 及 Note body 的 UUIDv5；语义重复项拒绝。
-- [ ] 不输出逐条 creator、`sr:kind`、target type、body format、Work/Edition/File、Track、chapter context/fingerprint、anchor ID、CFI、provenance 或 public digest。
+- [x] `@context` 必须是上述 W3C EPUB Annotations context 字符串；Pack 中零 `sr:*`，各层均使用严格属性白名单。
+- [x] `generator` 使用固定的 Second Reader 软件身份，`generated` 为每个 Pack 必备时间。
+- [x] `about.dc:identifier` 必须是恰好一项的数组，唯一值是 RFC 6920 `nih:sha-256;` 加 exact EPUB bytes 的 64 位小写十六进制 SHA-256；不接受分隔符、缩写或校验位。
+- [x] `about` 必须有 `dc:format=application/epub+zip` 和非空 `dc:title`；源 EPUB 有作者时必须输出非空 `dc:creator[]`。
+- [x] Highlight 必须为 `motivation=highlighting` 且禁止 `body`；Note 必须为 `motivation=commenting` 且只有一个 `type=TextualBody`、非空 `value` 的 body。
+- [x] `target` 只有 `source` 与 `selector`；selector 恰好两项且顺序固定为 TextQuote 后 TextPosition。`TextQuoteSelector.exact` 必备，`prefix`/`suffix` 可省略。
+- [x] TextPosition 使用 Unicode code point，`start` 包含、`end` 不包含，坐标针对当前 EPUB resource 的固定规范化文本流；规范化算法在 v0 README 中唯一定义，不逐条重复。
+- [x] `items` 按 Annotation `id` 确定性排序；Pack ID 是 exact EPUB hash 与固定 generator identity 的 UUIDv5，Annotation ID 是 EPUB hash、href、start/end、motivation 及 Note body 的 UUIDv5；语义重复项拒绝。
+- [x] 不输出逐条 creator、`sr:kind`、target type、body format、Work/Edition/File、Track、chapter context/fingerprint、anchor ID、CFI、provenance 或 public digest。
 
 ### 20.2 Standards and producer boundary
 
-- [ ] 文档仅宣称与 W3C Web Annotation Data Model Recommendation 及 `2026-05-21` EPUB Annotations 1.0 Working Draft aligned；不宣称 EPUB Working Draft conformant。
-- [ ] Set/Annotation 基础身份字段来自 W3C/EPUB WD；`generator/generated`、书籍必备元数据、motivation、双 selector、exact-file hash、顺序与严格白名单是 Second Reader v0 profile 约束，但公开 wire 仍只使用标准词汇。
-- [ ] `SecondReaderProducerAdapter` 只接受 `schema_version=1`、`mechanism_version=attentional_v2-phase9`、`record_source=read_surface`、native Highlight/Note 和已唯一 exact resolve 的 SourceRef。兼容 sidecar 可忽略但不再是必需输入；phase8 直接拒绝。
-- [ ] 无旧 wire migration/compatibility path，无 phase8 自动升级，无从 compatibility taxonomy 反推 Highlight/Note。
+- [x] 文档仅宣称与 W3C Web Annotation Data Model Recommendation 及 `2026-05-21` EPUB Annotations 1.0 Working Draft aligned；不宣称 EPUB Working Draft conformant。
+- [x] Set/Annotation 基础身份字段来自 W3C/EPUB WD；`generator/generated`、书籍必备元数据、motivation、双 selector、exact-file hash、顺序与严格白名单是 Second Reader v0 profile 约束，但公开 wire 仍只使用标准词汇。
+- [x] `SecondReaderProducerAdapter` 只接受 `schema_version=1`、`mechanism_version=attentional_v2-phase9`、`record_source=read_surface`、native Highlight/Note 和已唯一 exact resolve 的 SourceRef。兼容 sidecar 可忽略但不再是必需输入；phase8 直接拒绝。
+- [x] 无旧 wire migration/compatibility path，无 phase8 自动升级，无从 compatibility taxonomy 反推 Highlight/Note。
 
 ### 20.3 Internal correctness and publication invariants
 
-- [ ] exact verified source handle/no-follow、EPUB/BookDocument coherence、quote round-trip、privacy scan、canonical JSON bytes、ZIP hostile-case rejection、immutable revisions、atomic `current.json`、idempotent unchanged、input mutation detection、crash recovery 与 concurrency protection 全部保留。
-- [ ] snapshot/content digest、adapter identity/details 与 findings 仅可存在 sanitized validation report/current pointer，不得进入 `annotations.json` 或 `.annotations`。
-- [ ] `.annotations` 是单根 `annotations.json` ZIP；可在无 EPUB、BookDocument 或 producer ledger 时独立 validate/inspect。
-- [ ] public Pack/package 不含 local path、private Agent/book/job/id、compat taxonomy、prompt/reasoning、Memory、trace/audit、provenance 或其他 producer-private 内容。
+- [x] exact verified source handle/no-follow、EPUB/BookDocument coherence、quote round-trip、privacy scan、canonical JSON bytes、ZIP hostile-case rejection、immutable revisions、atomic `current.json`、idempotent unchanged、input mutation detection、crash recovery与 concurrency protection 全部保留。
+- [x] snapshot/content digest、adapter identity/details 与 findings 仅可存在 sanitized validation report/current pointer，不得进入 `annotations.json` 或 `.annotations`。
+- [x] `.annotations` 是单根 `annotations.json` ZIP；可在无 EPUB、BookDocument 或 producer ledger 时独立 validate/inspect。
+- [x] public Pack/package 不含 local path、private Agent/book/job/id、compat taxonomy、prompt/reasoning、Memory、trace/audit、provenance 或其他 producer-private 内容。
 
 ### 20.4 Implementation slices and acceptance
 
@@ -2112,28 +2112,28 @@ AnnotationSet
 
 - [x] 新决策明确 v0 未公开，允许原路径直接替换，并部分 supersede `DEC-155` 的重型身份与锚点公开设计。
 - [x] 本节、current state 与 task registry 指向新完成边界；登记 Annotation Hub consumer 后续迁移任务，但不修改 Hub 工作树。
-- [ ] 轻量文档/注册表校验已通过；Slice 1 仍须独立 commit 并 push 到 `codex/annotation-pack-v0` 才完成验收。
+- [x] 轻量文档/注册表校验通过；Slice 1 已由 `012788d` 独立 commit 并 push 到 `origin/codex/annotation-pack-v0`。
 
 **Slice 2 — Atomic wire cutover**
 
-- [ ] 同一 Slice 同步替换 canonical schema、examples、标准说明、generated bindings/runtime copies 和 Pages projection；删除自定义 JSON-LD context/namespace 发布面，保留原 schema IRI。
-- [ ] 同步重构 identity、IDs、anchor、builder、validator、exporter、inspector 和 adapter；ParagraphChar 被 TextPosition 完全替代，phase8 失败。
-- [ ] 重建 Tiny Reader `annotations.json`、package、report、pointer 和 digest golden；每个 target 均满足 `resource_text[start:end] == exact`。
-- [ ] focused Annotation Pack checks、影响的 Agent/source regressions 与必要的 contract checks 通过后，Slice 2 独立 commit/push。
+- [x] 同一 Slice 同步替换 canonical schema、examples、标准说明、generated bindings/runtime copies 和 Pages projection；删除自定义 JSON-LD context/namespace 发布面，保留原 schema IRI。
+- [x] 同步重构 identity、IDs、anchor、builder、validator、exporter、inspector 和 adapter；ParagraphChar 被 TextPosition 完全替代，phase8 失败。
+- [x] 重建 Tiny Reader `annotations.json`、package、report、pointer 和 digest golden；每个 target 均满足 `resource_text[start:end] == exact`。
+- [x] focused Annotation Pack checks、影响的 Agent/source regressions 与必要的 contract checks 完成；Slice 2 已由 `b44ba7d` 独立 commit 并 push 到 `origin/codex/annotation-pack-v0`。两条相关回归失败是可在 replacement 前基线复现的 `slow_cycle` 测试/接口漂移，单列于 baseline observations，不计为 Annotation Pack 回归。
 
 **Slice 3 — Acceptance and close-out**
 
-- [ ] 同步 README、source-of-truth、state aggregation、current-state、task registry、baseline observations 与本节的最终验收证据。
-- [ ] 运行 `make annotation-pack-contract-check`、完整 Annotation Pack suite、相关 Agent/source regressions、`make contract-check`、`make agent-check` 和完整 backend suite；无关 baseline 失败单列，不冒充回归。
-- [ ] 本地与远程分支 HEAD 一致，Slice 3 独立 commit/push；无 force-push。
-- [ ] 不运行真实整书 Agent，不新增 live-model、Library、HTTP API、frontend 或 Reader 集成。
+- [x] 同步 README、source-of-truth、state aggregation、current-state、task registry、baseline observations 与本节的最终验收证据。
+- [x] 最终命令组完成：`annotation-pack-contract-check: 55 passed`、完整 Annotation Pack suite `794 passed`、相关 Agent/source regressions `134 passed, 2 failed`，完整 backend suite `1794 passed, 9 failed`，`make contract-check` 与 `make agent-check` 均 exit `0`。两条相关回归失败、完整 backend 的九条失败及治理命令的历史 warning 均按既有 baseline 单列，未冒充全绿。
+- [x] Slice 3 由包含本验收记录的独立 closing commit 交付并 push 到 `origin/codex/annotation-pack-v0`；交付端在 push 后核对本地与远端 HEAD 一致，不 force-push。正文不写入无法自指的 closing commit hash，精确 hash 由最终交付记录报告。
+- [x] 未运行真实整书 Agent，未新增 live-model、Library、HTTP API、frontend 或 Reader 集成。
 
 ### 20.5 Required negative and determinism evidence
 
-- [ ] 缺少任一 profile-required 字段、任意 `sr:*`、旧重型 v0 字段、phase8 ledger、Highlight+body 或 Note-body 缺失均失败。
-- [ ] EPUB 任意一 byte 改变都会改变 `nih` 标识与相关确定性 IDs。
-- [ ] 错 href、越界/空 TextPosition 或错 exact 失败；prefix/suffix 可合法省略。
-- [ ] 重复导出 unchanged，崩溃恢复、输入突变、并发和 hostile ZIP 用例继续通过。
+- [x] 缺少任一 profile-required 字段、任意 `sr:*`、旧重型 v0 字段、phase8 ledger、Highlight+body 或 Note-body 缺失均失败。
+- [x] EPUB 任意一 byte 改变都会改变 `nih` 标识与相关确定性 IDs。
+- [x] 错 href、越界/空 TextPosition 或错 exact 失败；prefix/suffix 可合法省略。
+- [x] 重复导出 unchanged，崩溃恢复、输入突变、并发和 hostile ZIP 用例继续通过。
 
 ### 20.6 Completion claim boundary
 
@@ -2143,9 +2143,17 @@ Epic 完成后只能声明：
 
 不得声明旧《悉达多》《纳瓦尔宝典》已转换，不得声明真实整书 current Agent→Pack 链路已验证。GitHub Pages schema IRI 目前仍为未上线；只有进入 `main`、启用/完成 Pages 部署并通过 served-byte 对比后，才能声明公开可用。
 
-### Slice 1 authority-reset checkpoint
+本次 repo-local Epic 完成只作出上述限定声明。真实整书 Agent→Pack 没有运行；旧《悉达多》《纳瓦尔宝典》没有转换。Pages 只完成本地 projection/byte check，不是 live 部署或 served-byte 复验；Library、HTTP API、frontend 与 Reader 集成均未实现、未测试、未声明。
 
-当前工作树已写入 `DEC-156`、本节的新 DoD 与 Annotation Hub 后续迁移任务，且未修改 Hub 工作树。`git diff --check` 与 `jq empty docs/tasks/registry.json` 通过；`make agent-check` exit `0`，其中 Annotation Pack generated drift/example/Tiny Reader/contract/Pages 及 root contract/docs checks 全部通过。输出的 agent-switching traceability warnings 均是既有无关任务缺字段/缺路径、既有 current-state 任务状态漂移和既有重复 decision ids；本 Slice 新增/更新的 Annotation Pack 与 Hub 任务无新 warning。Slice 1 只有在独立 commit 并 push 后才视为已验收；在此之前不得进入 atomic wire cutover。
+### 20.7 Current minimal-reset acceptance evidence
+
+- Authority reset 已由 `012788d` commit/push：写入 `DEC-156`、新 DoD 和 Annotation Hub consumer migration 后续任务，未修改 Hub 工作树。
+- Atomic wire cutover 已由 `b44ba7d` commit/push：canonical contract、runtime、producer/export/package 链路和 Tiny Reader golden 已原子替换为极简 v0，无旧 wire 或 phase8 compatibility layer。
+- Slice 3 验收证据：`make annotation-pack-contract-check` 为 `55 passed`；完整 `tests/annotation_pack` 为 `794 passed`；相关 Agent/source regression set 为 `134 passed, 2 failed`；`make contract-check` 与 `make agent-check` 均 exit `0`。
+- 两条失败都位于 `tests/test_attentional_v2_slow_cycle.py`，仍是测试 monkeypatch 已移除的 `slow_cycle.invoke_structured_output_tool` module attribute；该漂移在 replacement 前基线已存在，Slice 1/2 均未修改 `slow_cycle.py` 或这两个测试。它们不是 Annotation Pack 回归，也没有被冒充为通过。
+- 完整 backend suite 为 `1794 passed, 9 failed`。九条失败与既有 baseline 清单一致：`attentional_v2.bridge` 三条、`survey` 两条、`slow_cycle` 两条均为已移除 `invoke_structured_output_tool` attribute 的 monkeypatch/interface drift；另有 minimal-eval inventory active pointer 一条和 F4A 默认 target-count 一条。极简替换未触碰这些实现/测试，结果未冒充全绿。
+- `make agent-check` 仍输出历史 task traceability、retired evidence path、active/done appendix drift、duplicate decision ID 与 LangChain deprecation warning；`make contract-check` 还输出 high-signal-doc decision reminder。前者均已在 baseline observations 中登记；后者不新增 decision-log entry，因为本 Slice 只同步 `DEC-156` 已决方向和 landed 能力，没有建立新方向。
+- Slice 3 通过包含本记录的 closing commit/push 与交付端远端 HEAD 对齐完成；精确 closing commit hash 在最终交付记录中报告。
 
 ## Appendix A. Superseded first-implementation Definition Of Done and closure record
 
@@ -2170,7 +2178,9 @@ Epic 完成后只能声明：
 - [x] 没有 Readest、Library、Hypothesis、KOReader、Readwise、database、community或cross-edition fuzzy dependency。
 - [x] README/source-of-truth/state aggregation/current-state/task registry/decision evidence按实际 landed能力最小同步；每个 Slice 都有 focused checks、独立 commit，并按 owner 授权 push 到 `codex/annotation-pack-v0`。
 
-### Current implementation checkpoint
+### Historical DEC-155 implementation checkpoint (superseded)
+
+以下 Slices 1–8、计数与能力描述记录 `2026-08-24` 重型首轮实现，只用于追溯。其中出现的 Work/Edition/File、Track、ParagraphChar、CFI、`sr:*`、provenance 或 public digest 均不是当前极简 v0 的完成证据。
 
 **Slice 1 — Contract skeleton + canonical schema authority** 已验收：稳定 namespace/schema IRI 已确认，字段约束已经成为 canonical schema/examples/offline drift check，Pages publication mapping 可重复构建。
 
@@ -2188,10 +2198,10 @@ Epic 完成后只能声明：
 
 **Slice 8 — Golden fixtures, full tests, docs and contract checks** 已验收：tracked Tiny Reader提交项目原创/CC0、可离线重建的真实EPUB 3（`3158` bytes，SHA-256 `1325ba2f76406fb22a1bb0f02edd735983cc150f64cc4af5bb00fbf6d873f7a7`）、真实parser生成并复验的BookDocument、current-shaped settled Highlight+Note ledger，以及canonical JSON、single-root detached package、report、pointer和digest goldens。固定generator重建并byte-check九个generated files；path/stream parse等价、两个XHTML href、chapter fingerprint、TextQuote exact/prefix/suffix、paragraph-char与exact resource bytes逐项回查，happy path只含两个required selectors且不依赖CFI。临时真实fragment-nav EPUB继续暴露duplicate same-resource/spine-zero/CFI-null warning；旧substrate缺optional locator/HTML/sentence fields仍能CFI-free resolve，缺required href则被真实identity coherence gate拒绝。Public JSON/package/report/pointer对完整private vocabulary和local path做负向扫描，独立validate/inspect不需要producer artifacts。
 
-Slice 8同时修复完整backend suite发现的一条Slice 6 lease-scan竞争：在已持有book lock时，逐sidecar读取复用现有job lock，保持`book -> job`锁序和原no-follow/identity gates，使合法heartbeat原子替换不再被误判为攻击性pathname race。Focused golden/lease/concurrent-resume为`55 passed`，完整Annotation Pack suite为`882 passed`；required affected regression set为`183 passed, 2 failed`，完整backend为`1882 passed, 9 failed`。剩余九项均以exact test replay在base `2d8aac2`复现并单列；新增concurrent-resume failure已消失。Ruff、compileall、fixture rebuild和diff checks通过；root Annotation Pack contract check保持`42 passed`且Pages projection有效，`contract-check`与`agent-check`均exit `0`，历史traceability和dependency warnings继续单列。全部Section 20本地DoD已闭环，Slices 1–8各自独立commit/push；本Slice更新既有`DEC-155`的落地证据，不建立新产品方向。
+Slice 8同时修复完整backend suite发现的一条Slice 6 lease-scan竞争：在已持有book lock时，逐sidecar读取复用现有job lock，保持`book -> job`锁序和原no-follow/identity gates，使合法heartbeat原子替换不再被误判为攻击性pathname race。Focused golden/lease/concurrent-resume为`55 passed`，完整Annotation Pack suite为`882 passed`；required affected regression set为`183 passed, 2 failed`，完整backend为`1882 passed, 9 failed`。剩余九项均以exact test replay在base `2d8aac2`复现并单列；新增concurrent-resume failure已消失。Ruff、compileall、fixture rebuild和diff checks通过；root Annotation Pack contract check保持`42 passed`且Pages projection有效，`contract-check`与`agent-check`均exit `0`，历史traceability和dependency warnings继续单列。旧版 Section 20 的本地 DoD 当时已闭环，Slices 1–8各自独立commit/push；该历史结论不代表 `DEC-156` 极简 v0 已完成 Slice 3 收口。
 
-外部 IRI 仍须等待 workflow 进入 `main`、Pages 启用并成功部署后做 HTTP byte comparison，当前不得称为 live。Annotation Pack v0第一实现Epic在本地与仓库范围内已完成；Reader/Library discovery或第三方互操作属于另立任务。
+外部 IRI 当时仍须等待 workflow 进入 `main`、Pages 启用并成功部署后做 HTTP byte comparison，不得称为 live。此处“完成”仅指 `DEC-155` 重型第一实现的本地与仓库范围历史结论；Reader/Library discovery或第三方互操作属于另立任务。
 
-### Explicit non-goals confirmation
+### Historical DEC-155 non-goals confirmation (superseded checkpoint)
 
-截至 Slice 8，仓库已实现 contract/schema/context/examples、producer-neutral离线schema loader、deterministic generated bindings/runtime resources、focused checks/Pages projection、verified EPUB publication identity/fingerprints/coherence gate、exact XHTML resource index、strict anchors、canonical serialization/semantic digest、generic Pack builder、bounded schema/semantic/privacy validator/final report primitives、只读current native settled ledger的strict producer adapter、显式JSON/detached exporter、独立validator/safe inspector、immutable public revision/atomic pointer publication，以及public-safe真实EPUB/current-shaped Highlight+Note end-to-end golden与完整anchor回查。Catalog/API/UI discovery仍未实现。Default CFI resolver仍不存在，因此不声称真实CFI或外部Reader互操作。Agent prompt、Digest、Memory、reading loop、Readest、Library和public HTTP API均未修改。
+截至 `2026-08-24` 的旧 Slice 8，仓库曾按 `DEC-155` 重型 wire 实现 contract/schema/context/examples、producer-neutral离线schema loader、deterministic generated bindings/runtime resources、focused checks/Pages projection、verified EPUB publication identity/fingerprints/coherence gate、exact XHTML resource index、strict anchors、canonical serialization/semantic digest、generic Pack builder、bounded schema/semantic/privacy validator/final report primitives、只读current native settled ledger的strict producer adapter、显式JSON/detached exporter、独立validator/safe inspector、immutable public revision/atomic pointer publication，以及public-safe真实EPUB/current-shaped Highlight+Note end-to-end golden与完整anchor回查。该段仅保留历史可辨识性，不是当前极简 wire 字段清单或验收口径。Catalog/API/UI discovery未实现；当时也不声称真实CFI或外部Reader互操作。Agent prompt、Digest、Memory、reading loop、Readest、Library和public HTTP API均未修改。

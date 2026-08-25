@@ -7,10 +7,10 @@ Update when: the current objective, active tasks, blockers, active jobs, open de
 
 This file is authoritative for durable current status. Do not keep unique active-state information only in `docs/agent-handoff.md`.
 
-Last verified: `2026-08-25T19:37:10+08:00`
+Last verified: `2026-08-25T20:27:43+08:00`
 
 ## Current Objective
-- Annotation Pack v0 is active again under `TASK-ANNOTATION-PACK-V0-IMPLEMENTATION` and `DEC-156` on branch `codex/annotation-pack-v0`. Because the first wire never became publicly available, it will be replaced in place with a minimal standards-vocabulary-only `AnnotationSet`: exact EPUB identity is one RFC 6920 `nih:sha-256` value plus Dublin Core title/format/authors, while every Highlight/Note has a relative XHTML href, exact quote, and Unicode-code-point TextPosition. The new public model has zero `sr:*` and no Work/Edition/File, Track, chapter context/fingerprints, custom anchor id, CFI, provenance, or public digest. `DEC-155` remains authority for the detached producer-neutral seam and internal source/publication safety but is partially superseded for its heavy public identity/anchor design. Slice 1 is the authority reset; the next accepted Slice must atomically cut over schema, examples, generated copies, Pages projection, implementation, current phase9 adapter, and Tiny Reader goldens without old-wire or phase8 compatibility. The Annotation Hub consumer migration is separately waiting under `TASK-ANNOTATION-HUB-V0-MINIMAL-PACK-MIGRATION`; this worktree does not modify the Hub. The schema IRI remains staged/not-live until `main` deployment, Pages enablement, and served-byte comparison succeed.
+- Annotation Pack minimal v0 is repo-locally complete under `TASK-ANNOTATION-PACK-V0-IMPLEMENTATION` and `DEC-156` on branch `codex/annotation-pack-v0`. Slice 1 landed and was pushed as `012788d`; Slice 2 atomically cut over the canonical schema/examples/standards, generated copies, Pages projection, implementation, strict current phase9 adapter, Tiny Reader goldens, and detached package as `b44ba7d`, also pushed; Slice 3 records final acceptance, governance checks, baseline separation, and branch close-out. The standards-vocabulary-only `AnnotationSet` uses one exact-EPUB RFC 6920 `nih:sha-256` identity plus Dublin Core title/format/authors, and every Highlight/Note targets a relative XHTML href with TextQuote+Unicode-code-point TextPosition. The public wire has zero `sr:*`, rejects the old heavy v0 and phase8 instead of migrating them, and publishes no Work/Edition/File, Track, chapter context/fingerprints, custom anchor id, CFI, provenance, or digest. The supported completion claim is limited to current-format producer data generating, validating, and independently packaging the Tiny Reader real-EPUB fixture; it does not establish conversion of prior whole-book outputs, a real current whole-book Agent-to-Pack run, or any Library, HTTP API, frontend, or Reader integration. The Annotation Hub consumer migration remains separately `waiting` under `TASK-ANNOTATION-HUB-V0-MINIMAL-PACK-MIGRATION`, is no longer blocked by Pack implementation, and stays outside this worktree. The schema IRI remains staged/not-live until the workflow reaches `main`, Pages is enabled, deployment succeeds, and served bytes match the canonical contract.
 - Runtime observability v1 is implemented as an infrastructure lane under `TASK-RUNTIME-OBSERVABILITY-COST-V1` and `DEC-154`; only the final live-provider whole-book acceptance remains externally blocked.
   - the canonical observability record is a local append-only JSONL fact ledger with deterministic JSON/Markdown reports; Phoenix is an optional derived trace UI rather than job/checkpoint truth
   - unit-bearing work uses `reading.run_attempt -> reading.chapter -> reading.unit_attempt -> llm.call -> llm.attempt`; survey/parse/chapter-consolidation work may be chapter-only without a fabricated unit span
@@ -3483,7 +3483,7 @@ Last verified: `2026-08-25T19:37:10+08:00`
   - `reading-companion-backend/src/attentional_v2/resume.py` now recreates the thin `runtime_shell.json` envelope if it is missing during position persistence
 
 ## Next
-- Perform Annotation Pack Slice 2 as one atomic wire cutover: canonical schema/examples/standards, generated copies, Pages projection, generic implementation, strict current phase9 adapter, and all Tiny Reader goldens move together to the zero-`sr:*` AnnotationSet with TextQuote+TextPosition; phase8 and the old heavy v0 must fail rather than migrate.
+- Finish Annotation Pack Section 20 acceptance and close-out for the already-landed minimal-v0 Slices 1/2: record focused and full-check evidence, separate unrelated baseline failures, confirm the feature branch remote matches the accepted local commits, then commit/push the closing docs. Keep the completion claim limited to the Tiny Reader real-EPUB shaped fixture; do not claim prior whole-book conversion, a real current whole-book Agent-to-Pack run, live Pages availability, or Library/API/frontend/Reader integration.
 - After provider access is restored, finish the one remaining public-book live acceptance and inspect its canonical ledger/report before treating the first measured efficiency figures as a baseline; do not change region or billing settings automatically.
 - Launch the next decisive chapter/excerpt comparison on the frozen clustered benchmark:
   - chapter lane:
@@ -3605,10 +3605,9 @@ Last verified: `2026-08-25T19:37:10+08:00`
 ## Machine-Readable Appendix
 ```json
 {
-  "updated_at": "2026-08-25T11:37:10Z",
+  "updated_at": "2026-08-25T12:27:43Z",
   "last_updated_by": "codex",
   "active_task_ids": [
-    "TASK-ANNOTATION-PACK-V0-IMPLEMENTATION",
     "TASK-ATTENTIONAL-V2-STRUCTURAL-REWORK",
     "TASK-V2-NATIVE-READING-PRESENTATION",
     "TASK-USER-LEVEL-SELECTIVE-V1",
