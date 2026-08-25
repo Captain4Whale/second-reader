@@ -35,7 +35,7 @@ from src.annotation_pack.exporter import (
 )
 from src.annotation_pack.ids import default_creator_id
 from src.annotation_pack.identity import PublicationIdentityError
-from src.annotation_pack.serialization import canonical_json_bytes, semantic_digest
+from src.annotation_pack.serialization import canonical_json_bytes
 from src.attentional_v2.storage import reaction_records_file
 from src.parsers import parse_ebook
 from src.reading_core.epub_document import build_book_document_from_chapters
@@ -93,7 +93,9 @@ def _write_source_and_document(output_dir: Path) -> dict[str, object]:
     return normalized
 
 
-def _paragraph(document: dict[str, object], chapter_id: int, paragraph_index: int) -> str:
+def _paragraph(
+    document: dict[str, object], chapter_id: int, paragraph_index: int
+) -> str:
     for chapter in document["chapters"]:  # type: ignore[index,union-attr]
         if chapter["id"] != chapter_id:
             continue
@@ -237,10 +239,17 @@ def _resolved(index: int, digest: str) -> ResolvedAnnotationDraft:
         body_text=None,
         created_at=NOW,
         target=ResolvedAnchor(
-            anchor_id="urn:uuid:8d3a79e9-b894-5bac-ab6c-3629d7af23d4",
             href="Text/chapter.xhtml",
             exact="x",
-            target={},
+            start=0,
+            end=1,
+            target={
+                "source": "Text/chapter.xhtml",
+                "selector": [
+                    {"type": "TextQuoteSelector", "exact": "x"},
+                    {"type": "TextPositionSelector", "start": 0, "end": 1},
+                ],
+            },
             findings=(),
         ),
         source_record_index=index,
@@ -252,35 +261,59 @@ def test_input_snapshot_and_revision_framing_fixed_vectors() -> None:
     records = (_resolved(9, "5" * 64), _resolved(2, "6" * 64))
     stream = (
         b"SECOND-READER-INPUT-SNAPSHOT-V1\n"
-        + b"E:64:" + b"1" * 64 + b"\n"
-        + b"B:64:" + b"2" * 64 + b"\n"
-        + b"S:64:" + b"3" * 64 + b"\n"
-        + b"L:64:" + b"4" * 64 + b"\n"
-        + b"R:64:" + b"6" * 64 + b"\n"
-        + b"R:64:" + b"5" * 64 + b"\n"
+        + b"E:64:"
+        + b"1" * 64
+        + b"\n"
+        + b"B:64:"
+        + b"2" * 64
+        + b"\n"
+        + b"S:64:"
+        + b"3" * 64
+        + b"\n"
+        + b"L:64:"
+        + b"4" * 64
+        + b"\n"
+        + b"R:64:"
+        + b"6" * 64
+        + b"\n"
+        + b"R:64:"
+        + b"5" * 64
+        + b"\n"
     )
-    assert second_reader_input_snapshot_digest(
-        source_epub_sha256="1" * 64,
-        book_document_sha256="2" * 64,
-        substrate_sha256="3" * 64,
-        reaction_ledger_sha256="4" * 64,
-        resolved_records=records,
-    ) == hashlib.sha256(stream).hexdigest()
+    assert (
+        second_reader_input_snapshot_digest(
+            source_epub_sha256="1" * 64,
+            book_document_sha256="2" * 64,
+            substrate_sha256="3" * 64,
+            reaction_ledger_sha256="4" * 64,
+            resolved_records=records,
+        )
+        == hashlib.sha256(stream).hexdigest()
+    )
 
     revision_stream = (
         b"SECOND-READER-ANNOTATION-PUBLICATION-REVISION-V1\n"
-        + b"J:64:" + b"a" * 64 + b"\n"
+        + b"J:64:"
+        + b"a" * 64
+        + b"\n"
         + b"P:0:\n"
-        + b"R:64:" + b"b" * 64 + b"\n"
+        + b"R:64:"
+        + b"b" * 64
+        + b"\n"
     )
-    assert publication_revision_id(
-        annotations_json_sha256="a" * 64,
-        package_sha256=None,
-        validation_report_sha256="b" * 64,
-    ) == hashlib.sha256(revision_stream).hexdigest()
+    assert (
+        publication_revision_id(
+            annotations_json_sha256="a" * 64,
+            package_sha256=None,
+            validation_report_sha256="b" * 64,
+        )
+        == hashlib.sha256(revision_stream).hexdigest()
+    )
 
 
-def test_resolve_book_output_dir_requires_safe_direct_real_child(tmp_path: Path) -> None:
+def test_resolve_book_output_dir_requires_safe_direct_real_child(
+    tmp_path: Path,
+) -> None:
     root = tmp_path / "output"
     book = root / "book-1"
     book.mkdir(parents=True)
@@ -330,7 +363,9 @@ def test_resolve_book_output_dir_rejects_normalization_alias_on_macos(
         resolve_book_output_dir(book_id=alias_name, output_root=root)
 
 
-def test_json_export_publishes_immutable_revision_then_is_unchanged(tmp_path: Path) -> None:
+def test_json_export_publishes_immutable_revision_then_is_unchanged(
+    tmp_path: Path,
+) -> None:
     runtime_root, output_root, output_dir, _ledger_value = _fixture(tmp_path)
     first = _export(runtime_root, output_root, output_dir)
 
@@ -345,6 +380,44 @@ def test_json_export_publishes_immutable_revision_then_is_unchanged(tmp_path: Pa
     assert canonical_json_bytes(json.loads(first.annotations_json.read_bytes())) == (
         first.annotations_json.read_bytes()
     )
+    public_pack = json.loads(first.annotations_json.read_bytes())
+    assert set(public_pack) == {
+        "@context",
+        "id",
+        "type",
+        "generator",
+        "generated",
+        "about",
+        "items",
+    }
+    assert "sr:" not in json.dumps(public_pack, sort_keys=True)
+    assert {item["motivation"] for item in public_pack["items"]} == {
+        "highlighting",
+        "commenting",
+    }
+    for item in public_pack["items"]:
+        assert [selector["type"] for selector in item["target"]["selector"]] == [
+            "TextQuoteSelector",
+            "TextPositionSelector",
+        ]
+        quote, position = item["target"]["selector"]
+        assert position["start"] < position["end"]
+        assert quote["exact"]
+        if item["motivation"] == "highlighting":
+            assert "body" not in item
+        else:
+            assert set(item["body"]) == {"type", "value"}
+
+    pointer = json.loads(first.current_pointer.read_bytes())
+    report = json.loads(first.validation_report.read_bytes())
+    assert pointer["semantic_digest"] == first.validation.semantic_digest
+    assert report["semantic_digest"] == first.validation.semantic_digest
+    assert report["input_snapshot_digest"] == (first.validation.input_snapshot_digest)
+    assert report["producer"] == exporter_module.SECOND_READER_PRODUCER_ID
+    assert report["adapter_version"] == exporter_module.ADAPTER_VERSION
+    assert "producer" not in public_pack
+    assert "adapter_version" not in public_pack
+    assert "semantic_digest" not in public_pack
 
     first_pointer = first.current_pointer.read_bytes()
     second = _export(runtime_root, output_root, output_dir)
@@ -392,9 +465,10 @@ def test_json_only_revision_upgrades_byte_preservingly_to_detached(
         assert archive.read("annotations.json") == json_bytes
     pointer = json.loads(detached.current_pointer.read_bytes())
     assert pointer["detached_package"].endswith(detached.detached_package.name)
-    assert pointer["detached_package_sha256"] == hashlib.sha256(
-        detached.detached_package.read_bytes()
-    ).hexdigest()
+    assert (
+        pointer["detached_package_sha256"]
+        == hashlib.sha256(detached.detached_package.read_bytes()).hexdigest()
+    )
     report = json.loads(detached.validation_report.read_bytes())
     assert report["package_sha256"] == pointer["detached_package_sha256"]
     assert {
@@ -505,7 +579,9 @@ def test_package_write_failure_preserves_current_and_cleans_owned_temp(
     assert failed.validation.findings[0].code == "publication_write_failed"
     assert json_only.current_pointer.read_bytes() == old_pointer
     revisions = json_only.annotations_json.parents[1]
-    assert not [child for child in revisions.iterdir() if child.name.startswith(".tmp-")]
+    assert not [
+        child for child in revisions.iterdir() if child.name.startswith(".tmp-")
+    ]
 
 
 def test_force_regenerate_reuses_identical_immutable_revision(tmp_path: Path) -> None:
@@ -618,7 +694,64 @@ def test_missing_or_unknown_run_state_fails_closed_with_real_guard(
     ]
 
 
-def test_strict_row_error_fails_and_allow_skips_publishes_degraded(tmp_path: Path) -> None:
+def test_phase8_ledger_is_rejected_without_publication_side_effect(
+    tmp_path: Path,
+) -> None:
+    runtime_root, output_root, output_dir, ledger = _fixture(tmp_path)
+    phase8 = deepcopy(ledger)
+    phase8["mechanism_version"] = "attentional_v2-phase8"
+    reaction_records_file(output_dir).write_bytes(_json_bytes(phase8))
+
+    result = _export(runtime_root, output_root, output_dir)
+
+    assert result.status == "failed"
+    assert [finding.code for finding in result.validation.findings] == [
+        "reaction_ledger_schema_unsupported"
+    ]
+    assert result.pack is None
+    assert result.annotations_json is None
+    assert result.detached_package is None
+    assert result.current_pointer is None
+    assert not (output_dir / "public" / "annotation-packs").exists()
+
+
+def test_private_note_body_fails_before_pack_or_package_publication(
+    tmp_path: Path,
+) -> None:
+    runtime_root, output_root, output_dir, ledger = _fixture(tmp_path)
+    private_body = (
+        "Leaked /Users/alice/runtime and "
+        "https://example.org/?access_token=private-value."
+    )
+    ledger["records"][1]["thought"] = private_body  # type: ignore[index]
+    reaction_records_file(output_dir).write_bytes(_json_bytes(ledger))
+
+    result = _export(
+        runtime_root,
+        output_root,
+        output_dir,
+        deliverables="detached",
+    )
+
+    assert result.status == "failed"
+    assert "private_field_leakage" in {
+        finding.code for finding in result.validation.findings
+    }
+    assert result.pack is None
+    assert result.annotations_json is None
+    assert result.detached_package is None
+    assert result.current_pointer is None
+    public_root = output_dir / "public"
+    assert all(
+        private_body.encode() not in path.read_bytes()
+        for path in public_root.rglob("*")
+        if path.is_file()
+    )
+
+
+def test_strict_row_error_fails_and_allow_skips_publishes_degraded(
+    tmp_path: Path,
+) -> None:
     runtime_root, output_root, output_dir, ledger = _fixture(tmp_path)
     broken = deepcopy(ledger)
     broken["records"][0]["primary_source_ref"]["resolution"]["match_count"] = 2  # type: ignore[index]
@@ -626,7 +759,10 @@ def test_strict_row_error_fails_and_allow_skips_publishes_degraded(tmp_path: Pat
 
     strict = _export(runtime_root, output_root, output_dir)
     assert strict.status == "failed"
-    assert any(finding.code == "ambiguous_source_quote" for finding in strict.validation.findings)
+    assert any(
+        finding.code == "ambiguous_source_quote"
+        for finding in strict.validation.findings
+    )
     assert strict.validation_report is not None
     assert strict.validation_report.name == "last-failed-validation-report.json"
     assert strict.validation_report.is_file()
@@ -863,7 +999,9 @@ def test_book_document_symlink_and_limit_fail_closed(
     assert MAX_BOOK_DOCUMENT_BYTES == 512 * 1024 * 1024
 
 
-def test_corrupt_current_pointer_is_fatal_and_preserves_old_bytes(tmp_path: Path) -> None:
+def test_corrupt_current_pointer_is_fatal_and_preserves_old_bytes(
+    tmp_path: Path,
+) -> None:
     runtime_root, output_root, output_dir, _ledger_value = _fixture(tmp_path)
     first = _export(runtime_root, output_root, output_dir)
     assert first.current_pointer is not None
@@ -1006,9 +1144,7 @@ def test_packaged_entry_bytes_must_equal_sibling_annotations_json(
     first.detached_package.chmod(0o644)
     first.detached_package.write_bytes(corrupted_package)
     pointer = json.loads(first.current_pointer.read_bytes())
-    pointer["detached_package_sha256"] = hashlib.sha256(
-        corrupted_package
-    ).hexdigest()
+    pointer["detached_package_sha256"] = hashlib.sha256(corrupted_package).hexdigest()
     first.current_pointer.write_bytes(canonical_json_bytes(pointer))
 
     result = _export(
@@ -1165,7 +1301,10 @@ def test_same_semantics_but_changed_ignored_ledger_payload_gets_new_revision(
     second = _export(runtime_root, output_root, output_dir)
     assert second.status == "published"
     assert second.validation.semantic_digest == first.validation.semantic_digest
-    assert second.validation.input_snapshot_digest != first.validation.input_snapshot_digest
+    assert (
+        second.validation.input_snapshot_digest
+        != first.validation.input_snapshot_digest
+    )
     assert second.revision_id != first.revision_id
 
 
@@ -1311,9 +1450,11 @@ def test_inspector_returns_only_fixed_summary_fields(tmp_path: Path) -> None:
     result = inspect_annotation_pack(exported.annotations_json)
     assert result.valid
     assert dict(result.item_counts) == {"total": 2, "highlight": 1, "note": 1}
+    assert result.track_id is None
+    assert result.semantic_digest == exported.validation.semantic_digest
     assert result.anchor_capabilities == (
         "TextQuoteSelector",
-        "sr:ParagraphCharSelector",
+        "TextPositionSelector",
     )
     rendered = repr(result)
     assert "durable idea" not in rendered
@@ -1321,7 +1462,7 @@ def test_inspector_returns_only_fixed_summary_fields(tmp_path: Path) -> None:
     assert str(output_dir) not in rendered
 
 
-def test_inspector_reports_verified_cfi_without_claiming_fragment_selector(
+def test_inspector_rejects_legacy_custom_cfi_selector(
     tmp_path: Path,
 ) -> None:
     runtime_root, output_root, output_dir, _ledger_value = _fixture(tmp_path)
@@ -1335,20 +1476,17 @@ def test_inspector_reports_verified_cfi_without_claiming_fragment_selector(
             "sr:verification": "quote-round-trip",
         }
     )
-    document["sr:semanticDigest"]["sr:value"] = semantic_digest(document)
-    source = tmp_path / "verified-cfi-pack.json"
+    source = tmp_path / "legacy-cfi-pack.json"
     source.write_bytes(canonical_json_bytes(document))
 
     result = inspect_annotation_pack(source)
 
-    assert result.valid
-    assert result.anchor_capabilities == (
-        "TextQuoteSelector",
-        "sr:ParagraphCharSelector",
-        "sr:EpubCfiSelector",
-        "epubcfi",
+    assert not result.valid
+    assert result.track_id is None
+    assert result.anchor_capabilities == ()
+    assert any(
+        finding.code == "schema_validation_failed" for finding in result.findings
     )
-    assert "FragmentSelector" not in result.anchor_capabilities
 
 
 def test_publication_crash_before_pointer_replace_preserves_old_pointer(
@@ -1411,9 +1549,7 @@ def test_revision_is_reverified_after_rename_before_pointer_switch(
     assert mutated
     assert result.status == "failed"
     assert result.validation.findings[0].code == "publication_write_failed"
-    assert not list(
-        (output_dir / "public" / "annotation-packs").glob("*/current.json")
-    )
+    assert not list((output_dir / "public" / "annotation-packs").glob("*/current.json"))
 
 
 def test_revision_is_read_only_before_current_pointer_switch(
@@ -1634,9 +1770,7 @@ def test_revisions_path_symlink_swap_cannot_redirect_publication_writes(
     assert result.status == "failed"
     assert result.validation.findings[0].code == "publication_write_failed"
     assert list(outside.iterdir()) == []
-    assert not list(
-        (output_dir / "public" / "annotation-packs").glob("*/current.json")
-    )
+    assert not list((output_dir / "public" / "annotation-packs").glob("*/current.json"))
 
 
 def test_fsync_failure_after_pointer_replace_leaves_complete_current_revision(
@@ -1705,8 +1839,13 @@ def test_unicode_and_long_existing_book_ids_are_safe_direct_children(
     long_book = root / ("可" * 90)
     unicode_book.mkdir(parents=True)
     long_book.mkdir()
-    assert resolve_book_output_dir(book_id="南腔北調集", output_root=root) == unicode_book
-    assert resolve_book_output_dir(book_output_dir=long_book, output_root=root) == long_book
+    assert (
+        resolve_book_output_dir(book_id="南腔北調集", output_root=root) == unicode_book
+    )
+    assert (
+        resolve_book_output_dir(book_output_dir=long_book, output_root=root)
+        == long_book
+    )
     control_book = root / "unsafe\u0085book"
     control_book.mkdir()
     with pytest.raises(ValueError):
@@ -1754,10 +1893,12 @@ def test_existing_empty_revision_directory_is_never_replaced(
 ) -> None:
     runtime_root, output_root, output_dir, _ledger_value = _fixture(tmp_path)
     expected_revision = "e" * 64
+
     def fixed_revision(**_kwargs: object) -> str:
         return expected_revision
 
     monkeypatch.setattr(exporter_module, "publication_revision_id", fixed_revision)
+
     # Intercept the pinned no-replace syscall and create an empty colliding
     # destination through that same revisions dirfd just before rename.
     def collide(

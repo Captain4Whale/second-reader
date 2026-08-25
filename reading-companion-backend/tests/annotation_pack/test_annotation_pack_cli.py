@@ -34,7 +34,6 @@ EXPORT_CLI = _load_script("export_annotation_pack.py")
 INSPECT_CLI = _load_script("inspect_annotation_pack.py")
 
 PACK_ID = "urn:uuid:31f414c4-32f3-50d6-85e1-9382e47c6390"
-TRACK_ID = "urn:uuid:04ace963-40ef-5247-90d2-1cc55d925afa"
 DIGEST_A = "a" * 64
 DIGEST_B = "b" * 64
 DIGEST_C = "c" * 64
@@ -45,6 +44,10 @@ def _summary(stream: str) -> dict[str, Any]:
     lines = stream.splitlines()
     assert len(lines) == 1
     return json.loads(lines[0])
+
+
+def _valid_pack() -> dict[str, Any]:
+    return json.loads((EXAMPLES / "minimal-pack.json").read_text(encoding="utf-8"))
 
 
 def _export_args(*, deliverables: str | None = "json") -> list[str]:
@@ -78,7 +81,9 @@ class _FakePolicy:
 
 def _validation(*, failed: bool = False) -> SimpleNamespace:
     finding = SimpleNamespace(
-        code="deliverable_not_implemented" if failed else "cfi_unverified",
+        code=(
+            "deliverable_not_implemented" if failed else "quote_not_unique_in_resource"
+        ),
         severity="fatal" if failed else "warning",
         source_record_index=None if failed else 3,
         source_record_digest=None if failed else DIGEST_C,
@@ -100,7 +105,9 @@ def _validation(*, failed: bool = False) -> SimpleNamespace:
     )
 
 
-def _fake_exporter(monkeypatch: pytest.MonkeyPatch) -> tuple[ModuleType, dict[str, Any]]:
+def _fake_exporter(
+    monkeypatch: pytest.MonkeyPatch,
+) -> tuple[ModuleType, dict[str, Any]]:
     module = ModuleType("src.annotation_pack.exporter")
     calls: dict[str, Any] = {}
 
@@ -154,7 +161,7 @@ def test_export_cli_json_success_and_independent_policy_flags(
         },
         "findings": [
             {
-                "code": "cfi_unverified",
+                "code": "quote_not_unique_in_resource",
                 "severity": "warning",
                 "source_record_digest": DIGEST_C,
                 "source_record_index": 3,
@@ -208,6 +215,30 @@ def test_export_cli_defaults_to_detached(
     assert captured.err == ""
     assert _summary(captured.out)["status"] == "published"
     assert calls["export"]["policy"].deliverables == "detached"
+
+
+def test_export_summary_never_reads_legacy_public_digest_or_provenance() -> None:
+    validation = _validation()
+    validation.semantic_digest = None
+    validation.input_snapshot_digest = None
+    result = SimpleNamespace(
+        status="published",
+        pack={
+            "id": PACK_ID,
+            "sr:semanticDigest": {"sr:value": DIGEST_A},
+            "sr:provenance": {
+                "sr:inputSnapshotDigest": {"sr:value": DIGEST_B},
+            },
+        },
+        validation=validation,
+        revision_id=DIGEST_C,
+    )
+
+    summary = EXPORT_CLI._result_summary(result)
+
+    assert summary["pack_id"] == PACK_ID
+    assert summary["semantic_digest"] is None
+    assert summary["input_snapshot_digest"] is None
 
 
 def test_export_cli_unexpected_error_is_fixed_and_private_safe(
@@ -273,8 +304,7 @@ def test_export_cli_requires_exactly_one_book_locator() -> None:
 
     with pytest.raises(SystemExit) as both:
         EXPORT_CLI.main(
-            _export_args()
-            + ["--book-output-dir", "/isolated/output/safe-book-id"]
+            _export_args() + ["--book-output-dir", "/isolated/output/safe-book-id"]
         )
     assert both.value.code == 2
 
@@ -290,16 +320,16 @@ def test_inspect_cli_outputs_only_fixed_safe_metadata(
         return SimpleNamespace(
             valid=True,
             pack_id=PACK_ID,
-            track_id=TRACK_ID,
+            track_id=None,
             semantic_digest=DIGEST_A,
             item_counts={"total": 2, "highlight": 1, "note": 1},
             anchor_capabilities=(
-                "sr:ParagraphCharSelector",
+                "TextPositionSelector",
                 "TextQuoteSelector",
             ),
             findings=(
                 SimpleNamespace(
-                    code="cfi_unverified",
+                    code="quote_not_unique_in_resource",
                     severity="warning",
                     source_record_index=None,
                     source_record_digest=None,
@@ -322,8 +352,9 @@ def test_inspect_cli_outputs_only_fixed_safe_metadata(
     assert summary["item_counts"] == {"highlight": 1, "note": 1, "total": 2}
     assert summary["anchor_capabilities"] == [
         "TextQuoteSelector",
-        "sr:ParagraphCharSelector",
+        "TextPositionSelector",
     ]
+    assert summary["track_id"] is None
     assert set(summary["findings"][0]) == {
         "code",
         "severity",
@@ -342,7 +373,7 @@ def test_inspect_cli_fails_closed_on_non_protocol_summary_fields(
     module.inspect_annotation_pack = lambda _source: SimpleNamespace(
         valid=True,
         pack_id=PACK_ID,
-        track_id=TRACK_ID,
+        track_id=None,
         semantic_digest=DIGEST_A,
         item_counts={"total": 0, "highlight": 0, "note": 0, PRIVATE_TEXT: 1},
         anchor_capabilities=(PRIVATE_TEXT,),
@@ -365,7 +396,6 @@ def test_inspect_cli_uses_real_safe_inspector_for_canonical_pack(
     capsys: pytest.CaptureFixture[str],
 ) -> None:
     from src.annotation_pack.serialization import canonical_json_bytes
-    from tests.annotation_pack.test_validation import _valid_pack
 
     source = tmp_path / "annotations.json"
     source.write_bytes(canonical_json_bytes(_valid_pack()))
@@ -380,8 +410,9 @@ def test_inspect_cli_uses_real_safe_inspector_for_canonical_pack(
     assert summary["item_counts"] == {"highlight": 1, "note": 1, "total": 2}
     assert summary["anchor_capabilities"] == [
         "TextQuoteSelector",
-        "sr:ParagraphCharSelector",
+        "TextPositionSelector",
     ]
+    assert summary["track_id"] is None
     assert str(source) not in captured.out
 
 
@@ -391,7 +422,6 @@ def test_validate_and_inspect_clis_accept_independent_detached_package(
 ) -> None:
     from src.annotation_pack.packaging import build_detached_annotations
     from src.annotation_pack.serialization import canonical_json_bytes
-    from tests.annotation_pack.test_validation import _valid_pack
 
     json_bytes = canonical_json_bytes(_valid_pack())
     package = build_detached_annotations(json_bytes)
@@ -430,11 +460,9 @@ def test_detached_empty_pack_still_requires_validate_cli_allow_empty(
 ) -> None:
     from src.annotation_pack.packaging import build_detached_annotations
     from src.annotation_pack.serialization import canonical_json_bytes
-    from tests.annotation_pack.test_validation import _refresh_digest, _valid_pack
 
     pack = _valid_pack()
     pack["items"] = []
-    _refresh_digest(pack)
     source = tmp_path / "empty.annotations"
     source.write_bytes(
         build_detached_annotations(canonical_json_bytes(pack)).package_bytes
@@ -455,10 +483,9 @@ def test_inspect_cli_preserves_safe_invalid_summary_when_counts_include_bad_rows
     capsys: pytest.CaptureFixture[str],
 ) -> None:
     from src.annotation_pack.serialization import canonical_json_bytes
-    from tests.annotation_pack.test_validation import _valid_pack
 
     pack = _valid_pack()
-    pack["items"][0]["sr:kind"] = "private-invalid-kind"
+    pack["items"][0]["motivation"] = "private-invalid-kind"
     source = tmp_path / "invalid-annotations.json"
     source.write_bytes(canonical_json_bytes(pack))
 
@@ -502,7 +529,6 @@ def test_validate_cli_default_runs_full_pack_semantics(
     tmp_path: Path,
     capsys: pytest.CaptureFixture[str],
 ) -> None:
-    from tests.annotation_pack.test_validation import _valid_pack
     from src.annotation_pack.serialization import canonical_json_bytes
 
     source = tmp_path / "annotations.json"
@@ -517,15 +543,14 @@ def test_validate_cli_default_runs_full_pack_semantics(
     assert summary["mode"] == "semantic"
     assert summary["status"] == "valid"
     assert summary["counts"]["exported"] == 2
-    assert summary["semantic_digest"] == pack["sr:semanticDigest"]["sr:value"]
+    assert summary["semantic_digest"] is not None
+    assert len(summary["semantic_digest"]) == 64
 
 
 def test_validate_cli_rejects_noncanonical_semantic_json(
     tmp_path: Path,
     capsys: pytest.CaptureFixture[str],
 ) -> None:
-    from tests.annotation_pack.test_validation import _valid_pack
-
     source = tmp_path / "annotations.json"
     source.write_text(json.dumps(_valid_pack()), encoding="utf-8")
 
@@ -541,11 +566,9 @@ def test_validate_cli_empty_semantics_require_explicit_allow_empty(
     capsys: pytest.CaptureFixture[str],
 ) -> None:
     from src.annotation_pack.serialization import canonical_json_bytes
-    from tests.annotation_pack.test_validation import _refresh_digest, _valid_pack
 
     pack = _valid_pack()
     pack["items"] = []
-    _refresh_digest(pack)
     source = tmp_path / "empty-annotations.json"
     source.write_bytes(canonical_json_bytes(pack))
 
@@ -579,7 +602,7 @@ def test_validate_cli_schema_only_and_allow_empty_are_mutually_exclusive() -> No
     [
         (b"{", "invalid_json"),
         (b"\xef\xbb\xbf{}", "utf8_bom_forbidden"),
-        (b"{\"type\":\"AnnotationSet\",\xff}", "invalid_utf8"),
+        (b'{"type":"AnnotationSet",\xff}', "invalid_utf8"),
         (
             b'{"type":"AnnotationSet","type":"AnnotationSet"}',
             "duplicate_json_key",
@@ -639,9 +662,7 @@ def test_validate_cli_rejects_leaf_and_parent_symlinks(
         assert VALIDATE_CLI.main(["--schema-only", str(unsafe_source)]) == 1
         captured = capsys.readouterr()
         assert captured.out == ""
-        assert _summary(captured.err)["findings"][0]["code"] == (
-            "source_unavailable"
-        )
+        assert _summary(captured.err)["findings"][0]["code"] == ("source_unavailable")
         assert str(unsafe_source) not in captured.err
 
 
@@ -693,9 +714,7 @@ def test_validate_cli_rejects_oversize_and_nonregular_sources(
 
     assert VALIDATE_CLI.main([str(oversize)]) == 1
     oversized_output = capsys.readouterr()
-    assert _summary(oversized_output.err)["findings"][0]["code"] == (
-        "source_too_large"
-    )
+    assert _summary(oversized_output.err)["findings"][0]["code"] == ("source_too_large")
 
     assert VALIDATE_CLI.main([str(directory)]) == 1
     directory_output = capsys.readouterr()

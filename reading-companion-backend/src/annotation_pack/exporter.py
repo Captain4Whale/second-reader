@@ -53,7 +53,7 @@ from src.annotation_pack.identity import (
     PublicationIdentityError,
     PublicationIdentityResult,
 )
-from src.annotation_pack.ids import default_generator_id, track_id as derive_track_id
+from src.annotation_pack.ids import default_generator_id, pack_id as derive_pack_id
 from src.annotation_pack.packaging import (
     MAX_DETACHED_PACKAGE_BYTES,
     PackageError,
@@ -135,9 +135,7 @@ _RUN_STAGES = frozenset(
 )
 _INSPECTOR_CAPABILITY_ORDER = (
     "TextQuoteSelector",
-    "sr:ParagraphCharSelector",
-    "sr:EpubCfiSelector",
-    "epubcfi",
+    "TextPositionSelector",
 )
 
 
@@ -565,11 +563,10 @@ def inspect_annotation_pack(source: Path) -> InspectionResult:
 
     counts = _inspection_counts(document)
     capabilities = _inspection_capabilities(document) if validation.publishable else ()
-    track_identifier = _nested_string(document, "sr:track", "id")
     return InspectionResult(
         valid=validation.publishable,
         pack_id=validation.pack_id,
-        track_id=track_identifier if _UUID5_URN.fullmatch(track_identifier or "") else None,
+        track_id=None,
         semantic_digest=validation.semantic_digest,
         item_counts=MappingProxyType(counts),
         anchor_capabilities=capabilities,
@@ -669,6 +666,9 @@ def _export_under_writer_guard(
         validation_context = ValidationContext(
             input_count=producer_snapshot.input_count,
             findings=tuple(findings),
+            input_snapshot_digest=snapshot_digest,
+            producer=SECOND_READER_PRODUCER_ID,
+            adapter_version=ADAPTER_VERSION,
             # ``allow_empty`` covers a genuinely empty current track.  It does
             # not make a non-empty input publishable when every row was
             # explicitly skipped.
@@ -752,15 +752,8 @@ def _export_under_writer_guard(
         )
         try:
             if current is not None and not policy.force_regenerate:
-                current_semantic = _nested_string(
-                    current.document, "sr:semanticDigest", "sr:value"
-                )
-                current_snapshot_digest = _nested_string(
-                    current.document,
-                    "sr:provenance",
-                    "sr:inputSnapshotDigest",
-                    "sr:value",
-                )
+                current_semantic = current.report.semantic_digest
+                current_snapshot_digest = current.report.input_snapshot_digest
                 current_with_fresh_context = validate_pack(
                     current.document,
                     context=validation_context,
@@ -1022,11 +1015,14 @@ def _track_identifier(
     creator: CreatorInput,
     track_key: str,
 ) -> str:
-    edition = publication.wire.get("sr:edition")
-    if not isinstance(edition, Mapping) or type(edition.get("id")) is not str:
+    # The publication lane remains an internal crash-safety concern.  Keying it
+    # by the new exact-file Pack identity naturally separates minimal v0 from
+    # any immutable old-wire lane without a migration or compatibility read.
+    if type(publication.file_sha256) is not str:
         raise _ExportFailure("publication_identity_missing")
     try:
-        return derive_track_id(str(edition["id"]), creator.id, track_key)
+        _ = creator, track_key
+        return derive_pack_id(publication.file_sha256, default_generator_id())
     except (TypeError, ValueError):
         raise _ExportFailure("export_configuration_invalid") from None
 
@@ -1230,6 +1226,9 @@ def _load_current_publication(
         report_context = ValidationContext(
             input_count=report.input_count,
             findings=_upstream_report_findings(report.findings),
+            input_snapshot_digest=report.input_snapshot_digest,
+            producer=report.producer,
+            adapter_version=report.adapter_version,
             allow_empty=report.exported_count == 0
             and any(
                 finding.code == "empty_track" and finding.severity == "warning"
@@ -1249,20 +1248,10 @@ def _load_current_publication(
         )
         if serialize_validation_report(expected_report) != report_snapshot.content:
             raise _ExportFailure("validation_report_invalid")
-        semantic = _nested_string(
-            annotations_snapshot.value,
-            "sr:semanticDigest",
-            "sr:value",
-        )
-        track_identifier = _nested_string(
-            annotations_snapshot.value,
-            "sr:track",
-            "id",
-        )
+        semantic = current_validation.semantic_digest
         if (
             pointer.get("semantic_digest") != semantic
             or report.semantic_digest != semantic
-            or track_identifier != expected_track_id
             or report.pack_id != annotations_snapshot.value.get("id")
         ):
             raise _ExportFailure("publication_pointer_invalid")
@@ -1439,6 +1428,8 @@ def _validated_report(
             input_snapshot_digest=cast(
                 str | None, document.get("input_snapshot_digest")
             ),
+            producer=cast(str | None, document.get("producer")),
+            adapter_version=cast(str | None, document.get("adapter_version")),
             annotations_json_sha256=cast(
                 str | None, document.get("annotations_json_sha256")
             ),
@@ -2689,9 +2680,11 @@ def _inspection_counts(document: Mapping[str, Any]) -> dict[str, int]:
     for item in items:
         if not isinstance(item, Mapping):
             continue
-        kind = item.get("sr:kind")
-        if kind in {"highlight", "note"}:
-            counts[cast(str, kind)] += 1
+        motivation = item.get("motivation")
+        if motivation == "highlighting":
+            counts["highlight"] += 1
+        elif motivation == "commenting":
+            counts["note"] += 1
     return counts
 
 
@@ -2711,11 +2704,8 @@ def _inspection_capabilities(document: Mapping[str, Any]) -> tuple[str, ...]:
             if not isinstance(selector, Mapping):
                 continue
             selector_type = selector.get("type")
-            if selector_type in {"TextQuoteSelector", "sr:ParagraphCharSelector"}:
+            if selector_type in {"TextQuoteSelector", "TextPositionSelector"}:
                 found.add(cast(str, selector_type))
-            elif selector_type == "sr:EpubCfiSelector":
-                found.add("sr:EpubCfiSelector")
-                found.add("epubcfi")
     return tuple(value for value in _INSPECTOR_CAPABILITY_ORDER if value in found)
 
 

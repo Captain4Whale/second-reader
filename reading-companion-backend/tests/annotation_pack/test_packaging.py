@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 from io import BytesIO
+import json
 import os
 from pathlib import Path
 import stat
@@ -25,8 +26,7 @@ from src.annotation_pack.packaging import (
 )
 import src.annotation_pack.packaging as packaging_module
 from src.annotation_pack.schema import pack_validator
-from src.annotation_pack.serialization import canonical_json_bytes, semantic_digest
-from tests.annotation_pack.test_validation import _valid_pack
+from src.annotation_pack.serialization import canonical_json_bytes
 
 
 _REGULAR_ATTR = (stat.S_IFREG | 0o644) << 16
@@ -47,6 +47,18 @@ _CENTRAL_NAME_OFFSET = 46
 _EOCD_DISK_OFFSET = 4
 _EOCD_TOTAL_ENTRIES_OFFSET = 10
 _EOCD_CENTRAL_OFFSET_OFFSET = 16
+_MINIMAL_PACK_EXAMPLE = (
+    Path(__file__).resolve().parents[3]
+    / "contract"
+    / "annotation-pack"
+    / "v0"
+    / "examples"
+    / "minimal-pack.json"
+)
+
+
+def _valid_pack() -> dict[str, object]:
+    return json.loads(_MINIMAL_PACK_EXAMPLE.read_text(encoding="utf-8"))
 
 
 def _pack_bytes() -> bytes:
@@ -185,7 +197,6 @@ def test_validate_and_read_return_schema_compatible_detached_document() -> None:
 def test_explicit_empty_pack_remains_semantically_valid_at_package_layer() -> None:
     pack = _valid_pack()
     pack["items"] = []
-    pack["sr:semanticDigest"]["sr:value"] = semantic_digest(pack)
     annotations_json = canonical_json_bytes(pack)
 
     validated = validate_detached_annotations(
@@ -193,10 +204,14 @@ def test_explicit_empty_pack_remains_semantically_valid_at_package_layer() -> No
     )
 
     assert validated.validation.status == "valid"
-    assert [finding.code for finding in validated.validation.findings] == ["empty_track"]
+    assert [finding.code for finding in validated.validation.findings] == [
+        "empty_track"
+    ]
 
 
-def test_standalone_path_wrapper_creates_new_file_and_reopens_it(tmp_path: Path) -> None:
+def test_standalone_path_wrapper_creates_new_file_and_reopens_it(
+    tmp_path: Path,
+) -> None:
     destination = tmp_path / "second-reader.annotations"
     annotations_json = _pack_bytes()
 
@@ -546,9 +561,9 @@ def test_matching_but_false_crc_is_rejected_by_raw_payload_check() -> None:
 def test_trailing_bytes_inside_declared_deflate_stream_are_rejected() -> None:
     package = build_detached_annotations(_pack_bytes()).package_bytes
     central = _central_offset(package)
-    compressed_size = struct.unpack_from(
-        "<I", package, _LOCAL_COMPRESSED_SIZE_OFFSET
-    )[0]
+    compressed_size = struct.unpack_from("<I", package, _LOCAL_COMPRESSED_SIZE_OFFSET)[
+        0
+    ]
     changed = package[:central] + b"\x00" + package[central:]
     shifted_central = central + 1
     shifted_eocd = _eocd_offset(changed)
@@ -611,9 +626,9 @@ def test_declared_entry_size_and_compression_ratio_limits_are_rejected() -> None
     )
     _assert_package_error(changed)
 
-    compressed_size = struct.unpack_from(
-        "<I", package, _LOCAL_COMPRESSED_SIZE_OFFSET
-    )[0]
+    compressed_size = struct.unpack_from("<I", package, _LOCAL_COMPRESSED_SIZE_OFFSET)[
+        0
+    ]
     high_ratio_size = compressed_size * 101
     changed = _replace_u32(package, _LOCAL_UNCOMPRESSED_SIZE_OFFSET, high_ratio_size)
     changed = _replace_u32(
@@ -637,9 +652,7 @@ def test_package_byte_limit_is_checked_before_zip_parsing() -> None:
         lambda package: package[:100] + b"broken" + package[106:],
     ],
 )
-def test_prepended_trailing_truncated_and_corrupt_archives_are_rejected(mutate) -> (
-    None
-):
+def test_prepended_trailing_truncated_and_corrupt_archives_are_rejected(mutate) -> None:
     package = build_detached_annotations(_pack_bytes()).package_bytes
     _assert_package_error(mutate(package))
 
@@ -694,6 +707,23 @@ def test_builder_rejects_noncanonical_or_semantically_invalid_json() -> None:
     ):
         with pytest.raises(PackageError):
             build_detached_annotations(annotations_json)
+
+
+def test_builder_rejects_unreleased_heavy_v0_public_wire() -> None:
+    heavy = _valid_pack()
+    heavy["sr:specVersion"] = "0.1.0"
+    heavy["sr:track"] = {
+        "id": "urn:uuid:04ace963-40ef-5247-90d2-1cc55d925afa",
+        "type": "sr:AnnotationTrack",
+        "sr:key": "second-reader-agent",
+    }
+    heavy["about"]["sr:work"] = {  # type: ignore[index]
+        "id": "urn:uuid:c34f891e-f715-5663-a556-f1fc6e313345",
+        "type": "sr:WorkIdentity",
+    }
+
+    with pytest.raises(PackageError):
+        build_detached_annotations(canonical_json_bytes(heavy))
 
 
 def test_expected_entry_bytes_must_match_exactly() -> None:

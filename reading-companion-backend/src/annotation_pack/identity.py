@@ -5,14 +5,12 @@ from __future__ import annotations
 from collections.abc import Callable, Mapping, Sequence
 from dataclasses import dataclass, field
 import hashlib
-import ipaddress
 import json
 from pathlib import Path, PurePosixPath
 import re
 from types import MappingProxyType
 from typing import Any, BinaryIO, Literal, cast
 import unicodedata
-from urllib.parse import urlsplit
 
 from src.annotation_pack.epub_source import (
     DEFAULT_SOURCE_ASSET,
@@ -20,16 +18,9 @@ from src.annotation_pack.epub_source import (
     EpubSourceError,
     EpubSourceWarning,
     VerifiedEpubSource,
-    decode_public_scan_value,
     is_public_display_metadata,
     normalize_epub_href,
     verify_epub_source,
-)
-from src.annotation_pack.ids import (
-    asserted_work_id,
-    edition_id,
-    file_id,
-    provisional_work_id,
 )
 from src.annotation_pack.epub_resources import (
     EpubManifestIndex,
@@ -76,21 +67,6 @@ _CHAPTER_HEADER = b"SECOND-READER-BOOK-DOCUMENT-CHAPTER-V1\n"
 _SUBSTRATE_HEADER = b"SECOND-READER-BOOK-DOCUMENT-SUBSTRATE-V1\n"
 _TEXT_ROLES = {"chapter_heading", "section_heading", "body", "auxiliary"}
 _LANGUAGE_TAG = re.compile(r"[A-Za-z]{2,8}(?:-[A-Za-z0-9]{1,8})*\Z")
-_WINDOWS_ABSOLUTE_PATH = re.compile(r"^[A-Za-z]:[\\/]")
-_URI_CREDENTIALS = re.compile(r"[A-Za-z][A-Za-z0-9+.-]*://[^/\s]+@")
-_INVALID_PERCENT_ESCAPE = re.compile(r"%(?![0-9A-Fa-f]{2})")
-_LEGACY_IPV4_HOST = re.compile(
-    r"(?:0[xX][0-9A-Fa-f]+|[0-9]+)(?:\.(?:0[xX][0-9A-Fa-f]+|[0-9]+)){0,3}\Z"
-)
-_URN_URI = re.compile(
-    r"urn:(?P<nid>[A-Za-z0-9](?:[A-Za-z0-9-]{0,30}[A-Za-z0-9])):"
-    r"(?P<nss>.+)\Z",
-    re.IGNORECASE,
-)
-_URN_LOCAL_PATH = re.compile(
-    r"(?:^|:)/(?:Users|home|etc|root|tmp|private|Volumes|var/folders)(?:/|$)",
-    re.IGNORECASE,
-)
 _UNICODE_WHITE_SPACE = frozenset(
     {
         *range(0x0009, 0x000E),
@@ -115,7 +91,7 @@ _UNSAFE_OPF_DISPLAY_METADATA_POINTERS = {
         "/about/dc:creator"
     ),
     "An OPF language value was excluded because it is not safe for public metadata.": (
-        "/about/sr:edition/sr:language"
+        "/about/dc:language"
     ),
 }
 
@@ -185,14 +161,6 @@ class Fingerprint:
     value: str
     algorithm: str = "sha256"
 
-    def to_wire(self) -> dict[str, object]:
-        return {
-            "type": "sr:Fingerprint",
-            "sr:algorithm": self.algorithm,
-            "sr:algorithmVersion": self.algorithm_version,
-            "sr:value": self.value,
-        }
-
 
 @dataclass(frozen=True, slots=True)
 class ChapterFingerprint:
@@ -201,21 +169,6 @@ class ChapterFingerprint:
     title: str
     resource_hrefs: tuple[str, ...]
     fingerprint: Fingerprint
-
-    def to_wire(self) -> dict[str, object]:
-        document: dict[str, object] = {
-            "type": "sr:ChapterFingerprint",
-            "sr:chapterId": self.chapter_id,
-            "sr:order": self.order,
-            "sr:algorithm": self.fingerprint.algorithm,
-            "sr:algorithmVersion": self.fingerprint.algorithm_version,
-            "sr:value": self.fingerprint.value,
-        }
-        if is_public_display_metadata(self.title):
-            document["sr:title"] = self.title
-        if self.resource_hrefs:
-            document["sr:resourceHrefs"] = list(self.resource_hrefs)
-        return document
 
 
 @dataclass(frozen=True, slots=True)
@@ -249,7 +202,7 @@ class PublicationIdentityResult:
 
 
 class PublicationIdentityBuilder:
-    """Build Work/Edition/File identity from one strictly verified EPUB."""
+    """Build minimal exact-file identity from one strictly verified EPUB."""
 
     def build(
         self,
@@ -258,7 +211,6 @@ class PublicationIdentityBuilder:
         persisted_book_document: Mapping[str, Any],
         manifest: Mapping[str, Any] | None = None,
         source_asset_file: str | None = None,
-        work_identifiers: Sequence[tuple[str, str]] = (),
     ) -> PublicationIdentityResult:
         """Verify a book output's source asset and build its public identity."""
 
@@ -270,7 +222,6 @@ class PublicationIdentityBuilder:
         return self.build_verified(
             verified_source=verified,
             persisted_book_document=persisted_book_document,
-            work_identifiers=work_identifiers,
         )
 
     def build_verified(
@@ -278,11 +229,8 @@ class PublicationIdentityBuilder:
         *,
         verified_source: VerifiedEpubSource,
         persisted_book_document: Mapping[str, Any],
-        work_identifiers: Sequence[tuple[str, str]] = (),
     ) -> PublicationIdentityResult:
         """Build identity from an already verified, builder-private source handle."""
-
-        normalized_work_identifiers = _normalize_work_identifiers(work_identifiers)
         persisted_metadata = _book_metadata(persisted_book_document)
         title, creators, language, findings = _publication_metadata(
             verified_source,
@@ -331,59 +279,10 @@ class PublicationIdentityBuilder:
                 "verified source EPUB could not be indexed for exact resource text",
             ) from exc
 
-        if normalized_work_identifiers:
-            work_identifier_pairs = tuple(
-                (identifier["sr:scheme"], identifier["sr:value"])
-                for identifier in normalized_work_identifiers
-            )
-            work = {
-                "id": asserted_work_id(work_identifier_pairs),
-                "type": "sr:WorkIdentity",
-                "sr:identityStrength": "asserted",
-                "sr:identifiers": list(normalized_work_identifiers),
-            }
-        else:
-            work = {
-                "id": provisional_work_id(title, creators),
-                "type": "sr:WorkIdentity",
-                "sr:identityStrength": "provisional",
-            }
-
-        edition_identifier = edition_id(content.value)
-        file_identifier = file_id(verified_source.sha256)
-        publication_identifiers = tuple(
-            {
-                "type": "sr:Identifier",
-                "sr:scheme": identifier.scheme,
-                "sr:value": identifier.value,
-            }
-            for identifier in verified_source.metadata.publication_identifiers
-        )
-        edition: dict[str, object] = {
-            "id": edition_identifier,
-            "type": "sr:EditionIdentity",
-            "sr:contentFingerprint": content.to_wire(),
-            "sr:chapterFingerprints": [chapter.to_wire() for chapter in chapters],
-        }
-        if publication_identifiers:
-            edition["sr:publicationIdentifiers"] = list(publication_identifiers)
-        if language is not None:
-            edition["sr:language"] = language
-
-        file_document = {
-            "id": file_identifier,
-            "type": "sr:FileIdentity",
-            "dc:format": EPUB_MEDIA_TYPE,
-            "sr:sha256": verified_source.sha256,
-            "sr:byteLength": verified_source.byte_length,
-        }
         wire: dict[str, object] = {
             "dc:format": EPUB_MEDIA_TYPE,
             "dc:title": title,
-            "dc:identifier": [work["id"], edition_identifier, file_identifier],
-            "sr:work": work,
-            "sr:edition": edition,
-            "sr:file": file_document,
+            "dc:identifier": [f"nih:sha-256;{verified_source.sha256}"],
         }
         if creators:
             wire["dc:creator"] = list(creators)
@@ -775,7 +674,7 @@ def _publication_metadata(
                         "Verified OPF language differs from persisted BookDocument "
                         "metadata; the verified OPF value was used."
                     ),
-                    json_pointer="/about/sr:edition/sr:language",
+                    json_pointer="/about/dc:language",
                 )
             )
     else:
@@ -788,7 +687,7 @@ def _publication_metadata(
                         "Verified OPF language was omitted because it is not a v0 "
                         "language tag."
                     ),
-                    json_pointer="/about/sr:edition/sr:language",
+                    json_pointer="/about/dc:language",
                 )
             )
     return title, creators, language, tuple(findings)
@@ -860,9 +759,9 @@ def _manifest_href_resolver(
     opf_parent = PurePosixPath(source.opf_path).parent
     for item in source.manifest_items:
         try:
-            relative_archive_path = PurePosixPath(item.archive_path).relative_to(
-                opf_parent
-            ).as_posix()
+            relative_archive_path = (
+                PurePosixPath(item.archive_path).relative_to(opf_parent).as_posix()
+            )
         except ValueError as exc:  # pragma: no cover - verifier invariant
             raise PublicationIdentityError(
                 "invalid_epub_manifest_index",
@@ -976,169 +875,6 @@ def _require_chapter_resources_in_manifest(
                     "canonical chapter references a non-text OPF manifest resource",
                     json_pointer=f"/chapters/{chapter.order - 1}/href",
                 )
-
-
-def _normalize_work_identifiers(
-    identifiers: Sequence[tuple[str, str]],
-) -> tuple[dict[str, str], ...]:
-    normalized: set[tuple[str, str]] = set()
-    for position, identifier in enumerate(identifiers):
-        if not isinstance(identifier, tuple) or len(identifier) != 2:
-            raise PublicationIdentityError(
-                "invalid_work_identifier",
-                "explicit work identifiers must be (scheme, value) tuples",
-                json_pointer=f"/work_identifiers/{position}",
-            )
-        raw_scheme, raw_value = identifier
-        if not isinstance(raw_scheme, str) or not isinstance(raw_value, str):
-            raise PublicationIdentityError(
-                "invalid_work_identifier",
-                "explicit work identifiers must contain string fields",
-                json_pointer=f"/work_identifiers/{position}",
-            )
-        scheme = unicodedata.normalize("NFC", raw_scheme)
-        value = unicodedata.normalize("NFC", raw_value)
-        if (
-            raw_scheme != "work-uri"
-            or not value
-            or len(value) > 2048
-            or any(
-                ord(character) in _UNICODE_WHITE_SPACE for character in raw_value
-            )
-            or any(
-                unicodedata.category(character) in {"Cc", "Cf", "Cs"}
-                for character in raw_value
-            )
-            or "\\" in raw_value
-            or "\x00" in raw_value
-            or not _is_public_work_uri(value)
-        ):
-            raise PublicationIdentityError(
-                "invalid_work_identifier",
-                "explicit work identifier is not an approved absolute work URI",
-                json_pointer=f"/work_identifiers/{position}",
-            )
-        normalized.add((scheme, value))
-    return tuple(
-        {
-            "type": "sr:Identifier",
-            "sr:scheme": scheme,
-            "sr:value": value,
-        }
-        for scheme, value in sorted(normalized)
-    )
-
-
-def _is_public_work_uri(value: str) -> bool:
-    if "?" in value or _INVALID_PERCENT_ESCAPE.search(value):
-        return False
-    try:
-        parsed = urlsplit(value)
-        decoded = decode_public_scan_value(value)
-        if decoded is None:
-            return False
-        decoded_parsed = urlsplit(decoded)
-    except ValueError:
-        return False
-    if "?" in decoded or any(
-        ord(character) in _UNICODE_WHITE_SPACE
-        or unicodedata.category(character) in {"Cc", "Cf", "Cs"}
-        for character in decoded
-    ):
-        return False
-    scheme = parsed.scheme.casefold()
-    if (
-        scheme not in {"http", "https", "urn"}
-        or decoded_parsed.scheme.casefold() != scheme
-        or parsed.query
-        or decoded_parsed.query
-        or _URI_CREDENTIALS.search(decoded)
-        or not is_public_display_metadata(decoded)
-    ):
-        return False
-    if scheme == "urn":
-        urn_without_fragment = decoded.split("#", 1)[0]
-        urn_match = _URN_URI.fullmatch(urn_without_fragment)
-        return bool(
-            urn_match
-            and urn_match.group("nid").casefold() != "urn"
-            and urn_match.group("nss")
-            and ":/" not in decoded_parsed.path
-            and ":\\" not in decoded_parsed.path
-            and not _URN_LOCAL_PATH.search(decoded_parsed.path)
-            and not _WINDOWS_ABSOLUTE_PATH.search(decoded_parsed.path)
-        )
-    if (
-        not parsed.netloc
-        or "%" in parsed.netloc
-        or parsed.username is not None
-        or parsed.password is not None
-        or decoded_parsed.username is not None
-        or decoded_parsed.password is not None
-    ):
-        return False
-    try:
-        hostname = parsed.hostname
-        _port = parsed.port
-    except ValueError:
-        return False
-    if not hostname:
-        return False
-    normalized_host = hostname.rstrip(".").casefold()
-    if (
-        normalized_host == "localhost"
-        or normalized_host.endswith(".localhost")
-        or normalized_host.endswith(".local")
-    ):
-        return False
-    try:
-        address = ipaddress.ip_address(normalized_host)
-    except ValueError:
-        if not _LEGACY_IPV4_HOST.fullmatch(normalized_host):
-            return True
-        address = _parse_legacy_ipv4(normalized_host)
-        return bool(address and address.is_global and not address.is_multicast)
-    return address.is_global and not address.is_multicast
-
-
-def _parse_legacy_ipv4(hostname: str) -> ipaddress.IPv4Address | None:
-    parts = hostname.split(".")
-    if not 1 <= len(parts) <= 4:
-        return None
-    values: list[int] = []
-    for part in parts:
-        try:
-            if part.casefold().startswith("0x"):
-                value = int(part[2:], 16)
-            elif len(part) > 1 and part.startswith("0"):
-                value = int(part, 8)
-            else:
-                value = int(part, 10)
-        except ValueError:
-            return None
-        values.append(value)
-    limits = {
-        1: (0xFFFFFFFF,),
-        2: (0xFF, 0xFFFFFF),
-        3: (0xFF, 0xFF, 0xFFFF),
-        4: (0xFF, 0xFF, 0xFF, 0xFF),
-    }[len(values)]
-    if any(value > limit for value, limit in zip(values, limits, strict=True)):
-        return None
-    if len(values) == 1:
-        packed = values[0]
-    elif len(values) == 2:
-        packed = (values[0] << 24) | values[1]
-    elif len(values) == 3:
-        packed = (values[0] << 24) | (values[1] << 16) | values[2]
-    else:
-        packed = (
-            (values[0] << 24)
-            | (values[1] << 16)
-            | (values[2] << 8)
-            | values[3]
-        )
-    return ipaddress.IPv4Address(packed)
 
 
 def _normalized_metadata_value(value: object) -> str:

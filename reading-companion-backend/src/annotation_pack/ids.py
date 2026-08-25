@@ -1,8 +1,9 @@
-"""Deterministic UUIDv5 identities for Annotation Pack v0.
+"""Deterministic identities for the minimal Annotation Pack v0 profile.
 
-Every public identity is serialized as a canonical lowercase UUID URN.  The
-namespace UUIDs and NUL-framed names in this module are protocol material: a
-change to either changes identity and therefore requires a new protocol major.
+Only Pack and Annotation UUIDs are public protocol identities.  The older
+work/edition/file/track/anchor helpers remain private implementation utilities
+for the exporter and its immutable publication layout; their values never
+enter ``annotations.json``.
 """
 
 from __future__ import annotations
@@ -19,6 +20,7 @@ __all__ = [
     "ANNOTATION_NAMESPACE",
     "CREATOR_CONTRACT_MAJOR",
     "CREATOR_NAMESPACE",
+    "DEFAULT_GENERATOR_IRI",
     "DEFAULT_SPEC_MAJOR",
     "EDITION_NAMESPACE",
     "FILE_NAMESPACE",
@@ -79,6 +81,7 @@ EPUB_MEDIA_TYPE = "application/epub+zip"
 CREATOR_CONTRACT_MAJOR = 0
 GENERATOR_CONTRACT_MAJOR = 0
 DEFAULT_SPEC_MAJOR = 0
+DEFAULT_GENERATOR_IRI = "https://github.com/Captain4Whale/second-reader"
 
 _SHA256_RE = re.compile(r"[0-9a-f]{64}\Z")
 _UNICODE_WHITE_SPACE_RE = re.compile(
@@ -168,18 +171,17 @@ def default_creator_id(
 def default_generator_id(
     contract_major: int = GENERATOR_CONTRACT_MAJOR,
 ) -> str:
-    """Return the stable id of the reference Annotation Pack exporter."""
+    """Return the fixed public IRI of the Second Reader generator.
+
+    ``contract_major`` is retained as an API guard for callers that used the
+    first local implementation.  Minimal v0 has one generator identity, so
+    only major ``0`` is accepted.
+    """
 
     major = _major_token(contract_major, "contract_major")
-    return uuid5_urn(
-        GENERATOR_NAMESPACE,
-        _nul_frame(
-            "generator",
-            "software",
-            "second-reader-annotation-pack-exporter",
-            major,
-        ),
-    )
+    if major != "0":
+        raise ValueError("minimal v0 supports only generator contract major 0")
+    return DEFAULT_GENERATOR_IRI
 
 
 def track_id(edition: str, creator: str, track_key: str) -> str:
@@ -195,18 +197,20 @@ def track_id(edition: str, creator: str, track_key: str) -> str:
 
 
 def pack_id(
-    edition: str,
-    track: str,
+    epub_sha256: str,
+    generator_id: str = DEFAULT_GENERATOR_IRI,
     spec_major: int = DEFAULT_SPEC_MAJOR,
 ) -> str:
-    """Derive the stable v0 Edition-by-Track container id."""
+    """Derive the public Pack UUIDv5 from exact EPUB bytes and generator."""
 
+    digest = _lowercase_sha256(epub_sha256, "epub_sha256")
+    generator = _canonical_absolute_iri(generator_id, "generator_id")
     major = _major_token(spec_major, "spec_major")
-    canonical_edition = _canonical_uuid5_urn(edition, "edition")
-    canonical_track = _canonical_uuid5_urn(track, "track")
+    if major != "0":
+        raise ValueError("minimal v0 supports only spec major 0")
     return uuid5_urn(
         PACK_NAMESPACE,
-        _nul_frame("pack", major, canonical_edition, canonical_track),
+        _nul_frame("annotation-pack", "v0", digest, generator),
     )
 
 
@@ -271,33 +275,54 @@ def anchor_id(
 
 
 def annotation_id(
-    track: str,
-    kind: Literal["highlight", "note"],
-    anchor: str,
-    body_sha256: str | None = None,
+    epub_sha256: str,
+    href: str,
+    start: int,
+    end: int,
+    motivation: Literal["highlighting", "commenting"],
+    body: str | None = None,
 ) -> str:
-    """Derive an annotation identity from its complete public semantics.
+    """Derive one public Annotation UUIDv5 from complete visible semantics.
 
-    Highlight has an intentionally empty final NUL-framed field.  Note uses
-    the SHA-256 of the builder-normalized body.  The empty field is part of the
-    v0 protocol name and must not be replaced with a sentinel token.
+    Text positions are Unicode-code-point offsets into the documented EPUB
+    resource stream.  Highlighting has an empty final name field; commenting
+    carries the exact NFC-normalized Note value.  Timestamps and quote context
+    deliberately do not participate in identity.
     """
 
-    canonical_track = _canonical_uuid5_urn(track, "track")
-    canonical_anchor = _canonical_uuid5_urn(anchor, "anchor")
-    if kind == "highlight":
-        if body_sha256 is not None:
-            raise ValueError("highlight annotation identity must not include a body digest")
-        body_digest = ""
-    elif kind == "note":
-        if body_sha256 is None:
-            raise ValueError("note annotation identity requires a body digest")
-        body_digest = _lowercase_sha256(body_sha256, "body_sha256")
+    digest = _lowercase_sha256(epub_sha256, "epub_sha256")
+    canonical_href = _nfc_required(href, "href")
+    if canonical_href != href:
+        raise ValueError("href must already be NFC-normalized")
+    start_token = _non_negative_integer_token(start, "start")
+    end_token = _non_negative_integer_token(end, "end")
+    if start >= end:
+        raise ValueError("annotation range must be non-empty")
+    if motivation == "highlighting":
+        if body is not None:
+            raise ValueError("highlighting identity must not include a body")
+        body_value = ""
+    elif motivation == "commenting":
+        if not isinstance(body, str):
+            raise ValueError("commenting identity requires a body")
+        body_value = _nfc_required(body, "body")
+        if body_value != body or not body_value.strip():
+            raise ValueError("body must be non-empty NFC text")
     else:
-        raise ValueError("kind must be 'highlight' or 'note'")
-
+        raise ValueError("motivation must be highlighting or commenting")
+    if "\0" in canonical_href or "\0" in body_value:
+        raise ValueError("annotation identity input must not contain NUL")
     canonical_name = "\0".join(
-        ("annotation", canonical_track, kind, canonical_anchor, body_digest)
+        (
+            "annotation",
+            "v0",
+            digest,
+            canonical_href,
+            start_token,
+            end_token,
+            motivation,
+            body_value,
+        )
     )
     return uuid5_urn(ANNOTATION_NAMESPACE, canonical_name)
 

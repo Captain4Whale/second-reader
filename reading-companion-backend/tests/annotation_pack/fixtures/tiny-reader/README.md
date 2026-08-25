@@ -72,17 +72,17 @@ golden/
 ```
 
 `golden/tiny-reader.annotations` is byte-identical to the formal package that
-the exporter names `second-reader-agent-04f55dd82c11.annotations`; the generic
+the exporter names `second-reader-agent-94da560b3600.annotations`; the generic
 fixture filename keeps the committed golden easy to address. Both forms contain
 exactly root `annotations.json`.
 
-The golden deliberately succeeds without an EPUB CFI selector. The first spine
-item observes the parser's existing spine-zero CFI-null behavior, and the
-second item has only parser-produced lightweight CFIs; neither is published
-without an exact CFI resolver and quote round-trip. Both annotations instead
-prove exact XHTML href, `TextQuoteSelector`, and paragraph-character selector
-round trips. This is an offline reference-implementation fixture, not evidence
-of external Reader interoperability.
+The golden publishes no EPUB CFI or private paragraph/chapter coordinates.
+Both annotations prove an exact manifest-relative XHTML href plus ordered
+`TextQuoteSelector` and `TextPositionSelector` round trips against the fixed
+normalized resource-text stream. Python string indexes are Unicode code-point
+indexes, and the position range includes `start` while excluding `end`. This is
+an offline reference-implementation fixture, not evidence of external Reader
+interoperability.
 
 Validate and safely inspect the committed standalone artifacts without the
 producer directory:

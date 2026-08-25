@@ -93,9 +93,10 @@ class ProducerDraftResult:
 class ResolvedAnchor:
     """A canonical, exact-source-backed annotation target."""
 
-    anchor_id: str
     href: str
     exact: str
+    start: int
+    end: int
     target: Mapping[str, Any]
     findings: tuple[ValidationFinding, ...]
 

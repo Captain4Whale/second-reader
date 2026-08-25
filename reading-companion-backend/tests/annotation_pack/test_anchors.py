@@ -13,7 +13,6 @@ import src.annotation_pack.anchors as anchors_module
 from src.annotation_pack.anchors import (
     AnchorBuilder,
     AnchorResolutionError,
-    CfiRoundTrip,
 )
 from src.annotation_pack.drafts import AnnotationDraft, SourceCoordinate, SourceRange
 from src.annotation_pack.epub_resources import EpubResourceIndex
@@ -154,9 +153,7 @@ def _copy_index(
     return EpubResourceIndex(
         manifest=original.manifest,
         resource_texts=(
-            dict(original.resource_texts)
-            if resource_texts is None
-            else resource_texts
+            dict(original.resource_texts) if resource_texts is None else resource_texts
         ),
         paragraph_ranges=(
             dict(original.paragraph_ranges)
@@ -171,7 +168,7 @@ def _copy_index(
     )
 
 
-def test_anchor_resolves_exact_single_paragraph_target_and_fixed_id(
+def test_anchor_resolves_minimal_quote_and_position_target(
     tmp_path: Path,
 ) -> None:
     publication = _publication(tmp_path)
@@ -183,32 +180,28 @@ def test_anchor_resolves_exact_single_paragraph_target_and_fixed_id(
     target = anchor.target
     assert anchor.exact == "durable idea"
     assert anchor.href == "Text/chapter-01.xhtml"
-    assert anchor.anchor_id == "urn:uuid:8d3a79e9-b894-5bac-ab6c-3629d7af23d4"
-    assert target["sr:anchorId"] == anchor.anchor_id
-    assert target["selector"][0]["exact"] == anchor.exact
-    assert target["selector"][0]["sr:normalization"] == (
-        "sr-epub-resource-text-v1"
-    )
-    assert target["selector"][1] == {
-        "type": "sr:ParagraphCharSelector",
-        "sr:coordinateSystem": "sr-book-document-paragraph-char-v1",
-        "sr:offsetUnit": "unicode-code-point",
-        "sr:start": {
-            "sr:chapterId": 1,
-            "sr:paragraphIndex": 3,
-            "sr:charOffset": 2,
-        },
-        "sr:end": {
-            "sr:chapterId": 1,
-            "sr:paragraphIndex": 3,
-            "sr:charOffset": 14,
-        },
+    href, paragraph_start, _paragraph_end = publication.epub_index.paragraph_ranges[
+        (1, 3)
+    ]
+    assert href == anchor.href
+    assert anchor.start == paragraph_start + 2
+    assert anchor.end == paragraph_start + 14
+    resource_text = publication.epub_index.resource_texts[anchor.href]
+    assert resource_text[anchor.start : anchor.end] == anchor.exact
+    assert target["selector"][0] == {
+        "type": "TextQuoteSelector",
+        "exact": anchor.exact,
+        "prefix": resource_text[max(0, anchor.start - 64) : anchor.start],
+        "suffix": resource_text[anchor.end : anchor.end + 64],
     }
+    assert target["selector"][1] == {
+        "type": "TextPositionSelector",
+        "start": anchor.start,
+        "end": anchor.end,
+    }
+    assert set(target) == {"source", "selector"}
     assert len(target["selector"]) == 2
-    assert target["sr:chapter"]["sr:order"] == 1
-    assert target["sr:chapter"]["sr:fingerprint"]["sr:value"] == (
-        publication.chapter_fingerprints[1]
-    )
+    assert "sr:" not in json.dumps(target, sort_keys=True)
     assert _target_errors(target) == []
     assert anchor.findings == ()
     with pytest.raises(TypeError, match="immutable"):
@@ -234,10 +227,14 @@ def test_anchor_cross_paragraph_quote_round_trips_resource_stream(
         quote=quote,
     )
 
-    anchor = AnchorBuilder().resolve(
-        draft=draft,
-        publication=publication,
-    ).target
+    anchor = (
+        AnchorBuilder()
+        .resolve(
+            draft=draft,
+            publication=publication,
+        )
+        .target
+    )
 
     href, first_start, _first_end = publication.epub_index.paragraph_ranges[(1, 2)]
     _href, second_start, _second_end = publication.epub_index.paragraph_ranges[(1, 3)]
@@ -245,12 +242,21 @@ def test_anchor_cross_paragraph_quote_round_trips_resource_stream(
     resource_start = first_start + start_offset
     resource_end = second_start + end_offset
     assert resource[resource_start:resource_end] == quote
-    assert anchor.target["selector"][0]["prefix"] == resource[
-        max(0, resource_start - 64) : resource_start
-    ]
-    assert anchor.target["selector"][0]["suffix"] == resource[
-        resource_end : resource_end + 64
-    ]
+    assert (anchor.start, anchor.end) == (resource_start, resource_end)
+    assert anchor.target["selector"][1] == {
+        "type": "TextPositionSelector",
+        "start": resource_start,
+        "end": resource_end,
+    }
+    assert (
+        anchor.target["selector"][0]["prefix"]
+        == resource[max(0, resource_start - 64) : resource_start]
+    )
+    assert (
+        anchor.target["selector"][0]["suffix"]
+        == resource[resource_end : resource_end + 64]
+    )
+    assert "sr:" not in json.dumps(anchor.target, sort_keys=True)
     assert _target_errors(anchor.target) == []
 
 
@@ -391,6 +397,49 @@ def test_anchor_rejects_missing_or_unverifiable_resource_mapping(
     )
     with pytest.raises(AnchorResolutionError) as raised:
         AnchorBuilder().resolve(draft=draft, publication=unverifiable)
+    assert raised.value.code == "resource_text_unverifiable"
+
+
+def test_anchor_rejects_bad_resource_range_and_resource_quote(
+    tmp_path: Path,
+) -> None:
+    publication = _publication(tmp_path)
+    draft = _single_paragraph_draft(publication)
+    href = "Text/chapter-01.xhtml"
+    resource_text = publication.epub_index.resource_texts[href]
+
+    ranges = dict(publication.epub_index.paragraph_ranges)
+    ranges[(1, 3)] = (href, len(resource_text), len(resource_text) + 1)
+    bad_range = replace(
+        publication,
+        epub_index=_copy_index(publication, paragraph_ranges=ranges),
+    )
+    with pytest.raises(AnchorResolutionError) as raised:
+        AnchorBuilder().resolve(draft=draft, publication=bad_range)
+    assert raised.value.code == "resource_text_unverifiable"
+
+    paragraph_href, paragraph_start, _paragraph_end = (
+        publication.epub_index.paragraph_ranges[(1, 3)]
+    )
+    assert paragraph_href == href
+    changed_offset = paragraph_start + 2
+    tampered_text = (
+        resource_text[:changed_offset]
+        + ("X" if resource_text[changed_offset] != "X" else "Y")
+        + resource_text[changed_offset + 1 :]
+    )
+    bad_quote = replace(
+        publication,
+        epub_index=_copy_index(
+            publication,
+            resource_texts={
+                **publication.epub_index.resource_texts,
+                href: tampered_text,
+            },
+        ),
+    )
+    with pytest.raises(AnchorResolutionError) as raised:
+        AnchorBuilder().resolve(draft=draft, publication=bad_quote)
     assert raised.value.code == "resource_text_unverifiable"
 
 
@@ -592,75 +641,6 @@ def test_repeated_quote_and_duplicate_projection_are_warnings(
 
 def test_quote_uniqueness_scan_stops_after_the_second_occurrence() -> None:
     assert anchors_module._occurrence_count("a" * 1_000_000, "a") == 2
-
-
-class _ValidCfiResolver:
-    def resolve(self, **kwargs: Any) -> CfiRoundTrip:
-        return CfiRoundTrip(
-            value="epubcfi(/6/4!/4/2,/1:2,/1:14)",
-            href=kwargs["href"],
-            resource_start=kwargs["resource_start"],
-            resource_end=kwargs["resource_end"],
-        )
-
-
-class _WrongCfiResolver:
-    def resolve(self, **kwargs: Any) -> CfiRoundTrip:
-        return CfiRoundTrip(
-            value="epubcfi(/6/4!/4/2,/1:2,/1:14)",
-            href="Text/wrong.xhtml",
-            resource_start=kwargs["resource_start"],
-            resource_end=kwargs["resource_end"],
-        )
-
-
-class _WrongOffsetCfiResolver:
-    def resolve(self, **kwargs: Any) -> CfiRoundTrip:
-        return CfiRoundTrip(
-            value="epubcfi(/6/4!/4/2,/1:2,/1:14)",
-            href=kwargs["href"],
-            resource_start=kwargs["resource_start"],
-            resource_end=kwargs["resource_end"] + 1,
-        )
-
-
-class _FailingCfiResolver:
-    def resolve(self, **_kwargs: Any) -> CfiRoundTrip:
-        raise RuntimeError("/private/path must not escape")
-
-
-def test_verified_cfi_is_optional_and_only_emitted_after_round_trip(
-    tmp_path: Path,
-) -> None:
-    publication = _publication(tmp_path)
-    draft = _single_paragraph_draft(publication)
-
-    verified = AnchorBuilder(cfi_resolver=_ValidCfiResolver()).resolve(
-        draft=draft,
-        publication=publication,
-    ).target
-    assert len(verified.target["selector"]) == 3
-    assert verified.target["selector"][2]["type"] == "sr:EpubCfiSelector"
-    assert _target_errors(verified.target) == []
-
-    for resolver in (
-        _WrongCfiResolver(),
-        _WrongOffsetCfiResolver(),
-        _FailingCfiResolver(),
-    ):
-        unverified = AnchorBuilder(cfi_resolver=resolver).resolve(
-            draft=draft,
-            publication=publication,
-        ).target
-        assert len(unverified.target["selector"]) == 2
-        assert [finding.code for finding in unverified.findings] == ["cfi_unverified"]
-        assert "/private/path" not in repr(unverified.findings)
-
-    without_cfi = AnchorBuilder().resolve(
-        draft=draft,
-        publication=publication,
-    ).target
-    assert verified.anchor_id == without_cfi.anchor_id
 
 
 def test_anchor_module_has_no_mechanism_dependency() -> None:

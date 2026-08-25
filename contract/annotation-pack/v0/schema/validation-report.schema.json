@@ -8,6 +8,8 @@
     "schema_version",
     "validator_version",
     "status",
+    "producer",
+    "adapter_version",
     "pack_id",
     "semantic_digest",
     "input_snapshot_digest",
@@ -30,6 +32,12 @@
         "degraded",
         "failed"
       ]
+    },
+    "producer": {
+      "$ref": "#/$defs/nullableAbsoluteIri"
+    },
+    "adapter_version": {
+      "$ref": "#/$defs/nullableSemver"
     },
     "pack_id": {
       "oneOf": [
@@ -80,6 +88,12 @@
       },
       "then": {
         "properties": {
+          "producer": {
+            "$ref": "#/$defs/absoluteIri"
+          },
+          "adapter_version": {
+            "$ref": "#/$defs/semver"
+          },
           "pack_id": {
             "$ref": "#/$defs/uuidUrn"
           },
@@ -190,6 +204,35 @@
     "sha256Hex": {
       "type": "string",
       "pattern": "^[0-9a-f]{64}$"
+    },
+    "absoluteIri": {
+      "type": "string",
+      "format": "iri",
+      "pattern": "^[A-Za-z][A-Za-z0-9+.-]*:"
+    },
+    "semver": {
+      "type": "string",
+      "pattern": "^(0|[1-9][0-9]*)\\.(0|[1-9][0-9]*)\\.(0|[1-9][0-9]*)(?:-[0-9A-Za-z.-]+)?(?:\\+[0-9A-Za-z.-]+)?$"
+    },
+    "nullableAbsoluteIri": {
+      "oneOf": [
+        {
+          "$ref": "#/$defs/absoluteIri"
+        },
+        {
+          "type": "null"
+        }
+      ]
+    },
+    "nullableSemver": {
+      "oneOf": [
+        {
+          "$ref": "#/$defs/semver"
+        },
+        {
+          "type": "null"
+        }
+      ]
     },
     "nullableDigest": {
       "oneOf": [

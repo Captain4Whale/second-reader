@@ -11,10 +11,10 @@ from zipfile import ZipFile
 
 import pytest
 from jsonschema import Draft202012Validator
+from pydantic import ValidationError
 
 from src.annotation_pack._generated_models import AnnotationPackDocument
 from src.annotation_pack.schema import (
-    ANNOTATION_CONTEXT_SHA256,
     ANNOTATION_PACK_SCHEMA_ID,
     PUBLICATION_POINTER_SCHEMA_ID,
     SCHEMA_VERSION,
@@ -22,7 +22,6 @@ from src.annotation_pack.schema import (
     VALIDATION_REPORT_SCHEMA_ID,
     annotation_validator,
     auxiliary_validator,
-    load_context,
     load_schema,
     pack_validator,
     validation_report_finding_sort_key,
@@ -36,11 +35,22 @@ SCHEMA_ROOT = CONTRACT_ROOT / "schema"
 EXAMPLE_ROOT = CONTRACT_ROOT / "examples"
 RUNTIME_ROOT = BACKEND_ROOT / "src" / "annotation_pack" / "resources"
 GENERATED_MODEL = BACKEND_ROOT / "src" / "annotation_pack" / "_generated_models.py"
+PAGES_SCRIPT = WORKSPACE_ROOT / "scripts" / "build_annotation_pack_pages.py"
+PAGES_WORKFLOW = WORKSPACE_ROOT / ".github" / "workflows" / "annotation-pack-pages.yml"
+PAGES_ROOT = Path("schema") / "annotation-pack" / "v0"
+
+EPUB_CONTEXT = "https://www.w3.org/ns/epub-anno.jsonld"
+GENERATOR = {
+    "id": "https://github.com/Captain4Whale/second-reader",
+    "type": "Software",
+    "name": "Second Reader Annotation Pack Exporter",
+}
 HEX_A = "a" * 64
 HEX_B = "b" * 64
 HEX_C = "c" * 64
 PACK_ID = "urn:uuid:31f414c4-32f3-50d6-85e1-9382e47c6390"
 TRACK_ID = "urn:uuid:04ace963-40ef-5247-90d2-1cc55d925afa"
+PRODUCER_ID = "urn:uuid:da94868b-ce7f-56d6-9c77-c5b959f15f5a"
 
 
 def _read_json(path: Path) -> Any:
@@ -49,6 +59,14 @@ def _read_json(path: Path) -> Any:
 
 def _minimal_pack() -> dict[str, Any]:
     return _read_json(EXAMPLE_ROOT / "minimal-pack.json")
+
+
+def _highlight() -> dict[str, Any]:
+    return _read_json(EXAMPLE_ROOT / "highlight.annotation.json")
+
+
+def _note() -> dict[str, Any]:
+    return _read_json(EXAMPLE_ROOT / "note.annotation.json")
 
 
 def _assert_invalid(validator: Draft202012Validator, document: Any) -> None:
@@ -66,6 +84,20 @@ def _walk_refs(value: Any) -> list[str]:
         for child in value:
             refs.extend(_walk_refs(child))
         return refs
+    return []
+
+
+def _walk_mappings(value: Any) -> list[dict[str, Any]]:
+    if isinstance(value, dict):
+        mappings = [value]
+        for child in value.values():
+            mappings.extend(_walk_mappings(child))
+        return mappings
+    if isinstance(value, list):
+        mappings: list[dict[str, Any]] = []
+        for child in value:
+            mappings.extend(_walk_mappings(child))
+        return mappings
     return []
 
 
@@ -99,6 +131,8 @@ def _report(*, status: str = "valid", packaged: bool = False) -> dict[str, Any]:
         "schema_version": "annotation-pack-validation-report/0.1",
         "validator_version": "0.1.0",
         "status": status,
+        "producer": None if failed else PRODUCER_ID,
+        "adapter_version": None if failed else "0.1.0",
         "pack_id": None if failed else PACK_ID,
         "semantic_digest": None if failed else HEX_A,
         "input_snapshot_digest": None if failed else HEX_B,
@@ -120,7 +154,9 @@ def _report(*, status: str = "valid", packaged: bool = False) -> dict[str, Any]:
                     "source_record_digest": "e" * 64,
                     "json_pointer": None,
                     "annotation_id": None,
-                    "message": "Source record is not supported by this adapter version.",
+                    "message": (
+                        "Source record is not supported by this adapter version."
+                    ),
                 }
             ]
             if degraded
@@ -136,7 +172,7 @@ def test_all_contract_schemas_are_valid_draft_2020_12() -> None:
         Draft202012Validator.check_schema(schema)
 
 
-def test_schema_ids_and_pinned_context_are_stable() -> None:
+def test_schema_ids_context_and_local_versions_are_stable() -> None:
     pack_schema = load_schema()
     assert pack_schema["$id"] == ANNOTATION_PACK_SCHEMA_ID
     assert (
@@ -146,37 +182,9 @@ def test_schema_ids_and_pinned_context_are_stable() -> None:
     assert (
         load_schema(VALIDATION_REPORT_SCHEMA_ID)["$id"] == VALIDATION_REPORT_SCHEMA_ID
     )
-    context = pack_schema["properties"]["@context"]
-    assert (
-        context["prefixItems"][0]["const"] == "https://www.w3.org/ns/epub-anno.jsonld"
-    )
-    assert context["prefixItems"][1]["properties"]["@protected"]["const"] is True
-    assert context["prefixItems"][1]["properties"]["sr"]["const"] == (
-        "https://captain4whale.github.io/second-reader/ns/annotation-pack#"
-    )
-    committed_context = _read_json(
-        CONTRACT_ROOT / "context" / "second-reader-annotation-context.jsonld"
-    )["@context"]
-    assert committed_context == {
-        "@protected": True,
-        "sr": {
-            "@id": "https://captain4whale.github.io/second-reader/ns/annotation-pack#",
-            "@prefix": True,
-        },
-    }
-    assert not {"value", "language", "start", "end", "title"} & set(committed_context)
-    assert load_context()["@context"] == committed_context
-    context_bytes = (
-        CONTRACT_ROOT / "context" / "second-reader-annotation-context.jsonld"
-    ).read_bytes()
-    assert hashlib.sha256(context_bytes).hexdigest() == ANNOTATION_CONTEXT_SHA256
-
-
-def test_python_versions_are_bound_to_the_canonical_schema() -> None:
-    pack_schema = load_schema()
-    assert SPEC_VERSION == pack_schema["properties"]["sr:specVersion"]["const"]
-    assert SCHEMA_VERSION == pack_schema["properties"]["sr:schemaVersion"]["const"]
-    assert CONTRACT_ROOT.name == f"v{int(SCHEMA_VERSION.split('.', maxsplit=1)[0])}"
+    assert pack_schema["properties"]["@context"] == {"const": EPUB_CONTEXT}
+    assert SPEC_VERSION == SCHEMA_VERSION == "0.1.0"
+    assert CONTRACT_ROOT.name == "v0"
 
 
 def test_public_schema_mutation_cannot_weaken_a_later_validator() -> None:
@@ -201,7 +209,9 @@ def test_standards_baseline_is_dated_and_status_pinned() -> None:
     assert "https://www.w3.org/TR/2017/REC-annotation-model-20170223/" in baseline
     assert "EPUB Annotations 1.0, Working Draft, 21 May 2026" in baseline
     assert "https://www.w3.org/TR/2026/WD-epub-anno-10-20260521/" in baseline
-    assert "The EPUB document is a Working Draft, not a Recommendation." in baseline
+    assert "RFC 6920, Naming Things with Hashes" in baseline
+    assert "aligned" in baseline
+    assert "never described as EPUB-WD conformant" in baseline
 
 
 @pytest.mark.parametrize(
@@ -221,24 +231,83 @@ def test_committed_examples_are_schema_valid(filename: str, root_type: str) -> N
     validator.validate(document)
 
 
+def test_committed_example_ids_and_item_order_match_v0_framing() -> None:
+    highlight = _highlight()
+    note = _note()
+    pack = _minimal_pack()
+    assert pack["id"] == "urn:uuid:d012c503-1480-55d5-8490-cc9e984f95ba"
+    assert highlight["id"] == "urn:uuid:9ec4a27a-b863-57fd-a1fc-8dcc77cc29a1"
+    assert note["id"] == "urn:uuid:c5b912cb-2487-508c-a6b1-8cb35835ab6c"
+    assert pack["items"] == [highlight, note]
+    assert [item["id"] for item in pack["items"]] == sorted(
+        [highlight["id"], note["id"]]
+    )
+
+
+def test_minimal_pack_targets_are_jointly_realizable_resource_slices() -> None:
+    pack = _minimal_pack()
+    resources = {
+        "Text/chapter-01.xhtml": (
+            "The reader paused. "
+            "A durable idea is worth returning to."
+            " Then the argument moved on."
+        ),
+        "Text/chapter-02.xhtml": (
+            "Do not merely repeat. "
+            "Return with a better question."
+            " The page may answer differently."
+        ),
+    }
+
+    for item in pack["items"]:
+        target = item["target"]
+        quote, position = target["selector"]
+        resource = resources[target["source"]]
+        start = position["start"]
+        end = position["end"]
+        assert resource[start:end] == quote["exact"]
+        assert resource[:start].endswith(quote["prefix"])
+        assert resource[end:].startswith(quote["suffix"])
+
+
+def test_pack_schema_and_examples_contain_zero_custom_vocabulary() -> None:
+    documents = [
+        _read_json(SCHEMA_ROOT / "annotation-pack.schema.json"),
+        *(_read_json(path) for path in sorted(EXAMPLE_ROOT.glob("*.json"))),
+    ]
+    for document in documents:
+        serialized = json.dumps(document, ensure_ascii=False)
+        assert '"sr:' not in serialized
+        assert (
+            "captain4whale.github.io/second-reader/ns/annotation-pack" not in serialized
+        )
+        assert not any(
+            key.startswith("sr:")
+            for mapping in _walk_mappings(document)
+            for key in mapping
+        )
+    assert not any(path.is_file() for path in (CONTRACT_ROOT / "context").glob("**/*"))
+
+
+def test_pack_schema_has_strict_object_whitelists_and_no_extension_escape() -> None:
+    schema = _read_json(SCHEMA_ROOT / "annotation-pack.schema.json")
+    assert "patternProperties" not in json.dumps(schema)
+    for name in (
+        "generator",
+        "publication",
+        "annotation",
+        "textualBody",
+        "annotationTarget",
+        "textQuoteSelector",
+        "textPositionSelector",
+    ):
+        assert schema["$defs"][name]["additionalProperties"] is False
+    assert schema["additionalProperties"] is False
+
+
 @pytest.mark.parametrize(
     "field",
-    [
-        "@context",
-        "id",
-        "type",
-        "generator",
-        "generated",
-        "about",
-        "items",
-        "sr:specVersion",
-        "sr:schemaVersion",
-        "sr:extensionVersion",
-        "sr:profile",
-        "sr:track",
-        "sr:provenance",
-        "sr:semanticDigest",
-    ],
+    ["@context", "id", "type", "generator", "generated", "about", "items"],
 )
 def test_every_pack_required_field_is_enforced(field: str) -> None:
     document = _minimal_pack()
@@ -246,129 +315,267 @@ def test_every_pack_required_field_is_enforced(field: str) -> None:
     _assert_invalid(pack_validator(), document)
 
 
-def test_highlight_note_and_selector_conditionals_are_enforced() -> None:
-    highlight = _read_json(EXAMPLE_ROOT / "highlight.annotation.json")
-    highlight["body"] = {
-        "type": "TextualBody",
-        "value": "Not allowed.",
-        "format": "text/plain",
-    }
-    _assert_invalid(annotation_validator(), highlight)
+def test_context_and_generator_are_exact_and_immutable() -> None:
+    document = _minimal_pack()
+    assert document["generator"] == GENERATOR
 
-    note = _read_json(EXAMPLE_ROOT / "note.annotation.json")
+    for bad_context in ([EPUB_CONTEXT], f"{EPUB_CONTEXT}#", None):
+        candidate = _minimal_pack()
+        candidate["@context"] = bad_context
+        _assert_invalid(pack_validator(), candidate)
+
+    for field, replacement in (
+        ("id", "https://example.org/exporter"),
+        ("type", "Organization"),
+        ("name", "Second Reader"),
+    ):
+        candidate = _minimal_pack()
+        candidate["generator"][field] = replacement
+        _assert_invalid(pack_validator(), candidate)
+
+    candidate = _minimal_pack()
+    candidate["generator"]["version"] = "0.1.0"
+    _assert_invalid(pack_validator(), candidate)
+
+
+def test_publication_metadata_is_minimal_and_exact_file_bound() -> None:
+    validator = pack_validator()
+    about = _minimal_pack()["about"]
+    assert set(about) == {"dc:identifier", "dc:format", "dc:title", "dc:creator"}
+
+    for field in ("dc:identifier", "dc:format", "dc:title"):
+        candidate = _minimal_pack()
+        del candidate["about"][field]
+        _assert_invalid(validator, candidate)
+
+    without_creator = _minimal_pack()
+    del without_creator["about"]["dc:creator"]
+    validator.validate(without_creator)
+
+    for identifier in (
+        [],
+        [f"nih:sha-256;{HEX_A}", f"nih:sha-256;{HEX_B}"],
+        [f"nih:sha-256:{HEX_A}"],
+        [f"nih:sha-256;{HEX_A.upper()}"],
+        [f"urn:sha256:{HEX_A}"],
+    ):
+        candidate = _minimal_pack()
+        candidate["about"]["dc:identifier"] = identifier
+        _assert_invalid(validator, candidate)
+
+    for creators in ([], [""], ["One", "One"]):
+        candidate = _minimal_pack()
+        candidate["about"]["dc:creator"] = creators
+        _assert_invalid(validator, candidate)
+
+    candidate = _minimal_pack()
+    candidate["about"]["dc:language"] = "en"
+    _assert_invalid(validator, candidate)
+
+
+@pytest.mark.parametrize("field", ["id", "type", "motivation", "created", "target"])
+def test_every_annotation_required_field_is_enforced(field: str) -> None:
+    annotation = _highlight()
+    del annotation[field]
+    _assert_invalid(annotation_validator(), annotation)
+
+
+def test_highlight_and_note_body_conditionals_are_enforced() -> None:
+    validator = annotation_validator()
+
+    highlight = _highlight()
+    highlight["body"] = {"type": "TextualBody", "value": "Not allowed."}
+    _assert_invalid(validator, highlight)
+
+    note = _note()
     del note["body"]
-    _assert_invalid(annotation_validator(), note)
+    _assert_invalid(validator, note)
 
-    wrong_kind = _read_json(EXAMPLE_ROOT / "highlight.annotation.json")
-    wrong_kind["sr:kind"] = "bookmark"
-    _assert_invalid(annotation_validator(), wrong_kind)
+    for mutation in (
+        {"type": "TextualBody", "value": ""},
+        {"type": "TextualBody", "value": "A note.", "format": "text/plain"},
+        {"type": "Text", "value": "A note."},
+    ):
+        candidate = _note()
+        candidate["body"] = mutation
+        _assert_invalid(validator, candidate)
 
-    wrong_order = _read_json(EXAMPLE_ROOT / "highlight.annotation.json")
-    wrong_order["target"]["selector"].reverse()
-    _assert_invalid(annotation_validator(), wrong_order)
-
-
-def test_uri_datetime_source_and_input_digest_constraints_are_enforced() -> None:
-    document = _minimal_pack()
-    document["generator"]["id"] = "relative-generator"
-    _assert_invalid(pack_validator(), document)
-
-    document = _minimal_pack()
-    document["generated"] = "2026-08-23T00:00:00+00:00"
-    _assert_invalid(pack_validator(), document)
-
-    document = _minimal_pack()
-    document["items"][0]["target"]["source"] = "../private.xhtml"
-    _assert_invalid(pack_validator(), document)
-
-    document = _minimal_pack()
-    document["sr:provenance"]["sr:inputSnapshotDigest"]["sr:canonicalization"] = (
-        "sr-second-reader-input-snapshot-v1"
-    )
-    _assert_invalid(pack_validator(), document)
+    candidate = _highlight()
+    candidate["motivation"] = "bookmarking"
+    _assert_invalid(validator, candidate)
 
 
-def test_absolute_iris_accept_unicode_characters() -> None:
-    document = _minimal_pack()
-    document["generator"]["id"] = "https://example.org/作者"
-    pack_validator().validate(document)
+def test_target_is_exactly_quote_then_position() -> None:
+    validator = annotation_validator()
+    target = _highlight()["target"]
+    assert set(target) == {"source", "selector"}
+    assert [selector["type"] for selector in target["selector"]] == [
+        "TextQuoteSelector",
+        "TextPositionSelector",
+    ]
+
+    without_context = _highlight()
+    quote = without_context["target"]["selector"][0]
+    del quote["prefix"]
+    del quote["suffix"]
+    validator.validate(without_context)
+
+    reversed_selectors = _highlight()
+    reversed_selectors["target"]["selector"].reverse()
+    _assert_invalid(validator, reversed_selectors)
+
+    for selector_count in (1, 3):
+        candidate = _highlight()
+        selectors = candidate["target"]["selector"]
+        candidate["target"]["selector"] = (
+            selectors[:selector_count]
+            if selector_count == 1
+            else [*selectors, selectors[0]]
+        )
+        _assert_invalid(validator, candidate)
+
+    candidate = _highlight()
+    candidate["target"]["type"] = "SpecificResource"
+    _assert_invalid(validator, candidate)
 
 
-def test_canonical_ids_require_uuid_v5_in_all_contract_documents() -> None:
+def test_quote_and_text_position_structural_constraints_are_enforced() -> None:
+    validator = annotation_validator()
+
+    candidate = _highlight()
+    candidate["target"]["selector"][0]["exact"] = ""
+    _assert_invalid(validator, candidate)
+
+    candidate = _highlight()
+    candidate["target"]["selector"][0]["normalization"] = "private"
+    _assert_invalid(validator, candidate)
+
+    candidate = _highlight()
+    candidate["target"]["selector"][0]["prefix"] = ""
+    _assert_invalid(validator, candidate)
+
+    candidate = _highlight()
+    candidate["target"]["selector"][1]["start"] = -1
+    _assert_invalid(validator, candidate)
+
+    candidate = _highlight()
+    candidate["target"]["selector"][1]["end"] = 0
+    _assert_invalid(validator, candidate)
+
+    candidate = _highlight()
+    candidate["target"]["selector"][1]["coordinateSystem"] = "paragraph"
+    _assert_invalid(validator, candidate)
+
+    # JSON Schema owns shape only; the semantic validator owns start < end and
+    # exact source-resource round trips.
+    structurally_valid = _highlight()
+    structurally_valid["target"]["selector"][1].update({"start": 9, "end": 8})
+    validator.validate(structurally_valid)
+
+
+@pytest.mark.parametrize(
+    "source",
+    [
+        "https://example.org/chapter.xhtml",
+        "/Text/chapter.xhtml",
+        "../Text/chapter.xhtml",
+        "Text/../chapter.xhtml",
+        "Text/chapter.xhtml#frag",
+        "Text/chapter.xhtml?token=secret",
+        "Text\\chapter.xhtml",
+        "Text/chapter one.xhtml",
+    ],
+)
+def test_target_source_is_a_safe_relative_epub_href(source: str) -> None:
+    candidate = _highlight()
+    candidate["target"]["source"] = source
+    _assert_invalid(annotation_validator(), candidate)
+
+
+def test_uuid_dates_and_root_extras_are_strict() -> None:
     uuid_v4 = "urn:uuid:31f414c4-32f3-40d6-85e1-9382e47c6390"
 
-    pack = _minimal_pack()
-    pack["id"] = uuid_v4
-    _assert_invalid(pack_validator(), pack)
+    candidate = _minimal_pack()
+    candidate["id"] = uuid_v4
+    _assert_invalid(pack_validator(), candidate)
 
-    pointer = _pointer(packaged=False)
-    pointer["track_id"] = uuid_v4
-    _assert_invalid(auxiliary_validator(PUBLICATION_POINTER_SCHEMA_ID), pointer)
+    candidate = _minimal_pack()
+    candidate["items"][0]["id"] = uuid_v4
+    _assert_invalid(pack_validator(), candidate)
 
-    report = _report(status="valid")
-    report["pack_id"] = uuid_v4
-    _assert_invalid(auxiliary_validator(VALIDATION_REPORT_SCHEMA_ID), report)
+    candidate = _minimal_pack()
+    candidate["generated"] = "2026-08-25T00:00:00+00:00"
+    _assert_invalid(pack_validator(), candidate)
+
+    candidate = _minimal_pack()
+    candidate["items"][0]["created"] = "2026-08-25T00:00:00.000Z"
+    _assert_invalid(pack_validator(), candidate)
+
+    candidate = _minimal_pack()
+    candidate["private_state"] = "must not pass"
+    _assert_invalid(pack_validator(), candidate)
 
 
-def test_edition_content_fingerprint_algorithm_version_is_fixed() -> None:
+@pytest.mark.parametrize(
+    ("path", "field", "value"),
+    [
+        (("items", 0), "creator", {"type": "Software", "name": "Private"}),
+        (("items", 0), "sr:kind", "highlight"),
+        (("items", 0), "confidence", 0.9),
+        (("items", 0, "target"), "sr:anchorId", PACK_ID),
+        (("items", 0, "target"), "chapter", {"id": 1}),
+    ],
+)
+def test_legacy_and_private_annotation_fields_are_rejected(
+    path: tuple[str | int, ...], field: str, value: Any
+) -> None:
     document = _minimal_pack()
-    document["about"]["sr:edition"]["sr:contentFingerprint"]["sr:algorithmVersion"] = (
-        "totally-unsupported-v99"
-    )
+    candidate: Any = document
+    for part in path:
+        candidate = candidate[part]
+    candidate[field] = value
     _assert_invalid(pack_validator(), document)
 
 
-def test_unknown_unprefixed_fields_are_rejected() -> None:
+def test_generated_binding_round_trip_is_strict_but_schema_remains_canonical() -> None:
     document = _minimal_pack()
-    document["private_state"] = "must not pass"
-    _assert_invalid(pack_validator(), document)
-
-    document = _minimal_pack()
-    document["items"][0]["private_state"] = "must not pass"
-    _assert_invalid(pack_validator(), document)
-
-
-def test_declared_prefixed_extension_survives_generated_alias_round_trip() -> None:
-    document = _minimal_pack()
-    document["@context"][1]["ex"] = "https://example.invalid/annotation-extension#"
-    document["ex:score"] = {"value": 3}
-    document["items"][0]["ex:confidence"] = 0.75
-    pack_validator().validate(document)
-
     model = AnnotationPackDocument.model_validate(document)
     dumped = model.model_dump(mode="json", by_alias=True, exclude_none=True)
-
-    assert "@context" in dumped
-    assert dumped["ex:score"] == {"value": 3}
-    assert dumped["items"][0]["ex:confidence"] == 0.75
-    assert "sr:semanticDigest" in dumped
+    assert dumped == document
     pack_validator().validate(dumped)
 
+    with pytest.raises(ValidationError):
+        AnnotationPackDocument.model_validate({**document, "sr:private": True})
 
-def test_pack_context_requires_a_protected_sr_binding() -> None:
-    document = _minimal_pack()
-    del document["@context"][1]["@protected"]
-    _assert_invalid(pack_validator(), document)
-
-
-def test_generated_model_does_not_replace_canonical_validation() -> None:
-    document = _minimal_pack()
-    document["unknown_unprefixed"] = True
-    model = AnnotationPackDocument.model_validate(document)
-    assert model.model_dump()["unknown_unprefixed"] is True
-    _assert_invalid(pack_validator(), document)
-
-
-def test_runtime_schema_copies_are_byte_identical() -> None:
-    for canonical in sorted(SCHEMA_ROOT.glob("*.json")):
-        assert (RUNTIME_ROOT / canonical.name).read_bytes() == canonical.read_bytes()
-
-    canonical_context = (
-        CONTRACT_ROOT / "context" / "second-reader-annotation-context.jsonld"
+    # Code generation cannot encode the highlighting/commenting conditional,
+    # so callers must still use the canonical schema validator.
+    invalid_highlight = _minimal_pack()
+    highlight_item = next(
+        item
+        for item in invalid_highlight["items"]
+        if item["motivation"] == "highlighting"
     )
-    assert (
-        RUNTIME_ROOT / canonical_context.name
-    ).read_bytes() == canonical_context.read_bytes()
+    highlight_item["body"] = {
+        "type": "TextualBody",
+        "value": "Forbidden on a Highlight.",
+    }
+    AnnotationPackDocument.model_validate(invalid_highlight)
+    _assert_invalid(pack_validator(), invalid_highlight)
+
+
+def test_runtime_schema_copies_are_exact_and_context_free() -> None:
+    canonical_schemas = sorted(SCHEMA_ROOT.glob("*.json"))
+    assert {path.name for path in canonical_schemas} == {
+        "annotation-pack.schema.json",
+        "publication-pointer.schema.json",
+        "validation-report.schema.json",
+    }
+    assert {path.name for path in RUNTIME_ROOT.glob("*.json")} == {
+        path.name for path in canonical_schemas
+    }
+    for canonical in canonical_schemas:
+        assert (RUNTIME_ROOT / canonical.name).read_bytes() == canonical.read_bytes()
+    assert not list(RUNTIME_ROOT.glob("*context*"))
 
 
 def test_runtime_resources_load_from_a_zip_import(tmp_path: Path) -> None:
@@ -384,9 +591,9 @@ def test_runtime_resources_load_from_a_zip_import(tmp_path: Path) -> None:
         (
             "import sys",
             f"sys.path.insert(0, {str(archive)!r})",
-            "from src.annotation_pack.schema import load_context, load_schema",
+            "from src.annotation_pack.schema import load_schema",
             "assert load_schema()['type'] == 'object'",
-            "assert load_context()['@context']['sr']['@prefix'] is True",
+            "assert load_schema()['properties']['@context']['const'].startswith('https://www.w3.org/')",
         )
     )
     completed = subprocess.run(
@@ -400,7 +607,7 @@ def test_runtime_resources_load_from_a_zip_import(tmp_path: Path) -> None:
     assert completed.returncode == 0, completed.stdout
 
 
-def test_generated_header_names_canonical_schema_digest_and_fixed_tool() -> None:
+def test_generated_header_names_schema_digest_and_fixed_tools() -> None:
     digest = hashlib.sha256(
         (SCHEMA_ROOT / "annotation-pack.schema.json").read_bytes()
     ).hexdigest()
@@ -425,10 +632,12 @@ def test_generation_is_clean() -> None:
 def test_auxiliary_schemas_do_not_redefine_pack_wire() -> None:
     for schema_id in (PUBLICATION_POINTER_SCHEMA_ID, VALIDATION_REPORT_SCHEMA_ID):
         schema = load_schema(schema_id)
-        assert not {"@context", "about", "items", "sr:track"} & set(
+        assert not {"@context", "about", "items", "generator", "target"} & set(
             schema["properties"]
         )
-        assert "annotation-pack.schema.json" not in json.dumps(schema)
+        serialized = json.dumps(schema)
+        assert "annotation-pack.schema.json" not in serialized
+        assert '"sr:' not in serialized
 
 
 def test_publication_pointer_supports_json_only_and_packaged_revisions() -> None:
@@ -445,12 +654,29 @@ def test_publication_pointer_supports_json_only_and_packaged_revisions() -> None
     _assert_invalid(validator, unsafe_path)
 
 
-def test_validation_report_status_and_artifact_conditionals() -> None:
+def test_validation_report_status_adapter_and_artifact_conditionals() -> None:
     validator = auxiliary_validator(VALIDATION_REPORT_SCHEMA_ID)
     validator.validate(_report(status="valid", packaged=False))
     validator.validate(_report(status="valid", packaged=True))
     validator.validate(_report(status="degraded", packaged=False))
     validator.validate(_report(status="failed", packaged=False))
+
+    for field in ("producer", "adapter_version"):
+        missing = _report(status="valid")
+        del missing[field]
+        _assert_invalid(validator, missing)
+
+        null_publishable = _report(status="valid")
+        null_publishable[field] = None
+        _assert_invalid(validator, null_publishable)
+
+    relative_producer = _report(status="valid")
+    relative_producer["producer"] = "second-reader"
+    _assert_invalid(validator, relative_producer)
+
+    bad_adapter = _report(status="valid")
+    bad_adapter["adapter_version"] = "v0.1"
+    _assert_invalid(validator, bad_adapter)
 
     half_published = _report(status="valid")
     half_published["annotations_json_sha256"] = None
@@ -498,11 +724,7 @@ def test_validation_report_finding_sort_is_protocol_deterministic() -> None:
     assert [
         item["severity"]
         for item in sorted(findings, key=validation_report_finding_sort_key)
-    ] == [
-        "fatal",
-        "error",
-        "warning",
-    ]
+    ] == ["fatal", "error", "warning"]
 
 
 def test_contract_module_has_no_producer_or_mechanism_dependency() -> None:
@@ -548,29 +770,61 @@ def test_contract_module_has_no_producer_or_mechanism_dependency() -> None:
         assert not any(
             "producers" in imported.split(".") for imported in imported_modules
         ), path
-        referenced_names = {
-            node.id
-            for node in ast.walk(tree)
-            if isinstance(node, ast.Name)
-        } | {
-            node.attr
-            for node in ast.walk(tree)
-            if isinstance(node, ast.Attribute)
-        }
-        assert not any(name.endswith("ProducerAdapter") for name in referenced_names)
 
 
-def test_pages_projection_builds_exact_authority_bytes() -> None:
-    completed = subprocess.run(
-        [
-            sys.executable,
-            str(WORKSPACE_ROOT / "scripts" / "build_annotation_pack_pages.py"),
-            "--check",
-        ],
+def test_pages_projection_builds_only_allowlisted_authority_bytes(
+    tmp_path: Path,
+) -> None:
+    check = subprocess.run(
+        [sys.executable, str(PAGES_SCRIPT), "--check"],
         cwd=WORKSPACE_ROOT,
         check=False,
         text=True,
         stdout=subprocess.PIPE,
         stderr=subprocess.STDOUT,
     )
-    assert completed.returncode == 0, completed.stdout
+    assert check.returncode == 0, check.stdout
+
+    destination = tmp_path / "_site"
+    build = subprocess.run(
+        [sys.executable, str(PAGES_SCRIPT), "--output-dir", str(destination)],
+        cwd=WORKSPACE_ROOT,
+        check=False,
+        text=True,
+        stdout=subprocess.PIPE,
+        stderr=subprocess.STDOUT,
+    )
+    assert build.returncode == 0, build.stdout
+
+    expected_sources = {
+        PAGES_ROOT / path.name: path for path in sorted(SCHEMA_ROOT.glob("*.json"))
+    }
+    expected_sources.update(
+        {
+            PAGES_ROOT / "examples" / path.name: path
+            for path in sorted(EXAMPLE_ROOT.glob("*.json"))
+        }
+    )
+    expected_files = {Path(".nojekyll"), *expected_sources}
+    actual_files = {
+        path.relative_to(destination)
+        for path in destination.rglob("*")
+        if path.is_file()
+    }
+    assert actual_files == expected_files
+    assert (destination / ".nojekyll").read_bytes() == b""
+    for published, authority in expected_sources.items():
+        assert (destination / published).read_bytes() == authority.read_bytes()
+
+    assert not (destination / "ns" / "annotation-pack").exists()
+    assert not (destination / PAGES_ROOT / "context").exists()
+
+
+def test_pages_workflow_checks_every_branch_but_deploys_main_only() -> None:
+    workflow = PAGES_WORKFLOW.read_text(encoding="utf-8")
+    assert "python scripts/build_annotation_pack_pages.py --check" in workflow
+    assert (
+        "python scripts/build_annotation_pack_pages.py --output-dir _site" in workflow
+    )
+    assert workflow.count("github.ref == 'refs/heads/main'") >= 2
+    assert "uses: actions/deploy-pages@v4" in workflow

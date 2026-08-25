@@ -1,60 +1,89 @@
 # Second Reader Annotation Pack v0
 
-Status: reference implementation complete; contract version `0.1.0`.
+Status: canonical minimal v0 contract; not yet published at its GitHub Pages IRI.
 
-This directory is the protocol authority for Second Reader Annotation Pack v0. The Pack is a compact JSON-LD `AnnotationSet` aligned with the W3C Web Annotation Data Model and the pinned EPUB Annotations Working Draft. The word **aligned** is deliberate: this project schema is not a W3C schema and does not claim full EPUB Annotations conformance.
+This directory is the protocol authority for Second Reader Annotation Pack v0. A Pack is a detached JSON-LD `AnnotationSet` for one exact EPUB file and the Highlight/Note annotations exported by Second Reader. It uses only terms from the pinned W3C EPUB Annotations context, including Web Annotation and Dublin Core terms. The contract is W3C-aligned; it is not a W3C schema and does not claim conformance to the EPUB Annotations Working Draft.
 
 ## Authorities
 
 - Pack wire authority: [`schema/annotation-pack.schema.json`](schema/annotation-pack.schema.json)
 - local publication-pointer auxiliary schema: [`schema/publication-pointer.schema.json`](schema/publication-pointer.schema.json)
 - local validation-report auxiliary schema: [`schema/validation-report.schema.json`](schema/validation-report.schema.json)
-- Second Reader vocabulary context: [`context/second-reader-annotation-context.jsonld`](context/second-reader-annotation-context.jsonld)
 - pinned standards and status wording: [`standards.md`](standards.md)
-- compatible-change history: [`CHANGELOG.md`](CHANGELOG.md)
+- unpublished contract history: [`CHANGELOG.md`](CHANGELOG.md)
 
-The pointer and report schemas describe local publication companions. They neither embed nor redefine the Pack wire document. Backend Pydantic bindings and runtime schema copies are generated artifacts; they are not additional authorities.
+The pointer and report schemas describe local publication companions. They neither embed nor redefine `annotations.json`. Generated Pydantic bindings and backend runtime schema copies are checked derivatives, not additional authorities.
 
-## Stable IRIs
+## Stable schema IRI
 
-- namespace: `https://captain4whale.github.io/second-reader/ns/annotation-pack#`
-- Pack schema: `https://captain4whale.github.io/second-reader/schema/annotation-pack/v0/annotation-pack.schema.json`
+`https://captain4whale.github.io/second-reader/schema/annotation-pack/v0/annotation-pack.schema.json`
 
-GitHub Pages is the approved publication mechanism. The repository workflow publishes an allowlisted projection of this contract after it lands on the default branch. A feature-branch push proves the mapping and build, but the IRIs must not be described as live until the Pages deployment and HTTP byte comparison succeed.
+GitHub Pages is the approved publication mechanism. The site contains a strict allowlist of the three schemas and three examples under `/schema/annotation-pack/v0/`. Minimal v0 has no Second Reader JSON-LD vocabulary, custom context, or namespace landing page. A feature-branch build proves only the projection; the schema IRI is not live until the workflow reaches the default branch, Pages deploys successfully, and served bytes are compared with this authority.
 
-## Invariants beyond JSON Schema
+## Canonical wire
 
-The canonical schema owns wire shape, required fields, enums, basic formats, limits, and Highlight/Note body conditionals. Cross-object and source-dependent invariants remain semantic-validator responsibilities, including deterministic ID recomputation, creator equality, item ordering and uniqueness, publication/source coherence, digest recomputation, declared-prefix governance, privacy scanning, and anchor round trips against the exact EPUB.
+Every Pack is a strict `AnnotationSet` with exactly these root properties:
 
-Unknown unprefixed fields are rejected. The second `@context` object requires `"@protected": true` and the fixed `sr` binding. A compatible document may declare additional safe prefixes in that object and preserve optional prefixed fields; a semantic validator must reject undeclared prefixes, reserved-prefix redefinition, unsafe depth/size, or extensions that change core interpretation.
+- `@context`: the string `https://www.w3.org/ns/epub-anno.jsonld`
+- `id`: a lowercase RFC 4122 UUIDv5 URN
+- `type`: `AnnotationSet`
+- `generator`: the fixed software identity `https://github.com/Captain4Whale/second-reader`, `Software`, `Second Reader Annotation Pack Exporter`
+- `generated`: a UTC timestamp with second precision
+- `about`: exact EPUB identity and display metadata
+- `items`: Highlight and Note annotations, sorted by `id` by the reference builder
 
-Source-derived quote strings are not normalized during serialization because their Unicode code-point coordinates must continue to match the source substrate. Metadata, creator names, and Note bodies are normalized by their builders before schema validation.
+`about` requires:
 
-## Detached package profile
+- `dc:identifier`: exactly one `nih:sha-256;<digest>` value, where `<digest>` is the 64-character lowercase hexadecimal SHA-256 of the exact EPUB bytes
+- `dc:format`: `application/epub+zip`
+- `dc:title`: a non-empty source-book title
+- optional `dc:creator`: a non-empty, duplicate-free list emitted when the source EPUB has usable authors
 
-The formal detached artifact uses media type `application/zip;profile="https://www.w3.org/TR/epub-anno-10/"` and contains exactly one root entry:
+Each Annotation requires `id`, `type=Annotation`, `created`, `motivation`, and `target`. A Highlight has `motivation=highlighting` and no `body`. A Note has `motivation=commenting` and one `TextualBody` containing only `type` and a non-empty `value`. Per-annotation creator, private kind, track, provenance, public digest, chapter context, anchor id, CFI, and body format/language fields are not part of minimal v0.
 
-```text
-/
-└── annotations.json
-```
+Each target contains only:
 
-`annotations.json` is the same complete canonical JSON-LD `AnnotationSet` that can be retained as a development artifact. The package must not contain the source EPUB, XHTML, cover, validation report, a `mimetype` entry, a custom manifest, optional assets, or private runtime data.
+- `source`: the canonical relative XHTML/HTML href from the exact EPUB manifest
+- `selector`: exactly two selectors in fixed order
+  1. `TextQuoteSelector`, with required `exact` and optional non-empty `prefix`/`suffix` (omit either when no adjacent context exists)
+  2. `TextPositionSelector`, with integer `start` and `end`
 
-Second Reader v0 writes a deliberately narrow classic single-disk ZIP: root filename `annotations.json`, DEFLATED level 9, timestamp `1980-01-01T00:00:00`, Unix regular-file mode `0644`, flags zero, and no archive/entry comments or extra fields. The validator rejects ZIP64, multi-disk, prefixed/trailing data, extra entries, unsafe paths or modes, encryption/data descriptors, local/central-header disagreement, package bytes over 8 MiB, entry bytes over 16 MiB, compression ratios over 100, malformed DEFLATE/CRC, and noncanonical or semantically invalid JSON. It validates in memory and never extracts to disk.
+The schema owns object whitelists, required fields, enums, scalar formats, limits, selector order, and Highlight/Note body conditionals. The offline semantic validator owns `start < end`, quote-length/position coherence, deterministic ID recomputation, item ordering, and semantic duplicate rejection. Manifest membership and actual quote/prefix/suffix round-trip require the exact EPUB, so the EPUB-backed anchor/export acceptance path owns those checks; standalone validation never claims to have performed them.
 
-These reproducibility and security restrictions are the Second Reader package profile, not general requirements asserted by the W3C drafts. Repeated generation is byte-stable within the supported compressor toolchain; independent validation does not require re-compressing with the local zlib version, because DEFLATE bitstreams are not guaranteed to remain identical across zlib versions.
+## Resource text and TextPosition
 
-## Version axes
+`TextPositionSelector` offsets are zero-based Unicode code-point indexes into one deterministic logical text stream for `target.source`. `start` is inclusive and `end` is exclusive. The v0 stream is built as follows:
 
-- `sr:specVersion`: `0.1.0`
-- `sr:schemaVersion`: `0.1.0`
-- `sr:extensionVersion`: `0.1`
-- canonical JSON: `sr-canonical-json-v1`
-- detached package: canonical classic ZIP profile described above
-- validation report JSON: `sr-annotation-validation-report-json-v1`
+1. Read the exact verified UTF-8 XHTML/HTML manifest resource as XML; do not fall back to regex or plaintext recovery after a parse/coherence failure.
+2. Visit `p`, `li`, `blockquote`, `caption`, `div`, `figcaption`, and `h1` through `h6` elements in document order.
+3. Skip a non-heading container when emitting it would duplicate text already represented by a nested textual block and the container has no direct non-whitespace text.
+4. For each included block, concatenate descendant text, replace every Python Unicode `\s+` run with one ASCII space, trim leading/trailing whitespace, and omit an empty result. Do not apply NFC or any other Unicode normalization to source text.
+5. Join included blocks with exactly two LF characters (`\n\n`).
 
-Any wire schema edit bumps `sr:schemaVersion`. A new required semantic, ID input change, target meaning change, or Highlight/Note body rule change requires a new major contract directory. Standards URLs never move to an undated or newer draft without an explicit conformance delta review.
+A valid target satisfies `0 <= start < end <= len(resource_text)` and `resource_text[start:end] == exact`. The reference producer emits up to 64 immediately adjacent code points before and after that range as `prefix` and `suffix`, omitting either property when its slice is empty. These requirements bind the selectors to the EPUB hash in `about`; they do not claim cross-edition anchoring.
+
+## Deterministic identity
+
+The reference implementation derives Pack and Annotation UUIDv5 values from NUL-framed canonical inputs under audited v0 namespaces:
+
+- Pack: exact EPUB SHA-256 plus the fixed generator IRI
+- Annotation: exact EPUB SHA-256, NFC canonical href, `start`, `end`, motivation, and the NFC Note body or an empty Highlight body field
+
+Timestamps, quote context, producer records, and local publication paths do not participate. Changing any byte of the EPUB changes the `nih` identifier and the Pack/Annotation identity inputs. JSON Schema checks only the UUIDv5 URN shape; the semantic validator recomputes the values.
+
+## Detached package and local companions
+
+The formal detached artifact uses media type `application/zip;profile="https://www.w3.org/TR/epub-anno-10/"` and contains exactly one root `annotations.json`. It never contains the EPUB, XHTML, cover, validation report, manifest, optional assets, or private runtime data.
+
+Second Reader retains its bounded deterministic classic-ZIP profile: one DEFLATED root file, fixed timestamp/mode/flags, no comments or extra fields, no ZIP64/multi-disk/encryption/data descriptors, hard byte/ratio limits, strict local/central-header agreement, and in-memory validation without extraction. Those restrictions are project rules, not W3C requirements.
+
+Input snapshot/content digests, adapter details, findings, immutable revision paths, and recovery metadata may exist only in sanitized local pointer/report companions. The report always carries nullable `producer` and `adapter_version` fields; a publishable `valid` or `degraded` report requires an absolute producer IRI and a semantic-version adapter value, while a pre-Pack `failed` report may use null. These fields are forbidden from `annotations.json` and therefore from the `.annotations` entry.
+
+## Compatibility and versioning
+
+This path directly replaces an unpublished heavier v0 under `DEC-156`; there is no old-wire migration or compatibility mode. Phase 8 producer ledgers are rejected rather than upgraded. The contract path remains `v0` and the runtime constants remain `0.1.0` for local companion compatibility, but no version field is emitted in the public Pack.
+
+After public deployment, a change to required wire semantics, deterministic identity inputs, target meaning, or Highlight/Note body rules requires a new contract path. Standards URLs never move to a newer draft without an explicit conformance-delta review.
 
 ## Local verification
 
@@ -64,8 +93,4 @@ After backend development dependencies are installed:
 make annotation-pack-contract-check
 ```
 
-The check is network-free: it validates the three schemas against Draft 2020-12, validates examples, verifies generated bindings and byte-identical runtime copies, rebuilds and byte-checks the tracked Tiny Reader real-EPUB golden, and stages the exact GitHub Pages projection without fetching remote contexts.
-
-The examples are schema-valid protocol examples. Fixed identity, fingerprint, canonical-byte, package, and anchor vectors are implemented in backend tests; the end-to-end public-safe reference lives under `reading-companion-backend/tests/annotation_pack/fixtures/tiny-reader/`. These examples and goldens prove the Second Reader reference implementation offline, not external Reader interoperability.
-
-`sr-canonical-json-v1` sorts object keys by Unicode code point, preserves array and string code-point order, emits UTF-8 without BOM or optional whitespace, uses lowercase JSON control escapes with `/` unescaped, and terminates with exactly one LF. Its numeric domain is limited to JSON integers in `[-(2^53-1), 2^53-1]`; floating-point values and lone Unicode surrogates are semantic errors. This restriction also applies to declared extension values before they can participate in a canonical Pack or semantic digest.
+The check is network-free. It validates all three schemas, validates the three examples, verifies generated bindings and byte-identical runtime schema copies, rebuilds the tracked Tiny Reader fixture, runs focused contract tests, and stages the strict Pages projection without dereferencing the W3C context.

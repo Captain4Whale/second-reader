@@ -11,7 +11,6 @@ import pytest
 from jsonschema import Draft202012Validator, FormatChecker
 
 import src.annotation_pack.identity as identity_module
-from src.annotation_pack._generated_models import PublicationIdentity
 from src.annotation_pack.epub_source import EpubSourceError
 from src.annotation_pack.identity import (
     ChapterFingerprint,
@@ -260,9 +259,9 @@ def test_field_digest_handles_lone_surrogate_as_stable_mismatch() -> None:
 
     assert raised.value.code == "publication_substrate_mismatch"
     assert raised.value.json_pointer == "/chapters/0/paragraphs/0/text"
-    assert raised.value.persisted_field_sha256 == hashlib.sha256(
-        b'"\\ud800"'
-    ).hexdigest()
+    assert (
+        raised.value.persisted_field_sha256 == hashlib.sha256(b'"\\ud800"').hexdigest()
+    )
     assert "\\ud800" not in str(raised.value)
 
 
@@ -302,7 +301,7 @@ def _publication_identity_errors(wire: Mapping[str, object]) -> list[str]:
         {
             "$schema": "https://json-schema.org/draft/2020-12/schema",
             "$defs": schema["$defs"],
-            "$ref": "#/$defs/publicationIdentity",
+            "$ref": "#/$defs/publication",
         },
         format_checker=FormatChecker(),
     )
@@ -356,26 +355,19 @@ def test_publication_identity_builder_has_fixed_end_to_end_vectors(
         chapter.chapter_id: chapter.fingerprint.value
         for chapter in chapter_fingerprints(result.rebuilt_book_document)
     } == dict(result.chapter_fingerprints)
-    result_projection = project_book_document_substrate(
-        result.rebuilt_book_document
-    )
-    assert hashlib.sha256(
-        book_document_substrate_stream(result_projection)
-    ).hexdigest() == result.substrate_sha256
-    assert result.wire["dc:identifier"] == [
-        "urn:uuid:c34f891e-f715-5663-a556-f1fc6e313345",
-        "urn:uuid:7e922158-cf02-5eb8-bfcb-592f0082ce9d",
-        "urn:uuid:6be51fb2-7259-50d1-90af-3eecb2ce7ca0",
-    ]
-    assert _publication_identity_errors(result.wire) == []
+    result_projection = project_book_document_substrate(result.rebuilt_book_document)
     assert (
-        PublicationIdentity.model_validate(result.wire).model_dump(
-            by_alias=True,
-            mode="json",
-            exclude_none=True,
-        )
-        == result.wire
+        hashlib.sha256(book_document_substrate_stream(result_projection)).hexdigest()
+        == result.substrate_sha256
     )
+    assert result.wire == {
+        "dc:format": "application/epub+zip",
+        "dc:title": "The Returning Question",
+        "dc:identifier": [f"nih:sha-256;{result.file_sha256}"],
+        "dc:creator": ["Second Reader Fixture Authors"],
+    }
+    assert "sr:" not in json.dumps(result.wire, sort_keys=True)
+    assert _publication_identity_errors(result.wire) == []
 
     second = PublicationIdentityBuilder().build(
         output_dir=output_dir,
@@ -394,7 +386,7 @@ def test_publication_identity_builder_has_fixed_end_to_end_vectors(
         result.rebuilt_book_document["metadata"]["source_file"] = "/tmp/leak"  # type: ignore[index]
 
 
-def test_publication_identity_distinguishes_file_edition_and_work_layers(
+def test_publication_identity_uses_exact_epub_file_and_minimal_dc_metadata(
     tmp_path: Path,
 ) -> None:
     builder = PublicationIdentityBuilder()
@@ -414,8 +406,8 @@ def test_publication_identity_distinguishes_file_edition_and_work_layers(
     )
     assert repack.file_sha256 != base.file_sha256
     assert repack.content_sha256 == base.content_sha256
-    assert repack.wire["sr:edition"]["id"] == base.wire["sr:edition"]["id"]
-    assert repack.wire["sr:work"]["id"] == base.wire["sr:work"]["id"]
+    assert repack.wire["dc:identifier"] != base.wire["dc:identifier"]
+    assert repack.wire["dc:identifier"] == [f"nih:sha-256;{repack.file_sha256}"]
 
     metadata = FixtureMetadata(title="The Returning Question, Revised Metadata")
     metadata_dir = tmp_path / "metadata"
@@ -432,8 +424,8 @@ def test_publication_identity_distinguishes_file_edition_and_work_layers(
     )
     assert metadata_result.file_sha256 != base.file_sha256
     assert metadata_result.content_sha256 == base.content_sha256
-    assert metadata_result.wire["sr:edition"]["id"] == base.wire["sr:edition"]["id"]
-    assert metadata_result.wire["sr:work"]["id"] != base.wire["sr:work"]["id"]
+    assert metadata_result.wire["dc:identifier"] != base.wire["dc:identifier"]
+    assert metadata_result.wire["dc:title"] == metadata.title
 
     changed_chapters = (
         FixtureChapter(
@@ -454,7 +446,11 @@ def test_publication_identity_distinguishes_file_edition_and_work_layers(
         persisted_book_document=_persisted_document(changed_source),
     )
     assert changed.content_sha256 != base.content_sha256
-    assert changed.wire["sr:edition"]["id"] != base.wire["sr:edition"]["id"]
+    assert changed.wire["dc:identifier"] != base.wire["dc:identifier"]
+    for result in (base, repack, metadata_result, changed):
+        assert result.wire["dc:identifier"] == [f"nih:sha-256;{result.file_sha256}"]
+        assert "sr:" not in json.dumps(result.wire, sort_keys=True)
+        assert _publication_identity_errors(result.wire) == []
 
 
 def test_publication_identity_rejects_stale_document_and_has_no_local_path(
@@ -707,9 +703,7 @@ def test_identity_canonicalizes_parser_decoded_reserved_resource_names(
     content = build_epub_bytes(
         chapters=(chapter,),
         omit_entries=(f"EPUB/Text/{encoded_name}",),
-        extra_entries=(
-            FixtureZipEntry(f"EPUB/Text/{archive_name}", xhtml),
-        ),
+        extra_entries=(FixtureZipEntry(f"EPUB/Text/{archive_name}", xhtml),),
     )
     output_dir = tmp_path / "book"
     source = _write_source(output_dir, content)
@@ -723,12 +717,16 @@ def test_identity_canonicalizes_parser_decoded_reserved_resource_names(
     canonical_href = f"Text/{encoded_name}"
     chapter_document = result.rebuilt_book_document["chapters"][0]
     assert chapter_document["href"] == canonical_href
+    assert {paragraph["href"] for paragraph in chapter_document["paragraphs"]} == {
+        canonical_href
+    }
+    assert canonical_href in result.epub_index.text_resource_hrefs
+    assert canonical_href in result.epub_index.resource_texts
     assert {
-        paragraph["href"] for paragraph in chapter_document["paragraphs"]
+        paragraph_range[0]
+        for paragraph_range in result.epub_index.paragraph_ranges.values()
     } == {canonical_href}
-    assert result.wire["sr:edition"]["sr:chapterFingerprints"][0][
-        "sr:resourceHrefs"
-    ] == [canonical_href]
+    assert "sr:" not in json.dumps(result.wire, sort_keys=True)
 
 
 def test_manifest_aliases_prefer_opf_relative_hrefs_in_nested_package(
@@ -764,13 +762,18 @@ def test_manifest_aliases_prefer_opf_relative_hrefs_in_nested_package(
     assert [
         chapter["href"] for chapter in result.rebuilt_book_document["chapters"]
     ] == ["EPUB/Text/same.xhtml", "Text/same.xhtml"]
-    assert [
-        chapter["sr:resourceHrefs"]
-        for chapter in result.wire["sr:edition"]["sr:chapterFingerprints"]
-    ] == [["EPUB/Text/same.xhtml"], ["Text/same.xhtml"]]
+    assert {
+        paragraph_range[0]
+        for paragraph_range in result.epub_index.paragraph_ranges.values()
+    } == {"EPUB/Text/same.xhtml", "Text/same.xhtml"}
+    assert {
+        "EPUB/Text/same.xhtml",
+        "Text/same.xhtml",
+    }.issubset(result.epub_index.text_resource_hrefs)
+    assert "sr:" not in json.dumps(result.wire, sort_keys=True)
 
 
-def test_publication_identity_metadata_warnings_and_asserted_work(
+def test_publication_identity_metadata_warnings_use_only_epub_metadata(
     tmp_path: Path,
 ) -> None:
     output_dir = tmp_path / "book"
@@ -782,19 +785,13 @@ def test_publication_identity_metadata_warnings_and_asserted_work(
     result = PublicationIdentityBuilder().build(
         output_dir=output_dir,
         persisted_book_document=persisted,
-        work_identifiers=(
-            ("work-uri", "https://example.org/works/returning-question"),
-        ),
     )
-    work = result.wire["sr:work"]
-    assert work["sr:identityStrength"] == "asserted"
-    assert work["sr:identifiers"] == [
-        {
-            "type": "sr:Identifier",
-            "sr:scheme": "work-uri",
-            "sr:value": "https://example.org/works/returning-question",
-        }
-    ]
+    assert result.wire == {
+        "dc:format": "application/epub+zip",
+        "dc:title": "The Returning Question",
+        "dc:identifier": [f"nih:sha-256;{result.file_sha256}"],
+        "dc:creator": ["Second Reader Fixture Authors"],
+    }
     assert [finding.json_pointer for finding in result.findings] == [
         "/about/dc:title",
         "/about/dc:creator",
@@ -802,6 +799,10 @@ def test_publication_identity_metadata_warnings_and_asserted_work(
     assert "Stale private" not in " ".join(
         finding.message for finding in result.findings
     )
+    serialized = json.dumps(result.wire, sort_keys=True)
+    assert "sr:" not in serialized
+    assert "file:" not in serialized
+    assert "private" not in serialized
 
 
 def test_publication_identity_warns_when_verified_language_differs(
@@ -817,104 +818,17 @@ def test_publication_identity_warns_when_verified_language_differs(
         persisted_book_document=persisted,
     )
 
-    assert result.wire["sr:edition"]["sr:language"] == "en"
+    assert set(result.wire) == {
+        "dc:format",
+        "dc:title",
+        "dc:identifier",
+        "dc:creator",
+    }
+    assert "language" not in json.dumps(result.wire, sort_keys=True).lower()
+    assert "sr:" not in json.dumps(result.wire, sort_keys=True)
     assert any(
-        finding.code == "publication_metadata_mismatch"
-        and finding.json_pointer == "/about/sr:edition/sr:language"
-        for finding in result.findings
+        finding.code == "publication_metadata_mismatch" for finding in result.findings
     )
-
-    with pytest.raises(PublicationIdentityError) as raised:
-        PublicationIdentityBuilder().build(
-            output_dir=output_dir,
-            persisted_book_document=persisted,
-            work_identifiers=(("work-uri", "file:///private/work"),),
-        )
-    assert raised.value.code == "invalid_work_identifier"
-
-
-@pytest.mark.parametrize(
-    "work_uri",
-    [
-        "https://reader:secret@example.org/work",
-        "https://example.org/work?token=secret",
-        "javascript:alert(1)",
-        "file:///private/work",
-        "http://localhost/work",
-        "http://127.0.0.1/work",
-        "http://[::1]/work",
-        "https://example.org/work with space",
-        "urn:example:/Users/private/work",
-        "urn:example:%2FUsers%2Fprivate%2Fwork",
-        "https://example.org/work\x01",
-        "https://example.org/work\x1c",
-        "https://example.org/work\x7f",
-        "http://2130706433/work",
-        "http://127.1/work",
-        "http://0177.0.0.1/work",
-        "http://0x7f.0.0.1/work",
-        "http://100.64.0.1/work",
-        "http://foo.localhost/work",
-        "http://224.0.0.1/work",
-        "http://[ff02::1]/work",
-        "https://example.org/work#token=sekrit",
-        "urn:example:token=sekrit",
-        "urn:example:work#api_key=sekrit",
-        "urn:example:/secret",
-        "urn:example:work#/Users/alice",
-        "https://example.org/work#/Users/alice",
-        "https://example.org/work#file:///etc/passwd",
-        "https://example.org/work#~/secret",
-        "https://example.org/work#%252FUsers%252Falice",
-        "urn:example:api_key%253Dsekrit",
-        "https://example.org/book%253Ffoo=bar",
-        "urn:example:book%253Ffoo=bar",
-        "https://example.org/book%2520part",
-        "urn:example:book%2520part",
-        r"https://example.org/work#C:\secret",
-        r"https://example.org/work#\\server\share",
-        " https://example.org/work",
-        "https://example.org/work ",
-        "\thttps://example.org/work\n",
-        "urn::foo",
-        "urn:x:foo",
-        "urn:foo:",
-        "urn:foo:#frag",
-        "urn:urn:reserved",
-        "https://example.org/work?",
-        "urn:foo:bar?",
-    ],
-)
-def test_publication_identity_rejects_nonpublic_work_uris(
-    tmp_path: Path,
-    work_uri: str,
-) -> None:
-    output_dir = tmp_path / "book"
-    source = _write_source(output_dir, build_epub_bytes())
-    persisted = _persisted_document(source)
-
-    with pytest.raises(PublicationIdentityError) as raised:
-        PublicationIdentityBuilder().build(
-            output_dir=output_dir,
-            persisted_book_document=persisted,
-            work_identifiers=(("work-uri", work_uri),),
-        )
-    assert raised.value.code == "invalid_work_identifier"
-    assert work_uri not in str(raised.value)
-
-
-@pytest.mark.parametrize(
-    "work_uri",
-    [
-        "https://example.org/work",
-        "https://example.org/work#chapter-one",
-        "http://8.8.8.8/work",
-        "urn:example:work-123",
-        "urn:example:works/example",
-    ],
-)
-def test_public_work_uri_accepts_approved_absolute_forms(work_uri: str) -> None:
-    assert identity_module._is_public_work_uri(work_uri)
 
 
 def test_publication_identity_rechecks_source_after_reparse(

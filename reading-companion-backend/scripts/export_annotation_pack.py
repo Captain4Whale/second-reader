@@ -144,22 +144,9 @@ def _result_summary(result: object) -> dict[str, object]:
     if pack_id is None:
         pack_id = _safe_pack_id(_safe_pack_value(pack, "id"))
     semantic_digest = _safe_digest(getattr(validation, "semantic_digest", None))
-    if semantic_digest is None:
-        semantic_digest = _safe_digest(
-            _safe_pack_value(pack, "sr:semanticDigest", "sr:value")
-        )
     input_snapshot_digest = _safe_digest(
         getattr(validation, "input_snapshot_digest", None)
     )
-    if input_snapshot_digest is None:
-        input_snapshot_digest = _safe_digest(
-            _safe_pack_value(
-                pack,
-                "sr:provenance",
-                "sr:inputSnapshotDigest",
-                "sr:value",
-            )
-        )
 
     return {
         "status": status,

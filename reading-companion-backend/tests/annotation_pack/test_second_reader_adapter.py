@@ -133,6 +133,52 @@ def test_adapter_loads_sanitized_current_highlight_and_note_fixture(
         assert private_value not in rendered
 
 
+def test_adapter_accepts_minimal_current_native_highlight_and_note_rows(
+    tmp_path: Path,
+) -> None:
+    document = _fixture_document()
+    minimal_rows = []
+    for original in document["records"]:
+        primary_ref = original["primary_source_ref"]
+        source_span = primary_ref["source_span"]
+        row = {
+            "record_source": original["record_source"],
+            "marginalia_kind": original["marginalia_kind"],
+            "source_quote": original["source_quote"],
+            "primary_source_ref": {
+                "source_span": {
+                    "start_cursor": {
+                        key: source_span["start_cursor"][key]
+                        for key in ("chapter_id", "paragraph_index", "char_offset")
+                    },
+                    "end_cursor": {
+                        key: source_span["end_cursor"][key]
+                        for key in ("chapter_id", "paragraph_index", "char_offset")
+                    },
+                },
+                "quote": primary_ref["quote"],
+                "resolution": primary_ref["resolution"],
+            },
+            "created_at": original["created_at"],
+        }
+        if original["marginalia_kind"] == "note":
+            row["thought"] = original["thought"]
+        minimal_rows.append(row)
+    document["records"] = minimal_rows
+    _write_document(tmp_path, document)
+
+    result = _load(tmp_path)
+
+    assert result.findings == ()
+    assert [draft.kind for draft in result.drafts] == ["highlight", "note"]
+    assert result.drafts[0].body_text is None
+    assert result.drafts[1].body_text == (
+        "The question redirects attention to what changes on return."
+    )
+    assert result.drafts[0].source_range.start.chapter_id == 1
+    assert result.drafts[1].source_range.end.paragraph_index == 3
+
+
 def test_note_kind_uses_native_discriminator_and_ignores_compat_values(
     tmp_path: Path,
 ) -> None:
@@ -161,16 +207,20 @@ def test_note_kind_uses_native_discriminator_and_ignores_compat_values(
     assert "/Users/alice" not in repr(changed_result)
 
 
-def test_chapter_ref_is_shape_checked_but_not_used_as_coordinate_authority(
+def test_known_private_and_compatibility_fields_are_ignored_even_when_opaque(
     tmp_path: Path,
 ) -> None:
     original = _fixture_document()
     changed = deepcopy(original)
     changed_row = changed["records"][0]
-    changed_row["chapter_ref"] = "diagnostic row ref"
-    span = changed_row["primary_source_ref"]["source_span"]
-    span["start_cursor"]["chapter_ref"] = "different diagnostic start ref"
-    span["end_cursor"]["chapter_ref"] = "different diagnostic end ref"
+    changed_row["chapter_id"] = {"private": "row chapter id"}
+    changed_row["chapter_ref"] = ["private row chapter ref"]
+    primary_ref = changed_row["primary_source_ref"]
+    primary_ref["source_span_id"] = {"private": "source span id"}
+    primary_ref["role"] = ["private role"]
+    span = primary_ref["source_span"]
+    span["start_cursor"]["chapter_ref"] = {"private": "start ref"}
+    span["end_cursor"]["chapter_ref"] = ["private end ref"]
 
     _write_document(tmp_path / "original", original)
     _write_document(tmp_path / "changed", changed)
@@ -181,6 +231,7 @@ def test_chapter_ref_is_shape_checked_but_not_used_as_coordinate_authority(
     assert _public_draft_view(changed_result.drafts[0]) == _public_draft_view(
         original_result.drafts[0]
     )
+    assert "private row chapter ref" not in repr(changed_result)
 
 
 @pytest.mark.parametrize(
@@ -192,6 +243,7 @@ def test_chapter_ref_is_shape_checked_but_not_used_as_coordinate_authority(
         (lambda row: row.update(record_source="legacy_builder"), "unsupported_legacy_record"),
         (lambda row: row.update(record_source=[]), "unsupported_legacy_record"),
         (lambda row: row.update(thought="fabricated note"), "highlight_body_present"),
+        (lambda row: row.update(thought=None), "highlight_body_present"),
         (lambda row: row.update(created_at="2026-08-23T09:01:02+00:00"), "invalid_annotation_timestamp"),
         (lambda row: row["primary_source_ref"]["resolution"].update(status="fallback_unit_span"), "unresolved_source_quote"),
         (lambda row: row["primary_source_ref"]["resolution"].update(status=[]), "unresolved_source_quote"),
@@ -199,8 +251,11 @@ def test_chapter_ref_is_shape_checked_but_not_used_as_coordinate_authority(
         (lambda row: row.update(source_quote="different quote"), "unresolved_source_quote"),
         (lambda row: row["primary_source_ref"].update(quote=[]), "unresolved_source_quote"),
         (lambda row: row.update(private_extension="not current"), "unsupported_legacy_record"),
+        (lambda row: row["primary_source_ref"].update(private_extension="not current"), "unsupported_legacy_record"),
+        (lambda row: row["primary_source_ref"]["source_span"].update(private_extension="not current"), "malformed_source_span"),
+        (lambda row: row["primary_source_ref"]["source_span"]["start_cursor"].update(private_extension="not current"), "malformed_source_span"),
         (lambda row: row["primary_source_ref"]["source_span"]["start_cursor"].update(char_offset=True), "malformed_source_span"),
-        (lambda row: row.update(chapter_id=2), "malformed_source_span"),
+        (lambda row: row["primary_source_ref"]["source_span"]["end_cursor"].update(chapter_id=2), "malformed_source_span"),
     ],
 )
 def test_adapter_rejects_non_current_or_invalid_rows_without_repair(
@@ -309,6 +364,18 @@ def test_timestamp_rejects_non_z_naive_and_overprecision(
     assert [finding.code for finding in result.findings] == [
         "invalid_annotation_timestamp"
     ]
+
+
+def test_phase8_envelope_is_fatal_and_not_migrated(tmp_path: Path) -> None:
+    document = _fixture_document()
+    document["mechanism_version"] = "attentional_v2-phase8"
+    _write_document(tmp_path, document)
+
+    with pytest.raises(ProducerAdapterError) as caught:
+        _load(tmp_path)
+
+    assert caught.value.code == "reaction_ledger_schema_unsupported"
+    assert caught.value.finding.severity == "fatal"
 
 
 def test_note_body_is_nfc_normalized_before_the_code_point_limit(

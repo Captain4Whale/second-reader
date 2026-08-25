@@ -197,7 +197,6 @@ def _selector(target: dict[str, object], selector_type: str) -> dict[str, object
 def _assert_anchor_round_trip(
     *,
     item: dict[str, object],
-    document: dict[str, object],
     publication,  # type: ignore[no-untyped-def]
 ) -> None:
     target = item["target"]
@@ -205,54 +204,22 @@ def _assert_anchor_round_trip(
     href = target["source"]
     assert href in publication.epub_index.manifest.text_resource_hrefs
     assert len(target["selector"]) == 2
-    assert {selector["type"] for selector in target["selector"]} == {
+    assert [selector["type"] for selector in target["selector"]] == [
         "TextQuoteSelector",
-        "sr:ParagraphCharSelector",
-    }
-    quote = _selector(target, "TextQuoteSelector")
-    coordinates = _selector(target, "sr:ParagraphCharSelector")
-    start = coordinates["sr:start"]
-    end = coordinates["sr:end"]
-    assert isinstance(start, dict) and isinstance(end, dict)
-    chapter_id = start["sr:chapterId"]
-    assert chapter_id == end["sr:chapterId"]
-    chapter_context = target["sr:chapter"]
-    assert isinstance(chapter_context, dict)
-    assert chapter_context["sr:chapterId"] == chapter_id
-    assert chapter_context["sr:fingerprint"]["sr:value"] == (
-        publication.chapter_fingerprints[chapter_id]
-    )
-    paragraphs = _paragraphs(document, chapter_id)
-    by_index = {paragraph["paragraph_index"]: paragraph for paragraph in paragraphs}
-    start_index = start["sr:paragraphIndex"]
-    end_index = end["sr:paragraphIndex"]
-    covered = [
-        by_index[index]
-        for index in range(start_index, end_index + 1)
-        if index in by_index
-        and by_index[index]["text"]
-        and by_index[index]["text_role"] != "auxiliary"
+        "TextPositionSelector",
     ]
-    pieces: list[str] = []
-    for paragraph in covered:
-        text = paragraph["text"]
-        paragraph_index = paragraph["paragraph_index"]
-        begin = start["sr:charOffset"] if paragraph_index == start_index else 0
-        finish = end["sr:charOffset"] if paragraph_index == end_index else len(text)
-        if text[begin:finish]:
-            pieces.append(text[begin:finish])
-    exact = "\n\n".join(pieces)
-    assert exact == quote["exact"]
-
-    start_mapping = publication.epub_index.paragraph_ranges[(chapter_id, start_index)]
-    end_mapping = publication.epub_index.paragraph_ranges[(chapter_id, end_index)]
-    assert start_mapping[0] == href == end_mapping[0]
+    quote = _selector(target, "TextQuoteSelector")
+    position = _selector(target, "TextPositionSelector")
+    start = position["start"]
+    end = position["end"]
+    assert isinstance(start, int) and isinstance(end, int)
+    assert 0 <= start < end
     resource = publication.epub_index.resource_texts[href]
-    resource_start = start_mapping[1] + start["sr:charOffset"]
-    resource_end = end_mapping[1] + end["sr:charOffset"]
-    assert resource[resource_start:resource_end] == exact
-    assert quote["prefix"] == resource[max(0, resource_start - 64) : resource_start]
-    assert quote["suffix"] == resource[resource_end : resource_end + 64]
+    assert resource[start:end] == quote["exact"]
+    if "prefix" in quote:
+        assert quote["prefix"] == resource[max(0, start - 64) : start]
+    if "suffix" in quote:
+        assert quote["suffix"] == resource[end : end + 64]
 
 
 def test_tiny_reader_builder_reproduces_every_tracked_generated_byte() -> None:
@@ -357,13 +324,10 @@ def test_tiny_reader_real_export_matches_goldens_and_every_anchor_round_trips(
 
     pack = json.loads(annotations_bytes)
     assert len(pack["items"]) == 2
-    by_kind = {item["sr:kind"]: item for item in pack["items"]}
-    assert set(by_kind) == {"highlight", "note"}
-    assert "body" not in by_kind["highlight"]
-    assert by_kind["highlight"]["motivation"] == "highlighting"
-    assert by_kind["note"]["motivation"] == "commenting"
-    assert by_kind["note"]["body"] == {
-        "format": "text/plain",
+    by_motivation = {item["motivation"]: item for item in pack["items"]}
+    assert set(by_motivation) == {"highlighting", "commenting"}
+    assert "body" not in by_motivation["highlighting"]
+    assert by_motivation["commenting"]["body"] == {
         "type": "TextualBody",
         "value": "Returning reveals the reader as part of the annotation.",
     }
@@ -381,7 +345,6 @@ def test_tiny_reader_real_export_matches_goldens_and_every_anchor_round_trips(
     for item in pack["items"]:
         _assert_anchor_round_trip(
             item=item,
-            document=document,
             publication=publication,
         )
 
@@ -410,7 +373,7 @@ def test_tiny_reader_real_export_matches_goldens_and_every_anchor_round_trips(
     }
     assert inspection.anchor_capabilities == (
         "TextQuoteSelector",
-        "sr:ParagraphCharSelector",
+        "TextPositionSelector",
     )
 
     report = json.loads(report_bytes)
@@ -509,7 +472,7 @@ def test_tiny_reader_committed_json_and_package_validate_and_inspect_offline() -
     assert summary["item_counts"] == {"highlight": 1, "note": 1, "total": 2}
     assert summary["anchor_capabilities"] == [
         "TextQuoteSelector",
-        "sr:ParagraphCharSelector",
+        "TextPositionSelector",
     ]
     safe_output = (validate.stdout + inspect.stdout).encode()
     assert b"durable idea" not in safe_output
@@ -588,7 +551,7 @@ def test_true_fragment_nav_epub_exposes_duplicate_spine_zero_projection(
     assert len(resolved.target.target["selector"]) == 2
 
 
-def test_legacy_optional_sparsity_is_cfi_free_but_anchor_href_is_required(
+def test_optional_source_sparsity_uses_text_position_but_href_is_required(
     tmp_path: Path,
 ) -> None:
     _runtime_root, _output_root, output_dir = _materialize(tmp_path)
@@ -639,7 +602,7 @@ def test_legacy_optional_sparsity_is_cfi_free_but_anchor_href_is_required(
     resolved = AnchorBuilder().resolve(draft=draft, publication=publication)
     assert [selector["type"] for selector in resolved.target.target["selector"]] == [
         "TextQuoteSelector",
-        "sr:ParagraphCharSelector",
+        "TextPositionSelector",
     ]
     assert resolved.target.findings == ()
 

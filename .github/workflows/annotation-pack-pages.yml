@@ -30,6 +30,8 @@ jobs:
       - uses: actions/setup-python@v6
         with:
           python-version: "3.11"
+      - name: Check strict contract projection
+        run: python scripts/build_annotation_pack_pages.py --check
       - name: Build allowlisted contract site
         run: python scripts/build_annotation_pack_pages.py --output-dir _site
       - name: Upload Pages artifact

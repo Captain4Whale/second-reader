@@ -3,7 +3,6 @@
 from __future__ import annotations
 
 from functools import lru_cache
-import hashlib
 from importlib import resources
 import json
 from typing import Any, Mapping
@@ -25,14 +24,7 @@ VALIDATION_REPORT_SCHEMA_ID = (
     "https://captain4whale.github.io/second-reader/schema/annotation-pack/v0/"
     "validation-report.schema.json"
 )
-ANNOTATION_CONTEXT_SHA256 = (
-    "eb72eb498c4bb70360ed57d6f97a85ead6985b9c88921124dfb27e37f3400f70"
-)
-ANNOTATION_NAMESPACE = (
-    "https://captain4whale.github.io/second-reader/ns/annotation-pack#"
-)
 _RESOURCE_PACKAGE = f"{__package__}.resources"
-_CONTEXT_FILE = "second-reader-annotation-context.jsonld"
 _SCHEMA_FILES = {
     ANNOTATION_PACK_SCHEMA_ID: "annotation-pack.schema.json",
     PUBLICATION_POINTER_SCHEMA_ID: "publication-pointer.schema.json",
@@ -46,7 +38,7 @@ _FINDING_SEVERITY_RANK = {
 }
 
 
-@lru_cache(maxsize=len(_SCHEMA_FILES) + 1)
+@lru_cache(maxsize=len(_SCHEMA_FILES))
 def _load_resource_bytes(filename: str) -> bytes:
     """Read an immutable packaged resource in directories and ZIP imports."""
 
@@ -71,26 +63,6 @@ def load_schema(schema_id: str = ANNOTATION_PACK_SCHEMA_ID) -> Mapping[str, Any]
     document = json.loads(_load_resource_bytes(filename))
     if document.get("$id") != schema_id:
         raise ValueError(f"runtime schema id mismatch: {filename}")
-    return document
-
-
-def load_context() -> Mapping[str, Any]:
-    """Load and integrity-check the pinned offline JSON-LD context."""
-
-    content = _load_resource_bytes(_CONTEXT_FILE)
-    actual_digest = hashlib.sha256(content).hexdigest()
-    if actual_digest != ANNOTATION_CONTEXT_SHA256:
-        raise ValueError(
-            "runtime Annotation Pack context digest mismatch: "
-            f"expected {ANNOTATION_CONTEXT_SHA256}, found {actual_digest}"
-        )
-    document = json.loads(content)
-    expected_context = {
-        "@protected": True,
-        "sr": {"@id": ANNOTATION_NAMESPACE, "@prefix": True},
-    }
-    if document != {"@context": expected_context}:
-        raise ValueError("runtime Annotation Pack context mapping mismatch")
     return document
 
 

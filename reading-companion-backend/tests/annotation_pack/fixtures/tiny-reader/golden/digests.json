@@ -1,31 +1,33 @@
 {
-  "format": "sr-annotation-pack-tiny-reader-golden-v1",
+  "format": "annotation-pack-tiny-reader-minimal-v0",
   "generated_at": "2026-08-24T00:00:00Z",
   "golden": {
     "annotations.json": {
-      "bytes": 5819,
-      "sha256": "a49b3b88884013f42b973c8dc6df209a5dd32137b741613a8a92ab13c8a2fb26"
+      "bytes": 1554,
+      "sha256": "4ffc8e0969c22c61501ed0794c5e025203fe89f3932b9bdf12cebe2ac2166439"
     },
     "current.json": {
       "bytes": 940,
-      "sha256": "5bb508bf07f7eae5354c26f0dfaecfcd371cdd3e0a61bc72baf9aaeca5d41fb7"
+      "sha256": "87d45bb82f542b1c74c49d16c7f186b8031413f3575d18b983f5a2c24a21ad57"
     },
     "tiny-reader.annotations": {
-      "bytes": 2165,
-      "sha256": "ae3d689dfb8b2efd9df2d46d7d4300cef6fb158f6dae1e05e2f55927502cd614"
+      "bytes": 924,
+      "sha256": "4dba6f51c87ae309be6eeb15059cb395e66a796feb0c8f995fab64c9f98892b3"
     },
     "validation-report.json": {
-      "bytes": 599,
-      "sha256": "e4e1af7609d1c0e0213805b10c67cdadbd82ca2174cc942d5b4f6c88431223aa"
+      "bytes": 684,
+      "sha256": "71c48c2705c456eab6ddc80a56daebb78dfbc8770993239f7937bf9eeb794e6e"
     }
   },
   "pack": {
+    "adapter_version": "0.1.0",
     "annotation_count": 2,
     "input_snapshot_sha256": "249cbf286bf3cf54479291ca8b2bcc20db70c68c4d1073d0b4c0a0afb7edde6c",
-    "published_package_filename": "second-reader-agent-04f55dd82c11.annotations",
-    "revision_id": "c291e90bb33303172e22e86feb612c587de411feb5ed7db6b9a754e0778aa5c2",
-    "semantic_sha256": "1a626accf4ef3986de9763e7dc98e5c325ef1070cd51c239c72039644eed4d32",
-    "track_slug": "second-reader-agent-04f55dd82c11"
+    "producer": "urn:uuid:da94868b-ce7f-56d6-9c77-c5b959f15f5a",
+    "published_package_filename": "second-reader-agent-94da560b3600.annotations",
+    "revision_id": "bf07c496e42a10f3e219ec4a2a77640097aa8578ec60af52b63f739ab13d4910",
+    "semantic_sha256": "f7dac5e98d6cf0743122950ea4e2f27bf5fab67175e22889d10cef63e0c476e2",
+    "track_slug": "second-reader-agent-94da560b3600"
   },
   "producer": {
     "_mechanisms/attentional_v2/runtime/reaction_records.json": {

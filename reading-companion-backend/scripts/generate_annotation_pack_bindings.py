@@ -25,9 +25,6 @@ AUXILIARY_SCHEMAS = (
     CONTRACT_ROOT / "schema" / "publication-pointer.schema.json",
     CONTRACT_ROOT / "schema" / "validation-report.schema.json",
 )
-CANONICAL_CONTEXT = (
-    CONTRACT_ROOT / "context" / "second-reader-annotation-context.jsonld"
-)
 GENERATED_MODEL = BACKEND_ROOT / "src" / "annotation_pack" / "_generated_models.py"
 RUNTIME_RESOURCES = BACKEND_ROOT / "src" / "annotation_pack" / "resources"
 CODEGEN_DISTRIBUTION = "datamodel-code-generator"
@@ -122,7 +119,7 @@ def _render_generated_model(destination: Path) -> bytes:
         "--use-standard-collections",
         "--use-union-operator",
         "--extra-fields",
-        "allow",
+        "forbid",
         "--formatters",
         "builtin",
         "ruff-format",
@@ -169,9 +166,6 @@ def _expected_artifacts(generated_model: bytes) -> dict[Path, bytes]:
     artifacts = {GENERATED_MODEL: generated_model}
     for schema in (CANONICAL_SCHEMA, *AUXILIARY_SCHEMAS):
         artifacts[RUNTIME_RESOURCES / schema.name] = schema.read_bytes()
-    artifacts[RUNTIME_RESOURCES / CANONICAL_CONTEXT.name] = (
-        CANONICAL_CONTEXT.read_bytes()
-    )
     return artifacts
 
 
@@ -188,10 +182,6 @@ def main() -> int:
         if not schema.is_file():
             raise SystemExit(f"error: missing contract schema: {schema}")
         _assert_local_refs(_load_json(schema))
-    if not CANONICAL_CONTEXT.is_file():
-        raise SystemExit(f"error: missing contract context: {CANONICAL_CONTEXT}")
-    _assert_local_refs(_load_json(CANONICAL_CONTEXT))
-
     with tempfile.TemporaryDirectory(prefix="annotation-pack-codegen-") as temp_dir:
         generated_model = _render_generated_model(
             Path(temp_dir) / "_generated_models.py"

@@ -47,7 +47,7 @@ MAX_SOURCE_QUOTE_CODE_POINTS = 1_024
 _ENVELOPE_KEYS = frozenset(
     {"schema_version", "mechanism_version", "updated_at", "records"}
 )
-_ROW_KEYS = frozenset(
+_ROW_ALLOWED_KEYS = frozenset(
     {
         "reaction_id",
         "chapter_id",
@@ -72,18 +72,32 @@ _ROW_KEYS = frozenset(
         "created_at",
     }
 )
-_PRIMARY_REF_KEYS = frozenset(
+_ROW_REQUIRED_KEYS = frozenset(
+    {
+        "record_source",
+        "marginalia_kind",
+        "source_quote",
+        "primary_source_ref",
+        "created_at",
+    }
+)
+_PRIMARY_REF_ALLOWED_KEYS = frozenset(
     {"source_span_id", "source_span", "quote", "role", "resolution"}
 )
+_PRIMARY_REF_REQUIRED_KEYS = frozenset({"source_span", "quote", "resolution"})
 _SOURCE_SPAN_KEYS = frozenset({"start_cursor", "end_cursor"})
-_CURSOR_KEYS = frozenset(
+_CURSOR_ALLOWED_KEYS = frozenset(
     {"chapter_id", "chapter_ref", "paragraph_index", "char_offset"}
+)
+_CURSOR_REQUIRED_KEYS = frozenset(
+    {"chapter_id", "paragraph_index", "char_offset"}
 )
 _RESOLUTION_KEYS = frozenset({"status", "method", "match_count"})
 _UTC_TIMESTAMP = re.compile(
     r"[0-9]{4}-[0-9]{2}-[0-9]{2}T[0-9]{2}:[0-9]{2}:[0-9]{2}"
     r"(?:\.[0-9]{1,6})?Z\Z"
 )
+_MISSING = object()
 
 
 class _DuplicateJsonKey(ValueError):
@@ -408,7 +422,11 @@ def _draft_from_row(
     index: int,
     record_digest: str,
 ) -> AnnotationDraft:
-    if not isinstance(row, dict) or frozenset(row) != _ROW_KEYS:
+    if not isinstance(row, dict) or not _supported_key_subset(
+        row,
+        required=_ROW_REQUIRED_KEYS,
+        allowed=_ROW_ALLOWED_KEYS,
+    ):
         raise _RejectedRow("unsupported_legacy_record")
     if (
         type(row["record_source"]) is not str
@@ -421,13 +439,14 @@ def _draft_from_row(
         if kind is None or kind == "":
             raise _RejectedRow("unsupported_legacy_record")
         raise _RejectedRow("unsupported_kind")
-    if type(row["thought"]) is not str:
-        raise _RejectedRow(
-            "highlight_body_present" if kind == "highlight" else "note_body_missing"
-        )
-    thought = row["thought"]
-    if kind == "highlight" and thought != "":
-        raise _RejectedRow("highlight_body_present")
+    thought = row.get("thought", _MISSING)
+    if kind == "highlight":
+        if thought is not _MISSING and (
+            type(thought) is not str or thought != ""
+        ):
+            raise _RejectedRow("highlight_body_present")
+    elif type(thought) is not str:
+        raise _RejectedRow("note_body_missing")
     normalized_thought: str | None = None
     if kind == "note":
         try:
@@ -452,17 +471,12 @@ def _draft_from_row(
         raise _RejectedRow("source_quote_too_long")
 
     primary_ref = row["primary_source_ref"]
-    if not isinstance(primary_ref, dict) or frozenset(primary_ref) != _PRIMARY_REF_KEYS:
-        raise _RejectedRow("unsupported_legacy_record")
-    if (
-        type(primary_ref["role"]) is not str
-        or primary_ref["role"] != "reaction_anchor"
+    if not isinstance(primary_ref, dict) or not _supported_key_subset(
+        primary_ref,
+        required=_PRIMARY_REF_REQUIRED_KEYS,
+        allowed=_PRIMARY_REF_ALLOWED_KEYS,
     ):
         raise _RejectedRow("unsupported_legacy_record")
-    if type(primary_ref["source_span_id"]) is not str or not primary_ref[
-        "source_span_id"
-    ]:
-        raise _RejectedRow("malformed_source_span")
     if type(primary_ref["quote"]) is not str or primary_ref["quote"] != source_quote:
         raise _RejectedRow("unresolved_source_quote")
 
@@ -483,18 +497,7 @@ def _draft_from_row(
     if status != "matched" or method != "exact_text":
         raise _RejectedRow("unresolved_source_quote")
 
-    row_chapter_id = row["chapter_id"]
-    row_chapter_ref = row["chapter_ref"]
-    if (
-        type(row_chapter_id) is not int
-        or row_chapter_id < 1
-        or type(row_chapter_ref) is not str
-    ):
-        raise _RejectedRow("malformed_source_span")
-    source_range = _source_range(
-        primary_ref["source_span"],
-        expected_chapter_id=row_chapter_id,
-    )
+    source_range = _source_range(primary_ref["source_span"])
     return AnnotationDraft(
         kind=kind,
         source_range=source_range,
@@ -508,8 +511,6 @@ def _draft_from_row(
 
 def _source_range(
     value: object,
-    *,
-    expected_chapter_id: int,
 ) -> SourceRange:
     if not isinstance(value, dict) or frozenset(value) != _SOURCE_SPAN_KEYS:
         raise _RejectedRow("malformed_source_span")
@@ -517,10 +518,7 @@ def _source_range(
     end_value = value["end_cursor"]
     start = _coordinate(start_value)
     end = _coordinate(end_value)
-    if (
-        start.chapter_id != end.chapter_id
-        or start.chapter_id != expected_chapter_id
-    ):
+    if start.chapter_id != end.chapter_id:
         raise _RejectedRow("malformed_source_span")
     if (start.paragraph_index, start.char_offset) >= (
         end.paragraph_index,
@@ -531,7 +529,11 @@ def _source_range(
 
 
 def _coordinate(value: object) -> SourceCoordinate:
-    if not isinstance(value, dict) or frozenset(value) != _CURSOR_KEYS:
+    if not isinstance(value, dict) or not _supported_key_subset(
+        value,
+        required=_CURSOR_REQUIRED_KEYS,
+        allowed=_CURSOR_ALLOWED_KEYS,
+    ):
         raise _RejectedRow("malformed_source_span")
     chapter_id = value["chapter_id"]
     paragraph_index = value["paragraph_index"]
@@ -543,7 +545,6 @@ def _coordinate(value: object) -> SourceCoordinate:
         or paragraph_index < 1
         or type(char_offset) is not int
         or char_offset < 0
-        or type(value["chapter_ref"]) is not str
     ):
         raise _RejectedRow("malformed_source_span")
     return SourceCoordinate(
@@ -551,6 +552,16 @@ def _coordinate(value: object) -> SourceCoordinate:
         paragraph_index=paragraph_index,
         char_offset=char_offset,
     )
+
+
+def _supported_key_subset(
+    value: dict[object, object],
+    *,
+    required: frozenset[str],
+    allowed: frozenset[str],
+) -> bool:
+    keys = frozenset(value)
+    return required.issubset(keys) and keys.issubset(allowed)
 
 
 def _timestamp_or_none(value: object) -> datetime | None:

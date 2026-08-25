@@ -2,8 +2,9 @@
 
 This module deliberately does not validate the Annotation Pack schema or repair
 producer data.  Entity builders own normalization and the later semantic
-validator owns cross-object invariants.  The only protocol-specific projection
-here is the one used to calculate ``sr:semanticDigest``.
+validator owns cross-object invariants.  The only profile-specific projection
+here is the internal content digest used by immutable publication reports and
+pointers.  That digest is never written into the public Pack.
 """
 
 from __future__ import annotations
@@ -19,14 +20,7 @@ JSONValue: TypeAlias = JSONScalar | list["JSONValue"] | dict[str, "JSONValue"]
 
 CANONICALIZATION = "sr-canonical-json-v1"
 MAX_SAFE_JSON_INTEGER = (1 << 53) - 1
-_SEMANTIC_EXCLUDED_FIELDS = frozenset(
-    {
-        "generated",
-        "generator",
-        "sr:provenance",
-        "sr:semanticDigest",
-    }
-)
+_SEMANTIC_EXCLUDED_FIELDS = frozenset({"generated"})
 
 __all__ = [
     "CANONICALIZATION",
@@ -83,9 +77,9 @@ def canonical_json_bytes(value: object) -> bytes:
 def semantic_projection(pack: Mapping[str, object]) -> dict[str, JSONValue]:
     """Return the v0 semantic projection without mutating ``pack``.
 
-    Four top-level serialization/provenance fields are excluded.  ``items`` is
-    the only array whose order is changed, and is sorted lexicographically by
-    annotation ``id``.  All other array orders remain significant.
+    Only volatile top-level ``generated`` is excluded.  ``items`` is the only
+    array whose order is changed, and is sorted lexicographically by annotation
+    ``id``.  All other array orders remain significant.
     """
 
     if not isinstance(pack, Mapping):

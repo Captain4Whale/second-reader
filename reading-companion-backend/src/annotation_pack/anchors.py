@@ -3,10 +3,8 @@
 from __future__ import annotations
 
 from collections.abc import Mapping, Sequence
-from dataclasses import dataclass
-import hashlib
 import re
-from typing import Any, Protocol, cast
+from typing import Any, cast
 
 import regex
 
@@ -18,49 +16,14 @@ from src.annotation_pack.drafts import (
     SourceRange,
     ValidationFinding,
 )
-from src.annotation_pack.epub_resources import RESOURCE_TEXT_NORMALIZATION_VERSION
 from src.annotation_pack.epub_source import EpubSourceError, normalize_epub_href
-from src.annotation_pack.identity import (
-    CHAPTER_FINGERPRINT_VERSION,
-    PublicationIdentityResult,
-)
-from src.annotation_pack.ids import anchor_id
+from src.annotation_pack.identity import PublicationIdentityResult
 
 
-PARAGRAPH_COORDINATE_SYSTEM = "sr-book-document-paragraph-char-v1"
-RESOURCE_TEXT_NORMALIZATION = RESOURCE_TEXT_NORMALIZATION_VERSION
-OFFSET_UNIT = "unicode-code-point"
 MAX_EXACT_CODE_POINTS = 1024
 CONTEXT_CODE_POINTS = 64
 
 _SHA256 = re.compile(r"[0-9a-f]{64}\Z")
-_CFI = re.compile(r"epubcfi\([^\r\n]+\)\Z")
-
-
-@dataclass(frozen=True, slots=True)
-class CfiRoundTrip:
-    """One optional CFI proven to resolve to the requested resource slice."""
-
-    value: str
-    href: str
-    resource_start: int
-    resource_end: int
-
-
-class CfiResolver(Protocol):
-    """Protocol for an exact-source CFI implementation supplied by a caller."""
-
-    def resolve(
-        self,
-        *,
-        publication: PublicationIdentityResult,
-        source_range: SourceRange,
-        href: str,
-        exact: str,
-        resource_start: int,
-        resource_end: int,
-    ) -> CfiRoundTrip | None: ...
-
 
 class AnchorResolutionError(ValueError):
     """Stable annotation-level failure with one sanitized finding."""
@@ -73,9 +36,6 @@ class AnchorResolutionError(ValueError):
 
 class AnchorBuilder:
     """Resolve neutral paragraph-char drafts against one verified publication."""
-
-    def __init__(self, *, cfi_resolver: CfiResolver | None = None) -> None:
-        self._cfi_resolver = cfi_resolver
 
     def resolve(
         self,
@@ -91,7 +51,9 @@ class AnchorBuilder:
             raise TypeError("publication must be a PublicationIdentityResult")
 
         start, end = _validated_source_range(draft)
-        chapter, chapter_order = _resolve_chapter(publication, start.chapter_id, draft)
+        chapter, _chapter_order = _resolve_chapter(
+            publication, start.chapter_id, draft
+        )
         paragraphs, paragraph_positions = _resolve_paragraphs(chapter, draft)
         start_position = _require_paragraph_position(
             paragraph_positions,
@@ -173,25 +135,6 @@ class AnchorBuilder:
         suffix = resource_text[
             resource_end : min(len(resource_text), resource_end + CONTEXT_CODE_POINTS)
         ]
-        chapter_fingerprint = _chapter_fingerprint(
-            publication,
-            start.chapter_id,
-            draft,
-        )
-        edition = _edition_id(publication, draft)
-        resolved_anchor_id = anchor_id(
-            edition,
-            href,
-            chapter_fingerprint,
-            start_chapter_id=start.chapter_id,
-            start_paragraph_index=start.paragraph_index,
-            start_char_offset=start.char_offset,
-            end_chapter_id=end.chapter_id,
-            end_paragraph_index=end.paragraph_index,
-            end_char_offset=end.char_offset,
-            quote_sha256=hashlib.sha256(exact.encode("utf-8")).hexdigest(),
-        )
-
         findings: list[ValidationFinding] = []
         if _occurrence_count(resource_text, exact) > 1:
             findings.append(
@@ -214,64 +157,35 @@ class AnchorBuilder:
                     "duplicate_resource_chapter_projection",
                     "warning",
                     "verified resource blocks are projected into multiple chapters",
-                    json_pointer="/target/sr:chapter",
+                    json_pointer="/target/source",
                 )
             )
 
+        quote_selector: dict[str, object] = {
+            "type": "TextQuoteSelector",
+            "exact": exact,
+        }
+        if prefix:
+            quote_selector["prefix"] = prefix
+        if suffix:
+            quote_selector["suffix"] = suffix
         selectors: list[dict[str, object]] = [
+            quote_selector,
             {
-                "type": "TextQuoteSelector",
-                "exact": exact,
-                "prefix": prefix,
-                "suffix": suffix,
-                "sr:normalization": RESOURCE_TEXT_NORMALIZATION_VERSION,
-            },
-            {
-                "type": "sr:ParagraphCharSelector",
-                "sr:coordinateSystem": PARAGRAPH_COORDINATE_SYSTEM,
-                "sr:offsetUnit": OFFSET_UNIT,
-                "sr:start": _coordinate_wire(start),
-                "sr:end": _coordinate_wire(end),
+                "type": "TextPositionSelector",
+                "start": resource_start,
+                "end": resource_end,
             },
         ]
-        cfi_selector, cfi_finding = self._verified_cfi(
-            draft=draft,
-            publication=publication,
-            href=href,
-            exact=exact,
-            resource_start=resource_start,
-            resource_end=resource_end,
-        )
-        if cfi_selector is not None:
-            selectors.append(cfi_selector)
-        if cfi_finding is not None:
-            findings.append(cfi_finding)
-
-        chapter_context: dict[str, object] = {
-            "type": "sr:ChapterContext",
-            "sr:chapterId": start.chapter_id,
-            "sr:order": chapter_order,
-            "sr:fingerprint": {
-                "type": "sr:Fingerprint",
-                "sr:algorithm": "sha256",
-                "sr:algorithmVersion": CHAPTER_FINGERPRINT_VERSION,
-                "sr:value": chapter_fingerprint,
-            },
-        }
-        chapter_title = chapter.get("title")
-        if isinstance(chapter_title, str) and chapter_title:
-            chapter_context["name"] = chapter_title
         target = {
-            "type": "SpecificResource",
             "source": href,
             "selector": selectors,
-            "sr:anchorId": resolved_anchor_id,
-            "sr:chapter": chapter_context,
         }
         resolved_anchor = ResolvedAnchor(
-            anchor_id=resolved_anchor_id,
             href=href,
             exact=exact,
+            start=resource_start,
+            end=resource_end,
             target=cast(Mapping[str, Any], _freeze_json(target)),
             findings=tuple(findings),
         )
@@ -283,62 +197,6 @@ class AnchorBuilder:
             source_record_index=draft.source_record_index,
             source_record_digest=draft.source_record_digest,
         )
-
-    def _verified_cfi(
-        self,
-        *,
-        draft: AnnotationDraft,
-        publication: PublicationIdentityResult,
-        href: str,
-        exact: str,
-        resource_start: int,
-        resource_end: int,
-    ) -> tuple[dict[str, object] | None, ValidationFinding | None]:
-        if self._cfi_resolver is None:
-            return None, None
-        try:
-            resolved = self._cfi_resolver.resolve(
-                publication=publication,
-                source_range=draft.source_range,
-                href=href,
-                exact=exact,
-                resource_start=resource_start,
-                resource_end=resource_end,
-            )
-        except Exception:
-            resolved = None
-        if (
-            not isinstance(resolved, CfiRoundTrip)
-            or not isinstance(resolved.value, str)
-            or len(resolved.value) > 2048
-            or _CFI.fullmatch(resolved.value) is None
-            or resolved.href != href
-            or isinstance(resolved.resource_start, bool)
-            or not isinstance(resolved.resource_start, int)
-            or isinstance(resolved.resource_end, bool)
-            or not isinstance(resolved.resource_end, int)
-            or resolved.resource_start != resource_start
-            or resolved.resource_end != resource_end
-        ):
-            return (
-                None,
-                _finding(
-                    draft,
-                    "cfi_unverified",
-                    "warning",
-                    "optional EPUB CFI did not pass exact quote round-trip verification",
-                    json_pointer="/target/selector/2",
-                ),
-            )
-        return (
-            {
-                "type": "sr:EpubCfiSelector",
-                "value": resolved.value,
-                "sr:verification": "quote-round-trip",
-            },
-            None,
-        )
-
 
 def _validated_source_range(
     draft: AnnotationDraft,
@@ -613,39 +471,6 @@ def _valid_resource_range(
     )
 
 
-def _chapter_fingerprint(
-    publication: PublicationIdentityResult,
-    chapter_id: int,
-    draft: AnnotationDraft,
-) -> str:
-    value = publication.chapter_fingerprints.get(chapter_id)
-    if not isinstance(value, str) or _SHA256.fullmatch(value) is None:
-        _fail(
-            draft,
-            "resource_text_unverifiable",
-            "chapter fingerprint is unavailable",
-        )
-    return value
-
-
-def _edition_id(
-    publication: PublicationIdentityResult,
-    draft: AnnotationDraft,
-) -> str:
-    edition = publication.wire.get("sr:edition")
-    if not isinstance(edition, Mapping) or not isinstance(edition.get("id"), str):
-        _fail(draft, "resource_text_unverifiable", "edition identity is unavailable")
-    return cast(str, edition["id"])
-
-
-def _coordinate_wire(coordinate: SourceCoordinate) -> dict[str, int]:
-    return {
-        "sr:chapterId": coordinate.chapter_id,
-        "sr:paragraphIndex": coordinate.paragraph_index,
-        "sr:charOffset": coordinate.char_offset,
-    }
-
-
 def _occurrence_count(haystack: str, needle: str) -> int:
     """Return 0, 1, or 2 where 2 means two-or-more occurrences."""
 
@@ -770,11 +595,6 @@ def _freeze_json(value: object) -> object:
 __all__ = [
     "CONTEXT_CODE_POINTS",
     "MAX_EXACT_CODE_POINTS",
-    "OFFSET_UNIT",
-    "PARAGRAPH_COORDINATE_SYSTEM",
-    "RESOURCE_TEXT_NORMALIZATION",
     "AnchorBuilder",
     "AnchorResolutionError",
-    "CfiResolver",
-    "CfiRoundTrip",
 ]

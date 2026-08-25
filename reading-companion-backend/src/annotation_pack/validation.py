@@ -11,7 +11,6 @@ from __future__ import annotations
 from collections.abc import Mapping, Sequence
 from dataclasses import dataclass
 from functools import lru_cache
-import hashlib
 import ipaddress
 import re
 from typing import Any, Literal, TypeAlias
@@ -25,17 +24,10 @@ from src.annotation_pack.epub_source import (
     normalize_epub_href,
 )
 from src.annotation_pack.ids import (
-    anchor_id,
     annotation_id,
-    asserted_work_id,
-    edition_id,
-    file_id,
     pack_id,
-    provisional_work_id,
-    track_id,
 )
 from src.annotation_pack.schema import (
-    SCHEMA_VERSION,
     VALIDATION_REPORT_SCHEMA_ID,
     auxiliary_validator,
     load_schema,
@@ -49,7 +41,7 @@ from src.annotation_pack.serialization import (
 )
 
 
-ValidationMode = Literal["strict", "compatible"]
+ValidationMode = Literal["strict"]
 ValidationStatus = Literal["valid", "degraded", "failed"]
 JSONScalar: TypeAlias = None | bool | int | str
 JSONValue: TypeAlias = JSONScalar | list["JSONValue"] | dict[str, "JSONValue"]
@@ -69,6 +61,10 @@ MAX_EXTENSION_NODES = 2048
 MAX_EXTENSION_STRING_CODE_POINTS = 65_536
 
 _SHA256_RE = re.compile(r"[0-9a-f]{64}\Z")
+_SEMVER_RE = re.compile(
+    r"(?:0|[1-9][0-9]*)\.(?:0|[1-9][0-9]*)\.(?:0|[1-9][0-9]*)"
+    r"(?:-[0-9A-Za-z.-]+)?(?:\+[0-9A-Za-z.-]+)?\Z"
+)
 _CODE_RE = re.compile(r"[a-z][a-z0-9_]{0,127}\Z")
 _UUID5_URN_RE = re.compile(
     r"urn:uuid:[0-9a-f]{8}-[0-9a-f]{4}-5[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}\Z"
@@ -374,6 +370,9 @@ class ValidationContext:
     input_count: int | None = None
     findings: tuple[ValidationFinding, ...] = ()
     allow_empty: bool = False
+    input_snapshot_digest: str | None = None
+    producer: str | None = None
+    adapter_version: str | None = None
 
 
 @dataclass(frozen=True, slots=True)
@@ -386,6 +385,8 @@ class ValidationResult:
     pack_id: str | None
     semantic_digest: str | None
     input_snapshot_digest: str | None
+    producer: str | None
+    adapter_version: str | None
     input_count: int
     exported_count: int
     skipped_count: int
@@ -408,6 +409,8 @@ class ValidationReport:
     pack_id: str | None
     semantic_digest: str | None
     input_snapshot_digest: str | None
+    producer: str | None
+    adapter_version: str | None
     annotations_json_sha256: str | None
     package_sha256: str | None
     input_count: int
@@ -433,14 +436,12 @@ def validate_pack(
 ) -> ValidationResult:
     """Validate one in-memory Pack without network, source, or disk access.
 
-    ``strict`` rejects every schema-unknown prefixed field.  ``compatible``
-    preserves one only when its prefix is explicitly and safely declared in the
-    protected second context object, emitting a warning.  Undeclared extensions
-    and reserved-prefix redefinitions are fatal in both modes.
+    Minimal v0 has one strict mode.  Every object layer is closed by the
+    canonical schema; there is no extension or old-wire compatibility mode.
     """
 
-    if mode not in {"strict", "compatible"}:
-        raise ValueError("mode must be 'strict' or 'compatible'")
+    if mode != "strict":
+        raise ValueError("mode must be 'strict'")
     if not isinstance(verify_ids, bool):
         raise TypeError("verify_ids must be a boolean")
     if context is None:
@@ -483,18 +484,6 @@ def validate_pack(
             exported_count=_safe_item_count(plain),
         )
 
-    findings.extend(_extension_findings(plain, mode=mode))
-
-    schema_version = plain.get("sr:schemaVersion")
-    if schema_version != SCHEMA_VERSION:
-        findings.append(
-            _finding(
-                "schema_version_unsupported",
-                "fatal",
-                json_pointer="/sr:schemaVersion",
-            )
-        )
-
     schema_errors = sorted(
         pack_validator().iter_errors(plain),
         key=lambda error: (
@@ -504,11 +493,6 @@ def validate_pack(
         ),
     )
     for error in schema_errors[:MAX_SCHEMA_FINDINGS]:
-        if (
-            tuple(error.absolute_path) == ("sr:schemaVersion",)
-            and schema_version != SCHEMA_VERSION
-        ):
-            continue
         findings.append(_schema_finding(error, plain))
     if len(schema_errors) > MAX_SCHEMA_FINDINGS:
         findings.append(_finding("document_limit_exceeded", "fatal"))
@@ -570,6 +554,8 @@ def finalize_validation_report(
         pack_id=result.pack_id,
         semantic_digest=result.semantic_digest,
         input_snapshot_digest=result.input_snapshot_digest,
+        producer=result.producer,
+        adapter_version=result.adapter_version,
         annotations_json_sha256=annotations_digest,
         package_sha256=package_digest,
         input_count=result.input_count,
@@ -600,6 +586,8 @@ def validation_report_wire(report: ValidationReport) -> dict[str, JSONValue]:
         "pack_id": report.pack_id,
         "semantic_digest": report.semantic_digest,
         "input_snapshot_digest": report.input_snapshot_digest,
+        "producer": report.producer,
+        "adapter_version": report.adapter_version,
         "annotations_json_sha256": report.annotations_json_sha256,
         "package_sha256": report.package_sha256,
         "counts": {
@@ -1013,10 +1001,12 @@ def _schema_finding(error: Any, document: Mapping[str, JSONValue]) -> Validation
         item = _item_at(document, index)
         item_pointer = f"/items/{index}"
         if item is not None:
-            kind = item.get("sr:kind")
-            if kind not in {"highlight", "note"}:
+            motivation = item.get("motivation")
+            if motivation not in {"highlighting", "commenting"}:
                 return _finding(
-                    "unsupported_kind", "error", json_pointer=f"{item_pointer}/sr:kind"
+                    "unsupported_kind",
+                    "error",
+                    json_pointer=f"{item_pointer}/motivation",
                 )
             if "created" not in item or (len(path) >= 3 and path[2] == "created"):
                 return _finding(
@@ -1024,13 +1014,13 @@ def _schema_finding(error: Any, document: Mapping[str, JSONValue]) -> Validation
                     "error",
                     json_pointer=f"{item_pointer}/created",
                 )
-            if kind == "highlight" and "body" in item:
+            if motivation == "highlighting" and "body" in item:
                 return _finding(
                     "highlight_body_present",
                     "error",
                     json_pointer=f"{item_pointer}/body",
                 )
-            if kind == "note" and (
+            if motivation == "commenting" and (
                 "body" not in item or (len(path) >= 3 and path[2] == "body")
             ):
                 return _finding(
@@ -1047,76 +1037,22 @@ def _semantic_findings(
     *,
     verify_ids: bool,
 ) -> list[ValidationFinding]:
-    findings: list[ValidationFinding] = []
     about = _mapping(document["about"])
-    edition = _mapping(about["sr:edition"])
-    work = _mapping(about["sr:work"])
-    file_identity = _mapping(about["sr:file"])
-    track = _mapping(document["sr:track"])
-    track_creator = _mapping(track["creator"])
+    generator = _mapping(document["generator"])
     items = _list(document["items"])
+    findings: list[ValidationFinding] = []
 
     if not _normalized_metadata(document):
         findings.append(_finding("schema_validation_failed", "fatal"))
     if not _public_iris_are_safe(document):
         findings.append(_finding("private_field_leakage", "fatal"))
 
-    nested_ids = {work["id"], edition["id"], file_identity["id"]}
-    public_ids = set(_list(about["dc:identifier"]))
-    if not nested_ids.issubset(public_ids):
-        findings.append(
-            _finding(
-                "publication_identity_missing",
-                "fatal",
-                json_pointer="/about/dc:identifier",
-            )
-        )
-
-    chapters, chapter_identity_valid = _chapter_index(edition)
-    if not chapter_identity_valid:
-        findings.append(
-            _finding(
-                "publication_identity_missing",
-                "fatal",
-                json_pointer="/about/sr:edition/sr:chapterFingerprints",
-            )
-        )
-
+    nih = str(_list(about["dc:identifier"])[0])
+    epub_sha256 = nih.removeprefix("nih:sha-256;")
     if verify_ids:
         try:
-            if work["sr:identityStrength"] == "asserted":
-                identifiers = [
-                    (
-                        str(_mapping(entry)["sr:scheme"]),
-                        str(_mapping(entry)["sr:value"]),
-                    )
-                    for entry in _list(work["sr:identifiers"])
-                ]
-                expected_work = asserted_work_id(identifiers)
-            else:
-                creators = [str(value) for value in _list(about.get("dc:creator", []))]
-                expected_work = provisional_work_id(str(about["dc:title"]), creators)
-            expected_edition = edition_id(
-                str(_mapping(edition["sr:contentFingerprint"])["sr:value"])
-            )
-            expected_file = file_id(str(file_identity["sr:sha256"]))
-            if (
-                work["id"] != expected_work
-                or edition["id"] != expected_edition
-                or file_identity["id"] != expected_file
-            ):
-                findings.append(_finding("publication_identity_missing", "fatal"))
-        except (KeyError, TypeError, ValueError):
-            findings.append(_finding("publication_identity_missing", "fatal"))
-
-        try:
-            expected_track = track_id(
-                str(edition["id"]),
-                str(track_creator["id"]),
-                str(track["sr:key"]),
-            )
-            expected_pack = pack_id(str(edition["id"]), expected_track)
-            if track["id"] != expected_track or document["id"] != expected_pack:
+            expected_pack = pack_id(epub_sha256, str(generator["id"]))
+            if document["id"] != expected_pack:
                 findings.append(
                     _finding("duplicate_pack_or_track_id_semantics", "fatal")
                 )
@@ -1125,9 +1061,7 @@ def _semantic_findings(
 
     ids: list[str] = []
     seen_ids: set[str] = set()
-    anchor_targets: dict[str, bytes] = {}
-    target_semantics: dict[bytes, str] = {}
-    annotation_semantics: set[tuple[str, str, str]] = set()
+    annotation_semantics: set[tuple[str, int, int, str, str]] = set()
 
     for index, raw_item in enumerate(items):
         item = _mapping(raw_item)
@@ -1144,45 +1078,7 @@ def _semantic_findings(
             )
         seen_ids.add(item_id)
 
-        if _mapping(item["creator"]) != track_creator:
-            findings.append(
-                _finding(
-                    "creator_mismatch",
-                    "fatal",
-                    json_pointer=f"/items/{index}/creator",
-                    annotation_id=item_id,
-                )
-            )
-
         target = _mapping(item["target"])
-        anchor = str(target["sr:anchorId"])
-        target_projection = canonical_json_bytes(_required_anchor_projection(target))
-        prior_target = anchor_targets.get(anchor)
-        if prior_target is not None and prior_target != target_projection:
-            findings.append(
-                _finding(
-                    "duplicate_anchor_semantics",
-                    "fatal",
-                    json_pointer=f"/items/{index}/target/sr:anchorId",
-                    annotation_id=item_id,
-                )
-            )
-        anchor_targets[anchor] = target_projection
-        prior_anchor = target_semantics.get(target_projection)
-        if prior_anchor is not None and prior_anchor != anchor:
-            findings.append(
-                _finding(
-                    "duplicate_anchor_semantics",
-                    "fatal",
-                    json_pointer=f"/items/{index}/target/sr:anchorId",
-                    annotation_id=item_id,
-                )
-            )
-        target_semantics[target_projection] = anchor
-
-        chapter = _mapping(target["sr:chapter"])
-        chapter_id_value = int(chapter["sr:chapterId"])
-        publication_chapter = chapters.get(chapter_id_value)
         source = str(target["source"])
         if not _canonical_epub_href(source):
             findings.append(
@@ -1193,44 +1089,50 @@ def _semantic_findings(
                     annotation_id=item_id,
                 )
             )
-        if publication_chapter is None or not _chapter_matches_target(
-            publication_chapter,
-            chapter,
-            source=source,
-        ):
+        selectors = _list(target["selector"])
+        quote = _mapping(selectors[0])
+        position = _mapping(selectors[1])
+        exact = str(quote["exact"])
+        start = int(position["start"])
+        end = int(position["end"])
+        if start < 0 or start >= end:
             findings.append(
                 _finding(
-                    "chapter_context_mismatch",
-                    "fatal",
-                    json_pointer=f"/items/{index}/target/sr:chapter",
-                    annotation_id=item_id,
-                )
-            )
-        if not _paragraph_coordinates_match_target(
-            target,
-            chapter_id=chapter_id_value,
-            publication_chapters=chapters,
-        ):
-            findings.append(
-                _finding(
-                    "chapter_context_mismatch",
-                    "fatal",
+                    "malformed_source_span",
+                    "error",
                     json_pointer=f"/items/{index}/target/selector/1",
                     annotation_id=item_id,
                 )
             )
+        if end - start != len(exact):
+            findings.append(
+                _finding(
+                    "unresolved_source_quote",
+                    "error",
+                    json_pointer=f"/items/{index}/target/selector/0/exact",
+                    annotation_id=item_id,
+                )
+            )
 
-        kind = str(item["sr:kind"])
-        body_digest = ""
-        if kind == "note":
-            body = _mapping(item["body"])
-            body_value = str(body["value"])
-            body_digest = hashlib.sha256(body_value.encode("utf-8")).hexdigest()
-            quote = str(_mapping(_list(target["selector"])[0])["exact"])
+        motivation = str(item["motivation"])
+        body_value = ""
+        body_for_id: str | None = None
+        if motivation == "commenting":
+            body_value = str(_mapping(item["body"])["value"])
+            body_for_id = body_value
+            if not body_value.strip():
+                findings.append(
+                    _finding(
+                        "note_body_missing",
+                        "error",
+                        json_pointer=f"/items/{index}/body/value",
+                        annotation_id=item_id,
+                    )
+                )
             if (
                 len(body_value) >= 512
-                and len(quote) >= 512
-                and (body_value == quote or quote in body_value or body_value in quote)
+                and len(exact) >= 512
+                and (body_value == exact or exact in body_value or body_value in exact)
             ):
                 findings.append(
                     _finding(
@@ -1240,7 +1142,7 @@ def _semantic_findings(
                         annotation_id=item_id,
                     )
                 )
-        semantic_key = (kind, anchor, body_digest)
+        semantic_key = (source, start, end, motivation, body_value)
         if semantic_key in annotation_semantics:
             findings.append(
                 _finding(
@@ -1253,24 +1155,14 @@ def _semantic_findings(
         annotation_semantics.add(semantic_key)
 
         if verify_ids:
-            if not _anchor_id_matches(
-                target,
-                edition_id_value=str(edition["id"]),
-            ):
-                findings.append(
-                    _finding(
-                        "duplicate_anchor_semantics",
-                        "fatal",
-                        json_pointer=f"/items/{index}/target/sr:anchorId",
-                        annotation_id=item_id,
-                    )
-                )
             try:
                 expected_annotation = annotation_id(
-                    str(track["id"]),
-                    kind,  # type: ignore[arg-type]
-                    anchor,
-                    body_digest if kind == "note" else None,
+                    epub_sha256,
+                    source,
+                    start,
+                    end,
+                    motivation,  # type: ignore[arg-type]
+                    body_for_id,
                 )
             except (TypeError, ValueError):
                 expected_annotation = ""
@@ -1286,165 +1178,21 @@ def _semantic_findings(
 
     if ids != sorted(ids):
         findings.append(_finding("item_order_invalid", "fatal", json_pointer="/items"))
-
-    try:
-        actual_semantic_digest = semantic_digest(document)
-        declared_semantic_digest = str(
-            _mapping(document["sr:semanticDigest"])["sr:value"]
-        )
-        if actual_semantic_digest != declared_semantic_digest:
-            findings.append(
-                _finding(
-                    "semantic_digest_mismatch",
-                    "fatal",
-                    json_pointer="/sr:semanticDigest/sr:value",
-                )
-            )
-    except (CanonicalJsonError, KeyError, TypeError, ValueError):
-        findings.append(_finding("semantic_digest_mismatch", "fatal"))
-
     return _deduplicate_findings(findings)
-
-
-def _anchor_id_matches(
-    target: Mapping[str, JSONValue],
-    *,
-    edition_id_value: str,
-) -> bool:
-    try:
-        selectors = _list(target["selector"])
-        quote = _mapping(selectors[0])
-        paragraph = _mapping(selectors[1])
-        start = _mapping(paragraph["sr:start"])
-        end = _mapping(paragraph["sr:end"])
-        chapter = _mapping(target["sr:chapter"])
-        chapter_fingerprint = _mapping(chapter["sr:fingerprint"])
-        expected = anchor_id(
-            edition_id_value,
-            str(target["source"]),
-            str(chapter_fingerprint["sr:value"]),
-            start_chapter_id=int(start["sr:chapterId"]),
-            start_paragraph_index=int(start["sr:paragraphIndex"]),
-            start_char_offset=int(start["sr:charOffset"]),
-            end_chapter_id=int(end["sr:chapterId"]),
-            end_paragraph_index=int(end["sr:paragraphIndex"]),
-            end_char_offset=int(end["sr:charOffset"]),
-            quote_sha256=hashlib.sha256(
-                str(quote["exact"]).encode("utf-8")
-            ).hexdigest(),
-        )
-        return target["sr:anchorId"] == expected
-    except (IndexError, KeyError, TypeError, ValueError):
-        return False
-
-
-def _required_anchor_projection(
-    target: Mapping[str, JSONValue],
-) -> dict[str, JSONValue]:
-    """Exclude identity and optional CFI from anchor-collision comparison."""
-
-    projection = dict(target)
-    projection.pop("sr:anchorId", None)
-    selectors = _list(target["selector"])
-    projection["selector"] = selectors[:2]
-    return projection
-
-
-def _paragraph_coordinates_match_target(
-    target: Mapping[str, JSONValue],
-    *,
-    chapter_id: int,
-    publication_chapters: Mapping[int, Mapping[str, JSONValue]],
-) -> bool:
-    try:
-        paragraph = _mapping(_list(target["selector"])[1])
-        start = _mapping(paragraph["sr:start"])
-        end = _mapping(paragraph["sr:end"])
-        start_chapter = int(start["sr:chapterId"])
-        end_chapter = int(end["sr:chapterId"])
-        start_position = (
-            int(start["sr:paragraphIndex"]),
-            int(start["sr:charOffset"]),
-        )
-        end_position = (
-            int(end["sr:paragraphIndex"]),
-            int(end["sr:charOffset"]),
-        )
-    except (IndexError, KeyError, TypeError, ValueError):
-        return False
-    return (
-        start_chapter == end_chapter == chapter_id
-        and chapter_id in publication_chapters
-        and start_position < end_position
-    )
-
-
-def _chapter_index(
-    edition: Mapping[str, JSONValue],
-) -> tuple[dict[int, Mapping[str, JSONValue]], bool]:
-    chapters = _list(edition["sr:chapterFingerprints"])
-    result: dict[int, Mapping[str, JSONValue]] = {}
-    orders: set[int] = set()
-    ordered_values: list[int] = []
-    valid = True
-    for raw in chapters:
-        chapter = _mapping(raw)
-        chapter_id_value = int(chapter["sr:chapterId"])
-        order = int(chapter["sr:order"])
-        if chapter_id_value in result or order in orders:
-            valid = False
-        resources = chapter.get("sr:resourceHrefs")
-        if isinstance(resources, list) and any(
-            not _canonical_epub_href(resource) for resource in resources
-        ):
-            valid = False
-        result[chapter_id_value] = chapter
-        orders.add(order)
-        ordered_values.append(order)
-    if ordered_values != sorted(ordered_values):
-        valid = False
-    return result, valid
-
-
-def _chapter_matches_target(
-    publication_chapter: Mapping[str, JSONValue],
-    target_chapter: Mapping[str, JSONValue],
-    *,
-    source: str,
-) -> bool:
-    if publication_chapter["sr:order"] != target_chapter["sr:order"]:
-        return False
-    publication_digest = publication_chapter["sr:value"]
-    target_digest = _mapping(target_chapter["sr:fingerprint"])["sr:value"]
-    if publication_digest != target_digest:
-        return False
-    if "name" in target_chapter and target_chapter["name"] != publication_chapter.get(
-        "sr:title"
-    ):
-        return False
-    resources = publication_chapter.get("sr:resourceHrefs")
-    if isinstance(resources, list) and source not in resources:
-        return False
-    return True
 
 
 def _normalized_metadata(document: Mapping[str, JSONValue]) -> bool:
     about = _mapping(document["about"])
-    track = _mapping(document["sr:track"])
     candidates: list[tuple[str, bool]] = [
         (str(about["dc:title"]), True),
         (str(_mapping(document["generator"])["name"]), False),
-        (str(_mapping(track["creator"])["name"]), True),
     ]
-    if "name" in track:
-        candidates.append((str(track["name"]), True))
     candidates.extend(
         (str(value), True) for value in _list(about.get("dc:creator", []))
     )
     for item_raw in _list(document["items"]):
         item = _mapping(item_raw)
-        candidates.append((str(_mapping(item["creator"])["name"]), True))
-        if item["sr:kind"] == "note":
+        if item["motivation"] == "commenting":
             candidates.append((str(_mapping(item["body"])["value"]), False))
     return all(
         value == unicodedata.normalize("NFC", value)
@@ -1455,26 +1203,10 @@ def _normalized_metadata(document: Mapping[str, JSONValue]) -> bool:
 
 def _public_iris_are_safe(document: Mapping[str, JSONValue]) -> bool:
     about = _mapping(document["about"])
-    work = _mapping(about["sr:work"])
-    edition = _mapping(about["sr:edition"])
-    track = _mapping(document["sr:track"])
-    provenance = _mapping(document["sr:provenance"])
     candidates = [
         str(_mapping(document["generator"])["id"]),
-        str(_mapping(track["creator"])["id"]),
-        str(provenance["sr:producer"]),
     ]
     candidates.extend(str(value) for value in _list(about["dc:identifier"]))
-    for identity in (work, edition):
-        for raw_identifier in _list(
-            identity.get(
-                "sr:identifiers",
-                identity.get("sr:publicationIdentifiers", []),
-            )
-        ):
-            identifier = _mapping(raw_identifier)
-            if identifier["sr:scheme"] in {"uri", "work-uri"}:
-                candidates.append(str(identifier["sr:value"]))
     return all(_safe_public_iri(value) for value in candidates)
 
 
@@ -1484,9 +1216,28 @@ def _sanitize_context_findings(context: ValidationContext) -> list[ValidationFin
     input_count = context.input_count
     context_findings = context.findings
     allow_empty = context.allow_empty
+    input_snapshot_digest = context.input_snapshot_digest
+    producer = context.producer
+    adapter_version = context.adapter_version
     if input_count is not None and (type(input_count) is not int or input_count < 0):
         invalid = True
     if type(allow_empty) is not bool or type(context_findings) is not tuple:
+        invalid = True
+    if input_snapshot_digest is not None and (
+        type(input_snapshot_digest) is not str
+        or _SHA256_RE.fullmatch(input_snapshot_digest) is None
+    ):
+        invalid = True
+    if producer is not None and (
+        type(producer) is not str or not _safe_public_iri(producer)
+    ):
+        invalid = True
+    if adapter_version is not None and (
+        type(adapter_version) is not str
+        or _SEMVER_RE.fullmatch(adapter_version) is None
+    ):
+        invalid = True
+    if (producer is None) != (adapter_version is None):
         invalid = True
 
     if type(context_findings) is tuple:
@@ -1617,13 +1368,13 @@ def _result(
         status = "valid"
 
     pack_value = _safe_nested_string(document, "id")
-    semantic_value = _safe_nested_string(document, "sr:semanticDigest", "sr:value")
-    input_value = _safe_nested_string(
-        document,
-        "sr:provenance",
-        "sr:inputSnapshotDigest",
-        "sr:value",
-    )
+    try:
+        semantic_value = semantic_digest(document) if document is not None else None
+    except (CanonicalJsonError, KeyError, TypeError, ValueError):
+        semantic_value = None
+    input_value = context.input_snapshot_digest
+    producer = context.producer
+    adapter_version = context.adapter_version
     return ValidationResult(
         schema_version=VALIDATION_RESULT_SCHEMA_VERSION,
         validator_version=VALIDATOR_VERSION,
@@ -1635,6 +1386,17 @@ def _result(
         input_snapshot_digest=input_value
         if _SHA256_RE.fullmatch(input_value or "")
         else None,
+        producer=(
+            producer
+            if isinstance(producer, str) and _safe_public_iri(producer)
+            else None
+        ),
+        adapter_version=(
+            adapter_version
+            if isinstance(adapter_version, str)
+            and _SEMVER_RE.fullmatch(adapter_version)
+            else None
+        ),
         input_count=input_count,
         exported_count=exported_count,
         skipped_count=skipped_count,
@@ -1683,10 +1445,13 @@ def _validate_result_coherence(result: ValidationResult) -> None:
         semantic_digest=result.semantic_digest,
         input_snapshot_digest=result.input_snapshot_digest,
     )
+    _validate_optional_adapter_fields(
+        producer=result.producer,
+        adapter_version=result.adapter_version,
+    )
     if result.publishable and (
         _UUID5_URN_RE.fullmatch(result.pack_id or "") is None
         or _SHA256_RE.fullmatch(result.semantic_digest or "") is None
-        or _SHA256_RE.fullmatch(result.input_snapshot_digest or "") is None
     ):
         raise ValueError("publishable ValidationResult identity fields are incomplete")
 
@@ -1730,6 +1495,10 @@ def _validate_report_coherence(report: ValidationReport) -> None:
         semantic_digest=report.semantic_digest,
         input_snapshot_digest=report.input_snapshot_digest,
     )
+    _validate_optional_adapter_fields(
+        producer=report.producer,
+        adapter_version=report.adapter_version,
+    )
     _optional_digest(report.annotations_json_sha256, "annotations_json_sha256")
     _optional_digest(report.package_sha256, "package_sha256")
     if report.package_sha256 is not None and report.annotations_json_sha256 is None:
@@ -1738,6 +1507,8 @@ def _validate_report_coherence(report: ValidationReport) -> None:
         report.pack_id is None
         or report.semantic_digest is None
         or report.input_snapshot_digest is None
+        or report.producer is None
+        or report.adapter_version is None
         or report.annotations_json_sha256 is None
     ):
         raise ValueError("publishable ValidationReport fields are incomplete")
@@ -1821,6 +1592,24 @@ def _validate_optional_identity_fields(
             raise ValueError("validation digest identity is invalid")
 
 
+def _validate_optional_adapter_fields(
+    *,
+    producer: object,
+    adapter_version: object,
+) -> None:
+    if (producer is None) != (adapter_version is None):
+        raise ValueError("validation adapter metadata is incomplete")
+    if producer is not None and (
+        type(producer) is not str or not _safe_public_iri(producer)
+    ):
+        raise ValueError("validation producer identity is invalid")
+    if adapter_version is not None and (
+        type(adapter_version) is not str
+        or _SEMVER_RE.fullmatch(adapter_version) is None
+    ):
+        raise ValueError("validation adapter version is invalid")
+
+
 def _finding(
     code: str,
     severity: Literal["fatal", "error", "warning", "skipped"],
@@ -1880,6 +1669,8 @@ def make_validation_failure(
     pack_id: str | None = None,
     semantic_digest: str | None = None,
     input_snapshot_digest: str | None = None,
+    producer: str | None = None,
+    adapter_version: str | None = None,
 ) -> ValidationResult:
     """Build one deterministic pre-artifact failure from a catalog code.
 
@@ -1900,6 +1691,8 @@ def make_validation_failure(
         pack_id=pack_id,
         semantic_digest=semantic_digest,
         input_snapshot_digest=input_snapshot_digest,
+        producer=producer,
+        adapter_version=adapter_version,
         input_count=input_count,
         exported_count=0,
         skipped_count=0,
@@ -2053,13 +1846,12 @@ def _key_looks_private(key: str) -> bool:
 
 
 def _scan_private_value_at(path: tuple[str, ...]) -> bool:
-    """Exclude ordinary authored/source prose from path-shaped-value checks.
+    """Exclude only source-faithful selector text from private-value scanning.
 
-    Field-name scanning still applies everywhere.  Exact/prefix/suffix and Note
-    body prose can naturally discuss a filesystem path, token, or mechanism
-    name; treating that vocabulary as runtime leakage would be a false positive.
-    Metadata, identifiers, provenance, extension values, and every other string
-    retain the stronger value-shape scan.
+    Exact/prefix/suffix must preserve the EPUB resource byte semantics even
+    when the source prose resembles a path.  Note bodies are producer output,
+    so they retain the private-path, secret, mechanism, and local-authority
+    scan before anything can be published.
     """
 
     if (
@@ -2081,7 +1873,7 @@ def _scan_private_value_at(path: tuple[str, ...]) -> bool:
         return False
     if len(path) >= 2 and path[-2] == "sr:resourceHrefs" and path[-1].isdigit():
         return False
-    return not (len(path) >= 2 and path[-2:] == ("body", "value"))
+    return True
 
 
 def _cfi_selector_value_path(path: tuple[str, ...]) -> bool:

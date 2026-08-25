@@ -24,16 +24,12 @@ _COUNT_KEYS = frozenset({"total", "highlight", "note"})
 _ANCHOR_CAPABILITIES = frozenset(
     {
         "TextQuoteSelector",
-        "sr:ParagraphCharSelector",
-        "sr:EpubCfiSelector",
-        "epubcfi",
+        "TextPositionSelector",
     }
 )
 _ANCHOR_ORDER = {
     "TextQuoteSelector": 0,
-    "sr:ParagraphCharSelector": 1,
-    "sr:EpubCfiSelector": 2,
-    "epubcfi": 3,
+    "TextPositionSelector": 1,
 }
 
 
@@ -143,9 +139,7 @@ def _inspection_summary(result: object) -> dict[str, object]:
         "valid": valid,
         "pack_id": _safe_uuid5(getattr(result, "pack_id", None)),
         "track_id": _safe_uuid5(getattr(result, "track_id", None)),
-        "semantic_digest": _safe_digest(
-            getattr(result, "semantic_digest", None)
-        ),
+        "semantic_digest": _safe_digest(getattr(result, "semantic_digest", None)),
         "item_counts": sanitized_counts,
         "anchor_capabilities": capabilities,
         "findings": findings,

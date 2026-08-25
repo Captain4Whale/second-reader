@@ -32,7 +32,7 @@ from src.reading_runtime.source_normalization import (  # noqa: E402
 )
 
 
-FIXTURE_FORMAT: Final = "sr-annotation-pack-tiny-reader-golden-v1"
+FIXTURE_FORMAT: Final = "annotation-pack-tiny-reader-minimal-v0"
 GENERATED_AT: Final = datetime(2026, 8, 24, 0, 0, 0, tzinfo=timezone.utc)
 ZIP_TIMESTAMP: Final = (1980, 1, 1, 0, 0, 0)
 TITLE: Final = "Tiny Reader: Returning Light"
@@ -376,6 +376,7 @@ def render_fixture() -> dict[str, bytes]:
         current_pointer = result.current_pointer.read_bytes()
         pack = json.loads(annotations_json)
         pointer = json.loads(current_pointer)
+        report = json.loads(validation_report)
         track_slug = result.current_pointer.parent.name
 
     files = {
@@ -420,11 +421,11 @@ def render_fixture() -> dict[str, bytes]:
         },
         "pack": {
             "annotation_count": len(pack["items"]),
-            "input_snapshot_sha256": pack["sr:provenance"][
-                "sr:inputSnapshotDigest"
-            ]["sr:value"],
+            "input_snapshot_sha256": report["input_snapshot_digest"],
             "revision_id": result.revision_id,
-            "semantic_sha256": pack["sr:semanticDigest"]["sr:value"],
+            "semantic_sha256": report["semantic_digest"],
+            "producer": report["producer"],
+            "adapter_version": report["adapter_version"],
             "track_slug": track_slug,
             "published_package_filename": Path(pointer["detached_package"]).name,
         },

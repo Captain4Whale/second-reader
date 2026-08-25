@@ -1,9 +1,0 @@
-{
-  "@context": {
-    "@protected": true,
-    "sr": {
-      "@id": "https://captain4whale.github.io/second-reader/ns/annotation-pack#",
-      "@prefix": true
-    }
-  }
-}
