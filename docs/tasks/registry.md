@@ -7,7 +7,7 @@ Update when: task status, priority, blockers, decision refs, job refs, evidence 
 
 This document is the human-readable companion to `docs/tasks/registry.json`.
 
-Last updated: `2026-08-25T20:42:47+08:00`
+Last updated: `2026-08-25T20:59:17+08:00`
 
 ## Status Values
 - `active`
@@ -78,6 +78,23 @@ Last updated: `2026-08-25T20:42:47+08:00`
   - `docs/backend-state-aggregation.md`
   - `docs/implementation/annotation-pack/baseline-observations.md`
   - `docs/implementation/annotation-pack/second-reader-annotation-pack-v0-detailed-design-and-implementation-handoff.md`
+
+### `TASK-ANNOTATION-PACK-RECENT-AGENT-ARTIFACT-VALIDATION` — Validate a recent real Agent artifact against the producer-neutral Pack handoff
+- Status: `done`
+- Lane: `product_contract`
+- Priority: `high`
+- Detail: `docs/implementation/annotation-pack/recent-real-agent-artifact-contract-audit-2026-08-25.md`
+- Next: the newest completed product artifact, `reading-companion-backend/output/悉达多`, was audited without rerunning the Agent. Exact EPUB verification and all `63` UTC settlement times pass, but the phase8 ledger has no neutral kind/SourceRef handoff, all `15` legacy Highlight rows carry non-empty thoughts, persisted `BookDocument` coherence fails, and all `22` text resources are unverifiable by the current exact-resource index. The current adapter correctly returns `reaction_ledger_schema_unsupported`; no exporter or package write was attempted. Preserve this negative result and use a current-native coherent real-book artifact for the next positive proof, or authorize a separate explicit historical migration.
+- Evidence:
+  - `DEC-157`
+  - `contract/annotation-pack/v0/README.md`
+  - `docs/implementation/annotation-pack/recent-real-agent-artifact-contract-audit-2026-08-25.md`
+  - `reading-companion-backend/output/悉达多/_assets/source.epub`
+  - `reading-companion-backend/output/悉达多/public/book_document.json`
+  - `reading-companion-backend/output/悉达多/_mechanisms/attentional_v2/runtime/reaction_records.json`
+  - `reading-companion-backend/output/悉达多/_runtime/run_state.json`
+  - `reading-companion-backend/src/annotation_pack/identity.py`
+  - `reading-companion-backend/src/annotation_pack/producers/second_reader.py`
 
 ## Active
 
@@ -1159,19 +1176,6 @@ Last updated: `2026-08-25T20:42:47+08:00`
   - `bgjob_closed_loop_bilingual_broader_auditcoherencefix_20260330` (`completed`)
 
 ## Queued
-
-### `TASK-ANNOTATION-PACK-RECENT-AGENT-ARTIFACT-VALIDATION` — Validate a recent real Agent artifact against the producer-neutral Pack handoff
-- Status: `queued`
-- Lane: `product_contract`
-- Priority: `high`
-- Detail: `contract/annotation-pack/v0/README.md#producer-neutral-information-responsibility`
-- Next: select the most recent completed real Agent output, identify its exact source EPUB and coherent `BookDocument`, audit its settled producer data against the neutral `kind`/source range/quote/conditional Note text/settlement-time handoff, then run an actual export only if those inputs pass. Report the exact artifact inspected; do not reuse Tiny Reader as proof of that real artifact and do not rerun the Agent before checking the existing output.
-- Evidence:
-  - `DEC-157`
-  - `contract/annotation-pack/v0/README.md`
-  - `reading-companion-backend/src/annotation_pack/drafts.py`
-  - `reading-companion-backend/src/annotation_pack/producers/second_reader.py`
-  - `reading-companion-backend/tests/annotation_pack/test_second_reader_adapter.py`
 
 ### `TASK-FE-SECTION-RETIREMENT` — Retire section-first chapter/detail and marks surfaces
 - Status: `queued`

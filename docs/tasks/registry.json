@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "updated_at": "2026-08-25T20:42:47+08:00",
+  "updated_at": "2026-08-25T20:59:17+08:00",
   "tasks": [
     {
       "id": "TASK-ANNOTATION-PACK-V0-IMPLEMENTATION",
@@ -105,29 +105,36 @@
     {
       "id": "TASK-ANNOTATION-PACK-RECENT-AGENT-ARTIFACT-VALIDATION",
       "title": "Validate a recent real Agent artifact against the producer-neutral Pack handoff",
-      "status": "queued",
+      "status": "done",
       "lane": "product_contract",
       "priority": "high",
-      "detail_ref": "contract/annotation-pack/v0/README.md#producer-neutral-information-responsibility",
+      "detail_ref": "docs/implementation/annotation-pack/recent-real-agent-artifact-contract-audit-2026-08-25.md",
       "truth_refs": [
         "contract/annotation-pack/v0/README.md",
-        "docs/tasks/registry.md"
+        "docs/tasks/registry.md",
+        "docs/implementation/annotation-pack/recent-real-agent-artifact-contract-audit-2026-08-25.md"
       ],
       "decision_refs": [
         "DEC-157"
       ],
       "job_refs": [],
       "acceptance_ref": "contract/annotation-pack/v0/README.md#producer-neutral-information-responsibility",
-      "next_action": "Select the most recent completed real Agent output, identify its exact source EPUB and coherent BookDocument, audit its settled producer data against the neutral kind/source range/quote/conditional Note text/settlement-time handoff, then run an actual export only if those inputs pass. Report the exact artifact inspected; do not reuse Tiny Reader as proof of that real artifact and do not rerun the Agent before checking the existing output.",
+      "next_action": "The newest completed product artifact, reading-companion-backend/output/悉达多, was audited without rerunning the Agent. Exact EPUB verification and all 63 UTC settlement times pass, but the phase8 ledger has no neutral kind/SourceRef handoff, all 15 legacy Highlight rows carry non-empty thoughts, persisted BookDocument coherence fails, and all 22 text resources are unverifiable by the current exact-resource index. The current adapter correctly returns reaction_ledger_schema_unsupported; no exporter or package write was attempted. Preserve this negative result and use a current-native coherent real-book artifact for the next positive proof, or authorize a separate explicit historical migration.",
       "blocked_by": [],
       "evidence_refs": [
         "docs/history/decision-log.md",
         "contract/annotation-pack/v0/README.md",
+        "docs/implementation/annotation-pack/recent-real-agent-artifact-contract-audit-2026-08-25.md",
+        "reading-companion-backend/output/悉达多/_assets/source.epub",
+        "reading-companion-backend/output/悉达多/public/book_document.json",
+        "reading-companion-backend/output/悉达多/_mechanisms/attentional_v2/runtime/reaction_records.json",
+        "reading-companion-backend/output/悉达多/_runtime/run_state.json",
         "reading-companion-backend/src/annotation_pack/drafts.py",
+        "reading-companion-backend/src/annotation_pack/identity.py",
         "reading-companion-backend/src/annotation_pack/producers/second_reader.py",
         "reading-companion-backend/tests/annotation_pack/test_second_reader_adapter.py"
       ],
-      "last_updated": "2026-08-25T20:42:47+08:00",
+      "last_updated": "2026-08-25T20:59:17+08:00",
       "last_updated_by": "codex"
     },
     {

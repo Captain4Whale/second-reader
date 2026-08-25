@@ -7,10 +7,10 @@ Update when: the current objective, active tasks, blockers, active jobs, open de
 
 This file is authoritative for durable current status. Do not keep unique active-state information only in `docs/agent-handoff.md`.
 
-Last verified: `2026-08-25T20:42:47+08:00`
+Last verified: `2026-08-25T20:59:17+08:00`
 
 ## Current Objective
-- Annotation Pack minimal v0 is repo-locally complete under `TASK-ANNOTATION-PACK-V0-IMPLEMENTATION`, `DEC-156`, and the producer-responsibility clarification `DEC-157` on branch `codex/annotation-pack-v0`. Slice 1 landed and was pushed as `012788d`; Slice 2 atomically cut over the canonical schema/examples/standards, generated copies, Pages projection, implementation, strict current phase9 adapter, Tiny Reader goldens, and detached package as `b44ba7d`, also pushed; Slice 3 records final acceptance, governance checks, baseline separation, and branch close-out. The standards-vocabulary-only `AnnotationSet` uses one exact-EPUB RFC 6920 `nih:sha-256` identity plus Dublin Core title/format/authors, and every Highlight/Note targets a relative XHTML href with TextQuote+Unicode-code-point TextPosition. `DEC-157` makes the enduring input seam mechanism-neutral: the verified source substrate owns book/EPUB facts; mechanisms provide only `kind`, exact shared-source range/quote and conditional Note text; runtime supplies settlement time; generic export derives the W3C wire. `attentional_v2-phase9` is only the current adapter binding, not a future-mechanism requirement. The public wire has zero `sr:*`, rejects the old heavy v0 and phase8 instead of migrating them, and publishes no Work/Edition/File, Track, chapter context/fingerprints, custom anchor id, CFI, provenance, or digest. The supported completion claim remains limited to current-format producer data generating, validating, and independently packaging the Tiny Reader real-EPUB fixture; it does not establish conversion of prior whole-book outputs, a real current whole-book Agent-to-Pack run, or any Library, HTTP API, frontend, or Reader integration. Artifact-specific validation of a recent real Agent output is queued separately under `TASK-ANNOTATION-PACK-RECENT-AGENT-ARTIFACT-VALIDATION`. The Annotation Hub consumer migration remains separately `waiting` under `TASK-ANNOTATION-HUB-V0-MINIMAL-PACK-MIGRATION`, is no longer blocked by Pack implementation, and stays outside this worktree. The schema IRI remains staged/not-live until the workflow reaches `main`, Pages is enabled, deployment succeeds, and served bytes match the canonical contract.
+- Annotation Pack minimal v0 is repo-locally complete under `TASK-ANNOTATION-PACK-V0-IMPLEMENTATION`, `DEC-156`, and the producer-responsibility clarification `DEC-157` on branch `codex/annotation-pack-v0`. Slice 1 landed and was pushed as `012788d`; Slice 2 atomically cut over the canonical schema/examples/standards, generated copies, Pages projection, implementation, strict current phase9 adapter, Tiny Reader goldens, and detached package as `b44ba7d`, also pushed; Slice 3 records final acceptance, governance checks, baseline separation, and branch close-out. The standards-vocabulary-only `AnnotationSet` uses one exact-EPUB RFC 6920 `nih:sha-256` identity plus Dublin Core title/format/authors, and every Highlight/Note targets a relative XHTML href with TextQuote+Unicode-code-point TextPosition. `DEC-157` makes the enduring input seam mechanism-neutral: the verified source substrate owns book/EPUB facts; mechanisms provide only `kind`, exact shared-source range/quote and conditional Note text; runtime supplies settlement time; generic export derives the W3C wire. `attentional_v2-phase9` is only the current adapter binding, not a future-mechanism requirement. The public wire has zero `sr:*`, rejects the old heavy v0 and phase8 instead of migrating them, and publishes no Work/Edition/File, Track, chapter context/fingerprints, custom anchor id, CFI, provenance, or digest. The supported completion claim remains limited to current-format producer data generating, validating, and independently packaging the Tiny Reader real-EPUB fixture; it does not establish conversion of prior whole-book outputs, a real current whole-book Agent-to-Pack run, or any Library, HTTP API, frontend, or Reader integration. `TASK-ANNOTATION-PACK-RECENT-AGENT-ARTIFACT-VALIDATION` is now complete with a negative result: the newest completed real product artifact is `reading-companion-backend/output/悉达多`, whose exact EPUB and all `63` UTC timestamps verify, but whose phase8 ledger lacks neutral kind/SourceRef data, whose `15` legacy Highlight rows all carry thoughts, and whose persisted `BookDocument` fails current exact-EPUB coherence while all `22` text resources remain unverifiable. The current adapter correctly rejects it with `reaction_ledger_schema_unsupported`; no exporter/package write was attempted. The Annotation Hub consumer migration remains separately `waiting` under `TASK-ANNOTATION-HUB-V0-MINIMAL-PACK-MIGRATION`, is no longer blocked by Pack implementation, and stays outside this worktree. The schema IRI remains staged/not-live until the workflow reaches `main`, Pages is enabled, deployment succeeds, and served bytes match the canonical contract.
 - Runtime observability v1 is implemented as an infrastructure lane under `TASK-RUNTIME-OBSERVABILITY-COST-V1` and `DEC-154`; only the final live-provider whole-book acceptance remains externally blocked.
   - the canonical observability record is a local append-only JSONL fact ledger with deterministic JSON/Markdown reports; Phoenix is an optional derived trace UI rather than job/checkpoint truth
   - unit-bearing work uses `reading.run_attempt -> reading.chapter -> reading.unit_attempt -> llm.call -> llm.attempt`; survey/parse/chapter-consolidation work may be chapter-only without a fabricated unit span
@@ -2095,7 +2095,7 @@ Last verified: `2026-08-25T20:42:47+08:00`
 - Treat runtime viability, broader local pairwise comparison, durable-trace / re-entry comparison, and most mechanism-specific judged attribution families as paused unless one of the three kept dimensions later requires them.
 
 ## Now
-- Accept the Annotation Pack minimal-v0 Slice 1 authority reset, run the focused doc/registry checks, then commit and push it independently before any wire/code change. Section 20 now owns the replacement Definition of Done and `DEC-156` partially supersedes only the heavy public identity/anchor portion of `DEC-155`.
+- Preserve the completed real-artifact audit as a negative contract result: the latest completed `attentional_v2-phase8` product ledger is useful historical evidence but is not a neutral draft source, and no Pack should be emitted from it by inference.
 - Keep runtime observability opt-in and evidence-first: finish the manual ledger/export wiring, then verify one bounded local trace/report without changing mechanism behavior or making Phoenix part of app readiness.
 - Treat `attentional_v2` as the current default mechanism and `iterator_v1` as the supported fallback / legacy-resume path.
 - The active Phase 9 move is now split across two coordinated surfaces:
@@ -3483,7 +3483,7 @@ Last verified: `2026-08-25T20:42:47+08:00`
   - `reading-companion-backend/src/attentional_v2/resume.py` now recreates the thin `runtime_shell.json` envelope if it is missing during position persistence
 
 ## Next
-- Finish Annotation Pack Section 20 acceptance and close-out for the already-landed minimal-v0 Slices 1/2: record focused and full-check evidence, separate unrelated baseline failures, confirm the feature branch remote matches the accepted local commits, then commit/push the closing docs. Keep the completion claim limited to the Tiny Reader real-EPUB shaped fixture; do not claim prior whole-book conversion, a real current whole-book Agent-to-Pack run, live Pages availability, or Library/API/frontend/Reader integration.
+- For the next positive real-book Annotation Pack proof, use a completed current-native Agent artifact with an exact EPUB-coherent `BookDocument`, then run the actual exporter and independent validate/inspect path. If the historical《悉达多》output must be preserved without rerunning, open a separate explicit migration task for kind/body decisions and exact quote re-resolution; do not relax the current adapter.
 - After provider access is restored, finish the one remaining public-book live acceptance and inspect its canonical ledger/report before treating the first measured efficiency figures as a baseline; do not change region or billing settings automatically.
 - Launch the next decisive chapter/excerpt comparison on the frozen clustered benchmark:
   - chapter lane:
@@ -3605,7 +3605,7 @@ Last verified: `2026-08-25T20:42:47+08:00`
 ## Machine-Readable Appendix
 ```json
 {
-  "updated_at": "2026-08-25T12:42:47Z",
+  "updated_at": "2026-08-25T12:59:17Z",
   "last_updated_by": "codex",
   "active_task_ids": [
     "TASK-ATTENTIONAL-V2-STRUCTURAL-REWORK",
@@ -3616,9 +3616,7 @@ Last verified: `2026-08-25T20:42:47+08:00`
   "waiting_task_ids": [
     "TASK-ANNOTATION-HUB-V0-MINIMAL-PACK-MIGRATION"
   ],
-  "queued_task_ids": [
-    "TASK-ANNOTATION-PACK-RECENT-AGENT-ARTIFACT-VALIDATION"
-  ],
+  "queued_task_ids": [],
   "blocked_task_ids": [
     "TASK-RUNTIME-OBSERVABILITY-COST-V1"
   ],
@@ -3626,6 +3624,7 @@ Last verified: `2026-08-25T20:42:47+08:00`
   "open_decision_ids": [],
   "detail_refs": [
     "docs/implementation/annotation-pack/second-reader-annotation-pack-v0-detailed-design-and-implementation-handoff.md",
+    "docs/implementation/annotation-pack/recent-real-agent-artifact-contract-audit-2026-08-25.md",
     "contract/annotation-pack/v0/README.md",
     "docs/implementation/runtime-observability/README.md",
     "docs/backend-reader-evaluation.md",
