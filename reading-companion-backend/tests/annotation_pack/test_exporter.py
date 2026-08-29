@@ -229,6 +229,7 @@ def _export(
         track_key="second-reader-agent",
         creator=CREATOR,
         generated_at=NOW,
+        producer_format="attentional-v2-phase9-legacy",
         policy=ExportPolicy(deliverables=deliverables, **values),  # type: ignore[arg-type]
     )
 
@@ -414,7 +415,7 @@ def test_json_export_publishes_immutable_revision_then_is_unchanged(
     assert report["semantic_digest"] == first.validation.semantic_digest
     assert report["input_snapshot_digest"] == (first.validation.input_snapshot_digest)
     assert report["producer"] == exporter_module.SECOND_READER_PRODUCER_ID
-    assert report["adapter_version"] == exporter_module.ADAPTER_VERSION
+    assert report["adapter_version"] == exporter_module.LEGACY_PHASE9_ADAPTER_VERSION
     assert "producer" not in public_pack
     assert "adapter_version" not in public_pack
     assert "semantic_digest" not in public_pack
@@ -778,7 +779,7 @@ def test_strict_row_error_fails_and_allow_skips_publishes_degraded(
     assert degraded.validation.skipped_count == 1
 
 
-def test_default_export_publishes_detached_revision(tmp_path: Path) -> None:
+def test_explicit_legacy_export_publishes_detached_revision(tmp_path: Path) -> None:
     runtime_root, output_root, output_dir, _ledger_value = _fixture(tmp_path)
     result = export_annotation_pack(
         output_dir=output_dir,
@@ -786,6 +787,7 @@ def test_default_export_publishes_detached_revision(tmp_path: Path) -> None:
         runtime_root=runtime_root,
         track_key="second-reader-agent",
         creator=CREATOR,
+        producer_format="attentional-v2-phase9-legacy",
     )
     assert result.status == "published"
     assert result.detached_package is not None
@@ -794,6 +796,23 @@ def test_default_export_publishes_detached_revision(tmp_path: Path) -> None:
     with zipfile.ZipFile(result.detached_package) as archive:
         assert archive.namelist() == ["annotations.json"]
         assert archive.read("annotations.json") == result.annotations_json.read_bytes()
+
+
+def test_default_export_does_not_fall_back_to_phase9_ledger(tmp_path: Path) -> None:
+    runtime_root, output_root, output_dir, _ledger_value = _fixture(tmp_path)
+
+    result = export_annotation_pack(
+        output_dir=output_dir,
+        output_root=output_root,
+        runtime_root=runtime_root,
+        track_key="second-reader-agent",
+        creator=CREATOR,
+    )
+
+    assert result.status == "failed"
+    assert [finding.code for finding in result.validation.findings] == [
+        "reading_product_unavailable"
+    ]
 
 
 def test_active_writer_precedes_run_state_and_deliverable_checks(
@@ -1353,7 +1372,7 @@ def test_run_state_is_rechecked_after_input_snapshot_before_noop(
     first = _export(runtime_root, output_root, output_dir)
     assert first.current_pointer is not None
     old_pointer = first.current_pointer.read_bytes()
-    original_load = exporter_module.SecondReaderProducerAdapter.load_drafts
+    original_load = exporter_module.LegacyAttentionalV2Phase9Adapter.load_drafts
     calls = 0
 
     def load_then_change_stage(self: object, **kwargs: object):  # type: ignore[no-untyped-def]
@@ -1367,7 +1386,7 @@ def test_run_state_is_rechecked_after_input_snapshot_before_noop(
         return result
 
     monkeypatch.setattr(
-        exporter_module.SecondReaderProducerAdapter,
+        exporter_module.LegacyAttentionalV2Phase9Adapter,
         "load_drafts",
         load_then_change_stage,
     )
@@ -2058,6 +2077,8 @@ def test_real_clis_upgrade_validate_and_inspect_detached_safe_fixture(
         CREATOR.name,
         "--deliverables",
         "json",
+        "--producer-format",
+        "attentional-v2-phase9-legacy",
     ]
 
     first = subprocess.run(
@@ -2096,7 +2117,8 @@ def test_real_clis_upgrade_validate_and_inspect_detached_safe_fixture(
     assert repeated.stderr == ""
     assert json.loads(repeated.stdout)["status"] == "unchanged"
 
-    detached_command = [*export_command[:-1], "detached"]
+    detached_command = list(export_command)
+    detached_command[detached_command.index("json")] = "detached"
     upgraded = subprocess.run(
         detached_command,
         cwd=BACKEND,

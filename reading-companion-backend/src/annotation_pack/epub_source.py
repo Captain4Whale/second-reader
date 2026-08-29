@@ -19,7 +19,7 @@ import stat
 import struct
 from types import MappingProxyType
 from typing import Any, BinaryIO, Final
-from urllib.parse import SplitResult, quote, unquote_to_bytes, urlsplit
+from urllib.parse import SplitResult, unquote_to_bytes, urlsplit
 import unicodedata
 import xml.etree.ElementTree as ET
 import zipfile

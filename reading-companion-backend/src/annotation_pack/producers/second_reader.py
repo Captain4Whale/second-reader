@@ -1,7 +1,7 @@
-"""Strict adapter for current native Second Reader reaction records.
+"""Explicit legacy adapter for attentional_v2 phase9 reaction records.
 
-This is the only Annotation Pack module allowed to know where the active
-Second Reader mechanism stores its settled reaction ledger.  It deliberately
+This is the only Annotation Pack module allowed to know where the historical
+phase9 mechanism stores its settled reaction ledger.  It deliberately
 does not load compatibility chapter output, audits, prompts, memories, or
 Digest results, and it never projects mechanism-private fields into drafts.
 """
@@ -113,7 +113,7 @@ class _RejectedRow(ValueError):
 
 
 class SecondReaderProducerAdapter:
-    """Load one stable current-native reaction ledger into neutral drafts."""
+    """Load one explicitly selected phase9 legacy ledger into neutral drafts."""
 
     def load_drafts(self, *, output_dir: Path) -> ProducerDraftResult:
         """Return accepted drafts plus exact ledger and row provenance.
@@ -578,6 +578,9 @@ def _fail(code: str) -> NoReturn:
     raise ProducerAdapterError(code) from None
 
 
+LegacyAttentionalV2Phase9Adapter = SecondReaderProducerAdapter
+
+
 __all__ = [
     "ADAPTER_VERSION",
     "MAX_REACTION_LEDGER_BYTES",
@@ -590,5 +593,6 @@ __all__ = [
     "REACTION_LEDGER_HASH_CHUNK_BYTES",
     "SUPPORTED_MECHANISM_VERSION",
     "SUPPORTED_SCHEMA_VERSION",
+    "LegacyAttentionalV2Phase9Adapter",
     "SecondReaderProducerAdapter",
 ]

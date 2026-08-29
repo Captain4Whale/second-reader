@@ -18,7 +18,7 @@ The pointer and report schemas describe local publication companions. They neith
 
 `https://captain4whale.github.io/second-reader/schema/annotation-pack/v0/annotation-pack.schema.json`
 
-GitHub Pages is the approved publication mechanism. The site contains a strict allowlist of the three schemas and three examples under `/schema/annotation-pack/v0/`. Minimal v0 has no Second Reader JSON-LD vocabulary, custom context, or namespace landing page. A feature-branch build proves only the projection; the schema IRI is not live until the workflow reaches the default branch, Pages deploys successfully, and served bytes are compared with this authority.
+GitHub Pages is the approved publication mechanism. The site contains a strict allowlist of the Annotation Pack and Reading Product contract artifacts; Annotation Pack lives under `/schema/annotation-pack/v0/`. Minimal v0 has no Second Reader JSON-LD vocabulary, custom context, or namespace landing page. A feature-branch build proves only the projection; the schema IRI is not live until the workflow reaches the default branch, Pages deploys successfully, and served bytes are compared with this authority.
 
 ## Canonical wire
 
@@ -71,9 +71,9 @@ The minimum normalized handoff from any mechanism adapter to the generic Pack pi
 | `body_text` | absent for Highlight; non-empty for Note |
 | `created_at` | the runtime settlement timestamp carried into public `created` |
 
-Adapter bookkeeping such as source-record index/digest, ledger digest, findings, and adapter version may accompany this handoff for safe export and reporting, but it is neither Agent semantic output nor public Pack data.
+Adapter bookkeeping such as source-record index/digest, producer-snapshot digest, findings, and adapter version may accompany this handoff for safe export and reporting, but it is neither Agent semantic output nor public Pack data.
 
-`attentional_v2-phase9` is only the private input contract supported by the current `SecondReaderProducerAdapter`. It is not an Annotation Pack version and is not a universal requirement on future mechanisms. A future mechanism may use a different prompt, ontology, ledger, version, or source-citation representation, but its adapter must produce the same neutral values above. It must not pretend to be phase9, and the generic exporter must not infer annotation kind, source selection, or Note content from compatibility taxonomies.
+The default adapter consumes only a complete [Reading Product Output v1](../../reading-product/v1/README.md) publication selected by `public/reading-products/current.json`. It does not read Agent run state, reaction records, audit, prompts, or memory. `attentional_v2-phase9` remains an explicitly selected legacy input only; there is no automatic fallback, and phase8 remains rejected. A future mechanism may use a different prompt, ontology, ledger, version, or source-citation representation, but it must settle the same mechanism-neutral Reading Product facts rather than pretending to be phase9. The generic exporter must not infer annotation kind, source selection, or Note content from compatibility taxonomies.
 
 Consequently, a reading mechanism does **not** need to generate EPUB hashes, book metadata, manifest hrefs, resource-wide TextPosition offsets, W3C JSON-LD, UUIDs, motivations, generator metadata, package files, or public digests. Those are verified or derived outside the mechanism. What the mechanism must preserve is the user-visible annotation decision: which exact source span is marked, whether it is a Highlight or Note, and the Note text when present.
 

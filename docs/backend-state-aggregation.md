@@ -23,21 +23,31 @@ Use `docs/api-contract.md` for exact fields and routes. Use this file to underst
   - Sentence records are parse-time, source-order, mechanism-neutral substrate entries grounded back to paragraph locators with character offsets.
   - Load/build helpers may backfill missing sentence inventories into older paragraph-only `book_document.json` payloads when the canonical document is reloaded.
   - Current public API surfaces do not expose it directly, but runtime and future eval tooling can rely on it as the mechanism-neutral text source.
+- `_runtime/reading-products/<reading_uuid>/ledger.sqlite3` and `reading-product.partial.json`
+  - The SQLite Product Store is the sole commit truth for accepted Reading Product Units. The atomically rebuilt `partial` JSON is an inspectable recovery projection, not a second truth source.
+  - Each accepted Unit carries its exact `BookDocument` source range, `understanding`, `response`, and valid source-grounded Marginalia. Unit Memory, reaction records, audit rows, and chapter compatibility files are downstream projections and may be rebuilt from committed Product facts.
+  - A partial Product remains private runtime state: it is never selected by the public pointer and cannot be an Annotation Pack input.
+- `public/reading-products/current.json` and `public/reading-products/revisions/<product_sha256>/`
+  - Whole-book finalization publishes one validated, immutable `reading-product.json` plus its sanitized `validation-report.json`, then atomically switches `current.json`.
+  - Only a Product that covers the approved `mainline + deferred` plan can be selected. Chapter-only, audit-window, source-mutated, or otherwise partial runs remain unsealed.
+  - This complete publication is the default downstream product source. The current acceptance round is offline-only; real-LLM whole-book acceptance remains a deferred Gate until a usable credential is supplied.
 - `public/annotation-packs/<track_slug>/current.json` and `public/annotation-packs/<track_slug>/revisions/<revision_id>/`
   - Explicit Annotation Pack export creates this public-safe publication source; it is not written by normal reading completion.
+  - Default export reads only the complete Reading Product selected by `public/reading-products/current.json`. `attentional_v2-phase9` is available only through an explicitly selected legacy adapter, never as an automatic fallback; phase8 remains rejected.
   - Minimal `annotations.json` is a strict W3C/EPUB/Dublin Core `AnnotationSet`: `about` identifies the exact EPUB with one RFC 6920 `nih:sha-256` name, and each Highlight/Note uses ordered TextQuote plus resource-wide Unicode-code-point TextPosition selectors. It contains zero `sr:*` and has no project context or namespace.
   - `current.json` is a small atomically replaced internal pointer to one complete immutable revision. A detached revision contains canonical `annotations.json`, `<track_slug>.annotations`, and internal-only `validation-report.json`; a development JSON-only revision remains supported.
   - The `.annotations` file is an independently valid, bounded single-entry package containing only root `annotations.json`. The pointer/report, producer/adapter metadata, source digests, and findings stay outside the Pack and package. JSON-only-to-detached upgrade creates a new revision without modifying the old directory.
-  - This tree is exporter-owned normalized publication output. It is not reading runtime state, mechanism truth, checkpoint/resume truth, or a replacement for the settled producer ledger.
+  - This tree is exporter-owned normalized publication output. It is not reading runtime state, mechanism truth, checkpoint/resume truth, or a replacement for the Reading Product Store.
   - No current frontend, Library discovery flow, REST route, or WebSocket surface reads or exposes this tree. Its placement under `public/` denotes content-safety and future product-facing eligibility, not current HTTP availability.
-  - `tests/annotation_pack/fixtures/tiny-reader/` is the tracked public-safe rebuild/golden proof for this layout, current phase9 producer shape, exact EPUB identity, and Quote/Position round trips. It is bounded small-fixture evidence, not an additional runtime source, a successful prior full-book conversion, or an external Reader/public-service claim.
+  - `tests/annotation_pack/fixtures/tiny-reader/` is the tracked public-safe rebuild/golden proof for this layout, a complete Reading Product producer fixture, exact EPUB identity, and Quote/Position round trips. It is bounded deterministic-fixture evidence, not an additional runtime source, a real-LLM full-book conversion, or an external Reader/public-service claim.
 - `_mechanisms/iterator_v1/derived/structure.json`
   - Current `iterator_v1`-owned derived traversal artifact.
   - Carries chapter section trees, `segment_ref`, and iterator-specific traversal metadata.
   - Public aggregation still uses it where section-level backfill or iterator-era chapter structure is required.
 - `_mechanisms/attentional_v2/derived/chapter_result_compatibility/*.json`
-  - `attentional_v2`-owned compatibility chapter results derived from anchored Marginalia truth.
+  - `attentional_v2`-owned compatibility chapter results derived from committed Reading Product Units, never from reaction/audit/memory files as an independent truth source.
   - File and legacy field names may still contain `reaction`, but current aggregation treats those as compatibility aliases for Digest-authored Marginalia.
+  - Mapping native Product `note` to the old `association` family happens only in this legacy UI compatibility layer. Reading Product and Annotation Pack retain native Highlight/Note semantics.
   - These are the source chapter-result artifacts for the current routed frontend when `attentional_v2` is active.
 - `public/book_manifest.json`
   - Book identity, language metadata, chapter tree, source asset pointers, and chapter result file hints.
@@ -50,6 +60,7 @@ Use `docs/api-contract.md` for exact fields and routes. Use this file to underst
   - Carries top-level stage, chapter and segment pointers, `current_phase_step`, `current_reading_activity`, checkpoint metadata, errors, and ETA-like progress hints.
 - `_runtime/runtime_shell.json`
   - Shared thin runtime envelope for cross-mechanism cursor and active-artifact references.
+  - For Reading Product-aware runs it carries `reading_id`, `last_product_unit_id`, and `last_product_unit_sequence` so resume can locate the committed frontier; these markers mirror the Product Store and do not supersede it.
   - May now contribute additive `reading_locus` and active Marginalia references for non-section mechanisms even when the current compatibility surfaces still expose `segment_ref`.
   - Phase 8 now also carries `observability_mode` so the shared shell can distinguish thin standard-mode runtime state from debug-only diagnostics.
 - `_runtime/parse_state.json`
@@ -161,9 +172,16 @@ Use `docs/api-contract.md` for exact fields and routes. Use this file to underst
 - `reading-companion-backend/src/library/runtime_truth.py`
   - Owns the shared helper that decides whether a runtime snapshot is truly active, stale-orphaned, or only last-known.
   - Keeps bookshelf, detail, analysis-state, and job polling aligned on the same `status_reason` and resumability truth.
+- `reading-companion-backend/src/reading_product/store.py`
+  - Owns atomic accepted-Unit commits, partial projection, complete-product validation, immutable revision publication, and the atomic `public/reading-products/current.json` switch.
+  - Product Store rows are authoritative when private cursor/checkpoint or derived artifacts disagree; recovery replays committed Units rather than promoting audit evidence into product meaning.
+- `reading-companion-backend/src/attentional_v2/product_compatibility.py`
+  - Projects committed Reading Product Units into the existing chapter-result envelope without reading reaction records, audit, or memory.
+  - Owns the temporary old-UI `note -> association` mapping; no other product or Pack layer should reinterpret Note that way.
 - `reading-companion-backend/src/annotation_pack/exporter.py`
   - Owns the explicit source verification, producer-to-public normalization, validation, immutable revision publication, and atomic current-pointer switch for Annotation Packs.
-  - It may read settled mechanism data only through the producer adapter boundary. Catalog/API aggregation must not reinterpret private producer rows into Annotation Pack wire data independently.
+  - Its default adapter reads only a complete Reading Product publication. The private `attentional_v2-phase9` ledger adapter requires an explicit legacy selection, has no automatic fallback, and does not make phase9 part of the shared seam; phase8 is rejected.
+  - Catalog/API aggregation must not reinterpret private producer rows into Annotation Pack wire data independently.
   - It binds the Pack to exact EPUB bytes, resolves quotes into the verified resource-wide TextPosition coordinate system, and strips producer/private metadata from `annotations.json`; sanitized metadata belongs only to the report/pointer companions.
   - Its public-safe files are currently operated only by the export, validate, and inspect tools; they are not an automatic catalog or API input, and the GitHub Pages schema IRI is still not live.
 
@@ -197,13 +215,14 @@ Use `docs/api-contract.md` for exact fields and routes. Use this file to underst
   - `book_document.json` is the canonical parsed-book substrate for runtime and future mechanism work.
   - Its sentence layer is shared substrate, not a mechanism-private derivative.
   - Top-level `public/` contains only cross-mechanism, product-facing artifacts.
-  - Top-level `_runtime/` contains only cross-mechanism live shell state.
+  - Top-level `_runtime/` contains cross-mechanism runtime state: thin shell files plus the Reading Product Store and partial projection under `_runtime/reading-products/`.
+  - Only validated complete Reading Product revisions are published under `public/reading-products/`.
   - `_mechanisms/<mechanism_key>/` contains mechanism-private derived structures, runtime memory/checkpoints, diagnostics, and optional eval exports.
   - `_mechanisms/iterator_v1/derived/structure.json` remains a current-mechanism artifact that aggregation may still consult for `iterator_v1`-shaped section views and compatibility backfill.
 - Annotation Pack publication vs runtime truth
   - The exporter is the only boundary that may turn exact verified EPUB identity, coherent `BookDocument` source coordinates, and producer-adapter drafts into the minimal public Annotation Pack wire shape.
-  - Responsibility is deliberately split: the verified source substrate owns book/file facts; a mechanism adapter owns only the normalized annotation choice (`kind`, exact source range/quote, conditional Note text, settlement time); the generic resolver/builder owns href/TextPosition projection, W3C shaping, IDs, ordering, validation, and packaging.
-  - `attentional_v2-phase9` is the current private adapter input contract, not the shared seam. Future mechanisms must map their own outputs into `AnnotationDraft`; aggregation/export code must not inspect mechanism-private ledgers directly or infer missing annotation semantics.
+  - Responsibility is deliberately split: the verified source substrate owns book/file facts; complete Reading Product owns accepted annotation choice (`kind`, exact source range/quote, conditional Note text, settlement time); the generic resolver/builder owns href/TextPosition projection, W3C shaping, IDs, ordering, validation, and packaging.
+  - The default adapter reads only the complete Product selected by `public/reading-products/current.json`. `attentional_v2-phase9` remains an explicitly selected legacy input only, with no automatic fallback; phase8 remains unsupported. Future mechanisms commit the shared Reading Product rather than copying a private phase marker.
   - `public/annotation-packs/` contains immutable, validated local publication snapshots selected by the internal `current.json`; it never feeds job activity, progress, checkpoint, lease, or resume decisions.
   - Canonical JSON and detached package publication are implemented and verified by Tiny Reader, but there is intentionally no frontend/API/Library discovery contract and no live Pages serving claim. Later discovery work must preserve this exporter-only normalization boundary.
 - Additive locus/source-ref fields vs section compatibility

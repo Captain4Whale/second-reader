@@ -1,5 +1,5 @@
 {
-  "format": "annotation-pack-tiny-reader-minimal-v0",
+  "format": "annotation-pack-tiny-reader-reading-product-v1",
   "generated_at": "2026-08-24T00:00:00Z",
   "golden": {
     "annotations.json": {
@@ -8,7 +8,7 @@
     },
     "current.json": {
       "bytes": 940,
-      "sha256": "87d45bb82f542b1c74c49d16c7f186b8031413f3575d18b983f5a2c24a21ad57"
+      "sha256": "b830ced68e04b7e262f32cf609ff9ab9754f7b41cfa3cb48248b15dc2caa620a"
     },
     "tiny-reader.annotations": {
       "bytes": 924,
@@ -16,31 +16,35 @@
     },
     "validation-report.json": {
       "bytes": 684,
-      "sha256": "71c48c2705c456eab6ddc80a56daebb78dfbc8770993239f7937bf9eeb794e6e"
+      "sha256": "440a1185698f04d568a74787fa643462f1e6e8098cd5ebefe66572163438aded"
     }
   },
   "pack": {
-    "adapter_version": "0.1.0",
+    "adapter_version": "1.0.0",
     "annotation_count": 2,
-    "input_snapshot_sha256": "249cbf286bf3cf54479291ca8b2bcc20db70c68c4d1073d0b4c0a0afb7edde6c",
+    "input_snapshot_sha256": "eb158c1e4185ed8e3c8f1549f34471671d8f53d736d6efa0afe2478f15645ace",
     "producer": "urn:uuid:da94868b-ce7f-56d6-9c77-c5b959f15f5a",
     "published_package_filename": "second-reader-agent-94da560b3600.annotations",
-    "revision_id": "bf07c496e42a10f3e219ec4a2a77640097aa8578ec60af52b63f739ab13d4910",
+    "revision_id": "ebaf0f560f18dbc2e147e0181ffd802afb653d139fd7957745bc44389591b927",
     "semantic_sha256": "f7dac5e98d6cf0743122950ea4e2f27bf5fab67175e22889d10cef63e0c476e2",
     "track_slug": "second-reader-agent-94da560b3600"
   },
   "producer": {
-    "_mechanisms/attentional_v2/runtime/reaction_records.json": {
-      "bytes": 3016,
-      "sha256": "7d1cfd7d00d8d66aab32d2594d0f3387fac50d6b68e8b4c6cbc20024b724f175"
-    },
-    "_runtime/run_state.json": {
-      "bytes": 27,
-      "sha256": "5d3b14f8365a20d29aff60f7367922198c0c1804f344b3a80aa3782a8215da19"
-    },
     "public/book_document.json": {
       "bytes": 18934,
       "sha256": "707385ed055193ff941d2b07b220710b0054b76f69d69569731ea7cab8e9d657"
+    },
+    "public/reading-products/current.json": {
+      "bytes": 625,
+      "sha256": "022ff3bf47df84b80088942d1b5b1bf46285e442b81cbb96eff5b3a876237f27"
+    },
+    "public/reading-products/revisions/795f6ee1cc583807f817488b65fcad96ea6b2ed10203e7afad66d7badeff83e5/reading-product.json": {
+      "bytes": 1695,
+      "sha256": "795f6ee1cc583807f817488b65fcad96ea6b2ed10203e7afad66d7badeff83e5"
+    },
+    "public/reading-products/revisions/795f6ee1cc583807f817488b65fcad96ea6b2ed10203e7afad66d7badeff83e5/validation-report.json": {
+      "bytes": 534,
+      "sha256": "a3c90507d67a28de3ccc3409a25c09b90f822aacf96729dd2da752e820374774"
     }
   },
   "source_epub": {

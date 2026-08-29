@@ -70,13 +70,27 @@ class ProducerAdapterError(ValueError):
 
 @dataclass(frozen=True, slots=True)
 class ProducerDraftResult:
-    """Neutral drafts and exact provenance from one stable producer ledger."""
+    """Neutral drafts and exact controls from one stable producer snapshot.
+
+    ``reaction_ledger_sha256`` retains its historical constructor spelling so
+    the explicit phase9 legacy adapter remains source-compatible.  New code
+    must use ``producer_snapshot_sha256``; for Reading Product v1 the stored
+    digest is the canonical complete-product digest selected by its public
+    pointer, not a private reaction-ledger digest.
+    """
 
     drafts: tuple[AnnotationDraft, ...]
     reaction_ledger_sha256: str
     accepted_record_digests: tuple[str, ...]
     findings: tuple[ValidationFinding, ...]
     input_count: int
+    source_epub_sha256: str | None = None
+    book_document_substrate_sha256: str | None = None
+    producer_reading_id: str | None = None
+
+    @property
+    def producer_snapshot_sha256(self) -> str:
+        return self.reaction_ledger_sha256
 
 
 @dataclass(frozen=True, slots=True)

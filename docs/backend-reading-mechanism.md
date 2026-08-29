@@ -38,12 +38,20 @@ Use `docs/backend-sequential-lifecycle.md` for the job-level workflow over time.
 - Shared public-state surface
   - Public API and websocket surfaces are allowed to expose stable compatibility fields such as `segment_ref`.
   - Internal mechanism structure must be adapted into shared public-state surfaces instead of leaking through directly.
+- Shared Reading Product handoff
+  - `contract/reading-product/v1/README.md` is authoritative for the mechanism-neutral accepted-Unit product boundary.
+  - A successful reading Unit commits its exact shared-`BookDocument` range, non-empty `understanding` and `response`, and valid source-grounded Highlight/Note Marginalia to the Product Store before the accepted cursor advances.
+  - The Product Store is the sole commit truth for accepted Units. Mechanism memory, Unit Span Ledger rows, reaction records, audit, and the current chapter-result compatibility envelope are derived consequences rather than alternative product truth.
+  - Fresh reading creates a `reading_id`; resume reuses it. Runtime shell and checkpoints carry `reading_id`, `last_product_unit_id`, and `last_product_unit_sequence` so recovery can reconcile private state to the committed frontier.
+  - Running `status=partial` projections live under `_runtime/reading-products/<reading_uuid>/`. Only a validated whole-book `status=complete` revision may be selected through `public/reading-products/current.json`.
+  - Current chapter/API compatibility is projected from Product Units. Native Product Note maps to `association` only inside the old UI compatibility layer; Reading Product and Annotation Pack retain Note.
 - Shared Annotation Pack handoff
   - `contract/annotation-pack/v0/README.md#producer-neutral-information-responsibility` is authoritative for the mechanism-independent annotation handoff.
-  - A product-default reading mechanism that produces visible annotations must settle, directly or through its adapter, one neutral candidate containing `highlight | note`, an exact shared-`BookDocument` source range and quote, conditional non-empty Note text, and a runtime creation time.
+  - Default export consumes only the complete Reading Product selected through `public/reading-products/current.json`; it never reconstructs product meaning from mechanism memory, reaction rows, audit, or a partial projection.
   - Exact EPUB identity/metadata, manifest hrefs, resource-wide TextPosition offsets, W3C wire fields, UUIDs, ordering, and packaging are source-verifier/exporter responsibilities rather than mechanism output.
-  - Private ledger versions such as `attentional_v2-phase9` are adapter bindings only. A new mechanism must map its own private output to the neutral handoff instead of copying another mechanism's version marker or asking the generic exporter to infer semantics from compatibility data.
-  - A fallback or experimental mechanism that lacks such an adapter must state that Annotation Pack export is unsupported; it cannot inherit another mechanism's capability claim.
+  - `attentional_v2-phase9` remains available only through an explicitly selected legacy adapter. There is no automatic fallback from missing/invalid Reading Product to that ledger, and phase8 is rejected.
+  - A fallback or experimental mechanism that neither publishes Reading Product nor owns an explicitly documented legacy adapter must state that Annotation Pack export is unsupported; it cannot inherit another mechanism's capability claim.
+  - Repo-local publication and deterministic offline proof do not make either contract's GitHub Pages IRI publicly live. Real-LLM whole-book acceptance also remains a separate deferred Gate.
 - Shared evaluation seam
   - Mechanisms are compared through the shared evaluation frame and normalized runtime outputs, not by forcing one internal ontology.
 
@@ -65,6 +73,7 @@ Use `docs/backend-sequential-lifecycle.md` for the job-level workflow over time.
 - Design-only mechanisms belong in the same stable mechanism-doc system as implemented mechanisms, but must be clearly labeled `design-only`.
 - Experimental mechanisms should document their live parse/read entrypoints, runtime artifact root, and any intentionally unsupported retired legacy modes such as `book_analysis`.
 - Every mechanism doc must state its Annotation Pack handoff status: supported adapter and neutral mapping, or explicitly unsupported. Promoting a mechanism to product default requires this status to be reviewed whenever that mechanism emits user-visible annotations.
+- Every product-writing mechanism doc must also state how accepted Units commit to Reading Product, which private artifacts are derived, and whether its completion path can publish a complete revision. A mechanism must not advance accepted progress from audit or compatibility data when the Product Store commit is absent.
 
 ## Terminology Discipline
 - Shared docs should prefer neutral terms such as:

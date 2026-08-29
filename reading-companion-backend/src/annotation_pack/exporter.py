@@ -3,7 +3,8 @@
 The exporter can publish canonical development JSON or the complete detached
 deliverable set.  It is not part of the normal reading runner and it does not
 expose arbitrary producer paths.  All producer-specific knowledge remains
-behind the ``SecondReaderProducerAdapter`` boundary.
+    behind an explicitly selected producer-adapter boundary.  The default is
+    complete Reading Product v1; phase9 reaction records are legacy-only.
 """
 
 from __future__ import annotations
@@ -60,9 +61,13 @@ from src.annotation_pack.packaging import (
     build_detached_annotations,
     validate_detached_annotations,
 )
+from src.annotation_pack.producers.reading_product import (
+    ADAPTER_VERSION as READING_PRODUCT_ADAPTER_VERSION,
+    ReadingProductProducerAdapter,
+)
 from src.annotation_pack.producers.second_reader import (
-    ADAPTER_VERSION,
-    SecondReaderProducerAdapter,
+    ADAPTER_VERSION as LEGACY_PHASE9_ADAPTER_VERSION,
+    LegacyAttentionalV2Phase9Adapter,
 )
 from src.annotation_pack.schema import (
     PUBLICATION_POINTER_SCHEMA_ID,
@@ -105,6 +110,7 @@ from src.reading_runtime.job_lease import (
 
 ExportStatus = Literal["published", "degraded", "unchanged", "failed"]
 Deliverables = Literal["json", "detached"]
+ProducerFormat = Literal["reading-product-v1", "attentional-v2-phase9-legacy"]
 
 MAX_BOOK_DOCUMENT_BYTES = 512 * 1024 * 1024
 MAX_ANNOTATIONS_JSON_BYTES = 16 * 1024 * 1024
@@ -437,6 +443,7 @@ def export_annotation_pack(
     output_root: Path | None = None,
     runtime_root: Path | None = None,
     track_name: str | None = None,
+    producer_format: ProducerFormat = "reading-product-v1",
 ) -> ExportResult:
     """Build, validate, and atomically publish one explicit deliverable set."""
 
@@ -460,6 +467,11 @@ def export_annotation_pack(
         return _early_failed_result("invalid_generated_timestamp")
     if runtime_root is not None and not isinstance(runtime_root, Path):
         return _early_failed_result("export_configuration_invalid")
+    if type(producer_format) is not str or producer_format not in {
+        "reading-product-v1",
+        "attentional-v2-phase9-legacy",
+    }:
+        return _early_failed_result("export_configuration_invalid")
 
     lease_root = runtime_root or get_backend_runtime_root()
     try:
@@ -477,6 +489,7 @@ def export_annotation_pack(
                 policy=policy,
                 generated_at=generated_at,
                 track_name=track_name,
+                producer_format=producer_format,
                 writer_exclusion=writer_exclusion,
             )
     except (JobLeaseConflict, JobLeaseReadError):
@@ -582,26 +595,34 @@ def _export_under_writer_guard(
     policy: ExportPolicy,
     generated_at: datetime | None,
     track_name: str | None,
+    producer_format: ProducerFormat,
     writer_exclusion: _WriterExclusion,
 ) -> ExportResult:
     known_track_slug: str | None = None
     input_count = 0
     pack_identity: tuple[str | None, str | None, str | None] = (None, None, None)
     try:
-        run_stage = _load_run_stage(output_dir)
-        if run_stage in {"parsing_structure", "deep_reading"}:
-            raise _ExportFailure("run_state_not_exportable")
-        if run_stage in {"paused", "error"} and not policy.allow_partial:
-            raise _ExportFailure("run_state_not_exportable")
-
-        adapter = SecondReaderProducerAdapter()
+        legacy_phase9 = producer_format == "attentional-v2-phase9-legacy"
+        if legacy_phase9:
+            run_stage = _load_run_stage(output_dir)
+            if run_stage in {"parsing_structure", "deep_reading"}:
+                raise _ExportFailure("run_state_not_exportable")
+            if run_stage in {"paused", "error"} and not policy.allow_partial:
+                raise _ExportFailure("run_state_not_exportable")
+            adapter = LegacyAttentionalV2Phase9Adapter()
+            adapter_version = LEGACY_PHASE9_ADAPTER_VERSION
+        else:
+            run_stage = None
+            adapter = ReadingProductProducerAdapter()
+            adapter_version = READING_PRODUCT_ADAPTER_VERSION
         producer_snapshot = adapter.load_drafts(output_dir=output_dir)
         input_count = producer_snapshot.input_count
-        _require_exportable_run_state(
-            run_stage,
-            input_count=input_count,
-            policy=policy,
-        )
+        if run_stage is not None:
+            _require_exportable_run_state(
+                run_stage,
+                input_count=input_count,
+                policy=policy,
+            )
 
         book_snapshot = _read_json_snapshot(
             book_document_file(output_dir),
@@ -617,6 +638,12 @@ def _export_under_writer_guard(
         publication = PublicationIdentityBuilder().build_verified(
             verified_source=verified_source,
             persisted_book_document=book_snapshot.value,
+        )
+        _require_producer_source_identity(
+            producer_snapshot=producer_snapshot,
+            source_epub_sha256=verified_source.sha256,
+            substrate_sha256=publication.substrate_sha256,
+            required=not legacy_phase9,
         )
 
         track_identifier = _track_identifier(
@@ -637,7 +664,7 @@ def _export_under_writer_guard(
             source_epub_sha256=verified_source.sha256,
             book_document_sha256=book_snapshot.sha256,
             substrate_sha256=publication.substrate_sha256,
-            reaction_ledger_sha256=producer_snapshot.reaction_ledger_sha256,
+            reaction_ledger_sha256=producer_snapshot.producer_snapshot_sha256,
             resolved_records=resolved,
         )
         clock: Clock = (
@@ -659,7 +686,7 @@ def _export_under_writer_guard(
             ),
             provenance=ProvenanceInput(
                 producer=SECOND_READER_PRODUCER_ID,
-                adapter_version=ADAPTER_VERSION,
+                adapter_version=adapter_version,
                 input_snapshot_digest=snapshot_digest,
             ),
         )
@@ -668,7 +695,7 @@ def _export_under_writer_guard(
             findings=tuple(findings),
             input_snapshot_digest=snapshot_digest,
             producer=SECOND_READER_PRODUCER_ID,
-            adapter_version=ADAPTER_VERSION,
+            adapter_version=adapter_version,
             # ``allow_empty`` covers a genuinely empty current track.  It does
             # not make a non-empty input publishable when every row was
             # explicitly skipped.
@@ -706,12 +733,13 @@ def _export_under_writer_guard(
         if second_producer_snapshot != producer_snapshot:
             raise _ExportFailure("input_changed_during_export")
         verified_source.assert_unchanged()
-        final_run_stage = _load_run_stage(output_dir)
-        _require_exportable_run_state(
-            final_run_stage,
-            input_count=producer_snapshot.input_count,
-            policy=policy,
-        )
+        if legacy_phase9:
+            final_run_stage = _load_run_stage(output_dir)
+            _require_exportable_run_state(
+                final_run_stage,
+                input_count=producer_snapshot.input_count,
+                policy=policy,
+            )
 
         def assert_reversible_boundary() -> None:
             _assert_writer_exclusion_current(writer_exclusion)
@@ -725,12 +753,13 @@ def _export_under_writer_guard(
             if adapter.load_drafts(output_dir=output_dir) != producer_snapshot:
                 raise _ExportFailure("input_changed_during_export")
             verified_source.assert_unchanged()
-            latest_run_stage = _load_run_stage(output_dir)
-            _require_exportable_run_state(
-                latest_run_stage,
-                input_count=producer_snapshot.input_count,
-                policy=policy,
-            )
+            if legacy_phase9:
+                latest_run_stage = _load_run_stage(output_dir)
+                _require_exportable_run_state(
+                    latest_run_stage,
+                    input_count=producer_snapshot.input_count,
+                    policy=policy,
+                )
 
         current = _load_current_publication(
             output_dir=output_dir,
@@ -927,6 +956,33 @@ def _load_run_stage(output_dir: Path) -> str:
     if type(stage) is not str or stage not in _RUN_STAGES:
         raise _ExportFailure("run_state_not_exportable")
     return stage
+
+
+def _require_producer_source_identity(
+    *,
+    producer_snapshot: ProducerDraftResult,
+    source_epub_sha256: str,
+    substrate_sha256: str,
+    required: bool,
+) -> None:
+    """Bind complete-product input to the independently verified publication.
+
+    Legacy phase9 snapshots do not carry these neutral identity fields and are
+    checked by their historical path.  A Reading Product snapshot must carry
+    both fields and match exactly; no local path or private run state is used.
+    """
+
+    product_epub = producer_snapshot.source_epub_sha256
+    product_substrate = producer_snapshot.book_document_substrate_sha256
+    if product_epub is None and product_substrate is None:
+        if required:
+            raise _ExportFailure("reading_product_source_mismatch")
+        return
+    if (
+        product_epub != source_epub_sha256
+        or product_substrate != substrate_sha256
+    ):
+        raise _ExportFailure("reading_product_source_mismatch")
 
 
 def _require_exportable_run_state(

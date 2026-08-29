@@ -179,6 +179,7 @@ def test_export_cli_json_success_and_independent_policy_flags(
         "book_output_dir": None,
     }
     assert calls["export"]["track_name"] == "Second Reader"
+    assert calls["export"]["producer_format"] == "reading-product-v1"
     policy = calls["export"]["policy"]
     assert policy.deliverables == "json"
     assert policy.allow_partial is True

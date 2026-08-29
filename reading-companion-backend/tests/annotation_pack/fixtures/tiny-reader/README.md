@@ -36,10 +36,11 @@ The builder fixes the EPUB ZIP member order, timestamp, Unix mode, storage
 method, OPF identifier, metadata, and XHTML bytes. It then uses the production
 `parse_epub_stream` -> neutral `build_book_document_from_chapters` -> source
 normalization path to generate `producer/public/book_document.json`. It writes
-one current-shaped settled Highlight and one current-shaped settled Note to the
-native `reaction_records.json` envelope, runs the real explicit exporter with a
-fixed UTC generation time, and records the resulting canonical JSON, detached
-package, validation report, publication pointer, and digests.
+one settled Highlight and one settled Note through Reading Product v1, seals a
+complete immutable Product revision, deletes the private runtime store, then
+runs the real explicit exporter with a fixed UTC generation time. This proves
+that Pack generation depends on the complete public Product rather than Agent
+audit, memory, run state, or reaction records.
 
 The source EPUB uses only stored ZIP entries, so its fixture hash does not
 depend on a DEFLATE implementation. The detached `.annotations` golden uses
@@ -61,8 +62,9 @@ The generated layout is:
 source.epub
 producer/
   public/book_document.json
-  _runtime/run_state.json
-  _mechanisms/attentional_v2/runtime/reaction_records.json
+  public/reading-products/current.json
+  public/reading-products/revisions/<sha256>/reading-product.json
+  public/reading-products/revisions/<sha256>/validation-report.json
 golden/
   annotations.json
   tiny-reader.annotations

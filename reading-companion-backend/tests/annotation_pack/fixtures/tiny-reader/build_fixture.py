@@ -9,6 +9,7 @@ import hashlib
 from io import BytesIO
 import json
 from pathlib import Path
+import shutil
 import sys
 import tempfile
 from typing import Final, Mapping
@@ -27,12 +28,19 @@ from src.parsers import parse_epub_stream  # noqa: E402
 from src.reading_core.epub_document import (  # noqa: E402
     build_book_document_from_chapters,
 )
+from src.reading_core import SourceCoordinate, SourceRange  # noqa: E402
+from src.reading_product import (  # noqa: E402
+    CompletionEvidence,
+    MarginaliaCandidate,
+    ReadingProductStore,
+    build_product_unit,
+)
 from src.reading_runtime.source_normalization import (  # noqa: E402
     normalize_book_document_source,
 )
 
 
-FIXTURE_FORMAT: Final = "annotation-pack-tiny-reader-minimal-v0"
+FIXTURE_FORMAT: Final = "annotation-pack-tiny-reader-reading-product-v1"
 GENERATED_AT: Final = datetime(2026, 8, 24, 0, 0, 0, tzinfo=timezone.utc)
 ZIP_TIMESTAMP: Final = (1980, 1, 1, 0, 0, 0)
 TITLE: Final = "Tiny Reader: Returning Light"
@@ -60,6 +68,7 @@ SECOND_PARAGRAPHS: Final = (
 HIGHLIGHT_QUOTE: Final = "durable idea"
 NOTE_QUOTE: Final = "reader who met them again"
 NOTE_BODY: Final = "Returning reveals the reader as part of the annotation."
+READING_ID: Final = "urn:uuid:b385225f-578c-4d75-ab38-d228849feab9"
 
 
 def _json_bytes(value: object) -> bytes:
@@ -217,99 +226,98 @@ def _paragraph(
     raise RuntimeError("generated BookDocument paragraph is missing")
 
 
-def _reaction_row(
-    *,
-    kind: str,
-    chapter_id: int,
-    chapter_ref: str,
-    paragraph_index: int,
-    paragraph_text: str,
-    quote: str,
-    created_at: str,
-    thought: str,
-) -> dict[str, object]:
-    start = paragraph_text.index(quote)
-    end = start + len(quote)
-    source_span_id = (
-        f"fixture:c{chapter_id}:p{paragraph_index}@{start}-p{paragraph_index}@{end}"
+def _range(
+    chapter_id: int, paragraph_index: int, start: int, end: int
+) -> SourceRange:
+    return SourceRange(
+        start=SourceCoordinate(chapter_id, paragraph_index, start),
+        end=SourceCoordinate(chapter_id, paragraph_index, end),
     )
-    start_cursor = {
-        "chapter_id": chapter_id,
-        "chapter_ref": chapter_ref,
-        "paragraph_index": paragraph_index,
-        "char_offset": start,
-    }
-    end_cursor = {**start_cursor, "char_offset": end}
-    return {
-        "reaction_id": f"fixture-internal-{kind}",
-        "chapter_id": chapter_id,
-        "chapter_ref": chapter_ref,
-        "emitted_at_source_span_id": source_span_id,
-        "record_source": "read_surface",
-        "type": "association" if kind == "note" else "highlight",
-        "compat_family": "association" if kind == "note" else "highlight",
-        "marginalia_kind": kind,
-        "thought": thought,
-        "source_quote": quote,
-        "primary_source_ref": {
-            "source_span_id": source_span_id,
-            "source_span": {
-                "start_cursor": start_cursor,
-                "end_cursor": end_cursor,
-            },
-            "quote": quote,
-            "role": "reaction_anchor",
-            "resolution": {
-                "status": "matched",
-                "method": "exact_text",
-                "match_count": 1,
-            },
-        },
-        "related_source_refs": [],
-        "reconsolidation_record_id": "",
-        "supersedes_reaction_id": "",
-        "compatibility_section_ref": f"fixture-internal-{chapter_id}",
-        "prior_link": None,
-        "outside_link": None,
-        "search_intent": None,
-        "search_query": "",
-        "search_results": [],
-        "created_at": created_at,
-    }
 
 
-def build_reaction_ledger(document: Mapping[str, object]) -> dict[str, object]:
-    """Return the exact current native settled Marginalia envelope."""
+def build_reading_product(
+    *,
+    output_dir: Path,
+    source_epub: bytes,
+    document: Mapping[str, object],
+) -> None:
+    """Publish the deterministic complete product used by the Pack fixture."""
 
+    source_sha256 = _sha256(source_epub)
+    store = ReadingProductStore.create(
+        output_dir,
+        epub_sha256=source_sha256,
+        book_document=document,
+        reading_id=READING_ID,
+        started_at="2026-08-24T00:00:30Z",
+    )
     first = _paragraph(document, chapter_id=1, paragraph_index=3)
     second = _paragraph(document, chapter_id=2, paragraph_index=3)
-    return {
-        "schema_version": 1,
-        "mechanism_version": "attentional_v2-phase9",
-        "updated_at": "2026-08-24T00:02:04Z",
-        "records": [
-            _reaction_row(
-                kind="highlight",
-                chapter_id=1,
-                chapter_ref=FIRST_HEADING,
-                paragraph_index=3,
-                paragraph_text=first,
-                quote=HIGHLIGHT_QUOTE,
-                thought="",
-                created_at="2026-08-24T00:01:02Z",
+    highlight_start = first.index(HIGHLIGHT_QUOTE)
+    note_start = second.index(NOTE_QUOTE)
+    units = (
+        build_product_unit(
+            unit_id="u000001",
+            sequence_index=1,
+            source_range=_range(1, 3, 0, len(first)),
+            settled_at="2026-08-24T00:01:02Z",
+            understanding="The first return treats a durable idea as worth revisiting.",
+            response="The mark can remain open without closing the reader's question.",
+            marginalia_candidates=(
+                MarginaliaCandidate(
+                    kind="highlight",
+                    source_range=_range(
+                        1,
+                        3,
+                        highlight_start,
+                        highlight_start + len(HIGHLIGHT_QUOTE),
+                    ),
+                    source_quote=HIGHLIGHT_QUOTE,
+                ),
             ),
-            _reaction_row(
-                kind="note",
-                chapter_id=2,
-                chapter_ref=SECOND_HEADING,
-                paragraph_index=3,
-                paragraph_text=second,
-                quote=NOTE_QUOTE,
-                thought=NOTE_BODY,
-                created_at="2026-08-24T00:02:03Z",
+            book_document=document,
+        ),
+        build_product_unit(
+            unit_id="u000002",
+            sequence_index=2,
+            source_range=_range(2, 3, 0, len(second)),
+            settled_at="2026-08-24T00:02:03Z",
+            understanding="Returning reveals that the reader also changes between encounters.",
+            response="The same words can support a different path of attention.",
+            marginalia_candidates=(
+                MarginaliaCandidate(
+                    kind="note",
+                    source_range=_range(
+                        2,
+                        3,
+                        note_start,
+                        note_start + len(NOTE_QUOTE),
+                    ),
+                    source_quote=NOTE_QUOTE,
+                    body_text=NOTE_BODY,
+                ),
             ),
-        ],
-    }
+            book_document=document,
+        ),
+    )
+    for unit in units:
+        store.commit_unit(
+            unit,
+            book_document=document,
+            epub_sha256=source_sha256,
+        )
+    store.finalize(
+        book_document=document,
+        epub_sha256=source_sha256,
+        completion=CompletionEvidence(
+            scope="whole_book",
+            chapter_number=None,
+            scheduled_chapter_ids=(1, 2),
+            completed_chapter_ids=(1, 2),
+            reading_plan_complete=True,
+        ),
+        completed_at="2026-08-24T00:02:04Z",
+    )
 
 
 def _sha256(content: bytes) -> str:
@@ -321,13 +329,8 @@ def render_fixture() -> dict[str, bytes]:
 
     source_epub = build_source_epub()
     document = build_book_document(source_epub)
-    ledger = build_reaction_ledger(document)
     producer_files = {
         "producer/public/book_document.json": _json_bytes(document),
-        "producer/_runtime/run_state.json": _json_bytes({"stage": "completed"}),
-        "producer/_mechanisms/attentional_v2/runtime/reaction_records.json": (
-            _json_bytes(ledger)
-        ),
     }
 
     with tempfile.TemporaryDirectory(prefix="tiny-reader-annotation-pack-") as raw:
@@ -340,6 +343,21 @@ def render_fixture() -> dict[str, bytes]:
             target = output_dir / relative.removeprefix("producer/")
             target.parent.mkdir(parents=True, exist_ok=True)
             target.write_bytes(content)
+        build_reading_product(
+            output_dir=output_dir,
+            source_epub=source_epub,
+            document=document,
+        )
+        product_root = output_dir / "public" / "reading-products"
+        for path in sorted(product_root.rglob("*")):
+            if path.is_file():
+                relative = path.relative_to(output_dir).as_posix()
+                producer_files[f"producer/{relative}"] = path.read_bytes()
+
+        # The Pack proof deliberately runs after all private runtime state is
+        # removed.  Only BookDocument, EPUB, and the complete public Product
+        # remain as inputs.
+        shutil.rmtree(output_dir / "_runtime")
 
         result = export_annotation_pack(
             output_dir=output_dir,

@@ -33,6 +33,7 @@ Use `docs/backend-reading-mechanism.md` when the question is about shared mechan
 - `POST /api/books/{book_id}/analysis/resume`
   - Resumes the latest paused or interrupted sequential job from the newest compatible checkpoint.
   - In demo/prod mode, an incompatible checkpoint triggers a fresh rerun instead of an unsafe resume.
+  - A compatible Reading Product-aware resume reuses the persisted `reading_id` and reconciles private state to the last Product-committed Unit. A fresh rerun creates a new reading revision.
   - If `memory_retrieval_mode` is omitted, resume restores the persisted run mode; if provided, the explicit mode change is recorded in retrieval trace.
 - `GET /api/jobs/{job_id}`
   - Returns the refreshed job record plus analysis-derived progress when available.
@@ -64,9 +65,15 @@ Use `docs/backend-reading-mechanism.md` when the question is about shared mechan
     - main-body chapters first
     - deferred support chapters after the main body drains
   - explicit chapter-targeted or benchmark-window reads continue to use the explicitly requested chapter/span rather than being reordered by the body-first queue.
-7. While the reader is active, cross-mechanism runtime artifacts update stage-level state in `_runtime/`, while mechanism-private memory, checkpoints, and diagnostics update under `_mechanisms/<mechanism_key>/`.
-8. If the worker stops cleanly, deferred parse work finishes at `ready` and full read work finishes at `completed`. If runtime guards intervene, the run becomes `paused`. If recovery is no longer safe, the run becomes `error` or is restarted from scratch.
-9. Terminal runs are mirrored into `_history/runs/<job_id>/` so the latest live artifacts and run history stay separate.
+7. A fresh normal `attentional_v2` read creates one Reading Product revision under `_runtime/reading-products/<reading_uuid>/`; resume reopens the revision named by `reading_id` in the runtime shell/checkpoint.
+8. For each successful Unit, the Runner resolves product Marginalia and atomically commits the Unit to the Product Store before advancing the accepted cursor. The Product Store is the sole accepted-Unit commit truth; Unit Memory, reaction records, Unit Span Ledger, audit, and chapter compatibility are derived afterward.
+  - `_runtime/reading-products/<reading_uuid>/reading-product.partial.json` is an atomic running projection of that store, not a second truth source and not an Annotation Pack input.
+  - Runtime shell and full checkpoints carry `reading_id`, `last_product_unit_id`, and `last_product_unit_sequence`. When those markers or private projections drift, recovery reconciles to the Product Store without inventing missing product facts from audit.
+9. When the approved whole-book `mainline + deferred` plan is complete, the deterministic finalizer validates the exact source and committed sequence, writes an immutable complete revision under `public/reading-products/revisions/`, and atomically switches `public/reading-products/current.json`.
+  - Chapter-only, audit-window, partial, source-mutated, or plan-incomplete reads do not seal a complete Product.
+  - The current chapter/API compatibility files are projected from Product Units; only that old UI layer maps native Note to `association`.
+10. An `attentional_v2` read run becomes `completed` only after Product finalization succeeds. Otherwise a recoverable bounded/partial run is `paused`; unsafe failures become `error` or start a fresh revision under the existing recovery rules. Explicit legacy/fallback mechanisms keep their documented completion semantics until they adopt this shared product boundary.
+11. Terminal runs are mirrored into `_history/runs/<job_id>/` so the latest live artifacts and run history stay separate.
 
 ## Source Asset Territories
 - `state/uploads/`
@@ -75,6 +82,7 @@ Use `docs/backend-reading-mechanism.md` when the question is about shared mechan
 - `output/<book_id>/...`
   - one runtime book's copied source asset plus its derived artifacts
   - this is the reproducible source territory for one analyzed book
+  - active accepted-Unit product truth lives in `_runtime/reading-products/<reading_uuid>/`; validated complete product publication lives in `public/reading-products/`
 - `state/library_sources/`
   - durable local source-library territory for manually curated backend books
   - suitable for repeated imports, demos, and evaluation preparation
@@ -102,7 +110,8 @@ Promotion from user upload into the durable source library or evaluation corpus 
     - default sentence-order meaning-unit reader
   - `iterator_v1`
     - explicit fallback / legacy-compatible section/subsegment reader
-- Read-time mutable artifacts remain mechanism-private:
+- Read-time mutable mechanism artifacts remain mechanism-private, while Reading Product is the shared accepted-Unit boundary:
+  - shared Product Store and partial projection use `_runtime/reading-products/<reading_uuid>/`
   - `iterator_v1` uses `_mechanisms/iterator_v1/runtime/`
   - `attentional_v2` uses `_mechanisms/attentional_v2/runtime/`
 
@@ -131,7 +140,8 @@ Promotion from user upload into the durable source library or evaluation corpus 
     - `dev_run_abandoned`
   - Continue/retry affordances should only be shown when `resume_available = true`.
 - `completed`
-  - Deep reading finished and the result surfaces should now read completed chapter artifacts.
+  - For the current default `attentional_v2` path, deep reading finished, whole-book Reading Product finalization succeeded, and `public/reading-products/current.json` selects the immutable complete revision.
+  - Explicit legacy/fallback mechanisms retain their mechanism-specific completion contract until migrated; their status must not be mistaken for a complete Reading Product publication.
 - `error`
   - The job cannot continue safely in its current form. Some `error` situations still surface `resume_available`, but they should be treated as recovery cases, not normal progress states.
 
@@ -190,7 +200,7 @@ Runtime OpenTelemetry is a derived overlay on this lifecycle, not another lifecy
 - Each lease-fenced worker execution creates `reading.run_attempt`; unit-bearing work uses `reading.chapter -> reading.unit_attempt -> llm.call -> llm.attempt`, while chapter-only survey/parse calls remain below `reading.chapter` without a fabricated unit. Individual provider requests stay separate so retries remain visible and billable-attempt usage is not collapsed.
 - The short HTTP upload/start/resume request does not stay open for the background job's lifetime. V1 correlates the worker through stable job/run/book/chapter/cycle/unit IDs; HTTP-request-to-worker OpenTelemetry links are explicitly deferred.
 - Book, chapter, job, mechanism, reading-cycle, and unit identifiers are span attributes rather than low-cardinality resource attributes. V1 does not claim source-text hashes or resume-lineage attributes that are not available at the shared observation hook.
-- The append-only runtime-observability JSONL ledger is the canonical source for observability facts and generated JSON/Markdown aggregates; Phoenix is its derived trace UI. Existing `_runtime/` artifacts and mechanism-private audits remain the source for accepted cursor movement, checkpoints, status, resume compatibility, and reader output. A trace may describe those transitions but cannot cause or certify them.
+- The append-only runtime-observability JSONL ledger is the canonical source for observability facts and generated JSON/Markdown aggregates; Phoenix is its derived trace UI. The Product Store is the accepted-Unit product truth; runtime shell/checkpoints still own operational resume/status coordination, while mechanism-private audits are evidence only. A trace may describe those transitions but cannot cause or certify a Product commit, cursor advance, checkpoint, or completion.
 - Exporter timeout, Phoenix absence, rejected spans, or local trace-data loss must not turn a valid parse/read into `paused` or `error`, block settlement, or consume the runtime auto-resume budget.
 - Provider-attempt usage and failure are recorded independently from logical-call outcome. Missing usage is unknown rather than zero, a failed attempt may still be billable, and a successful retry adds a separate attempt to token/cost totals.
 - The current shared gateway path is non-streaming. Streaming usage/TTFT semantics remain deferred; missing usage in the implemented path stays explicitly unknown.

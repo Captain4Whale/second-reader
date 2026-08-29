@@ -20,12 +20,13 @@ Use `docs/backend-reading-mechanism.md` for shared platform boundaries. Use `doc
 - `DEC-107` replaces the old `Navigate` LLM-call identity with `Ingest`.
 - `DEC-110` lands the Unit Memory ledger + hybrid retrieval bottom framework. The follow-through recall/tool slice now lets Ingest emit bounded prior-reading recalls, lets Reading Runner execute runtime-owned Unit Memory retrieval/selection, and renders selected Understanding lines into Digest `ReadingMemory`.
 - `DEC-128` promotes Marginalia as the canonical Digest visible-note concept. Live Digest now emits `marginalia[]`; legacy `annotations[]`, `surfaced_reactions`, `reaction_records`, and public `reaction_*` names remain compatibility/audit aliases unless a later cleanup retires them explicitly.
+- `DEC-158` establishes Reading Product Output v1 as the mechanism-neutral accepted-Unit product contract. New normal runs commit Product Units before advancing accepted progress; private memory, reaction, audit, and compatibility artifacts are derived.
 - `DEC-148` keeps `network_blocked` as the compatibility problem code for provider connection failures while adding private provider exception diagnostics and delayed same-cursor unit recovery for focused diagnostics; `DEC-150` extends the default partial-mode recovery budget for long-running diagnostics; `DEC-151` adds bounded structured-output contract-failure audit rows and broad same-cursor recovery for diagnostic unit failures unless the problem is known non-recoverable; `DEC-152` makes Digest failures propagate to that recovery loop instead of accepting empty reads.
 - Stable live behavior remains defined here and should be updated only when implementation lands.
 
 ## Mechanism-Internal Reading Runner Boundary
 - `Reading Runner` is the name for this mechanism's internal read-progress executor.
-  - It owns the live loop around `Ingest`, `Digest`, post-Digest settlement, cursor advancement, and mechanism-private runtime persistence.
+  - It owns the live loop around `Ingest`, `Digest`, Product Unit commit, post-commit private settlement, cursor advancement, and mechanism-private runtime persistence.
   - It is not the shared runtime shell, the mechanism registry, or the thin mechanism adapter.
 - The shared runtime shell remains under `reading-companion-backend/src/reading_runtime/`.
 - The mechanism adapter remains under `reading-companion-backend/src/reading_mechanisms/attentional_v2.py`.
@@ -45,7 +46,7 @@ Use `docs/backend-reading-mechanism.md` for shared platform boundaries. Use `doc
   - deterministic intake/retrieval helpers
   - LLM calls with prompt-version manifests
       - Phase 5 knowledge and retained-evidence helper history, with the old Bridge path now paused from the live Runner
-      - Phase 6 slow-cycle helpers for durable source-referenced reaction truth, reflective promotion, reconsolidation, chapter consolidation, and mechanism-private compatibility projection
+      - Phase 6 slow-cycle helpers for source-referenced reaction compatibility, reflective promotion, reconsolidation, chapter consolidation, and mechanism-private compatibility projection
   - Phase 7 checkpointing and resume helpers for compact local continuity, full checkpoints, shared checkpoint summaries, and bounded warm/cold/reconstitution resume reconstruction
   - Phase 8 normalized eval export and structural integrity checks over persisted artifacts
 - Phase 8.5 live Reading Runner integration now adds:
@@ -142,7 +143,8 @@ Use `docs/backend-reading-mechanism.md` for shared platform boundaries. Use `doc
 - The forward-settlement cutover is now landed.
   - `Navigate.route`, `route_action`, and `route_history` are no longer part of the current live mechanism.
   - `Digest` no longer emits `pressure_signals`.
-  - After `Digest`, the Reading Runner deterministically applies memory uptake, persists surfaced reactions, writes audit records, closes the current unit, and advances the cursor to the unit end.
+  - After `Digest`, the Reading Runner validates and atomically commits one Reading Product Unit before accepted cursor movement. It then derives per-Unit memory, reaction, audit, and Unit Span Ledger state from that committed Product fact and advances the cursor to the Unit end; chapter compatibility is projected from Product snapshots at chapter/audit/finalization boundaries.
+  - The Product Store is the sole accepted-Unit commit truth. A missing Product commit cannot be inferred from a reaction record, audit row, checkpoint, or compatibility file.
   - There is no replacement `forward` action.
   - There is no current live non-mainline scheduling mechanism; old Detour / source-backread is removed from the current runtime surface after `DEC-105`.
 - The `Ingest` LLM-call boundary is now landed.
@@ -181,7 +183,7 @@ Use `docs/backend-reading-mechanism.md` for shared platform boundaries. Use `doc
   - `Reading Runner` executes Unit Memory retrieval for the accepted unit when recalls are present, selects prompt-facing Understanding memory, and records `unit_memory_retrieval_trace.jsonl`
   - mandatory `Digest` call with bounded `ReadingMemory`
   - `Digest` directly surfaces zero-to-many reading-time reactions and emits bounded Recent Reading Memory
-  - `Reading Runner` invokes `Digest` on the accepted source unit, applies converted memory uptake, persists reactions, writes audit, records the accepted unit span, and advances the cursor
+  - `Reading Runner` invokes `Digest` on the selected source unit, commits its normalized U/R/M as one Reading Product Unit, derives private memory/reaction/audit/span state, and only then advances the accepted cursor
   - `Digest` has no current path-redirection output contract; new read-audit rows do not emit retired path-redirection evidence
   - chapter-end slow-cycle work such as `chapter_consolidation`, `reflective_promotion`, and `reconsolidation`
 - The old `trigger -> zoom_read -> meaning_unit_closure -> controller_decision -> reaction_emission` chain is now historical implementation vocabulary, not live runtime behavior.
@@ -208,8 +210,8 @@ Use `docs/backend-reading-mechanism.md` for shared platform boundaries. Use `doc
   - seeing `sentence_id`, `target_sentence_id`, or `cN-sM` in an artifact does not mean the current mainline reader is sentence-driven
   - new mechanism design and reviewer-facing reports should present paragraph-char / source-span coordinates as canonical and label sentence ids as compatibility or orientation metadata
 - `Unit Span Ledger`
-  - the append-only runtime fact recording accepted mainline units
-  - used for reading-history continuity and resume validation, not merely for debugging
+  - an append-only mechanism-private projection of Product-committed mainline Units
+  - used for reading-history continuity and resume validation, not merely for debugging, but no longer an independent accepted-Unit truth source
 - `meaning unit`
   - the primary reasoning unit
   - usually one paragraph or a short paragraph span
@@ -255,10 +257,12 @@ Use `docs/backend-reading-mechanism.md` for shared platform boundaries. Use `doc
   - retrieve/select prior Understanding when Ingest supplied recalls, then build a bounded prompt-facing `ReadingMemory` block from hot current-chapter Understanding plus selected long-distance Unit Memory Understanding
   - formally digest the accepted source unit through `Digest`
     - Digest LLM/provider failures and content-bearing empty `understanding` or `response` are contract failures, not successful reads
-    - these failures propagate as `ReaderLLMError` to same-cursor recovery; settlement, memory writeback, `read_audit`, Unit Span Ledger append, and cursor advance happen only after a valid Digest result
+    - these failures propagate as `ReaderLLMError` to same-cursor recovery; Product commit, derived settlement, and cursor advance happen only after a valid Digest result and successful Product validation
   - let `Digest` produce three model-facing reading outputs for that exact unit: `understanding`, `response`, and `marginalia`
   - runtime maps those outputs into internal `memory_uptake_ops`, `reading_impression`, and canonical `marginalia`, with deprecated `surfaced_reactions` aliases for existing settlement/audit compatibility
-  - `Reading Runner` post-Digest settlement closes the exact source unit, appends it to the Unit Span Ledger, and advances the cursor to `end_cursor`
+  - `Reading Runner` resolves Marginalia against the exact source, omits only invalid/ambiguous items into private findings, and atomically commits the valid Unit product before accepted progress moves
+  - after that Product commit, the Runner rebuilds/updates Unit Memory, reaction records, audit, and Unit Span Ledger, then advances the cursor to `end_cursor`; chapter/audit/finalization boundaries separately project the affected chapter views from the Product snapshot
+  - a content-bearing Unit with empty `understanding` or `response`, or any Product commit conflict, fails closed at the same cursor
 - Current capture/resume writes only the current forward continuity schema; old non-mainline checkpoint/artifact shapes are not a compatibility target after `DEC-105`.
 - `Ingest` memory retrieval is now a Unit Memory recall/tool path and is separate from the retired source-skill loop.
 - `Ingest` is now the sole current selector of the next coverage unit.
@@ -325,7 +329,7 @@ Use `docs/backend-reading-mechanism.md` for shared platform boundaries. Use `doc
   - It helped isolate visible wording while the system proved out surfaced-reaction persistence.
   - But the approved next shape no longer treats a dedicated `Express` step as the mechanism's stable center of gravity, and F1 has already removed it from the live Reading Runner path.
 - The Reading Runner now owns post-Digest settlement for that same chosen unit.
-  - It deterministically applies `memory_uptake_ops`, persists Marginalia with reaction-compatible aliases, writes audit records, closes the current unit, appends the accepted mainline unit to the Unit Span Ledger, and advances the paragraph-offset cursor to the unit's `end_cursor`.
+  - It first atomically commits the normalized Reading Product Unit, then deterministically applies `memory_uptake_ops`, derives Marginalia reaction aliases and audit/span records, closes the current unit, and advances the paragraph-offset cursor to the unit's `end_cursor`.
   - It does not ask an LLM whether ordinary forward reading should continue.
   - It does not record a replacement `forward` action; forward progression is the default program behavior.
 - Span visibility and authority are now aligned.
@@ -433,11 +437,12 @@ Use `docs/backend-reading-mechanism.md` for shared platform boundaries. Use `doc
     - compatibility adapter may still use these for bounded local source-referenced reactions that remain fully inside the current unit
     - they are no longer prompt-time native generation families for `attentional_v2`
     - `highlight` now means a compat-projected `kind == "highlight"` Marginalia item whose surfaced payload stays inside the current unit and does not explicitly surface legacy `prior_link`, `outside_link`, or `search_intent`
-    - `kind == "note"` maps to the existing public `association` family unless legacy prior/outside/search compatibility metadata explicitly overrides it
+    - native Reading Product `kind == "note"` maps to the existing public `association` family only when `product_compatibility.py` builds the old UI chapter envelope
     - `discern` remains a compat-side split for a more interpretively explicit local source-referenced reaction, not a native Digest-time type field
 - This mapping is transitional.
-  - It exists for slow-cycle aggregation, eval normalization, and UI adapter continuity.
-  - It is now derived from persisted surfaced reaction records through one compat helper rather than treated as the persisted reaction truth.
+  - Legacy family vocabulary may still appear in slow-cycle/eval compatibility, but the Product Note-to-`association` conversion itself belongs only to the old UI compatibility layer.
+  - Chapter/UI compatibility is derived from committed Reading Product Units rather than treating reaction records as persisted product truth.
+  - Reading Product and Annotation Pack retain native `note`; neither exposes `association` as the annotation kind.
   - It must not become the governing shape of the current `Digest` prompt.
 - Default current call types are:
   - `Ingest`
@@ -526,6 +531,9 @@ Use `docs/backend-reading-mechanism.md` for shared platform boundaries. Use `doc
 
 ## State Layers And Ownership
 - The mechanism now distinguishes current state territories plus inline source evidence:
+  - `Reading Product Store` (shared product boundary)
+    - owns the sole committed record of every accepted Unit's exact source range, `understanding`, `response`, and valid Marginalia
+    - commits atomically before accepted cursor advancement; all mechanism-private state below is derived or operational
   - `local_continuity`
     - reading-flow position, paragraph-offset `mainline_cursor`, recent unit boundaries, and resume semantics
   - `active_attention` (deprecated store, pending removal)
@@ -550,8 +558,9 @@ Use `docs/backend-reading-mechanism.md` for shared platform boundaries. Use `doc
     - chapter-level reflective summaries remain a slow-cycle artifact
   - `unit_memory`
     - current content-neutral long-distance memory substrate after `DEC-110`
-    - one Unit Memory Entry is written per accepted source unit after Digest settlement
+    - one Unit Memory Entry is derived per Product-committed source Unit after Digest settlement
     - each entry preserves the accepted source unit plus the model-facing `understanding`, `response`, and `marginalia`
+    - it is rebuildable retrieval state, not an alternative accepted-Unit/product truth source
     - retrieval documents are derived from source, understanding, response, and Marginalia surfaces
     - FTS5 text retrieval is always available when SQLite supports FTS5; sqlite-vec + local Ollama embedding is optional and degrades to text-only behavior
     - hybrid readiness can be checked without starting services through `cd reading-companion-backend && .venv/bin/python scripts/check_unit_memory_hybrid_readiness.py`; current Phase 2 live validation requires sqlite-vec load, Ollama reachability, the configured Qwen embedding model, a valid embedding dimension, dense candidates, and RRF contribution
@@ -628,6 +637,13 @@ Use `docs/backend-reading-mechanism.md` for shared platform boundaries. Use `doc
   - Parse-time sentence records with stable ids and locators may still exist in the same document, but for this mechanism they are compatibility and historical-evidence handles, not the mainline reading lattice.
   - `text_role` on paragraph records is a weak structure cue. `auxiliary` paragraphs are filtered before mainline preview construction, so footnote-like or apparatus-like content that survives only as `auxiliary` never reaches `Ingest` on the live mainline path.
   - `Source Normalization` is now live for newly created parsed-book documents as deterministic-only v1.2. It attaches richer `source_normalization` metadata to existing paragraph records rather than introducing persistent `reading_blocks[]`; raw paragraph coordinates remain the highlight/source-reference authority. The parser preserves ancestor container and inline-anchor metadata, skips duplicate parent containers such as `blockquote > p` aggregates, excludes only strong source apparatus evidence such as explicit footnote/endnote/reference containers or note-definition anchors, and keeps inline note references / malformed orphan-note candidates in正文 unless later reviewed. No default parse-time LLM classifier can change `text_role`; uncertain cases preserve mainline visibility. The design and follow-ups live in `docs/implementation/new-reading-mechanism/source-normalization-design.md`.
+- Shared Reading Product artifacts
+  - `_runtime/reading-products/<reading_uuid>/ledger.sqlite3`
+    - sole accepted-Unit commit truth for the active reading revision
+  - `_runtime/reading-products/<reading_uuid>/reading-product.partial.json`
+    - atomically rebuilt inspection/recovery projection; never a Pack input or independent truth
+  - `public/reading-products/current.json` and `public/reading-products/revisions/<product_sha256>/`
+    - immutable complete-product publication selected only after whole-book finalization validates the approved plan and exact source
 - Current scaffolded mechanism-private derived artifacts
   - `_mechanisms/attentional_v2/derived/survey_map.json`
     - now includes:
@@ -640,6 +656,8 @@ Use `docs/backend-reading-mechanism.md` for shared platform boundaries. Use `doc
   - this historical file is retained for compatibility territory until a later cleanup slice
 - `_mechanisms/attentional_v2/derived/chapter_result_compatibility/*.json`
   - live compatibility chapter results used by current chapter/detail and marks surfaces when `attentional_v2` is the active mechanism
+  - projected from committed Product Units; deleting reaction/audit/memory artifacts does not remove the inputs needed to rebuild this envelope
+  - Product Note maps to `association` only here for the old UI shape
 - Current scaffolded mechanism-private runtime artifacts
   - `_mechanisms/attentional_v2/runtime/local_buffer.json`
     - rolling intake buffer only
@@ -657,7 +675,7 @@ Use `docs/backend-reading-mechanism.md` for shared platform boundaries. Use `doc
     - resume restores the stored mode unless the operator explicitly passes a different mode, in which case the change is traced
   - `_mechanisms/attentional_v2/runtime/unit_memory.sqlite`
     - mechanism-private Unit Memory ledger and rebuildable retrieval indexes
-    - `unit_memory_entries` is the durable per-unit memory source of truth
+    - `unit_memory_entries` is the durable retrieval-memory source for this mechanism, but Reading Product remains the accepted-Unit product truth
     - `retrieval_docs`, FTS5 rows, vector rows, and query-embedding cache are derived retrieval/index state
     - sqlite-vec and local Ollama embedding are optional; when unavailable, retrieval degrades to text-only behavior
     - use `scripts/check_unit_memory_hybrid_readiness.py` to distinguish sqlite-vec readiness from Ollama/model availability before claiming live `hybrid` validation
@@ -666,7 +684,7 @@ Use `docs/backend-reading-mechanism.md` for shared platform boundaries. Use `doc
     - records recall count, per-recall candidate counts, prompt-visible hot span exclusion counts, effective retrieval mode, channel availability/degradation, selected/suppressed units, latency, and prompt-facing memory token accounting
     - tool results exposed to Ingest stay status/count-only; retrieved Understanding text and selected ids remain runtime-owned
   - `_mechanisms/attentional_v2/runtime/unit_span_ledger.jsonl`
-    - canonical runtime fact for accepted mainline source units
+    - mechanism-private projection of Product-committed mainline source units
     - records `unit_id`, sequence index, start/end source cursors, preview cursors, char/paragraph counts, end anchor text, and resolution status
     - used for reading-history continuity and resume validation rather than treated as a debug-only stream
   - `_mechanisms/attentional_v2/runtime/read_audit.jsonl`
@@ -683,7 +701,7 @@ Use `docs/backend-reading-mechanism.md` for shared platform boundaries. Use `doc
   - `_mechanisms/attentional_v2/runtime/reflective_frames.json`
   - `_mechanisms/attentional_v2/runtime/knowledge_activations.json`
   - `_mechanisms/attentional_v2/runtime/reaction_records.json`
-    - compatibility filename for persisted visible Marginalia records
+    - compatibility filename for derived visible Marginalia records; it is not Product or Annotation Pack truth
     - new rows store native Marginalia semantics first:
       - `thought`
       - `source_quote`
@@ -695,6 +713,7 @@ Use `docs/backend-reading-mechanism.md` for shared platform boundaries. Use `doc
   - `_mechanisms/attentional_v2/runtime/reader_policy.json`
   - `_mechanisms/attentional_v2/runtime/resume_metadata.json`
   - `_mechanisms/attentional_v2/runtime/checkpoints/*`
+    - full checkpoints carry `reading_id`, `last_product_unit_id`, and `last_product_unit_sequence` alongside private continuity so resume can reconcile to Product Store truth
 - Legacy load/projection artifacts may still appear in older output trees:
   - `_mechanisms/attentional_v2/runtime/working_pressure.json`
   - `_mechanisms/attentional_v2/runtime/anchor_memory.json`
@@ -704,7 +723,8 @@ Use `docs/backend-reading-mechanism.md` for shared platform boundaries. Use `doc
   - they remain historical evidence from older runs, not a supported live-state format
 - Current scaffolded shared runtime resume artifacts
   - `_runtime/runtime_shell.json`
-    - shared cursor, last-checkpoint pointer, and observability mode
+    - shared cursor, last-checkpoint pointer, observability mode, `reading_id`, `last_product_unit_id`, and `last_product_unit_sequence`
+    - Product markers locate the committed frontier but do not override the Product Store
     - for current `attentional_v2` mainline progress, the shared cursor uses `position_kind = "span"` with paragraph-offset start/end cursor data
   - `_runtime/checkpoint_summaries/*.json`
     - thin resume-kind, observability mode, and visible-reaction checkpoint summaries
@@ -734,7 +754,8 @@ Use `docs/backend-reading-mechanism.md` for shared platform boundaries. Use `doc
   - `current_excerpt`
   - `search_query` when applicable
 - Live parse/read integration now means those surfaces can be populated by `attentional_v2` through the same upload/start/resume flows as other mechanisms, without requiring `_mechanisms/iterator_v1/derived/structure.json`.
-- Phase 6 now adds a mechanism-private compatibility projector that can shape durable source-referenced reactions into the current chapter-result envelope while keeping the reaction record as the source of truth.
+- The current compatibility projector shapes committed Reading Product Units into the existing chapter-result envelope. It can rebuild chapter views without reaction records, audit, or memory, and keeps all existing API/frontend field names stable during this migration.
+- Native Product Note becomes old-family `association` only inside that UI compatibility projection; the Product and Annotation Pack continue to expose Note.
 - Phase 7 now adds bounded resume helpers that keep non-warm rereads chapter-local, preserve durable state, and explicitly mark reconstructed hot state instead of presenting it as warm continuity.
 - Phase D now adds persisted continuation capsules so warm resume can restore a bounded continuity seed instead of reconstructing context only from raw state files.
 - Phase 8 now lands the first additive public-surface projection layer:
@@ -778,15 +799,15 @@ Use `docs/backend-reading-mechanism.md` for shared platform boundaries. Use `doc
   - or the current interpretive question if that better explains what the mechanism is doing now
 
 ## Annotation Pack Handoff
-- Supported through `SecondReaderProducerAdapter` for the current settled `schema_version=1`, `attentional_v2-phase9`, `record_source=read_surface` reaction ledger.
-- Native settled Marginalia maps to the shared neutral handoff as follows:
-  - explicit Marginalia `kind` becomes neutral `highlight | note`
-  - the uniquely resolved exact `primary_source_ref.source_span` becomes the canonical `BookDocument` source range
-  - `source_quote` must equal the uniquely resolved SourceRef quote
-  - Note `thought` becomes non-empty `body_text`; Highlight carries no body
-  - runtime `created_at` becomes the neutral settlement time
-- `phase9` is only this adapter's private input binding. It is not the Annotation Pack version and must not be copied by a future mechanism. Book/EPUB identity, manifest href, public TextPosition, W3C fields, IDs, and packaging remain outside `attentional_v2` ownership.
-- This section describes implemented format compatibility, not proof that a recent real whole-book output has already been exported. That claim requires an artifact-specific export and report.
+- Default export reads only the complete Reading Product selected by `public/reading-products/current.json`; it does not read this mechanism's run state, reaction records, audit, or memory.
+- Product Marginalia maps directly through the neutral handoff:
+  - `highlight | note` remains Highlight/Note
+  - exact `source_range` and `source_quote` become the Pack anchor inputs
+  - Note `body_text` becomes the body; Highlight carries no body
+  - Product Unit `settled_at` becomes annotation creation time
+- `SecondReaderProducerAdapter` remains only as an explicitly selected `attentional_v2-phase9` legacy adapter. There is no automatic fallback when complete Product is missing or invalid; phase8 remains rejected.
+- Book/EPUB identity, manifest href, public TextPosition, W3C fields, IDs, ordering, validation, and packaging remain outside `attentional_v2` ownership.
+- Deterministic Tiny Reader/offline lifecycle evidence proves this consumer path without a provider call. It does not prove a current real-LLM whole-book run; that Gate remains deferred, and the GitHub Pages schema IRI is not publicly live.
 
 ## Evaluation Questions
 - These are the enduring mechanism-specific questions `attentional_v2` should eventually be able to answer well.

@@ -36,6 +36,8 @@ from src.annotation_pack.packaging import (
 )
 from src.parsers import parse_ebook, parse_epub_stream
 from src.reading_core.epub_document import build_book_document_from_chapters
+from src.reading_product import CompletionEvidence, ReadingProductStore
+from src.reading_product.serialization import load_document_bytes
 from src.reading_runtime.source_normalization import normalize_book_document_source
 
 
@@ -70,6 +72,12 @@ def _materialize(tmp_path: Path) -> tuple[Path, Path, Path]:
     source.parent.mkdir(parents=True)
     source.write_bytes(SOURCE.read_bytes())
     return runtime_root, output_root, output_dir
+
+
+def test_tiny_reader_producer_fixture_is_complete_product_only() -> None:
+    assert (PRODUCER / "public" / "reading-products" / "current.json").is_file()
+    assert not any(path.is_file() for path in (PRODUCER / "_runtime").rglob("*"))
+    assert not any(path.is_file() for path in (PRODUCER / "_mechanisms").rglob("*"))
 
 
 def _export(runtime_root: Path, output_root: Path, output_dir: Path):  # type: ignore[no-untyped-def]
@@ -233,7 +241,7 @@ def test_tiny_reader_builder_reproduces_every_tracked_generated_byte() -> None:
     )
 
     assert completed.returncode == 0, completed.stderr
-    assert "verified 9 deterministic Tiny Reader fixture files" in completed.stdout
+    assert "verified 10 deterministic Tiny Reader fixture files" in completed.stdout
 
 
 def test_tiny_reader_is_true_deterministic_epub3_and_real_parsed_document(
@@ -347,7 +355,6 @@ def test_tiny_reader_real_export_matches_goldens_and_every_anchor_round_trips(
             item=item,
             publication=publication,
         )
-
     package = validate_detached_annotations(
         package_bytes,
         expected_annotations_json=annotations_bytes,
@@ -432,6 +439,57 @@ def test_tiny_reader_real_export_matches_goldens_and_every_anchor_round_trips(
     ):
         assert private_sentinel not in public_payload
     assert str(output_dir).lower().encode() not in public_payload
+
+
+def test_tiny_reader_default_export_rejects_product_source_identity_mismatch(
+    tmp_path: Path,
+) -> None:
+    runtime_root, output_root, output_dir = _materialize(tmp_path)
+    document = json.loads((PRODUCER / "public" / "book_document.json").read_bytes())
+    current = json.loads(
+        (output_dir / "public" / "reading-products" / "current.json").read_bytes()
+    )
+    original = load_document_bytes(
+        (
+            output_dir
+            / "public"
+            / "reading-products"
+            / str(current["reading_product"])
+        ).read_bytes()
+    )
+    wrong_digest = "f" * 64
+    store = ReadingProductStore.create(
+        output_dir,
+        epub_sha256=wrong_digest,
+        book_document=document,
+        reading_id="urn:uuid:1273fa35-5bad-4a72-94a6-531a7f70351a",
+        started_at=original.started_at,
+    )
+    for unit in original.units:
+        store.commit_unit(
+            unit,
+            book_document=document,
+            epub_sha256=wrong_digest,
+        )
+    store.finalize(
+        book_document=document,
+        epub_sha256=wrong_digest,
+        completion=CompletionEvidence(
+            scope="whole_book",
+            chapter_number=None,
+            scheduled_chapter_ids=(1, 2),
+            completed_chapter_ids=(1, 2),
+            reading_plan_complete=True,
+        ),
+        completed_at=original.completed_at,
+    )
+
+    result = _export(runtime_root, output_root, output_dir)
+
+    assert result.status == "failed"
+    assert [finding.code for finding in result.validation.findings] == [
+        "reading_product_source_mismatch"
+    ]
 
 
 def test_tiny_reader_committed_json_and_package_validate_and_inspect_offline() -> None:

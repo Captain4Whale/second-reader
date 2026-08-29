@@ -204,6 +204,12 @@ def _parser() -> argparse.ArgumentParser:
     parser.add_argument("--allow-skips", action="store_true")
     parser.add_argument("--allow-empty", action="store_true")
     parser.add_argument("--force-regenerate", action="store_true")
+    parser.add_argument(
+        "--producer-format",
+        default="reading-product-v1",
+        choices=("reading-product-v1", "attentional-v2-phase9-legacy"),
+        help="read a complete Reading Product by default; phase9 is explicit legacy input",
+    )
     return parser
 
 
@@ -249,6 +255,7 @@ def _execute(args: argparse.Namespace) -> dict[str, object]:
             track_name=args.track_name,
             creator=creator,
             policy=policy,
+            producer_format=args.producer_format,
         )
         summary = _result_summary(result)
     except Exception:
