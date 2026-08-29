@@ -118,7 +118,7 @@ Delivery: accepted and pushed as `6239147` (`feat(annotation-pack): consume comp
 
 Acceptance: the offline full-book lifecycle covers Highlight, Note, empty Marginalia, invalid-item skip, crash/resume, repeated execution, and source mutation; all required offline checks pass.
 
-Delivery: implementation and focused acceptance are complete; the Slice 5 close-out commit/push is `pending` and must be filled by the main task after the final serial checks and documentation commit.
+Delivery: accepted and pushed as `a81a935` (`test(reading-product): accept offline whole-book lifecycle`). Immediately after push, local and `origin/codex/annotation-pack-v0` both resolved to `a81a9356988f7c711de5cac37eb7ae248e929134`.
 
 ## 6. Execution baseline
 
@@ -155,7 +155,7 @@ Repo-local implementation is complete only when:
 - [x] privacy and private-artifact-deletion isolation tests pass;
 - [x] unrelated pre-implementation baseline problems are listed separately rather than represented as Reading Product regressions;
 - [x] Slices 1–4 were independently committed and pushed on `codex/annotation-pack-v0` without force-push;
-- [ ] Slice 5 close-out commit/push and final local/remote HEAD comparison are pending the main task's final serial checks; this checkbox must be filled with the actual commit rather than guessed in advance.
+- [x] Slice 5 was committed and pushed as `a81a935`; the post-push local/remote comparison matched at `a81a9356988f7c711de5cac37eb7ae248e929134`.
 
 The allowed repo-local completion statement is:
 
@@ -171,7 +171,7 @@ This round must not claim a live LLM whole-book read, validity of the expired Op
 - Slice-specific evidence also completed with Reading Product core `22 passed`, attentional runtime `101 passed`, the Annotation Pack/consumer set `803 passed`, Tiny Reader deterministic rebuild of `10` files, and `make annotation-pack-contract-check` at `55 passed`.
 - Final serial governance completed with `make reading-product-contract-check`, `make annotation-pack-contract-check`, `make contract-check`, and `make agent-check` all exiting `0` under dotenv/provider isolation. `agent-check` still reports only the separately cataloged historical traceability warnings.
 - The complete backend suite completed with `1834 passed, 9 failed`. None of the nine failures is in Reading Product or Annotation Pack: seven unchanged legacy tests monkeypatch removed `invoke_structured_output_tool` attributes, one minimal-eval inventory assertion expects an older active dataset pointer, and one F4A target-balancing assertion expects two configured targets while the isolated offline registry exposes one. The pre-implementation `135 passed, 2 failed` affected regression baseline, these full-suite baseline categories, and the earlier concurrent `agent-check` transient remain separately recorded in `docs/implementation/annotation-pack/baseline-observations.md`; no all-green claim is inferred.
-- Commit evidence is `d83707a`, `7dcd160`, `e7adccc`, and `6239147`; the final Slice 5 documentation/test close-out commit is still `pending` for the main task to record after serial close-out.
+- Commit evidence is `d83707a`, `7dcd160`, `e7adccc`, `6239147`, and `a81a935`; all five Slice commits were pushed without force-push, and Slice 5's immediate post-push local/remote comparison matched.
 
 ## 9. Deferred live acceptance
 

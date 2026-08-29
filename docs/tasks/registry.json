@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "updated_at": "2026-08-29T18:54:54+08:00",
+  "updated_at": "2026-08-29T18:59:25+08:00",
   "tasks": [
     {
       "id": "TASK-READING-PRODUCT-OUTPUT-V1",
@@ -20,7 +20,7 @@
       ],
       "job_refs": [],
       "acceptance_ref": "docs/implementation/reading-product/reading-product-output-v1-detailed-design-and-implementation-handoff.md#8-definition-of-done",
-      "next_action": "Repo-local offline implementation is complete. Preserve exactly this bounded claim: 当前默认阅读机制已经在代码层接入 Reading Product Output v1；使用真实 EPUB 和确定性模型替身，可以完成逐 Unit 提交、整书封版、兼容投影以及 Annotation Pack 的生成与独立验证。 Slices 1-4 are pushed as d83707a, 7dcd160, e7adccc, and 6239147; the Slice 5 close-out commit and push remain pending for the main task to record after final serial verification. The separate live-model Gate is not unfinished code.",
+      "next_action": "Repo-local offline implementation is complete. Preserve exactly this bounded claim: 当前默认阅读机制已经在代码层接入 Reading Product Output v1；使用真实 EPUB 和确定性模型替身，可以完成逐 Unit 提交、整书封版、兼容投影以及 Annotation Pack 的生成与独立验证。 Slices 1-5 are pushed as d83707a, 7dcd160, e7adccc, 6239147, and a81a935; local and remote matched at the Slice 5 delivery commit after push, and no repo-local close-out action remains. The separate live-model Gate is not unfinished code.",
       "blocked_by": [],
       "evidence_refs": [
         "contract/reading-product/v1/README.md",
@@ -41,7 +41,7 @@
         "reading-companion-backend/tests/reading_product/test_offline_whole_book_lifecycle.py",
         "reading-companion-backend/tests/test_attentional_v2_reading_product.py"
       ],
-      "last_updated": "2026-08-29T18:54:54+08:00",
+      "last_updated": "2026-08-29T18:59:25+08:00",
       "last_updated_by": "codex"
     },
     {

@@ -2167,7 +2167,7 @@ Epic 完成后只能声明：
 - [x] 离线全书用例覆盖空 Marginalia、Highlight、Note、坏锚点仅淘汰该条、Product-commit-ahead crash/resume 且不重复 Digest、source mutation 拒绝、重复 runner 和重复 Pack export `unchanged`；同样隔离条件下，专用 lifecycle 用例为 `1 passed`，包含 Reading Product、默认 runtime 与 Tiny Reader Pack consumer 的组合 focused set 为 `39 passed`。
 - [x] 相关 Slice 证据还包括 Reading Product core `22 passed`、attentional runtime `101 passed`、Annotation Pack/consumer set `803 passed`、Tiny Reader `10` 个 deterministic files byte-exact，以及 `make annotation-pack-contract-check` 的 `55 passed`。
 - [x] 最终串行 `make reading-product-contract-check`、`make annotation-pack-contract-check`、`make contract-check` 和 `make agent-check` 均 exit `0`；完整 backend suite 为 `1834 passed, 9 failed`，九项均属于已单列的 legacy monkeypatch、eval active-pointer 或隔离环境 target-count baseline 类别，没有 Reading Product/Annotation Pack 新失败。
-- [ ] Slice 5 最终 close-out commit/push 与 local/remote HEAD 对齐仍为 `pending`，由主任务完成最终串行检查后写入实际 hash；不得预填或自指猜测。
+- [x] Slice 5 以 `a81a935`（`test(reading-product): accept offline whole-book lifecycle`）完成 commit/push；push 后本地与 `origin/codex/annotation-pack-v0` 均解析为 `a81a9356988f7c711de5cac37eb7ae248e929134`。
 
 上述证据只支持第 20.6 节的 repo-local 离线声明。`TASK-READING-PRODUCT-OUTPUT-V1-LIVE-ACCEPTANCE` 继续 deferred/blocked，唯一外部 blocker 是当前没有可用模型 API credential；未来有可用 credential 时才从普通产品入口运行一份短小真实 EPUB 并验证 `complete Reading Product -> Annotation Pack`。
 

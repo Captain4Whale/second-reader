@@ -7,7 +7,7 @@ Update when: task status, priority, blockers, decision refs, job refs, evidence 
 
 This document is the human-readable companion to `docs/tasks/registry.json`.
 
-Last updated: `2026-08-29T18:54:54+08:00`
+Last updated: `2026-08-29T18:59:25+08:00`
 
 ## Status Values
 - `active`
@@ -25,7 +25,7 @@ Last updated: `2026-08-29T18:54:54+08:00`
 - Lane: `product_contract`
 - Priority: `high`
 - Detail: `docs/implementation/reading-product/reading-product-output-v1-detailed-design-and-implementation-handoff.md`
-- Next: repo-local offline implementation is complete. Preserve exactly this bounded claim: **当前默认阅读机制已经在代码层接入 Reading Product Output v1；使用真实 EPUB 和确定性模型替身，可以完成逐 Unit 提交、整书封版、兼容投影以及 Annotation Pack 的生成与独立验证。** Slices 1–4 are pushed as `d83707a`, `7dcd160`, `e7adccc`, and `6239147`; the Slice 5 close-out commit/push is pending for the main task to record after final serial verification. Do not treat the separate live-model Gate as unfinished code.
+- Next: repo-local offline implementation is complete. Preserve exactly this bounded claim: **当前默认阅读机制已经在代码层接入 Reading Product Output v1；使用真实 EPUB 和确定性模型替身，可以完成逐 Unit 提交、整书封版、兼容投影以及 Annotation Pack 的生成与独立验证。** Slices 1–5 are pushed as `d83707a`, `7dcd160`, `e7adccc`, `6239147`, and `a81a935`; local and remote matched at the Slice 5 delivery commit after push, and no repo-local close-out action remains. Do not treat the separate live-model Gate as unfinished code.
 - Evidence:
   - `DEC-158`
   - `contract/reading-product/v1/README.md`
@@ -41,7 +41,7 @@ Last updated: `2026-08-29T18:54:54+08:00`
   - `reading-companion-backend/tests/reading_product/test_product_consumers.py`
   - `reading-companion-backend/tests/reading_product/test_offline_whole_book_lifecycle.py`
   - `reading-companion-backend/tests/test_attentional_v2_reading_product.py`
-  - commits `d83707a`, `7dcd160`, `e7adccc`, `6239147`; Slice 5 close-out `pending`
+  - commits `d83707a`, `7dcd160`, `e7adccc`, `6239147`, `a81a935` (all pushed; Slice 5 local/remote delivery comparison matched)
 
 ### `TASK-ANNOTATION-PACK-V0-IMPLEMENTATION` — Implement the Second Reader Annotation Pack v0 contract and exporter
 - Status: `done`
