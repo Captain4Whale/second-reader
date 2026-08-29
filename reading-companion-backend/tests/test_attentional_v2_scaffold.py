@@ -85,7 +85,12 @@ from src.attentional_v2.unit_memory import UnitMemoryIndex, build_unit_memory_en
 from src.reading_core.runtime_contracts import ParseRequest, ReadRequest
 from src.reading_mechanisms.attentional_v2 import AttentionalV2Mechanism
 from src.reading_runtime.provisioning import ProvisionedBook
-from src.reading_runtime.artifacts import checkpoint_summary_file, mechanism_manifest_file, runtime_shell_file
+from src.reading_runtime.artifacts import (
+    checkpoint_summary_file,
+    mechanism_manifest_file,
+    run_state_file,
+    runtime_shell_file,
+)
 from src.reading_runtime.shell_state import load_runtime_shell
 from src.reading_product import ReadingProductStore, ReadingProductValidationError
 
@@ -2985,6 +2990,144 @@ def test_attentional_v2_failed_digest_or_product_validation_does_not_accept_unit
     assert unit_span_ledger_file(output_dir).read_text(encoding="utf-8") == ""
     assert not read_audit_file(output_dir).exists()
     assert not settlement_audit_file(output_dir).exists()
+
+
+def _install_offline_product_runner_stubs(monkeypatch, provisioned):
+    """Install deterministic Unit lifecycle stubs with no provider boundary."""
+
+    def fake_digest(**kwargs):
+        sentence_ids = [
+            str(sentence.get("sentence_id"))
+            for sentence in kwargs["current_unit_sentences"]
+        ]
+        return {
+            "understanding": f"Understood {sentence_ids[-1]}.",
+            "reading_impression": f"Responded to {sentence_ids[-1]}.",
+            "marginalia": [],
+            "memory_uptake_ops": [],
+        }
+
+    def fake_process_sentence_intake(sentence, *, local_buffer, window_size=6):
+        return {
+            **local_buffer,
+            "current_sentence_id": sentence["sentence_id"],
+            "current_sentence_index": sentence["sentence_index"],
+            "recent_sentences": [
+                *local_buffer.get("recent_sentences", []),
+                dict(sentence),
+            ][-window_size:],
+            "open_meaning_unit_sentence_ids": [sentence["sentence_id"]],
+            "seen_sentence_ids": [
+                *local_buffer.get("seen_sentence_ids", []),
+                sentence["sentence_id"],
+            ],
+        }
+
+    def fake_phase6_chapter_cycle(**kwargs):
+        compatibility_payload = project_chapter_result_compatibility(
+            book_id=kwargs["book_id"],
+            chapter=kwargs["chapter"],
+            reaction_records=kwargs["reaction_records"],
+            output_language=kwargs["output_language"],
+            output_dir=kwargs["output_dir"],
+            persist=True,
+        )
+        return {
+            "chapter_consolidation": {
+                "chapter_ref": kwargs["chapter"].get("reference", ""),
+            },
+            "promotion_results": [],
+            "active_attention": kwargs["active_attention"],
+            "reflective_frames": kwargs["reflective_frames"],
+            "knowledge_activations": kwargs["knowledge_activations"],
+            "reaction_records": kwargs["reaction_records"],
+            "compatibility_payload": compatibility_payload,
+        }
+
+    monkeypatch.setattr(
+        runner_module,
+        "ensure_canonical_parse",
+        lambda *args, **kwargs: provisioned,
+    )
+    monkeypatch.setattr(
+        runner_module,
+        "_call_ingest",
+        _fake_single_sentence_ingest_boundary,
+    )
+    monkeypatch.setattr(runner_module, "_call_digest", fake_digest)
+    monkeypatch.setattr(
+        runner_module,
+        "process_sentence_intake",
+        fake_process_sentence_intake,
+    )
+    monkeypatch.setattr(
+        runner_module,
+        "run_phase6_chapter_cycle",
+        fake_phase6_chapter_cycle,
+    )
+
+
+def test_attentional_v2_chapter_only_run_remains_partial_and_unsealed(
+    tmp_path,
+    monkeypatch,
+):
+    monkeypatch.chdir(tmp_path)
+    provisioned = _provisioned_two_chapter_book()
+    _install_offline_product_runner_stubs(monkeypatch, provisioned)
+
+    result = AttentionalV2Mechanism().read_book(
+        ReadRequest(
+            book_path=_fixture_epub(),
+            chapter_number=1,
+            mechanism_key=ATTENTIONAL_V2_MECHANISM_KEY,
+            mechanism_config={"memory_retrieval_mode": "text_only"},
+        )
+    )
+
+    shell = load_runtime_shell(runtime_shell_file(result.output_dir))
+    run_state = json.loads(run_state_file(result.output_dir).read_text(encoding="utf-8"))
+    store = ReadingProductStore.open(result.output_dir, shell["reading_id"])
+    product = store.snapshot(book_document=result.book_document)
+    assert shell["status"] == "paused"
+    assert run_state["stage"] == "paused"
+    assert product.status == "partial"
+    assert product.completed_at is None
+    assert {unit.source_range.start.chapter_id for unit in product.units} == {1}
+    assert not (result.output_dir / "public" / "reading-products" / "current.json").exists()
+
+
+def test_attentional_v2_finalizer_failure_never_marks_run_completed(
+    tmp_path,
+    monkeypatch,
+):
+    monkeypatch.chdir(tmp_path)
+    provisioned = _provisioned_book()
+    _install_offline_product_runner_stubs(monkeypatch, provisioned)
+    finalize_calls: list[str] = []
+
+    def fail_finalizer(self, **_kwargs):
+        finalize_calls.append(self.reading_id)
+        raise RuntimeError("simulated finalizer failure")
+
+    monkeypatch.setattr(ReadingProductStore, "finalize", fail_finalizer)
+    with pytest.raises(RuntimeError, match="simulated finalizer failure"):
+        AttentionalV2Mechanism().read_book(
+            ReadRequest(
+                book_path=_fixture_epub(),
+                mechanism_key=ATTENTIONAL_V2_MECHANISM_KEY,
+                mechanism_config={"memory_retrieval_mode": "text_only"},
+            )
+        )
+
+    output_dir = provisioned.output_dir
+    shell = load_runtime_shell(runtime_shell_file(output_dir))
+    run_state = json.loads(run_state_file(output_dir).read_text(encoding="utf-8"))
+    store = ReadingProductStore.open(output_dir, shell["reading_id"])
+    assert finalize_calls == [store.reading_id]
+    assert shell["status"] != "completed"
+    assert run_state["stage"] != "completed"
+    assert store.snapshot(book_document=provisioned.book_document).status == "partial"
+    assert not (output_dir / "public" / "reading-products" / "current.json").exists()
 
 
 def test_attentional_v2_rejects_book_analysis_mode(tmp_path, monkeypatch):
