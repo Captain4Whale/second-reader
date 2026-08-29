@@ -7,11 +7,12 @@ Update when: the current objective, active tasks, blockers, active jobs, open de
 
 This file is authoritative for durable current status. Do not keep unique active-state information only in `docs/agent-handoff.md`.
 
-Last verified: `2026-08-29T18:04:24+08:00`
+Last verified: `2026-08-29T18:54:54+08:00`
 
 ## Current Objective
-- `TASK-READING-PRODUCT-OUTPUT-V1` is the active product-contract/runtime objective under `DEC-158` on `codex/annotation-pack-v0`. It establishes one mechanism-neutral Reading Product fact containing exact EPUB/BookDocument identity plus every accepted Unit's source range, Understanding, Response, and exact-source Highlight/Note Marginalia. Product Store must commit before accepted cursor advance; private memory/reaction/audit/compatibility artifacts become derived; a deterministic finalizer may publish only a complete immutable whole-book revision. Annotation Pack and current chapter compatibility views will consume this fact without changing Pack v0 or public HTTP/frontend shapes. This round is offline-only: deterministic model substitutes and real EPUB fixtures are authorized, but the expired OpenCode Go key must not be read/tested and no live LLM request or real-Agent whole-book claim is allowed.
-- Annotation Pack minimal v0 is repo-locally complete under `TASK-ANNOTATION-PACK-V0-IMPLEMENTATION`, `DEC-156`, and the producer-responsibility clarification `DEC-157` on branch `codex/annotation-pack-v0`. Slice 1 landed and was pushed as `012788d`; Slice 2 atomically cut over the canonical schema/examples/standards, generated copies, Pages projection, implementation, strict current phase9 adapter, Tiny Reader goldens, and detached package as `b44ba7d`, also pushed; Slice 3 records final acceptance, governance checks, baseline separation, and branch close-out. The standards-vocabulary-only `AnnotationSet` uses one exact-EPUB RFC 6920 `nih:sha-256` identity plus Dublin Core title/format/authors, and every Highlight/Note targets a relative XHTML href with TextQuote+Unicode-code-point TextPosition. `DEC-157` makes the enduring input seam mechanism-neutral: the verified source substrate owns book/EPUB facts; mechanisms provide only `kind`, exact shared-source range/quote and conditional Note text; runtime supplies settlement time; generic export derives the W3C wire. `attentional_v2-phase9` is only the current adapter binding, not a future-mechanism requirement. The public wire has zero `sr:*`, rejects the old heavy v0 and phase8 instead of migrating them, and publishes no Work/Edition/File, Track, chapter context/fingerprints, custom anchor id, CFI, provenance, or digest. The supported completion claim remains limited to current-format producer data generating, validating, and independently packaging the Tiny Reader real-EPUB fixture; it does not establish conversion of prior whole-book outputs, a real current whole-book Agent-to-Pack run, or any Library, HTTP API, frontend, or Reader integration.
+- `TASK-READING-PRODUCT-OUTPUT-V1` is repo-locally complete for the offline implementation boundary under `DEC-158` on `codex/annotation-pack-v0`. `d83707a` established the v1 contract/shared substrate, `7dcd160` made Product Unit settlement authoritative before cursor advance, `e7adccc` completed recovery/finalization, and `6239147` migrated the default Annotation Pack and chapter compatibility consumers; all four commits are pushed. The tracked Tiny Reader real EPUB now passes through ordinary parse, the default `attentional_v2` Reading Runner, real Unit settlement/coordinates, Product Store recovery, whole-book finalization, compatibility projection, default Pack export, detached packaging, and independent validation with deterministic model substitutes. The accurate claim is: **当前默认阅读机制已经在代码层接入 Reading Product Output v1；使用真实 EPUB 和确定性模型替身，可以完成逐 Unit 提交、整书封版、兼容投影以及 Annotation Pack 的生成与独立验证。** Slice 5 focused acceptance is complete; its final close-out commit/push is still `pending` for the main task to fill after serial close-out.
+- `TASK-READING-PRODUCT-OUTPUT-V1-LIVE-ACCEPTANCE` remains deferred/blocked solely because no usable model API credential is currently available. No real LLM whole-book run was performed. The final isolated offline acceptance rerun set `PYTHON_DOTENV_DISABLED=1` and `READING_OBSERVABILITY_OTLP_ENABLED=0`; no credential was restored, preflighted, tested, printed, or used.
+- Annotation Pack minimal v0 remains repo-locally complete under `TASK-ANNOTATION-PACK-V0-IMPLEMENTATION`, `DEC-156`, and `DEC-157`. Its W3C/DC `AnnotationSet` wire, exact EPUB RFC 6920 identity, TextQuote+Unicode-code-point TextPosition targets, deterministic IDs, canonical bytes, and detached package are unchanged. `DEC-158` follow-through in `6239147` makes complete Reading Product v1 the default producer input; `attentional-v2-phase9-legacy` is explicit legacy-only with no automatic fallback, and phase8 remains rejected. The public wire still has zero `sr:*` and publishes no Work/Edition/File, Track, chapter context/fingerprints, custom anchor id, CFI, provenance, producer digest, private audit, Memory, or mechanism data.
 - `TASK-ANNOTATION-PACK-RECENT-AGENT-ARTIFACT-VALIDATION` is complete with a corrected result. The best recent real current-native evidence is the July 5 phase9 Xidaduo evaluation segment, not the April phase8 product output. Its `112` records correctly contain `83` bodyless Highlights and `29` body-bearing Notes; all quote/range slices and timestamps round-trip, and the current adapter accepts `111`, rejecting only one five-code-point quote that occurs twice in its source unit. The exact EPUB and coherent `16`-chapter/`590`-paragraph source `BookDocument` are traceable through the dataset, and a deterministic renderer replay maps all `112` segment ranges back to exact EPUB hrefs. Direct export is still blocked because the eval artifact retains stale non-terminal runtime state, does not persist that coordinate map or co-locate the EPUB, and the exact-resource parser falsely rejects all `22` safe simple HTML doctypes. A narrow read-only parser/remap trial resolved all `111` accepted drafts. This segment covers source chapters `3–14`; it is not a current whole-book product proof.
 - The Annotation Hub consumer migration remains separately `waiting` under `TASK-ANNOTATION-HUB-V0-MINIMAL-PACK-MIGRATION`, is no longer blocked by Pack implementation, and stays outside this worktree. The schema IRI remains staged/not-live until the workflow reaches `main`, Pages is enabled, deployment succeeds, and served bytes match the canonical contract.
 - Runtime observability v1 is implemented as an infrastructure lane under `TASK-RUNTIME-OBSERVABILITY-COST-V1` and `DEC-154`; only the final live-provider whole-book acceptance remains externally blocked.
@@ -2098,6 +2099,7 @@ Last verified: `2026-08-29T18:04:24+08:00`
 - Treat runtime viability, broader local pairwise comparison, durable-trace / re-entry comparison, and most mechanism-specific judged attribution families as paused unless one of the three kept dimensions later requires them.
 
 ## Now
+- Preserve the completed Reading Product Output v1 offline boundary: Product Store is accepted-Unit truth, the default Reading Product adapter feeds Annotation Pack, and chapter compatibility is derived from Product Units. Do not reopen this implementation merely because the separate live-model Gate is deferred; final serial verification is complete, and the remaining close-out action is the pending Slice 5 commit/push record.
 - Preserve the corrected real-artifact audit: current phase9 kind/body and read-surface anchors pass, while direct export awaits the safe-doctype parser repair, persisted eval segment-to-source coordinates, export-facing runtime finalization, and explicit resolution or skipping of one ambiguous quote. Keep the April phase8 output only as historical migration evidence.
 - Keep runtime observability opt-in and evidence-first: finish the manual ledger/export wiring, then verify one bounded local trace/report without changing mechanism behavior or making Phoenix part of app readiness.
 - Treat `attentional_v2` as the current default mechanism and `iterator_v1` as the supported fallback / legacy-resume path.
@@ -3486,6 +3488,7 @@ Last verified: `2026-08-29T18:04:24+08:00`
   - `reading-companion-backend/src/attentional_v2/resume.py` now recreates the thin `runtime_shell.json` envelope if it is missing during position persistence
 
 ## Next
+- When the owner later provides a usable model API credential, run `TASK-READING-PRODUCT-OUTPUT-V1-LIVE-ACCEPTANCE` from the ordinary product entrypoint on one short real EPUB and verify `complete Reading Product -> Annotation Pack`; do not redesign or rebuild the completed offline implementation first.
 - For the next positive real-book Annotation Pack proof, use a completed current-native Agent artifact with an exact EPUB-coherent `BookDocument`, then run the actual exporter and independent validate/inspect path. If the historical《悉达多》output must be preserved without rerunning, open a separate explicit migration task for kind/body decisions and exact quote re-resolution; do not relax the current adapter.
 - After provider access is restored, finish the one remaining public-book live acceptance and inspect its canonical ledger/report before treating the first measured efficiency figures as a baseline; do not change region or billing settings automatically.
 - Launch the next decisive chapter/excerpt comparison on the frozen clustered benchmark:
@@ -3517,6 +3520,7 @@ Last verified: `2026-08-29T18:04:24+08:00`
   - run `make library-source-intake`
 
 ## Blocked
+- `TASK-READING-PRODUCT-OUTPUT-V1-LIVE-ACCEPTANCE` is deferred/blocked solely because no usable model API credential is currently available. This does not block or downgrade the completed repo-local offline implementation.
 - `TASK-RUNTIME-OBSERVABILITY-COST-V1` has passed deterministic product-path and Phoenix smoke validation, but its final live public-book acceptance is blocked by external provider access: DeepSeek returns a regional opt-in error and Mimo returns insufficient credits. No eval runner is involved.
 - No gate-review blocker remains ahead of the remaining decisive mechanism-eval lane.
 - Formal curated promotion from the modern private-library supplement remains intentionally paused under the recorded `hold_for_backlog_rescue` outcome and requires genuinely new benchmark-strengthening evidence before reopening.
@@ -3571,7 +3575,6 @@ Last verified: `2026-08-29T18:04:24+08:00`
 - Benchmark confidence can look stronger than it really is if corpus growth, promotion, and reviewed-slice confidence gates drift apart.
 
 ## Active Task IDs
-- `TASK-READING-PRODUCT-OUTPUT-V1`
 - `TASK-ANNOTATION-PACK-V0-IMPLEMENTATION`
 - `TASK-SECOND-READER-INGEST-DIGEST-REFRAME-AUDIT-20260530`
 - `TASK-ATTENTIONAL-V2-STRUCTURAL-REWORK`
@@ -3612,10 +3615,9 @@ Last verified: `2026-08-29T18:04:24+08:00`
 ## Machine-Readable Appendix
 ```json
 {
-  "updated_at": "2026-08-29T10:04:24Z",
+  "updated_at": "2026-08-29T10:54:54Z",
   "last_updated_by": "codex",
   "active_task_ids": [
-    "TASK-READING-PRODUCT-OUTPUT-V1",
     "TASK-ATTENTIONAL-V2-STRUCTURAL-REWORK",
     "TASK-V2-NATIVE-READING-PRESENTATION",
     "TASK-USER-LEVEL-SELECTIVE-V1",

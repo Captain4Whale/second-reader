@@ -2096,8 +2096,8 @@ AnnotationSet
 
 - [x] 文档仅宣称与 W3C Web Annotation Data Model Recommendation 及 `2026-05-21` EPUB Annotations 1.0 Working Draft aligned；不宣称 EPUB Working Draft conformant。
 - [x] Set/Annotation 基础身份字段来自 W3C/EPUB WD；`generator/generated`、书籍必备元数据、motivation、双 selector、exact-file hash、顺序与严格白名单是 Second Reader v0 profile 约束，但公开 wire 仍只使用标准词汇。
-- [x] `SecondReaderProducerAdapter` 只接受 `schema_version=1`、`mechanism_version=attentional_v2-phase9`、`record_source=read_surface`、native Highlight/Note 和已唯一 exact resolve 的 SourceRef。兼容 sidecar 可忽略但不再是必需输入；phase8 直接拒绝。
-- [x] 无旧 wire migration/compatibility path，无 phase8 自动升级，无从 compatibility taxonomy 反推 Highlight/Note。
+- [x] 默认 `ReadingProductProducerAdapter` 只读取 complete Reading Product v1 的公开 pointer、不可变 revision 与 validation report，并把已提交 Unit 中的 native Highlight/Note、exact range/quote 和 settlement time 展平为 producer-neutral drafts；默认路径不读取 run state、reaction ledger、audit、Memory 或机制版本。
+- [x] `attentional-v2-phase9-legacy` 只保留为显式选择的旧输入 adapter，无自动 fallback；phase8 继续直接拒绝。无旧 wire migration/compatibility path，无 phase8 自动升级，无从 compatibility taxonomy 反推 Highlight/Note。
 
 ### 20.3 Internal correctness and publication invariants
 
@@ -2139,11 +2139,11 @@ AnnotationSet
 
 Epic 完成后只能声明：
 
-> **当前格式的生产者数据能够通过 Tiny Reader 的真实 EPUB fixture 生成、验证并独立打包为极简 Annotation Pack。**
+> **当前默认阅读机制已经在代码层接入 Reading Product Output v1；使用真实 EPUB 和确定性模型替身，可以完成逐 Unit 提交、整书封版、兼容投影以及 Annotation Pack 的生成与独立验证。**
 
-不得声明旧《悉达多》《纳瓦尔宝典》已转换，不得声明真实整书 current Agent→Pack 链路已验证。GitHub Pages schema IRI 目前仍为未上线；只有进入 `main`、启用/完成 Pages 部署并通过 served-byte 对比后，才能声明公开可用。
+不得声明旧《悉达多》《纳瓦尔宝典》已转换，不得声明真实 LLM Agent 已完成整书阅读或真实整书 current Agent→Pack Gate 已验证。GitHub Pages schema IRI 目前仍为未上线；只有进入 `main`、启用/完成 Pages 部署并通过 served-byte 对比后，才能声明公开可用。原生 Unit API、frontend Understanding/Response 展示、Library、HTTP API 与 Reader 集成也不在本轮完成范围。
 
-本次 repo-local Epic 完成只作出上述限定声明。真实整书 Agent→Pack 没有运行；旧《悉达多》《纳瓦尔宝典》没有转换。Pages 只完成本地 projection/byte check，不是 live 部署或 served-byte 复验；Library、HTTP API、frontend 与 Reader 集成均未实现、未测试、未声明。
+本次 repo-local 完成只作出上述限定声明。真实 LLM 整书 Agent→Pack 没有运行；旧《悉达多》《纳瓦尔宝典》没有转换。Pages 只完成本地 projection/byte check，不是 live 部署或 served-byte 复验；原生 Unit API、frontend Understanding/Response、Library、HTTP API 与 Reader 集成均未实现、未测试、未声明。
 
 ### 20.7 Current minimal-reset acceptance evidence
 
@@ -2154,6 +2154,22 @@ Epic 完成后只能声明：
 - 完整 backend suite 为 `1794 passed, 9 failed`。九条失败与既有 baseline 清单一致：`attentional_v2.bridge` 三条、`survey` 两条、`slow_cycle` 两条均为已移除 `invoke_structured_output_tool` attribute 的 monkeypatch/interface drift；另有 minimal-eval inventory active pointer 一条和 F4A 默认 target-count 一条。极简替换未触碰这些实现/测试，结果未冒充全绿。
 - `make agent-check` 仍输出历史 task traceability、retired evidence path、active/done appendix drift、duplicate decision ID 与 LangChain deprecation warning；`make contract-check` 还输出 high-signal-doc decision reminder。前者均已在 baseline observations 中登记；后者不新增 decision-log entry，因为本 Slice 只同步 `DEC-156` 已决方向和 landed 能力，没有建立新方向。
 - Slice 3 通过包含本记录的 closing commit/push 与交付端远端 HEAD 对齐完成；精确 closing commit hash 在最终交付记录中报告。
+
+### 20.8 Reading Product v1 default-producer follow-through
+
+`DEC-158` 在不改变极简 W3C/DC wire 的前提下，把默认生产者输入从机制私有 phase9 ledger 迁移到 mechanism-neutral Reading Product Output v1。Annotation Pack 的 schema、identity、anchor、canonical bytes 和 detached package 语义保持不变；phase9 只作为显式 legacy adapter 保留。
+
+- [x] Slice 1（`d83707a`，已 push）建立 `contract/reading-product/v1`、共享 canonical JSON/BookDocument substrate/source-range 能力和严格 Product domain，且保持既有 Annotation Pack bytes 不变。
+- [x] Slice 2（`7dcd160`，已 push）让默认 `attentional_v2` 在 accepted cursor 前原子提交 Product Unit；Understanding、Response、Highlight/Note 与 exact source anchors 成为产品事实，audit/Memory/reaction/selection reason 保持私有派生。
+- [x] Slice 3（`e7adccc`，已 push）完成 Product Store 权威恢复、无重复模型调用的 committed-Unit replay、whole-book-only finalizer、source mutation/partial/chapter-only/audit-cap fail-closed 和不可变 publication。
+- [x] Slice 4（`6239147`，已 push）把 Annotation Pack 默认 adapter 与章节兼容投影迁移到 complete Reading Product；删除私有 reaction/audit/memory 后仍可生成 Pack 和旧 UI 兼容投影，phase9 无自动 fallback。
+- [x] Slice 5 repo-local implementation/acceptance 使用 tracked Tiny Reader 真实 EPUB 通过普通 parse、默认 Reading Runner、真实 Unit settlement/coordinates、Product Store、恢复、finalizer、compatibility projection 和默认 Pack exporter；只在模型调用边界注入确定性替身，没有执行 provider preflight 或真实 LLM 请求。最终隔离验收显式设置 `PYTHON_DOTENV_DISABLED=1` 与 `READING_OBSERVABILITY_OTLP_ENABLED=0`，因此该验收进程没有加载 backend `.env` 或尝试 OTLP export。
+- [x] 离线全书用例覆盖空 Marginalia、Highlight、Note、坏锚点仅淘汰该条、Product-commit-ahead crash/resume 且不重复 Digest、source mutation 拒绝、重复 runner 和重复 Pack export `unchanged`；同样隔离条件下，专用 lifecycle 用例为 `1 passed`，包含 Reading Product、默认 runtime 与 Tiny Reader Pack consumer 的组合 focused set 为 `39 passed`。
+- [x] 相关 Slice 证据还包括 Reading Product core `22 passed`、attentional runtime `101 passed`、Annotation Pack/consumer set `803 passed`、Tiny Reader `10` 个 deterministic files byte-exact，以及 `make annotation-pack-contract-check` 的 `55 passed`。
+- [x] 最终串行 `make reading-product-contract-check`、`make annotation-pack-contract-check`、`make contract-check` 和 `make agent-check` 均 exit `0`；完整 backend suite 为 `1834 passed, 9 failed`，九项均属于已单列的 legacy monkeypatch、eval active-pointer 或隔离环境 target-count baseline 类别，没有 Reading Product/Annotation Pack 新失败。
+- [ ] Slice 5 最终 close-out commit/push 与 local/remote HEAD 对齐仍为 `pending`，由主任务完成最终串行检查后写入实际 hash；不得预填或自指猜测。
+
+上述证据只支持第 20.6 节的 repo-local 离线声明。`TASK-READING-PRODUCT-OUTPUT-V1-LIVE-ACCEPTANCE` 继续 deferred/blocked，唯一外部 blocker 是当前没有可用模型 API credential；未来有可用 credential 时才从普通产品入口运行一份短小真实 EPUB 并验证 `complete Reading Product -> Annotation Pack`。
 
 ## Appendix A. Superseded first-implementation Definition Of Done and closure record
 

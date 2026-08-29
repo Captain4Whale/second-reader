@@ -1,11 +1,11 @@
 {
   "version": 1,
-  "updated_at": "2026-08-29T18:04:24+08:00",
+  "updated_at": "2026-08-29T18:54:54+08:00",
   "tasks": [
     {
       "id": "TASK-READING-PRODUCT-OUTPUT-V1",
       "title": "Implement mechanism-neutral Reading Product Output v1",
-      "status": "active",
+      "status": "done",
       "lane": "product_contract",
       "priority": "high",
       "detail_ref": "docs/implementation/reading-product/reading-product-output-v1-detailed-design-and-implementation-handoff.md",
@@ -20,18 +20,28 @@
       ],
       "job_refs": [],
       "acceptance_ref": "docs/implementation/reading-product/reading-product-output-v1-detailed-design-and-implementation-handoff.md#8-definition-of-done",
-      "next_action": "Implement and accept Slices 1-5 offline: contract/shared foundations, per-Unit product transaction, resume/finalizer, Annotation Pack and chapter compatibility consumers, then a real-EPUB whole-book lifecycle using deterministic model substitutes. Commit and push each accepted Slice on codex/annotation-pack-v0. Do not access or test the expired OpenCode Go key and do not make a live-model claim.",
+      "next_action": "Repo-local offline implementation is complete. Preserve exactly this bounded claim: 当前默认阅读机制已经在代码层接入 Reading Product Output v1；使用真实 EPUB 和确定性模型替身，可以完成逐 Unit 提交、整书封版、兼容投影以及 Annotation Pack 的生成与独立验证。 Slices 1-4 are pushed as d83707a, 7dcd160, e7adccc, and 6239147; the Slice 5 close-out commit and push remain pending for the main task to record after final serial verification. The separate live-model Gate is not unfinished code.",
       "blocked_by": [],
       "evidence_refs": [
         "contract/reading-product/v1/README.md",
         "contract/reading-product/v1/schema/reading-product-output.schema.json",
         "docs/history/decision-log.md",
         "docs/implementation/reading-product/reading-product-output-v1-detailed-design-and-implementation-handoff.md",
+        "docs/implementation/annotation-pack/second-reader-annotation-pack-v0-detailed-design-and-implementation-handoff.md",
+        "docs/implementation/annotation-pack/baseline-observations.md",
         "scripts/reading-product-contract-check.sh",
         "scripts/check_reading_product_contract.py",
-        "scripts/build_contract_pages.py"
+        "scripts/build_contract_pages.py",
+        "reading-companion-backend/src/reading_product",
+        "reading-companion-backend/src/attentional_v2/product_output.py",
+        "reading-companion-backend/src/attentional_v2/product_compatibility.py",
+        "reading-companion-backend/src/annotation_pack/producers/reading_product.py",
+        "reading-companion-backend/tests/reading_product/test_reading_product_core.py",
+        "reading-companion-backend/tests/reading_product/test_product_consumers.py",
+        "reading-companion-backend/tests/reading_product/test_offline_whole_book_lifecycle.py",
+        "reading-companion-backend/tests/test_attentional_v2_reading_product.py"
       ],
-      "last_updated": "2026-08-29T18:04:24+08:00",
+      "last_updated": "2026-08-29T18:54:54+08:00",
       "last_updated_by": "codex"
     },
     {
@@ -51,13 +61,13 @@
       ],
       "job_refs": [],
       "acceptance_ref": "docs/implementation/reading-product/reading-product-output-v1-detailed-design-and-implementation-handoff.md#9-deferred-live-acceptance",
-      "next_action": "Wait for the owner to provide a usable model API credential in a future task. Then run one short real EPUB through the normal product entrypoint and verify complete Reading Product to Annotation Pack. Do not inspect, restore, preflight, or retry the expired OpenCode Go key.",
+      "next_action": "Blocked solely because no usable model API credential is currently available. Wait for the owner to provide one in a future task, then run one short real EPUB through the normal product entrypoint and verify complete Reading Product to Annotation Pack. Do not inspect, restore, preflight, or retry the expired credential, and do not redesign the completed offline implementation first.",
       "blocked_by": [],
       "evidence_refs": [
         "docs/history/decision-log.md",
         "docs/implementation/reading-product/reading-product-output-v1-detailed-design-and-implementation-handoff.md"
       ],
-      "last_updated": "2026-08-29T18:04:24+08:00",
+      "last_updated": "2026-08-29T18:54:54+08:00",
       "last_updated_by": "codex"
     },
     {
@@ -74,11 +84,12 @@
       "decision_refs": [
         "DEC-155",
         "DEC-156",
-        "DEC-157"
+        "DEC-157",
+        "DEC-158"
       ],
       "job_refs": [],
       "acceptance_ref": "docs/implementation/annotation-pack/second-reader-annotation-pack-v0-detailed-design-and-implementation-handoff.md#20-definition-of-done",
-      "next_action": "Implementation is closed after three accepted slices. DEC-157 fixes the producer-neutral responsibility model without changing the wire. The separate recent real-Agent audit is complete and shows current phase9 semantic data substantially passes while eval source packaging still needs a coordinate bridge, safe-doctype repair, terminal run state, and one explicit ambiguity decision. Preserve the Tiny Reader-only completion claim until a real export is completed. Any public Pages activation or product integration is another separate task.",
+      "next_action": "The minimal W3C and Dublin Core wire remains closed, and DEC-158 follow-through now makes complete Reading Product v1 the default producer while phase9 is explicit legacy-only. Preserve the repo-local offline completion boundary: a real EPUB plus deterministic model substitutes can pass through the default reading mechanism, whole-book Product finalizer, compatibility projection, Pack generation, detached packaging, and independent validation. Do not reinterpret this as historical whole-book conversion, a real LLM whole-book run, live Pages, native Unit API, frontend U/R, or Library, API, and Reader integration.",
       "blocked_by": [],
       "evidence_refs": [
         ".github/workflows/annotation-pack-pages.yml",
@@ -102,6 +113,7 @@
         "reading-companion-backend/src/annotation_pack/packaging.py",
         "reading-companion-backend/src/annotation_pack/producers/__init__.py",
         "reading-companion-backend/src/annotation_pack/producers/second_reader.py",
+        "reading-companion-backend/src/annotation_pack/producers/reading_product.py",
         "reading-companion-backend/src/annotation_pack/exporter.py",
         "reading-companion-backend/src/reading_runtime/artifacts.py",
         "reading-companion-backend/src/reading_runtime/job_lease.py",
@@ -129,9 +141,10 @@
         "reading-companion-backend/tests/annotation_pack/fixtures/tiny-reader/README.md",
         "reading-companion-backend/tests/annotation_pack/fixtures/tiny-reader/source.epub",
         "reading-companion-backend/tests/annotation_pack/fixtures/tiny-reader/golden/digests.json",
-        "reading-companion-backend/tests/annotation_pack/test_tiny_reader_golden.py"
+        "reading-companion-backend/tests/annotation_pack/test_tiny_reader_golden.py",
+        "reading-companion-backend/tests/reading_product/test_offline_whole_book_lifecycle.py"
       ],
-      "last_updated": "2026-08-25T20:42:47+08:00",
+      "last_updated": "2026-08-29T18:54:54+08:00",
       "last_updated_by": "codex"
     },
     {

@@ -1,6 +1,6 @@
 # Reading Product Output v1 — Detailed Design, Implementation Handoff, and Definition of Done
 
-Status: active implementation authority for `TASK-READING-PRODUCT-OUTPUT-V1` under `DEC-158`.
+Status: repo-local offline implementation complete for `TASK-READING-PRODUCT-OUTPUT-V1` under `DEC-158`; live-model acceptance remains deferred under `TASK-READING-PRODUCT-OUTPUT-V1-LIVE-ACCEPTANCE`.
 
 ## 1. Outcome
 
@@ -75,6 +75,8 @@ Crash recovery treats the Product Store as authoritative. If product is ahead of
 
 Acceptance: contract/examples/negative cases and Pages projection pass offline; shared helper regression proves Annotation Pack bytes/digests unchanged; no provider access occurs.
 
+Delivery: accepted and pushed as `d83707a` (`feat(reading-product): establish v1 contract`).
+
 ### Slice 2 — Per-Unit product settlement
 
 - Create/reuse the reading revision store and partial projection.
@@ -83,6 +85,8 @@ Acceptance: contract/examples/negative cases and Pages projection pass offline; 
 - Make Unit Memory/reaction/audit/compat outputs downstream of product commit.
 
 Acceptance: focused tests cover empty U/R, body rules, containment, quote mismatch, ambiguity skip, empty Marginalia, duplicate/conflicting replay, sequence gaps, and crash boundaries without provider calls.
+
+Delivery: accepted and pushed as `7dcd160` (`feat(reading-product): make unit settlement authoritative`).
 
 ### Slice 3 — Resume and complete finalization
 
@@ -93,6 +97,8 @@ Acceptance: focused tests cover empty U/R, body rules, containment, quote mismat
 
 Acceptance: deterministic crash injection covers Digest success before product, product commit before derived files, pointer switch interruption, repeated finalization, concurrent finalization, source mutation, chapter-only/audit-cap/partial rejection, and plan-completeness rules.
 
+Delivery: accepted and pushed as `e7adccc` (`test(reading-product): verify recovery and finalization`).
+
 ### Slice 4 — Direct consumers
 
 - Make complete Reading Product the default Annotation Pack producer input.
@@ -102,6 +108,8 @@ Acceptance: deterministic crash injection covers Digest success before product, 
 
 Acceptance: Tiny Reader complete product generates the same minimal W3C/DC Pack semantics and an independently valid detached package; API/frontend contract snapshots remain unchanged.
 
+Delivery: accepted and pushed as `6239147` (`feat(annotation-pack): consume complete reading products`).
+
 ### Slice 5 — Offline whole-book lifecycle and close-out
 
 - Use the real Tiny Reader EPUB and normal parse/Runner/settlement/finalizer/Pack path.
@@ -109,6 +117,8 @@ Acceptance: Tiny Reader complete product generates the same minimal W3C/DC Pack 
 - Update final evidence, baseline separation, task status, and completion claims.
 
 Acceptance: the offline full-book lifecycle covers Highlight, Note, empty Marginalia, invalid-item skip, crash/resume, repeated execution, and source mutation; all required offline checks pass.
+
+Delivery: implementation and focused acceptance are complete; the Slice 5 close-out commit/push is `pending` and must be filled by the main task after the final serial checks and documentation commit.
 
 ## 6. Execution baseline
 
@@ -136,23 +146,33 @@ New failures outside these exact baseline cases are in-scope until explained or 
 
 Repo-local implementation is complete only when:
 
-- [ ] canonical contract, examples, companion schemas, runtime copy, Pages projection, and offline checks agree;
-- [ ] default reading settlement commits one strict Product Unit before cursor advance;
-- [ ] resume/recovery honors Product Store commit truth without repeated model work;
-- [ ] whole-book finalizer publishes only complete immutable revisions and switches current atomically;
-- [ ] Annotation Pack and current chapter/API compatibility views consume Reading Product by default;
-- [ ] deterministic real-EPUB offline whole-book lifecycle passes through normal runtime seams;
-- [ ] privacy and private-artifact-deletion isolation tests pass;
-- [ ] required checks are run serially at close-out and unrelated baseline problems are listed separately;
-- [ ] each accepted Slice is committed and pushed on `codex/annotation-pack-v0` without force-push;
-- [ ] current-state/task/docs and remote HEAD evidence are accurate.
+- [x] canonical contract, examples, companion schemas, runtime copy, Pages projection, and offline checks agree;
+- [x] default reading settlement commits one strict Product Unit before cursor advance;
+- [x] resume/recovery honors Product Store commit truth without repeated model work;
+- [x] whole-book finalizer publishes only complete immutable revisions and switches current atomically;
+- [x] Annotation Pack and current chapter/API compatibility views consume Reading Product by default;
+- [x] deterministic real-EPUB offline whole-book lifecycle passes through normal runtime seams;
+- [x] privacy and private-artifact-deletion isolation tests pass;
+- [x] unrelated pre-implementation baseline problems are listed separately rather than represented as Reading Product regressions;
+- [x] Slices 1–4 were independently committed and pushed on `codex/annotation-pack-v0` without force-push;
+- [ ] Slice 5 close-out commit/push and final local/remote HEAD comparison are pending the main task's final serial checks; this checkbox must be filled with the actual commit rather than guessed in advance.
 
-The allowed completion statement is:
+The allowed repo-local completion statement is:
 
-> The current default reading mechanism is wired to Reading Product Output v1; with a real EPUB and deterministic model substitutes, it can commit accepted Units, seal a whole-book product, build compatibility projections, and generate and independently validate Annotation Pack v0.
+> 当前默认阅读机制已经在代码层接入 Reading Product Output v1；使用真实 EPUB 和确定性模型替身，可以完成逐 Unit 提交、整书封版、兼容投影以及 Annotation Pack 的生成与独立验证。
 
 This round must not claim a live LLM whole-book read, validity of the expired OpenCode Go key, conversion of historical full-book outputs, public Pages availability, or native frontend display of Unit U/R.
 
+### 8.1 Offline acceptance evidence
+
+- The tracked Tiny Reader EPUB passes through ordinary canonical parse, the default `attentional_v2` Reading Runner, real source-unit selection/coordinate resolution, Product Store settlement, crash recovery, finalization, compatibility projection, and the default Reading Product Annotation Pack adapter. Only model invocation boundaries use deterministic test doubles; no provider preflight or real LLM request runs. The final isolated rerun explicitly set `PYTHON_DOTENV_DISABLED=1` and `READING_OBSERVABILITY_OTLP_ENABLED=0`, so that acceptance process neither loaded the backend `.env` nor attempted OTLP export.
+- `tests/reading_product/test_offline_whole_book_lifecycle.py` proves empty Marginalia, native Highlight, native Note, item-local bad-anchor rejection, product-commit-ahead recovery without a repeated Digest, source-mutation failure, immutable complete publication, repeated runner execution, and byte-stable `unchanged` Pack export.
+- With the same dotenv/OTLP isolation, the dedicated lifecycle test completed with `1 passed`, and the combined focused close-out command over `tests/reading_product`, `tests/test_attentional_v2_reading_product.py`, and `tests/annotation_pack/test_tiny_reader_golden.py` completed with `39 passed`.
+- Slice-specific evidence also completed with Reading Product core `22 passed`, attentional runtime `101 passed`, the Annotation Pack/consumer set `803 passed`, Tiny Reader deterministic rebuild of `10` files, and `make annotation-pack-contract-check` at `55 passed`.
+- Final serial governance completed with `make reading-product-contract-check`, `make annotation-pack-contract-check`, `make contract-check`, and `make agent-check` all exiting `0` under dotenv/provider isolation. `agent-check` still reports only the separately cataloged historical traceability warnings.
+- The complete backend suite completed with `1834 passed, 9 failed`. None of the nine failures is in Reading Product or Annotation Pack: seven unchanged legacy tests monkeypatch removed `invoke_structured_output_tool` attributes, one minimal-eval inventory assertion expects an older active dataset pointer, and one F4A target-balancing assertion expects two configured targets while the isolated offline registry exposes one. The pre-implementation `135 passed, 2 failed` affected regression baseline, these full-suite baseline categories, and the earlier concurrent `agent-check` transient remain separately recorded in `docs/implementation/annotation-pack/baseline-observations.md`; no all-green claim is inferred.
+- Commit evidence is `d83707a`, `7dcd160`, `e7adccc`, and `6239147`; the final Slice 5 documentation/test close-out commit is still `pending` for the main task to record after serial close-out.
+
 ## 9. Deferred live acceptance
 
-`TASK-READING-PRODUCT-OUTPUT-V1-LIVE-ACCEPTANCE` is blocked solely on the owner supplying a usable model API credential in a future task. No implementation Slice may test the expired key. When unblocked, run one short real EPUB from the normal product entrypoint and verify `complete Reading Product -> Annotation Pack`; do not redesign or rebuild the offline implementation first.
+`TASK-READING-PRODUCT-OUTPUT-V1-LIVE-ACCEPTANCE` remains deferred/blocked solely because no usable model API credential is currently available. No implementation Slice may inspect, preflight, or test the expired key. When a usable credential is supplied, run one short real EPUB from the normal product entrypoint and verify `complete Reading Product -> Annotation Pack`; do not redesign or rebuild the completed offline implementation first.

@@ -104,4 +104,30 @@ Observed for the minimal-v0 Slice 3 final candidate on `2026-08-25`:
 
 Final minimal-v0 governance on `2026-08-25` completed with both `make contract-check` and `make agent-check` exiting `0`. The commands still emitted the historical traceability and LangChain warnings cataloged above. The contract check also emitted its warning-only high-signal-document reminder because close-out synchronizes `AGENTS.md`, backend aggregation, and backend rules; no additional decision entry was added because `DEC-156` already records the minimal-v0 direction and this Slice introduces no new product or architecture decision.
 
-This evidence supports only the repo-local Tiny Reader fixture claim. Slice 3 is closed by the commit containing this acceptance record, followed by a non-force push and local/remote HEAD comparison recorded in the final handoff.
+This minimal-v0 close-out evidence supported only the then-current repo-local Tiny Reader producer-fixture claim. Slice 3 was closed by the commit containing that acceptance record, followed by a non-force push and local/remote HEAD comparison recorded in its final handoff. The later Reading Product offline lifecycle is separate follow-through under `DEC-158` and does not retroactively turn the 2026-08-25 checks into a real-LLM whole-book proof.
+
+Observed before implementing Reading Product Output v1 on `2026-08-29`:
+
+- `make annotation-pack-contract-check` completed with `55 passed` and a valid local Pages projection
+- the affected `attentional_v2`/source regression set completed with `135 passed, 2 failed`; both failures are the already cataloged `tests/test_attentional_v2_slow_cycle.py` cases that monkeypatch the removed `slow_cycle.invoke_structured_output_tool` attribute
+- serial `make contract-check` exited `0`
+- one concurrently launched `make agent-check` attempt failed while the frontend contract command ran through `npx tsx scripts/print-contract.ts`; the serial contract check passed, so this attempt is retained as a concurrency/transient observation and does not establish a product-code failure or a final `agent-check` result
+
+The Reading Product implementation baseline therefore remains `135 passed, 2 failed` for the affected set, with the two exact known failures separated from new work. Final Slice 5 acceptance must report later serial checks independently; it must not rewrite this baseline as green or treat the concurrent `agent-check` attempt as the final serial governance result.
+
+Offline-acceptance isolation note on `2026-08-29`:
+
+- `reading-companion-backend/src/config.py` loads the backend `.env` by default during import, so earlier generic pytest processes are not evidence that dotenv loading was disabled even though no provider preflight or real LLM request was initiated and no credential contents were inspected or reported
+- the final dedicated Slice 5 rerun explicitly set `PYTHON_DOTENV_DISABLED=1` and `READING_OBSERVABILITY_OTLP_ENABLED=0`; under that isolation the whole-book lifecycle test completed with `1 passed`
+- the final combined focused rerun used the same isolation and completed with `39 passed` across `tests/reading_product`, `tests/test_attentional_v2_reading_product.py`, and `tests/annotation_pack/test_tiny_reader_golden.py`
+- these focused counts are acceptance evidence for the offline Reading Product lifecycle; they do not replace the pre-implementation `135 passed, 2 failed` baseline or establish a live-model whole-book result
+
+Final Reading Product close-out observations on `2026-08-29`:
+
+- serial `make reading-product-contract-check`, `make annotation-pack-contract-check`, `make contract-check`, and `make agent-check` all exited `0` with `PYTHON_DOTENV_DISABLED=1`, provider variables removed, and OTLP disabled; `agent-check` retained only the historical traceability warnings cataloged above
+- the complete Annotation Pack plus Reading Product consumer suite completed with `803 passed`, and the deterministic Tiny Reader rebuild verified `10` files
+- the complete backend suite completed with `1834 passed, 9 failed`; no failure belongs to Reading Product or Annotation Pack
+- seven failures are unchanged legacy tests that monkeypatch removed `invoke_structured_output_tool` attributes in `attentional_v2.bridge`, `attentional_v2.slow_cycle`, or `attentional_v2.survey`; the same stale monkeypatch references are present at pre-implementation commit `5f7b8e4`, and this task changed none of those modules or tests
+- one minimal-eval inventory failure expects an older active dataset pointer, and one F4A quality-audit failure expects two default targets while the isolated offline registry intentionally exposes one; neither failing surface was changed by this task
+
+These nine results are retained as unrelated baseline/environment observations. They do not convert the full suite into an all-green claim, and they do not block the focused offline completion statement.

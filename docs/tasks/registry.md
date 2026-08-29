@@ -7,7 +7,7 @@ Update when: task status, priority, blockers, decision refs, job refs, evidence 
 
 This document is the human-readable companion to `docs/tasks/registry.json`.
 
-Last updated: `2026-08-29T18:04:24+08:00`
+Last updated: `2026-08-29T18:54:54+08:00`
 
 ## Status Values
 - `active`
@@ -20,16 +20,40 @@ Last updated: `2026-08-29T18:04:24+08:00`
 
 ## Done
 
+### `TASK-READING-PRODUCT-OUTPUT-V1` — Implement mechanism-neutral Reading Product Output v1
+- Status: `done`
+- Lane: `product_contract`
+- Priority: `high`
+- Detail: `docs/implementation/reading-product/reading-product-output-v1-detailed-design-and-implementation-handoff.md`
+- Next: repo-local offline implementation is complete. Preserve exactly this bounded claim: **当前默认阅读机制已经在代码层接入 Reading Product Output v1；使用真实 EPUB 和确定性模型替身，可以完成逐 Unit 提交、整书封版、兼容投影以及 Annotation Pack 的生成与独立验证。** Slices 1–4 are pushed as `d83707a`, `7dcd160`, `e7adccc`, and `6239147`; the Slice 5 close-out commit/push is pending for the main task to record after final serial verification. Do not treat the separate live-model Gate as unfinished code.
+- Evidence:
+  - `DEC-158`
+  - `contract/reading-product/v1/README.md`
+  - `contract/reading-product/v1/schema/reading-product-output.schema.json`
+  - `docs/implementation/reading-product/reading-product-output-v1-detailed-design-and-implementation-handoff.md`
+  - `docs/implementation/annotation-pack/second-reader-annotation-pack-v0-detailed-design-and-implementation-handoff.md#20-definition-of-done`
+  - `docs/implementation/annotation-pack/baseline-observations.md`
+  - `reading-companion-backend/src/reading_product/`
+  - `reading-companion-backend/src/attentional_v2/product_output.py`
+  - `reading-companion-backend/src/attentional_v2/product_compatibility.py`
+  - `reading-companion-backend/src/annotation_pack/producers/reading_product.py`
+  - `reading-companion-backend/tests/reading_product/test_reading_product_core.py`
+  - `reading-companion-backend/tests/reading_product/test_product_consumers.py`
+  - `reading-companion-backend/tests/reading_product/test_offline_whole_book_lifecycle.py`
+  - `reading-companion-backend/tests/test_attentional_v2_reading_product.py`
+  - commits `d83707a`, `7dcd160`, `e7adccc`, `6239147`; Slice 5 close-out `pending`
+
 ### `TASK-ANNOTATION-PACK-V0-IMPLEMENTATION` — Implement the Second Reader Annotation Pack v0 contract and exporter
 - Status: `done`
 - Lane: `product_contract`
 - Priority: `high`
 - Detail: `docs/implementation/annotation-pack/second-reader-annotation-pack-v0-detailed-design-and-implementation-handoff.md`
-- Next: implementation is closed after three accepted slices. Preserve the completion boundary: current-format producer data can generate, validate, and independently package the Tiny Reader real-EPUB fixture; do not reinterpret this as prior whole-book conversion, a real current whole-book Agent-to-Pack run, live Pages, or Library/API/frontend/Reader integration. Any public Pages activation or product integration is a separate task.
+- Next: the minimal W3C/DC wire remains closed, and `DEC-158` follow-through now makes complete Reading Product v1 the default producer while phase9 is explicit legacy-only. Preserve the repo-local offline completion boundary: a real EPUB plus deterministic model substitutes can pass through the default reading mechanism, whole-book Product finalizer, compatibility projection, Pack generation, detached packaging, and independent validation. Do not reinterpret this as historical whole-book conversion, a real LLM whole-book run, live Pages, native Unit API, frontend U/R, or Library/API/Reader integration.
 - Evidence:
   - `DEC-155`
   - `DEC-156`
   - `DEC-157`
+  - `DEC-158`
   - `contract/annotation-pack/v0/README.md`
   - `contract/annotation-pack/v0/schema/annotation-pack.schema.json`
   - `.github/workflows/annotation-pack-pages.yml`
@@ -47,6 +71,7 @@ Last updated: `2026-08-29T18:04:24+08:00`
   - `reading-companion-backend/src/annotation_pack/packaging.py`
   - `reading-companion-backend/src/annotation_pack/producers/__init__.py`
   - `reading-companion-backend/src/annotation_pack/producers/second_reader.py`
+  - `reading-companion-backend/src/annotation_pack/producers/reading_product.py`
   - `reading-companion-backend/src/annotation_pack/exporter.py`
   - `reading-companion-backend/src/reading_runtime/artifacts.py`
   - `reading-companion-backend/src/reading_runtime/job_lease.py`
@@ -74,6 +99,7 @@ Last updated: `2026-08-29T18:04:24+08:00`
   - `reading-companion-backend/tests/annotation_pack/fixtures/tiny-reader/source.epub`
   - `reading-companion-backend/tests/annotation_pack/fixtures/tiny-reader/golden/digests.json`
   - `reading-companion-backend/tests/annotation_pack/test_tiny_reader_golden.py`
+  - `reading-companion-backend/tests/reading_product/test_offline_whole_book_lifecycle.py`
   - `docs/source-of-truth-map.md`
   - `docs/backend-state-aggregation.md`
   - `docs/implementation/annotation-pack/baseline-observations.md`
@@ -98,20 +124,6 @@ Last updated: `2026-08-29T18:04:24+08:00`
   - `reading-companion-backend/src/annotation_pack/producers/second_reader.py`
 
 ## Active
-
-### `TASK-READING-PRODUCT-OUTPUT-V1` — Implement mechanism-neutral Reading Product Output v1
-- Status: `active`
-- Lane: `product_contract`
-- Priority: `high`
-- Detail: `docs/implementation/reading-product/reading-product-output-v1-detailed-design-and-implementation-handoff.md`
-- Next: implement and accept the five offline Slices on `codex/annotation-pack-v0`: contract/shared foundations, per-Unit product transaction, resume/finalizer, Pack/chapter compatibility consumers, and a real-EPUB whole-book lifecycle using deterministic model substitutes. Commit and push every accepted Slice. Do not access or test the expired OpenCode Go key and do not make a live-model claim.
-- Evidence:
-  - `DEC-158`
-  - `contract/reading-product/v1/README.md`
-  - `contract/reading-product/v1/schema/reading-product-output.schema.json`
-  - `docs/implementation/reading-product/reading-product-output-v1-detailed-design-and-implementation-handoff.md`
-  - `scripts/reading-product-contract-check.sh`
-  - `scripts/build_contract_pages.py`
 
 ### `TASK-SECOND-READER-INGEST-DIGEST-REFRAME-AUDIT-20260530` — Maintain the implemented Ingest/Digest and Unit Memory mechanism track
 - Status: `active`
@@ -884,8 +896,8 @@ Last updated: `2026-08-29T18:04:24+08:00`
 - Lane: `mechanism_eval`
 - Priority: `high`
 - Detail: `docs/implementation/reading-product/reading-product-output-v1-detailed-design-and-implementation-handoff.md#9-deferred-live-acceptance`
-- Blocker: no usable LLM API credential is currently available; the prior OpenCode Go key is expired.
-- Next: wait for the owner to supply a usable credential in a future task, then run one short real EPUB through the normal product entrypoint and verify `complete Reading Product -> Annotation Pack`. Do not inspect, restore, preflight, or retry the expired key.
+- Blocker: no usable model API credential is currently available.
+- Next: wait for the owner to supply a usable credential in a future task, then run one short real EPUB through the normal product entrypoint and verify `complete Reading Product -> Annotation Pack`. Do not inspect, restore, preflight, or retry the expired credential, and do not redesign the completed offline implementation first.
 - Evidence:
   - `DEC-158`
   - `docs/implementation/reading-product/reading-product-output-v1-detailed-design-and-implementation-handoff.md`
