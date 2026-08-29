@@ -18,6 +18,10 @@ from src.annotation_pack.drafts import (
 )
 from src.annotation_pack.epub_source import EpubSourceError, normalize_epub_href
 from src.annotation_pack.identity import PublicationIdentityResult
+from src.reading_core.source_ranges import (
+    SourceRangeValidationError,
+    validate_book_document_source_range,
+)
 
 
 MAX_EXACT_CODE_POINTS = 1024
@@ -50,75 +54,26 @@ class AnchorBuilder:
         if not isinstance(publication, PublicationIdentityResult):
             raise TypeError("publication must be a PublicationIdentityResult")
 
-        start, end = _validated_source_range(draft)
-        chapter, _chapter_order = _resolve_chapter(
-            publication, start.chapter_id, draft
-        )
-        paragraphs, paragraph_positions = _resolve_paragraphs(chapter, draft)
-        start_position = _require_paragraph_position(
-            paragraph_positions,
-            start.paragraph_index,
-            draft,
-        )
-        end_position = _require_paragraph_position(
-            paragraph_positions,
-            end.paragraph_index,
-            draft,
-        )
-        if start_position > end_position:
-            _fail(draft, "malformed_source_span", "source range order is invalid")
-
-        start_paragraph = paragraphs[start_position]
-        end_paragraph = paragraphs[end_position]
-        start_text = _paragraph_text(start_paragraph, draft)
-        end_text = _paragraph_text(end_paragraph, draft)
-        _validate_offset(start.char_offset, start_text, draft)
-        _validate_offset(end.char_offset, end_text, draft)
-        if start_position == end_position and start.char_offset >= end.char_offset:
-            _fail(draft, "malformed_source_span", "source range must be non-empty")
-        if not _is_grapheme_boundary(start_text, start.char_offset) or not (
-            _is_grapheme_boundary(end_text, end.char_offset)
-        ):
-            _fail(
-                draft,
-                "grapheme_boundary_split",
-                "source range splits an extended grapheme cluster",
+        try:
+            resolved_source = validate_book_document_source_range(
+                publication.rebuilt_book_document,
+                draft.source_range,
+                expected_quote=draft.source_quote,
+                normalize_href=normalize_epub_href,
+                maximum_quote_code_points=MAX_EXACT_CODE_POINTS,
             )
-
-        covered = paragraphs[start_position : end_position + 1]
-        readable = [paragraph for paragraph in covered if _is_readable(paragraph)]
-        if not readable or readable[0] is not start_paragraph or readable[-1] is not end_paragraph:
-            _fail(
-                draft,
-                "malformed_source_span",
-                "source range endpoints must reference readable paragraphs",
-            )
+        except SourceRangeValidationError as exc:
+            _fail(draft, exc.code, str(exc))
+        start = resolved_source.source_range.start
+        end = resolved_source.source_range.end
+        covered = list(resolved_source.covered_paragraphs)
+        readable = list(resolved_source.readable_paragraphs)
         href_participants = [
             paragraph
             for paragraph in covered
             if _paragraph_text(paragraph, draft)
         ]
         href = _single_canonical_href(href_participants, publication, draft)
-        reconstructed = _reconstruct_quote(
-            readable,
-            start=start,
-            end=end,
-            draft=draft,
-        )
-        if not isinstance(draft.source_quote, str) or not draft.source_quote:
-            _fail(draft, "unresolved_source_quote", "source quote is missing")
-        if len(draft.source_quote) > MAX_EXACT_CODE_POINTS:
-            _fail(
-                draft,
-                "source_quote_too_long",
-                "source quote exceeds the v0 code-point limit",
-            )
-        if reconstructed != draft.source_quote:
-            _fail(
-                draft,
-                "unresolved_source_quote",
-                "source quote does not match the canonical BookDocument range",
-            )
 
         resource_text, resource_start, resource_end = _resolve_resource_slice(
             publication=publication,

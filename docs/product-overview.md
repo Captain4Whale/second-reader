@@ -22,6 +22,8 @@ Use `docs/product-interaction-model.md` for the canonical journey, routes, and p
 - The experience should preserve the feeling of "AI thinking while reading" rather than flattening into a report generator.
 - The user is not only consuming conclusions.
   - The user is getting access to a reading process, its live attention, and the trail of thoughts that surfaced along the way.
+- The durable product result of a completed reading is not the full private Agent trace. It is the ordered set of accepted source Units together with the co-reader's Understanding, Response, and exact-source Marginalia for each Unit.
+- This product result must remain usable when the internal reading mechanism changes. Private selection rationale, planning, memory, prompt/trace, and recovery evidence support audit and operation but do not define the user-facing reading product.
 
 ## Illustrative Value Channels
 - The product can create value through multiple channels at once.
@@ -45,6 +47,7 @@ Use `docs/product-interaction-model.md` for the canonical journey, routes, and p
 - A living co-reader mind is the core product identity.
 - Live visible thought while reading is part of the core experience.
 - Blind-spot discovery, resonance, delight, recall, and companionship are all legitimate current value channels.
+- Reading Product Output v1 is the canonical backend product fact for accepted Unit boundaries plus Understanding, Response, and source-grounded Marginalia. Downstream Pack/API projections may select from it without treating the private mechanism ledger as product truth.
 
 ### Emerging
 - Explicit user-agent dialogue or steering is emerging product territory, not part of the canonical current promise.

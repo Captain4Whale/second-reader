@@ -11,6 +11,8 @@ fi
 require_backend_venv
 BACKEND_PYTHON="$BACKEND_DIR/.venv/bin/python"
 
+"$ROOT_DIR/scripts/reading-product-contract-check.sh"
+
 "$ROOT_DIR/scripts/annotation-pack-contract-check.sh"
 
 echo "Checking docs/backend/frontend contract constants..."

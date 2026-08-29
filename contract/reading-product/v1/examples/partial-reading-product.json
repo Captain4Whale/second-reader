@@ -1,0 +1,50 @@
+{
+  "schema_version": "reading-product-output/1.0",
+  "reading_id": "urn:uuid:1f44d3e4-3518-4e16-8fb1-53dcff7aa8d4",
+  "status": "partial",
+  "source": {
+    "epub_sha256": "c6b708b231994f2c768e0462011e764782512f0f749b83743122d243b8e74247",
+    "book_document_substrate_sha256": "a48955c05af6713cece0eac5838da4308422f15a0ef4d997fa9c75d9750db7f2"
+  },
+  "started_at": "2026-08-29T01:00:00Z",
+  "units": [
+    {
+      "unit_id": "u000001",
+      "sequence_index": 1,
+      "source_range": {
+        "start": {
+          "chapter_id": 1,
+          "paragraph_index": 1,
+          "char_offset": 0
+        },
+        "end": {
+          "chapter_id": 1,
+          "paragraph_index": 2,
+          "char_offset": 37
+        }
+      },
+      "settled_at": "2026-08-29T01:01:00Z",
+      "understanding": "The opening frames deliberate return as part of serious reading.",
+      "response": "The idea shifts rereading from repetition toward testing a changed question.",
+      "marginalia": [
+        {
+          "marginalia_id": "u000001-m001",
+          "kind": "highlight",
+          "source_range": {
+            "start": {
+              "chapter_id": 1,
+              "paragraph_index": 2,
+              "char_offset": 0
+            },
+            "end": {
+              "chapter_id": 1,
+              "paragraph_index": 2,
+              "char_offset": 37
+            }
+          },
+          "source_quote": "A durable idea is worth returning to."
+        }
+      ]
+    }
+  ]
+}

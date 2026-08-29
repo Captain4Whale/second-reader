@@ -25,6 +25,11 @@ import xml.etree.ElementTree as ET
 import zipfile
 import zlib
 
+from src.reading_core.epub_href import (
+    EpubHrefError,
+    normalize_epub_href as _normalize_shared_epub_href,
+)
+
 
 DEFAULT_SOURCE_ASSET: Final = "_assets/source.epub"
 EPUB_MEDIA_TYPE: Final = "application/epub+zip"
@@ -730,34 +735,12 @@ def normalize_epub_href(href: str) -> str:
     UTF-8 percent escapes are decoded and then emitted with canonical escaping.
     """
 
-    if not isinstance(href, str) or not href or href != _strip_frozen_white_space(href):
-        raise _source_error("OPF manifest contains an unsafe resource href.")
-    parsed = _urlsplit(href)
-    if (
-        parsed.scheme
-        or parsed.netloc
-        or parsed.query
-        or href.startswith("/")
-        or "\\" in href
-        or "\x00" in href
-        or any(unicodedata.category(character) == "Cc" for character in href)
-        or "//" in parsed.path
-        or _WINDOWS_DRIVE.match(parsed.path)
-    ):
-        raise _source_error("OPF manifest contains an unsafe resource href.")
-    raw_parts = parsed.path.split("/")
-    while raw_parts and raw_parts[0] == ".":
-        raw_parts.pop(0)
-    if not raw_parts:
-        raise _source_error("OPF manifest contains an unsafe resource href.")
-    decoded_parts = tuple(_decode_href_segment(part) for part in raw_parts)
-    return "/".join(
-        quote(
-            part,
-            safe="-._~!$&'()*+,;=@" if index == 0 else "-._~!$&'()*+,;=:@",
-        )
-        for index, part in enumerate(decoded_parts)
-    )
+    try:
+        return _normalize_shared_epub_href(href)
+    except EpubHrefError as exc:
+        if "canonical NFC" in str(exc):
+            raise _source_error("EPUB href must use canonical NFC Unicode.") from None
+        raise _source_error("OPF manifest contains an unsafe resource href.") from None
 
 
 def normalize_opf_relative_href(opf_path: str, href: str) -> ResolvedOpfHref:

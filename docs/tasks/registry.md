@@ -7,7 +7,7 @@ Update when: task status, priority, blockers, decision refs, job refs, evidence 
 
 This document is the human-readable companion to `docs/tasks/registry.json`.
 
-Last updated: `2026-08-25T21:45:54+08:00`
+Last updated: `2026-08-29T18:04:24+08:00`
 
 ## Status Values
 - `active`
@@ -98,6 +98,20 @@ Last updated: `2026-08-25T21:45:54+08:00`
   - `reading-companion-backend/src/annotation_pack/producers/second_reader.py`
 
 ## Active
+
+### `TASK-READING-PRODUCT-OUTPUT-V1` — Implement mechanism-neutral Reading Product Output v1
+- Status: `active`
+- Lane: `product_contract`
+- Priority: `high`
+- Detail: `docs/implementation/reading-product/reading-product-output-v1-detailed-design-and-implementation-handoff.md`
+- Next: implement and accept the five offline Slices on `codex/annotation-pack-v0`: contract/shared foundations, per-Unit product transaction, resume/finalizer, Pack/chapter compatibility consumers, and a real-EPUB whole-book lifecycle using deterministic model substitutes. Commit and push every accepted Slice. Do not access or test the expired OpenCode Go key and do not make a live-model claim.
+- Evidence:
+  - `DEC-158`
+  - `contract/reading-product/v1/README.md`
+  - `contract/reading-product/v1/schema/reading-product-output.schema.json`
+  - `docs/implementation/reading-product/reading-product-output-v1-detailed-design-and-implementation-handoff.md`
+  - `scripts/reading-product-contract-check.sh`
+  - `scripts/build_contract_pages.py`
 
 ### `TASK-SECOND-READER-INGEST-DIGEST-REFRAME-AUDIT-20260530` — Maintain the implemented Ingest/Digest and Unit Memory mechanism track
 - Status: `active`
@@ -864,6 +878,17 @@ Last updated: `2026-08-25T21:45:54+08:00`
   - `reading-companion-backend/eval/runs/attentional_v2/attentional_v2_full_long_span_vnext_post_slice8h_20260518_parallel5/meta/selected_windows.json`
 
 ## Blocked
+
+### `TASK-READING-PRODUCT-OUTPUT-V1-LIVE-ACCEPTANCE` — Run live whole-book Reading Product v1 acceptance
+- Status: `blocked`
+- Lane: `mechanism_eval`
+- Priority: `high`
+- Detail: `docs/implementation/reading-product/reading-product-output-v1-detailed-design-and-implementation-handoff.md#9-deferred-live-acceptance`
+- Blocker: no usable LLM API credential is currently available; the prior OpenCode Go key is expired.
+- Next: wait for the owner to supply a usable credential in a future task, then run one short real EPUB through the normal product entrypoint and verify `complete Reading Product -> Annotation Pack`. Do not inspect, restore, preflight, or retry the expired key.
+- Evidence:
+  - `DEC-158`
+  - `docs/implementation/reading-product/reading-product-output-v1-detailed-design-and-implementation-handoff.md`
 
 ### `TASK-RUNTIME-OBSERVABILITY-COST-V1` — Land and validate runtime observability and cost v1
 - Status: `blocked`

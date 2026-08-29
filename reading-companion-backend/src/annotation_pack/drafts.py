@@ -12,26 +12,11 @@ from dataclasses import dataclass
 from datetime import datetime
 from typing import Any, Literal
 
+from src.reading_core.source_ranges import SourceCoordinate, SourceRange
+
 
 FindingSeverity = Literal["fatal", "error", "warning", "skipped"]
 AnnotationKind = Literal["highlight", "note"]
-
-
-@dataclass(frozen=True, slots=True)
-class SourceCoordinate:
-    """One end-exclusive paragraph-local Unicode code-point coordinate."""
-
-    chapter_id: int
-    paragraph_index: int
-    char_offset: int
-
-
-@dataclass(frozen=True, slots=True)
-class SourceRange:
-    """A start/end pair in the canonical BookDocument coordinate system."""
-
-    start: SourceCoordinate
-    end: SourceCoordinate
 
 
 @dataclass(frozen=True, slots=True)

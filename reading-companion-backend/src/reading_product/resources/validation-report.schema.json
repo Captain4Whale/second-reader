@@ -1,0 +1,204 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://captain4whale.github.io/second-reader/schema/reading-product/v1/validation-report.schema.json",
+  "title": "Second Reader Reading Product validation report v1",
+  "description": "Sanitized local validation companion for one complete Reading Product revision. It does not define or embed the Reading Product wire.",
+  "type": "object",
+  "required": [
+    "schema_version",
+    "validator_version",
+    "status",
+    "reading_id",
+    "reading_product_sha256",
+    "source",
+    "counts",
+    "findings"
+  ],
+  "properties": {
+    "schema_version": {
+      "const": "reading-product-validation-report/1.0"
+    },
+    "validator_version": {
+      "$ref": "#/$defs/semver"
+    },
+    "status": {
+      "enum": [
+        "valid",
+        "failed"
+      ]
+    },
+    "reading_id": {
+      "oneOf": [
+        {
+          "$ref": "#/$defs/uuidV4Urn"
+        },
+        {
+          "type": "null"
+        }
+      ]
+    },
+    "reading_product_sha256": {
+      "oneOf": [
+        {
+          "$ref": "#/$defs/sha256Hex"
+        },
+        {
+          "type": "null"
+        }
+      ]
+    },
+    "source": {
+      "oneOf": [
+        {
+          "$ref": "#/$defs/sourceIdentity"
+        },
+        {
+          "type": "null"
+        }
+      ]
+    },
+    "counts": {
+      "$ref": "#/$defs/counts"
+    },
+    "findings": {
+      "type": "array",
+      "items": {
+        "$ref": "#/$defs/finding"
+      },
+      "maxItems": 100000
+    }
+  },
+  "allOf": [
+    {
+      "if": {
+        "properties": {
+          "status": {
+            "const": "valid"
+          }
+        },
+        "required": [
+          "status"
+        ]
+      },
+      "then": {
+        "properties": {
+          "reading_id": {
+            "$ref": "#/$defs/uuidV4Urn"
+          },
+          "reading_product_sha256": {
+            "$ref": "#/$defs/sha256Hex"
+          },
+          "source": {
+            "$ref": "#/$defs/sourceIdentity"
+          },
+          "counts": {
+            "properties": {
+              "errors": {
+                "const": 0
+              }
+            }
+          }
+        }
+      }
+    }
+  ],
+  "additionalProperties": false,
+  "$defs": {
+    "uuidV4Urn": {
+      "type": "string",
+      "pattern": "^urn:uuid:[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$"
+    },
+    "sha256Hex": {
+      "type": "string",
+      "pattern": "^[0-9a-f]{64}$"
+    },
+    "semver": {
+      "type": "string",
+      "pattern": "^(0|[1-9][0-9]*)\\.(0|[1-9][0-9]*)\\.(0|[1-9][0-9]*)(?:-[0-9A-Za-z.-]+)?(?:\\+[0-9A-Za-z.-]+)?$"
+    },
+    "sourceIdentity": {
+      "type": "object",
+      "required": [
+        "epub_sha256",
+        "book_document_substrate_sha256"
+      ],
+      "properties": {
+        "epub_sha256": {
+          "$ref": "#/$defs/sha256Hex"
+        },
+        "book_document_substrate_sha256": {
+          "$ref": "#/$defs/sha256Hex"
+        }
+      },
+      "additionalProperties": false
+    },
+    "counts": {
+      "type": "object",
+      "required": [
+        "units",
+        "marginalia",
+        "rejected_marginalia",
+        "errors"
+      ],
+      "properties": {
+        "units": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "marginalia": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "rejected_marginalia": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "errors": {
+          "type": "integer",
+          "minimum": 0
+        }
+      },
+      "additionalProperties": false
+    },
+    "finding": {
+      "type": "object",
+      "required": [
+        "code",
+        "severity",
+        "message"
+      ],
+      "properties": {
+        "code": {
+          "type": "string",
+          "pattern": "^[a-z][a-z0-9_]{0,79}$"
+        },
+        "severity": {
+          "enum": [
+            "error",
+            "warning",
+            "skipped"
+          ]
+        },
+        "message": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 512
+        },
+        "unit_id": {
+          "type": "string",
+          "pattern": "^u[0-9]{6}$"
+        },
+        "marginalia_id": {
+          "type": "string",
+          "pattern": "^u[0-9]{6}-m[0-9]{3}$"
+        },
+        "json_pointer": {
+          "type": "string",
+          "pattern": "^(?:/(?:[^~/]|~0|~1)*)*$",
+          "maxLength": 2048
+        }
+      },
+      "additionalProperties": false
+    }
+  }
+}

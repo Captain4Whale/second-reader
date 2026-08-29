@@ -16,7 +16,8 @@ Update when: workspace structure, ownership boundaries, or primary shared entryp
 
 ### Root protocol contracts
 - `contract/annotation-pack/v0/` owns the producer-neutral Annotation Pack v0 wire schema, non-wire publication companion schemas, vocabulary context, pinned standards, and examples.
-- `.github/workflows/annotation-pack-pages.yml` publishes only the allowlisted Annotation Pack contract projection; it does not publish the full documentation tree, backend source, or runtime state.
+- `contract/reading-product/v1/` owns the mechanism-neutral accepted Unit/U-R-M product wire, source-coordinate rules, publication companion schemas, and examples.
+- `.github/workflows/annotation-pack-pages.yml` publishes only the unified allowlisted Annotation Pack and Reading Product contract projection; it does not publish the full documentation tree, backend source, or runtime state.
 
 ### `reading-companion-backend`
 - Python project declared in `pyproject.toml`
@@ -59,6 +60,7 @@ Update when: workspace structure, ownership boundaries, or primary shared entryp
   - mechanism-specific reader implementations
   - OpenAPI contract and payload normalization
   - the producer-neutral Annotation Pack reference implementation under `src/annotation_pack/`, generated from the root contract without making backend models authoritative
+  - the mechanism-neutral Reading Product runtime/store/finalizer under `src/reading_product/`, checked against the root contract without making backend models authoritative
 - Frontend owns:
   - route rendering
   - upload form UX
@@ -73,6 +75,8 @@ Update when: workspace structure, ownership boundaries, or primary shared entryp
 - Annotation Pack v0 protocol entrypoint and wire authority: `contract/annotation-pack/v0/README.md`, `contract/annotation-pack/v0/schema/annotation-pack.schema.json`
 - Annotation Pack public-safe end-to-end golden: `reading-companion-backend/tests/annotation_pack/fixtures/tiny-reader/README.md`, rebuilt by its colocated `build_fixture.py`
 - Annotation Pack focused verification: `make annotation-pack-contract-check`
+- Reading Product Output v1 protocol entrypoint and wire authority: `contract/reading-product/v1/README.md`, `contract/reading-product/v1/schema/reading-product-output.schema.json`
+- Reading Product focused offline verification: `make reading-product-contract-check`
 - Product-purpose authority: `docs/product-overview.md`
 - Product journey and surface authority: `docs/product-interaction-model.md`
 - Shared backend mechanism-platform authority: `docs/backend-reading-mechanism.md`
@@ -108,5 +112,6 @@ Update when: workspace structure, ownership boundaries, or primary shared entryp
 - Use `docs/backend-reading-mechanism.md` for shared mechanism boundaries and `docs/backend-reading-mechanisms/<mechanism>.md` for mechanism-private reading logic.
 - Treat `reading-companion-backend/output/<book_id>/public/` and `reading-companion-backend/output/<book_id>/_runtime/` as shared cross-mechanism territory.
 - Future Annotation Pack publications belong under `reading-companion-backend/output/<book_id>/public/annotation-packs/`; producer ledgers remain mechanism-private inputs and are not part of the public artifact.
+- Complete Reading Product revisions belong under `reading-companion-backend/output/<book_id>/public/reading-products/`; live transaction state belongs under `_runtime/reading-products/`, while mechanism audit/memory remains private.
 - Treat `reading-companion-backend/output/<book_id>/_mechanisms/<mechanism_key>/` as mechanism-owned territory for derived structures, runtime memory, checkpoints, and diagnostics.
 - The workspace root is the shared Git root for both sub-applications.

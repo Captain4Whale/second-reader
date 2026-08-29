@@ -118,6 +118,8 @@ Update when: document layering, reading order, task routing, or cross-project co
 - backend artifact aggregation, state surfaces, normalization boundary: `docs/backend-state-aggregation.md`
 - Annotation Pack minimal W3C/DC wire authority, producer-neutral information responsibility, exact EPUB NIH identity, Quote/Position rules, schema IRI, and examples: `contract/annotation-pack/v0/README.md`, `contract/annotation-pack/v0/schema/annotation-pack.schema.json`; minimal v0 has no project context or namespace
 - Annotation Pack implementation sequence, slice acceptance, and Definition of Done: `docs/implementation/annotation-pack/second-reader-annotation-pack-v0-detailed-design-and-implementation-handoff.md`
+- Reading Product Output v1 mechanism-neutral product facts, source identity, Unit/U-R-M wire, coordinate rules, and publication companions: `contract/reading-product/v1/README.md`, `contract/reading-product/v1/schema/reading-product-output.schema.json`
+- Reading Product implementation sequence, recovery rules, offline acceptance, and Definition of Done: `docs/implementation/reading-product/reading-product-output-v1-detailed-design-and-implementation-handoff.md`
 
 ### History Tasks
 - design evolution, rejected alternatives, key decision history: `docs/history/README.md`
@@ -151,6 +153,8 @@ Update when: document layering, reading order, task routing, or cross-project co
 - backend artifact aggregation, analysis-state sourcing, normalization boundary -> `docs/backend-state-aggregation.md`
 - Annotation Pack minimal wire/schema/identity/anchor authority -> `contract/annotation-pack/v0/README.md`, `contract/annotation-pack/v0/schema/annotation-pack.schema.json`; pointer/report are internal companions and there is no project context/namespace
 - Annotation Pack implementation sequencing, acceptance evidence, and completion boundary -> `docs/implementation/annotation-pack/second-reader-annotation-pack-v0-detailed-design-and-implementation-handoff.md`
+- Reading Product Output wire/source coordinates/product-vs-audit boundary -> `contract/reading-product/v1/README.md`, `contract/reading-product/v1/schema/reading-product-output.schema.json`
+- Reading Product settlement/finalizer/consumer sequencing and completion boundary -> `docs/implementation/reading-product/reading-product-output-v1-detailed-design-and-implementation-handoff.md`
 - session-only scratch notes that have not yet been promoted -> `docs/agent-handoff.md`
 - design evolution, rejected alternatives, key decision history -> `docs/history/README.md`
 
@@ -287,6 +291,7 @@ Update when: document layering, reading order, task routing, or cross-project co
 - If a backend change materially alters shared mechanism boundaries, mechanism status routing, or which docs own mechanism internals, update `docs/backend-reading-mechanism.md` in the same task.
 - If a backend change materially alters one mechanism's ontology, reading loop, prompt assembly, memory model, or private artifacts, update `docs/backend-reading-mechanisms/<mechanism>.md` in the same task.
 - If a mechanism changes how it produces Highlights/Notes or source grounding, verify and document its mapping to the producer-neutral handoff in `contract/annotation-pack/v0/README.md`; do not make a generic exporter depend on that mechanism's phase/version or infer missing annotation intent.
+- If a mechanism changes accepted Unit boundaries, Understanding/Response/Marginalia production, or settlement timing, verify and document its mapping into `contract/reading-product/v1/README.md`; product output must remain mechanism-neutral and audit/runtime evidence must not leak into the wire.
 - If a backend change adds a mechanism, archives one, or changes which mechanism is default, update `docs/backend-reading-mechanisms/README.md` in the same task.
 - If a backend change changes which mechanism is default, update `docs/backend-reading-mechanism.md`, `docs/workspace-overview.md`, `docs/backend-sequential-lifecycle.md`, `docs/backend-state-aggregation.md`, `reading-companion-backend/AGENTS.md`, and `docs/history/decision-log.md` in the same task.
 - If a backend change materially alters reader-quality dimensions, evaluation workflow, offline judge usage, or evaluation artifact routing, update `docs/backend-reader-evaluation.md` in the same task.
@@ -334,4 +339,6 @@ Update when: document layering, reading order, task routing, or cross-project co
 - `docs/backend-reading-mechanisms/iterator_v1.md` when the task touches the current live/default reader internals
 - `contract/annotation-pack/v0/README.md` and its canonical schema when the task touches Annotation Pack minimal wire data, exact EPUB identity, Quote/Position anchors, schema IRI, internal pointer/report companions, or examples
 - `docs/implementation/annotation-pack/second-reader-annotation-pack-v0-detailed-design-and-implementation-handoff.md` when implementing or accepting an Annotation Pack slice
+- `contract/reading-product/v1/README.md` and its canonical schema when the task touches accepted Unit product data, U/R/M, BookDocument coordinates, complete-product publication, or downstream product consumers
+- `docs/implementation/reading-product/reading-product-output-v1-detailed-design-and-implementation-handoff.md` when implementing or accepting a Reading Product slice
 - Then load only the task-gated stable doc that matches the work at hand

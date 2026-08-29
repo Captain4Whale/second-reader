@@ -1,6 +1,21 @@
 """Shared canonical book substrate and cross-mechanism runtime contracts."""
 
 from .book_document import BookChapter, BookDocument, BookMetadata, ChapterHeadingBlock, ParagraphRecord, SentenceRecord, TextLocator, TextRole
+from .book_document_identity import (
+    BookDocumentIdentityError,
+    SUBSTRATE_FINGERPRINT_VERSION,
+    SubstrateComparison,
+    book_document_substrate_digest,
+    book_document_substrate_stream,
+    compare_book_document_substrates,
+    project_book_document_substrate,
+)
+from .canonical_json import (
+    CANONICALIZATION,
+    CanonicalJsonError,
+    canonical_json_bytes,
+    validate_json_value,
+)
 from .normalized_outputs import (
     AttentionEventKind,
     CurrentReadingPhase,
@@ -36,14 +51,29 @@ from .runtime_contracts import (
     stable_config_fingerprint,
 )
 from .sentences import build_sentence_records, ensure_book_document_sentence_layer, split_text_into_sentence_spans, split_text_into_sentences
+from .source_ranges import (
+    ResolvedSourceRange,
+    SourceCoordinate,
+    SourceRange,
+    SourceRangeValidationError,
+    source_coordinate_from_wire,
+    source_coordinate_to_wire,
+    source_range_contains,
+    source_range_from_wire,
+    source_range_to_wire,
+    validate_book_document_source_range,
+)
 from .storage import book_document_file, existing_book_document_file, load_book_document, save_book_document
 
 __all__ = [
     "AttentionEventKind",
     "BookChapter",
     "BookDocument",
+    "BookDocumentIdentityError",
     "BookMetadata",
     "CheckpointSummary",
+    "CANONICALIZATION",
+    "CanonicalJsonError",
     "ChapterHeadingBlock",
     "CurrentReadingPhase",
     "CurrentReadingProblemCode",
@@ -70,19 +100,37 @@ __all__ = [
     "RuntimeCursorKind",
     "RuntimeShellState",
     "SearchHit",
+    "ResolvedSourceRange",
     "SharedRunCursor",
+    "SourceCoordinate",
+    "SourceRange",
+    "SourceRangeValidationError",
+    "SUBSTRATE_FINGERPRINT_VERSION",
+    "SubstrateComparison",
     "TextLocator",
     "TextRole",
     "ThoughtFamily",
     "UserMark",
     "UserMarksState",
     "build_sentence_records",
+    "book_document_substrate_digest",
+    "book_document_substrate_stream",
     "book_document_file",
+    "canonical_json_bytes",
+    "compare_book_document_substrates",
     "ensure_book_document_sentence_layer",
     "existing_book_document_file",
     "load_book_document",
     "save_book_document",
+    "source_coordinate_from_wire",
+    "source_coordinate_to_wire",
+    "source_range_contains",
+    "source_range_from_wire",
+    "source_range_to_wire",
+    "project_book_document_substrate",
     "split_text_into_sentence_spans",
     "split_text_into_sentences",
     "stable_config_fingerprint",
+    "validate_book_document_source_range",
+    "validate_json_value",
 ]

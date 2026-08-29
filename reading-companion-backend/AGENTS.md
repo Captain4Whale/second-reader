@@ -14,6 +14,7 @@ Update when: backend-local constraints, recurring pitfalls, or stable implementa
 - Use `../docs/backend-reading-mechanisms/iterator_v1.md` for the supported fallback mechanism's section/subsegment internals.
 - Use `../docs/backend-reader-evaluation.md` for reader-quality goals, evaluation layers, and offline eval methodology.
 - Use `../contract/annotation-pack/v0/README.md` and its schema for the minimal W3C/DC Annotation Pack wire, exact EPUB NIH identity, and Quote/Position authority; use `../docs/implementation/annotation-pack/second-reader-annotation-pack-v0-detailed-design-and-implementation-handoff.md` for slice sequencing and acceptance.
+- Use `../contract/reading-product/v1/README.md` and its schema for mechanism-neutral accepted Unit/U-R-M product facts, source coordinates, and complete-product publication; use `../docs/implementation/reading-product/reading-product-output-v1-detailed-design-and-implementation-handoff.md` for settlement/finalizer sequencing and acceptance.
 
 ## Stable Defaults
 - Default to improving `sequential` deep-reading quality.
@@ -63,6 +64,9 @@ Update when: backend-local constraints, recurring pitfalls, or stable implementa
 
 ## Local Structure Rules
 - Keep `../contract/annotation-pack/v0/schema/annotation-pack.schema.json` authoritative for the Annotation Pack wire contract. Generated models and `src/annotation_pack/resources/` are checked offline copies, not competing authorities.
+- Keep `../contract/reading-product/v1/schema/reading-product-output.schema.json` authoritative for the Reading Product wire. Runtime models and `src/reading_product/resources/` are strict checked derivatives, not competing authorities.
+- Keep Reading Product mechanism-neutral and product-only: accepted Unit source ranges, Understanding, Response, and exact-source Highlight/Note Marginalia belong there; selection reasons, prompts, memory, traces, provider/job/Agent identifiers, compatibility taxonomy, and provenance do not.
+- Commit a Product Unit before advancing the accepted source cursor. Product Store is settlement truth; Unit Memory, reaction records, audit, and compatibility projections are recoverable derivatives. Only a complete finalizer result may switch `public/reading-products/current.json`.
 - Keep minimal v0 `annotations.json` and `.annotations` free of `sr:*`, project JSON-LD context/namespace, producer provenance, and local pointer/report data. Input/source digests, producer/adapter metadata, and findings belong only in sanitized internal companions.
 - Keep Annotation Pack export explicit and exporter-owned. Normal reading completion, catalog/API aggregation, Library discovery, and the frontend must not infer or publish Packs independently; the Pages schema IRI is not live until default-branch deployment and served-byte verification.
 - Keep `src/annotation_pack/` producer-neutral. Only explicit producer adapters may depend on a reading mechanism; schema, validation, identity, packaging, and publication code must not import mechanism internals.

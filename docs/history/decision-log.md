@@ -4405,3 +4405,30 @@ Pack UUIDv5 input is the exact EPUB hash plus the fixed generator identity. Anno
 - `docs/backend-reading-mechanism.md`
 - `docs/backend-reading-mechanisms/README.md`
 - `docs/backend-state-aggregation.md`
+
+## Entry 156
+**ID**: DEC-158
+**Status**: active
+
+**Decision / Inflection**: Establish Reading Product Output v1 as the mechanism-neutral product fact between private reading execution and downstream Annotation Pack/API projections.
+
+**Period**: August 29, 2026, after Annotation Pack v0 closure and a real-Agent artifact audit exposed that the project had product semantics distributed across Unit Memory, reaction records, compatibility views, and audit rather than one authoritative accepted-reading output.
+
+**Problem**: `attentional_v2` already produces an accepted source Unit plus Understanding, Response, and Marginalia, but no single artifact preserves those facts as the durable product. Unit Memory is mechanism-private and non-authoritative; reaction records retain Marginalia but lose the Unit-level U/R relation; audit mixes product semantics with selection rationale, traces, and operational evidence. Exporting directly from any one of those shapes couples consumers to a mechanism phase and makes it tempting to infer missing product meaning from audit. It also leaves cursor advance, crash recovery, whole-book completion, and rerun identity without one product-level transaction boundary.
+
+**Decision**: `contract/reading-product/v1/` is the sole wire authority. One reading revision is bound to the exact EPUB SHA-256 and the shared `sr-book-document-substrate-v1` digest. Each accepted Unit commits one strict record containing its canonical paragraph/Unicode-code-point range, non-empty Understanding and Response, settlement time, and zero or more exact-range Highlight/Note Marginalia. Model/provider/version details, selection reasons, prompts, memory, trace, compatibility taxonomy, jobs, provenance, and supersession are excluded. Product Store commits before accepted cursor advance and becomes settlement truth; private memory/reaction/audit/compatibility artifacts are derived. A deterministic whole-book finalizer may seal an immutable `complete` revision only after all scheduled `mainline + deferred` chapters finish; `auxiliary` is excluded. Partial products cannot become current or feed Annotation Pack.
+
+Annotation Pack consumes only complete-product Marginalia and keeps its W3C/DC wire unchanged; Understanding and Response remain Reading Product facts. Fresh reruns use a new UUIDv4 reading revision. V1 does not model annotation replacement/supersession.
+
+**Execution constraint**: The current OpenCode Go credential is expired and no replacement is available. Implementation, deterministic test doubles, real-EPUB offline lifecycle, commits, and pushes are authorized. Reading or testing the expired key, provider preflight, and real LLM whole-book reading are explicitly out of scope. Live acceptance remains a separate blocked task until the owner supplies a usable credential.
+
+**Why this path won**: A narrow product transaction preserves exactly what downstream product surfaces need while allowing prompts, mechanisms, memory, and audit to evolve independently. Incremental Unit commits give honest recovery; finalization gives an immutable whole-book deliverable without asking a closing model pass to reconstruct semantics.
+
+**Primary evidence**:
+- `contract/reading-product/v1/README.md`
+- `contract/reading-product/v1/schema/reading-product-output.schema.json`
+- `docs/implementation/reading-product/reading-product-output-v1-detailed-design-and-implementation-handoff.md`
+- `reading-companion-backend/src/reading_product/`
+- `reading-companion-backend/src/reading_core/source_ranges.py`
+- `reading-companion-backend/src/reading_core/book_document_identity.py`
+- `docs/source-of-truth-map.md`

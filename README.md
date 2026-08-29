@@ -276,6 +276,7 @@ Important frontend variables:
 - `make status-phoenix`: show installation, PID, UI readiness, endpoints, and state path without starting Phoenix
 - `make stop-phoenix`: stop only the PID verified as the repo-local Phoenix sidecar and preserve its data
 - `make test`: run backend tests, frontend typecheck/build, and contract drift checks
+- `make reading-product-contract-check`: verify the mechanism-neutral Reading Product Output v1 schemas, examples, semantic invariants, runtime copy, and unified strict GitHub Pages projection without network or model access
 - `make annotation-pack-contract-check`: verify the minimal Annotation Pack v0 W3C/DC schema, examples, generated bindings/runtime copies, tracked Tiny Reader JSON/package golden, and strict GitHub Pages projection without network access
 - `make contract-check`: verify docs appendix, backend OpenAPI snapshot, and frontend contract guards
 - `make e2e`: run the fixture-backed upload -> analysis -> book -> chapter -> marks Playwright flow

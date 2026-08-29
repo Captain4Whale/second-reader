@@ -1,7 +1,65 @@
 {
   "version": 1,
-  "updated_at": "2026-08-25T21:45:54+08:00",
+  "updated_at": "2026-08-29T18:04:24+08:00",
   "tasks": [
+    {
+      "id": "TASK-READING-PRODUCT-OUTPUT-V1",
+      "title": "Implement mechanism-neutral Reading Product Output v1",
+      "status": "active",
+      "lane": "product_contract",
+      "priority": "high",
+      "detail_ref": "docs/implementation/reading-product/reading-product-output-v1-detailed-design-and-implementation-handoff.md",
+      "truth_refs": [
+        "contract/reading-product/v1/README.md",
+        "contract/reading-product/v1/schema/reading-product-output.schema.json",
+        "docs/tasks/registry.md",
+        "docs/source-of-truth-map.md"
+      ],
+      "decision_refs": [
+        "DEC-158"
+      ],
+      "job_refs": [],
+      "acceptance_ref": "docs/implementation/reading-product/reading-product-output-v1-detailed-design-and-implementation-handoff.md#8-definition-of-done",
+      "next_action": "Implement and accept Slices 1-5 offline: contract/shared foundations, per-Unit product transaction, resume/finalizer, Annotation Pack and chapter compatibility consumers, then a real-EPUB whole-book lifecycle using deterministic model substitutes. Commit and push each accepted Slice on codex/annotation-pack-v0. Do not access or test the expired OpenCode Go key and do not make a live-model claim.",
+      "blocked_by": [],
+      "evidence_refs": [
+        "contract/reading-product/v1/README.md",
+        "contract/reading-product/v1/schema/reading-product-output.schema.json",
+        "docs/history/decision-log.md",
+        "docs/implementation/reading-product/reading-product-output-v1-detailed-design-and-implementation-handoff.md",
+        "scripts/reading-product-contract-check.sh",
+        "scripts/check_reading_product_contract.py",
+        "scripts/build_contract_pages.py"
+      ],
+      "last_updated": "2026-08-29T18:04:24+08:00",
+      "last_updated_by": "codex"
+    },
+    {
+      "id": "TASK-READING-PRODUCT-OUTPUT-V1-LIVE-ACCEPTANCE",
+      "title": "Run live whole-book Reading Product v1 acceptance",
+      "status": "blocked",
+      "lane": "mechanism_eval",
+      "priority": "high",
+      "detail_ref": "docs/implementation/reading-product/reading-product-output-v1-detailed-design-and-implementation-handoff.md",
+      "truth_refs": [
+        "contract/reading-product/v1/README.md",
+        "docs/tasks/registry.md",
+        "docs/current-state.md"
+      ],
+      "decision_refs": [
+        "DEC-158"
+      ],
+      "job_refs": [],
+      "acceptance_ref": "docs/implementation/reading-product/reading-product-output-v1-detailed-design-and-implementation-handoff.md#9-deferred-live-acceptance",
+      "next_action": "Wait for the owner to provide a usable model API credential in a future task. Then run one short real EPUB through the normal product entrypoint and verify complete Reading Product to Annotation Pack. Do not inspect, restore, preflight, or retry the expired OpenCode Go key.",
+      "blocked_by": [],
+      "evidence_refs": [
+        "docs/history/decision-log.md",
+        "docs/implementation/reading-product/reading-product-output-v1-detailed-design-and-implementation-handoff.md"
+      ],
+      "last_updated": "2026-08-29T18:04:24+08:00",
+      "last_updated_by": "codex"
+    },
     {
       "id": "TASK-ANNOTATION-PACK-V0-IMPLEMENTATION",
       "title": "Implement the Second Reader Annotation Pack v0 contract and exporter",

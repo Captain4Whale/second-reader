@@ -7,9 +7,10 @@ Update when: the current objective, active tasks, blockers, active jobs, open de
 
 This file is authoritative for durable current status. Do not keep unique active-state information only in `docs/agent-handoff.md`.
 
-Last verified: `2026-08-25T21:45:54+08:00`
+Last verified: `2026-08-29T18:04:24+08:00`
 
 ## Current Objective
+- `TASK-READING-PRODUCT-OUTPUT-V1` is the active product-contract/runtime objective under `DEC-158` on `codex/annotation-pack-v0`. It establishes one mechanism-neutral Reading Product fact containing exact EPUB/BookDocument identity plus every accepted Unit's source range, Understanding, Response, and exact-source Highlight/Note Marginalia. Product Store must commit before accepted cursor advance; private memory/reaction/audit/compatibility artifacts become derived; a deterministic finalizer may publish only a complete immutable whole-book revision. Annotation Pack and current chapter compatibility views will consume this fact without changing Pack v0 or public HTTP/frontend shapes. This round is offline-only: deterministic model substitutes and real EPUB fixtures are authorized, but the expired OpenCode Go key must not be read/tested and no live LLM request or real-Agent whole-book claim is allowed.
 - Annotation Pack minimal v0 is repo-locally complete under `TASK-ANNOTATION-PACK-V0-IMPLEMENTATION`, `DEC-156`, and the producer-responsibility clarification `DEC-157` on branch `codex/annotation-pack-v0`. Slice 1 landed and was pushed as `012788d`; Slice 2 atomically cut over the canonical schema/examples/standards, generated copies, Pages projection, implementation, strict current phase9 adapter, Tiny Reader goldens, and detached package as `b44ba7d`, also pushed; Slice 3 records final acceptance, governance checks, baseline separation, and branch close-out. The standards-vocabulary-only `AnnotationSet` uses one exact-EPUB RFC 6920 `nih:sha-256` identity plus Dublin Core title/format/authors, and every Highlight/Note targets a relative XHTML href with TextQuote+Unicode-code-point TextPosition. `DEC-157` makes the enduring input seam mechanism-neutral: the verified source substrate owns book/EPUB facts; mechanisms provide only `kind`, exact shared-source range/quote and conditional Note text; runtime supplies settlement time; generic export derives the W3C wire. `attentional_v2-phase9` is only the current adapter binding, not a future-mechanism requirement. The public wire has zero `sr:*`, rejects the old heavy v0 and phase8 instead of migrating them, and publishes no Work/Edition/File, Track, chapter context/fingerprints, custom anchor id, CFI, provenance, or digest. The supported completion claim remains limited to current-format producer data generating, validating, and independently packaging the Tiny Reader real-EPUB fixture; it does not establish conversion of prior whole-book outputs, a real current whole-book Agent-to-Pack run, or any Library, HTTP API, frontend, or Reader integration.
 - `TASK-ANNOTATION-PACK-RECENT-AGENT-ARTIFACT-VALIDATION` is complete with a corrected result. The best recent real current-native evidence is the July 5 phase9 Xidaduo evaluation segment, not the April phase8 product output. Its `112` records correctly contain `83` bodyless Highlights and `29` body-bearing Notes; all quote/range slices and timestamps round-trip, and the current adapter accepts `111`, rejecting only one five-code-point quote that occurs twice in its source unit. The exact EPUB and coherent `16`-chapter/`590`-paragraph source `BookDocument` are traceable through the dataset, and a deterministic renderer replay maps all `112` segment ranges back to exact EPUB hrefs. Direct export is still blocked because the eval artifact retains stale non-terminal runtime state, does not persist that coordinate map or co-locate the EPUB, and the exact-resource parser falsely rejects all `22` safe simple HTML doctypes. A narrow read-only parser/remap trial resolved all `111` accepted drafts. This segment covers source chapters `3–14`; it is not a current whole-book product proof.
 - The Annotation Hub consumer migration remains separately `waiting` under `TASK-ANNOTATION-HUB-V0-MINIMAL-PACK-MIGRATION`, is no longer blocked by Pack implementation, and stays outside this worktree. The schema IRI remains staged/not-live until the workflow reaches `main`, Pages is enabled, deployment succeeds, and served bytes match the canonical contract.
@@ -3570,6 +3571,7 @@ Last verified: `2026-08-25T21:45:54+08:00`
 - Benchmark confidence can look stronger than it really is if corpus growth, promotion, and reviewed-slice confidence gates drift apart.
 
 ## Active Task IDs
+- `TASK-READING-PRODUCT-OUTPUT-V1`
 - `TASK-ANNOTATION-PACK-V0-IMPLEMENTATION`
 - `TASK-SECOND-READER-INGEST-DIGEST-REFRAME-AUDIT-20260530`
 - `TASK-ATTENTIONAL-V2-STRUCTURAL-REWORK`
@@ -3581,6 +3583,7 @@ Last verified: `2026-08-25T21:45:54+08:00`
 - `TASK-ANNOTATION-HUB-V0-MINIMAL-PACK-MIGRATION`
 
 ## Blocked Task IDs
+- `TASK-READING-PRODUCT-OUTPUT-V1-LIVE-ACCEPTANCE`
 - `TASK-RUNTIME-OBSERVABILITY-COST-V1`
 
 ## Active Job IDs
@@ -3603,13 +3606,16 @@ Last verified: `2026-08-25T21:45:54+08:00`
 14. `docs/implementation/new-reading-mechanism/attentional_v2_structural_rework_plan.md` (historical/reference only after `DEC-108`)
 15. `docs/implementation/annotation-pack/second-reader-annotation-pack-v0-detailed-design-and-implementation-handoff.md`
 16. `contract/annotation-pack/v0/README.md`
+17. `docs/implementation/reading-product/reading-product-output-v1-detailed-design-and-implementation-handoff.md`
+18. `contract/reading-product/v1/README.md`
 
 ## Machine-Readable Appendix
 ```json
 {
-  "updated_at": "2026-08-25T12:59:17Z",
+  "updated_at": "2026-08-29T10:04:24Z",
   "last_updated_by": "codex",
   "active_task_ids": [
+    "TASK-READING-PRODUCT-OUTPUT-V1",
     "TASK-ATTENTIONAL-V2-STRUCTURAL-REWORK",
     "TASK-V2-NATIVE-READING-PRESENTATION",
     "TASK-USER-LEVEL-SELECTIVE-V1",
@@ -3620,11 +3626,14 @@ Last verified: `2026-08-25T21:45:54+08:00`
   ],
   "queued_task_ids": [],
   "blocked_task_ids": [
+    "TASK-READING-PRODUCT-OUTPUT-V1-LIVE-ACCEPTANCE",
     "TASK-RUNTIME-OBSERVABILITY-COST-V1"
   ],
   "active_job_ids": [],
   "open_decision_ids": [],
   "detail_refs": [
+    "docs/implementation/reading-product/reading-product-output-v1-detailed-design-and-implementation-handoff.md",
+    "contract/reading-product/v1/README.md",
     "docs/implementation/annotation-pack/second-reader-annotation-pack-v0-detailed-design-and-implementation-handoff.md",
     "docs/implementation/annotation-pack/recent-real-agent-artifact-contract-audit-2026-08-25.md",
     "contract/annotation-pack/v0/README.md",

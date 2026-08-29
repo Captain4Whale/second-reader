@@ -1,0 +1,52 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://captain4whale.github.io/second-reader/schema/reading-product/v1/publication-pointer.schema.json",
+  "title": "Second Reader Reading Product publication pointer v1",
+  "description": "Local pointer to one immutable, complete Reading Product revision. This auxiliary schema does not define or embed the Reading Product wire.",
+  "type": "object",
+  "required": [
+    "schema_version",
+    "reading_id",
+    "revision_id",
+    "reading_product",
+    "reading_product_sha256",
+    "validation_report",
+    "validation_report_sha256"
+  ],
+  "properties": {
+    "schema_version": {
+      "const": "reading-product-publication-pointer/1.0"
+    },
+    "reading_id": {
+      "$ref": "#/$defs/uuidV4Urn"
+    },
+    "revision_id": {
+      "$ref": "#/$defs/sha256Hex"
+    },
+    "reading_product": {
+      "type": "string",
+      "pattern": "^revisions/[0-9a-f]{64}/reading-product\\.json$"
+    },
+    "reading_product_sha256": {
+      "$ref": "#/$defs/sha256Hex"
+    },
+    "validation_report": {
+      "type": "string",
+      "pattern": "^revisions/[0-9a-f]{64}/validation-report\\.json$"
+    },
+    "validation_report_sha256": {
+      "$ref": "#/$defs/sha256Hex"
+    }
+  },
+  "additionalProperties": false,
+  "$defs": {
+    "uuidV4Urn": {
+      "type": "string",
+      "pattern": "^urn:uuid:[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$"
+    },
+    "sha256Hex": {
+      "type": "string",
+      "pattern": "^[0-9a-f]{64}$"
+    }
+  }
+}

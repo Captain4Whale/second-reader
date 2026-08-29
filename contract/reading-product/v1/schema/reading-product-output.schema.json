@@ -1,0 +1,272 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://captain4whale.github.io/second-reader/schema/reading-product/v1/reading-product-output.schema.json",
+  "title": "Second Reader Reading Product Output v1",
+  "description": "Mechanism-neutral, product-facing record of accepted reading units and their understanding, response, and source-grounded marginalia.",
+  "type": "object",
+  "required": [
+    "schema_version",
+    "reading_id",
+    "status",
+    "source",
+    "started_at",
+    "units"
+  ],
+  "properties": {
+    "schema_version": {
+      "const": "reading-product-output/1.0"
+    },
+    "reading_id": {
+      "$ref": "#/$defs/uuidV4Urn"
+    },
+    "status": {
+      "enum": [
+        "partial",
+        "complete"
+      ]
+    },
+    "source": {
+      "$ref": "#/$defs/sourceIdentity"
+    },
+    "started_at": {
+      "$ref": "#/$defs/utcDateTime"
+    },
+    "completed_at": {
+      "$ref": "#/$defs/utcDateTime"
+    },
+    "units": {
+      "type": "array",
+      "items": {
+        "$ref": "#/$defs/unit"
+      },
+      "maxItems": 999999
+    }
+  },
+  "allOf": [
+    {
+      "if": {
+        "properties": {
+          "status": {
+            "const": "complete"
+          }
+        },
+        "required": [
+          "status"
+        ]
+      },
+      "then": {
+        "required": [
+          "completed_at"
+        ],
+        "properties": {
+          "units": {
+            "minItems": 1
+          }
+        }
+      },
+      "else": {
+        "not": {
+          "required": [
+            "completed_at"
+          ]
+        }
+      }
+    }
+  ],
+  "additionalProperties": false,
+  "$defs": {
+    "uuidV4Urn": {
+      "type": "string",
+      "pattern": "^urn:uuid:[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$"
+    },
+    "sha256Hex": {
+      "type": "string",
+      "pattern": "^[0-9a-f]{64}$"
+    },
+    "utcDateTime": {
+      "type": "string",
+      "format": "date-time",
+      "pattern": "^[0-9]{4}-[0-9]{2}-[0-9]{2}T[0-9]{2}:[0-9]{2}:[0-9]{2}Z$"
+    },
+    "nonBlankText": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 262144,
+      "pattern": "^[\\s\\S]*\\S[\\s\\S]*$"
+    },
+    "sourceIdentity": {
+      "type": "object",
+      "required": [
+        "epub_sha256",
+        "book_document_substrate_sha256"
+      ],
+      "properties": {
+        "epub_sha256": {
+          "$ref": "#/$defs/sha256Hex"
+        },
+        "book_document_substrate_sha256": {
+          "$ref": "#/$defs/sha256Hex"
+        }
+      },
+      "additionalProperties": false
+    },
+    "sourceCoordinate": {
+      "type": "object",
+      "required": [
+        "chapter_id",
+        "paragraph_index",
+        "char_offset"
+      ],
+      "properties": {
+        "chapter_id": {
+          "type": "integer",
+          "minimum": 1
+        },
+        "paragraph_index": {
+          "type": "integer",
+          "minimum": 1
+        },
+        "char_offset": {
+          "type": "integer",
+          "minimum": 0
+        }
+      },
+      "additionalProperties": false
+    },
+    "sourceRange": {
+      "type": "object",
+      "required": [
+        "start",
+        "end"
+      ],
+      "properties": {
+        "start": {
+          "$ref": "#/$defs/sourceCoordinate"
+        },
+        "end": {
+          "$ref": "#/$defs/sourceCoordinate"
+        }
+      },
+      "additionalProperties": false
+    },
+    "unit": {
+      "type": "object",
+      "required": [
+        "unit_id",
+        "sequence_index",
+        "source_range",
+        "settled_at",
+        "understanding",
+        "response",
+        "marginalia"
+      ],
+      "properties": {
+        "unit_id": {
+          "type": "string",
+          "pattern": "^u[0-9]{6}$"
+        },
+        "sequence_index": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 999999
+        },
+        "source_range": {
+          "$ref": "#/$defs/sourceRange"
+        },
+        "settled_at": {
+          "$ref": "#/$defs/utcDateTime"
+        },
+        "understanding": {
+          "$ref": "#/$defs/nonBlankText"
+        },
+        "response": {
+          "$ref": "#/$defs/nonBlankText"
+        },
+        "marginalia": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/marginalia"
+          },
+          "maxItems": 999,
+          "uniqueItems": true
+        }
+      },
+      "additionalProperties": false
+    },
+    "marginalia": {
+      "type": "object",
+      "required": [
+        "marginalia_id",
+        "kind",
+        "source_range",
+        "source_quote"
+      ],
+      "properties": {
+        "marginalia_id": {
+          "type": "string",
+          "pattern": "^u[0-9]{6}-m[0-9]{3}$"
+        },
+        "kind": {
+          "enum": [
+            "highlight",
+            "note"
+          ]
+        },
+        "source_range": {
+          "$ref": "#/$defs/sourceRange"
+        },
+        "source_quote": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 1024,
+          "pattern": "^[\\s\\S]*\\S[\\s\\S]*$"
+        },
+        "body_text": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 16384,
+          "pattern": "^[\\s\\S]*\\S[\\s\\S]*$"
+        }
+      },
+      "allOf": [
+        {
+          "if": {
+            "properties": {
+              "kind": {
+                "const": "highlight"
+              }
+            },
+            "required": [
+              "kind"
+            ]
+          },
+          "then": {
+            "not": {
+              "required": [
+                "body_text"
+              ]
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "kind": {
+                "const": "note"
+              }
+            },
+            "required": [
+              "kind"
+            ]
+          },
+          "then": {
+            "required": [
+              "body_text"
+            ]
+          }
+        }
+      ],
+      "additionalProperties": false
+    }
+  }
+}
