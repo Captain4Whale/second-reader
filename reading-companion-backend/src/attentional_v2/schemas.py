@@ -857,6 +857,9 @@ class ResumeMetadataState(TypedDict, total=False):
     last_resume_reason: str
     last_resume_window_sentence_ids: list[str]
     reconstructed_hot_state: bool
+    reading_id: str | None
+    last_product_unit_id: str | None
+    last_product_unit_sequence: int
 
 
 class FullCheckpointState(TypedDict, total=False):
@@ -872,6 +875,9 @@ class FullCheckpointState(TypedDict, total=False):
     cursor: SharedRunCursor
     active_artifact_refs: RuntimeArtifactRefs
     visible_reaction_ids: list[str]
+    reading_id: str
+    last_product_unit_id: str | None
+    last_product_unit_sequence: int
     local_buffer: LocalBufferState
     local_continuity: LocalContinuityState
     continuation_capsule: ContinuationCapsule
@@ -1175,4 +1181,7 @@ def build_empty_resume_metadata(
         "last_resume_reason": "",
         "last_resume_window_sentence_ids": [],
         "reconstructed_hot_state": False,
+        "reading_id": None,
+        "last_product_unit_id": None,
+        "last_product_unit_sequence": 0,
     }

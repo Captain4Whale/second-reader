@@ -193,8 +193,8 @@ def test_digest_projects_compact_packet_and_returns_f1_surface_contract(tmp_path
     assert result["memory_uptake_ops"][0]["target_store"] == "recent_reading_memory"
 
 
-def test_run_digest_for_source_unit_reads_once_and_persists_read_cycle_audit(tmp_path, monkeypatch):
-    """The live helper should Digest once and persist the read-cycle audit shape."""
+def test_run_digest_for_source_unit_reads_once_without_accepting_unit_audit(tmp_path, monkeypatch):
+    """Digest alone is an attempt; Product admission owns accepted-read audit."""
 
     output_dir = tmp_path / "output" / "demo-book"
     AttentionalV2Mechanism().initialize_artifacts(output_dir)
@@ -257,21 +257,12 @@ def test_run_digest_for_source_unit_reads_once_and_persists_read_cycle_audit(tmp
         chapter_ref="Chapter 1",
     )
 
-    audit_line = json.loads(read_audit_file(output_dir).read_text(encoding="utf-8").strip())
-
     assert llm_fallbacks == []
     assert len(calls) == 1
     assert digest_result["understanding"] == "The unit becomes legible immediately."
     assert digest_result["surfaced_reactions"][0]["source_quote"] == "Beta sentence."
     assert digest_result["memory_uptake_ops"][0]["op"] == "append"
-    assert audit_line["stop_reason"] == "digest_complete"
-    assert audit_line["understanding"] == "The unit becomes legible immediately."
-    assert audit_line["digest_result"]["understanding"] == "The unit becomes legible immediately."
-    assert audit_line["surfaced_reaction_count"] == 1
-    assert audit_line["surfaced_reactions"][0]["source_quote"] == "Beta sentence."
-    assert audit_line["memory_uptake_op_count"] == 1
-    assert audit_line["memory_uptake_ops"][0]["target_store"] == "recent_reading_memory"
-    assert audit_line["memory_uptake_ops_by_target_store"] == {"recent_reading_memory": 1}
+    assert not read_audit_file(output_dir).exists()
 
 
 def test_run_digest_for_source_unit_propagates_llm_error_without_empty_audit(tmp_path, monkeypatch):

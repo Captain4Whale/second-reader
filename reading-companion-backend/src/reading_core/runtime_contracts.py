@@ -114,6 +114,9 @@ class RuntimeShellState(TypedDict, total=False):
     resume_available: bool
     last_checkpoint_id: str | None
     last_checkpoint_at: str | None
+    reading_id: str
+    last_product_unit_id: str | None
+    last_product_unit_sequence: int
     updated_at: str
 
 
@@ -130,6 +133,9 @@ class CheckpointSummary(TypedDict, total=False):
     cursor: SharedRunCursor
     active_artifact_refs: RuntimeArtifactRefs
     visible_reaction_ids: list[str]
+    reading_id: str
+    last_product_unit_id: str | None
+    last_product_unit_sequence: int
 
 
 @dataclass(frozen=True)

@@ -12,6 +12,13 @@ from typing import Callable, Iterator, Mapping
 from src.reading_core import BookDocument
 from src.reading_core.storage import book_document_file, save_book_document
 from src.reading_core.runtime_contracts import MechanismInfo, ParseRequest, ParseResult, ReadRequest, ReadResult, SharedRunCursor
+from src.reading_product import (
+    CompletionEvidence,
+    ProductUnit,
+    ReadingProductStore,
+    build_source_identity,
+    sha256_file,
+)
 from src.reading_runtime import artifacts as runtime_artifacts
 from src.reading_runtime.job_lease import assert_current_lease
 from src.reading_runtime.llm_registry import DEFAULT_RUNTIME_PROFILE_ID
@@ -50,6 +57,13 @@ from .observability import (
     record_unitization,
 )
 from .resume import persist_reading_position, resume_from_checkpoint, write_full_checkpoint
+from .product_output import (
+    build_and_commit_product_unit,
+    digest_result_for_committed_unit,
+    mechanism_span_from_source_range,
+    product_finding_rows,
+)
+from .product_compatibility import project_reading_product_compatibility
 from .source_spans import (
     build_paragraph_offset_preview,
     chapter_end_cursor,
@@ -100,7 +114,6 @@ from .schemas import (
 from .slow_cycle import (
     build_reaction_record_from_surfaced_reaction,
     compat_reaction_family,
-    project_chapter_result_compatibility,
     reaction_records_for_chapter,
     run_phase6_chapter_cycle,
 )
@@ -138,6 +151,7 @@ from .storage import (
     read_audit_file,
     unit_memory_retrieval_trace_file,
     unit_memory_sqlite_file,
+    unit_span_ledger_file,
     unitization_audit_file,
     active_attention_file,
 )
@@ -453,36 +467,6 @@ def _audit_window_max_units(request: ReadRequest) -> int:
     return max(0, value)
 
 
-def _persist_partial_chapter_projections(
-    *,
-    output_dir: Path,
-    chapter_lookup: dict[int, dict[str, object]],
-    touched_chapter_ids: set[int],
-    reaction_records: ReactionRecordsState,
-    output_language: str,
-    chapter_statuses: dict[int, str],
-) -> dict[int, str]:
-    """Persist compatibility payloads for chapters touched by a partial audit run."""
-
-    if not touched_chapter_ids:
-        return chapter_statuses
-    book_id = runtime_artifacts.book_id_from_output_dir(output_dir)
-    for chapter_id in sorted(int(item) for item in touched_chapter_ids if int(item) > 0):
-        chapter = chapter_lookup.get(chapter_id)
-        if not isinstance(chapter, dict):
-            continue
-        project_chapter_result_compatibility(
-            book_id=book_id,
-            chapter=chapter,
-            reaction_records=reaction_records,
-            output_language=output_language,
-            output_dir=output_dir,
-            persist=True,
-        )
-        chapter_statuses[chapter_id] = "done"
-    return chapter_statuses
-
-
 def _chapter_result_relative_paths(document: BookDocument, output_dir: Path) -> dict[int, str]:
     """Return manifest-relative compatibility result paths for ready chapters."""
 
@@ -772,6 +756,333 @@ def _update_shell_phase(output_dir: Path, *, status: str, phase: str) -> None:
     save_runtime_shell(shell_path, shell)
 
 
+def _reading_product_source_file(provisioned: ProvisionedBook) -> Path:
+    """Return the immutable source asset used to bind one product revision."""
+
+    source_asset = runtime_artifacts.source_asset_file(provisioned.output_dir)
+    return source_asset if source_asset.exists() else provisioned.book_path
+
+
+def _open_reading_product_store(
+    *,
+    provisioned: ProvisionedBook,
+    continue_mode: bool,
+) -> ReadingProductStore:
+    """Create a fresh product revision or explicitly reopen the active one."""
+
+    if provisioned.book_document is None:
+        raise RuntimeError("Reading Product requires a canonical BookDocument.")
+    output_dir = provisioned.output_dir
+    source_digest = sha256_file(_reading_product_source_file(provisioned))
+    expected_source = build_source_identity(source_digest, provisioned.book_document)
+    shell_path = runtime_artifacts.runtime_shell_file(output_dir)
+    shell = load_runtime_shell(shell_path)
+    if continue_mode:
+        reading_id = _clean_text(shell.get("reading_id"))
+        if not reading_id:
+            raise RuntimeError(
+                "This attentional_v2 runtime predates Reading Product v1; start a fresh run before resuming."
+            )
+        store = ReadingProductStore.open(output_dir, reading_id)
+        if store.source != expected_source:
+            raise RuntimeError("Reading Product source identity no longer matches the canonical book source.")
+    else:
+        store = ReadingProductStore.create(
+            output_dir,
+            epub_sha256=source_digest,
+            book_document=provisioned.book_document,
+        )
+    latest = store.latest_unit()
+    shell["reading_id"] = store.reading_id
+    shell["last_product_unit_id"] = latest.unit_id if latest is not None else None
+    shell["last_product_unit_sequence"] = latest.sequence_index if latest is not None else 0
+    shell["updated_at"] = _timestamp()
+    save_runtime_shell(shell_path, shell)
+    return store
+
+
+def _mark_product_commit(
+    output_dir: Path,
+    *,
+    store: ReadingProductStore,
+    unit_id: str,
+    sequence_index: int,
+) -> None:
+    """Persist a thin commit marker without advancing the accepted source cursor."""
+
+    shell_path = runtime_artifacts.runtime_shell_file(output_dir)
+    shell = load_runtime_shell(shell_path)
+    shell["reading_id"] = store.reading_id
+    shell["last_product_unit_id"] = unit_id
+    shell["last_product_unit_sequence"] = sequence_index
+    shell["resume_available"] = True
+    shell["updated_at"] = _timestamp()
+    save_runtime_shell(shell_path, shell)
+
+
+def _chapter_for_product_unit(
+    book_document: BookDocument,
+    *,
+    chapter_id: int,
+) -> dict[str, object]:
+    chapter = next(
+        (
+            dict(item)
+            for item in book_document.get("chapters", [])
+            if isinstance(item, dict) and int(item.get("id", 0) or 0) == chapter_id
+        ),
+        None,
+    )
+    if chapter is None:
+        raise RuntimeError("Reading Product references a chapter absent from BookDocument.")
+    return chapter
+
+
+def _source_unit_for_product_unit(
+    book_document: BookDocument,
+    unit: object,
+) -> tuple[dict[str, object], dict[str, object], dict[str, object]]:
+    source_range = getattr(unit, "source_range")
+    chapter = _chapter_for_product_unit(
+        book_document,
+        chapter_id=int(source_range.start.chapter_id),
+    )
+    source_span = mechanism_span_from_source_range(
+        source_range,
+        chapter_ref=_chapter_ref(chapter),
+    )
+    source_unit = source_unit_from_span(chapter=chapter, source_span=source_span)
+    source_unit["unit_id"] = _clean_text(getattr(unit, "unit_id"))
+    source_unit["sequence_index"] = int(getattr(unit, "sequence_index"))
+    return chapter, source_span, source_unit
+
+
+def _product_reaction_records(
+    *,
+    units: tuple[ProductUnit, ...],
+    book_document: BookDocument,
+) -> tuple[AnchoredReactionRecord, ...]:
+    """Rebuild every read-surface record from committed Product facts only."""
+
+    records: list[AnchoredReactionRecord] = []
+    chapter_ordinals: dict[int, int] = {}
+    for unit in units:
+        chapter, unit_span, _source_unit = _source_unit_for_product_unit(
+            book_document,
+            unit,
+        )
+        chapter_id = int(chapter.get("id", 0) or 0)
+        chapter_ref = _chapter_ref(chapter)
+        chapter_ordinals.setdefault(chapter_id, 0)
+        for marginalia in unit.marginalia:
+            chapter_ordinals[chapter_id] += 1
+            marginalia_span = mechanism_span_from_source_range(
+                marginalia.source_range,
+                chapter_ref=chapter_ref,
+            )
+            source_ref = source_ref_from_span(
+                marginalia_span,
+                quote=marginalia.source_quote,
+                role="reaction_anchor",
+                resolution={"status": "matched", "method": "reading_product_replay"},
+            )
+            record = build_reaction_record_from_surfaced_reaction(
+                reaction={
+                    "kind": marginalia.kind,
+                    "source_quote": marginalia.source_quote,
+                    "content": marginalia.body_text or "",
+                },
+                primary_source_ref=source_ref,
+                chapter_id=chapter_id,
+                chapter_ref=chapter_ref,
+                emitted_at_source_span_id=source_span_id(unit_span),
+                reaction_id=marginalia.marginalia_id,
+                created_at=unit.settled_at,
+                ordinal=chapter_ordinals[chapter_id],
+                compatibility_section_ref=(
+                    f"{chapter_id}.{unit.source_range.start.paragraph_index}"
+                ),
+            )
+            if record is None:
+                raise RuntimeError(
+                    "Reading Product marginalia could not be replayed into the private projection."
+                )
+            records.append(record)
+    return tuple(records)
+
+
+def _reconcile_reading_product_progress(
+    *,
+    output_dir: Path,
+    store: ReadingProductStore,
+    book_document: BookDocument,
+    bundle: dict[str, dict[str, object]],
+) -> dict[str, dict[str, object]]:
+    """Repair stale private projections from the product commit truth without model calls."""
+
+    units = store.load_units()
+    if not units:
+        return bundle
+
+    latest_private = latest_unit_span(output_dir)
+    private_sequence = int((latest_private or {}).get("sequence_index", 0) or 0)
+    if private_sequence > len(units):
+        raise RuntimeError("Private Unit Span Ledger is ahead of Reading Product truth.")
+    if private_sequence:
+        expected_private = units[private_sequence - 1]
+        _chapter, expected_span, _source_unit = _source_unit_for_product_unit(
+            book_document,
+            expected_private,
+        )
+        if (
+            _clean_text((latest_private or {}).get("unit_id"))
+            != expected_private.unit_id
+            or _clean_text((latest_private or {}).get("source_span_id"))
+            != source_span_id(expected_span)
+        ):
+            raise RuntimeError(
+                "Private Unit Span Ledger conflicts with Reading Product truth."
+            )
+    for unit in units[private_sequence:]:
+        chapter, _source_span, source_unit = _source_unit_for_product_unit(book_document, unit)
+        unit_record = append_unit_span_record(
+            output_dir,
+            chapter_id=int(chapter.get("id", 0) or 0),
+            chapter_ref=_chapter_ref(chapter),
+            source_unit=source_unit,
+            preview={},
+            end_anchor_text="",
+            resolution={"status": "replayed_from_reading_product"},
+        )
+        if (
+            _clean_text(unit_record.get("unit_id")) != unit.unit_id
+            or int(unit_record.get("sequence_index", 0) or 0) != unit.sequence_index
+        ):
+            raise RuntimeError("Private Unit Span Ledger could not be reconciled to Reading Product truth.")
+
+    reaction_records: ReactionRecordsState = bundle["reaction_records"]  # type: ignore[assignment]
+    expected_product_records = _product_reaction_records(
+        units=units,
+        book_document=book_document,
+    )
+    expected_product_ids = {
+        _clean_text(record.get("reaction_id")) for record in expected_product_records
+    }
+    private_records = [
+        dict(item)
+        for item in reaction_records.get("records", [])
+        if isinstance(item, dict)
+    ]
+    non_product_records = [
+        record
+        for record in private_records
+        if _clean_text(record.get("record_source")) != "read_surface"
+    ]
+    if any(
+        _clean_text(record.get("reaction_id")) in expected_product_ids
+        for record in non_product_records
+    ):
+        raise RuntimeError(
+            "A private non-product reaction conflicts with Reading Product identity."
+        )
+    reaction_records = {
+        **reaction_records,
+        "updated_at": _timestamp(),
+        "records": [
+            *(dict(record) for record in expected_product_records),
+            *non_product_records,
+        ],
+    }
+
+    latest = units[-1]
+    latest_chapter, latest_span, _latest_source_unit = _source_unit_for_product_unit(book_document, latest)
+    local_buffer: LocalBufferState = close_local_meaning_unit(bundle["local_buffer"])  # type: ignore[arg-type]
+    local_continuity: LocalContinuityState = dict(bundle["local_continuity"])  # type: ignore[assignment]
+    local_continuity["mainline_cursor"] = _shared_cursor_for_source_span(latest_span)
+    local_continuity["current_source_span"] = dict(latest_span)
+    local_continuity["current_source_span_id"] = source_span_id(latest_span)
+    resume_metadata = dict(bundle.get("resume_metadata", {}))
+    resume_metadata["reading_id"] = store.reading_id
+    resume_metadata["last_product_unit_id"] = latest.unit_id
+    resume_metadata["last_product_unit_sequence"] = latest.sequence_index
+    bundle.update(
+        {
+            "local_buffer": local_buffer,
+            "local_continuity": local_continuity,
+            "reaction_records": reaction_records,
+            "resume_metadata": resume_metadata,
+        }
+    )
+    _save_runtime_bundle(output_dir, bundle)
+    persisted = persist_reading_position(
+        output_dir,
+        chapter_id=int(latest_chapter.get("id", 0) or 0),
+        chapter_ref=_chapter_ref(latest_chapter),
+        local_buffer=local_buffer,
+        local_continuity=local_continuity,
+        source_span=latest_span,
+        reading_id=store.reading_id,
+        last_product_unit_id=latest.unit_id,
+        last_product_unit_sequence=latest.sequence_index,
+        status="running",
+        phase="preparing",
+    )
+    if isinstance(persisted.get("local_continuity"), dict):
+        bundle["local_continuity"] = persisted["local_continuity"]  # type: ignore[assignment]
+    return bundle
+
+
+def _reconcile_unit_memory_from_reading_product(
+    *,
+    output_dir: Path,
+    store: ReadingProductStore,
+    book_document: BookDocument,
+    book_id: str,
+    memory_retrieval_config: dict[str, object],
+) -> None:
+    """Rebuild missing content-neutral Unit Memory rows without embeddings or model calls."""
+
+    retrieval_mode: MemoryRetrievalMode = (
+        "text_only" if _clean_text(memory_retrieval_config.get("mode")) == "text_only" else "hybrid"
+    )
+    index = UnitMemoryIndex(output_dir, config=memory_retrieval_config)
+    for unit in store.load_units():
+        chapter, _source_span, source_unit = _source_unit_for_product_unit(book_document, unit)
+        digest_result: DigestResult = {
+            "understanding": unit.understanding,
+            "reading_impression": unit.response,
+            "marginalia": [
+                {
+                    "kind": item.kind,
+                    "source_quote": item.source_quote,
+                    "content": item.body_text or "",
+                }
+                for item in unit.marginalia
+            ],
+        }
+        try:
+            entry = build_unit_memory_entry(
+                book_id=book_id,
+                chapter_id=int(chapter.get("id", 0) or 0),
+                chapter_ref=_chapter_ref(chapter),
+                source_unit=source_unit,
+                digest_result=digest_result,
+                memory_retrieval_mode=retrieval_mode,
+            )
+            index.write_entry(entry, index_vectors=False)
+        except Exception as exc:  # pragma: no cover - derived memory never owns product truth.
+            record_unit_memory_retrieval_trace(
+                output_dir,
+                {
+                    "recorded_at": _timestamp(),
+                    "event_type": "unit_memory_replay_failed",
+                    "book_id": book_id,
+                    "unit_id": unit.unit_id,
+                    "degradation_reason": f"unit_memory_replay_failed:{type(exc).__name__}",
+                },
+            )
+
+
 def _reset_live_runtime(output_dir: Path) -> None:
     """Clear live attentional runtime artifacts for one fresh full rerun."""
 
@@ -792,6 +1103,7 @@ def _reset_live_runtime(output_dir: Path) -> None:
         unitization_audit_file(output_dir),
         unit_memory_retrieval_trace_file(output_dir),
         unit_memory_sqlite_file(output_dir),
+        unit_span_ledger_file(output_dir),
         memory_quality_probe_export_file(output_dir),
         runtime_artifacts.runtime_shell_file(output_dir),
         runtime_artifacts.run_state_file(output_dir),
@@ -818,6 +1130,7 @@ def _chapter_selection(
     chapter_number: int | None,
     continue_mode: bool,
     resume_chapter_id: int | None,
+    chapter_statuses: Mapping[int, str] | None = None,
 ) -> list[dict[str, object]]:
     """Select chapters for the current Reading Runner invocation."""
 
@@ -846,7 +1159,8 @@ def _chapter_selection(
     remaining = [
         chapter
         for chapter in (queued_chapters or chapters)
-        if not chapter_result_compatibility_file(output_dir, int(chapter.get("id", 0) or 0)).exists()
+        if _clean_text((chapter_statuses or {}).get(int(chapter.get("id", 0) or 0)))
+        != "done"
     ]
     if resume_chapter_id and any(int(chapter.get("id", 0) or 0) == int(resume_chapter_id) for chapter in remaining):
         start_index = next(
@@ -2254,6 +2568,8 @@ def _persist_marginalia(
             if isinstance(source_unit, dict) and source_unit
             else _compatibility_section_ref(chapter_id, focal_sentence),
             ordinal=chapter_reaction_count + index,
+            reaction_id=_clean_text(marginalia_item.get("marginalia_id")) or None,
+            created_at=_clean_text(marginalia_item.get("settled_at")) or None,
         )
         if emitted_reaction is None:
             continue
@@ -2342,7 +2658,7 @@ def _run_digest_for_source_unit(
     ingest_trace: list[dict[str, object]] | None = None,
     reading_memory_lines: list[str] | None = None,
 ) -> tuple[DigestResult, list[dict[str, str]]]:
-    """Run Digest for the accepted source unit and persist the read-cycle audit."""
+    """Run Digest without declaring an accepted read before product admission."""
 
     chosen_unit_sentences = [dict(sentence) for sentence in (chosen_unit_sentences or []) if isinstance(sentence, dict)]
     current_unit_source = dict(current_unit_source or {}) if isinstance(current_unit_source, dict) else None
@@ -2377,19 +2693,6 @@ def _run_digest_for_source_unit(
         source_unit=current_unit_source,
     )
 
-    assert_current_lease()
-    record_read(
-        output_dir,
-        chapter_id=chapter_id,
-        chapter_ref=chapter_ref,
-        unitize_decision=unitize_decision,
-        source_unit=current_unit_source,
-        carry_forward_context=carry_forward_context,
-        digest_result=digest_result,
-        stop_reason="digest_complete",
-        llm_fallbacks=llm_fallbacks,
-        ingest_trace=ingest_trace,
-    )
     return digest_result, llm_fallbacks
 
 
@@ -2420,6 +2723,7 @@ def _settle_next_unit(
     meaning_units_in_chapter: list[dict[str, object]] | None,
     already_ingested_sentence_ids: set[str] | None = None,
     capture_memory_probe: bool = False,
+    reading_product_store: ReadingProductStore | None = None,
 ) -> dict[str, object]:
     """Read and settle one runtime-prepared source unit."""
 
@@ -2513,22 +2817,6 @@ def _settle_next_unit(
     )
     if reading_queue_stage:
         current_activity["reading_queue_stage"] = reading_queue_stage
-    position_payload = persist_reading_position(
-        output_dir,
-        chapter_id=chapter_id,
-        chapter_ref=chapter_ref,
-        local_buffer=local_buffer,
-        local_continuity=local_continuity,
-        source_cursor=dict(source_span.get("end_cursor", {}))
-        if has_selected_source_unit and isinstance(source_span.get("end_cursor"), dict)
-        else None,
-        status="running",
-        phase="reading",
-    )
-    if isinstance(position_payload.get("local_continuity"), dict):
-        local_continuity = position_payload["local_continuity"]  # type: ignore[assignment]
-        bundle["local_continuity"] = local_continuity
-        _save_runtime_bundle(output_dir, bundle)
     write_run_state(
         output_dir,
         build_run_state(
@@ -2647,8 +2935,63 @@ def _settle_next_unit(
             },
         )
 
-    memory_uptake_ops = digest_result.get("memory_uptake_ops", [])
     assert_current_lease()
+    product_findings: list[dict[str, object]] = []
+    product_commit_status = ""
+    product_unit_id = ""
+    if reading_product_store is not None:
+        if not has_selected_source_unit:
+            raise RuntimeError("Reading Product settlement requires a paragraph-offset source unit.")
+        product_unit, raw_product_findings, product_commit_status = build_and_commit_product_unit(
+            store=reading_product_store,
+            source_unit=selected_source_unit,
+            digest_result=digest_result,
+            book_document=provisioned.book_document or {},
+            epub_sha256=sha256_file(_reading_product_source_file(provisioned)),
+        )
+        digest_result = digest_result_for_committed_unit(digest_result, product_unit)
+        product_unit_id = product_unit.unit_id
+        product_findings = product_finding_rows(raw_product_findings)
+        unit_sequence_index = product_unit.sequence_index
+        selected_source_unit["unit_id"] = product_unit.unit_id
+        selected_source_unit["sequence_index"] = product_unit.sequence_index
+        _mark_product_commit(
+            output_dir,
+            store=reading_product_store,
+            unit_id=product_unit.unit_id,
+            sequence_index=product_unit.sequence_index,
+        )
+    else:
+        unit_sequence_index = next_unit_sequence_index(output_dir)
+
+    carry_forward_context = build_carry_forward_context(
+        chapter_ref=chapter_ref,
+        current_unit_sentence_ids=[
+            _clean_text(sentence.get("sentence_id"))
+            for sentence in chosen_unit_sentences
+            if _clean_text(sentence.get("sentence_id"))
+        ],
+        local_buffer=local_buffer,
+        active_attention=active_attention,
+        recent_reading_memory=recent_reading_memory,
+        reflective_frames=reflective_frames,
+        reaction_records=reaction_records,
+        continuation_capsule=continuation_capsule,
+    )
+    record_read(
+        output_dir,
+        chapter_id=chapter_id,
+        chapter_ref=chapter_ref,
+        unitize_decision=unitize_decision,
+        source_unit=selected_source_unit if has_selected_source_unit else None,
+        carry_forward_context=carry_forward_context,
+        digest_result=digest_result,
+        stop_reason="product_unit_committed" if reading_product_store is not None else "digest_complete",
+        llm_fallbacks=digest_fallbacks,
+        ingest_trace=_compact_ingest_trace(prepared_source_unit.get("ingest_trace")),
+    )
+
+    memory_uptake_ops = digest_result.get("memory_uptake_ops", [])
     before_active_attention = active_attention
     before_recent_reading_memory = recent_reading_memory
     before_reaction_records = reaction_records
@@ -2656,7 +2999,6 @@ def _settle_next_unit(
         active_attention,
         memory_uptake_ops,
     )
-    unit_sequence_index = next_unit_sequence_index(output_dir)
     recent_reading_memory = apply_recent_reading_memory_operations(
         recent_reading_memory,
         memory_uptake_ops,
@@ -2692,19 +3034,32 @@ def _settle_next_unit(
         before_reaction_records=before_reaction_records,
         after_reaction_records=reaction_records,
         emitted_reaction_ids=[_clean_text(item.get("reaction_id")) for item in emitted_reactions],
+        reading_id=reading_product_store.reading_id if reading_product_store is not None else "",
+        product_unit_id=product_unit_id,
+        product_commit_status=product_commit_status,
+        product_findings=product_findings,
     )
     if has_selected_source_unit:
-        unit_record = append_unit_span_record(
-            output_dir,
-            chapter_id=chapter_id,
-            chapter_ref=chapter_ref,
-            source_unit=selected_source_unit,
-            preview=dict(prepared_source_unit.get("preview", {})) if isinstance(prepared_source_unit.get("preview"), dict) else {},
-            end_anchor_text=_clean_text(unitize_decision.get("end_anchor_text")),
-            resolution=dict(unitize_decision.get("resolution", {})) if isinstance(unitize_decision.get("resolution"), dict) else {},
-        )
-        selected_source_unit["unit_id"] = _clean_text(unit_record.get("unit_id"))
-        selected_source_unit["sequence_index"] = int(unit_record.get("sequence_index", 0) or 0)
+        latest_span = latest_unit_span(output_dir)
+        latest_span_sequence = int((latest_span or {}).get("sequence_index", 0) or 0)
+        if latest_span_sequence < unit_sequence_index:
+            unit_record = append_unit_span_record(
+                output_dir,
+                chapter_id=chapter_id,
+                chapter_ref=chapter_ref,
+                source_unit=selected_source_unit,
+                preview=dict(prepared_source_unit.get("preview", {})) if isinstance(prepared_source_unit.get("preview"), dict) else {},
+                end_anchor_text=_clean_text(unitize_decision.get("end_anchor_text")),
+                resolution=dict(unitize_decision.get("resolution", {})) if isinstance(unitize_decision.get("resolution"), dict) else {},
+            )
+            if int(unit_record.get("sequence_index", 0) or 0) != unit_sequence_index:
+                raise RuntimeError("Derived Unit Span Ledger diverged from Reading Product sequence.")
+            selected_source_unit["unit_id"] = _clean_text(unit_record.get("unit_id"))
+            selected_source_unit["sequence_index"] = int(unit_record.get("sequence_index", 0) or 0)
+        elif latest_span_sequence > unit_sequence_index or _clean_text((latest_span or {}).get("unit_id")) != _clean_text(
+            selected_source_unit.get("unit_id")
+        ):
+            raise RuntimeError("Derived Unit Span Ledger conflicts with Reading Product truth.")
         retrieval_mode: MemoryRetrievalMode = (
             "text_only" if _clean_text(memory_retrieval_config.get("mode")) == "text_only" else "hybrid"
         )
@@ -2796,6 +3151,9 @@ def _settle_next_unit(
         local_continuity=local_continuity,
         active_artifact_refs={key: value for key, value in active_refs.items() if value},
         source_span=source_span if has_selected_source_unit else None,
+        reading_id=reading_product_store.reading_id if reading_product_store is not None else None,
+        last_product_unit_id=product_unit_id or None,
+        last_product_unit_sequence=unit_sequence_index if reading_product_store is not None else None,
         status="running",
         phase="reading",
     )
@@ -2947,11 +3305,36 @@ def run_reading_runner(request: ReadRequest, mechanism: MechanismInfo) -> ReadRe
             resume_payload = resume_from_checkpoint(output_dir, book_document=provisioned.book_document)
             bundle = _load_runtime_bundle(output_dir)
 
+        reading_product_store = _open_reading_product_store(
+            provisioned=provisioned,
+            continue_mode=bool(request.continue_mode),
+        )
+        if request.continue_mode:
+            bundle = _reconcile_reading_product_progress(
+                output_dir=output_dir,
+                store=reading_product_store,
+                book_document=provisioned.book_document,
+                bundle=bundle,
+            )
+            resume_payload = {
+                **dict(resume_payload or {}),
+                "reading_id": reading_product_store.reading_id,
+                "local_continuity": dict(bundle.get("local_continuity", {})),
+            }
+
         memory_retrieval_config = resolve_memory_retrieval_config(
             output_dir,
             dict(request.mechanism_config or {}),
             continue_mode=bool(request.continue_mode),
         )
+        if request.continue_mode:
+            _reconcile_unit_memory_from_reading_product(
+                output_dir=output_dir,
+                store=reading_product_store,
+                book_document=provisioned.book_document,
+                book_id=provisioned.output_dir.name,
+                memory_retrieval_config=memory_retrieval_config,
+            )
         reader_policy: ReaderPolicy = bundle["reader_policy"]  # type: ignore[assignment]
         audit_window_max_units = _audit_window_max_units(request)
         audit_window_units_read = 0
@@ -2987,6 +3370,7 @@ def run_reading_runner(request: ReadRequest, mechanism: MechanismInfo) -> ReadRe
             chapter_number=request.chapter_number,
             continue_mode=request.continue_mode,
             resume_chapter_id=resume_chapter_id,
+            chapter_statuses=chapter_statuses,
         )
         if request.chapter_number is not None:
             probe_source_chapters = chapters
@@ -3128,6 +3512,7 @@ def run_reading_runner(request: ReadRequest, mechanism: MechanismInfo) -> ReadRe
                         meaning_units_in_chapter=meaning_units_in_chapter,
                         already_ingested_sentence_ids=set(),
                         capture_memory_probe=True,
+                        reading_product_store=reading_product_store,
                     )
                     unit_observation.settle(
                         "accepted" if int(settled_unit.get("units_read_delta", 0) or 0) > 0 else "skipped"
@@ -3183,7 +3568,7 @@ def run_reading_runner(request: ReadRequest, mechanism: MechanismInfo) -> ReadRe
                 reader_policy=reader_policy,
                 output_language=provisioned.output_language,
                 output_dir=output_dir,
-                persist_compatibility_projection=True,
+                persist_compatibility_projection=False,
                 book_title=provisioned.title,
                 author=provisioned.author,
             )
@@ -3214,6 +3599,17 @@ def run_reading_runner(request: ReadRequest, mechanism: MechanismInfo) -> ReadRe
                 }
             )
             _save_runtime_bundle(output_dir, bundle)
+            project_reading_product_compatibility(
+                reading_product=reading_product_store.snapshot(
+                    book_document=provisioned.book_document,
+                ),
+                book_document=provisioned.book_document,
+                book_id=provisioned.output_dir.name,
+                output_language=provisioned.output_language,
+                output_dir=output_dir,
+                persist=True,
+                chapter_ids=(chapter_id,),
+            )
             chapter_statuses[chapter_id] = "done"
             completed_chapters = _completed_scheduled_chapters(
                 chapter_statuses,
@@ -3249,14 +3645,21 @@ def run_reading_runner(request: ReadRequest, mechanism: MechanismInfo) -> ReadRe
                 ),
             )
         if audit_window_stop_reason:
-            chapter_statuses = _persist_partial_chapter_projections(
-                output_dir=output_dir,
-                chapter_lookup=chapter_lookup,
-                touched_chapter_ids=touched_chapter_ids,
-                reaction_records=reaction_records,
-                output_language=provisioned.output_language,
-                chapter_statuses=chapter_statuses,
-            )
+            touched = tuple(sorted(int(item) for item in touched_chapter_ids if int(item) > 0))
+            if touched:
+                project_reading_product_compatibility(
+                    reading_product=reading_product_store.snapshot(
+                        book_document=provisioned.book_document,
+                    ),
+                    book_document=provisioned.book_document,
+                    book_id=provisioned.output_dir.name,
+                    output_language=provisioned.output_language,
+                    output_dir=output_dir,
+                    persist=True,
+                    chapter_ids=touched,
+                )
+                for touched_chapter_id in touched:
+                    chapter_statuses[touched_chapter_id] = "in_progress"
             completed_chapters = _completed_scheduled_chapters(
                 chapter_statuses,
                 scheduled_chapter_ids=scheduled_chapter_ids,
@@ -3275,12 +3678,64 @@ def run_reading_runner(request: ReadRequest, mechanism: MechanismInfo) -> ReadRe
                 },
             )
         _write_manifest(output_dir, provisioned.book_document, chapter_statuses=chapter_statuses)
-        _update_shell_phase(output_dir, status="completed", phase="idle")
+        completed_chapter_ids = tuple(
+            chapter_id
+            for chapter_id in scheduled_chapter_ids
+            if _clean_text(chapter_statuses.get(chapter_id)) == "done"
+        )
+        reading_plan_complete = bool(scheduled_chapter_ids) and set(completed_chapter_ids) == set(
+            scheduled_chapter_ids
+        )
+        completion_scope = (
+            "bounded"
+            if audit_window_stop_reason
+            else "chapter"
+            if request.chapter_number is not None
+            else "whole_book"
+        )
+        completion = CompletionEvidence(
+            scope=completion_scope,
+            chapter_number=request.chapter_number,
+            scheduled_chapter_ids=tuple(scheduled_chapter_ids),
+            completed_chapter_ids=completed_chapter_ids,
+            reading_plan_complete=reading_plan_complete,
+            audit_window_stop_reason=audit_window_stop_reason or None,
+        )
+        product_finalized = (
+            completion_scope == "whole_book"
+            and reading_plan_complete
+            and not audit_window_stop_reason
+        )
+        if product_finalized:
+            current_source = build_source_identity(
+                sha256_file(_reading_product_source_file(provisioned)),
+                provisioned.book_document,
+            )
+            if current_source != reading_product_store.source:
+                raise RuntimeError("Reading Product source changed before whole-book finalization.")
+            reading_product_store.finalize(
+                book_document=provisioned.book_document,
+                epub_sha256=current_source.epub_sha256,
+                completion=completion,
+            )
+            project_reading_product_compatibility(
+                reading_product=reading_product_store.snapshot(
+                    book_document=provisioned.book_document,
+                ),
+                book_document=provisioned.book_document,
+                book_id=provisioned.output_dir.name,
+                output_language=provisioned.output_language,
+                output_dir=output_dir,
+                persist=True,
+            )
+
+        terminal_status = "completed" if product_finalized else "paused"
+        _update_shell_phase(output_dir, status=terminal_status, phase="idle")
         write_run_state(
             output_dir,
             build_run_state(
                 book_title=provisioned.title,
-                stage="completed",
+                stage=terminal_status,
                 total_chapters=total_chapters,
                 completed_chapters=completed_chapters,
                 resume_available=bool(load_runtime_shell(runtime_artifacts.runtime_shell_file(output_dir)).get("resume_available")),
@@ -3290,11 +3745,20 @@ def run_reading_runner(request: ReadRequest, mechanism: MechanismInfo) -> ReadRe
         append_activity_event(
             output_dir,
             {
-                "type": "run_completed",
-                "message": "Reading Runner completed sequential reading.",
+                "type": "run_completed" if product_finalized else "run_paused",
+                "message": (
+                    "Reading Runner completed sequential reading and sealed Reading Product v1."
+                    if product_finalized
+                    else "Reading Runner stopped before whole-book Reading Product finalization."
+                ),
                 "details": {
                     "started_at": run_started_at,
                     "finished_at": _timestamp(),
+                    "reading_id": reading_product_store.reading_id,
+                    "reading_product_finalized": product_finalized,
+                    "stop_reason": audit_window_stop_reason or (
+                        "chapter_scope" if request.chapter_number is not None else "reading_plan_incomplete"
+                    ),
                 },
             },
         )

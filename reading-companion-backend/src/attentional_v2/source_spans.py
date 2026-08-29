@@ -295,7 +295,9 @@ def source_ref_from_unit(
     source_span = source_unit.get("source_span")
     unit_span = dict(source_span) if isinstance(source_span, Mapping) else {}
     unit_text = str(source_unit.get("source_text", "") or "")
-    clean_quote = str(quote or "").strip()
+    # Quote boundaries are product data.  Do not trim legitimate leading or
+    # trailing source characters before resolving their paragraph offsets.
+    clean_quote = str(quote or "")
     if not clean_quote:
         return source_ref_from_span(
             unit_span,

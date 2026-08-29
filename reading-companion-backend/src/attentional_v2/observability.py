@@ -469,6 +469,10 @@ def record_settlement(
     emitted_reaction_ids: list[str] | None = None,
     source_span: Mapping[str, object] | None = None,
     source_span_id: str = "",
+    reading_id: str = "",
+    product_unit_id: str = "",
+    product_commit_status: str = "",
+    product_findings: list[Mapping[str, object]] | None = None,
 ) -> None:
     """Append one compact transaction summary for a completed unit settlement."""
 
@@ -495,6 +499,12 @@ def record_settlement(
             "emitted_reaction_ids": [_clean_text(item) for item in (emitted_reaction_ids or []) if _clean_text(item)],
         },
     }
+    product_payload = {
+        "reading_id": _clean_text(reading_id),
+        "unit_id": _clean_text(product_unit_id),
+        "commit_status": _clean_text(product_commit_status),
+        "findings": [dict(item) for item in (product_findings or []) if isinstance(item, Mapping)],
+    }
     append_jsonl(
         settlement_audit_file(output_dir),
         {
@@ -509,6 +519,7 @@ def record_settlement(
             "memory_uptake_ops_by_target_store": _memory_uptake_ops_by_target_store(normalized_ops),
             "memory_uptake_op_outcomes": _memory_uptake_op_outcomes(normalized_ops, state_deltas),
             "state_deltas": state_deltas,
+            "reading_product": product_payload,
         },
     )
 

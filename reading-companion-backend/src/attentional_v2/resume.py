@@ -243,6 +243,9 @@ def persist_reading_position(
     active_artifact_refs: RuntimeArtifactRefs | None = None,
     source_cursor: dict[str, object] | None = None,
     source_span: dict[str, object] | None = None,
+    reading_id: str | None = None,
+    last_product_unit_id: str | None = None,
+    last_product_unit_sequence: int | None = None,
     status: str | None = None,
     phase: str | None = None,
 ) -> dict[str, object]:
@@ -279,6 +282,12 @@ def persist_reading_position(
     save_json(local_continuity_file(output_dir), continuity)
     if active_artifact_refs is not None:
         shell["active_artifact_refs"] = dict(active_artifact_refs)
+    if reading_id is not None:
+        shell["reading_id"] = _clean_text(reading_id)
+    if last_product_unit_id is not None:
+        shell["last_product_unit_id"] = _clean_text(last_product_unit_id)
+    if last_product_unit_sequence is not None:
+        shell["last_product_unit_sequence"] = max(0, int(last_product_unit_sequence))
     if status is not None:
         shell["status"] = status
     if phase is not None:
@@ -466,6 +475,9 @@ def write_full_checkpoint(
     summary["cursor"] = cursor
     summary["active_artifact_refs"] = active_artifact_refs
     summary["visible_reaction_ids"] = visible_reaction_ids
+    summary["reading_id"] = _clean_text(shell.get("reading_id"))
+    summary["last_product_unit_id"] = _clean_text(shell.get("last_product_unit_id")) or None
+    summary["last_product_unit_sequence"] = int(shell.get("last_product_unit_sequence", 0) or 0)
     write_checkpoint_summary(output_dir, summary)
 
     checkpoint: FullCheckpointState = {
@@ -479,6 +491,9 @@ def write_full_checkpoint(
         "cursor": cursor,
         "active_artifact_refs": active_artifact_refs,
         "visible_reaction_ids": visible_reaction_ids,
+        "reading_id": _clean_text(shell.get("reading_id")),
+        "last_product_unit_id": _clean_text(shell.get("last_product_unit_id")) or None,
+        "last_product_unit_sequence": int(shell.get("last_product_unit_sequence", 0) or 0),
         "local_buffer": bundle["local_buffer"],  # type: ignore[typeddict-item]
         "local_continuity": continuity,  # type: ignore[typeddict-item]
         "continuation_capsule": _build_runtime_continuation_capsule(
@@ -516,6 +531,9 @@ def write_full_checkpoint(
     resume_metadata["default_resume_kind"] = str(bundle["reader_policy"].get("resume", {}).get("default_mode", "warm_resume"))  # type: ignore[assignment]
     resume_metadata["last_checkpoint_id"] = checkpoint_id
     resume_metadata["last_checkpoint_at"] = checkpoint["created_at"]
+    resume_metadata["reading_id"] = checkpoint["reading_id"] or None
+    resume_metadata["last_product_unit_id"] = checkpoint["last_product_unit_id"]
+    resume_metadata["last_product_unit_sequence"] = checkpoint["last_product_unit_sequence"]
     save_json(resume_metadata_file(output_dir), resume_metadata)
     emit_checkpoint_observability(
         output_dir,
@@ -945,14 +963,36 @@ def resume_from_checkpoint(
     shell["cursor"] = cursor
     shell["observability_mode"] = observability_mode(policy)
     shell["active_artifact_refs"] = dict(checkpoint_source.get("active_artifact_refs", shell.get("active_artifact_refs", {})))
-    shell["resume_available"] = bool(shell.get("last_checkpoint_id"))
+    shell_reading_id = _clean_text(shell.get("reading_id"))
+    checkpoint_reading_id = _clean_text(checkpoint_source.get("reading_id"))
+    if not shell_reading_id and checkpoint_reading_id:
+        shell["reading_id"] = checkpoint_reading_id
+        shell["last_product_unit_id"] = (
+            _clean_text(checkpoint_source.get("last_product_unit_id")) or None
+        )
+        shell["last_product_unit_sequence"] = int(
+            checkpoint_source.get("last_product_unit_sequence", 0) or 0
+        )
+    elif shell_reading_id and shell_reading_id == checkpoint_reading_id:
+        shell_product_sequence = int(shell.get("last_product_unit_sequence", 0) or 0)
+        checkpoint_product_sequence = int(
+            checkpoint_source.get("last_product_unit_sequence", 0) or 0
+        )
+        if checkpoint_product_sequence > shell_product_sequence:
+            shell["last_product_unit_id"] = (
+                _clean_text(checkpoint_source.get("last_product_unit_id")) or None
+            )
+            shell["last_product_unit_sequence"] = checkpoint_product_sequence
+    shell["resume_available"] = bool(
+        shell.get("last_checkpoint_id") or _clean_text(shell.get("reading_id"))
+    )
     shell["updated_at"] = _timestamp()
     save_runtime_shell(runtime_shell_file(output_dir), shell)
 
     resume_metadata: ResumeMetadataState = {
         **dict(live_bundle["resume_metadata"]),
         "updated_at": _timestamp(),
-        "resume_available": bool(shell.get("last_checkpoint_id")),
+        "resume_available": bool(shell.get("resume_available")),
         "default_resume_kind": effective_resume_kind if compatibility_status == "fallback_to_live_state" else str(
             resume_policy.get("default_mode", "warm_resume")
         ),
@@ -963,6 +1003,9 @@ def resume_from_checkpoint(
         "last_resume_reason": ",".join(compatibility_issues) if compatibility_issues else "checkpoint_restored",
         "last_resume_window_sentence_ids": resume_window_sentence_ids,
         "reconstructed_hot_state": reconstructed,
+        "reading_id": _clean_text(shell.get("reading_id")) or None,
+        "last_product_unit_id": _clean_text(shell.get("last_product_unit_id")) or None,
+        "last_product_unit_sequence": int(shell.get("last_product_unit_sequence", 0) or 0),
     }
     save_json(resume_metadata_file(output_dir), resume_metadata)
 
@@ -978,6 +1021,9 @@ def resume_from_checkpoint(
         "local_buffer": local_buffer,
         "local_continuity": continuity,
         "resume_metadata": resume_metadata,
+        "reading_id": _clean_text(shell.get("reading_id")),
+        "last_product_unit_id": _clean_text(shell.get("last_product_unit_id")) or None,
+        "last_product_unit_sequence": int(shell.get("last_product_unit_sequence", 0) or 0),
     }
     emit_resume_observability(
         output_dir,

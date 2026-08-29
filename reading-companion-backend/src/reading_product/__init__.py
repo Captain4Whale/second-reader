@@ -13,6 +13,14 @@ from .models import (
     SourceIdentity,
     UnitBuildResult,
 )
+from .store import (
+    ReadingProductProjectionError,
+    ReadingProductStore,
+    ReadingProductStoreError,
+    public_reading_product_current_file,
+    public_reading_product_revision_dir,
+    runtime_reading_product_dir,
+)
 from .validation import ReadingProductValidationError
 
 __all__ = [
@@ -24,10 +32,16 @@ __all__ = [
     "ProductMarginalia",
     "ProductUnit",
     "ReadingProductDocument",
+    "ReadingProductStore",
+    "ReadingProductProjectionError",
+    "ReadingProductStoreError",
     "ReadingProductValidationError",
     "SourceIdentity",
     "UnitBuildResult",
     "build_product_unit",
     "build_source_identity",
+    "public_reading_product_current_file",
+    "public_reading_product_revision_dir",
+    "runtime_reading_product_dir",
     "sha256_file",
 ]

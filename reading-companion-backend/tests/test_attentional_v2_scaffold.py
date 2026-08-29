@@ -87,6 +87,7 @@ from src.reading_mechanisms.attentional_v2 import AttentionalV2Mechanism
 from src.reading_runtime.provisioning import ProvisionedBook
 from src.reading_runtime.artifacts import checkpoint_summary_file, mechanism_manifest_file, runtime_shell_file
 from src.reading_runtime.shell_state import load_runtime_shell
+from src.reading_product import ReadingProductStore, ReadingProductValidationError
 
 
 def _write_minimal_unit_span_ledger(output_dir: Path, count: int) -> None:
@@ -1942,6 +1943,7 @@ def test_attentional_v2_runner_prefers_main_body_before_supporting_chapters(tmp_
         focal_sentence = kwargs["current_unit_sentences"][-1]
         chapter_read_order.append(str(kwargs["chapter_title"]))
         return {
+            "understanding": f"Understood {focal_sentence['sentence_id']}.",
             "reading_impression": f"Read {focal_sentence['sentence_id']}.",
             "surfaced_reactions": [],
             "memory_uptake_ops": [],
@@ -2343,9 +2345,11 @@ def test_attentional_v2_read_book_runs_live_loop_and_persists_compatibility_resu
         captured_unit_reads.append([str(sentence.get("sentence_id")) for sentence in current_unit_sentences])
         captured_carry_forward_contexts.append(dict(kwargs["carry_forward_context"]))
         return {
+            "understanding": f"The unit develops meaning around {anchor_quote[:24]}",
             "reading_impression": f"Meaning unit around {anchor_quote[:24]}",
             "surfaced_reactions": [
                 {
+                    "kind": "note",
                     "source_quote": anchor_quote,
                     "content": f"Read noticed: {anchor_quote[:40]}",
                     "prior_link": {
@@ -2478,7 +2482,7 @@ def test_attentional_v2_read_book_runs_live_loop_and_persists_compatibility_resu
     persisted_reactions = json.loads(reaction_records_file(result.output_dir).read_text(encoding="utf-8"))["records"]
     assert persisted_reactions[0]["record_source"] == "read_surface"
     assert persisted_reactions[0]["thought"].startswith("Read noticed:")
-    assert persisted_reactions[0]["prior_link"]["ref_ids"] == ["source:src:c1:p1@0-p1@10"]
+    assert persisted_reactions[0]["prior_link"] is None
 
 
 def test_attentional_v2_runner_persists_multiple_read_surface_reactions(tmp_path, monkeypatch):
@@ -2491,13 +2495,16 @@ def test_attentional_v2_runner_persists_multiple_read_surface_reactions(tmp_path
         focal_sentence = kwargs["current_unit_sentences"][-1]
         anchor_quote = str(focal_sentence.get("text", "") or "").strip()[:80]
         return {
+            "understanding": f"The unit develops meaning around {anchor_quote[:24]}",
             "reading_impression": f"Meaning unit around {anchor_quote[:24]}",
             "surfaced_reactions": [
                 {
+                    "kind": "note",
                     "source_quote": anchor_quote,
                     "content": f"First surfaced: {anchor_quote[:20]}",
                 },
                 {
+                    "kind": "note",
                     "source_quote": anchor_quote,
                     "content": f"Second surfaced: {anchor_quote[:20]}",
                     "search_intent": {
@@ -2557,7 +2564,7 @@ def test_attentional_v2_runner_persists_multiple_read_surface_reactions(tmp_path
     assert len(persisted_reactions) == 4
     assert all(record["record_source"] == "read_surface" for record in persisted_reactions)
     assert persisted_reactions[0]["thought"].startswith("First surfaced:")
-    assert persisted_reactions[1]["search_intent"]["query"] == "why this line lands so hard"
+    assert persisted_reactions[1]["search_intent"] is None
 
 
 def test_attentional_v2_read_book_tolerates_missing_reaction_payload(tmp_path, monkeypatch):
@@ -2570,6 +2577,7 @@ def test_attentional_v2_read_book_tolerates_missing_reaction_payload(tmp_path, m
         focal_sentence = kwargs["current_unit_sentences"][-1]
         anchor_quote = str(focal_sentence.get("text", "") or "").strip()[:80]
         return {
+            "understanding": f"The unit develops meaning around {anchor_quote[:24]}",
             "reading_impression": f"Meaning unit around {anchor_quote[:24]}",
             "surfaced_reactions": [],
             "memory_uptake_ops": [],
@@ -2674,6 +2682,7 @@ def test_attentional_v2_read_book_runs_source_anchor_units_without_sentence_curs
             ]
         )
         return {
+            "understanding": "The source unit has been interpreted.",
             "reading_impression": "single-sentence path still got read",
             "surfaced_reactions": [],
             "memory_uptake_ops": [],
@@ -2725,9 +2734,11 @@ def test_attentional_v2_runner_stops_at_audit_window_cap_and_persists_partial_ou
         read_calls.append(sentence_ids)
         focal_sentence = kwargs["current_unit_sentences"][-1]
         return {
+            "understanding": f"Understood {sentence_ids[-1]}.",
             "reading_impression": f"Read {sentence_ids[-1]}.",
             "surfaced_reactions": [
                 {
+                    "kind": "note",
                     "source_quote": str(focal_sentence.get("text")),
                     "content": f"Immediate reaction to {sentence_ids[-1]}.",
                 }
@@ -2760,7 +2771,10 @@ def test_attentional_v2_runner_stops_at_audit_window_cap_and_persists_partial_ou
         ReadRequest(
             book_path=_fixture_epub(),
             mechanism_key=ATTENTIONAL_V2_MECHANISM_KEY,
-            mechanism_config={"audit_window_max_units": 2},
+            mechanism_config={
+                "audit_window_max_units": 2,
+                "memory_retrieval_mode": "text_only",
+            },
         )
     )
 
@@ -2781,7 +2795,196 @@ def test_attentional_v2_runner_stops_at_audit_window_cap_and_persists_partial_ou
     assert chapter_payload["visible_reaction_count"] == 2
 
     shell = load_runtime_shell(runtime_shell_file(result.output_dir))
-    assert shell["status"] == "completed"
+    assert shell["status"] == "paused"
+    product_store = ReadingProductStore.open(result.output_dir, shell["reading_id"])
+    assert product_store.snapshot(book_document=result.book_document).status == "partial"
+    assert product_store.partial_snapshot_path.exists()
+    assert not (result.output_dir / "public" / "reading-products" / "current.json").exists()
+
+    def fake_phase6_chapter_cycle(**kwargs):
+        compatibility_payload = project_chapter_result_compatibility(
+            book_id=kwargs["book_id"],
+            chapter=kwargs["chapter"],
+            reaction_records=kwargs["reaction_records"],
+            output_language=kwargs["output_language"],
+            output_dir=kwargs["output_dir"],
+            persist=True,
+        )
+        return {
+            "chapter_consolidation": {
+                "chapter_ref": kwargs["chapter"].get("reference", ""),
+            },
+            "promotion_results": [],
+            "active_attention": kwargs["active_attention"],
+            "reflective_frames": kwargs["reflective_frames"],
+            "knowledge_activations": kwargs["knowledge_activations"],
+            "reaction_records": kwargs["reaction_records"],
+            "compatibility_payload": compatibility_payload,
+        }
+
+    monkeypatch.setattr(runner_module, "run_phase6_chapter_cycle", fake_phase6_chapter_cycle)
+    continued = mechanism.read_book(
+        ReadRequest(
+            book_path=_fixture_epub(),
+            continue_mode=True,
+            mechanism_key=ATTENTIONAL_V2_MECHANISM_KEY,
+            mechanism_config={"memory_retrieval_mode": "text_only"},
+        )
+    )
+    assert read_calls == [["c1-s1"], ["c1-s2"], ["c2-s1"], ["c2-s2"]]
+    assert len(product_store.load_units()) == 4
+    assert load_runtime_shell(runtime_shell_file(continued.output_dir))["status"] == "completed"
+    assert (continued.output_dir / "public" / "reading-products" / "current.json").exists()
+
+
+def test_attentional_v2_runner_replays_product_commit_after_derived_projection_crash(
+    tmp_path,
+    monkeypatch,
+):
+    """A committed Product Unit must advance resume without a second Digest call."""
+
+    monkeypatch.chdir(tmp_path)
+    provisioned = _provisioned_book()
+    monkeypatch.setattr(runner_module, "ensure_canonical_parse", lambda *args, **kwargs: provisioned)
+    digest_calls: list[list[str]] = []
+
+    def fake_digest(**kwargs):
+        sentence_ids = [
+            str(sentence.get("sentence_id"))
+            for sentence in kwargs["current_unit_sentences"]
+        ]
+        digest_calls.append(sentence_ids)
+        return {
+            "understanding": f"Understood {sentence_ids[-1]}.",
+            "reading_impression": f"Responded to {sentence_ids[-1]}.",
+            "marginalia": [],
+            "memory_uptake_ops": [],
+        }
+
+    def fake_process_sentence_intake(sentence, *, local_buffer, window_size=6):
+        return {
+            **local_buffer,
+            "current_sentence_id": sentence["sentence_id"],
+            "current_sentence_index": sentence["sentence_index"],
+            "recent_sentences": [
+                *local_buffer.get("recent_sentences", []),
+                dict(sentence),
+            ][-window_size:],
+            "open_meaning_unit_sentence_ids": [sentence["sentence_id"]],
+            "seen_sentence_ids": [
+                *local_buffer.get("seen_sentence_ids", []),
+                sentence["sentence_id"],
+            ],
+        }
+
+    def fake_phase6_chapter_cycle(**kwargs):
+        compatibility_payload = project_chapter_result_compatibility(
+            book_id=kwargs["book_id"],
+            chapter=kwargs["chapter"],
+            reaction_records=kwargs["reaction_records"],
+            output_language=kwargs["output_language"],
+            output_dir=kwargs["output_dir"],
+            persist=True,
+        )
+        return {
+            "chapter_consolidation": {
+                "chapter_ref": kwargs["chapter"].get("reference", ""),
+            },
+            "promotion_results": [],
+            "active_attention": kwargs["active_attention"],
+            "reflective_frames": kwargs["reflective_frames"],
+            "knowledge_activations": kwargs["knowledge_activations"],
+            "reaction_records": kwargs["reaction_records"],
+            "compatibility_payload": compatibility_payload,
+        }
+
+    monkeypatch.setattr(runner_module, "_call_ingest", _fake_single_sentence_ingest_boundary)
+    monkeypatch.setattr(runner_module, "process_sentence_intake", fake_process_sentence_intake)
+    monkeypatch.setattr(runner_module, "_call_digest", fake_digest)
+    monkeypatch.setattr(runner_module, "run_phase6_chapter_cycle", fake_phase6_chapter_cycle)
+    persist_marginalia = runner_module._persist_marginalia
+
+    def crash_after_product_commit(**_kwargs):
+        raise RuntimeError("simulated derived projection crash")
+
+    monkeypatch.setattr(runner_module, "_persist_marginalia", crash_after_product_commit)
+    mechanism = AttentionalV2Mechanism()
+    request = ReadRequest(
+        book_path=_fixture_epub(),
+        mechanism_key=ATTENTIONAL_V2_MECHANISM_KEY,
+        mechanism_config={"memory_retrieval_mode": "text_only"},
+    )
+    with pytest.raises(RuntimeError, match="simulated derived projection crash"):
+        mechanism.read_book(request)
+
+    output_dir = provisioned.output_dir
+    shell = load_runtime_shell(runtime_shell_file(output_dir))
+    store = ReadingProductStore.open(output_dir, shell["reading_id"])
+    assert len(store.load_units()) == 1
+    assert shell["last_product_unit_sequence"] == 1
+    assert shell["cursor"].get("span_end_cursor", {}).get("char_offset") != 15
+
+    monkeypatch.setattr(runner_module, "_persist_marginalia", persist_marginalia)
+    result = mechanism.read_book(
+        ReadRequest(
+            book_path=_fixture_epub(),
+            continue_mode=True,
+            mechanism_key=ATTENTIONAL_V2_MECHANISM_KEY,
+            mechanism_config={"memory_retrieval_mode": "text_only"},
+        )
+    )
+
+    assert digest_calls == [["c1-s1"], ["c1-s2"]]
+    assert len(store.load_units()) == 2
+    assert load_runtime_shell(runtime_shell_file(result.output_dir))["status"] == "completed"
+    assert (result.output_dir / "public" / "reading-products" / "current.json").exists()
+
+
+@pytest.mark.parametrize("failure_mode", ["digest_error", "product_validation"])
+def test_attentional_v2_failed_digest_or_product_validation_does_not_accept_unit(
+    tmp_path,
+    monkeypatch,
+    failure_mode,
+):
+    """Failed attempts must not advance cursor or create accepted-unit audits."""
+
+    monkeypatch.chdir(tmp_path)
+    provisioned = _provisioned_book()
+    monkeypatch.setattr(runner_module, "ensure_canonical_parse", lambda *args, **kwargs: provisioned)
+    monkeypatch.setattr(runner_module, "_call_ingest", _fake_single_sentence_ingest_boundary)
+
+    def fake_digest(**_kwargs):
+        if failure_mode == "digest_error":
+            raise RuntimeError("digest attempt failed")
+        return {
+            "understanding": "",
+            "reading_impression": "A response without understanding is invalid.",
+            "marginalia": [],
+            "memory_uptake_ops": [],
+        }
+
+    monkeypatch.setattr(runner_module, "_call_digest", fake_digest)
+    request = ReadRequest(
+        book_path=_fixture_epub(),
+        mechanism_key=ATTENTIONAL_V2_MECHANISM_KEY,
+        mechanism_config={"memory_retrieval_mode": "text_only"},
+    )
+    if failure_mode == "digest_error":
+        with pytest.raises(RuntimeError, match="digest attempt failed"):
+            AttentionalV2Mechanism().read_book(request)
+    else:
+        with pytest.raises(ReadingProductValidationError, match="understanding"):
+            AttentionalV2Mechanism().read_book(request)
+
+    output_dir = provisioned.output_dir
+    shell = load_runtime_shell(runtime_shell_file(output_dir))
+    store = ReadingProductStore.open(output_dir, shell["reading_id"])
+    assert store.load_units() == ()
+    assert shell.get("last_product_unit_sequence", 0) == 0
+    assert shell["cursor"].get("span_end_cursor", {}).get("char_offset") is None
+    assert unit_span_ledger_file(output_dir).read_text(encoding="utf-8") == ""
+    assert not read_audit_file(output_dir).exists()
+    assert not settlement_audit_file(output_dir).exists()
 
 
 def test_attentional_v2_rejects_book_analysis_mode(tmp_path, monkeypatch):
