@@ -7,7 +7,7 @@ Update when: task status, priority, blockers, decision refs, job refs, evidence 
 
 This document is the human-readable companion to `docs/tasks/registry.json`.
 
-Last updated: `2026-08-30T20:38:00+08:00`
+Last updated: `2026-08-31T06:50:00+08:00`
 
 ## Status Values
 - `active`
@@ -130,7 +130,7 @@ Last updated: `2026-08-30T20:38:00+08:00`
 - Lane: `product_contract`
 - Priority: `high`
 - Detail: `docs/implementation/annotation-pack/recent-real-agent-artifact-contract-audit-2026-08-25.md`
-- Next: the corrected audit selects the July 5 phase9 Xidaduo evaluation segment rather than the April phase8 product output. Its `112` records contain `83` bodyless Highlights and `29` body-bearing Notes; every stored quote/range and UTC timestamp round-trips. The current adapter accepts `111` and rejects only record index `44`, whose five-code-point quote occurs twice in its source unit. The exact EPUB/full `BookDocument` are traceable and all `112` ranges deterministically remap to exact EPUB hrefs, but the eval artifact does not persist that map or co-locate the EPUB, leaves export-facing runtime state non-terminal, and hits a confirmed blanket-doctype parser false positive. Implement the narrow safe-doctype repair, persist an audited segment-to-source map/final state, explicitly resolve or skip record `44`, then run the real exporter. Do not call this a whole-book proof: the segment covers source chapters `3–14`.
+- Next: no historical migration is required for the current Product goal. The narrow safe-DOCTYPE repair is complete: the real Xidaduo EPUB now produces `22` resource texts, `590` paragraph ranges, and zero unverifiable hrefs while hostile DTD/entity forms remain rejected. If a separate future task explicitly chooses to export this old phase9 segment, it must still persist/audit the segment-to-source map, co-locate the exact EPUB, materialize an honest export-facing terminal state, and resolve or explicitly skip record `44`. Do not call that segment a whole-book proof: it covers source chapters `3–14`.
 - Evidence:
   - `DEC-157`
   - `contract/annotation-pack/v0/README.md`
@@ -142,6 +142,7 @@ Last updated: `2026-08-30T20:38:00+08:00`
   - `reading-companion-backend/src/annotation_pack/epub_resources.py`
   - `reading-companion-backend/src/annotation_pack/identity.py`
   - `reading-companion-backend/src/annotation_pack/producers/second_reader.py`
+  - `reading-companion-backend/tests/annotation_pack/test_epub_resources.py`
 
 ## Active
 

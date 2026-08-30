@@ -46,8 +46,14 @@ _BLOCK_TAGS: Final = frozenset(
     }
 )
 _HEADING_TAGS: Final = frozenset({"h1", "h2", "h3", "h4", "h5", "h6"})
-_FORBIDDEN_XML_DECLARATION: Final = re.compile(
+_XML_DECLARATION_TOKEN: Final = re.compile(
     rb"<!\s*(?:DOCTYPE|ENTITY)\b",
+    re.IGNORECASE,
+)
+_SAFE_HTML5_DOCTYPE_PROLOG: Final = re.compile(
+    rb"\A(?:\xef\xbb\xbf)?[ \t\r\n]*"
+    rb"(?:<\?xml\b[^>]*\?>[ \t\r\n]*)?"
+    rb"(?P<doctype><!DOCTYPE[ \t\r\n]+html[ \t\r\n]*>)",
     re.IGNORECASE,
 )
 _WHITE_SPACE_RUN: Final = re.compile(r"\s+")
@@ -246,7 +252,7 @@ def _resource_text_and_blocks(
 ) -> tuple[str, tuple[_ResourceBlock, ...]] | None:
     if (
         b"\x00" in content
-        or _FORBIDDEN_XML_DECLARATION.search(content)
+        or _has_unsafe_resource_declaration(content)
         or content.count(b"<") > MAX_RESOURCE_XML_MARKUP_DELIMITERS
     ):
         return None
@@ -297,6 +303,25 @@ def _resource_text_and_blocks(
         cursor += len(text)
         blocks.append(_ResourceBlock(text=text, start=start, end=cursor))
     return "".join(stream_parts), tuple(blocks)
+
+
+def _has_unsafe_resource_declaration(content: bytes) -> bool:
+    """Allow only one canonical simple HTML5 doctype in the XML prolog.
+
+    EPUB XHTML commonly includes ``<!DOCTYPE html>``.  That declaration has no
+    external or internal subset and is safe for the bounded ElementTree parse
+    below.  Every other DOCTYPE/ENTITY token remains fail-closed, including
+    SYSTEM, PUBLIC, internal subsets, duplicate declarations, and declarations
+    placed outside the initial XML prolog.
+    """
+
+    declarations = tuple(_XML_DECLARATION_TOKEN.finditer(content))
+    if not declarations:
+        return False
+    safe_prolog = _SAFE_HTML5_DOCTYPE_PROLOG.match(content)
+    if safe_prolog is None or len(declarations) != 1:
+        return True
+    return declarations[0].start() != safe_prolog.start("doctype")
 
 
 def _map_book_document_paragraphs(

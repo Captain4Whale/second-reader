@@ -2179,6 +2179,12 @@ Epic 完成后只能声明：
 
 新增证据只允许声明：**在 tracked Tiny Reader 短小真实 EPUB 上，当前默认机制已通过 CPA Luna 的真实 LLM 调用完成普通入口整书阅读，并生成 complete Reading Product、章节兼容投影和独立验证通过的 Annotation Pack。** 仍不得据此声明旧《悉达多》《纳瓦尔宝典》已转换、生产规模整书质量/性能已验证、Pages IRI 已公开上线，或原生 Unit API、frontend Understanding/Response、Library/API/Reader 集成已经完成。
 
+### 20.10 Safe HTML5 DOCTYPE parser repair
+
+The exact XHTML/HTML resource parser now accepts exactly one simple HTML5 `<!DOCTYPE html>` in the initial resource prolog after optional BOM/whitespace and an optional XML declaration. It continues to reject `ENTITY`, internal subsets, `SYSTEM`, `PUBLIC`, wrong doctype names, duplicate/misplaced declarations, malformed XML, oversized structures, and hostile ZIP inputs. Container and OPF XML remain DTD-free.
+
+Focused source/resource tests pass `246` cases and the complete Annotation Pack suite passes `804` cases. The retained exact Xidaduo EPUB (`f239921773ac5abc86527fb78379cbd68cdf2cb901d253e085b2883180984a4f`) now produces `22` resource texts, all `590` paragraph ranges, and zero unverifiable hrefs through the committed production parser. This removes the parser false positive only; it does not migrate the historical phase9 eval artifact, invent a terminal state, persist its segment-coordinate bridge, resolve its one ambiguous quote, or publish a Pack from it. New Reading Product outputs already carry canonical coordinates and a true complete state.
+
 ## Appendix A. Superseded first-implementation Definition Of Done and closure record
 
 以下内容是 `DEC-155` 重型 v0 在 `2026-08-24` 的本地/仓库验收记录，仅作实施历史；不再定义当前 v0 wire 或完成条件。

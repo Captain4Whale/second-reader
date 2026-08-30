@@ -81,7 +81,7 @@ Consequently, a reading mechanism does **not** need to generate EPUB hashes, boo
 
 `TextPositionSelector` offsets are zero-based Unicode code-point indexes into one deterministic logical text stream for `target.source`. `start` is inclusive and `end` is exclusive. The v0 stream is built as follows:
 
-1. Read the exact verified UTF-8 XHTML/HTML manifest resource as XML; do not fall back to regex or plaintext recovery after a parse/coherence failure.
+1. Read the exact verified UTF-8 XHTML/HTML manifest resource as XML; do not fall back to regex or plaintext recovery after a parse/coherence failure. A resource may contain exactly one simple HTML5 `<!DOCTYPE html>` immediately after optional BOM/whitespace and an optional XML declaration. Any other `DOCTYPE` or `ENTITY` token—including `SYSTEM`, `PUBLIC`, an internal subset, or duplicate/misplaced declarations—makes that resource unverifiable. Container and OPF XML remain DTD-free.
 2. Visit `p`, `li`, `blockquote`, `caption`, `div`, `figcaption`, and `h1` through `h6` elements in document order.
 3. Skip a non-heading container when emitting it would duplicate text already represented by a nested textual block and the container has no direct non-whitespace text.
 4. For each included block, concatenate descendant text, replace every Python Unicode `\s+` run with one ASCII space, trim leading/trailing whitespace, and omit an empty result. Do not apply NFC or any other Unicode normalization to source text.

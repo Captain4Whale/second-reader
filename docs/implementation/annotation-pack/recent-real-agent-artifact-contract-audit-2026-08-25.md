@@ -52,9 +52,9 @@ Annotation text and Note bodies were not copied into this report. Only structura
 | Exact EPUB bytes and identity | **pass through dataset provenance; not co-located** | The retained EPUB is `190814` bytes with SHA-256 `f239921773ac5abc86527fb78379cbd68cdf2cb901d253e085b2883180984a4f`. The same bytes are in the source library and older product output. The July eval runtime itself does not contain `_assets/source.epub`. |
 | Exact-source metadata and `BookDocument` coherence | **pass for the source artifact** | The fresh-parse full `BookDocument` has `16` chapters and `590` paragraphs and passes current strict `PublicationIdentityBuilder` substrate comparison against the exact EPUB. The one-chapter/`511`-paragraph eval `BookDocument` is a TXT segment projection and must not be supplied directly as that EPUB's substrate. |
 | Segment range to exact EPUB range | **reconstructible, but not persisted as an export input** | Replaying the versioned dataset renderer reproduces the segment bytes exactly. `499` source-derived segment paragraphs map to the full `BookDocument`; `12` are inserted chapter-title rows. All `112` annotation ranges deterministically map to one original chapter/paragraph/href and round-trip to the exact EPUB text in the safe parser trial. The eval artifact did not persist this map, so the generic adapter/exporter must not guess it. |
-| Exact EPUB resource-text index | **blocked by a confirmed implementation false positive** | Current code rejects every `DOCTYPE`, so all `22` safe XHTML resources become unverifiable. All `22` contain only a simple HTML doctype: no `ENTITY`, internal subset, `SYSTEM`, or `PUBLIC`. A read-only trial allowing only the simple HTML5 doctype produced `22` resource streams, all `590` paragraph ranges, and zero unverifiable hrefs. |
-| EPUB-backed anchor resolution | **positive dry-run for the 111 accepted drafts** | After deterministic coordinate remap and the narrowly relaxed doctype trial, real `AnchorBuilder` resolves all `111` adapter-accepted drafts with exact quote/position round-trip and no findings. This is diagnostic evidence, not a committed migration or published Pack. |
-| Pack derivation and detached packaging | **not run** | The real exporter first fails the stale run-state gate. Even after finalization, it needs a persisted/audited coordinate bridge and the safe doctype parser repair; record `44` also needs an explicit skip or resolution policy. |
+| Exact EPUB resource-text index | **pass after committed safe-DOCTYPE repair** | The resource parser now accepts exactly one simple HTML5 `<!DOCTYPE html>` in the resource prolog and continues to reject `ENTITY`, internal subsets, `SYSTEM`, `PUBLIC`, duplicate/misplaced declarations, malformed XML, and hostile resources. The retained exact EPUB produces `22` resource streams, all `590` paragraph ranges, and zero unverifiable hrefs. |
+| EPUB-backed anchor resolution | **positive dry-run for the 111 accepted drafts** | After deterministic coordinate remap, the real `AnchorBuilder` resolves all `111` adapter-accepted drafts with exact quote/position round-trip and no findings. The parser portion now uses committed production code; coordinate remap remains diagnostic evidence rather than a committed historical migration or published Pack. |
+| Pack derivation and detached packaging | **not run for this historical segment** | The real exporter first fails the stale run-state gate. A historical migration would still need a persisted/audited coordinate bridge, co-located EPUB, honest terminal state, and an explicit skip or resolution policy for record `44`. Current/new Reading Product output does not need this migration. |
 
 ## Why the first point now passes
 
@@ -67,13 +67,15 @@ The distinction is explicit at every current phase9 layer:
 
 The compatibility `type` field is not authoritative: a current Note may retain `type=association` for older consumers while still carrying `marginalia_kind=note`. Reading `type` as the Pack kind was one cause of the earlier mistaken interpretation.
 
-## What still needs to be tried
+## Implemented follow-through
 
-### 1. Repair the safe EPUB resource parser
+### 1. Repair the safe EPUB resource parser — completed
 
-Replace the blanket doctype rejection in `src/annotation_pack/epub_resources.py` with a narrow rule that accepts only a simple HTML5 `<!DOCTYPE html>` declaration while continuing to reject `ENTITY`, internal subsets, `SYSTEM`, `PUBLIC`, malformed XML, oversized trees, and hostile ZIP cases. Add positive real-EPUB coverage and negative DTD/entity tests.
+The blanket content-resource doctype rejection in `src/annotation_pack/epub_resources.py` is replaced by a narrow rule that accepts only one simple HTML5 `<!DOCTYPE html>` declaration in the initial resource prolog. `ENTITY`, internal subsets, `SYSTEM`, `PUBLIC`, wrong names, duplicates/misplacement, malformed XML, oversized trees, and hostile ZIP cases remain fail-closed. Container and OPF XML retain their original blanket DTD prohibition.
 
-Expected proof: the retained Xidaduo EPUB yields `22` resource texts, `590` paragraph ranges, zero unverifiable hrefs, and unchanged hostile-input rejection.
+Committed positive/negative coverage passes, and the retained Xidaduo EPUB yields `22` resource texts, `590` paragraph ranges, zero unverifiable hrefs, with exact SHA-256 `f239921773ac5abc86527fb78379cbd68cdf2cb901d253e085b2883180984a4f`.
+
+## Historical migration work intentionally not taken
 
 ### 2. Make evaluation source provenance exportable
 
@@ -104,7 +106,7 @@ Neither target proves a current whole-book Agent-to-Pack route because this run 
 
 The April `output/悉达多` artifact is genuinely phase8 and is correctly rejected by the strict current adapter. It predates the explicit parallel Highlight/Note contract introduced in July, so its compatibility categories and non-empty thoughts cannot be treated as current kinds without an explicit migration policy.
 
-Its source EPUB is not corrupt. It has the same exact SHA-256 as the fresh-parse source. Its old persisted `BookDocument` differs because parser/source-normalization behavior changed, and its `22` resource failures have the same blanket-doctype cause described above. Those facts make it historical migration material, not evidence that the current Agent lacks required output.
+Its source EPUB is not corrupt. It has the same exact SHA-256 as the fresh-parse source. Its old persisted `BookDocument` differs because parser/source-normalization behavior changed. The former `22` resource failures were caused only by the now-fixed blanket-doctype gate; that parser defect no longer applies. The remaining substrate difference still makes this historical migration material, not evidence that the current Agent lacks required output.
 
 ## Verification
 
@@ -112,12 +114,12 @@ Its source EPUB is not corrupt. It has the same exact SHA-256 as the fresh-parse
 - Read-only current adapter invocation: `112` input, `111` accepted, one `ambiguous_source_quote` finding.
 - Read-only segment quote/range audit: `112/112` exact round-trip, `112/112` valid UTC, zero semantic duplicates.
 - Read-only dataset renderer replay: byte-identical segment source and deterministic original-source mapping for all `112` annotation ranges.
-- Current strict source identity: exact EPUB/full `BookDocument` coherence passes; resource index is empty only because of the blanket doctype gate.
-- Narrow safe-doctype trial: `22` resource texts, `590` paragraph ranges, zero unverifiable hrefs.
+- Current strict source identity and committed resource parser: exact EPUB/full `BookDocument` coherence passes with `22` resource texts, `590` paragraph ranges, and zero unverifiable hrefs.
+- Safe-DOCTYPE focused source/resource tests: `246 passed`; complete Annotation Pack suite: `804 passed`.
 - Remapped real AnchorBuilder trial: `111/111` accepted drafts resolve exactly with no findings.
 - `make annotation-pack-contract-check`: exit `0`; `55` contract tests pass and generated/Page-projection bytes are current.
 - `make agent-check`: exit `0`; only the separately recorded historical task-traceability and duplicate-decision warnings remain.
 
-No Agent was rerun, no production code was changed, and no Annotation Pack revision or package was published by this audit.
+The follow-through changes only the production XHTML resource declaration gate and its tests/docs. No Agent was rerun, no historical product was migrated, and no Annotation Pack revision or package was published from this eval artifact.
 
 No decision-log entry is added: this correction fixes artifact selection and factual classification. It does not change the producer-neutral contract, public wire, default mechanism, or approved compatibility boundary.

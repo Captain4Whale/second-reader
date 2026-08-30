@@ -1,5 +1,11 @@
 # Changelog
 
+## Safe HTML5 resource doctype parsing - 2026-08-31
+
+- allowed exactly one simple `<!DOCTYPE html>` in the initial XHTML/HTML resource prolog while retaining fail-closed rejection for `ENTITY`, internal subsets, `SYSTEM`, `PUBLIC`, wrong names, duplicate/misplaced declarations, malformed XML, and hostile resources
+- kept container and OPF XML DTD-free and made no public wire, schema, deterministic identity, packaging, or producer-contract change
+- verified the retained Xidaduo EPUB as `22` resource streams, `590` paragraph ranges, and zero unverifiable hrefs through production code
+
 ## Producer responsibility clarification - 2026-08-25
 
 - recorded the mechanism-neutral `AnnotationDraft` handoff and separated source-publication facts, annotation intent, runtime settlement facts, and exporter-derived wire data under `DEC-157`

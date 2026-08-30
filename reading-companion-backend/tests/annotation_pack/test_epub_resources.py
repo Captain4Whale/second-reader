@@ -150,6 +150,28 @@ def test_resource_text_uses_python_whitespace_without_nfc_and_skips_duplicate_co
     assert result.epub_index.unverifiable_hrefs == frozenset()
 
 
+def test_simple_html5_doctype_in_resource_prolog_is_accepted(tmp_path: Path) -> None:
+    chapter_path = "EPUB/Text/chapter-01.xhtml"
+    original = next(
+        entry.data for entry in fixture_entries() if entry.name == chapter_path
+    )
+    xhtml = original.replace(b"<html ", b"<!DOCTYPE html><html ", 1)
+    content = build_epub_bytes(
+        replace_entries=(FixtureZipEntry(chapter_path, xhtml),),
+    )
+    output_dir = tmp_path / "book"
+    source = _write_source(output_dir, content)
+
+    result = PublicationIdentityBuilder().build(
+        output_dir=output_dir,
+        persisted_book_document=_persisted_document(source),
+    )
+
+    assert "Text/chapter-01.xhtml" in result.epub_index.resource_texts
+    assert result.epub_index.unverifiable_hrefs == frozenset()
+    assert len(result.epub_index.paragraph_ranges) == 7
+
+
 @pytest.mark.parametrize(
     "unsafe_xhtml",
     [
@@ -158,6 +180,32 @@ def test_resource_text_uses_python_whitespace_without_nfc_and_skips_duplicate_co
             b'<?xml version="1.0"?>'
             b'<!DOCTYPE html [<!ENTITY private SYSTEM "file:///etc/passwd">]>'
             b"<html><body><p>&private;</p></body></html>"
+        ),
+        (
+            b'<?xml version="1.0"?>'
+            b'<!DOCTYPE html SYSTEM "https://example.invalid/book.dtd">'
+            b"<html><body><p>External system subset</p></body></html>"
+        ),
+        (
+            b'<?xml version="1.0"?>'
+            b'<!DOCTYPE html PUBLIC "-//EXAMPLE//DTD XHTML 1.0//EN" '
+            b'"https://example.invalid/book.dtd">'
+            b"<html><body><p>External public subset</p></body></html>"
+        ),
+        (
+            b'<?xml version="1.0"?>'
+            b"<!DOCTYPE html [<!ELEMENT html ANY>]>"
+            b"<html><body><p>Internal subset</p></body></html>"
+        ),
+        (
+            b'<?xml version="1.0"?>'
+            b"<!DOCTYPE svg>"
+            b"<html><body><p>Wrong doctype name</p></body></html>"
+        ),
+        (
+            b'<?xml version="1.0"?>'
+            b"<!DOCTYPE html><!DOCTYPE html>"
+            b"<html><body><p>Duplicate declarations</p></body></html>"
         ),
         b"<svg xmlns=\"http://www.w3.org/2000/svg\"><text>Wrong root</text></svg>",
     ],
