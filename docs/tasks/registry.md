@@ -7,7 +7,7 @@ Update when: task status, priority, blockers, decision refs, job refs, evidence 
 
 This document is the human-readable companion to `docs/tasks/registry.json`.
 
-Last updated: `2026-08-30T15:11:48+08:00`
+Last updated: `2026-08-30T20:38:00+08:00`
 
 ## Status Values
 - `active`
@@ -20,12 +20,32 @@ Last updated: `2026-08-30T15:11:48+08:00`
 
 ## Done
 
+### `TASK-READING-PRODUCT-OUTPUT-V1-LIVE-ACCEPTANCE` — Run live whole-book Reading Product v1 acceptance
+- Status: `done`
+- Lane: `mechanism_eval`
+- Priority: `high`
+- Detail: `docs/implementation/reading-product/reading-product-output-v1-detailed-design-and-implementation-handoff.md#9-live-acceptance`
+- Next: preserve the bounded Tiny Reader claim and evidence. Do not infer historical-book conversion, production-scale quality/performance, public Pages availability, or frontend/API deployment; any broader run is a separate acceptance task.
+- Jobs:
+  - `bgjob_reading_product_live_acceptance_cpa_luna_tiny_reader_20260830` (`failed` only after the real reading runtime completed, due to a post-read harness call)
+  - `bgjob_reading_product_live_acceptance_cpa_luna_tiny_reader_20260830_validation_retry1` (`failed`, no-model harness correction)
+  - `bgjob_reading_product_live_acceptance_cpa_luna_tiny_reader_20260830_validation_retry2` (`failed`, no-model harness correction)
+  - `bgjob_reading_product_live_acceptance_cpa_luna_tiny_reader_20260830_validation_retry3` (`failed`, no-model harness correction)
+  - `bgjob_reading_product_live_acceptance_cpa_luna_tiny_reader_20260830_validation_retry4` (`completed`, terminal no-model downstream validation)
+- Evidence:
+  - `DEC-158`
+  - `docs/implementation/reading-product/reading-product-output-v1-detailed-design-and-implementation-handoff.md`
+  - `reading-companion-backend/docs/evaluation/run_ledger.json`
+  - `reading-companion-backend/state/reading_product_live_acceptance/cpa_luna_tiny_reader_20260830/summary.json`
+  - `reading-companion-backend/state/reading_product_live_acceptance/cpa_luna_tiny_reader_20260830/book-output/public/reading-products/current.json`
+  - `reading-companion-backend/state/reading_product_live_acceptance/cpa_luna_tiny_reader_20260830/book-output/public/annotation-packs/live-cpa-luna-tiny-reader-94da560b3600/current.json`
+
 ### `TASK-READING-PRODUCT-OUTPUT-V1` — Implement mechanism-neutral Reading Product Output v1
 - Status: `done`
 - Lane: `product_contract`
 - Priority: `high`
 - Detail: `docs/implementation/reading-product/reading-product-output-v1-detailed-design-and-implementation-handoff.md`
-- Next: repo-local offline implementation is complete. Preserve exactly this bounded claim: **当前默认阅读机制已经在代码层接入 Reading Product Output v1；使用真实 EPUB 和确定性模型替身，可以完成逐 Unit 提交、整书封版、兼容投影以及 Annotation Pack 的生成与独立验证。** Slices 1–5 are pushed as `d83707a`, `7dcd160`, `e7adccc`, `6239147`, and `a81a935`; local and remote matched at the Slice 5 delivery commit after push, and no repo-local close-out action remains. Do not treat the separate live-model Gate as unfinished code.
+- Next: repo-local offline implementation is complete. Preserve exactly this offline claim: **当前默认阅读机制已经在代码层接入 Reading Product Output v1；使用真实 EPUB 和确定性模型替身，可以完成逐 Unit 提交、整书封版、兼容投影以及 Annotation Pack 的生成与独立验证。** Slices 1–5 are pushed as `d83707a`, `7dcd160`, `e7adccc`, `6239147`, and `a81a935`; local and remote matched at the Slice 5 delivery commit. The separate bounded live-model Gate is also complete and is recorded independently under `TASK-READING-PRODUCT-OUTPUT-V1-LIVE-ACCEPTANCE`; do not merge the two evidence boundaries.
 - Evidence:
   - `DEC-158`
   - `contract/reading-product/v1/README.md`
@@ -48,7 +68,7 @@ Last updated: `2026-08-30T15:11:48+08:00`
 - Lane: `product_contract`
 - Priority: `high`
 - Detail: `docs/implementation/annotation-pack/second-reader-annotation-pack-v0-detailed-design-and-implementation-handoff.md`
-- Next: the minimal W3C/DC wire remains closed, and `DEC-158` follow-through now makes complete Reading Product v1 the default producer while phase9 is explicit legacy-only. Preserve the repo-local offline completion boundary: a real EPUB plus deterministic model substitutes can pass through the default reading mechanism, whole-book Product finalizer, compatibility projection, Pack generation, detached packaging, and independent validation. Do not reinterpret this as historical whole-book conversion, a real LLM whole-book run, live Pages, native Unit API, frontend U/R, or Library/API/Reader integration.
+- Next: the minimal W3C/DC wire remains closed, and `DEC-158` follow-through makes complete Reading Product v1 the default producer while phase9 is explicit legacy-only. Preserve the offline evidence separately from the later bounded Tiny Reader live-model evidence in Section 20.9. Neither proves historical-book conversion, production-scale quality/performance, live Pages, native Unit API, frontend U/R, or Library/API/Reader integration.
 - Evidence:
   - `DEC-155`
   - `DEC-156`
@@ -891,7 +911,7 @@ Last updated: `2026-08-30T15:11:48+08:00`
 
 ## Blocked
 
-No provider-access blocker remains after the CPA Luna Medium switch. Product live acceptance tasks are queued below and have not been executed by this configuration change.
+No provider-access blocker remains after the CPA Luna Medium switch. The bounded Reading Product live acceptance is complete; no task is blocked on provider access here.
 
 ## Waiting
 
@@ -1169,16 +1189,6 @@ No provider-access blocker remains after the CPA Luna Medium switch. Product liv
   - `bgjob_closed_loop_bilingual_broader_auditcoherencefix_20260330` (`completed`)
 
 ## Queued
-
-### `TASK-READING-PRODUCT-OUTPUT-V1-LIVE-ACCEPTANCE` — Run live whole-book Reading Product v1 acceptance
-- Status: `queued`
-- Lane: `mechanism_eval`
-- Priority: `high`
-- Detail: `docs/implementation/reading-product/reading-product-output-v1-detailed-design-and-implementation-handoff.md#9-queued-live-acceptance`
-- Next: CPA Luna Medium is configured and a bounded Digest smoke has passed. In a separately authorized task, run one short real EPUB through the normal product entrypoint and verify `complete Reading Product -> Annotation Pack`. Do not redesign the completed offline implementation first, and do not treat the earlier Digest smoke as whole-book acceptance.
-- Evidence:
-  - `DEC-158`
-  - `docs/implementation/reading-product/reading-product-output-v1-detailed-design-and-implementation-handoff.md`
 
 ### `TASK-RUNTIME-OBSERVABILITY-COST-V1` — Land and validate runtime observability and cost v1
 - Status: `queued`

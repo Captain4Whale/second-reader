@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "updated_at": "2026-08-30T15:11:48+08:00",
+  "updated_at": "2026-08-30T20:38:00+08:00",
   "tasks": [
     {
       "id": "TASK-READING-PRODUCT-OUTPUT-V1",
@@ -20,7 +20,7 @@
       ],
       "job_refs": [],
       "acceptance_ref": "docs/implementation/reading-product/reading-product-output-v1-detailed-design-and-implementation-handoff.md#8-definition-of-done",
-      "next_action": "Repo-local offline implementation is complete. Preserve exactly this bounded claim: 当前默认阅读机制已经在代码层接入 Reading Product Output v1；使用真实 EPUB 和确定性模型替身，可以完成逐 Unit 提交、整书封版、兼容投影以及 Annotation Pack 的生成与独立验证。 Slices 1-5 are pushed as d83707a, 7dcd160, e7adccc, 6239147, and a81a935; local and remote matched at the Slice 5 delivery commit after push, and no repo-local close-out action remains. The separate live-model Gate is not unfinished code.",
+      "next_action": "Repo-local offline implementation is complete. Preserve its deterministic-substitute claim separately from the bounded live-model Gate, which is complete under TASK-READING-PRODUCT-OUTPUT-V1-LIVE-ACCEPTANCE. Slices 1-5 are pushed as d83707a, 7dcd160, e7adccc, 6239147, and a81a935; local and remote matched at the Slice 5 delivery commit. Do not merge the offline and live evidence boundaries.",
       "blocked_by": [],
       "evidence_refs": [
         "contract/reading-product/v1/README.md",
@@ -47,7 +47,7 @@
     {
       "id": "TASK-READING-PRODUCT-OUTPUT-V1-LIVE-ACCEPTANCE",
       "title": "Run live whole-book Reading Product v1 acceptance",
-      "status": "queued",
+      "status": "done",
       "lane": "mechanism_eval",
       "priority": "high",
       "detail_ref": "docs/implementation/reading-product/reading-product-output-v1-detailed-design-and-implementation-handoff.md",
@@ -59,15 +59,25 @@
       "decision_refs": [
         "DEC-158"
       ],
-      "job_refs": [],
-      "acceptance_ref": "docs/implementation/reading-product/reading-product-output-v1-detailed-design-and-implementation-handoff.md#9-queued-live-acceptance",
-      "next_action": "CPA Luna Medium is configured and a bounded Digest smoke has passed. In a separately authorized task, run one short real EPUB through the normal product entrypoint and verify complete Reading Product to Annotation Pack. Do not redesign the completed offline implementation first, and do not treat the earlier bounded Digest smoke as whole-book acceptance.",
+      "job_refs": [
+        "bgjob_reading_product_live_acceptance_cpa_luna_tiny_reader_20260830",
+        "bgjob_reading_product_live_acceptance_cpa_luna_tiny_reader_20260830_validation_retry1",
+        "bgjob_reading_product_live_acceptance_cpa_luna_tiny_reader_20260830_validation_retry2",
+        "bgjob_reading_product_live_acceptance_cpa_luna_tiny_reader_20260830_validation_retry3",
+        "bgjob_reading_product_live_acceptance_cpa_luna_tiny_reader_20260830_validation_retry4"
+      ],
+      "acceptance_ref": "docs/implementation/reading-product/reading-product-output-v1-detailed-design-and-implementation-handoff.md#9-live-acceptance",
+      "next_action": "Preserve the bounded Tiny Reader claim and evidence. Do not infer historical-book conversion, production-scale quality or performance, public Pages availability, or frontend/API deployment; any broader run is a separate acceptance task.",
       "blocked_by": [],
       "evidence_refs": [
         "docs/history/decision-log.md",
-        "docs/implementation/reading-product/reading-product-output-v1-detailed-design-and-implementation-handoff.md"
+        "docs/implementation/reading-product/reading-product-output-v1-detailed-design-and-implementation-handoff.md",
+        "reading-companion-backend/docs/evaluation/run_ledger.json",
+        "reading-companion-backend/state/reading_product_live_acceptance/cpa_luna_tiny_reader_20260830/summary.json",
+        "reading-companion-backend/state/reading_product_live_acceptance/cpa_luna_tiny_reader_20260830/book-output/public/reading-products/current.json",
+        "reading-companion-backend/state/reading_product_live_acceptance/cpa_luna_tiny_reader_20260830/book-output/public/annotation-packs/live-cpa-luna-tiny-reader-94da560b3600/current.json"
       ],
-      "last_updated": "2026-08-30T15:11:48+08:00",
+      "last_updated": "2026-08-30T20:38:00+08:00",
       "last_updated_by": "codex"
     },
     {
@@ -89,7 +99,7 @@
       ],
       "job_refs": [],
       "acceptance_ref": "docs/implementation/annotation-pack/second-reader-annotation-pack-v0-detailed-design-and-implementation-handoff.md#20-definition-of-done",
-      "next_action": "The minimal W3C and Dublin Core wire remains closed, and DEC-158 follow-through now makes complete Reading Product v1 the default producer while phase9 is explicit legacy-only. Preserve the repo-local offline completion boundary: a real EPUB plus deterministic model substitutes can pass through the default reading mechanism, whole-book Product finalizer, compatibility projection, Pack generation, detached packaging, and independent validation. Do not reinterpret this as historical whole-book conversion, a real LLM whole-book run, live Pages, native Unit API, frontend U/R, or Library, API, and Reader integration.",
+      "next_action": "The minimal W3C and Dublin Core wire remains closed, and DEC-158 follow-through makes complete Reading Product v1 the default producer while phase9 is explicit legacy-only. Preserve the offline evidence separately from the later bounded Tiny Reader live-model evidence in Section 20.9. Neither proves historical-book conversion, production-scale quality or performance, live Pages, native Unit API, frontend U/R, or Library, API, and Reader integration.",
       "blocked_by": [],
       "evidence_refs": [
         ".github/workflows/annotation-pack-pages.yml",

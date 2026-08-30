@@ -2143,7 +2143,7 @@ Epic 完成后只能声明：
 
 不得声明旧《悉达多》《纳瓦尔宝典》已转换，不得声明真实 LLM Agent 已完成整书阅读或真实整书 current Agent→Pack Gate 已验证。GitHub Pages schema IRI 目前仍为未上线；只有进入 `main`、启用/完成 Pages 部署并通过 served-byte 对比后，才能声明公开可用。原生 Unit API、frontend Understanding/Response 展示、Library、HTTP API 与 Reader 集成也不在本轮完成范围。
 
-本次 repo-local 完成只作出上述限定声明。真实 LLM 整书 Agent→Pack 没有运行；旧《悉达多》《纳瓦尔宝典》没有转换。Pages 只完成本地 projection/byte check，不是 live 部署或 served-byte 复验；原生 Unit API、frontend Understanding/Response、Library、HTTP API 与 Reader 集成均未实现、未测试、未声明。
+在 Slice 5 repo-local 收口时，只作出上述限定离线声明；当时真实 LLM 整书 Agent→Pack 尚未运行。后续 bounded live Gate 见第 20.9 节，它不改变这里的离线证据边界。旧《悉达多》《纳瓦尔宝典》仍未转换。Pages 只完成本地 projection/byte check，不是 live 部署或 served-byte 复验；原生 Unit API、frontend Understanding/Response、Library、HTTP API 与 Reader 集成均未实现、未测试、未声明。
 
 ### 20.7 Current minimal-reset acceptance evidence
 
@@ -2169,7 +2169,15 @@ Epic 完成后只能声明：
 - [x] 最终串行 `make reading-product-contract-check`、`make annotation-pack-contract-check`、`make contract-check` 和 `make agent-check` 均 exit `0`；完整 backend suite 为 `1834 passed, 9 failed`，九项均属于已单列的 legacy monkeypatch、eval active-pointer 或隔离环境 target-count baseline 类别，没有 Reading Product/Annotation Pack 新失败。
 - [x] Slice 5 以 `a81a935`（`test(reading-product): accept offline whole-book lifecycle`）完成 commit/push；push 后本地与 `origin/codex/annotation-pack-v0` 均解析为 `a81a9356988f7c711de5cac37eb7ae248e929134`。
 
-上述证据只支持第 20.6 节的 repo-local 离线声明。`TASK-READING-PRODUCT-OUTPUT-V1-LIVE-ACCEPTANCE` 继续 deferred/blocked，唯一外部 blocker 是当前没有可用模型 API credential；未来有可用 credential 时才从普通产品入口运行一份短小真实 EPUB 并验证 `complete Reading Product -> Annotation Pack`。
+上述 Slice 1–5 证据只支持第 20.6 节的 repo-local 离线声明；后续独立 live Gate 的证据见第 20.9 节。
+
+### 20.9 Reading Product live-model follow-through
+
+`TASK-READING-PRODUCT-OUTPUT-V1-LIVE-ACCEPTANCE` 已在 tracked Tiny Reader 短小真实 EPUB 上完成。普通 `parse_book` / `read_book` 入口通过 `cpa_codex_local` / `gpt-5.6-luna` 进行了真实模型调用，默认机制发布 `complete` Reading Product（`2` Units、`6` Marginalia），由 Product Unit 派生两份章节兼容投影，并由默认 adapter 生成 detached Annotation Pack。独立 validate/inspect 均通过：`6` items 全部导出，`0` skip、`0` warning、`0` error，包含 `4` Highlights 与 `2` Notes。
+
+初始注册 job 在真实阅读与 Product 发布完成后，因验收 harness 的 compatibility helper 调用错误而以 `failed` 收尾；随后四次 retry 均未调用模型，只修正验收 harness，最终 `validation_retry4` 完成。因此 run ledger 同时保留初始失败 job 与最终通过 job，不把 wrapper 失败改写成全程一次通过。
+
+新增证据只允许声明：**在 tracked Tiny Reader 短小真实 EPUB 上，当前默认机制已通过 CPA Luna 的真实 LLM 调用完成普通入口整书阅读，并生成 complete Reading Product、章节兼容投影和独立验证通过的 Annotation Pack。** 仍不得据此声明旧《悉达多》《纳瓦尔宝典》已转换、生产规模整书质量/性能已验证、Pages IRI 已公开上线，或原生 Unit API、frontend Understanding/Response、Library/API/Reader 集成已经完成。
 
 ## Appendix A. Superseded first-implementation Definition Of Done and closure record
 

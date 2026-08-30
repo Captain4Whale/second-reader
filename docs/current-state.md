@@ -7,15 +7,15 @@ Update when: the current objective, active tasks, blockers, active jobs, open de
 
 This file is authoritative for durable current status. Do not keep unique active-state information only in `docs/agent-handoff.md`.
 
-Last verified: `2026-08-30T15:11:48+08:00`
+Last verified: `2026-08-30T20:38:00+08:00`
 
 ## Current Objective
-- `TASK-READING-PRODUCT-OUTPUT-V1` is repo-locally complete for the offline implementation boundary under `DEC-158` on `codex/annotation-pack-v0`. `d83707a` established the v1 contract/shared substrate, `7dcd160` made Product Unit settlement authoritative before cursor advance, `e7adccc` completed recovery/finalization, `6239147` migrated the default Annotation Pack and chapter compatibility consumers, and `a81a935` delivered the Slice 5 offline whole-book lifecycle plus final acceptance evidence; all five Slice commits are pushed. The tracked Tiny Reader real EPUB now passes through ordinary parse, the default `attentional_v2` Reading Runner, real Unit settlement/coordinates, Product Store recovery, whole-book finalization, compatibility projection, default Pack export, detached packaging, and independent validation with deterministic model substitutes. The accurate claim is: **当前默认阅读机制已经在代码层接入 Reading Product Output v1；使用真实 EPUB 和确定性模型替身，可以完成逐 Unit 提交、整书封版、兼容投影以及 Annotation Pack 的生成与独立验证。** After pushing `a81a935`, local and `origin/codex/annotation-pack-v0` both resolved to `a81a9356988f7c711de5cac37eb7ae248e929134`. No repo-local Slice implementation remains; the separate live-model Gate is now queued.
-- `TASK-READING-PRODUCT-OUTPUT-V1-LIVE-ACCEPTANCE` is queued after CPA Luna Medium was configured and a bounded Digest smoke passed. No real LLM whole-book run was performed. The prior isolated offline acceptance rerun remains offline evidence because it set `PYTHON_DOTENV_DISABLED=1` and `READING_OBSERVABILITY_OTLP_ENABLED=0`.
+- `TASK-READING-PRODUCT-OUTPUT-V1` is repo-locally complete under `DEC-158` on `codex/annotation-pack-v0`. `d83707a`, `7dcd160`, `e7adccc`, `6239147`, and `a81a935` delivered and pushed the five offline implementation Slices. That deterministic-substitute boundary remains valid and unchanged.
+- `TASK-READING-PRODUCT-OUTPUT-V1-LIVE-ACCEPTANCE` is complete. The tracked Tiny Reader real EPUB ran through ordinary `parse_book` / `read_book`, the default `attentional_v2` mechanism, and the configured `cpa_codex_local` / `gpt-5.6-luna` route without replacing the model boundary. Ten recorded LLM calls completed with status `ok`; the reading runtime reached `completed` in `188.17` seconds and published a `complete` Reading Product with `2` Product Units, non-empty Understanding/Response, and `6` Marginalia (`4` Highlights, `2` Notes). Both chapter compatibility projections were generated. The default Reading Product adapter produced a detached Annotation Pack with `6` exported items and zero skips, warnings, or errors; standalone validate and inspect both passed. The bounded claim is: **在 tracked Tiny Reader 短小真实 EPUB 上，当前默认机制已通过 CPA Luna 的真实 LLM 调用完成普通入口整书阅读，并生成 complete Reading Product、章节兼容投影和独立验证通过的 Annotation Pack。** This is not evidence that historical《悉达多》《纳瓦尔宝典》were converted, that a production-scale book passed, or that Pages/frontend/API deployment is live.
 - Annotation Pack minimal v0 remains repo-locally complete under `TASK-ANNOTATION-PACK-V0-IMPLEMENTATION`, `DEC-156`, and `DEC-157`. Its W3C/DC `AnnotationSet` wire, exact EPUB RFC 6920 identity, TextQuote+Unicode-code-point TextPosition targets, deterministic IDs, canonical bytes, and detached package are unchanged. `DEC-158` follow-through in `6239147` makes complete Reading Product v1 the default producer input; `attentional-v2-phase9-legacy` is explicit legacy-only with no automatic fallback, and phase8 remains rejected. The public wire still has zero `sr:*` and publishes no Work/Edition/File, Track, chapter context/fingerprints, custom anchor id, CFI, provenance, producer digest, private audit, Memory, or mechanism data.
 - `TASK-ANNOTATION-PACK-RECENT-AGENT-ARTIFACT-VALIDATION` is complete with a corrected result. The best recent real current-native evidence is the July 5 phase9 Xidaduo evaluation segment, not the April phase8 product output. Its `112` records correctly contain `83` bodyless Highlights and `29` body-bearing Notes; all quote/range slices and timestamps round-trip, and the current adapter accepts `111`, rejecting only one five-code-point quote that occurs twice in its source unit. The exact EPUB and coherent `16`-chapter/`590`-paragraph source `BookDocument` are traceable through the dataset, and a deterministic renderer replay maps all `112` segment ranges back to exact EPUB hrefs. Direct export is still blocked because the eval artifact retains stale non-terminal runtime state, does not persist that coordinate map or co-locate the EPUB, and the exact-resource parser falsely rejects all `22` safe simple HTML doctypes. A narrow read-only parser/remap trial resolved all `111` accepted drafts. This segment covers source chapters `3–14`; it is not a current whole-book product proof.
 - The Annotation Hub consumer migration remains separately `waiting` under `TASK-ANNOTATION-HUB-V0-MINIMAL-PACK-MIGRATION`, is no longer blocked by Pack implementation, and stays outside this worktree. The schema IRI remains staged/not-live until the workflow reaches `main`, Pages is enabled, deployment succeeds, and served bytes match the canonical contract.
-- Runtime observability v1 is implemented as an infrastructure lane under `TASK-RUNTIME-OBSERVABILITY-COST-V1` and `DEC-154`; the final live-provider whole-book acceptance is queued and has not run.
+- Runtime observability v1 is implemented as an infrastructure lane under `TASK-RUNTIME-OBSERVABILITY-COST-V1` and `DEC-154`. The completed Tiny Reader Product live Gate captured `10` successful local LLM-ledger rows with OTLP disabled, but it did not execute the separate observability report/cost-baseline acceptance; that task remains queued.
   - the canonical observability record is a local append-only JSONL fact ledger with deterministic JSON/Markdown reports; Phoenix is an optional derived trace UI rather than job/checkpoint truth
   - unit-bearing work uses `reading.run_attempt -> reading.chapter -> reading.unit_attempt -> llm.call -> llm.attempt`; survey/parse/chapter-consolidation work may be chapter-only without a fabricated unit span
   - OTLP/HTTP export is disabled by default and uses the explicit `READING_OBSERVABILITY_*` environment boundary when enabled
@@ -2099,7 +2099,7 @@ Last verified: `2026-08-30T15:11:48+08:00`
 - Treat runtime viability, broader local pairwise comparison, durable-trace / re-entry comparison, and most mechanism-specific judged attribution families as paused unless one of the three kept dimensions later requires them.
 
 ## Now
-- Preserve the completed Reading Product Output v1 offline boundary: Product Store is accepted-Unit truth, the default Reading Product adapter feeds Annotation Pack, and chapter compatibility is derived from Product Units. Do not reopen this implementation merely because the separate live-model Gate is queued; final serial verification and all five Slice commit/push deliveries are complete.
+- Preserve the completed Reading Product Output v1 offline and bounded live-Tiny-Reader evidence. Product Store remains accepted-Unit truth, the default Reading Product adapter feeds Annotation Pack, and chapter compatibility is derived from Product Units; do not broaden the live claim to historical or production-scale books.
 - Preserve the corrected real-artifact audit: current phase9 kind/body and read-surface anchors pass, while direct export awaits the safe-doctype parser repair, persisted eval segment-to-source coordinates, export-facing runtime finalization, and explicit resolution or skipping of one ambiguous quote. Keep the April phase8 output only as historical migration evidence.
 - Keep runtime observability opt-in and evidence-first: finish the manual ledger/export wiring, then verify one bounded local trace/report without changing mechanism behavior or making Phoenix part of app readiness.
 - Treat `attentional_v2` as the current default mechanism and `iterator_v1` as the supported fallback / legacy-resume path.
@@ -3484,7 +3484,7 @@ Last verified: `2026-08-30T15:11:48+08:00`
   - `reading-companion-backend/src/attentional_v2/resume.py` now recreates the thin `runtime_shell.json` envelope if it is missing during position persistence
 
 ## Next
-- In a separately authorized task, run the queued `TASK-READING-PRODUCT-OUTPUT-V1-LIVE-ACCEPTANCE` on CPA Luna Medium from the ordinary product entrypoint using one short real EPUB and verify `complete Reading Product -> Annotation Pack`; do not redesign or rebuild the completed offline implementation first.
+- No further Reading Product v1 implementation or live-Gate action is required. Preserve the run ledger and bounded claim; any production-scale or historical-book run is a separate acceptance task.
 - For the next positive real-book Annotation Pack proof, use a completed current-native Agent artifact with an exact EPUB-coherent `BookDocument`, then run the actual exporter and independent validate/inspect path. If the historical《悉达多》output must be preserved without rerunning, open a separate explicit migration task for kind/body decisions and exact quote re-resolution; do not relax the current adapter.
 - Run the one remaining public-book live acceptance on the configured CPA route and inspect its canonical ledger/report before treating the first measured efficiency figures as a baseline.
 - Launch the next decisive chapter/excerpt comparison on the frozen clustered benchmark:
@@ -3580,7 +3580,6 @@ Last verified: `2026-08-30T15:11:48+08:00`
 - `TASK-ANNOTATION-HUB-V0-MINIMAL-PACK-MIGRATION`
 
 ## Queued Task IDs
-- `TASK-READING-PRODUCT-OUTPUT-V1-LIVE-ACCEPTANCE`
 - `TASK-RUNTIME-OBSERVABILITY-COST-V1`
 
 ## Blocked Task IDs
@@ -3612,7 +3611,7 @@ Last verified: `2026-08-30T15:11:48+08:00`
 ## Machine-Readable Appendix
 ```json
 {
-  "updated_at": "2026-08-30T07:11:48Z",
+  "updated_at": "2026-08-30T12:38:00Z",
   "last_updated_by": "codex",
   "active_task_ids": [
     "TASK-ATTENTIONAL-V2-STRUCTURAL-REWORK",
@@ -3623,7 +3622,6 @@ Last verified: `2026-08-30T15:11:48+08:00`
     "TASK-ANNOTATION-HUB-V0-MINIMAL-PACK-MIGRATION"
   ],
   "queued_task_ids": [
-    "TASK-READING-PRODUCT-OUTPUT-V1-LIVE-ACCEPTANCE",
     "TASK-RUNTIME-OBSERVABILITY-COST-V1"
   ],
   "blocked_task_ids": [],

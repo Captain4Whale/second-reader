@@ -1,6 +1,6 @@
 {
   "schema_version": 1,
-  "updated_at": "2026-07-05T11:03:07Z",
+  "updated_at": "2026-08-30T12:37:25.623641Z",
   "entries": [
     {
       "run_id": "attentional_v2_excerpt_surface_v1_1_judged_20260406",
@@ -3475,6 +3475,54 @@
         "merged_review_packet": "reading-companion-backend/eval/runs/attentional_v2/digest_marginalia_v24_5book_parallel_fullwindow_20260704/analysis/digest_marginalia_v24_5book_parallel_fullwindow/review_packet/README.md"
       },
       "updated_at": "2026-07-05T09:43:29Z"
+    },
+    {
+      "run_id": "reading_product_v1_live_acceptance_cpa_luna_tiny_reader_20260830",
+      "date": "2026-08-30",
+      "surface": "reading_product_v1_live_acceptance",
+      "lane": "mechanism_eval",
+      "status": "completed",
+      "mechanisms": [
+        "attentional_v2"
+      ],
+      "dataset_or_manifest": [
+        "reading-companion-backend/tests/annotation_pack/fixtures/tiny-reader/source.epub"
+      ],
+      "run_dir": "reading-companion-backend/state/reading_product_live_acceptance/cpa_luna_tiny_reader_20260830",
+      "summary_paths": {
+        "annotation_pack_pointer": "reading-companion-backend/state/reading_product_live_acceptance/cpa_luna_tiny_reader_20260830/book-output/public/annotation-packs/live-cpa-luna-tiny-reader-94da560b3600/current.json",
+        "reading_product_pointer": "reading-companion-backend/state/reading_product_live_acceptance/cpa_luna_tiny_reader_20260830/book-output/public/reading-products/current.json",
+        "summary": "reading-companion-backend/state/reading_product_live_acceptance/cpa_luna_tiny_reader_20260830/summary.json"
+      },
+      "job_ids": [
+        "bgjob_reading_product_live_acceptance_cpa_luna_tiny_reader_20260830",
+        "bgjob_reading_product_live_acceptance_cpa_luna_tiny_reader_20260830_validation_retry1",
+        "bgjob_reading_product_live_acceptance_cpa_luna_tiny_reader_20260830_validation_retry2",
+        "bgjob_reading_product_live_acceptance_cpa_luna_tiny_reader_20260830_validation_retry3",
+        "bgjob_reading_product_live_acceptance_cpa_luna_tiny_reader_20260830_validation_retry4"
+      ],
+      "report_paths": [],
+      "catalog_status": "not_cataloged",
+      "notes": "Real CPA Luna reading completed through ordinary parse_book/read_book in 188.17 seconds and published a complete Reading Product with 2 Units and 6 Marginalia (4 Highlights, 2 Notes). The initial registered wrapper failed only in post-read compatibility invocation after runtime completion. Four no-model validation retries corrected harness-only argument, SourceRange access, timestamp precision, and ValidationResult property mistakes; retry4 completed. The default detached Pack independently validates with 6 exported and zero skipped, warnings, or errors.",
+      "parent_run_id": "",
+      "child_run_ids": [],
+      "synthetic": false,
+      "local_missing_allowed": [],
+      "metadata": {
+        "provider_target": "cpa_codex_local",
+        "model": "gpt-5.6-luna",
+        "reasoning_effort": "medium",
+        "source_fixture": "tiny-reader",
+        "acceptance_gate": "TASK-READING-PRODUCT-OUTPUT-V1-LIVE-ACCEPTANCE",
+        "real_read_job": "bgjob_reading_product_live_acceptance_cpa_luna_tiny_reader_20260830",
+        "no_model_validation_retries": 4,
+        "real_llm_call_count": 10,
+        "product_unit_count": 2,
+        "marginalia_count": 6,
+        "pack_exported_count": 6,
+        "validation_retry4": "terminal_check"
+      },
+      "updated_at": "2026-08-30T12:37:25.622767Z"
     }
   ]
 }

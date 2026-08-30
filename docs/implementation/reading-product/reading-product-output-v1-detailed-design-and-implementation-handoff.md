@@ -1,6 +1,6 @@
 # Reading Product Output v1 — Detailed Design, Implementation Handoff, and Definition of Done
 
-Status: repo-local offline implementation complete for `TASK-READING-PRODUCT-OUTPUT-V1` under `DEC-158`; CPA Luna Medium is now configured, so the separate live-model acceptance is queued under `TASK-READING-PRODUCT-OUTPUT-V1-LIVE-ACCEPTANCE` but has not been run.
+Status: repo-local offline implementation complete for `TASK-READING-PRODUCT-OUTPUT-V1` under `DEC-158`; the bounded CPA Luna live-model acceptance is complete under `TASK-READING-PRODUCT-OUTPUT-V1-LIVE-ACCEPTANCE`.
 
 ## 1. Outcome
 
@@ -173,6 +173,15 @@ This round must not claim a live LLM whole-book read, conversion of historical f
 - The complete backend suite completed with `1834 passed, 9 failed`. None of the nine failures is in Reading Product or Annotation Pack: seven unchanged legacy tests monkeypatch removed `invoke_structured_output_tool` attributes, one minimal-eval inventory assertion expects an older active dataset pointer, and one F4A target-balancing assertion expects two configured targets while the isolated offline registry exposes one. The pre-implementation `135 passed, 2 failed` affected regression baseline, these full-suite baseline categories, and the earlier concurrent `agent-check` transient remain separately recorded in `docs/implementation/annotation-pack/baseline-observations.md`; no all-green claim is inferred.
 - Commit evidence is `d83707a`, `7dcd160`, `e7adccc`, `6239147`, and `a81a935`; all five Slice commits were pushed without force-push, and Slice 5's immediate post-push local/remote comparison matched.
 
-## 9. Queued live acceptance
+## 9. Live acceptance
 
-`TASK-READING-PRODUCT-OUTPUT-V1-LIVE-ACCEPTANCE` is now queued because `cpa_codex_local` / `gpt-5.6-luna` with `reasoning_effort=medium` is configured and has passed a bounded Digest smoke. The live whole-book gate itself has not run. In a separately authorized task, run one short real EPUB from the normal product entrypoint and verify `complete Reading Product -> Annotation Pack`; do not redesign or rebuild the completed offline implementation first.
+`TASK-READING-PRODUCT-OUTPUT-V1-LIVE-ACCEPTANCE` is complete for the bounded tracked Tiny Reader EPUB. The real run used `cpa_codex_local` / `gpt-5.6-luna` with `reasoning_effort=medium`, ordinary `parse_book` / `read_book`, the default `attentional_v2` mechanism, real Product settlement/finalization, and no model-boundary replacement.
+
+- The local canonical LLM ledger contains `10` successful calls: `4` survey, `4` phase4/Ingest, and `2` phase6/Digest records. The real reading runtime reached `completed` in `188.17` seconds.
+- The immutable complete Reading Product revision is `bb5e72ff170e3b551a203a45679630ff2cba755df98ac58d51e5e4ecaac6655b`, with `2` Product Units, non-empty Understanding/Response in both Units, and `6` Marginalia (`4` Highlights and `2` Notes).
+- Both chapter compatibility projections were generated from Product Units. The default Reading Product adapter published detached Pack revision `2c57131dd1f36439f2226cd2ad6422d400427c9415cdc3b816e74e88e74cba1f`; standalone validation and inspection report `6` exported, zero skipped/warnings/errors, both TextQuote/TextPosition capabilities, and the same `4`/`2` kind split.
+- The initial registered wrapper is terminal `failed` because its first post-read compatibility helper invocation was malformed, but its real model/runtime phase had already completed and published the Product. Four follow-up runs made no model calls and corrected acceptance-harness-only mistakes (helper arguments, SourceRange field access, generated timestamp precision, and `ValidationResult.publishable`); `validation_retry4` completed the terminal downstream verification. The failed wrapper is therefore retained as evidence rather than rewritten as a passing job.
+- The run ledger authority is `reading-companion-backend/docs/evaluation/run_ledger.json`; ignored runtime evidence is rooted at `reading-companion-backend/state/reading_product_live_acceptance/cpa_luna_tiny_reader_20260830/`.
+- Close-out verification passed: standalone Pack validate/inspect; the `31`-test Reading Product plus `attentional_v2` Product integration set; `make reading-product-contract-check`; `make annotation-pack-contract-check` (`55 passed`); root `make contract-check`; and root `make agent-check`. The first sandboxed root-check attempts were interrupted only because `tsx` could not create its local IPC pipe; both passed when rerun outside that sandbox. `agent-check` continues to print the pre-existing warning-only traceability and duplicate-decision inventory while exiting `0`.
+
+This permits only the following added claim: **在 tracked Tiny Reader 短小真实 EPUB 上，当前默认机制已通过 CPA Luna 的真实 LLM 调用完成普通入口整书阅读，并生成 complete Reading Product、章节兼容投影和独立验证通过的 Annotation Pack。** It does not prove conversion of historical《悉达多》《纳瓦尔宝典》outputs, production-scale book quality/performance, public Pages availability, a native Unit API, frontend Understanding/Response, or Library/API/Reader integration.
