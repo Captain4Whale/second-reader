@@ -38,7 +38,7 @@ from src.reading_runtime.provisioning import ensure_canonical_parse  # noqa: E40
 
 DEFAULT_RUNS_ROOT = ROOT / "eval" / "runs" / "attentional_v2"
 DEFAULT_TARGET_IDS = (
-    "opencode_deepseek_v4_flash",
+    "cpa_codex_local",
 )
 DEFAULT_MAX_UNITS = 8
 DEFAULT_USER_INTENT = (

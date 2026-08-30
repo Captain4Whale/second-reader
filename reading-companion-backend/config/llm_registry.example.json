@@ -1,21 +1,20 @@
 {
   "providers": [
     {
-      "provider_id": "runtime_opencode_go",
+      "provider_id": "runtime_cpa_codex_local",
       "contract": "openai_compatible",
-      "base_url": "https://opencode.ai/zen/go/v1",
-      "api_key_env": "OPENCODE_GO_API_KEY",
-      "supported_models": ["deepseek-v4-flash"],
+      "base_url": "http://127.0.0.1:8317/v1",
+      "api_key_env": "CPA_PROXY_API_KEY",
+      "supported_models": ["gpt-5.6-luna"],
       "provider_options": {
-        "response_format": {"type": "json_object"},
-        "thinking": {"type": "enabled"}
+        "reasoning_effort": "medium"
       },
-      "timeout_seconds": 120,
+      "timeout_seconds": 180,
       "retry_attempts": 2,
-      "max_concurrency": 12,
-      "initial_max_concurrency": 6,
-      "probe_max_concurrency": 12,
-      "min_stable_concurrency": 2,
+      "max_concurrency": 1,
+      "initial_max_concurrency": 1,
+      "probe_max_concurrency": 1,
+      "min_stable_concurrency": 1,
       "concurrency_strategy": "adaptive",
       "backoff_window_seconds": 10,
       "recover_window_seconds": 20
@@ -24,36 +23,36 @@
   "profiles": [
     {
       "profile_id": "runtime_reader_default",
-      "provider_id": "runtime_opencode_go",
-      "model": "deepseek-v4-flash",
+      "provider_id": "runtime_cpa_codex_local",
+      "model": "gpt-5.6-luna",
       "temperature": 0.2,
       "max_output_tokens": 4096,
       "timeout_seconds": 120,
       "retry_attempts": 2,
-      "max_concurrency": 12,
-      "default_burst_concurrency": 12
+      "max_concurrency": 1,
+      "default_burst_concurrency": 1
     },
     {
       "profile_id": "dataset_review_high_trust",
-      "provider_id": "runtime_opencode_go",
-      "model": "deepseek-v4-flash",
+      "provider_id": "runtime_cpa_codex_local",
+      "model": "gpt-5.6-luna",
       "temperature": 0.2,
       "max_output_tokens": 4096,
       "timeout_seconds": 120,
       "retry_attempts": 2,
-      "max_concurrency": 12,
-      "default_burst_concurrency": 12
+      "max_concurrency": 1,
+      "default_burst_concurrency": 1
     },
     {
       "profile_id": "eval_judge_high_trust",
-      "provider_id": "runtime_opencode_go",
-      "model": "deepseek-v4-flash",
+      "provider_id": "runtime_cpa_codex_local",
+      "model": "gpt-5.6-luna",
       "temperature": 0.2,
       "max_output_tokens": 4096,
       "timeout_seconds": 120,
       "retry_attempts": 2,
-      "max_concurrency": 12,
-      "default_burst_concurrency": 12
+      "max_concurrency": 1,
+      "default_burst_concurrency": 1
     }
   ]
 }

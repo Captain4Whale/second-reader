@@ -5,7 +5,7 @@
       "target_tiers": [
         {
           "tier_id": "primary",
-          "target_ids": ["opencode_deepseek_v4_flash"],
+          "target_ids": ["cpa_codex_local"],
           "min_required_stable_concurrency": 1
         }
       ],
@@ -13,8 +13,8 @@
       "max_output_tokens": 4096,
       "timeout_seconds": 120,
       "retry_attempts": 3,
-      "max_concurrency": 24,
-      "default_burst_concurrency": 24,
+      "max_concurrency": 1,
+      "default_burst_concurrency": 1,
       "quota_retry_attempts": 2,
       "quota_wait_budget_seconds": 25
     },
@@ -23,7 +23,7 @@
       "target_tiers": [
         {
           "tier_id": "primary",
-          "target_ids": ["opencode_deepseek_v4_flash"],
+          "target_ids": ["cpa_codex_local"],
           "min_required_stable_concurrency": 1
         }
       ],
@@ -31,8 +31,8 @@
       "max_output_tokens": 4096,
       "timeout_seconds": 120,
       "retry_attempts": 3,
-      "max_concurrency": 24,
-      "default_burst_concurrency": 24,
+      "max_concurrency": 1,
+      "default_burst_concurrency": 1,
       "quota_retry_attempts": 6,
       "quota_wait_budget_seconds": 180
     },
@@ -41,7 +41,7 @@
       "target_tiers": [
         {
           "tier_id": "primary",
-          "target_ids": ["opencode_deepseek_v4_flash"],
+          "target_ids": ["cpa_codex_local"],
           "min_required_stable_concurrency": 1
         }
       ],
@@ -49,8 +49,8 @@
       "max_output_tokens": 4096,
       "timeout_seconds": 120,
       "retry_attempts": 3,
-      "max_concurrency": 8,
-      "default_burst_concurrency": 8,
+      "max_concurrency": 1,
+      "default_burst_concurrency": 1,
       "quota_retry_attempts": 6,
       "quota_wait_budget_seconds": 180
     }

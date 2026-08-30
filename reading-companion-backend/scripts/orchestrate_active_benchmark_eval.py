@@ -363,7 +363,7 @@ def main() -> int:
     args = parse_args()
     run_root = RUNS_ROOT / str(args.run_id)
     run_root.mkdir(parents=True, exist_ok=True)
-    target_ids = [str(item) for item in (args.target_ids or ["opencode_deepseek_v4_flash"])]
+    target_ids = [str(item) for item in (args.target_ids or ["cpa_codex_local"])]
 
     excerpt_args = [
         "--run-id",

@@ -41,9 +41,9 @@ def get_llm_config() -> dict:
         Dictionary with base_url, api_key, model
     """
     return {
-        "base_url": os.getenv("LLM_BASE_URL", "https://opencode.ai/zen/go/v1"),
-        "api_key": os.getenv("LLM_API_KEY", ""),
-        "model": os.getenv("LLM_MODEL", "deepseek-v4-flash"),
+        "base_url": os.getenv("LLM_BASE_URL", "http://127.0.0.1:8317/v1"),
+        "api_key": os.getenv("LLM_API_KEY", os.getenv("CPA_PROXY_API_KEY", "")),
+        "model": os.getenv("LLM_MODEL", "gpt-5.6-luna"),
     }
 
 

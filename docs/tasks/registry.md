@@ -7,7 +7,7 @@ Update when: task status, priority, blockers, decision refs, job refs, evidence 
 
 This document is the human-readable companion to `docs/tasks/registry.json`.
 
-Last updated: `2026-08-29T18:59:25+08:00`
+Last updated: `2026-08-30T15:11:48+08:00`
 
 ## Status Values
 - `active`
@@ -891,52 +891,7 @@ Last updated: `2026-08-29T18:59:25+08:00`
 
 ## Blocked
 
-### `TASK-READING-PRODUCT-OUTPUT-V1-LIVE-ACCEPTANCE` — Run live whole-book Reading Product v1 acceptance
-- Status: `blocked`
-- Lane: `mechanism_eval`
-- Priority: `high`
-- Detail: `docs/implementation/reading-product/reading-product-output-v1-detailed-design-and-implementation-handoff.md#9-deferred-live-acceptance`
-- Blocker: no usable model API credential is currently available.
-- Next: wait for the owner to supply a usable credential in a future task, then run one short real EPUB through the normal product entrypoint and verify `complete Reading Product -> Annotation Pack`. Do not inspect, restore, preflight, or retry the expired credential, and do not redesign the completed offline implementation first.
-- Evidence:
-  - `DEC-158`
-  - `docs/implementation/reading-product/reading-product-output-v1-detailed-design-and-implementation-handoff.md`
-
-### `TASK-RUNTIME-OBSERVABILITY-COST-V1` — Land and validate runtime observability and cost v1
-- Status: `blocked`
-- Lane: `runtime_observability`
-- Priority: `high`
-- Detail: `docs/implementation/runtime-observability/README.md`
-- Blocked by: final live public-book acceptance requires provider-account action outside the repository. DeepSeek returned a regional workspace opt-in error; the configured Mimo fallback returned insufficient credits. Codex must not change region or billing settings automatically.
-- Next: After the operator restores one configured provider, rerun the ordinary product entrypoint on `reading-companion-backend/state/library_sources/zh/beiying_public_v2.epub`, then inspect its ledger, reports, and Phoenix trace. Do not invoke any eval runner, dataset, Judge, or evaluation ledger.
-- Jobs: none
-- Evidence:
-  - `DEC-154`
-  - `Makefile`
-  - `README.md`
-  - `scripts/phoenix-common.sh`
-  - `scripts/setup-phoenix.sh`
-  - `scripts/start-phoenix.sh`
-  - `scripts/status-phoenix.sh`
-  - `scripts/stop-phoenix.sh`
-  - `reading-companion-backend/.env.example`
-  - `reading-companion-backend/pyproject.toml`
-  - `reading-companion-backend/config/llm_pricing.json`
-  - `reading-companion-backend/src/reading_runtime/job_lease.py`
-  - `reading-companion-backend/src/reading_runtime/llm_telemetry.py`
-  - `reading-companion-backend/src/reading_runtime/llm_usage.py`
-  - `reading-companion-backend/src/reading_runtime/llm_pricing.py`
-  - `reading-companion-backend/src/reading_runtime/observation_context.py`
-  - `reading-companion-backend/src/reading_runtime/observation_ledger.py`
-  - `reading-companion-backend/src/reading_runtime/observation_metrics.py`
-  - `reading-companion-backend/src/reading_runtime/observability.py`
-  - `reading-companion-backend/tests/test_runtime_observability_core.py`
-  - `reading-companion-backend/tests/test_runtime_observability_e2e.py`
-  - `docs/implementation/runtime-observability/README.md`
-  - `docs/runtime-modes.md`
-  - `docs/backend-sequential-lifecycle.md`
-  - `docs/source-of-truth-map.md`
-  - `docs/history/decision-log.md`
+No provider-access blocker remains after the CPA Luna Medium switch. Product live acceptance tasks are queued below and have not been executed by this configuration change.
 
 ## Waiting
 
@@ -1214,6 +1169,32 @@ Last updated: `2026-08-29T18:59:25+08:00`
   - `bgjob_closed_loop_bilingual_broader_auditcoherencefix_20260330` (`completed`)
 
 ## Queued
+
+### `TASK-READING-PRODUCT-OUTPUT-V1-LIVE-ACCEPTANCE` — Run live whole-book Reading Product v1 acceptance
+- Status: `queued`
+- Lane: `mechanism_eval`
+- Priority: `high`
+- Detail: `docs/implementation/reading-product/reading-product-output-v1-detailed-design-and-implementation-handoff.md#9-queued-live-acceptance`
+- Next: CPA Luna Medium is configured and a bounded Digest smoke has passed. In a separately authorized task, run one short real EPUB through the normal product entrypoint and verify `complete Reading Product -> Annotation Pack`. Do not redesign the completed offline implementation first, and do not treat the earlier Digest smoke as whole-book acceptance.
+- Evidence:
+  - `DEC-158`
+  - `docs/implementation/reading-product/reading-product-output-v1-detailed-design-and-implementation-handoff.md`
+
+### `TASK-RUNTIME-OBSERVABILITY-COST-V1` — Land and validate runtime observability and cost v1
+- Status: `queued`
+- Lane: `runtime_observability`
+- Priority: `high`
+- Detail: `docs/implementation/runtime-observability/README.md`
+- Next: CPA Luna Medium is configured and a bounded Digest smoke has passed. In a separately authorized task, rerun the ordinary product entrypoint on `reading-companion-backend/state/library_sources/zh/beiying_public_v2.epub`, then inspect its ledger, reports, and Phoenix trace. Do not invoke any eval runner, dataset, Judge, or evaluation ledger.
+- Jobs: none
+- Evidence:
+  - `DEC-154`
+  - `README.md`
+  - `reading-companion-backend/config/llm_pricing.json`
+  - `reading-companion-backend/src/reading_runtime/observation_ledger.py`
+  - `reading-companion-backend/tests/test_runtime_observability_core.py`
+  - `reading-companion-backend/tests/test_runtime_observability_e2e.py`
+  - `docs/implementation/runtime-observability/README.md`
 
 ### `TASK-FE-SECTION-RETIREMENT` — Retire section-first chapter/detail and marks surfaces
 - Status: `queued`

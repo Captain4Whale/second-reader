@@ -637,8 +637,13 @@ def _legacy_registry_payload() -> dict[str, Any]:
         "provider_id": "legacy_default",
         "contract": provider_contract,
         "base_url": legacy["base_url"],
-        "api_key_env": "LLM_API_KEY",
+        "api_key_env": "LLM_API_KEY" if os.getenv("LLM_API_KEY") else "CPA_PROXY_API_KEY",
         "supported_models": ["*"],
+        "provider_options": (
+            {"reasoning_effort": os.getenv("LLM_REASONING_EFFORT", "medium")}
+            if provider_contract == "openai_compatible"
+            else {}
+        ),
         "timeout_seconds": 120,
         "retry_attempts": get_llm_retry_attempts(),
         "max_concurrency": get_llm_max_concurrency(),
@@ -658,7 +663,7 @@ def _legacy_registry_payload() -> dict[str, Any]:
             {
                 "profile_id": DEFAULT_RUNTIME_PROFILE_ID,
                 "provider_id": "legacy_default",
-                "model_env": "LLM_MODEL",
+                "model": legacy["model"],
                 "temperature": _env_float("LLM_RUNTIME_TEMPERATURE", 0.2),
                 "max_output_tokens": _env_int("LLM_RUNTIME_MAX_OUTPUT_TOKENS", _DEFAULT_MAX_OUTPUT_TOKENS),
                 "timeout_seconds": _env_int("LLM_RUNTIME_TIMEOUT_SECONDS", 120),
@@ -678,7 +683,7 @@ def _legacy_registry_payload() -> dict[str, Any]:
             {
                 "profile_id": DEFAULT_DATASET_REVIEW_PROFILE_ID,
                 "provider_id": "legacy_default",
-                "model_env": "LLM_DATASET_REVIEW_MODEL",
+                "model": os.getenv("LLM_DATASET_REVIEW_MODEL", legacy["model"]),
                 "temperature": _env_float("LLM_DATASET_REVIEW_TEMPERATURE", 0.2),
                 "max_output_tokens": _env_int("LLM_DATASET_REVIEW_MAX_OUTPUT_TOKENS", _DEFAULT_MAX_OUTPUT_TOKENS),
                 "timeout_seconds": _env_int("LLM_DATASET_REVIEW_TIMEOUT_SECONDS", 120),
@@ -698,7 +703,7 @@ def _legacy_registry_payload() -> dict[str, Any]:
             {
                 "profile_id": DEFAULT_EVAL_JUDGE_PROFILE_ID,
                 "provider_id": "legacy_default",
-                "model_env": "LLM_EVAL_JUDGE_MODEL",
+                "model": os.getenv("LLM_EVAL_JUDGE_MODEL", legacy["model"]),
                 "temperature": _env_float("LLM_EVAL_JUDGE_TEMPERATURE", 0.2),
                 "max_output_tokens": _env_int("LLM_EVAL_JUDGE_MAX_OUTPUT_TOKENS", _DEFAULT_MAX_OUTPUT_TOKENS),
                 "timeout_seconds": _env_int("LLM_EVAL_JUDGE_TIMEOUT_SECONDS", 120),

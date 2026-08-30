@@ -2123,7 +2123,7 @@ def test_runtime_observation_records_each_physical_retry_and_prices_actual_targe
     tmp_path: Path,
     monkeypatch: pytest.MonkeyPatch,
 ):
-    target_id = "opencode_deepseek_v4_flash"
+    target_id = "cpa_codex_local"
     _set_targets_and_bindings(
         monkeypatch,
         targets={
@@ -2131,8 +2131,8 @@ def test_runtime_observation_records_each_physical_retry_and_prices_actual_targe
                 {
                     "target_id": target_id,
                     "contract": "openai_compatible",
-                    "base_url": "https://opencode.ai/zen/go/v1",
-                    "model": "deepseek-v4-flash",
+                    "base_url": "http://127.0.0.1:8317/v1",
+                    "model": "gpt-5.6-luna",
                     "credentials": [{"credential_id": "primary", "api_key": "runtime-key"}],
                     "retry_attempts": 2,
                 }
@@ -2195,7 +2195,7 @@ def test_runtime_observation_records_each_physical_retry_and_prices_actual_targe
     assert all(event["status"] == "ok" for event in attempts)
     assert all(event["usage"]["status"] == "complete" for event in attempts)
     assert all(event["pricing"]["target_id"] == target_id for event in attempts)
-    assert all(event["cost"]["estimated_usage_value_usd"] == "0.00014056" for event in attempts)
+    assert all(event["cost"]["estimated_usage_value_usd"] == "0.000284" for event in attempts)
     assert all(event["cost"]["actual_billed_cost"] is None for event in attempts)
     assert all(event["stage"] == "digest" and event["node"] == "reaction" for event in attempts)
     assert len(calls) == 1 and calls[0]["attempt_count"] == 2
@@ -2203,7 +2203,7 @@ def test_runtime_observation_records_each_physical_retry_and_prices_actual_targe
     standard = _read_jsonl(runtime_artifacts.llm_standard_trace_file(output_dir))[-1]
     assert standard["physical_attempt_count"] == 2
     assert standard["correlation"]["unit_id"] == "unit-1"
-    assert standard["cost"]["estimated_usage_value_usd"] == "0.00014056"
+    assert standard["cost"]["estimated_usage_value_usd"] == "0.000284"
     metrics = json.loads((ledger_path.parent / "metrics.json").read_text(encoding="utf-8"))
     assert metrics["retry_amplification"] == "2"
     assert metrics["data_quality"]["provider_attempt_finish_coverage"] == "1"

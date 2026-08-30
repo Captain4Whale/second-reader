@@ -103,6 +103,7 @@ class _UsageResponse:
     content: str
     usage_metadata: dict[str, Any]
     response_metadata: dict[str, Any]
+    tool_calls: list[dict[str, Any]]
 
 
 class _DeterministicReadingAdapter:
@@ -176,8 +177,16 @@ class _DeterministicReadingAdapter:
                 "cross_chapter_carry_forward": [],
                 "chapter_summary_note": "The fixture chapter is complete.",
             }
+        output_tool_name = next(
+            (
+                str(tool.get("name", ""))
+                for tool in (tools or [])
+                if str(tool.get("name", "")).startswith("submit_")
+            ),
+            "",
+        )
         return _UsageResponse(
-            content=json.dumps(payload),
+            content="" if output_tool_name else json.dumps(payload),
             usage_metadata={
                 "input_tokens": 1_000,
                 "output_tokens": 100,
@@ -186,11 +195,16 @@ class _DeterministicReadingAdapter:
                 "output_token_details": {"reasoning": 20},
             },
             response_metadata={"model_provider": "openai", "finish_reason": "stop"},
+            tool_calls=(
+                [{"id": f"{node}-submit", "name": output_tool_name, "args": payload}]
+                if output_tool_name
+                else []
+            ),
         )
 
 
 def _configure_priced_runtime_target(monkeypatch) -> None:
-    target_id = "opencode_deepseek_v4_flash"
+    target_id = "cpa_codex_local"
     monkeypatch.setenv(
         "LLM_TARGETS_JSON",
         json.dumps(
@@ -199,13 +213,10 @@ def _configure_priced_runtime_target(monkeypatch) -> None:
                     {
                         "target_id": target_id,
                         "contract": "openai_compatible",
-                        "base_url": "https://opencode.ai/zen/go/v1",
-                        "model": "deepseek-v4-flash",
+                        "base_url": "http://127.0.0.1:8317/v1",
+                        "model": "gpt-5.6-luna",
                         "credentials": [{"credential_id": "test", "api_key": "not-sent"}],
-                        "provider_options": {
-                            "response_format": {"type": "json_object"},
-                            "thinking": {"type": "enabled"},
-                        },
+                        "provider_options": {"reasoning_effort": "medium"},
                     }
                 ]
             }
@@ -292,9 +303,9 @@ def test_product_read_emits_recomputable_cost_and_efficiency_observability(tmp_p
         event["attempt_id"] for event in attempts
     }
     assert all(event["usage_status"] == "complete" for event in attempts)
-    assert all(event["pricing"]["target_id"] == "opencode_deepseek_v4_flash" for event in attempts)
-    assert all(event["pricing"]["model"] == "deepseek-v4-flash" for event in attempts)
-    assert all(event["cost"]["estimated_usage_value_usd"] == "0.00014056" for event in attempts)
+    assert all(event["pricing"]["target_id"] == "cpa_codex_local" for event in attempts)
+    assert all(event["pricing"]["model"] == "gpt-5.6-luna" for event in attempts)
+    assert all(event["cost"]["estimated_usage_value_usd"] == "0.000284" for event in attempts)
     assert all(event["cost"]["actual_billed_cost"] is None for event in attempts)
     assert all(event.get("chapter_id") == "1" for event in attempts)
     assert {event.get("job_id") for event in attempts} == {events[0]["job_id"]}
@@ -323,7 +334,7 @@ def test_product_read_emits_recomputable_cost_and_efficiency_observability(tmp_p
     assert metrics["expected_physical_attempt_count"] == 4
     assert metrics["observed_physical_attempt_count"] == 4
     assert metrics["total_tokens"] == "4400"
-    assert metrics["estimated_usage_value_usd"] == "0.00056224"
+    assert metrics["estimated_usage_value_usd"] == "0.001136"
     assert metrics["by_stage"]["survey"]["attempt_count"] == 1
     assert metrics["by_stage"]["phase4"]["attempt_count"] == 2
     assert metrics["by_stage"]["phase4"]["accepted_source_chars"] == 30
@@ -337,5 +348,5 @@ def test_product_read_emits_recomputable_cost_and_efficiency_observability(tmp_p
     assert quality["chapter_correlation_coverage"] == "1"
     assert quality["unit_correlation_coverage"] == "1"
     assert quality["stage_appropriate_correlation_coverage"] == "1"
-    assert "Estimated usage value (USD): 0.00056224" in report_path.read_text(encoding="utf-8")
+    assert "Estimated usage value (USD): 0.001136" in report_path.read_text(encoding="utf-8")
     assert not normalized_eval_bundle_file(result.output_dir).exists()

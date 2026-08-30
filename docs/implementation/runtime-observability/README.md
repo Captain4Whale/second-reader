@@ -114,7 +114,7 @@ Each attempt freezes the matched rule into the ledger, including catalog version
 Values use Python `Decimal` and are serialized as decimal strings. Cost status remains non-complete when any priced category required by the rule is missing, when a used category has no known rate, or when no catalog rule matches. Reports expose the known sum and coverage; they do not label a partial sum as whole-book total.
 Because the v1 estimate field is explicitly USD-denominated, the catalog rejects non-USD rules rather than silently placing another currency into `estimated_usage_value_usd`.
 
-The tracked OpenCode Go rules are subscription based. They use the official published reference token rates to compute `estimated_usage_value_usd`, while preserving:
+The active tracked CPA Luna rule and the closed historical OpenCode Go rules are subscription based. They use published API-equivalent reference token rates to compute `estimated_usage_value_usd`, while preserving:
 
 ```text
 billing_model = subscription
@@ -263,7 +263,7 @@ Required automated checks cover:
 - a deterministic fake-adapter product read using `tests/fixtures/e2e_runtime/sample-upload.epub`;
 - a loopback Phoenix smoke with the unit-scoped five-level hierarchy plus legitimate chapter-only calls, persistence across restart, privacy-field inspection, and collector-down behavior.
 
-The deterministic product-path and loopback Phoenix proofs pass. The remaining live public-book acceptance against `state/library_sources/zh/beiying_public_v2.epub` is externally blocked: the configured DeepSeek target requires a regional workspace opt-in and the configured Mimo fallback reports insufficient credits. No region, billing, or account setting is changed automatically, and this blocker does not invalidate the deterministic runtime evidence.
+The deterministic product-path and loopback Phoenix proofs pass. CPA Luna Medium is now configured and has passed a bounded Digest smoke, so the remaining live public-book acceptance against `state/library_sources/zh/beiying_public_v2.epub` is queued rather than provider-blocked. That gate has not run, and this configuration change does not alter the deterministic runtime evidence or authorize an evaluation runner.
 
 Latest implementation validation on 2026-08-17: the observability/lease/gateway/mechanism/API/E2E focused suite passed `222` tests. The backend-wide suite completed `947` tests successfully and retained `9` unrelated repository-baseline failures: seven stale tests patch the removed `invoke_structured_output_tool` name, one evaluation-inventory assertion points at an older dataset, and one quality-audit assertion assumes two configured targets while the local configuration exposes one. This lane does not alter those mechanism/evaluation surfaces. `make agent-check` and `make contract-check` both exit successfully; `agent-check` continues to print the repository's pre-existing traceability warnings.
 
@@ -281,7 +281,7 @@ Do not invoke an evaluation runner, Judge, dataset, or evaluation ledger while v
 
 ## References
 
-- [OpenCode Go pricing](https://opencode.ai/docs/go/)
+- [OpenAI GPT-5.6 Luna model and API-equivalent pricing](https://developers.openai.com/api/docs/models/gpt-5.6-luna)
 - [OpenAI usage fields](https://platform.openai.com/docs/api-reference/usage/audio_transcriptions_object)
 - [Anthropic token and cache pricing semantics](https://docs.anthropic.com/en/docs/about-claude/pricing)
 - [Gemini `usageMetadata`](https://ai.google.dev/api/generate-content)

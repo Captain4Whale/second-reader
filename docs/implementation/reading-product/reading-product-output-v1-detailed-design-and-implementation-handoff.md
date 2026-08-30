@@ -1,6 +1,6 @@
 # Reading Product Output v1 — Detailed Design, Implementation Handoff, and Definition of Done
 
-Status: repo-local offline implementation complete for `TASK-READING-PRODUCT-OUTPUT-V1` under `DEC-158`; live-model acceptance remains deferred under `TASK-READING-PRODUCT-OUTPUT-V1-LIVE-ACCEPTANCE`.
+Status: repo-local offline implementation complete for `TASK-READING-PRODUCT-OUTPUT-V1` under `DEC-158`; CPA Luna Medium is now configured, so the separate live-model acceptance is queued under `TASK-READING-PRODUCT-OUTPUT-V1-LIVE-ACCEPTANCE` but has not been run.
 
 ## 1. Outcome
 
@@ -28,7 +28,7 @@ The canonical wire and coordinate rules live in [`contract/reading-product/v1/RE
 - Per-Unit settlement happens during reading. A deterministic finalizer seals the already committed book-level snapshot after the approved plan completes.
 - `complete` requires all scheduled `mainline + deferred` chapters; `auxiliary` is excluded.
 - Annotation Pack and existing chapter projections migrate to Reading Product, but the public HTTP/frontend shape remains compatible in this initiative.
-- No live-model call is authorized in the current implementation round. The expired OpenCode Go key must not be read, tested, restored, or referenced by a command.
+- The completed offline implementation round did not authorize or perform a live-model call. Its evidence boundary remains offline even though the current local provider is now CPA Luna Medium.
 
 ## 3. Storage and transaction model
 
@@ -161,7 +161,7 @@ The allowed repo-local completion statement is:
 
 > 当前默认阅读机制已经在代码层接入 Reading Product Output v1；使用真实 EPUB 和确定性模型替身，可以完成逐 Unit 提交、整书封版、兼容投影以及 Annotation Pack 的生成与独立验证。
 
-This round must not claim a live LLM whole-book read, validity of the expired OpenCode Go key, conversion of historical full-book outputs, public Pages availability, or native frontend display of Unit U/R.
+This round must not claim a live LLM whole-book read, conversion of historical full-book outputs, public Pages availability, or native frontend display of Unit U/R. The later CPA configuration does not retroactively convert offline evidence into live evidence.
 
 ### 8.1 Offline acceptance evidence
 
@@ -173,6 +173,6 @@ This round must not claim a live LLM whole-book read, validity of the expired Op
 - The complete backend suite completed with `1834 passed, 9 failed`. None of the nine failures is in Reading Product or Annotation Pack: seven unchanged legacy tests monkeypatch removed `invoke_structured_output_tool` attributes, one minimal-eval inventory assertion expects an older active dataset pointer, and one F4A target-balancing assertion expects two configured targets while the isolated offline registry exposes one. The pre-implementation `135 passed, 2 failed` affected regression baseline, these full-suite baseline categories, and the earlier concurrent `agent-check` transient remain separately recorded in `docs/implementation/annotation-pack/baseline-observations.md`; no all-green claim is inferred.
 - Commit evidence is `d83707a`, `7dcd160`, `e7adccc`, `6239147`, and `a81a935`; all five Slice commits were pushed without force-push, and Slice 5's immediate post-push local/remote comparison matched.
 
-## 9. Deferred live acceptance
+## 9. Queued live acceptance
 
-`TASK-READING-PRODUCT-OUTPUT-V1-LIVE-ACCEPTANCE` remains deferred/blocked solely because no usable model API credential is currently available. No implementation Slice may inspect, preflight, or test the expired key. When a usable credential is supplied, run one short real EPUB from the normal product entrypoint and verify `complete Reading Product -> Annotation Pack`; do not redesign or rebuild the completed offline implementation first.
+`TASK-READING-PRODUCT-OUTPUT-V1-LIVE-ACCEPTANCE` is now queued because `cpa_codex_local` / `gpt-5.6-luna` with `reasoning_effort=medium` is configured and has passed a bounded Digest smoke. The live whole-book gate itself has not run. In a separately authorized task, run one short real EPUB from the normal product entrypoint and verify `complete Reading Product -> Annotation Pack`; do not redesign or rebuild the completed offline implementation first.

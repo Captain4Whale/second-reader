@@ -1,46 +1,26 @@
 {
   "targets": [
     {
-      "target_id": "opencode_mimo_v25",
+      "target_id": "cpa_codex_local",
       "contract": "openai_compatible",
-      "base_url": "https://opencode.ai/zen/go/v1",
-      "model": "mimo-v2.5",
+      "base_url": "http://127.0.0.1:8317/v1",
+      "model": "gpt-5.6-luna",
       "credentials": [
         {
-          "credential_id": "primary_env",
-          "api_key_env": "OPENCODE_GO_API_KEY"
+          "credential_id": "local_proxy",
+          "api_key_env": "CPA_PROXY_API_KEY"
         }
       ],
       "provider_options": {
-        "response_format": {"type": "json_object"},
-        "thinking": {"type": "enabled"}
+        "reasoning_effort": "medium"
       },
-      "timeout_seconds": 120,
-      "retry_attempts": 3,
-      "max_concurrency": 8
-    },
-    {
-      "target_id": "opencode_deepseek_v4_flash",
-      "contract": "openai_compatible",
-      "base_url": "https://opencode.ai/zen/go/v1",
-      "model": "deepseek-v4-flash",
-      "credentials": [
-        {
-          "credential_id": "primary_env",
-          "api_key_env": "OPENCODE_GO_API_KEY"
-        }
-      ],
-      "provider_options": {
-        "response_format": {"type": "json_object"},
-        "thinking": {"type": "enabled"}
-      },
-      "timeout_seconds": 120,
-      "retry_attempts": 3,
-      "max_concurrency": 24,
-      "initial_max_concurrency": 24,
-      "probe_max_concurrency": 24,
-      "min_stable_concurrency": 24,
-      "concurrency_strategy": "fixed"
+      "timeout_seconds": 180,
+      "retry_attempts": 2,
+      "max_concurrency": 1,
+      "initial_max_concurrency": 1,
+      "probe_max_concurrency": 1,
+      "min_stable_concurrency": 1,
+      "concurrency_strategy": "adaptive"
     }
   ]
 }

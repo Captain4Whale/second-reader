@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "updated_at": "2026-08-29T18:59:25+08:00",
+  "updated_at": "2026-08-30T15:11:48+08:00",
   "tasks": [
     {
       "id": "TASK-READING-PRODUCT-OUTPUT-V1",
@@ -47,7 +47,7 @@
     {
       "id": "TASK-READING-PRODUCT-OUTPUT-V1-LIVE-ACCEPTANCE",
       "title": "Run live whole-book Reading Product v1 acceptance",
-      "status": "blocked",
+      "status": "queued",
       "lane": "mechanism_eval",
       "priority": "high",
       "detail_ref": "docs/implementation/reading-product/reading-product-output-v1-detailed-design-and-implementation-handoff.md",
@@ -60,14 +60,14 @@
         "DEC-158"
       ],
       "job_refs": [],
-      "acceptance_ref": "docs/implementation/reading-product/reading-product-output-v1-detailed-design-and-implementation-handoff.md#9-deferred-live-acceptance",
-      "next_action": "Blocked solely because no usable model API credential is currently available. Wait for the owner to provide one in a future task, then run one short real EPUB through the normal product entrypoint and verify complete Reading Product to Annotation Pack. Do not inspect, restore, preflight, or retry the expired credential, and do not redesign the completed offline implementation first.",
+      "acceptance_ref": "docs/implementation/reading-product/reading-product-output-v1-detailed-design-and-implementation-handoff.md#9-queued-live-acceptance",
+      "next_action": "CPA Luna Medium is configured and a bounded Digest smoke has passed. In a separately authorized task, run one short real EPUB through the normal product entrypoint and verify complete Reading Product to Annotation Pack. Do not redesign the completed offline implementation first, and do not treat the earlier bounded Digest smoke as whole-book acceptance.",
       "blocked_by": [],
       "evidence_refs": [
         "docs/history/decision-log.md",
         "docs/implementation/reading-product/reading-product-output-v1-detailed-design-and-implementation-handoff.md"
       ],
-      "last_updated": "2026-08-29T18:54:54+08:00",
+      "last_updated": "2026-08-30T15:11:48+08:00",
       "last_updated_by": "codex"
     },
     {
@@ -212,7 +212,7 @@
     {
       "id": "TASK-RUNTIME-OBSERVABILITY-COST-V1",
       "title": "Land and validate runtime observability and cost v1",
-      "status": "blocked",
+      "status": "queued",
       "lane": "runtime_observability",
       "priority": "high",
       "detail_ref": "docs/implementation/runtime-observability/README.md",
@@ -227,9 +227,8 @@
       ],
       "job_refs": [],
       "acceptance_ref": "docs/implementation/runtime-observability/README.md",
-      "next_action": "After the operator restores one configured provider, rerun the ordinary product entrypoint on `reading-companion-backend/state/library_sources/zh/beiying_public_v2.epub`, then inspect its ledger, reports, and Phoenix trace. Do not invoke any eval runner, dataset, Judge, or evaluation ledger.",
+      "next_action": "CPA Luna Medium is configured and a bounded Digest smoke has passed. In a separately authorized task, rerun the ordinary product entrypoint on `reading-companion-backend/state/library_sources/zh/beiying_public_v2.epub`, then inspect its ledger, reports, and Phoenix trace. Do not invoke any eval runner, dataset, Judge, or evaluation ledger.",
       "blocked_by": [],
-      "blocking_reason": "Final live public-book acceptance requires provider-account action outside the repository: DeepSeek returned a regional workspace opt-in error and the configured Mimo fallback returned insufficient credits.",
       "evidence_refs": [
         "Makefile",
         "README.md",
@@ -257,7 +256,7 @@
         "docs/source-of-truth-map.md",
         "docs/history/decision-log.md"
       ],
-      "last_updated": "2026-08-17T09:42:00+08:00",
+      "last_updated": "2026-08-30T15:11:48+08:00",
       "last_updated_by": "codex"
     },
     {

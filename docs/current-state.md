@@ -7,21 +7,21 @@ Update when: the current objective, active tasks, blockers, active jobs, open de
 
 This file is authoritative for durable current status. Do not keep unique active-state information only in `docs/agent-handoff.md`.
 
-Last verified: `2026-08-29T18:59:25+08:00`
+Last verified: `2026-08-30T15:11:48+08:00`
 
 ## Current Objective
-- `TASK-READING-PRODUCT-OUTPUT-V1` is repo-locally complete for the offline implementation boundary under `DEC-158` on `codex/annotation-pack-v0`. `d83707a` established the v1 contract/shared substrate, `7dcd160` made Product Unit settlement authoritative before cursor advance, `e7adccc` completed recovery/finalization, `6239147` migrated the default Annotation Pack and chapter compatibility consumers, and `a81a935` delivered the Slice 5 offline whole-book lifecycle plus final acceptance evidence; all five Slice commits are pushed. The tracked Tiny Reader real EPUB now passes through ordinary parse, the default `attentional_v2` Reading Runner, real Unit settlement/coordinates, Product Store recovery, whole-book finalization, compatibility projection, default Pack export, detached packaging, and independent validation with deterministic model substitutes. The accurate claim is: **当前默认阅读机制已经在代码层接入 Reading Product Output v1；使用真实 EPUB 和确定性模型替身，可以完成逐 Unit 提交、整书封版、兼容投影以及 Annotation Pack 的生成与独立验证。** After pushing `a81a935`, local and `origin/codex/annotation-pack-v0` both resolved to `a81a9356988f7c711de5cac37eb7ae248e929134`. No repo-local Slice implementation or acceptance action remains; only the separate live-model Gate is deferred.
-- `TASK-READING-PRODUCT-OUTPUT-V1-LIVE-ACCEPTANCE` remains deferred/blocked solely because no usable model API credential is currently available. No real LLM whole-book run was performed. The final isolated offline acceptance rerun set `PYTHON_DOTENV_DISABLED=1` and `READING_OBSERVABILITY_OTLP_ENABLED=0`; no credential was restored, preflighted, tested, printed, or used.
+- `TASK-READING-PRODUCT-OUTPUT-V1` is repo-locally complete for the offline implementation boundary under `DEC-158` on `codex/annotation-pack-v0`. `d83707a` established the v1 contract/shared substrate, `7dcd160` made Product Unit settlement authoritative before cursor advance, `e7adccc` completed recovery/finalization, `6239147` migrated the default Annotation Pack and chapter compatibility consumers, and `a81a935` delivered the Slice 5 offline whole-book lifecycle plus final acceptance evidence; all five Slice commits are pushed. The tracked Tiny Reader real EPUB now passes through ordinary parse, the default `attentional_v2` Reading Runner, real Unit settlement/coordinates, Product Store recovery, whole-book finalization, compatibility projection, default Pack export, detached packaging, and independent validation with deterministic model substitutes. The accurate claim is: **当前默认阅读机制已经在代码层接入 Reading Product Output v1；使用真实 EPUB 和确定性模型替身，可以完成逐 Unit 提交、整书封版、兼容投影以及 Annotation Pack 的生成与独立验证。** After pushing `a81a935`, local and `origin/codex/annotation-pack-v0` both resolved to `a81a9356988f7c711de5cac37eb7ae248e929134`. No repo-local Slice implementation remains; the separate live-model Gate is now queued.
+- `TASK-READING-PRODUCT-OUTPUT-V1-LIVE-ACCEPTANCE` is queued after CPA Luna Medium was configured and a bounded Digest smoke passed. No real LLM whole-book run was performed. The prior isolated offline acceptance rerun remains offline evidence because it set `PYTHON_DOTENV_DISABLED=1` and `READING_OBSERVABILITY_OTLP_ENABLED=0`.
 - Annotation Pack minimal v0 remains repo-locally complete under `TASK-ANNOTATION-PACK-V0-IMPLEMENTATION`, `DEC-156`, and `DEC-157`. Its W3C/DC `AnnotationSet` wire, exact EPUB RFC 6920 identity, TextQuote+Unicode-code-point TextPosition targets, deterministic IDs, canonical bytes, and detached package are unchanged. `DEC-158` follow-through in `6239147` makes complete Reading Product v1 the default producer input; `attentional-v2-phase9-legacy` is explicit legacy-only with no automatic fallback, and phase8 remains rejected. The public wire still has zero `sr:*` and publishes no Work/Edition/File, Track, chapter context/fingerprints, custom anchor id, CFI, provenance, producer digest, private audit, Memory, or mechanism data.
 - `TASK-ANNOTATION-PACK-RECENT-AGENT-ARTIFACT-VALIDATION` is complete with a corrected result. The best recent real current-native evidence is the July 5 phase9 Xidaduo evaluation segment, not the April phase8 product output. Its `112` records correctly contain `83` bodyless Highlights and `29` body-bearing Notes; all quote/range slices and timestamps round-trip, and the current adapter accepts `111`, rejecting only one five-code-point quote that occurs twice in its source unit. The exact EPUB and coherent `16`-chapter/`590`-paragraph source `BookDocument` are traceable through the dataset, and a deterministic renderer replay maps all `112` segment ranges back to exact EPUB hrefs. Direct export is still blocked because the eval artifact retains stale non-terminal runtime state, does not persist that coordinate map or co-locate the EPUB, and the exact-resource parser falsely rejects all `22` safe simple HTML doctypes. A narrow read-only parser/remap trial resolved all `111` accepted drafts. This segment covers source chapters `3–14`; it is not a current whole-book product proof.
 - The Annotation Hub consumer migration remains separately `waiting` under `TASK-ANNOTATION-HUB-V0-MINIMAL-PACK-MIGRATION`, is no longer blocked by Pack implementation, and stays outside this worktree. The schema IRI remains staged/not-live until the workflow reaches `main`, Pages is enabled, deployment succeeds, and served bytes match the canonical contract.
-- Runtime observability v1 is implemented as an infrastructure lane under `TASK-RUNTIME-OBSERVABILITY-COST-V1` and `DEC-154`; only the final live-provider whole-book acceptance remains externally blocked.
+- Runtime observability v1 is implemented as an infrastructure lane under `TASK-RUNTIME-OBSERVABILITY-COST-V1` and `DEC-154`; the final live-provider whole-book acceptance is queued and has not run.
   - the canonical observability record is a local append-only JSONL fact ledger with deterministic JSON/Markdown reports; Phoenix is an optional derived trace UI rather than job/checkpoint truth
   - unit-bearing work uses `reading.run_attempt -> reading.chapter -> reading.unit_attempt -> llm.call -> llm.attempt`; survey/parse/chapter-consolidation work may be chapter-only without a fabricated unit span
   - OTLP/HTTP export is disabled by default and uses the explicit `READING_OBSERVABILITY_*` environment boundary when enabled
   - the local Python Phoenix sidecar is isolated under `reading-companion-backend/state/phoenix/`, binds only to loopback, and is never installed or started by normal app commands
-  - OpenCode Go subscription targets keep `actual_billed_cost = null`, while official published reference rates still support versioned `estimated_usage_value_usd`; unknown usage/cost coverage must remain explicit
-  - deterministic product-path and loopback Phoenix proofs now cover accounting, aggregation, privacy, persistence, and non-fatal collector loss; the remaining public-book proof is blocked because the configured DeepSeek target requires a regional workspace opt-in and the configured Mimo fallback reports insufficient credits
+  - CPA subscription calls keep `actual_billed_cost = null`, while official Luna API-equivalent reference rates support versioned `estimated_usage_value_usd`; unknown usage/cost coverage must remain explicit
+  - deterministic product-path and loopback Phoenix proofs now cover accounting, aggregation, privacy, persistence, and non-fatal collector loss; the remaining public-book proof is queued on the configured CPA Luna Medium route
 - The `Ingest -> Digest -> Reading Runner settlement` mechanism reframe is implemented; current work is fact alignment, smoke/diagnostic review, and calibration before any formal evaluation promotion.
   - decision ref:
     - `DEC-103`
@@ -68,7 +68,7 @@ Last verified: `2026-08-29T18:59:25+08:00`
     - `DEC-112` records that subject continuity should be carried through Digest Understanding and `ReadingMemory`, not through raw-source backfill or Ingest-side reference-resolution fields
     - `DEC-113` migrates current `attentional_v2` structured LLM outputs from text JSON parsing to forced final-output tool use, with public `llm_contract` problem reporting for output-contract failures
     - `DEC-114` removes the inherited content-classification field from current Digest / Recent Reading Memory / Unit Memory live surfaces
-    - `DEC-115` adds protocol-neutral LLM structured-output transport: Anthropic-compatible profiles keep forced final-output tools, while OpenAI-compatible profiles configured with JSON-object response format can use JSON object plus validator/repair without redefining prompts or tools; the current OpenCode / DeepSeek JSON-object policy and historical MiniMax transport note live in `docs/implementation/new-reading-mechanism/llm-structured-output-protocol-note.md`
+    - `DEC-115` added protocol-neutral LLM structured-output transport: Anthropic-compatible profiles keep forced final-output tools, while OpenAI-compatible profiles configured with JSON-object response format can use JSON object plus validator/repair without redefining prompts or tools; the current CPA / Luna Medium function-tool policy and historical OpenCode / DeepSeek and MiniMax transport notes live in `docs/implementation/new-reading-mechanism/llm-structured-output-protocol-note.md`
     - `DEC-116` records the live Ingest selector as bounded-lookahead semantic planning: it uses the visible preview to infer where the first unit ends by seeing how later text continues or starts a second unit, while committing only that first unit for Digest
     - `DEC-117` promoted the preview-partition audit map into the then-live Ingest contract: `preview_partition[]` exposed the model's whole-window semantic map for mechanism-private audit while `preview_partition[0]` / `unit` remained the only authoritative next-unit boundary until `DEC-136` superseded that equality rule with prefix grouping
     - `DEC-118` was the interim move from paragraph-count bounded lookahead to source-character budgeted paragraph assembly, so short dialogue / poetry paragraphs no longer exhausted the preview after a small fixed paragraph count
@@ -108,8 +108,8 @@ Last verified: `2026-08-29T18:59:25+08:00`
     - `DEC-153` removes the fixed `20 + 20` Unit Memory retrieval horizon: retrieval now searches all completed prior units before the current unit, excludes only prompt-visible hot source spans, treats historical nonzero horizon config as audit compatibility, and records selected candidate distance for review
     - current `llm_calls.ingest(...)` is the forward-only XML LLM boundary call: final output carries `unit.end_paragraph_n`, `unit.end_at`, `preview_partition[]`, and optional boundary-rationale `reason`; bounded Unit Memory recall intent is expressed only through the `retrieve_unit_memory` action tool
     - current LLM-call code now lives in `reading-companion-backend/src/attentional_v2/llm_calls.py`; the old ambiguous active module name is removed
-    - current `attentional_v2` LLM calls keep project schemas/tools protocol-neutral; Anthropic-compatible profiles submit structured results through mechanism-private final-output tools such as `submit_ingest_result` and `submit_digest_result`, while OpenAI-compatible JSON-object profiles use JSON object plus validator/repair for Ingest/Digest final output; `retrieve_unit_memory` remains the only live action tool and is left to model `auto` choice; OpenAI-compatible DeepSeek/OpenCode JSON-object calls do not force final-output `tool_choice`
-    - current local LLM operation uses the OpenCode Go key path: `LLM_TARGETS_PATH=config/llm_targets.local.json`, `LLM_PROFILE_BINDINGS_PATH=config/llm_profile_bindings.local.json`, and `OPENCODE_GO_API_KEY`; MiniMax official-key targets are no longer an active local routing path
+    - current `attentional_v2` LLM calls keep project schemas/tools protocol-neutral; CPA Luna uses OpenAI-compatible function tools for mechanism-private final outputs such as `submit_ingest_result` and `submit_digest_result`, while `retrieve_unit_memory` remains the only live action tool and is left to model `auto` choice; project validators remain authoritative
+    - current local LLM operation uses `LLM_TARGETS_PATH=config/llm_targets.local.json`, `LLM_PROFILE_BINDINGS_PATH=config/llm_profile_bindings.local.json`, and `CPA_PROXY_API_KEY`; runtime, dataset review, and eval judge route to `cpa_codex_local` / `gpt-5.6-luna` with `reasoning_effort=medium` and concurrency `1`
     - runtime next-unit preparation lives outside `Ingest` as `prepare_next_source_unit_for_read`: it prepares source preview/context, calls `Ingest`, resolves `paragraph_end` or paragraph-local exact / quote-normalized tail quotes, applies trailing-closing-punctuation boundary extension, retry/fallback boundary governance, and hands the accepted source unit to `Digest`
     - Runtime builds a token-bounded paragraph-offset reading lookahead window for Ingest: default `reader_policy.unitize` preview values are `preview_soft_min_tokens=1600`, `preview_target_max_tokens=3000`, `preview_hard_max_tokens=4200`, and `emergency_max_preview_paragraphs=200`; default Digest-unit grouping guidance is `unit_soft_min_tokens=300`, `unit_target_max_tokens=900`, and `unit_hard_max_tokens=1600`; old `preview_*_chars` and `max_lookahead_paragraphs` snapshots are ignored as normal stopping rules, preview metadata carries `preview_end_reason`, `estimated_token_count`, and `preview_token_estimator`, and the live output contract expresses the chosen boundary as `unit.end_paragraph_n` plus `unit.end_at` while storing `preview_partition_audit[]` and prefix grouping metadata as derived audit metadata
     - `Ingest` uses `ReaderRole`, `Instruction`, `BookInfo`, `CurrentView`, empty `RetrievalSurface`, and `OutputContract`; it may express up to three prior-reading recalls only by calling `retrieve_unit_memory`, while actual retrieval execution and prompt-facing memory selection remain Reading Runner runtime work
@@ -2089,7 +2089,7 @@ Last verified: `2026-08-29T18:59:25+08:00`
       - ZH `7 keep`, `1 unclear`
     - operator posture retained:
       - all completed reserve/primary review waves still used serial packet workers
-      - current live local posture is now the OpenCode Go target `opencode_deepseek_v4_flash`; MiniMax official-key targets are retired from active local routing
+      - the provider posture used by those completed waves is historical; current live local routing is CPA Luna Medium
 - The older formal benchmark-v1 freeze remains historical evidence only:
   - historical manifest:
     - `reading-companion-backend/eval/manifests/splits/attentional_v2_formal_benchmark_v1_draft.json`
@@ -2099,7 +2099,7 @@ Last verified: `2026-08-29T18:59:25+08:00`
 - Treat runtime viability, broader local pairwise comparison, durable-trace / re-entry comparison, and most mechanism-specific judged attribution families as paused unless one of the three kept dimensions later requires them.
 
 ## Now
-- Preserve the completed Reading Product Output v1 offline boundary: Product Store is accepted-Unit truth, the default Reading Product adapter feeds Annotation Pack, and chapter compatibility is derived from Product Units. Do not reopen this implementation merely because the separate live-model Gate is deferred; final serial verification and all five Slice commit/push deliveries are complete.
+- Preserve the completed Reading Product Output v1 offline boundary: Product Store is accepted-Unit truth, the default Reading Product adapter feeds Annotation Pack, and chapter compatibility is derived from Product Units. Do not reopen this implementation merely because the separate live-model Gate is queued; final serial verification and all five Slice commit/push deliveries are complete.
 - Preserve the corrected real-artifact audit: current phase9 kind/body and read-surface anchors pass, while direct export awaits the safe-doctype parser repair, persisted eval segment-to-source coordinates, export-facing runtime finalization, and explicit resolution or skipping of one ambiguous quote. Keep the April phase8 output only as historical migration evidence.
 - Keep runtime observability opt-in and evidence-first: finish the manual ledger/export wiring, then verify one bounded local trace/report without changing mechanism behavior or making Phoenix part of app readiness.
 - Treat `attentional_v2` as the current default mechanism and `iterator_v1` as the supported fallback / legacy-resume path.
@@ -2271,15 +2271,11 @@ Last verified: `2026-08-29T18:59:25+08:00`
     - explicit `LLM_FORCE_TARGET_ID` is still the process-level selector when we want deterministic routing
     - because `LLM_FORCE_TARGET_ID` is process-wide and cached in-process, retargeting requires a fresh launch rather than editing config mid-run
   - the current local LLM posture is now:
-    - `reading-companion-backend/config/llm_targets.local.json` keeps OpenCode Go OpenAI-compatible targets that use `OPENCODE_GO_API_KEY`, with `opencode_deepseek_v4_flash` as the active primary target
-    - `reading-companion-backend/config/llm_profile_bindings.local.json` binds `runtime_reader_default`, `dataset_review_high_trust`, and `eval_judge_high_trust` to one `primary` tier containing `opencode_deepseek_v4_flash`
-    - MiniMax official-key targets are retired from active local routing; older MiniMax quota/plan failures are historical evidence, not the current default provider posture
-    - the gateway now persists a shared pooled-tier `next_index` cursor under `BACKEND_RUNTIME_ROOT/state/llm_gateway/tier_dispatch/`, so future sibling Python processes do not all restart from target index `0`
-    - because each long reading scope still pins one concrete target for its lifetime, already-running jobs launched before that repair can remain visibly skewed until they are relaunched
-    - current operator policy is:
-      - keep pooled routing without `LLM_FORCE_TARGET_ID`
-      - allow one active long-span judged lane plus a re-sharded excerpt judged lane when the excerpt side can reuse completed smoke bundles
-      - raise scope-level parallelism through more shards, but keep each judged shard on moderate process caps instead of maxing every process independently
+    - `reading-companion-backend/config/llm_targets.local.json` exposes `cpa_codex_local` at `http://127.0.0.1:8317/v1`, model `gpt-5.6-luna`, credential reference `CPA_PROXY_API_KEY`, and explicit `reasoning_effort=medium`
+    - `reading-companion-backend/config/llm_profile_bindings.local.json` binds `runtime_reader_default`, `dataset_review_high_trust`, and `eval_judge_high_trust` only to `cpa_codex_local`, with no DeepSeek fallback and concurrency `1`
+    - active eval orchestration defaults now select `cpa_codex_local`; historical run artifacts may still name OpenCode / DeepSeek but do not define current routing
+    - each reading/eval scope pins its selected target for its lifetime; relaunch an already-running process to pick up this provider switch
+    - do not raise CPA concurrency until a separately authorized capacity test supports it
 - There is currently one active background job in the registry:
   - `bgjob_accumulation_benchmark_v1_value_of_others_iterator_v1_recovery_20260408`
 - the latest completed long-span judged job is:
@@ -3488,9 +3484,9 @@ Last verified: `2026-08-29T18:59:25+08:00`
   - `reading-companion-backend/src/attentional_v2/resume.py` now recreates the thin `runtime_shell.json` envelope if it is missing during position persistence
 
 ## Next
-- When the owner later provides a usable model API credential, run `TASK-READING-PRODUCT-OUTPUT-V1-LIVE-ACCEPTANCE` from the ordinary product entrypoint on one short real EPUB and verify `complete Reading Product -> Annotation Pack`; do not redesign or rebuild the completed offline implementation first.
+- In a separately authorized task, run the queued `TASK-READING-PRODUCT-OUTPUT-V1-LIVE-ACCEPTANCE` on CPA Luna Medium from the ordinary product entrypoint using one short real EPUB and verify `complete Reading Product -> Annotation Pack`; do not redesign or rebuild the completed offline implementation first.
 - For the next positive real-book Annotation Pack proof, use a completed current-native Agent artifact with an exact EPUB-coherent `BookDocument`, then run the actual exporter and independent validate/inspect path. If the historical《悉达多》output must be preserved without rerunning, open a separate explicit migration task for kind/body decisions and exact quote re-resolution; do not relax the current adapter.
-- After provider access is restored, finish the one remaining public-book live acceptance and inspect its canonical ledger/report before treating the first measured efficiency figures as a baseline; do not change region or billing settings automatically.
+- Run the one remaining public-book live acceptance on the configured CPA route and inspect its canonical ledger/report before treating the first measured efficiency figures as a baseline.
 - Launch the next decisive chapter/excerpt comparison on the frozen clustered benchmark:
   - chapter lane:
     - run the judged `chapter_core` comparison on the `4` frozen clustered chapters
@@ -3520,8 +3516,7 @@ Last verified: `2026-08-29T18:59:25+08:00`
   - run `make library-source-intake`
 
 ## Blocked
-- `TASK-READING-PRODUCT-OUTPUT-V1-LIVE-ACCEPTANCE` is deferred/blocked solely because no usable model API credential is currently available. This does not block or downgrade the completed repo-local offline implementation.
-- `TASK-RUNTIME-OBSERVABILITY-COST-V1` has passed deterministic product-path and Phoenix smoke validation, but its final live public-book acceptance is blocked by external provider access: DeepSeek returns a regional opt-in error and Mimo returns insufficient credits. No eval runner is involved.
+- No provider-access blocker remains for the two live gates now listed under Queued in the task registry; neither gate has run.
 - No gate-review blocker remains ahead of the remaining decisive mechanism-eval lane.
 - Formal curated promotion from the modern private-library supplement remains intentionally paused under the recorded `hold_for_backlog_rescue` outcome and requires genuinely new benchmark-strengthening evidence before reopening.
 - The later frontend/API retirement of section-first chapter/detail and marks surfaces remains blocked on completion of the compatibility cutover, not on reopening Phase 9 scope.
@@ -3545,7 +3540,7 @@ Last verified: `2026-08-29T18:59:25+08:00`
 - Pre-fix parallel comparison artifacts can misassign case-to-output mappings, so partial outputs from the earlier round-3 reruns must be sanity-checked before they are treated as evidence.
 - Malformed-JSON handling in the reading path can still terminate a bounded rerun after substantial partial output has already been written.
 - Launching `run_registered_job.py` from a transient agent shell without the detached launcher can leave long-running jobs looking `abandoned` even when the wrapped command itself never raised a Python traceback.
-- The current live local posture is one OpenCode Go primary target, `opencode_deepseek_v4_flash`, using `OPENCODE_GO_API_KEY`; MiniMax official-key targets are retired from active local routing after the available MiniMax keys became unusable.
+- The current live local posture is one CPA primary target, `cpa_codex_local` / `gpt-5.6-luna`, using `CPA_PROXY_API_KEY` with `reasoning_effort=medium` and concurrency `1`. Its bounded Digest smoke is not evidence of whole-book acceptance or sustained capacity.
 - The shared cross-process pooled-tier dispatch fix is now landed for future launches, but the already-completed long-span judged lane was launched before that code was loaded, so its visible `by_target` skew should be treated as historical launch posture rather than as the current default.
 - `excerpt surface v1.1` now has one explicit documented `5`-case exception on `nawaer_baodian_private_zh__22`; treat that as a known surface constraint for later ROI retune, not as a blocker on interpreting the completed formal run.
 - The new v1.1 reuse pass showed that `value_of_others_private_en__8` only supports `8` real unique-span cases after duplicate-control pruning, so older apparent `14`-row density numbers should no longer be used for ROI estimates.
@@ -3580,14 +3575,16 @@ Last verified: `2026-08-29T18:59:25+08:00`
 - `TASK-ATTENTIONAL-V2-STRUCTURAL-REWORK`
 - `TASK-V2-NATIVE-READING-PRESENTATION`
 - `TASK-USER-LEVEL-SELECTIVE-V1`
-- `TASK-ACCUMULATION-BENCHMARK-V2`
 
 ## Waiting Task IDs
 - `TASK-ANNOTATION-HUB-V0-MINIMAL-PACK-MIGRATION`
 
-## Blocked Task IDs
+## Queued Task IDs
 - `TASK-READING-PRODUCT-OUTPUT-V1-LIVE-ACCEPTANCE`
 - `TASK-RUNTIME-OBSERVABILITY-COST-V1`
+
+## Blocked Task IDs
+- none
 
 ## Active Job IDs
 - none
@@ -3615,22 +3612,21 @@ Last verified: `2026-08-29T18:59:25+08:00`
 ## Machine-Readable Appendix
 ```json
 {
-  "updated_at": "2026-08-29T10:59:25Z",
+  "updated_at": "2026-08-30T07:11:48Z",
   "last_updated_by": "codex",
   "active_task_ids": [
     "TASK-ATTENTIONAL-V2-STRUCTURAL-REWORK",
     "TASK-V2-NATIVE-READING-PRESENTATION",
-    "TASK-USER-LEVEL-SELECTIVE-V1",
-    "TASK-ACCUMULATION-BENCHMARK-V2"
+    "TASK-USER-LEVEL-SELECTIVE-V1"
   ],
   "waiting_task_ids": [
     "TASK-ANNOTATION-HUB-V0-MINIMAL-PACK-MIGRATION"
   ],
-  "queued_task_ids": [],
-  "blocked_task_ids": [
+  "queued_task_ids": [
     "TASK-READING-PRODUCT-OUTPUT-V1-LIVE-ACCEPTANCE",
     "TASK-RUNTIME-OBSERVABILITY-COST-V1"
   ],
+  "blocked_task_ids": [],
   "active_job_ids": [],
   "open_decision_ids": [],
   "detail_refs": [

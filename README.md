@@ -50,7 +50,7 @@ Backend environment lives in `reading-companion-backend/.env`.
 Important backend variables:
 - `LLM_TARGETS_PATH`
 - `LLM_PROFILE_BINDINGS_PATH`
-- `OPENCODE_GO_API_KEY`
+- `CPA_PROXY_API_KEY`
 - optional `LLM_TARGETS_JSON`
 - optional `LLM_PROFILE_BINDINGS_JSON`
 - optional operator overrides: `LLM_FORCE_TARGET_ID`, `LLM_FORCE_TIER_ID`
@@ -77,7 +77,8 @@ Recommended local LLM setup:
   - `LLM_TARGETS_PATH=config/llm_targets.local.json`
   - `LLM_PROFILE_BINDINGS_PATH=config/llm_profile_bindings.local.json`
 - edit `reading-companion-backend/config/llm_targets.local.json` to define named runtime targets
-  - current local operation uses OpenCode Go targets with `OPENCODE_GO_API_KEY`
+  - current local operation uses CPA Manager Plus on `http://127.0.0.1:8317/v1` with `CPA_PROXY_API_KEY`
+  - the default target is `cpa_codex_local` / `gpt-5.6-luna`, with explicit `reasoning_effort: medium`
   - write the provider `contract`, `base_url`, `model`, and credential env-var reference there
   - keep the real API key in `reading-companion-backend/.env`, not in tracked JSON
   - supported provider contracts include `anthropic`, `google_genai`, and `openai_compatible`
@@ -112,7 +113,7 @@ Recommended tiered binding shape:
       "target_tiers": [
         {
           "tier_id": "primary",
-          "target_ids": ["opencode_deepseek_v4_flash"],
+          "target_ids": ["cpa_codex_local"],
           "min_required_stable_concurrency": 1
         }
       ],
@@ -120,8 +121,8 @@ Recommended tiered binding shape:
       "max_output_tokens": 4096,
       "timeout_seconds": 120,
       "retry_attempts": 3,
-      "max_concurrency": 24,
-      "default_burst_concurrency": 24,
+      "max_concurrency": 1,
+      "default_burst_concurrency": 1,
       "quota_retry_attempts": 2,
       "quota_wait_budget_seconds": 25
     }
@@ -129,65 +130,42 @@ Recommended tiered binding shape:
 }
 ```
 
-Optional pooled primary-tier shape for explicit OpenCode model fanout:
-```json
-{
-  "profiles": [
-    {
-      "profile_id": "runtime_reader_default",
-      "target_tiers": [
-        {
-          "tier_id": "primary",
-          "target_ids": ["opencode_deepseek_v4_flash", "opencode_mimo_v25"],
-          "min_required_stable_concurrency": 1
-        }
-      ],
-      "max_concurrency": 2,
-      "default_burst_concurrency": 2
-    }
-  ]
-}
-```
-- in this pooled shape, the tier dispatches across target ids for explicit experiments; it does not create extra provider quota when those targets share the same OpenCode key
-- if you want a true backup target instead of same-priority fanout, keep it in a later tier such as `backup`
-
 Tracked templates for the new local setup:
 - `reading-companion-backend/config/llm_targets.local.example.json`
 - `reading-companion-backend/config/llm_profile_bindings.local.example.json`
 
-OpenAI-compatible JSON-object targets:
+CPA Luna OpenAI-compatible target:
 ```json
 {
-  "target_id": "opencode_deepseek_v4_flash",
+  "target_id": "cpa_codex_local",
   "contract": "openai_compatible",
-  "base_url": "https://opencode.ai/zen/go/v1",
-  "model": "deepseek-v4-flash",
+  "base_url": "http://127.0.0.1:8317/v1",
+  "model": "gpt-5.6-luna",
   "credentials": [
     {
-      "credential_id": "primary_env",
-      "api_key_env": "OPENCODE_GO_API_KEY"
+      "credential_id": "local_proxy",
+      "api_key_env": "CPA_PROXY_API_KEY"
     }
   ],
   "provider_options": {
-    "response_format": {"type": "json_object"},
-    "thinking": {"type": "enabled"}
+    "reasoning_effort": "medium"
   },
-  "timeout_seconds": 120,
-  "retry_attempts": 3,
-  "max_concurrency": 24,
-  "initial_max_concurrency": 24,
-  "probe_max_concurrency": 24,
-  "min_stable_concurrency": 24,
-  "concurrency_strategy": "fixed"
+  "timeout_seconds": 180,
+  "retry_attempts": 2,
+  "max_concurrency": 1,
+  "initial_max_concurrency": 1,
+  "probe_max_concurrency": 1,
+  "min_stable_concurrency": 1,
+  "concurrency_strategy": "adaptive"
 }
 ```
 - project tools stay in the internal canonical shape `name`, `description`, `input_schema`
 - the Anthropic adapter emits Anthropic-style tool definitions; the OpenAI-compatible adapter emits OpenAI function tools and maps forced tool choice at the adapter boundary
-- when the selected OpenAI-compatible profile enables `response_format: {"type": "json_object"}`, current `attentional_v2` Ingest/Digest final structured outputs use JSON object mode plus local validator/repair
-- thinking-enabled target/profile options default to a larger `max_output_tokens` budget when the profile does not set one explicitly; use `8192` for Ingest probes that need visible reasoning plus final JSON
+- current CPA Luna Ingest/Digest calls use OpenAI-compatible function tools for final structured output plus the existing local validator/repair boundary
+- `reasoning_effort: medium` is declared at target level, so runtime, dataset review, and eval judge inherit the same reasoning setting
 - `retrieve_unit_memory` remains a normal `tool_choice="auto"` action tool; it is not forced merely to carry final structured output
 - standard runtime artifacts and traces should not store raw reasoning/thinking content; keep only normal content, usage, and metadata unless a debug trace explicitly opts in
-- the current OpenCode / DeepSeek JSON-object policy and historical MiniMax transport notes live in `docs/implementation/new-reading-mechanism/llm-structured-output-protocol-note.md`
+- the current CPA / Luna policy and historical OpenCode / MiniMax transport notes live in `docs/implementation/new-reading-mechanism/llm-structured-output-protocol-note.md`
 
 Compatibility and fallback modes:
 - `BACKEND_READING_MECHANISM`
@@ -204,6 +182,7 @@ Compatibility and fallback modes:
   - `LLM_BASE_URL`
   - `LLM_API_KEY`
   - `LLM_MODEL`
+  - optional `LLM_REASONING_EFFORT` (defaults to `medium` for the OpenAI-compatible legacy fallback)
   - optional `LLM_DATASET_REVIEW_MODEL`
   - optional `LLM_EVAL_JUDGE_MODEL`
   - optional `LLM_RUNTIME_MAX_OUTPUT_TOKENS`
@@ -213,7 +192,7 @@ Compatibility and fallback modes:
 Reference and compatibility files:
 - shared provider/profile registry example:
   - `reading-companion-backend/config/llm_registry.example.json`
-- the older MiniMax official-key local registry has been retired from the current checkout; use OpenCode Go targets for active local work
+- tracked examples and current local profiles use CPA Luna. OpenCode Go, DeepSeek, and MiniMax references are historical only and require an explicit reintroduction plus a fresh health check before use.
 
 The shared LLM layer still supports:
 - provider contracts such as `anthropic`, `google_genai`, and `openai_compatible`
@@ -246,9 +225,9 @@ Temporary operator overrides:
   - force new scopes onto one named tier such as `primary` or `backup`
 - these overrides apply only when a new scope starts and should not be the normal policy surface
 
-Current backend defaults are now throughput-oriented for new Python processes:
-- same-key parallelism is enabled by default
-- provider concurrency starts at `6`, can probe up to `12`, and backs off automatically on sustained timeout/rate-limit pressure
+Current CPA backend defaults are conservative for new Python processes:
+- runtime, dataset review, and eval judge all route to `cpa_codex_local`
+- provider and profile concurrency are capped at `1` while the subscription proxy is characterized
 - provider quota cooldown state is shared under `BACKEND_RUNTIME_ROOT/state/llm_gateway/providers/` so sibling Python processes can honor the same bounded wait window
 - runtime keeps a short bounded quota wait budget before surfacing `llm_quota`, while dataset review and eval judge profiles keep a longer bounded quota wait budget for offline work
 - eval/review worker counts derive from the shared concurrency policy rather than fixed script-local defaults
