@@ -1,6 +1,6 @@
 # Second Reader Reading Product Output v1
 
-Status: canonical v1 contract under implementation; its GitHub Pages schema IRI is not yet publicly live.
+Status: canonical v1 contract implemented and accepted; public schema hosting is deferred.
 
 Reading Product Output is the mechanism-neutral product fact produced while Second Reader reads one exact EPUB. It records the source Units that were actually accepted and, for each Unit, the resulting `understanding`, `response`, and source-grounded `marginalia`. It is the stable boundary from which product projections and Annotation Packs may be derived even when the private reading mechanism changes.
 
@@ -18,7 +18,7 @@ The pointer and report are local publication companions. They do not embed or re
 
 `https://captain4whale.github.io/second-reader/schema/reading-product/v1/reading-product-output.schema.json`
 
-GitHub Pages is the approved publication mechanism. A feature-branch projection proves only that the allowlisted files can be staged. The IRI is not public until the workflow reaches `main`, Pages deploys, and served bytes are compared with the canonical schema.
+This remains the reserved future public location, but `DEC-159` defers GitHub Pages hosting because the current producer/consumer lifecycle does not require a remotely served schema. The checked projection remains a deterministic derivative only. The current workflow does not upload or deploy it, and the IRI must not be described as live. Any future public hosting requires an explicit follow-up decision plus served-byte verification against the canonical schema.
 
 ## Product boundary
 

@@ -1,5 +1,11 @@
 # Changelog
 
+## Public schema hosting deferred - 2026-08-31
+
+- retained the GitHub Pages-shaped schema IRI as a reserved future location while explicitly removing public hosting from the current completion and merge boundary under `DEC-159`
+- converted the workflow to projection checks only; it has no Pages artifact upload, `pages: write` permission, deployment job, or automatic publication on `main`
+- made no Pack/Reading Product wire, schema, identity, anchor, package, producer, or validator change
+
 ## Safe HTML5 resource doctype parsing - 2026-08-31
 
 - allowed exactly one simple `<!DOCTYPE html>` in the initial XHTML/HTML resource prolog while retaining fail-closed rejection for `ENTITY`, internal subsets, `SYSTEM`, `PUBLIC`, wrong names, duplicate/misplaced declarations, malformed XML, and hostile resources

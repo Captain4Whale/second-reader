@@ -807,7 +807,7 @@ Use `docs/backend-reading-mechanism.md` for shared platform boundaries. Use `doc
   - Product Unit `settled_at` becomes annotation creation time
 - `SecondReaderProducerAdapter` remains only as an explicitly selected `attentional_v2-phase9` legacy adapter. There is no automatic fallback when complete Product is missing or invalid; phase8 remains rejected.
 - Book/EPUB identity, manifest href, public TextPosition, W3C fields, IDs, ordering, validation, and packaging remain outside `attentional_v2` ownership.
-- Deterministic Tiny Reader/offline lifecycle evidence proves this consumer path without a provider call. It does not prove a current real-LLM whole-book run; that Gate remains deferred, and the GitHub Pages schema IRI is not publicly live.
+- Deterministic Tiny Reader/offline lifecycle evidence proves this consumer path without a provider call, and the later bounded Tiny Reader CPA Luna run proves the same ordinary whole-book path with real model calls. Neither is a production-scale or historical-book claim. Public schema hosting is deferred under `DEC-159`; the reserved IRI is not live.
 
 ## Evaluation Questions
 - These are the enduring mechanism-specific questions `attentional_v2` should eventually be able to answer well.

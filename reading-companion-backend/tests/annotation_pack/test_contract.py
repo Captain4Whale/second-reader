@@ -820,11 +820,13 @@ def test_pages_projection_builds_only_allowlisted_authority_bytes(
     assert not (destination / PAGES_ROOT / "context").exists()
 
 
-def test_pages_workflow_checks_every_branch_but_deploys_main_only() -> None:
+def test_contract_projection_workflow_validates_without_deploying() -> None:
     workflow = PAGES_WORKFLOW.read_text(encoding="utf-8")
     assert "python scripts/build_annotation_pack_pages.py --check" in workflow
-    assert (
-        "python scripts/build_annotation_pack_pages.py --output-dir _site" in workflow
-    )
-    assert workflow.count("github.ref == 'refs/heads/main'") >= 2
-    assert "uses: actions/deploy-pages@v4" in workflow
+    assert "python scripts/build_contract_pages.py --check" in workflow
+    assert "--output-dir _site" not in workflow
+    assert "actions/upload-pages-artifact" not in workflow
+    assert "actions/configure-pages" not in workflow
+    assert "actions/deploy-pages" not in workflow
+    assert "pages: write" not in workflow
+    assert "id-token: write" not in workflow

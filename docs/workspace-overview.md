@@ -17,7 +17,7 @@ Update when: workspace structure, ownership boundaries, or primary shared entryp
 ### Root protocol contracts
 - `contract/annotation-pack/v0/` owns the producer-neutral Annotation Pack v0 wire schema, non-wire publication companion schemas, vocabulary context, pinned standards, and examples.
 - `contract/reading-product/v1/` owns the mechanism-neutral accepted Unit/U-R-M product wire, source-coordinate rules, publication companion schemas, and examples.
-- `.github/workflows/annotation-pack-pages.yml` publishes only the unified allowlisted Annotation Pack and Reading Product contract projection; it does not publish the full documentation tree, backend source, or runtime state.
+- `.github/workflows/annotation-pack-pages.yml` validates the unified allowlisted Annotation Pack and Reading Product contract projection only. Under `DEC-159` it has no artifact upload, Pages permission, or deployment job; future public hosting requires a separate explicit decision.
 
 ### `reading-companion-backend`
 - Python project declared in `pyproject.toml`

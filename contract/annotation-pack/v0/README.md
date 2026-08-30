@@ -1,6 +1,6 @@
 # Second Reader Annotation Pack v0
 
-Status: canonical minimal v0 contract; not yet published at its GitHub Pages IRI.
+Status: canonical minimal v0 contract; public schema hosting is deferred.
 
 This directory is the protocol authority for Second Reader Annotation Pack v0. A Pack is a detached JSON-LD `AnnotationSet` for one exact EPUB file and the Highlight/Note annotations exported by Second Reader. It uses only terms from the pinned W3C EPUB Annotations context, including Web Annotation and Dublin Core terms. The contract is W3C-aligned; it is not a W3C schema and does not claim conformance to the EPUB Annotations Working Draft.
 
@@ -18,7 +18,7 @@ The pointer and report schemas describe local publication companions. They neith
 
 `https://captain4whale.github.io/second-reader/schema/annotation-pack/v0/annotation-pack.schema.json`
 
-GitHub Pages is the approved publication mechanism. The site contains a strict allowlist of the Annotation Pack and Reading Product contract artifacts; Annotation Pack lives under `/schema/annotation-pack/v0/`. Minimal v0 has no Second Reader JSON-LD vocabulary, custom context, or namespace landing page. A feature-branch build proves only the projection; the schema IRI is not live until the workflow reaches the default branch, Pages deploys successfully, and served bytes are compared with this authority.
+This remains the reserved future public location, but `DEC-159` defers GitHub Pages hosting because it is not required for Pack production, local/embedded validation, or the current product and career-evidence goal. The checked projection remains a deterministic derivative only. The current workflow does not upload or deploy it, and the IRI must not be described as live. Any future public hosting requires an explicit follow-up decision plus served-byte verification against this authority.
 
 ## Canonical wire
 

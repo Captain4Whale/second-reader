@@ -19,6 +19,7 @@
 - **Proposed v0**：本设计固定、由后续 implementation slice 实现。
 - **Future-reserved**：v0 不实现，只保证不堵死演进。
 - **Resolved confirmation**：owner 已于 `2026-08-23` 确认 GitHub Pages IRI、分支、逐 Slice commit/push 和第 20 节完成条件。
+- **Current hosting decision**：`DEC-159` 于 `2026-08-31` 将公开 schema hosting 从当前合并边界中移除；IRI 只保留为 future-reserved location，workflow 只做 projection check，不上传或部署 Pages。
 
 > **Authority reset (2026-08-25)**：`DEC-156` 与本文第 20 节是尚未公开 v0 的当前实施权威。第 1–19 节保留为首轮重型 v0 的设计与已落地历史；其中与第 20 节冲突的 Work/Edition/File、Track、`sr:*`、chapter context/fingerprint、ParagraphChar、CFI、provenance 和 public digest 要求不再是 v0 要求。
 
@@ -2184,6 +2185,10 @@ Epic 完成后只能声明：
 The exact XHTML/HTML resource parser now accepts exactly one simple HTML5 `<!DOCTYPE html>` in the initial resource prolog after optional BOM/whitespace and an optional XML declaration. It continues to reject `ENTITY`, internal subsets, `SYSTEM`, `PUBLIC`, wrong doctype names, duplicate/misplaced declarations, malformed XML, oversized structures, and hostile ZIP inputs. Container and OPF XML remain DTD-free.
 
 Focused source/resource tests pass `246` cases and the complete Annotation Pack suite passes `804` cases. The retained exact Xidaduo EPUB (`f239921773ac5abc86527fb78379cbd68cdf2cb901d253e085b2883180984a4f`) now produces `22` resource texts, all `590` paragraph ranges, and zero unverifiable hrefs through the committed production parser. This removes the parser false positive only; it does not migrate the historical phase9 eval artifact, invent a terminal state, persist its segment-coordinate bridge, resolve its one ambiguous quote, or publish a Pack from it. New Reading Product outputs already carry canonical coordinates and a true complete state.
+
+### 20.11 Public schema hosting deferred before main merge
+
+`DEC-159` removes GitHub Pages publication from the current completion and merge boundary. The schema-shaped IRIs remain reserved future locations and the deterministic allowlisted projections remain locally/check-runner verifiable, but `.github/workflows/annotation-pack-pages.yml` is validation-only: no Pages artifact upload, `pages: write`/OIDC permission, deployment environment, or deploy job remains. Merging to `main` must not publish a site. Future public hosting requires a separate explicit decision and served-byte verification; it is not needed for Pack generation, detached validation, Reading Product consumption, or the current product/career-evidence claim.
 
 ## Appendix A. Superseded first-implementation Definition Of Done and closure record
 

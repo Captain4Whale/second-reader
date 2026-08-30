@@ -51,7 +51,7 @@ Use `docs/backend-sequential-lifecycle.md` for the job-level workflow over time.
   - Exact EPUB identity/metadata, manifest hrefs, resource-wide TextPosition offsets, W3C wire fields, UUIDs, ordering, and packaging are source-verifier/exporter responsibilities rather than mechanism output.
   - `attentional_v2-phase9` remains available only through an explicitly selected legacy adapter. There is no automatic fallback from missing/invalid Reading Product to that ledger, and phase8 is rejected.
   - A fallback or experimental mechanism that neither publishes Reading Product nor owns an explicitly documented legacy adapter must state that Annotation Pack export is unsupported; it cannot inherit another mechanism's capability claim.
-  - Repo-local publication and deterministic offline proof do not make either contract's GitHub Pages IRI publicly live. Real-LLM whole-book acceptance also remains a separate deferred Gate.
+  - Repo-local publication and deterministic projection checks do not make either contract's reserved schema IRI publicly live. Public hosting is deferred under `DEC-159`; the bounded Tiny Reader real-LLM whole-book Gate is complete, but production-scale or historical-book claims remain separate.
 - Shared evaluation seam
   - Mechanisms are compared through the shared evaluation frame and normalized runtime outputs, not by forcing one internal ontology.
 

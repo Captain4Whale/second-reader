@@ -4432,3 +4432,26 @@ Annotation Pack consumes only complete-product Marginalia and keeps its W3C/DC w
 - `reading-companion-backend/src/reading_core/source_ranges.py`
 - `reading-companion-backend/src/reading_core/book_document_identity.py`
 - `docs/source-of-truth-map.md`
+
+## Entry 157
+**ID**: DEC-159
+**Status**: active
+
+**Decision / Inflection**: Defer public GitHub Pages schema hosting and make the existing contract workflow validation-only before merging Annotation Pack v0 into `main`.
+
+**Period**: August 31, 2026, after the minimal Annotation Pack, Reading Product lifecycle, bounded real-Luna whole-book acceptance, and safe HTML5 DOCTYPE repair were complete, but before the feature branch was merged to `main`.
+
+**Problem**: The Pack and Reading Product can be generated, validated, packaged, and consumed locally without a remotely served Second Reader JSON Schema. The existing workflow would automatically upload and deploy the contract projection on every relevant push to `main`, even though public hosting provides little current product or career-evidence value and the owner explicitly chose to defer that work.
+
+**Decision**: Keep the current GitHub Pages-shaped schema IRIs only as reserved future locations and retain deterministic projection checks as repo-local/CI evidence. Remove Pages artifact upload, `pages: write` and OIDC permissions, deployment environment, and deployment job from `.github/workflows/annotation-pack-pages.yml`. Merging the completed feature branch to `main` must run validation only and must not publish a site. Any future public activation requires a separate explicit decision, deployment setup, and served-byte comparison against the canonical contract schemas.
+
+**Boundary**: This changes hosting posture only. It does not change Annotation Pack or Reading Product wire fields, schema bytes, identity, anchors, deterministic IDs, producer responsibilities, validation, packaging, runtime settlement, live-model evidence, API/frontend behavior, or the reserved IRI strings.
+
+**Why this path won**: Remote schema hosting is optional infrastructure rather than a prerequisite for the completed producer-to-artifact path. Deferring it keeps the merge focused on demonstrated product value and prevents an unintended deployment while preserving a low-cost future activation path.
+
+**Primary evidence**:
+- `.github/workflows/annotation-pack-pages.yml`
+- `contract/annotation-pack/v0/README.md`
+- `contract/reading-product/v1/README.md`
+- `docs/current-state.md`
+- `docs/implementation/annotation-pack/second-reader-annotation-pack-v0-detailed-design-and-implementation-handoff.md`

@@ -7,7 +7,7 @@ Update when: task status, priority, blockers, decision refs, job refs, evidence 
 
 This document is the human-readable companion to `docs/tasks/registry.json`.
 
-Last updated: `2026-08-31T06:50:00+08:00`
+Last updated: `2026-08-31T07:10:00+08:00`
 
 ## Status Values
 - `active`
@@ -68,12 +68,13 @@ Last updated: `2026-08-31T06:50:00+08:00`
 - Lane: `product_contract`
 - Priority: `high`
 - Detail: `docs/implementation/annotation-pack/second-reader-annotation-pack-v0-detailed-design-and-implementation-handoff.md`
-- Next: the minimal W3C/DC wire remains closed, and `DEC-158` follow-through makes complete Reading Product v1 the default producer while phase9 is explicit legacy-only. Preserve the offline evidence separately from the later bounded Tiny Reader live-model evidence in Section 20.9. Neither proves historical-book conversion, production-scale quality/performance, live Pages, native Unit API, frontend U/R, or Library/API/Reader integration.
+- Next: the minimal W3C/DC wire remains closed, and `DEC-158` follow-through makes complete Reading Product v1 the default producer while phase9 is explicit legacy-only. `DEC-159` removes public Pages hosting from the current boundary and keeps the workflow validation-only. Preserve offline evidence separately from the bounded Tiny Reader live-model evidence; neither proves historical-book conversion, production-scale quality/performance, native Unit API, frontend U/R, or Library/API/Reader integration.
 - Evidence:
   - `DEC-155`
   - `DEC-156`
   - `DEC-157`
   - `DEC-158`
+  - `DEC-159`
   - `contract/annotation-pack/v0/README.md`
   - `contract/annotation-pack/v0/schema/annotation-pack.schema.json`
   - `.github/workflows/annotation-pack-pages.yml`

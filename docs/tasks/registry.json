@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "updated_at": "2026-08-31T06:50:00+08:00",
+  "updated_at": "2026-08-31T07:10:00+08:00",
   "tasks": [
     {
       "id": "TASK-READING-PRODUCT-OUTPUT-V1",
@@ -95,11 +95,12 @@
         "DEC-155",
         "DEC-156",
         "DEC-157",
-        "DEC-158"
+        "DEC-158",
+        "DEC-159"
       ],
       "job_refs": [],
       "acceptance_ref": "docs/implementation/annotation-pack/second-reader-annotation-pack-v0-detailed-design-and-implementation-handoff.md#20-definition-of-done",
-      "next_action": "The minimal W3C and Dublin Core wire remains closed, and DEC-158 follow-through makes complete Reading Product v1 the default producer while phase9 is explicit legacy-only. Preserve the offline evidence separately from the later bounded Tiny Reader live-model evidence in Section 20.9. Neither proves historical-book conversion, production-scale quality or performance, live Pages, native Unit API, frontend U/R, or Library, API, and Reader integration.",
+      "next_action": "The minimal W3C and Dublin Core wire remains closed, and DEC-158 follow-through makes complete Reading Product v1 the default producer while phase9 is explicit legacy-only. DEC-159 removes public Pages hosting from the current boundary and keeps the workflow validation-only. Preserve offline evidence separately from the bounded Tiny Reader live-model evidence; neither proves historical-book conversion, production-scale quality or performance, native Unit API, frontend U/R, or Library, API, and Reader integration.",
       "blocked_by": [],
       "evidence_refs": [
         ".github/workflows/annotation-pack-pages.yml",
@@ -154,7 +155,7 @@
         "reading-companion-backend/tests/annotation_pack/test_tiny_reader_golden.py",
         "reading-companion-backend/tests/reading_product/test_offline_whole_book_lifecycle.py"
       ],
-      "last_updated": "2026-08-29T18:54:54+08:00",
+      "last_updated": "2026-08-31T07:10:00+08:00",
       "last_updated_by": "codex"
     },
     {

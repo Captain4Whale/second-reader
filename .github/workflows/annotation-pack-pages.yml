@@ -1,4 +1,4 @@
-name: Contract Pages
+name: Contract Projection Check
 
 on:
   pull_request:
@@ -21,11 +21,11 @@ on:
   workflow_dispatch:
 
 concurrency:
-  group: annotation-pack-pages
+  group: contract-projection-check-${{ github.ref }}
   cancel-in-progress: false
 
 jobs:
-  build:
+  check:
     runs-on: ubuntu-latest
     permissions:
       contents: read
@@ -38,28 +38,3 @@ jobs:
         run: python scripts/build_annotation_pack_pages.py --check
       - name: Check unified strict contract projection
         run: python scripts/build_contract_pages.py --check
-      - name: Build Annotation Pack allowlist
-        run: python scripts/build_annotation_pack_pages.py --output-dir _site
-      - name: Add Reading Product allowlist
-        run: python scripts/build_contract_pages.py --augment-output-dir _site
-      - name: Upload Pages artifact
-        if: github.event_name == 'push' && github.ref == 'refs/heads/main'
-        uses: actions/upload-pages-artifact@v4
-        with:
-          path: _site
-
-  deploy:
-    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
-    needs: build
-    runs-on: ubuntu-latest
-    permissions:
-      pages: write
-      id-token: write
-    environment:
-      name: github-pages
-      url: ${{ steps.deployment.outputs.page_url }}
-    steps:
-      - uses: actions/configure-pages@v5
-      - name: Deploy contract site
-        id: deployment
-        uses: actions/deploy-pages@v4
