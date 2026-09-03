@@ -1,6 +1,6 @@
 {
   "schema_version": 1,
-  "updated_at": "2026-09-03T01:24:49.976672Z",
+  "updated_at": "2026-09-03T03:06:45.455654Z",
   "entries": [
     {
       "run_id": "attentional_v2_excerpt_surface_v1_1_judged_20260406",
@@ -3529,7 +3529,7 @@
       "date": "2026-09-03",
       "surface": "reading_product_v1_live_acceptance",
       "lane": "mechanism_eval",
-      "status": "planned",
+      "status": "completed",
       "mechanisms": [
         "attentional_v2"
       ],
@@ -3538,29 +3538,65 @@
       ],
       "run_dir": "reading-companion-backend/state/reading_product_live_acceptance/cpa_luna_xidaduo_full_book_20260903",
       "summary_paths": {
+        "annotation_pack_package": "reading-companion-backend/state/reading_product_live_acceptance/cpa_luna_xidaduo_full_book_20260903/book-output/public/annotation-packs/live-cpa-luna-xidaduo-full-book-4500a5bddd3c/revisions/b96c08f4322d9370d25485d3b1abadd1f8ceada47c1c74031c9ba68cb9099c5b/live-cpa-luna-xidaduo-full-book-4500a5bddd3c.annotations",
+        "annotation_pack_pointer": "reading-companion-backend/state/reading_product_live_acceptance/cpa_luna_xidaduo_full_book_20260903/book-output/public/annotation-packs/live-cpa-luna-xidaduo-full-book-4500a5bddd3c/current.json",
+        "llm_ledger": "reading-companion-backend/state/reading_product_live_acceptance/cpa_luna_xidaduo_full_book_20260903/book-output/_runtime/llm_standard.jsonl",
+        "reading_product_pointer": "reading-companion-backend/state/reading_product_live_acceptance/cpa_luna_xidaduo_full_book_20260903/book-output/public/reading-products/current.json",
         "summary": "reading-companion-backend/state/reading_product_live_acceptance/cpa_luna_xidaduo_full_book_20260903/summary.json"
       },
       "job_ids": [
-        "bgjob_reading_product_live_acceptance_cpa_luna_xidaduo_full_book_20260903"
+        "bgjob_reading_product_live_acceptance_cpa_luna_xidaduo_full_book_20260903",
+        "bgjob_reading_product_live_acceptance_cpa_luna_xidaduo_full_book_20260903_resume1",
+        "bgjob_reading_product_live_acceptance_cpa_luna_xidaduo_full_book_20260903_validation1",
+        "bgjob_reading_product_live_acceptance_cpa_luna_xidaduo_full_book_20260903_validation2"
       ],
       "report_paths": [],
       "catalog_status": "not_cataloged",
-      "notes": "Planned fresh production-scale live gate: exact Xidaduo EPUB through ordinary parse/read, complete Reading Product v1, detached Annotation Pack export, exact-resource anchor checks, and repeat-export idempotency. Historical output is not reused or overwritten.",
+      "notes": "Production-scale Xidaduo completed through ordinary parse_book/read_book with the real CPA Luna route. One network_blocked TLS EOF after 78 committed Units was safely resumed under the same reading_id without repeating committed work. Final state has 89 Product Units and 207 Marginalia; the detached Pack exports all 207, exact-resource anchor checks pass, and repeat export is unchanged. The producer report retains one nonfatal invalid_publication_identifier warning because an invalid optional ISBN was omitted; detached semantic validation itself has zero findings.",
       "parent_run_id": "",
       "child_run_ids": [],
       "synthetic": false,
-      "local_missing_allowed": [
-        "reading-companion-backend/state/reading_product_live_acceptance/cpa_luna_xidaduo_full_book_20260903/summary.json"
-      ],
+      "local_missing_allowed": [],
       "metadata": {
         "provider_target": "cpa_codex_local",
         "model": "gpt-5.6-luna",
         "reasoning_effort": "medium",
         "source_epub_sha256": "f239921773ac5abc86527fb78379cbd68cdf2cb901d253e085b2883180984a4f",
         "memory_retrieval_mode": "hybrid",
-        "acceptance_gate": "TASK-READING-PRODUCT-XIDADUO-FULL-BOOK-LIVE-ACCEPTANCE"
+        "acceptance_gate": "TASK-READING-PRODUCT-XIDADUO-FULL-BOOK-LIVE-ACCEPTANCE",
+        "reading_id": "urn:uuid:f91e6d64-0d70-48e7-a18e-95d7db6504fa",
+        "chapter_count": 16,
+        "paragraph_count": 590,
+        "product_unit_count": 89,
+        "marginalia_count": 207,
+        "highlight_count": 89,
+        "note_count": 118,
+        "pack_exported_count": 207,
+        "pack_skipped_count": 0,
+        "pack_warning_count": 1,
+        "pack_warning_code": "invalid_publication_identifier",
+        "detached_semantic_warning_count": 0,
+        "verified_epub_resource_count": 22,
+        "unverifiable_epub_resource_count": 0,
+        "llm_call_rows": 325,
+        "llm_successful_calls": 324,
+        "llm_failed_calls": 1,
+        "llm_usage_complete_calls": 324,
+        "llm_usage_unavailable_calls": 1,
+        "input_tokens": 2034866,
+        "output_tokens": 159465,
+        "reasoning_tokens": 50752,
+        "total_tokens": 2194331,
+        "estimated_usage_value_usd": 0.58100512,
+        "actual_billed_cost": null,
+        "initial_failure_code": "network_blocked",
+        "units_before_resume1": 78,
+        "reading_product_revision_id": "543dd6b2c8338b601a14620dcfc8d0cc9aad7b794d59abb7e21ec727f1abf99f",
+        "annotation_pack_revision_id": "b96c08f4322d9370d25485d3b1abadd1f8ceada47c1c74031c9ba68cb9099c5b",
+        "annotation_pack_semantic_digest": "2e21ed225e7e47a21d003a2f5f403ad8ff0c6599ccc7566a018b3b2c1e2a74bd",
+        "annotation_pack_package_sha256": "cb4012913df9e0eeb1ffc6d739555b9eaf8a0fffd20b127327e62d288c9c9c94"
       },
-      "updated_at": "2026-09-03T01:24:49.975650Z"
+      "updated_at": "2026-09-03T03:06:45.454688Z"
     }
   ]
 }

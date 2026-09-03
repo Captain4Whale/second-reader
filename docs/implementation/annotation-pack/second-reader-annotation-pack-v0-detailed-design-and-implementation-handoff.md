@@ -2190,6 +2190,14 @@ Focused source/resource tests pass `246` cases and the complete Annotation Pack 
 
 `DEC-159` removes GitHub Pages publication from the current completion and merge boundary. The schema-shaped IRIs remain reserved future locations and the deterministic allowlisted projections remain locally/check-runner verifiable, but `.github/workflows/annotation-pack-pages.yml` is validation-only: no Pages artifact upload, `pages: write`/OIDC permission, deployment environment, or deploy job remains. Merging to `main` must not publish a site. Future public hosting requires a separate explicit decision and served-byte verification; it is not needed for Pack generation, detached validation, Reading Product consumption, or the current product/career-evidence claim.
 
+### 20.12 Production-scale Xidaduo live follow-through
+
+`TASK-READING-PRODUCT-XIDADUO-FULL-BOOK-LIVE-ACCEPTANCE` later completed a new, isolated run of the exact retained《悉达多》EPUB (`f239921773ac5abc86527fb78379cbd68cdf2cb901d253e085b2883180984a4f`) through ordinary `parse_book` / `read_book` and real `cpa_codex_local` / `gpt-5.6-luna` calls. One upstream TLS EOF after `78` committed Product Units was recovered through normal resume under the same reading ID without repeating committed work. The final complete Product has `89` Units and `207` Marginalia (`89` Highlights, `118` Notes).
+
+The default Reading Product adapter publishes all `207` items in detached Pack revision `b96c08f4322d9370d25485d3b1abadd1f8ceada47c1c74031c9ba68cb9099c5b`. Independent validation/inspection, all exact quote/position checks against `22` verified EPUB resources, privacy-key scanning, and two repeat exports pass; repeat exports are `unchanged`. The producer report retains one nonfatal `invalid_publication_identifier` warning for an omitted invalid optional ISBN, while standalone Pack semantic validation has zero findings. The catalog/replay defect exposed by that warning was fixed with regression coverage in `237bbba`.
+
+This later evidence permits a production-scale technical Agent-to-Pack claim for this exact new run. It does not retroactively convert historical Xidaduo evaluation artifacts, establish human-reviewed reading quality, publish the Pages IRI, or implement frontend/API/Reader integration. Full Product, call-accounting, recovery, test, and artifact-path evidence lives in the Reading Product implementation document's Section 10 and the evaluation run ledger.
+
 ## Appendix A. Superseded first-implementation Definition Of Done and closure record
 
 以下内容是 `DEC-155` 重型 v0 在 `2026-08-24` 的本地/仓库验收记录，仅作实施历史；不再定义当前 v0 wire 或完成条件。

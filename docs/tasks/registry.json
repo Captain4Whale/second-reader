@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "updated_at": "2026-09-03T09:24:18+08:00",
+  "updated_at": "2026-09-03T11:06:45+08:00",
   "tasks": [
     {
       "id": "TASK-READING-PRODUCT-OUTPUT-V1",
@@ -83,7 +83,7 @@
     {
       "id": "TASK-READING-PRODUCT-XIDADUO-FULL-BOOK-LIVE-ACCEPTANCE",
       "title": "Run production-scale Xidaduo Reading Product and Annotation Pack acceptance",
-      "status": "active",
+      "status": "done",
       "lane": "mechanism_eval",
       "priority": "high",
       "detail_ref": "docs/current-state.md",
@@ -97,16 +97,23 @@
         "DEC-158"
       ],
       "job_refs": [
-        "bgjob_reading_product_live_acceptance_cpa_luna_xidaduo_full_book_20260903"
+        "bgjob_reading_product_live_acceptance_cpa_luna_xidaduo_full_book_20260903",
+        "bgjob_reading_product_live_acceptance_cpa_luna_xidaduo_full_book_20260903_resume1",
+        "bgjob_reading_product_live_acceptance_cpa_luna_xidaduo_full_book_20260903_validation1",
+        "bgjob_reading_product_live_acceptance_cpa_luna_xidaduo_full_book_20260903_validation2"
       ],
-      "acceptance_ref": "docs/current-state.md",
-      "next_action": "Run the exact SHA-256-pinned Xidaduo EPUB through the ordinary attentional_v2 parse/read lifecycle with cpa_codex_local gpt-5.6-luna at reasoning_effort=medium, seal a complete Reading Product, export a detached minimal Annotation Pack, and independently verify every EPUB resource anchor plus repeat-export idempotency. Preserve the isolated run directory and do not reuse or overwrite historical Xidaduo output.",
+      "acceptance_ref": "docs/implementation/reading-product/reading-product-output-v1-detailed-design-and-implementation-handoff.md#10-production-scale-xidaduo-live-acceptance",
+      "next_action": "Preserve the exact-source technical acceptance and recovery history. Treat qualitative review of Understanding, Response, and Marginalia, Pages publication, native Unit API, and frontend integration as separate work; do not rewrite this new run as conversion of historical Xidaduo artifacts. The producer report's sole warning is the intentional omission of an invalid optional ISBN, while the detached Pack itself has zero semantic findings.",
       "blocked_by": [],
       "evidence_refs": [
         "reading-companion-backend/docs/evaluation/run_ledger.json",
-        "reading-companion-backend/state/reading_product_live_acceptance/cpa_luna_xidaduo_full_book_20260903/summary.json"
+        "reading-companion-backend/state/reading_product_live_acceptance/cpa_luna_xidaduo_full_book_20260903/summary.json",
+        "reading-companion-backend/state/reading_product_live_acceptance/cpa_luna_xidaduo_full_book_20260903/attempts.jsonl",
+        "reading-companion-backend/state/reading_product_live_acceptance/cpa_luna_xidaduo_full_book_20260903/book-output/public/reading-products/current.json",
+        "reading-companion-backend/state/reading_product_live_acceptance/cpa_luna_xidaduo_full_book_20260903/book-output/public/annotation-packs/live-cpa-luna-xidaduo-full-book-4500a5bddd3c/current.json",
+        "reading-companion-backend/state/reading_product_live_acceptance/cpa_luna_xidaduo_full_book_20260903/book-output/_runtime/llm_standard.jsonl"
       ],
-      "last_updated": "2026-09-03T09:24:18+08:00",
+      "last_updated": "2026-09-03T11:06:45+08:00",
       "last_updated_by": "codex"
     },
     {
