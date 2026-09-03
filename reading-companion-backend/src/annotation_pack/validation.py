@@ -237,6 +237,7 @@ UPSTREAM_VALIDATION_CODES = frozenset(
         "body_looks_like_source_copy",
         "invalid_persisted_metadata_fallback",
         "invalid_publication_metadata",
+        "invalid_publication_identifier",
         "publication_metadata_mismatch",
         "invalid_publication_language",
     }
@@ -299,6 +300,7 @@ _WARNING_CODES = frozenset(
         "body_looks_like_source_copy",
         "invalid_persisted_metadata_fallback",
         "invalid_publication_metadata",
+        "invalid_publication_identifier",
         "publication_metadata_mismatch",
         "invalid_publication_language",
     }
@@ -370,6 +372,7 @@ _MESSAGES: dict[str, str] = {
     "validation_context_invalid": "The validation context is internally inconsistent.",
     "invalid_persisted_metadata_fallback": "Persisted publication metadata was not safe to use.",
     "invalid_publication_metadata": "Publication metadata was invalid and was omitted.",
+    "invalid_publication_identifier": "An invalid optional publication identifier was omitted.",
     "publication_metadata_mismatch": "Publication metadata sources did not agree.",
     "invalid_publication_language": "The publication language was invalid and was omitted.",
 }

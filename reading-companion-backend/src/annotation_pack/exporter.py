@@ -1520,6 +1520,7 @@ def _upstream_report_findings(
         "duplicate_resource_chapter_projection",
         "invalid_persisted_metadata_fallback",
         "invalid_publication_metadata",
+        "invalid_publication_identifier",
         "publication_metadata_mismatch",
         "invalid_publication_language",
     }

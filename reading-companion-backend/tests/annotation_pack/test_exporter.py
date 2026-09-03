@@ -4,6 +4,7 @@ import ast
 from concurrent.futures import Future, ThreadPoolExecutor
 from contextlib import contextmanager
 from copy import deepcopy
+from dataclasses import replace
 from datetime import datetime, timezone
 import hashlib
 import json
@@ -34,7 +35,7 @@ from src.annotation_pack.exporter import (
     track_slug,
 )
 from src.annotation_pack.ids import default_creator_id
-from src.annotation_pack.identity import PublicationIdentityError
+from src.annotation_pack.identity import IdentityFinding, PublicationIdentityError
 from src.annotation_pack.serialization import canonical_json_bytes
 from src.attentional_v2.storage import reaction_records_file
 from src.parsers import parse_ebook
@@ -2012,6 +2013,52 @@ def test_warning_only_identity_exception_is_mapped_to_safe_fatal_code(
     assert result.status == "failed"
     assert result.validation.findings[0].code == "publication_identity_missing"
     assert "private publication title" not in repr(result)
+
+
+def test_optional_invalid_publication_identifier_is_a_publishable_warning(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    runtime_root, output_root, output_dir, _ledger_value = _fixture(tmp_path)
+    original_build = exporter_module.PublicationIdentityBuilder.build_verified
+
+    def build_with_identifier_warning(self: object, **kwargs: object):  # type: ignore[no-untyped-def]
+        publication = original_build(self, **kwargs)  # type: ignore[arg-type]
+        return replace(
+            publication,
+            findings=(
+                *publication.findings,
+                IdentityFinding(
+                    code="invalid_publication_identifier",
+                    message="An optional invalid identifier was omitted.",
+                ),
+            ),
+        )
+
+    monkeypatch.setattr(
+        exporter_module.PublicationIdentityBuilder,
+        "build_verified",
+        build_with_identifier_warning,
+    )
+
+    result = _export(runtime_root, output_root, output_dir)
+
+    assert result.status == "published"
+    assert result.validation.publishable
+    assert result.validation.warning_count == 1
+    assert [finding.code for finding in result.validation.findings] == [
+        "invalid_publication_identifier"
+    ]
+    assert result.annotations_json is not None
+    assert result.current_pointer is not None
+
+    repeated = _export(runtime_root, output_root, output_dir)
+
+    assert repeated.status == "unchanged"
+    assert repeated.revision_id == result.revision_id
+    assert repeated.validation == result.validation
+    assert repeated.annotations_json == result.annotations_json
+    assert repeated.current_pointer == result.current_pointer
 
 
 def test_exporter_has_no_normal_runner_or_direct_mechanism_import() -> None:
