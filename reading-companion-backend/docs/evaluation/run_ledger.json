@@ -1,6 +1,6 @@
 {
   "schema_version": 1,
-  "updated_at": "2026-08-30T12:37:25.623641Z",
+  "updated_at": "2026-09-03T01:24:49.976672Z",
   "entries": [
     {
       "run_id": "attentional_v2_excerpt_surface_v1_1_judged_20260406",
@@ -3523,6 +3523,44 @@
         "validation_retry4": "terminal_check"
       },
       "updated_at": "2026-08-30T12:37:25.622767Z"
+    },
+    {
+      "run_id": "reading_product_v1_live_acceptance_cpa_luna_xidaduo_full_book_20260903",
+      "date": "2026-09-03",
+      "surface": "reading_product_v1_live_acceptance",
+      "lane": "mechanism_eval",
+      "status": "planned",
+      "mechanisms": [
+        "attentional_v2"
+      ],
+      "dataset_or_manifest": [
+        "reading-companion-backend/state/library_sources/zh/xidaduo.epub"
+      ],
+      "run_dir": "reading-companion-backend/state/reading_product_live_acceptance/cpa_luna_xidaduo_full_book_20260903",
+      "summary_paths": {
+        "summary": "reading-companion-backend/state/reading_product_live_acceptance/cpa_luna_xidaduo_full_book_20260903/summary.json"
+      },
+      "job_ids": [
+        "bgjob_reading_product_live_acceptance_cpa_luna_xidaduo_full_book_20260903"
+      ],
+      "report_paths": [],
+      "catalog_status": "not_cataloged",
+      "notes": "Planned fresh production-scale live gate: exact Xidaduo EPUB through ordinary parse/read, complete Reading Product v1, detached Annotation Pack export, exact-resource anchor checks, and repeat-export idempotency. Historical output is not reused or overwritten.",
+      "parent_run_id": "",
+      "child_run_ids": [],
+      "synthetic": false,
+      "local_missing_allowed": [
+        "reading-companion-backend/state/reading_product_live_acceptance/cpa_luna_xidaduo_full_book_20260903/summary.json"
+      ],
+      "metadata": {
+        "provider_target": "cpa_codex_local",
+        "model": "gpt-5.6-luna",
+        "reasoning_effort": "medium",
+        "source_epub_sha256": "f239921773ac5abc86527fb78379cbd68cdf2cb901d253e085b2883180984a4f",
+        "memory_retrieval_mode": "hybrid",
+        "acceptance_gate": "TASK-READING-PRODUCT-XIDADUO-FULL-BOOK-LIVE-ACCEPTANCE"
+      },
+      "updated_at": "2026-09-03T01:24:49.975650Z"
     }
   ]
 }

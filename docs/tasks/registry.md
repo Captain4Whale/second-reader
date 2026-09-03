@@ -7,7 +7,7 @@ Update when: task status, priority, blockers, decision refs, job refs, evidence 
 
 This document is the human-readable companion to `docs/tasks/registry.json`.
 
-Last updated: `2026-08-31T07:10:00+08:00`
+Last updated: `2026-09-03T09:24:18+08:00`
 
 ## Status Values
 - `active`
@@ -146,6 +146,21 @@ Last updated: `2026-08-31T07:10:00+08:00`
   - `reading-companion-backend/tests/annotation_pack/test_epub_resources.py`
 
 ## Active
+
+### `TASK-READING-PRODUCT-XIDADUO-FULL-BOOK-LIVE-ACCEPTANCE` — Run production-scale Xidaduo Reading Product and Annotation Pack acceptance
+- Status: `active`
+- Lane: `mechanism_eval`
+- Priority: `high`
+- Detail: `docs/current-state.md`
+- Next: run the exact SHA-256-pinned Xidaduo EPUB through the ordinary `attentional_v2` parse/read lifecycle with `cpa_codex_local` / `gpt-5.6-luna` / `reasoning_effort=medium`, seal a complete Reading Product, export a detached minimal Annotation Pack, and independently verify every EPUB resource anchor plus repeat-export idempotency. Preserve the isolated run directory and do not reuse or overwrite historical Xidaduo output.
+- Jobs:
+  - `bgjob_reading_product_live_acceptance_cpa_luna_xidaduo_full_book_20260903`
+- Evidence:
+  - `DEC-158`
+  - `contract/reading-product/v1/README.md`
+  - `contract/annotation-pack/v0/README.md`
+  - `reading-companion-backend/docs/evaluation/run_ledger.json`
+  - `reading-companion-backend/state/reading_product_live_acceptance/cpa_luna_xidaduo_full_book_20260903/summary.json`
 
 ### `TASK-SECOND-READER-INGEST-DIGEST-REFRAME-AUDIT-20260530` — Maintain the implemented Ingest/Digest and Unit Memory mechanism track
 - Status: `active`
