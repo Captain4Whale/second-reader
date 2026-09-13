@@ -979,6 +979,13 @@ The old Memory / Planning / Evaluation implementation guidance chain at `docs/im
   - catching judge drift
   - distinguishing real regressions from defensible reading-style differences
 
+## Whole-Book Single-Call Diagnostic
+- A bounded whole-book test may ask whether one model request already yields useful reader-facing Marginalia before adding splitting, retrieval, or a more autonomous execution model. Manual review is the explicit method for this diagnostic; it does not trigger the dataset-hardening judge pipeline.
+- Use `eval.attentional_v2.run_whole_book_digest` to reconstruct the completed baseline's accepted source ranges from its persisted BookDocument, merge prior Unit boundaries, and verify the frozen paragraph count, length, and hash. Reuse existing preprocessing decisions and the historical Digest instruction blocks/output tool; change only the reading focus/SourceUnit to the full book and set ReadingMemory empty. Prior Understanding, Response, and Marginalia must not enter the request.
+- Pin model/settings and output capacity, save the complete request and original response/tool arguments, and enforce one application-side generation request with no repair, network/quota retry, or target switch. A refusal, timeout, truncation, or invalid structure ends the attempt. Save invalid Marginalia with deterministic quote/structure findings instead of silently dropping them. Proxy-internal attempts are unknown unless the proxy supplies evidence.
+- Produce source-ordered human-review Markdown and a separate historical reference without model calls. Review annotation correctness and usefulness, thin or concentrated coverage, and repetition; neither annotation count nor an unannotated passage is a standalone comprehension measure. The historical multi-call output also differs in context scope, memory, compute allocation, and output volume, so it cannot isolate a causal effect of context length or splitting.
+- Register the attempt in the background-job registry and evaluation run ledger, keep source/output under ignored `state/experiments/<run_id>/`, and stop at `review_pending` or the recorded failure for user review. This diagnostic does not promote benchmark evidence, modify the default product mechanism, or authorize follow-up runs. Operational commands are in the root README under “Whole-Book Single-Call Digest Experiment”.
+
 ## Fair Comparison Rules
 - Compare mechanisms on the same product question whenever possible.
 - Keep comparisons grounded in realistic constraints rather than unconstrained demo conditions.

@@ -1,6 +1,6 @@
 {
   "schema_version": 1,
-  "updated_at": "2026-09-03T03:06:45.455654Z",
+  "updated_at": "2026-09-13T01:27:02.398537Z",
   "entries": [
     {
       "run_id": "attentional_v2_excerpt_surface_v1_1_judged_20260406",
@@ -3597,6 +3597,91 @@
         "annotation_pack_package_sha256": "cb4012913df9e0eeb1ffc6d739555b9eaf8a0fffd20b127327e62d288c9c9c94"
       },
       "updated_at": "2026-09-03T03:06:45.454688Z"
+    },
+    {
+      "run_id": "xidaduo_fullbook_single_digest_20260913",
+      "date": "2026-09-13",
+      "surface": "whole_book_single_call_digest",
+      "lane": "mechanism_eval",
+      "status": "review_pending",
+      "mechanisms": [
+        "attentional_v2"
+      ],
+      "dataset_or_manifest": [
+        "state/reading_product_live_acceptance/cpa_luna_xidaduo_full_book_20260903/book-output"
+      ],
+      "run_dir": "reading-companion-backend/state/experiments/xidaduo_fullbook_single_digest_20260913",
+      "summary_paths": {
+        "llm_usage": "reading-companion-backend/state/experiments/xidaduo_fullbook_single_digest_20260913/llm-standard.jsonl",
+        "manifest": "reading-companion-backend/state/experiments/xidaduo_fullbook_single_digest_20260913/manifest.json",
+        "parsed_result": "reading-companion-backend/state/experiments/xidaduo_fullbook_single_digest_20260913/parsed-result.json",
+        "quote_validation": "reading-companion-backend/state/experiments/xidaduo_fullbook_single_digest_20260913/quote-validation.json",
+        "raw_response": "reading-companion-backend/state/experiments/xidaduo_fullbook_single_digest_20260913/raw-response.json",
+        "request": "reading-companion-backend/state/experiments/xidaduo_fullbook_single_digest_20260913/request.json",
+        "status": "reading-companion-backend/state/experiments/xidaduo_fullbook_single_digest_20260913/status.json",
+        "summary": "reading-companion-backend/state/experiments/xidaduo_fullbook_single_digest_20260913/summary.json"
+      },
+      "job_ids": [
+        "bgjob_xidaduo_fullbook_single_digest_20260913"
+      ],
+      "report_paths": [
+        "reading-companion-backend/state/experiments/xidaduo_fullbook_single_digest_20260913/review.md",
+        "reading-companion-backend/state/experiments/xidaduo_fullbook_single_digest_20260913/historical-reference.md"
+      ],
+      "catalog_status": "not_cataloged",
+      "notes": "Completed the authorized single whole-book Digest v24 request in 36.79 seconds; one application request and one gateway physical attempt, no quota retry, failover, repair, or judge. Usage: 64158 input + 1709 output (140 reasoning) = 65867 tokens. finish_reason=tool_calls, zero structure errors, below the 65536 output cap. Ten Marginalia (5 Highlights / 5 Notes): 8 exactly located quotes and 2 unlocated quotes retained for manual review. Historical 89 Units / 207 Marginalia are reference, not gold or causal proof that splitting is necessary. Implementation is complete; task waits for human review, with no follow-up generation authorized. Proxy-internal attempts and actual subscription billed cost remain unknown.",
+      "parent_run_id": "",
+      "child_run_ids": [],
+      "synthetic": false,
+      "local_missing_allowed": [],
+      "metadata": {
+        "baseline_run_id": "cpa_luna_xidaduo_full_book_20260903",
+        "source_paragraphs": 552,
+        "source_characters": 55185,
+        "source_sha256": "6d75c4bdd06668ccfc03c2a96ea4b484a31898fda05f8dfe793b852efcdb3be9",
+        "model": "gpt-5.6-luna",
+        "target": "cpa_codex_local",
+        "reasoning_effort": "medium",
+        "temperature": 0.2,
+        "max_output_tokens": 65536,
+        "timeout_seconds": 1800,
+        "application_request_limit": 1,
+        "application_request_started_at": "2026-09-13T01:24:50.208711+00:00",
+        "focused_offline_tests_passed": 27,
+        "application_request_count": 1,
+        "physical_attempt_count": 1,
+        "elapsed_seconds": 36.79,
+        "usage": {
+          "input_tokens": 64158,
+          "output_tokens": 1709,
+          "total_tokens": 65867,
+          "input_token_details": {
+            "cache_read": 0
+          },
+          "output_token_details": {
+            "reasoning": 140
+          }
+        },
+        "marginalia_counts": {
+          "total": 10,
+          "valid": 8,
+          "invalid": 2,
+          "highlights": 5,
+          "notes": 5,
+          "uniquely_located": 8,
+          "ambiguous": 0,
+          "unlocated": 2
+        },
+        "finish_reason": "tool_calls",
+        "contract_error_count": 0,
+        "proxy_internal_attempts": "not_observable",
+        "actual_billed_cost": null,
+        "completed_at": "2026-09-13T01:25:26.998474+00:00",
+        "final_agent_check_exit_code": 0,
+        "contract_tests_passed": 55,
+        "existing_traceability_warnings": true
+      },
+      "updated_at": "2026-09-13T01:27:02.398135Z"
     }
   ]
 }

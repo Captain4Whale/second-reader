@@ -7,7 +7,7 @@ Update when: task status, priority, blockers, decision refs, job refs, evidence 
 
 This document is the human-readable companion to `docs/tasks/registry.json`.
 
-Last updated: `2026-09-03T11:06:45+08:00`
+Last updated: `2026-09-13T09:27:02+08:00`
 
 ## Status Values
 - `active`
@@ -939,6 +939,18 @@ Last updated: `2026-09-03T11:06:45+08:00`
 No provider-access blocker remains after the CPA Luna Medium switch. The bounded Reading Product live acceptance is complete; no task is blocked on provider access here.
 
 ## Waiting
+
+### `TASK-XIDADUO-FULLBOOK-SINGLE-DIGEST-20260913` — Run one whole-book Xidaduo Digest request for manual review
+- Status: `waiting` for user review; implementation/generation complete, run ledger `review_pending`.
+- Lane: `mechanism_eval`; priority: `high`.
+- Detail / acceptance: `docs/backend-reader-evaluation.md#whole-book-single-call-diagnostic`.
+- Run: `xidaduo_fullbook_single_digest_20260913`; registered job `bgjob_xidaduo_fullbook_single_digest_20260913` is `completed`.
+- Input/settings: existing September 3 preprocessing and accepted source coordinates, `552` paragraphs / `55,185` characters, verified SHA-256 `6d75c4bdd06668ccfc03c2a96ea4b484a31898fda05f8dfe793b852efcdb3be9`; unchanged Digest v24 instructions, full-book focus, empty memory; `cpa_codex_local / gpt-5.6-luna`, medium reasoning, temperature `0.2`, output limit `65,536`, timeout `1,800` seconds.
+- Observed execution: one application request / one gateway physical attempt, `36.79` seconds, `64,158` input / `1,709` output tokens (`140` reasoning), total `65,867`; no retries/failover/repair. `tool_calls` termination, zero structure errors, output below limit; proxy-internal attempts unknown.
+- Output: `10` Marginalia (`5` Highlights / `5` Notes), `8` exact located quotes and `2` unlocated quotes preserved for human checking. Historical `89` Units / `207` Marginalia are reference only; neither result is gold and the counts establish no quality or causal conclusion.
+- Validation: `27` focused tests passed; final escalated `make agent-check` passed (`55` contract tests), with existing historical traceability warnings. Ledger and generated quote checks are separate from semantic quality review.
+- Next: user reviews `review.md` and, if useful, `historical-reference.md`; no judge, repair, retry, continuation, baseline rerun, or follow-up experiment without a new instruction.
+- Evidence: `reading-companion-backend/state/experiments/xidaduo_fullbook_single_digest_20260913/summary.json`, `reading-companion-backend/state/experiments/xidaduo_fullbook_single_digest_20260913/review.md`, `reading-companion-backend/state/experiments/xidaduo_fullbook_single_digest_20260913/historical-reference.md`, `reading-companion-backend/state/experiments/xidaduo_fullbook_single_digest_20260913/quote-validation.json`, `reading-companion-backend/state/experiments/xidaduo_fullbook_single_digest_20260913/llm-standard.jsonl`, `reading-companion-backend/docs/evaluation/run_ledger.json` (generated source/output files stay ignored and local).
 
 ### `TASK-ANNOTATION-HUB-V0-MINIMAL-PACK-MIGRATION` — Migrate Annotation Hub to the minimal Annotation Pack v0
 - Status: `waiting`

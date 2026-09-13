@@ -7,9 +7,10 @@ Update when: the current objective, active tasks, blockers, active jobs, open de
 
 This file is authoritative for durable current status. Do not keep unique active-state information only in `docs/agent-handoff.md`.
 
-Last verified: `2026-09-03T11:06:45+08:00`
+Last verified: `2026-09-13T09:27:02+08:00`
 
 ## Current Objective
+- `TASK-XIDADUO-FULLBOOK-SINGLE-DIGEST-20260913` completed implementation and the authorized generation; the task is `waiting` for the user's manual review and the run ledger is `review_pending`. The September 3 accepted source was reconstructed as `552` paragraphs / `55,185` characters (SHA-256 `6d75c4bdd06668ccfc03c2a96ea4b484a31898fda05f8dfe793b852efcdb3be9`) without reparsing EPUB or rerunning preprocessing. Digest v24 fixed blocks matched the baseline; full-book SourceUnit/focus and empty ReadingMemory were the only context changes. `cpa_codex_local / gpt-5.6-luna`, medium reasoning, temperature `0.2`, output limit `65,536`, timeout `1,800` seconds returned once in `36.79` seconds: `64,158` input + `1,709` output tokens (`140` reasoning), `65,867` total. The response ended with `tool_calls`, no structure errors, and below the output limit. It produced `10` Marginalia (`5` Highlights / `5` Notes): `8` quotes locate exactly and `2` do not locate and remain preserved for review. These are mechanical findings, not a quality verdict; the historical `89` Units / `207` Marginalia are reference material, not gold or proof that splitting is necessary. All local source/raw/parsed/check/review artifacts remain under `reading-companion-backend/state/experiments/xidaduo_fullbook_single_digest_20260913/`; no judge, repair, retry, continuation, or new experiment was run.
 - `TASK-READING-PRODUCT-XIDADUO-FULL-BOOK-LIVE-ACCEPTANCE` is complete. The exact local《悉达多》EPUB at SHA-256 `f239921773ac5abc86527fb78379cbd68cdf2cb901d253e085b2883180984a4f` ran through ordinary `parse_book` / `read_book`, the current `attentional_v2` mechanism, and real `cpa_codex_local` / `gpt-5.6-luna` calls with `reasoning_effort=medium` and `hybrid` memory retrieval. One upstream TLS EOF stopped the fresh attempt after `78` committed Units; normal resume reused reading ID `urn:uuid:f91e6d64-0d70-48e7-a18e-95d7db6504fa`, did not repeat committed work, and reached `completed`. The immutable complete Reading Product has `89` Units over a `16`-chapter / `590`-paragraph BookDocument and `207` Marginalia (`89` Highlights, `118` Notes); `15` chapter compatibility projections were derived from Product Units. The detached minimal Pack exports all `207` items, independently validates and inspects, resolves every quote/position against `22` verified EPUB resources with zero unverifiable hrefs, and returns `unchanged` on both repeat exports. Its producer report has one nonfatal `invalid_publication_identifier` warning because an invalid optional ISBN was omitted; the standalone Pack semantic validator reports zero findings. The local LLM ledger has `325` calls (`324` successful with complete usage, one recovered failure with usage unavailable) and `2,194,331` known tokens; subscription billing leaves actual billed cost unknown. The isolated evidence lives under `reading-companion-backend/state/reading_product_live_acceptance/cpa_luna_xidaduo_full_book_20260903/`. The bounded claim is: **在固定 SHA-256 的真实《悉达多》EPUB 上，当前机制已经通过 CPA Luna 的真实 LLM 调用完成整书阅读，并生成 complete Reading Product、章节兼容投影和独立验证通过的 207-item Annotation Pack。** This is a new run, not migration of historical Xidaduo artifacts, and is not a human quality benchmark or proof of Pages/frontend/API deployment.
 - `TASK-READING-PRODUCT-OUTPUT-V1` is repo-locally complete under `DEC-158` on `codex/annotation-pack-v0`. `d83707a`, `7dcd160`, `e7adccc`, `6239147`, and `a81a935` delivered and pushed the five offline implementation Slices. That deterministic-substitute boundary remains valid and unchanged.
 - `TASK-READING-PRODUCT-OUTPUT-V1-LIVE-ACCEPTANCE` is complete. The tracked Tiny Reader real EPUB ran through ordinary `parse_book` / `read_book`, the default `attentional_v2` mechanism, and the configured `cpa_codex_local` / `gpt-5.6-luna` route without replacing the model boundary. Ten recorded LLM calls completed with status `ok`; the reading runtime reached `completed` in `188.17` seconds and published a `complete` Reading Product with `2` Product Units, non-empty Understanding/Response, and `6` Marginalia (`4` Highlights, `2` Notes). Both chapter compatibility projections were generated. The default Reading Product adapter produced a detached Annotation Pack with `6` exported items and zero skips, warnings, or errors; standalone validate and inspect both passed. The bounded claim is: **在 tracked Tiny Reader 短小真实 EPUB 上，当前默认机制已通过 CPA Luna 的真实 LLM 调用完成普通入口整书阅读，并生成 complete Reading Product、章节兼容投影和独立验证通过的 Annotation Pack。** This is not evidence that historical《悉达多》《纳瓦尔宝典》were converted, that a production-scale book passed, or that Pages/frontend/API deployment is live.
@@ -2100,6 +2101,7 @@ Last verified: `2026-09-03T11:06:45+08:00`
 - Treat runtime viability, broader local pairwise comparison, durable-trace / re-entry comparison, and most mechanism-specific judged attribution families as paused unless one of the three kept dimensions later requires them.
 
 ## Now
+- `xidaduo_fullbook_single_digest_20260913` completed as registered detached job `bgjob_xidaduo_fullbook_single_digest_20260913`; the registry now has terminal `completed` status and the run is `review_pending`. `review.md` retains all `10` generated items, including the `2` unlocated quotes; `historical-reference.md` contains all `207` baseline items. `summary.json`, `request.json`, `raw-response.json`, `parsed-result.json`, `quote-validation.json`, and `llm-standard.jsonl` preserve reproducible checks and provider usage. The application and gateway each record one request/physical attempt, no quota retry, repair, or target failover; proxy-internal attempts remain unobservable. `27` focused offline tests passed and the final escalated `make agent-check` passed with `55` contract tests and existing historical traceability warnings.
 - Preserve the completed Reading Product Output v1 offline and bounded live-Tiny-Reader evidence. Product Store remains accepted-Unit truth, the default Reading Product adapter feeds Annotation Pack, and chapter compatibility is derived from Product Units; do not broaden the live claim to historical or production-scale books.
 - Preserve the corrected real-artifact audit: current phase9 kind/body and read-surface anchors pass, and the safe-DOCTYPE parser repair is complete. Historical direct export remains intentionally unimplemented and would require persisted eval segment-to-source coordinates, a co-located EPUB, export-facing runtime finalization, and explicit resolution or skipping of one ambiguous quote. Keep the April phase8 output only as historical migration evidence; do not retrofit old eval artifacts merely to prove the new Product path.
 - Keep runtime observability opt-in and evidence-first: finish the manual ledger/export wiring, then verify one bounded local trace/report without changing mechanism behavior or making Phoenix part of app readiness.
@@ -3485,6 +3487,7 @@ Last verified: `2026-09-03T11:06:45+08:00`
   - `reading-companion-backend/src/attentional_v2/resume.py` now recreates the thin `runtime_shell.json` envelope if it is missing during position persistence
 
 ## Next
+- Await the user's manual review of `reading-companion-backend/state/experiments/xidaduo_fullbook_single_digest_20260913/review.md`, using `historical-reference.md` only as reference. Inspect correctness and reading value before deciding whether another experiment is warranted; do not turn this one-book output count into a causal or general quality claim, or launch follow-up generation automatically.
 - No further Reading Product v1 implementation or live-Gate action is required. Preserve the run ledger and bounded claim; any production-scale or historical-book run is a separate acceptance task.
 - For the next positive real-book Annotation Pack proof, use a completed current-native Agent artifact with an exact EPUB-coherent `BookDocument`, then run the actual exporter and independent validate/inspect path. If the historical《悉达多》output must be preserved without rerunning, open a separate explicit migration task for kind/body decisions and exact quote re-resolution; do not relax the current adapter.
 - Run the one remaining public-book live acceptance on the configured CPA route and inspect its canonical ledger/report before treating the first measured efficiency figures as a baseline.
@@ -3578,6 +3581,7 @@ Last verified: `2026-09-03T11:06:45+08:00`
 - `TASK-USER-LEVEL-SELECTIVE-V1`
 
 ## Waiting Task IDs
+- `TASK-XIDADUO-FULLBOOK-SINGLE-DIGEST-20260913`
 - `TASK-ANNOTATION-HUB-V0-MINIMAL-PACK-MIGRATION`
 
 ## Queued Task IDs
@@ -3612,7 +3616,7 @@ Last verified: `2026-09-03T11:06:45+08:00`
 ## Machine-Readable Appendix
 ```json
 {
-  "updated_at": "2026-08-30T23:10:00Z",
+  "updated_at": "2026-09-13T01:27:02.300896Z",
   "last_updated_by": "codex",
   "active_task_ids": [
     "TASK-ATTENTIONAL-V2-STRUCTURAL-REWORK",
@@ -3620,6 +3624,7 @@ Last verified: `2026-09-03T11:06:45+08:00`
     "TASK-USER-LEVEL-SELECTIVE-V1"
   ],
   "waiting_task_ids": [
+    "TASK-XIDADUO-FULLBOOK-SINGLE-DIGEST-20260913",
     "TASK-ANNOTATION-HUB-V0-MINIMAL-PACK-MIGRATION"
   ],
   "queued_task_ids": [

@@ -502,6 +502,15 @@ Examples:
 Long-running wrapper example:
 - `cd reading-companion-backend && .venv/bin/python scripts/run_registered_job.py --task-ref "execution-tracker#dataset-platform" --lane dataset_platform --purpose "Closed-loop benchmark curation scratch pass" --cwd "$PWD" -- .venv/bin/python -m eval.attentional_v2.run_closed_loop_benchmark_curation --run-id demo_curate --repair-open-backlog`
 
+## Whole-Book Single-Call Digest Experiment
+The isolated《悉达多》experiment reuses the September 3 completed BookDocument/source scope and Digest v24. It does not parse EPUB again or invoke Ingest/retrieval. Run these commands from `reading-companion-backend/`:
+
+- Prepare and verify the complete input without a model request: `.venv/bin/python -m eval.attentional_v2.run_whole_book_digest --prepare`
+- Execute the explicitly authorized single request after registering the job as described below: `.venv/bin/python -m eval.attentional_v2.run_whole_book_digest --run`
+- Rebuild manual-review Markdown from saved artifacts without a model request: `.venv/bin/python -m eval.attentional_v2.run_whole_book_digest --render`
+
+The fixed run ID is `xidaduo_fullbook_single_digest_20260913`, job ID is `bgjob_xidaduo_fullbook_single_digest_20260913`, and local artifacts belong under `state/experiments/xidaduo_fullbook_single_digest_20260913/`. The run stops after one application-side request, including failure; it does not auto-repair, retry, continue, or change models. Do not relaunch the model call to regenerate review files. See `docs/backend-reader-evaluation.md#whole-book-single-call-diagnostic` for evidence limits, and check/update `reading-companion-backend/docs/evaluation/run_ledger.*` when the run changes state.
+
 ## Long-Running Eval Jobs
 Use the backend background-job registry for evaluation, packet review, or dataset jobs that may run for `10-15` minutes or longer.
 

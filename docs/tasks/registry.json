@@ -1,7 +1,40 @@
 {
   "version": 1,
-  "updated_at": "2026-09-03T11:06:45+08:00",
+  "updated_at": "2026-09-13T01:27:02.300896Z",
   "tasks": [
+    {
+      "id": "TASK-XIDADUO-FULLBOOK-SINGLE-DIGEST-20260913",
+      "title": "Run one whole-book Xidaduo Digest request for manual review",
+      "status": "waiting",
+      "lane": "mechanism_eval",
+      "priority": "high",
+      "detail_ref": "docs/backend-reader-evaluation.md#whole-book-single-call-diagnostic",
+      "truth_refs": [
+        "docs/backend-reader-evaluation.md",
+        "reading-companion-backend/docs/evaluation/run_ledger.md"
+      ],
+      "decision_refs": [],
+      "job_refs": [
+        "bgjob_xidaduo_fullbook_single_digest_20260913"
+      ],
+      "acceptance_ref": "docs/backend-reader-evaluation.md#whole-book-single-call-diagnostic",
+      "next_action": "Implementation and the one authorized generation are complete; await user manual review of review.md with historical-reference.md as reference, not gold. The output has 10 Marginalia, 8 exact located quotes, and 2 preserved unlocated quotes. Do not infer quality from counts or a causal need for splitting; do not run a judge, repair, retry, continuation, baseline rerun, or another experiment automatically.",
+      "blocked_by": [],
+      "evidence_refs": [
+        "reading-companion-backend/eval/attentional_v2/run_whole_book_digest.py",
+        "reading-companion-backend/state/experiments/xidaduo_fullbook_single_digest_20260913/summary.json",
+        "reading-companion-backend/state/experiments/xidaduo_fullbook_single_digest_20260913/review.md",
+        "reading-companion-backend/state/experiments/xidaduo_fullbook_single_digest_20260913/historical-reference.md",
+        "reading-companion-backend/state/experiments/xidaduo_fullbook_single_digest_20260913/request.json",
+        "reading-companion-backend/state/experiments/xidaduo_fullbook_single_digest_20260913/raw-response.json",
+        "reading-companion-backend/state/experiments/xidaduo_fullbook_single_digest_20260913/parsed-result.json",
+        "reading-companion-backend/state/experiments/xidaduo_fullbook_single_digest_20260913/quote-validation.json",
+        "reading-companion-backend/state/experiments/xidaduo_fullbook_single_digest_20260913/llm-standard.jsonl",
+        "reading-companion-backend/docs/evaluation/run_ledger.json"
+      ],
+      "last_updated": "2026-09-13T09:27:02+08:00",
+      "last_updated_by": "codex"
+    },
     {
       "id": "TASK-READING-PRODUCT-OUTPUT-V1",
       "title": "Implement mechanism-neutral Reading Product Output v1",
@@ -4404,5 +4437,5 @@
       "last_updated_by": "codex"
     }
   ],
-  "last_updated": "2026-08-25T20:22:39+08:00"
+  "last_updated": "2026-09-13T09:27:02+08:00"
 }
