@@ -1,7 +1,36 @@
 {
   "version": 1,
-  "updated_at": "2026-09-13T01:27:02.300896Z",
+  "updated_at": "2026-09-13T03:33:37.840734+00:00",
   "tasks": [
+    {
+      "id": "TASK-XIDADUO-CONTEXT-SCOPE-DIGEST-20260913",
+      "title": "Diagnose Xidaduo context and task scope with three Digest requests",
+      "status": "waiting",
+      "lane": "mechanism_eval",
+      "priority": "high",
+      "detail_ref": "docs/backend-reader-evaluation.md#context-and-task-scope-diagnostic",
+      "truth_refs": [
+        "docs/backend-reader-evaluation.md",
+        "reading-companion-backend/docs/evaluation/run_ledger.md"
+      ],
+      "decision_refs": [],
+      "job_refs": [
+        "bgjob_xidaduo_context_scope_digest_20260913"
+      ],
+      "acceptance_ref": "docs/backend-reader-evaluation.md#context-and-task-scope-diagnostic",
+      "next_action": "Review the partial anonymous packet. A and B completed; C returned HTTP 408 after 902.396 seconds with no normal output or usage. Batch/job status is failed; three requests total, no retry. B/C comparison is incomplete. Do not launch additional generation or change the product without a new user instruction.",
+      "blocked_by": [],
+      "evidence_refs": [
+        "reading-companion-backend/eval/attentional_v2/run_context_scope_digest.py",
+        "reading-companion-backend/state/experiments/xidaduo_context_scope_digest_20260913/manifest.json",
+        "reading-companion-backend/state/experiments/xidaduo_context_scope_digest_20260913/summary.json",
+        "reading-companion-backend/state/experiments/xidaduo_context_scope_digest_20260913/verification.json",
+        "reading-companion-backend/state/experiments/xidaduo_context_scope_digest_20260913/review.md",
+        "reading-companion-backend/state/experiments/xidaduo_context_scope_digest_20260913/execution-summary.md"
+      ],
+      "last_updated": "2026-09-13T03:33:37.840734+00:00",
+      "last_updated_by": "codex"
+    },
     {
       "id": "TASK-XIDADUO-FULLBOOK-SINGLE-DIGEST-20260913",
       "title": "Run one whole-book Xidaduo Digest request for manual review",

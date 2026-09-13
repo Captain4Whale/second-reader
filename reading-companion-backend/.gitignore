@@ -43,7 +43,7 @@ Thumbs.db
 data/
 output/
 eval/runs/
-# Whole-book single-call experiment inputs, private source text, and review outputs.
+# Whole-book and context/scope experiment inputs, private text, and review outputs.
 state/experiments/
 eval/review_packets/pending/
 # Generated review-packet archives are intermediate runtime artifacts by default.

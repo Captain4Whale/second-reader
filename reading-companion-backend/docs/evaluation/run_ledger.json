@@ -1,6 +1,6 @@
 {
   "schema_version": 1,
-  "updated_at": "2026-09-13T01:27:02.398537Z",
+  "updated_at": "2026-09-13T03:34:18.738340Z",
   "entries": [
     {
       "run_id": "attentional_v2_excerpt_surface_v1_1_judged_20260406",
@@ -3597,6 +3597,189 @@
         "annotation_pack_package_sha256": "cb4012913df9e0eeb1ffc6d739555b9eaf8a0fffd20b127327e62d288c9c9c94"
       },
       "updated_at": "2026-09-03T03:06:45.454688Z"
+    },
+    {
+      "run_id": "xidaduo_context_scope_digest_20260913",
+      "date": "2026-09-13",
+      "surface": "context_scope_digest",
+      "lane": "mechanism_eval",
+      "status": "failed",
+      "mechanisms": [
+        "attentional_v2"
+      ],
+      "dataset_or_manifest": [
+        "reading-companion-backend/state/experiments/xidaduo_context_scope_digest_20260913/manifest.json"
+      ],
+      "run_dir": "reading-companion-backend/state/experiments/xidaduo_context_scope_digest_20260913",
+      "job_ids": [
+        "bgjob_xidaduo_context_scope_digest_20260913"
+      ],
+      "catalog_status": "not_cataloged",
+      "summary_paths": {
+        "manifest": "reading-companion-backend/state/experiments/xidaduo_context_scope_digest_20260913/manifest.json",
+        "summary": "reading-companion-backend/state/experiments/xidaduo_context_scope_digest_20260913/summary.json",
+        "review-key": "reading-companion-backend/state/experiments/xidaduo_context_scope_digest_20260913/review-key.json",
+        "review-items": "reading-companion-backend/state/experiments/xidaduo_context_scope_digest_20260913/review-items.json",
+        "A_summary.json": "reading-companion-backend/state/experiments/xidaduo_context_scope_digest_20260913/A/summary.json",
+        "A_request.json": "reading-companion-backend/state/experiments/xidaduo_context_scope_digest_20260913/A/request.json",
+        "A_raw-response.json": "reading-companion-backend/state/experiments/xidaduo_context_scope_digest_20260913/A/raw-response.json",
+        "A_quote-validation.json": "reading-companion-backend/state/experiments/xidaduo_context_scope_digest_20260913/A/quote-validation.json",
+        "A_llm-standard.jsonl": "reading-companion-backend/state/experiments/xidaduo_context_scope_digest_20260913/A/llm-standard.jsonl",
+        "B_summary.json": "reading-companion-backend/state/experiments/xidaduo_context_scope_digest_20260913/B/summary.json",
+        "B_request.json": "reading-companion-backend/state/experiments/xidaduo_context_scope_digest_20260913/B/request.json",
+        "B_raw-response.json": "reading-companion-backend/state/experiments/xidaduo_context_scope_digest_20260913/B/raw-response.json",
+        "B_quote-validation.json": "reading-companion-backend/state/experiments/xidaduo_context_scope_digest_20260913/B/quote-validation.json",
+        "B_llm-standard.jsonl": "reading-companion-backend/state/experiments/xidaduo_context_scope_digest_20260913/B/llm-standard.jsonl",
+        "C_summary.json": "reading-companion-backend/state/experiments/xidaduo_context_scope_digest_20260913/C/summary.json",
+        "C_request.json": "reading-companion-backend/state/experiments/xidaduo_context_scope_digest_20260913/C/request.json",
+        "C_llm-standard.jsonl": "reading-companion-backend/state/experiments/xidaduo_context_scope_digest_20260913/C/llm-standard.jsonl",
+        "verification": "reading-companion-backend/state/experiments/xidaduo_context_scope_digest_20260913/verification.json"
+      },
+      "report_paths": [
+        "reading-companion-backend/state/experiments/xidaduo_context_scope_digest_20260913/historical-reference.md",
+        "reading-companion-backend/state/experiments/xidaduo_context_scope_digest_20260913/review.md",
+        "reading-companion-backend/state/experiments/xidaduo_context_scope_digest_20260913/execution-summary.md"
+      ],
+      "notes": "Authorized A/B/C diagnostic, one request per condition, serial A→B→C, fail-stop. A replays the prior whole-book request; B/C share chapter SourceUnit and differ only in optional surrounding source. Manual review only; no judge or product change. One selected failure chapter and one sample per condition do not establish a general causal effect. CPA internal attempts and actual billed cost remain unobservable. Terminal: A/B completed normally; C returned HTTP 408 after 902.396 seconds, classified llm_timeout, with no normal response and unavailable usage. Verified client timeout was 1800 seconds; exact proxy/upstream timeout origin is unknown. All three application/gateway physical counts are one; no retry. Partial 35-item anonymous review is ready. Defer product decisions and any extra generation pending user review.",
+      "metadata": {
+        "conditions": {
+          "A": {
+            "status": "review_pending",
+            "application_request_count": 1,
+            "counts": {
+              "total": 9,
+              "valid": 7,
+              "invalid": 2,
+              "highlights": 4,
+              "notes": 5,
+              "uniquely_located": 7,
+              "ambiguous": 0,
+              "unlocated": 2
+            },
+            "target_counts": {
+              "total": 9,
+              "valid": 0,
+              "invalid": 9,
+              "highlights": 4,
+              "notes": 5,
+              "uniquely_located": 0,
+              "ambiguous": 0,
+              "unlocated": 9,
+              "outside_target": 7
+            },
+            "usage": {
+              "input_tokens": 64158,
+              "output_tokens": 1690,
+              "total_tokens": 65848,
+              "input_token_details": {
+                "cache_read": 0
+              },
+              "output_token_details": {
+                "reasoning": 105
+              }
+            },
+            "elapsed_seconds": 36.334,
+            "response_metadata": {
+              "finish_reason": "tool_calls",
+              "model_name": "gpt-5.6-luna",
+              "model_provider": "openai",
+              "token_usage": {
+                "completion_tokens": 1690,
+                "prompt_tokens": 64158,
+                "total_tokens": 65848,
+                "completion_tokens_details": {
+                  "accepted_prediction_tokens": null,
+                  "audio_tokens": null,
+                  "reasoning_tokens": 105,
+                  "rejected_prediction_tokens": null
+                },
+                "prompt_tokens_details": {
+                  "audio_tokens": null,
+                  "cached_tokens": 0,
+                  "cached_creation_tokens": 0
+                }
+              },
+              "system_fingerprint": null,
+              "id": "resp_09531b9af8e115fb016aa6149ee13c87d0891abc78e8154f43"
+            }
+          },
+          "B": {
+            "status": "review_pending",
+            "application_request_count": 1,
+            "counts": {
+              "total": 6,
+              "valid": 5,
+              "invalid": 1,
+              "highlights": 4,
+              "notes": 2,
+              "uniquely_located": 5,
+              "ambiguous": 0,
+              "unlocated": 1,
+              "outside_target": 0
+            },
+            "target_counts": {
+              "total": 6,
+              "valid": 5,
+              "invalid": 1,
+              "highlights": 4,
+              "notes": 2,
+              "uniquely_located": 5,
+              "ambiguous": 0,
+              "unlocated": 1,
+              "outside_target": 0
+            },
+            "usage": {
+              "input_tokens": 61934,
+              "output_tokens": 1196,
+              "total_tokens": 63130,
+              "input_token_details": {
+                "cache_read": 0
+              },
+              "output_token_details": {
+                "reasoning": 295
+              }
+            },
+            "elapsed_seconds": 26.378,
+            "response_metadata": {
+              "finish_reason": "tool_calls",
+              "model_name": "gpt-5.6-luna",
+              "model_provider": "openai",
+              "token_usage": {
+                "completion_tokens": 1196,
+                "prompt_tokens": 61934,
+                "total_tokens": 63130,
+                "completion_tokens_details": {
+                  "accepted_prediction_tokens": null,
+                  "audio_tokens": null,
+                  "reasoning_tokens": 295,
+                  "rejected_prediction_tokens": null
+                },
+                "prompt_tokens_details": {
+                  "audio_tokens": null,
+                  "cached_tokens": 0,
+                  "cached_creation_tokens": 0
+                }
+              },
+              "system_fingerprint": null,
+              "id": "resp_0fbf03845c8ac8ea016aa614c0e88887d0adc00d17a5e28d01"
+            }
+          },
+          "C": {
+            "status": "failed",
+            "application_request_count": 1,
+            "elapsed_seconds": 902.396,
+            "error": {
+              "type": "ReaderLLMError",
+              "problem_code": "llm_timeout"
+            }
+          }
+        },
+        "request_limit": 3,
+        "target_chapter": 8,
+        "human_review_status": "pending_partial",
+        "comparison_complete": false,
+        "C_http_status": 408
+      }
     },
     {
       "run_id": "xidaduo_fullbook_single_digest_20260913",

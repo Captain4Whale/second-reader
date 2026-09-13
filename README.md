@@ -511,6 +511,15 @@ The isolated《悉达多》experiment reuses the September 3 completed BookDocum
 
 The fixed run ID is `xidaduo_fullbook_single_digest_20260913`, job ID is `bgjob_xidaduo_fullbook_single_digest_20260913`, and local artifacts belong under `state/experiments/xidaduo_fullbook_single_digest_20260913/`. The run stops after one application-side request, including failure; it does not auto-repair, retry, continue, or change models. Do not relaunch the model call to regenerate review files. See `docs/backend-reader-evaluation.md#whole-book-single-call-diagnostic` for evidence limits, and check/update `reading-companion-backend/docs/evaluation/run_ledger.*` when the run changes state.
 
+## Context and Task Scope Digest Experiment
+The authorized follow-up `xidaduo_context_scope_digest_20260913` runs three independent requests serially: A repeats the frozen whole-book request, B reads only 迦摩罗 with the rest of the original book as background, and C reads the identical chapter with empty background. It stops the batch on any failed request. From `reading-companion-backend/`:
+
+- Prepare once, without model calls: `.venv/bin/python -m eval.attentional_v2.run_context_scope_digest --prepare`
+- After registering `bgjob_xidaduo_context_scope_digest_20260913`, execute once: `.venv/bin/python -m eval.attentional_v2.run_context_scope_digest --run`
+- Rebuild the review packet without model calls: `.venv/bin/python -m eval.attentional_v2.run_context_scope_digest --render`
+
+Artifacts stay in ignored `state/experiments/xidaduo_context_scope_digest_20260913/`. Begin manual review with `review.md`; `review-key.json` and `execution-summary.md` reveal conditions. Re-entry is refused even after failure; `--render` preserves anonymous identifiers. See `docs/backend-reader-evaluation.md#context-and-task-scope-diagnostic` for controls and evidence limits.
+
 ## Long-Running Eval Jobs
 Use the backend background-job registry for evaluation, packet review, or dataset jobs that may run for `10-15` minutes or longer.
 

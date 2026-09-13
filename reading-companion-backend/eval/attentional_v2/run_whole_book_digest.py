@@ -268,10 +268,10 @@ def verify_prepared(run_dir: Path) -> dict:
     return manifest
 
 
-def reserve_request(run_dir: Path) -> None:
+def reserve_request(run_dir: Path, run_id: str = RUN_ID) -> None:
     # Exclusive creation survives process crashes and prevents a second attempt.
     with (run_dir / "request.started.json").open("x") as handle:
-        json.dump({"started_at": now(), "pid": os.getpid(), "run_id": RUN_ID}, handle)
+        json.dump({"started_at": now(), "pid": os.getpid(), "run_id": run_id}, handle)
 
 
 class SingleRequestAdapter:
@@ -418,8 +418,11 @@ def render(run_dir: Path) -> dict:
     return {"contract_errors": contract_errors, "counts": review["counts"]}
 
 
-def run(run_dir: Path) -> dict:
-    manifest = verify_prepared(run_dir)
+def run(run_dir: Path, *, prepared_verifier=None, result_renderer=None) -> dict:
+    """Execute one frozen request; optional hooks are for isolated evals only."""
+    manifest = (prepared_verifier or verify_prepared)(run_dir)
+    run_id = manifest.get("run_id", RUN_ID)
+    job_id = manifest.get("job_id", JOB_ID)
     if (run_dir / "request.started.json").exists():
         raise ValueError(
             "This experiment already used/reserved its one request; use --render"
@@ -435,7 +438,7 @@ def run(run_dir: Path) -> dict:
     if not registry.get_provider(TARGET_ID).resolved_key_pool():
         raise ValueError("Existing CPA credential is unavailable")
     packet = read_json(run_dir / "prompt.json")
-    reserve_request(run_dir)
+    reserve_request(run_dir, run_id)
     write_json(run_dir / "status.json", {"status": "running", "updated_at": now()})
     started = time.monotonic()
     adapter = SingleRequestAdapter(
@@ -446,8 +449,8 @@ def run(run_dir: Path) -> dict:
     try:
         with run_observation_scope(
             run_dir,
-            JOB_ID,
-            run_id=RUN_ID,
+            job_id,
+            run_id=run_id,
             mechanism_key="attentional_v2",
             job_kind="whole_book_digest_experiment",
             stage="digest",
@@ -475,7 +478,7 @@ def run(run_dir: Path) -> dict:
                 )
                 raw = normal_response(response)
                 write_json(run_dir / "raw-response.json", raw)
-        summary.update(render(run_dir))
+        summary.update((result_renderer or render)(run_dir))
         summary.update(
             usage=raw["usage_metadata"], response_metadata=raw["response_metadata"]
         )
@@ -502,9 +505,9 @@ def run(run_dir: Path) -> dict:
         write_json(
             run_dir / "status.json",
             {
-                "status": "completed"
-                if summary["status"] == "review_pending"
-                else "failed",
+                "status": (
+                    "completed" if summary["status"] == "review_pending" else "failed"
+                ),
                 "review_status": summary["status"],
                 "updated_at": now(),
             },
