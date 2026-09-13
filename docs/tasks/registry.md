@@ -7,7 +7,7 @@ Update when: task status, priority, blockers, decision refs, job refs, evidence 
 
 This document is the human-readable companion to `docs/tasks/registry.json`.
 
-Last updated: `2026-09-13T11:33:37+08:00`
+Last updated: `2026-09-13T13:30:49+08:00`
 
 ## Status Values
 - `active`
@@ -941,7 +941,7 @@ No provider-access blocker remains after the CPA Luna Medium switch. The bounded
 ## Waiting
 
 ### `TASK-XIDADUO-CONTEXT-SCOPE-DIGEST-20260913` — Diagnose Xidaduo context and task scope
-- Status: `waiting` for partial manual review; execution stopped, batch/run ledger/job `failed` because C returned HTTP 408. This is not a completed A/B/C comparison.
+- Status: `waiting` for combined manual review. C-only recovery completed on its first additional attempt; the original batch remains `failed`, while the separate recovery ledger is `review_pending` and its job is `completed`.
 - Lane: `mechanism_eval`; priority: `high`.
 - Detail / acceptance: `docs/backend-reader-evaluation.md#context-and-task-scope-diagnostic`.
 - Run: `xidaduo_context_scope_digest_20260913`; job: `bgjob_xidaduo_context_scope_digest_20260913`.
@@ -949,8 +949,13 @@ No provider-access blocker remains after the CPA Luna Medium switch. The bounded
 - Mechanical output: A completed in `36.334` seconds with `9` marks (`4` Highlights / `5` Notes), `7` exact / `2` unlocated, no exact target-chapter marks; B completed in `26.378` seconds with `6` marks (`4` Highlights / `2` Notes), `5` exact target-chapter quotes / `1` unlocated. Both ended with `tool_calls`, zero structure errors, well below the output cap. C failed after `902.396` seconds with `APIStatusError`, HTTP `408`, classified `llm_timeout`, despite a verified `1,800`-second client setting; no normal response/parsed output and usage unavailable. The proxy/upstream timeout origin is not observable.
 - Review: `35` anonymous items preserve `25` historical target-chapter references, all `6` B marks, and `4` unlocated A/A0 quotes. Full A output remains separately available. Historical marks are not gold; no semantic quality verdict or causal mechanism conclusion.
 - Validation: `37` focused offline tests passed; frozen-input/request/ledger/quote/review verification passed. Final `make agent-check` retains only pre-existing history/traceability warnings. A sandboxed PID probe briefly misclassified the live process; elevated verification corrected metadata without a relaunch.
-- Next: review the partial packet; defer mechanism changes and any additional generation until a new user instruction.
+- Next: review the new 40-item anonymous packet; no further generation or product change. C is the first successful transport recovery, not a result selected for annotation count or quality.
 - Evidence: `reading-companion-backend/state/experiments/xidaduo_context_scope_digest_20260913/summary.json`, `reading-companion-backend/state/experiments/xidaduo_context_scope_digest_20260913/verification.json`, `reading-companion-backend/state/experiments/xidaduo_context_scope_digest_20260913/review.md`, `reading-companion-backend/state/experiments/xidaduo_context_scope_digest_20260913/execution-summary.md`, `reading-companion-backend/docs/evaluation/run_ledger.json`. Private source/output remains ignored and local.
+
+- Authorized recovery: `xidaduo_context_scope_c_retry_20260913`, job `bgjob_xidaduo_context_scope_c_retry_20260913`; at most three additional identical C requests, serial, first structurally complete response stops the sequence. Inputs/runner frozen; A/B are not rerun.
+
+- Recovery result: one additional application request / one gateway physical attempt, `22.929` seconds, `15,482` input / `989` output tokens (`65` reasoning), `tool_calls` termination, zero structure errors; `5` marks (`2` Highlights / `3` Notes), all `5` uniquely match the target chapter. Attempts 2/3 remained unused. Actual request/settings match original C exactly. Original A/B and failed C artifacts are unchanged.
+- Recovery validation: `34` focused offline tests passed; frozen input/request/attempt/quote/40-item review checks passed. `make agent-check` passed with historical traceability warnings; its transient active-job warning is resolved by terminal state synchronization. New evidence: `reading-companion-backend/state/experiments/xidaduo_context_scope_c_retry_20260913/verification.json`, `reading-companion-backend/state/experiments/xidaduo_context_scope_c_retry_20260913/comparison/review.md`, `reading-companion-backend/state/experiments/xidaduo_context_scope_c_retry_20260913/comparison/execution-summary.md`.
 
 ### `TASK-XIDADUO-FULLBOOK-SINGLE-DIGEST-20260913` — Run one whole-book Xidaduo Digest request for manual review
 - Status: `waiting` for user review; implementation/generation complete, run ledger `review_pending`.

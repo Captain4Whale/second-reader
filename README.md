@@ -520,6 +520,8 @@ The authorized follow-up `xidaduo_context_scope_digest_20260913` runs three inde
 
 Artifacts stay in ignored `state/experiments/xidaduo_context_scope_digest_20260913/`. Begin manual review with `review.md`; `review-key.json` and `execution-summary.md` reveal conditions. Re-entry is refused even after failure; `--render` preserves anonymous identifiers. See `docs/backend-reader-evaluation.md#context-and-task-scope-diagnostic` for controls and evidence limits.
 
+The subsequently authorized C-only recovery uses `.venv/bin/python -m eval.attentional_v2.retry_context_scope_digest --prepare`, then `--run` under registered job `bgjob_xidaduo_context_scope_c_retry_20260913`. It allows at most three additional identical C requests, stops at the first structurally complete response or a non-transport failure, and preserves the original run. Artifacts are in ignored `state/experiments/xidaduo_context_scope_c_retry_20260913/`; `retry-summary.md` records attempts and `comparison/review.md` contains a new anonymous packet if C succeeds. Do not relaunch the batch or select an output by annotation count.
+
 ## Long-Running Eval Jobs
 Use the backend background-job registry for evaluation, packet review, or dataset jobs that may run for `10-15` minutes or longer.
 

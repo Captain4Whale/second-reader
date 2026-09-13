@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "updated_at": "2026-09-13T03:33:37.840734+00:00",
+  "updated_at": "2026-09-13T05:30:49.191000+00:00",
   "tasks": [
     {
       "id": "TASK-XIDADUO-CONTEXT-SCOPE-DIGEST-20260913",
@@ -15,10 +15,11 @@
       ],
       "decision_refs": [],
       "job_refs": [
-        "bgjob_xidaduo_context_scope_digest_20260913"
+        "bgjob_xidaduo_context_scope_digest_20260913",
+        "bgjob_xidaduo_context_scope_c_retry_20260913"
       ],
       "acceptance_ref": "docs/backend-reader-evaluation.md#context-and-task-scope-diagnostic",
-      "next_action": "Review the partial anonymous packet. A and B completed; C returned HTTP 408 after 902.396 seconds with no normal output or usage. Batch/job status is failed; three requests total, no retry. B/C comparison is incomplete. Do not launch additional generation or change the product without a new user instruction.",
+      "next_action": "Review the combined anonymous packet using unchanged A/B and the first successful C retry. Recovery completed after one additional request (22.929 seconds); attempts 2/3 were not called. Original failed C remains intact. No further generation or product change is authorized.",
       "blocked_by": [],
       "evidence_refs": [
         "reading-companion-backend/eval/attentional_v2/run_context_scope_digest.py",
@@ -26,9 +27,15 @@
         "reading-companion-backend/state/experiments/xidaduo_context_scope_digest_20260913/summary.json",
         "reading-companion-backend/state/experiments/xidaduo_context_scope_digest_20260913/verification.json",
         "reading-companion-backend/state/experiments/xidaduo_context_scope_digest_20260913/review.md",
-        "reading-companion-backend/state/experiments/xidaduo_context_scope_digest_20260913/execution-summary.md"
+        "reading-companion-backend/state/experiments/xidaduo_context_scope_digest_20260913/execution-summary.md",
+        "reading-companion-backend/state/experiments/xidaduo_context_scope_c_retry_20260913/manifest.json",
+        "reading-companion-backend/state/experiments/xidaduo_context_scope_c_retry_20260913/summary.json",
+        "reading-companion-backend/state/experiments/xidaduo_context_scope_c_retry_20260913/verification.json",
+        "reading-companion-backend/state/experiments/xidaduo_context_scope_c_retry_20260913/retry-summary.md",
+        "reading-companion-backend/state/experiments/xidaduo_context_scope_c_retry_20260913/comparison/review.md",
+        "reading-companion-backend/state/experiments/xidaduo_context_scope_c_retry_20260913/comparison/execution-summary.md"
       ],
-      "last_updated": "2026-09-13T03:33:37.840734+00:00",
+      "last_updated": "2026-09-13T05:30:49.191000+00:00",
       "last_updated_by": "codex"
     },
     {

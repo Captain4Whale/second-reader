@@ -238,3 +238,20 @@ def test_failed_condition_review_keeps_unknown_output_and_http_status(
     assert "private-provider-message" not in failure
     assert "未完成条件" in (tmp_path / "review.md").read_text()
     assert "[C 失败记录]" in (tmp_path / "execution-summary.md").read_text()
+
+
+def test_recovered_c_review_does_not_erase_failed_request(tmp_path, monkeypatch):
+    monkeypatch.setattr(packet, "gather_items", lambda path: [])
+    single.write_json(
+        tmp_path / "summary.json",
+        {
+            "status": "review_pending",
+            "conditions": {},
+            "C_retry_attempt": 1,
+        },
+    )
+    packet.render_packet(tmp_path)
+    audit = (tmp_path / "execution-summary.md").read_text()
+    assert "C 的原始失败" in audit
+    assert "不能把总调用次数记成一次" in audit
+    assert "每个条件仅一次" not in audit

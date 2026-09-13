@@ -235,14 +235,28 @@ def render_packet(run_dir: Path) -> None:
                 else "失败记录"
             )
             audit.append(f"- [{c} {label}]({c}/review.md)")
+    recovered_c = summary.get("C_retry_attempt")
+    request_note = (
+        f"本页 C 来自第 {recovered_c} 次授权重试；C 的原始失败及所有重试尝试另行保留，不能把总调用次数记成一次。每次尝试关闭应用侧自动修复、SDK/配额重试、续写和目标切换。"
+        if recovered_c
+        else "每组最多一次应用请求，无自动修复/重试/续写/目标切换；"
+    )
+    sample_note = (
+        "本页每个条件只展示一份正常生成结果，C 的失败请求仍计入运行记录。"
+        if recovered_c
+        else "每个条件仅一次。"
+    )
     audit.extend(
         [
             "",
             "[历史章节参考](historical-reference.md)",
             "",
-            "每组最多一次应用请求，无自动修复/重试/续写/目标切换；CPA 内部执行次数和实际账单不可观测。原始输出 tokens 包含供应商报告的 reasoning tokens，不等同于可见文本长度。",
+            request_note
+            + "CPA 内部执行次数和实际账单不可观测。原始输出 tokens 包含供应商报告的 reasoning tokens，不等同于可见文本长度。",
             "",
-            "选择此章是为了诊断已知遗漏；每个条件仅一次。B/C 改变额外内容、目标绝对位置和跨章证据；A/B 还改变任务范围包装。本轮不推断普遍切分收益，不改变产品默认流程，等待人工审阅。",
+            "选择此章是为了诊断已知遗漏；"
+            + sample_note
+            + "B/C 改变额外内容、目标绝对位置和跨章证据；A/B 还改变任务范围包装。本轮不推断普遍切分收益，不改变产品默认流程，等待人工审阅。",
             "",
         ]
     )

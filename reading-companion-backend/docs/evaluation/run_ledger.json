@@ -1,6 +1,6 @@
 {
   "schema_version": 1,
-  "updated_at": "2026-09-13T03:34:18.738340Z",
+  "updated_at": "2026-09-13T05:30:49.199824Z",
   "entries": [
     {
       "run_id": "attentional_v2_excerpt_surface_v1_1_judged_20260406",
@@ -3599,6 +3599,116 @@
       "updated_at": "2026-09-03T03:06:45.454688Z"
     },
     {
+      "run_id": "xidaduo_context_scope_c_retry_20260913",
+      "date": "2026-09-13",
+      "surface": "context_scope_digest_retry",
+      "lane": "mechanism_eval",
+      "status": "review_pending",
+      "mechanisms": [
+        "attentional_v2"
+      ],
+      "dataset_or_manifest": [
+        "reading-companion-backend/state/experiments/xidaduo_context_scope_c_retry_20260913/manifest.json"
+      ],
+      "run_dir": "reading-companion-backend/state/experiments/xidaduo_context_scope_c_retry_20260913",
+      "summary_paths": {
+        "manifest": "reading-companion-backend/state/experiments/xidaduo_context_scope_c_retry_20260913/manifest.json",
+        "summary.json": "reading-companion-backend/state/experiments/xidaduo_context_scope_c_retry_20260913/summary.json",
+        "comparison/summary.json": "reading-companion-backend/state/experiments/xidaduo_context_scope_c_retry_20260913/comparison/summary.json",
+        "verification": "reading-companion-backend/state/experiments/xidaduo_context_scope_c_retry_20260913/verification.json",
+        "successful_C_request.json": "reading-companion-backend/state/experiments/xidaduo_context_scope_c_retry_20260913/attempt-1/C/request.json",
+        "successful_C_raw-response.json": "reading-companion-backend/state/experiments/xidaduo_context_scope_c_retry_20260913/attempt-1/C/raw-response.json",
+        "successful_C_parsed-result.json": "reading-companion-backend/state/experiments/xidaduo_context_scope_c_retry_20260913/attempt-1/C/parsed-result.json",
+        "successful_C_quote-validation.json": "reading-companion-backend/state/experiments/xidaduo_context_scope_c_retry_20260913/attempt-1/C/quote-validation.json",
+        "successful_C_llm-standard.jsonl": "reading-companion-backend/state/experiments/xidaduo_context_scope_c_retry_20260913/attempt-1/C/llm-standard.jsonl"
+      },
+      "job_ids": [
+        "bgjob_xidaduo_context_scope_c_retry_20260913"
+      ],
+      "report_paths": [
+        "reading-companion-backend/state/experiments/xidaduo_context_scope_c_retry_20260913/retry-summary.md",
+        "reading-companion-backend/state/experiments/xidaduo_context_scope_c_retry_20260913/comparison/review.md",
+        "reading-companion-backend/state/experiments/xidaduo_context_scope_c_retry_20260913/comparison/execution-summary.md"
+      ],
+      "catalog_status": "not_cataloged",
+      "notes": "User explicitly authorized retrying failed C. At most three additional C-only requests, serial, stop at the first structurally complete response; only transport/quota failures permit another attempt. Exact original C packet/settings, no repair or hidden gateway retries, no A/B rerun or judge. Original failure remains intact. This is operational recovery, not three quality samples or selection of the best output. Completed on first retry in 22.929 seconds: 5 exact target-chapter marks, no structure errors; 15482 input/989 output tokens. Attempts 2/3 unused. Original failed C is retained. Combined 40-item review is ready; no semantic judgment or product change.",
+      "metadata": {
+        "original_run_id": "xidaduo_context_scope_digest_20260913",
+        "attempt_limit": 3,
+        "attempts": [
+          {
+            "attempt": 1,
+            "status": "review_pending",
+            "application_request_count": 1,
+            "counts": {
+              "total": 5,
+              "valid": 5,
+              "invalid": 0,
+              "highlights": 2,
+              "notes": 3,
+              "uniquely_located": 5,
+              "ambiguous": 0,
+              "unlocated": 0,
+              "outside_target": 0
+            },
+            "target_counts": {
+              "total": 5,
+              "valid": 5,
+              "invalid": 0,
+              "highlights": 2,
+              "notes": 3,
+              "uniquely_located": 5,
+              "ambiguous": 0,
+              "unlocated": 0,
+              "outside_target": 0
+            },
+            "elapsed_seconds": 22.929,
+            "usage": {
+              "input_tokens": 15482,
+              "output_tokens": 989,
+              "total_tokens": 16471,
+              "input_token_details": {
+                "cache_read": 0
+              },
+              "output_token_details": {
+                "reasoning": 65
+              }
+            },
+            "response_metadata": {
+              "finish_reason": "tool_calls",
+              "model_name": "gpt-5.6-luna",
+              "model_provider": "openai",
+              "token_usage": {
+                "completion_tokens": 989,
+                "prompt_tokens": 15482,
+                "total_tokens": 16471,
+                "completion_tokens_details": {
+                  "accepted_prediction_tokens": null,
+                  "audio_tokens": null,
+                  "reasoning_tokens": 65,
+                  "rejected_prediction_tokens": null
+                },
+                "prompt_tokens_details": {
+                  "audio_tokens": null,
+                  "cached_tokens": 0,
+                  "cached_creation_tokens": 0
+                }
+              },
+              "system_fingerprint": null,
+              "id": "resp_02a1fa27e03d1005016aa63447686c87d08366483f3c12e24e"
+            }
+          }
+        ],
+        "selected_attempt": 1,
+        "application_request_count": 1,
+        "unused_attempts": [
+          2,
+          3
+        ],
+        "human_review_status": "pending"
+      }
+    },
+    {
       "run_id": "xidaduo_context_scope_digest_20260913",
       "date": "2026-09-13",
       "surface": "context_scope_digest",
@@ -3640,7 +3750,7 @@
         "reading-companion-backend/state/experiments/xidaduo_context_scope_digest_20260913/review.md",
         "reading-companion-backend/state/experiments/xidaduo_context_scope_digest_20260913/execution-summary.md"
       ],
-      "notes": "Authorized A/B/C diagnostic, one request per condition, serial A→B→C, fail-stop. A replays the prior whole-book request; B/C share chapter SourceUnit and differ only in optional surrounding source. Manual review only; no judge or product change. One selected failure chapter and one sample per condition do not establish a general causal effect. CPA internal attempts and actual billed cost remain unobservable. Terminal: A/B completed normally; C returned HTTP 408 after 902.396 seconds, classified llm_timeout, with no normal response and unavailable usage. Verified client timeout was 1800 seconds; exact proxy/upstream timeout origin is unknown. All three application/gateway physical counts are one; no retry. Partial 35-item anonymous review is ready. Defer product decisions and any extra generation pending user review.",
+      "notes": "Authorized A/B/C diagnostic, one request per condition, serial A→B→C, fail-stop. A replays the prior whole-book request; B/C share chapter SourceUnit and differ only in optional surrounding source. Manual review only; no judge or product change. One selected failure chapter and one sample per condition do not establish a general causal effect. CPA internal attempts and actual billed cost remain unobservable. Terminal: A/B completed normally; C returned HTTP 408 after 902.396 seconds, classified llm_timeout, with no normal response and unavailable usage. Verified client timeout was 1800 seconds; exact proxy/upstream timeout origin is unknown. All three application/gateway physical counts are one; no retry. Partial 35-item anonymous review is ready. Defer product decisions and any extra generation pending user review. Subsequent user-authorized C-only recovery succeeded on its first attempt in separate run xidaduo_context_scope_c_retry_20260913. This original batch and failed C remain unchanged; see recovery run for combined review.",
       "metadata": {
         "conditions": {
           "A": {
@@ -3778,7 +3888,8 @@
         "target_chapter": 8,
         "human_review_status": "pending_partial",
         "comparison_complete": false,
-        "C_http_status": 408
+        "C_http_status": 408,
+        "recovery_run_id": "xidaduo_context_scope_c_retry_20260913"
       }
     },
     {
