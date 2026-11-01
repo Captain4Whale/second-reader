@@ -244,7 +244,7 @@ def test_build_chapter_plan_uses_llm_zone_classifier_when_available(monkeypatch)
         return SimpleNamespace(payload={"zone": "back_support", "confidence": "medium", "reason": "Appendix-like supporting material."})
 
     monkeypatch.setattr(chapter_planner_module, "current_llm_scope", lambda: object())
-    monkeypatch.setattr(chapter_planner_module, "invoke_structured_output_tool", fake_structured_output)
+    monkeypatch.setattr(chapter_planner_module, "invoke_structured_output", fake_structured_output)
 
     chapter_planner = build_chapter_plan(
         document,  # type: ignore[arg-type]
@@ -265,7 +265,7 @@ def test_build_chapter_plan_falls_back_when_llm_classifier_errors(monkeypatch):
     """Chapter planner should keep generating a plan even if the chapter-zone classifier fails."""
 
     monkeypatch.setattr(chapter_planner_module, "current_llm_scope", lambda: object())
-    monkeypatch.setattr(chapter_planner_module, "invoke_structured_output_tool", lambda *_args, **_kwargs: (_ for _ in ()).throw(RuntimeError("boom")))
+    monkeypatch.setattr(chapter_planner_module, "invoke_structured_output", lambda *_args, **_kwargs: (_ for _ in ()).throw(RuntimeError("boom")))
 
     chapter_planner = build_chapter_plan(
         _sample_book_document(),  # type: ignore[arg-type]

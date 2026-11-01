@@ -39,3 +39,9 @@
 A 已完成；B 改名及死输出清理已完成。改前封网全量测试 1747 passed / 2 failed（原有 monkeypatch）；改名前后固定 transport 的阅读计划、核心 prompt、Product U/R/M、Pack、固定 judge 匹配完全一致。离线基线位于 ignored `reading-companion-backend/state/step1_prereqs/`。模型 transport 使用固定替身，socket 连接被封锁。B–F 待实施。
 
 B 命名：`survey.py` → `chapter_planner.py`；`build_book_survey` → `build_chapter_plan`；`_classify_chapter_zone` → `classify_chapter_zones`；writer → `write_chapter_plan_artifacts`；`SurveyMap` → `ChapterPlan`；`survey_map.json` / `survey_map` → `chapter_plan.json` / `chapter_plan`；`survey_status` → `chapter_planner_status`；prompt `survey_chapter_zone` → `chapter_zone`，submit tool 同步。成本 ledger 的 node 不变。
+
+## C. 既有测试修复
+
+两项失败均为测试 monkeypatch 入口过期：生产分类器已使用协议中立的 `invoke_structured_output`，测试仍替换不存在的 `invoke_structured_output_tool`，在模型调用前即报 AttributeError。只修测试；成功分类和错误时规则 fallback 的功能未改。
+
+C 封网全量后端：1749 passed（改前 1747 passed / 2 failed），日志 `state/step1_prereqs/c-tests.log`。
