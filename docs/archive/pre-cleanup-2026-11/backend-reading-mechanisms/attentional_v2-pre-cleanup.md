@@ -1,0 +1,858 @@
+# Attentional V2 Mechanism
+
+Purpose: define the current default attention-frontier reading mechanism that reads from a paragraph-offset source cursor, lets `Ingest` choose the next source span, reasons mainly over meaning units, and moves forward through deterministic post-Digest settlement rather than fixed section traversal.
+Use when: changing the live `attentional_v2` parse/read path, clarifying its ontology, or updating its mechanism-private runtime behavior.
+Not for: shared mechanism-platform rules or the internals of `iterator_v1`.
+Update when: the live ontology, progression logic, LLM schedule, memory model, unsupported modes, or artifact design for `attentional_v2` materially changes.
+
+- Status: `default`
+- Mechanism key: `attentional_v2`
+- Defaultness: `current default`
+- Artifact root: `_mechanisms/attentional_v2/`
+- Authority scope: live `attentional_v2` mechanism behavior, including ontology, control loop, sparse-LLM schedule, memory model, unsupported modes, and mechanism-private artifacts
+
+Use `docs/backend-reading-mechanism.md` for shared platform boundaries. Use `docs/backend-state-aggregation.md` for shared public-state surfaces.
+
+## Implementation Guidance Note
+- `DEC-103` pauses the old Second Reader Memory / Planning implementation track as the default source for future work.
+- `DEC-104` retires live Detour / source-backread from `attentional_v2`.
+- `DEC-105` hard-purges the retired Detour / source-backread / source-skill compatibility interfaces from current code, prompts, schemas, audits, and tests. Old artifacts and reports are historical only, not a supported live compatibility target.
+- `DEC-107` replaces the old `Navigate` LLM-call identity with `Ingest`.
+- `DEC-110` lands the Unit Memory ledger + hybrid retrieval bottom framework. The follow-through recall/tool slice now lets Ingest emit bounded prior-reading recalls, lets Reading Runner execute runtime-owned Unit Memory retrieval/selection, and renders selected Understanding lines into Digest `ReadingMemory`.
+- `DEC-128` promotes Marginalia as the canonical Digest visible-note concept. Live Digest now emits `marginalia[]`; legacy `annotations[]`, `surfaced_reactions`, `reaction_records`, and public `reaction_*` names remain compatibility/audit aliases unless a later cleanup retires them explicitly.
+- `DEC-158` establishes Reading Product Output v1 as the mechanism-neutral accepted-Unit product contract. New normal runs commit Product Units before advancing accepted progress; private memory, reaction, audit, and compatibility artifacts are derived.
+- `DEC-148` keeps `network_blocked` as the compatibility problem code for provider connection failures while adding private provider exception diagnostics and delayed same-cursor unit recovery for focused diagnostics; `DEC-150` extends the default partial-mode recovery budget for long-running diagnostics; `DEC-151` adds bounded structured-output contract-failure audit rows and broad same-cursor recovery for diagnostic unit failures unless the problem is known non-recoverable; `DEC-152` makes Digest failures propagate to that recovery loop instead of accepting empty reads.
+- Stable live behavior remains defined here and should be updated only when implementation lands.
+
+## Mechanism-Internal Reading Runner Boundary
+- `Reading Runner` is the name for this mechanism's internal read-progress executor.
+  - It owns the live loop around `Ingest`, `Digest`, Product Unit commit, post-commit private settlement, cursor advancement, and mechanism-private runtime persistence.
+  - It is not the shared runtime shell, the mechanism registry, or the thin mechanism adapter.
+- The shared runtime shell remains under `reading-companion-backend/src/reading_runtime/`.
+- The mechanism adapter remains under `reading-companion-backend/src/reading_mechanisms/attentional_v2.py`.
+- The current implementation still lives under the `attentional_v2` mechanism key and package for artifact/history continuity, but current behavior should be explained through `Reading Runner`, `Ingest`, `Digest`, memory, and settlement roles rather than through rollout-phase labels or `V2` as a node name.
+
+## Purpose And Status
+- `attentional_v2` is the current live/default mechanism for the product's deep-reading path.
+- It is wired end to end through the shared runtime, CLI `--mechanism attentional_v2`, and the existing async analysis job lifecycle.
+- Omitting `--mechanism` now means `attentional_v2`.
+- The current routed frontend still consumes compatibility-first chapter and marks outputs, but those product surfaces now run on `attentional_v2` by default.
+- It has a live implementation under the shared runtime boundary; rollout phase labels are implementation-history labels, not canonical runtime-flow vocabulary.
+  - Some landed helper families still carry rollout-era names, but current behavior should be described through `Ingest`, `Digest`, Reading Runner settlement, and Unit Memory rather than `Phase N` shorthand.
+  - The landed implementation includes:
+  - shared chapter / paragraph substrate, with parse-time sentence records retained as compatibility and historical evidence handles rather than the mainline reading lattice
+  - shared canonical parse/provisioning and shared manifest/run-state shells
+  - orientation-only survey artifacts
+  - deterministic intake/retrieval helpers
+  - LLM calls with prompt-version manifests
+      - Phase 5 knowledge and retained-evidence helper history, with the old Bridge path now paused from the live Runner
+      - Phase 6 slow-cycle helpers for source-referenced reaction compatibility, reflective promotion, reconsolidation, chapter consolidation, and mechanism-private compatibility projection
+  - Phase 7 checkpointing and resume helpers for compact local continuity, full checkpoints, shared checkpoint summaries, and bounded warm/cold/reconstitution resume reconstruction
+  - Phase 8 normalized eval export and structural integrity checks over persisted artifacts
+- Phase 8.5 live Reading Runner integration now adds:
+  - real `parse_book`
+  - real sequential `read_book`
+  - shared runtime-shell and manifest updates during live execution
+  - job/resume mechanism-key propagation
+  - compatibility chapter-result outputs without requiring `iterator_v1`-style `structure.json`
+- It is still intentionally unsupported for the retired legacy `book_analysis` mode in this slice.
+- Its goal is to preserve source-span fidelity while shifting the main reasoning unit from fixed sections or pre-cut sentences toward dynamic meaning units and an explicit attention frontier.
+- Phase A of the post-eval structural rework is now landed.
+  - This did not change the mechanism key or public compatibility surface.
+  - It did change the live control skeleton:
+    - heuristic trigger output no longer decides whether正文 receives formal reading
+    - at that point, the live loop routed through historical `Navigate.unitize -> read -> Reading Runner settlement`; the current loop routes through `Ingest -> Digest -> Reading Runner settlement`
+    - span authority is now tied to the exact chosen coverage unit rather than a reconstructed late tail
+- Phase B of the post-eval structural rework is now also landed.
+  - the concrete per-unit LLM call is now `Digest`, which owns the current-unit interpretation packet on the live path.
+  - Each formal unit Digest call receives a small `carry-forward context` built from persisted state.
+  - old supplemental context helpers from that branch were removed from the current code surface by `DEC-105`; current `Ingest` retrieval is the separate Unit Memory recall/tool path described below.
+  - private `read_audit` records capture context use.
+  - that slice temporarily retained a `raw_reaction` compatibility shell, which was later removed from the live path by `Phase F3`.
+- Phase E1 through E3 are now preserved as a landed intermediate compatibility-first baseline.
+  - that branch routed through `Navigate.unitize -> read -> express(if needed) -> Navigate.route`; this is historical naming, not the current live LLM-call identity
+  - persisted visible reactions on that baseline now keep surfaced fields such as `prior_link`, `outside_link`, and `search_intent`
+  - slow-cycle compatibility projection and normalized eval export now derive old family labels through one compat helper instead of treating legacy `type` as the internal truth
+  - this branch is preserved as landed evidence, but it is no longer the approved end-state shape for the mechanism
+- Phase F1 of the post-E3 rework is now landed.
+  - the live per-unit loop was cut back to historical `Navigate.unitize -> read -> Navigate.route` at that point.
+  - the later forward-settlement cutover retired that route layer from the current live path.
+  - the current `Digest` call now owns a reader-action-shaped model contract:
+    - `understanding`
+    - `response`
+    - `annotations`
+  - the dedicated live `Express` node is no longer on the live Reading Runner path
+  - current Digest prompt packaging uses XML blocks with compact carried reading state instead of receiving the broader intermediate packet wholesale
+  - this removed the last live dependence on the temporary `Express` step
+- Phase F2 remains historical implementation evidence only.
+  - it introduced a navigate-owned Detour cutover, source-skill loop, and `local_continuity` detour fields.
+  - as of `DEC-104`, that Detour / source-backread behavior is retired from the live runtime path.
+  - as of `DEC-105`, current code, prompts, schemas, audits, and tests no longer expose those retired interfaces.
+- Phase F3 is now landed as the reaction-persistence and compatibility reconvergence slice.
+  - persisted visible reactions now enter the system only through `Digest.surfaced_reactions[]`
+  - persisted visible reactions now share one surfaced-native reaction-record builder for the current forward path; old detour reads remain historical artifacts only
+  - chapter-result compatibility projection and normalized eval export now derive legacy family labels only through the compat helper
+  - dead live ownership paths for the old `Express` persistence flow and `raw_reaction` fallback are now removed
+- Phase F4B is now landed as the survey-led `body-first` chapter scheduling slice.
+  - `survey` now performs one narrow LLM-backed `chapter_zone` classification pass over lightweight chapter samples.
+  - the legal survey scheduling zones are:
+    - `main_body`
+    - `front_support`
+    - `back_support`
+    - `auxiliary`
+  - `survey` now persists one machine-readable `reading_plan`:
+    - `mode`
+    - `mainline_chapter_ids`
+    - `deferred_chapter_ids`
+  - `Reading Runner` now consumes that plan and reads:
+    - main body first
+    - deferred support chapters after the main body drains
+  - `parse` still preserves the original chapter order as source truth, and `Ingest` does not own book-level chapter ordering
+- Phase C.1 of the post-eval structural rework is now landed.
+  - Live prompt inputs now flow through a bounded internal `state_packet.v1` seam.
+  - The then-current historical unitization helper began receiving packetized `navigation_context`; current `Ingest` no longer receives that state packet in the first slice.
+  - the then-current concrete reading node received packetized context views that explicitly separated continuity, active-attention, reflective, active-focus, and source-ref digests; current Digest has the XML context described below.
+  - Persisted runtime files and public compatibility surfaces remain unchanged in this slice.
+- Phase C.2 and C.3 of the post-eval structural rework are now historical implementation steps, not current memory architecture.
+  - Those slices experimented with content-typed long-memory digests and stores.
+  - `DEC-109` supersedes that direction: current live state no longer exposes the retired concept/thread structured stores as schema, runtime artifacts, prompt packets, checkpoint keys, settlement targets, audit fields, or tests.
+  - The source-ref cutover already retired `anchor_bank` from current runtime truth.
+  - Old supplemental retrieval helpers from that branch are not a current code surface after `DEC-105` and should not be treated as the forthcoming `Ingest` retrieval mechanism.
+  - Newly written checkpoints use only the current primary state keys.
+- Phase C.4 of the post-eval structural rework is now also landed as the helper-contract cutover.
+  - Sentence-intake and chapter slow-cycle now execute directly on the new primary state layers; the old bridge helper is paused after the SourceRef cutover instead of being carried forward as an Anchor Bank relation writer.
+  - The live Reading Runner no longer projects into legacy state stores in order to execute helpers.
+  - Live runtime loading and resume now reject pre-`Phase C.3` runtime/checkpoint shapes instead of migrating them on the live path.
+- The post-F4 cleanup has also retired the old gate/pressure sidecar from current state.
+  - Current code may still write `active_attention.active_items`, but Active Attention / ActiveTension is now deprecated as the primary hot-state design.
+  - `Working State` was the historical name for this hot layer; later runs used `Active Attention`, then ActiveTension semantics. Those names now describe deprecated artifacts rather than the forward architecture.
+  - `recent_reading_memory` is now the current first-half near-term memory layer: Digest can append compact semantic memory from each unit so later read cycles do not behave as if earlier units vanished.
+  - The implementation currently covers Digest-time formation, append-only persistence, prompt projection, checkpoint / resume carriage, settlement audit visibility, and evaluation snapshot inclusion.
+  - Long-distance Unit Memory now has a live recall/retrieval/context framework: settlement writes one ledger entry per accepted source unit, derives retrieval documents from source / understanding / response / Marginalia surfaces, builds FTS5 lexical retrieval, attempts optional sqlite-vec vector indexing in `hybrid` mode, records retrieval traces between `Ingest` and `Digest`, and renders runtime-selected Understanding lines into Digest `ReadingMemory`.
+  - Unit Memory selection now has per-recall prompt-visible discipline: one recall can select at most `max_units_per_recall_to_digest_context` entries toward Digest `ReadingMemory` before traceable suppression with `per_recall_selection_limit_exceeded`; the broader total long-distance budget still covers multiple specific recalls.
+  - Unit Memory selection also applies a content-neutral quality gate after aggregation and renderability checks: candidates need strong enough `unit_understanding` evidence before they can occupy long-distance `ReadingMemory` slots. Auxiliary `unit_source` / `unit_response` / `unit_marginalia` matches may help search and aggregation, but they cannot by themselves select a prompt-facing memory unless the same unit also has enough Understanding backing. Legacy `unit_annotation` docs remain readable as compatibility aliases. Weak candidates are suppressed with `candidate_below_selection_quality_threshold` instead of filling remaining budget by default.
+  - Unit Memory retrieval searches all completed prior units before the current unit and excludes only hot current-chapter spans that are already prompt-visible in Digest `ReadingMemory`; it does not exclude a fixed recent-neighbor window or the whole active Recent Reading Memory store. Retrieval traces record configured-vs-applied horizon settings, prompt-visible hot span exclusion count, prior-unit count, and selected candidate distance so selection slots are not silently spent on hot-memory duplicates.
+  - Dense Unit Memory retrieval now filters sqlite-vec candidates through `dense_max_distance` before aggregation, so `dense_top_k` does not automatically admit semantically distant vector neighbors.
+  - Digest prompt-facing memory is now one top-level `ReadingMemory` text block assembled from hot current-chapter Understanding plus selected long-distance Unit Memory Understanding; raw prior source text, prior Response, and prior Marginalia remain retrieval/audit surfaces rather than prompt-visible memory.
+  - The next long-memory direction should be content-neutral unit-level memory, not content-typed concept/thread schemas; visible Marginalia belong in Marginalia / reaction-compatible records.
+  - Do not expand ActiveTension to cover these needs. Keep its existing fields (`tension_from`, `tension_focus`, `working_interpretation`, `source_refs`, `development_source_refs`, terminal reasons / coordinates, `status`, and legacy inputs) only as deprecated data until cleanup.
+  - `question_from`, `driving_question`, `working_answer`, `answer_source_refs`, `answer_boundary`, and `statement` are old artifact inputs only.
+  - `local_hypotheses` / `live_hypotheses` are historical names only. Hypothesis-like material should become unit-level memory depending on its future retrieval value, not another ActiveTension expansion.
+  - `gate_state`, `pressure_snapshot`, and the old working-pressure file are historical trigger/watch/zoom design artifacts, not current runtime or prompt inputs.
+  - `pressure_signals` were the intermediate one-step old concrete reading-node -> route signals; they are now historical after the forward-settlement cutover.
+- The forward-settlement cutover is now landed.
+  - `Navigate.route`, `route_action`, and `route_history` are no longer part of the current live mechanism.
+  - `Digest` no longer emits `pressure_signals`.
+  - After `Digest`, the Reading Runner validates and atomically commits one Reading Product Unit before accepted cursor movement. It then derives per-Unit memory, reaction, audit, and Unit Span Ledger state from that committed Product fact and advances the cursor to the Unit end; chapter compatibility is projected from Product snapshots at chapter/audit/finalization boundaries.
+  - The Product Store is the sole accepted-Unit commit truth. A missing Product commit cannot be inferred from a reaction record, audit row, checkpoint, or compatibility file.
+  - There is no replacement `forward` action.
+  - There is no current live non-mainline scheduling mechanism; old Detour / source-backread is removed from the current runtime surface after `DEC-105`.
+- The `Ingest` LLM-call boundary is now landed.
+  - The current Ingest contract is a pure LLM boundary call: **Choose the Boundary of the Next Unit That Should Be Read**.
+  - Reading Runner owns runtime next-unit preparation through `prepare_next_source_unit_for_read` and consumes one `PreparedSourceUnit`.
+  - The runtime operation prepares source preview/context, calls `Ingest`, resolves or retries the returned unit-boundary object, applies fallback boundary governance for unresolved non-empty boundaries when needed, and produces the accepted forward source unit for `Digest`.
+  - Ingest structured-output / LLM failures are not accepted as boundary choices. Empty or malformed final-output payloads surface as LLM problem codes such as `llm_contract` rather than being normalized into an empty boundary and settled through deterministic cursor fallback; focused diagnostics may retry the same unit from the same cursor while preserving bounded contract-failure audit evidence.
+  - The current final-output prompt and schema expose boundary fields for that forward source unit: `unit.end_paragraph_n`, `unit.end_at`, `preview_partition[]`, and optional boundary-rationale `reason`.
+  - When the selected unit needs prior memory, Ingest expresses bounded recall intentions only by calling the mechanism-private `retrieve_unit_memory` action tool; Reading Runner executes Unit Memory retrieval/selection after boundary acceptance and before calling `Digest`.
+- Phase D of the post-eval structural rework is now landed as preserved intermediate continuity / recall / resume evidence.
+  - that branch added a budget-bounded multi-step supplemental loop around the old concrete reading node.
+  - Runtime state and full checkpoints now persist a lightweight `continuation capsule` with explicit `rehydration entrypoints`.
+  - Warm resume now restores the latest usable continuation capsule together with new-format runtime/checkpoint state.
+  - old supplemental source-span helper interfaces from that branch are no longer current code, prompt, audit, or test surfaces after `DEC-105`.
+
+## Naming Note
+- `Phase 3`, `Phase 4`, `Phase 5`, and `Phase 6` in this document refer to historical implementation-stage groupings, not to a user-facing or mechanism-intrinsic sequence of named runtime phases.
+- The current LLM capability name in stable docs is `Ingest`.
+  - It means: make the LLM boundary judgment for the next unit that should be read, and optionally describe bounded prior-reading recalls for that accepted unit.
+  - It is one Ingest XML prompt, not the full runtime source-unit preparation operation and not a Python semantic dispatch between separate live prompt families.
+  - Forward source-unit selection is still the primary live behavior for this prompt; retrieval execution is runtime work owned by Reading Runner.
+  - Historical non-mainline jump reading is removed from the current code and prompt surface after `DEC-105`.
+  - The historical `navigate_unitize`, `Navigate`, and non-mainline prompt families are no longer current live prompt families.
+- `Navigate.route` is historical route-layer vocabulary after the forward-settlement cutover.
+- The current LLM-call module is `llm_calls.py`; its Python function is `ingest(...)`.
+- The current prompt manifest id, trace id, prompt definition id, and Python LLM-call name for Ingest selection are `ingest`.
+- The live runtime should be explained as a reading loop:
+  - `Reading Runner` maintains a paragraph-offset `SourceCursor` over the current chapter
+  - `Reading Runner` prepares the next source-unit request with source preview and cursor state
+  - `Ingest`
+    - receives that already-prepared adaptive source preview in XML context
+    - returns boundary fields, including `unit.end_paragraph_n` plus `unit.end_at`, rather than sentence ids or raw numeric offsets
+    - may also call `retrieve_unit_memory` with up to three recall items for Unit Memory retrieval support
+  - `Reading Runner` boundary governance resolves `paragraph_end` directly to the visible paragraph-slice end, or resolves paragraph-local tail quotes with source-exact matching first, quote-normalized exact matching second, and trailing-closing-punctuation extension before retry/fallback; it retries once when a non-empty unit boundary is unresolved, falls back to a deterministic cursor boundary when needed, and produces the accepted `PreparedSourceUnit`
+  - Ingest contract failures, including missing or empty final `unit` fields, stop at the LLM-call contract boundary and are reported as explicit LLM problems instead of becoming fallback `PreparedSourceUnit` records; diagnostic runners may recover by retrying the same cursor, but never by accepting or advancing through the invalid result
+  - `Reading Runner` executes Unit Memory retrieval for the accepted unit when recalls are present, selects prompt-facing Understanding memory, and records `unit_memory_retrieval_trace.jsonl`
+  - mandatory `Digest` call with bounded `ReadingMemory`
+  - `Digest` directly surfaces zero-to-many reading-time reactions and emits bounded Recent Reading Memory
+  - `Reading Runner` invokes `Digest` on the selected source unit, commits its normalized U/R/M as one Reading Product Unit, derives private memory/reaction/audit/span state, and only then advances the accepted cursor
+  - `Digest` has no current path-redirection output contract; new read-audit rows do not emit retired path-redirection evidence
+  - chapter-end slow-cycle work such as `chapter_consolidation`, `reflective_promotion`, and `reconsolidation`
+- The old `trigger -> zoom_read -> meaning_unit_closure -> controller_decision -> reaction_emission` chain is now historical implementation vocabulary, not live runtime behavior.
+  - Those names may still appear in historical docs, old artifacts, or decision entries.
+  - They should not be read as active helper territory inside the current Reading Runner.
+
+## Core Primitives / Ontology
+- `paragraph substrate`
+  - the mainline source substrate for the current mechanism
+  - produced by the shared parse as `chapters[].paragraphs[]`
+  - `attentional_v2` treats it as the stable reading lattice for forward progress; parse-time sentence records are compatibility / historical evidence handles, not the mainline cursor system
+- `SourceCursor`
+  - the mechanism-internal mainline coordinate
+  - shape: `chapter_id`, `chapter_ref`, `paragraph_index`, `char_offset`
+  - offsets are character offsets inside one source paragraph
+- `SourceSpan`
+  - the accepted unit range digested by `Digest`
+  - shape: `start_cursor`, `end_cursor`
+  - ranges are end-exclusive: `[start, end)`
+- `coordinate boundary`
+  - paragraph-offset `SourceCursor` / `SourceSpan` is the authoritative coordinate system for current mainline reading progress
+  - inline paragraph-offset `SourceRef` is the authoritative source-evidence coordinate for current memory, reaction, and probe-facing state
+  - parse-time sentence ids may still appear in compatibility projections, local-buffer sentence fields, semantic probe locators, and reviewer orientation text
+  - seeing `sentence_id`, `target_sentence_id`, or `cN-sM` in an artifact does not mean the current mainline reader is sentence-driven
+  - new mechanism design and reviewer-facing reports should present paragraph-char / source-span coordinates as canonical and label sentence ids as compatibility or orientation metadata
+- `Unit Span Ledger`
+  - an append-only mechanism-private projection of Product-committed mainline Units
+  - used for reading-history continuity and resume validation, not merely for debugging, but no longer an independent accepted-Unit truth source
+- `meaning unit`
+  - the primary reasoning unit
+  - usually one paragraph or a short paragraph span
+  - sometimes one sentence when a line is unusually dense, pivotal, or ambiguous
+- `survey map`
+  - the initial structural map of the book or chapter
+  - built from chapter order, headings, openings, closings, and obvious pivots
+- `attention candidate`
+  - a span that may deserve focused reading next
+  - current live selection is forward-only from the mainline preview
+- `attention frontier`
+  - the ranked set of current attention candidates
+  - this is the mechanism's main control surface for choosing what deserves thought next
+- `open tension`
+  - an unresolved interpretive pressure such as contradiction, ambiguity, instability, motif recurrence, or unexplained significance
+- `working hypothesis`
+  - a provisional claim about what the chapter or book is doing
+## Reading Progression Logic
+- The mechanism starts with a survey pass.
+  - It uses the shared `book document` to build a rough structural map of chapters, headings, likely pivots, and a narrow `chapter_zone` classification for scheduling.
+  - That survey pass remains an orientation layer rather than hidden full-book reading:
+    - it classifies structural role only
+    - it does not produce user-visible Marginalia
+    - it does not write durable reading memory
+  - It now also emits a machine-readable `reading_plan` whose default mode is `body_first`.
+- It then reads through scheduled chapters by paragraph-offset source cursor.
+  - The chapter queue now defaults to:
+    - `main_body` chapters first
+    - then `front_support` and `back_support`
+  - Within whichever chapter is currently active, the cursor is `paragraph_index + char_offset`.
+  - Coverage-unit selection is the reasoning-entry discipline; the cursor only guarantees ordered coverage and exact resume position.
+  - The mainline loop no longer pre-ingests every sentence as the progress primitive.
+  - Legacy sentence records may still support compatibility projection, old eval manifests, old public surfaces, or reviewer orientation, but they do not define mainline progress.
+- The current live forward-settlement baseline now runs:
+  - build an adaptive paragraph-offset preview from the current `SourceCursor`
+  - call `Ingest`
+    - the single Ingest call chooses a forward source unit by returning `unit.end_paragraph_n` plus `unit.end_at`
+    - the current interface exposes no non-mainline routing or source-skill action
+  - deterministically resolve the returned unit boundary against the preview and map it to an end-exclusive `end_cursor`
+    - if the boundary cannot be resolved, retry Ingest once with the failed resolution as source evidence
+    - if a non-empty boundary still cannot be resolved, fall back conservatively to the current paragraph end or preview boundary and record the resolution status
+    - if Ingest fails its structured-output contract or submits missing/empty `unit` fields, surface the LLM problem such as `llm_contract` instead of manufacturing an empty boundary for fallback settlement
+  - retrieve/select prior Understanding when Ingest supplied recalls, then build a bounded prompt-facing `ReadingMemory` block from hot current-chapter Understanding plus selected long-distance Unit Memory Understanding
+  - formally digest the accepted source unit through `Digest`
+    - Digest LLM/provider failures and content-bearing empty `understanding` or `response` are contract failures, not successful reads
+    - these failures propagate as `ReaderLLMError` to same-cursor recovery; Product commit, derived settlement, and cursor advance happen only after a valid Digest result and successful Product validation
+  - let `Digest` produce three model-facing reading outputs for that exact unit: `understanding`, `response`, and `marginalia`
+  - runtime maps those outputs into internal `memory_uptake_ops`, `reading_impression`, and canonical `marginalia`, with deprecated `surfaced_reactions` aliases for existing settlement/audit compatibility
+  - `Reading Runner` resolves Marginalia against the exact source, omits only invalid/ambiguous items into private findings, and atomically commits the valid Unit product before accepted progress moves
+  - after that Product commit, the Runner rebuilds/updates Unit Memory, reaction records, audit, and Unit Span Ledger, then advances the cursor to `end_cursor`; chapter/audit/finalization boundaries separately project the affected chapter views from the Product snapshot
+  - a content-bearing Unit with empty `understanding` or `response`, or any Product commit conflict, fails closed at the same cursor
+- Current capture/resume writes only the current forward continuity schema; old non-mainline checkpoint/artifact shapes are not a compatibility target after `DEC-105`.
+- `Ingest` memory retrieval is now a Unit Memory recall/tool path and is separate from the retired source-skill loop.
+- `Ingest` is now the sole current selector of the next coverage unit.
+  - Boundary choice is prompt-led and semantic.
+  - Runtime guardrails only keep the unit from running away.
+  - In the mainline case, it receives `BookInfo`, `CurrentView`, an empty `RetrievalSurface`, and `OutputContract`; it does not receive carried reading-state digests.
+  - It may call `retrieve_unit_memory` with up to three recall targets; runtime retrieval/selection happens after boundary acceptance and prompt-facing memory is rendered into Digest `ReadingMemory`.
+  - Its selection posture is bounded-lookahead planning rather than greedy local chunking:
+    - it may use the rest of the visible preview to decide whether following text continues the current semantic move or begins the next one
+    - it must still commit only the current Digest unit, leaving later preview text as future source text rather than interpreting it for Digest
+    - a good boundary often becomes clear by asking where the second unit begins, not only whether the first local paragraph already looks complete
+  - The current mainline preview window is paragraph-offset and adaptive:
+    - always starts at the exact current cursor
+    - includes at least the current paragraph remainder
+    - appends following paragraphs to form a larger reading lookahead window for boundary selection
+    - treats estimated model-facing token budget, not paragraph count or source-character count, as the normal preview capacity rule
+    - does not cross chapter boundaries
+    - preview defaults live in `reader_policy.unitize`: `preview_soft_min_tokens = 1600`, `preview_target_max_tokens = 3000`, `preview_hard_max_tokens = 4200`, `emergency_max_preview_paragraphs = 200`
+    - Digest-unit grouping guidance also lives in `reader_policy.unitize`: `unit_soft_min_tokens = 300`, `unit_target_max_tokens = 900`, `unit_hard_max_tokens = 1600`
+    - old `preview_*_chars` and `max_lookahead_paragraphs` policy snapshots are deprecated and ignored as normal stopping rules; the emergency paragraph guard exists only for pathological short-line material
+    - preview metadata carries `estimated_token_count` and `preview_token_estimator` alongside existing char/paragraph counts and `preview_end_reason`
+  - Ingest does not return raw offsets. It returns the visible `Paragraph n` where the committed Digest unit ends and either `paragraph_end` or a paragraph-local exact tail quote.
+  - Parse-time `text_role` is still available during this step, but only as an inherited block-level weak cue rather than a sentence-level truth packet.
+  - Heading handling is now deliberately conservative:
+    - `chapter_heading` and `section_heading` may stand alone when their visible wording already forms a complete local move
+    - but they are not automatic standalone units just because their `text_role` says `heading`
+    - if a heading reads more like a label, lead-in, or structural setup, `Ingest` should prefer merging it with the immediately following body paragraph when the preview allows
+  - Boundary residue handling is also conservative:
+    - purely non-lexical ornament / divider / separator lines at a proposed unit boundary are structure cues, not content
+    - `Ingest` should trim those boundary sentences out of the chosen unit when they are not part of a substantive sentence, formula, quotation, poem, list item, or authorial expression
+    - this is a unit-boundary choice only; it does not rewrite, delete, or replace source text in the parse/substrate layer
+  - The deterministic fallback now follows the same posture:
+    - ordinary body paragraphs still fall back to the current paragraph end
+    - but a heading paragraph now falls back to `heading + first body paragraph` when the preview clearly contains that body paragraph
+  - `Preface`, `Foreword`, `Introduction`, `Appendix`, `Afterword`, and similar support chapters still remain legitimate reading material.
+    - but they are no longer treated as unconditional mainline reading territory
+    - `survey` now classifies them into `front_support` or `back_support` when appropriate
+    - `Reading Runner` then reads them after the `main_body` queue drains
+    - explicit chapter-targeted runs may still select them directly
+- `Digest` is the current formal unit interpretation LLM call, with a reader-first prompt role rather than a node-first role.
+  - On the current live baseline, its model-facing output fields are `understanding`, `response`, and `marginalia`.
+  - The runtime converts the single `understanding` string into zero or one internal `memory_uptake_ops[]` before settlement.
+  - The runtime maps `response` to internal `DigestResult.reading_impression` and `marginalia[]` to canonical `DigestResult.marginalia`, while still exposing `DigestResult.surfaced_reactions` as a deprecated alias.
+  - New `read_audit` rows persist explicit `understanding` both top-level and inside `digest_result`; Unit Memory prefers that explicit field while retaining legacy memory-op fallback for older artifacts.
+  - It should not behave like a control super-node or a checklist-filling state updater.
+  - Its intended order is:
+    - read the current unit as a reader
+    - form source-faithful `understanding`
+    - express a brief natural `response`
+    - write Marginalia for any exact source spans that genuinely ask to be marked in the page margin
+    - avoid route selection; the Runner will advance deterministically after settlement
+  - Legacy compatibility fields such as `raw_reaction`, `move_hint`, `prior_material_use`, `express_signal`, and `context_request` are now historical territory, not the live F3 contract.
+  - It now also carries an explicit proportion rule for thin structural units:
+    - a bare heading, label, or similarly slight structural cue may legitimately produce no Marginalia
+    - the mechanism should not inflate that kind of unit into review voice or manufactured gravitas unless the wording itself genuinely carries local force
+- `response` is the model-facing brief natural read-after impression; internally it is still stored as `reading_impression` for the current audit/runtime surface.
+  - It exists as the immediate reader-like response after one unit, not as a new durable memory layer.
+  - The LLM-facing Digest output emits one `understanding` object, not Recent Reading Memory or legacy store-targeted memory operations.
+  - Runtime converts the single `understanding` object into internal `memory_uptake_ops[]` for deterministic settlement into the Recent Reading Memory store.
+  - Model-emitted legacy `memory_uptake_ops[]` are ignored by the current Digest call.
+  - Visible Marginalia and stored Understanding come from the same reading experience, but Marginalia is persisted as a visible-note record with reaction-compatible aliases and is not automatically copied into memory.
+  - Author-given structures such as stage models, classifications, core definitions, named distinctions, or chapter roadmaps may enter Recent Reading Memory even when they do not produce a visible reaction.
+- `Express` is now best understood as historical intermediate compatibility-first territory rather than a live mechanism node.
+  - It helped isolate visible wording while the system proved out surfaced-reaction persistence.
+  - But the approved next shape no longer treats a dedicated `Express` step as the mechanism's stable center of gravity, and F1 has already removed it from the live Reading Runner path.
+- The Reading Runner now owns post-Digest settlement for that same chosen unit.
+  - It first atomically commits the normalized Reading Product Unit, then deterministically applies `memory_uptake_ops`, derives Marginalia reaction aliases and audit/span records, closes the current unit, and advances the paragraph-offset cursor to the unit's `end_cursor`.
+  - It does not ask an LLM whether ordinary forward reading should continue.
+  - It does not record a replacement `forward` action; forward progression is the default program behavior.
+- Span visibility and authority are now aligned.
+  - The span being read is the span being judged.
+  - The span being judged is the only span that can be closed or extended.
+  - The old Reading Runner behavior where a narrow late tail could implicitly close a larger hidden open span is no longer the live path.
+- The unitization decision carries the exact boundary evidence used on the live path:
+  - source span start/end cursors
+  - preview start/end cursors
+  - `unit.end_paragraph_n` and `unit.end_at`
+  - derived audit `end_anchor_text` where compatibility artifacts still need a source-text tail string
+  - resolver status and method
+  - unit boundary type
+  - unitization reason
+- `Navigate.route`, `route_action`, `route_history`, `commit`, `continue`, `bridge_back`, and `reframe` are historical route-layer vocabulary.
+  - New runs do not persist `RouteAction`, `route_action`, `route_history`, `MoveType`, `move_type`, or `move_history`.
+  - Historical artifacts and archived reports may still contain the old names, but current code, prompts, runtime, public payloads, and eval exports do not emit them.
+- Reading is pushed forward by Reading Runner settlement under coverage constraints.
+  - Coverage prevents wandering forever.
+  - Interpretive pressure prevents mechanical traversal.
+- The mechanism should not see future text beyond the current reading frontier.
+  - Survey context may include coarse chapter structure, but live interpretive calls must not use future paragraphs as if they were already read.
+
+## LLM Call Schedule
+- The main LLM is now called for every formal coverage unit, not for every sentence.
+- The current live LLM-call bundle is:
+  - `Ingest`
+  - `Digest`
+  - `reflective_promotion`
+  - `reconsolidation`
+  - `chapter_consolidation`
+- The runtime schedule is intentionally narrower than the old executed-call inventory:
+  - paragraph-offset preview construction and cursor advancement run without LLM
+  - `Ingest` decides the next coverage unit before formal reading begins
+  - forward source-unit choice normally uses one Ingest LLM call and cannot request skills
+  - `Digest` is now the only steady-state per-unit interpretation call
+  - Marginalia now come from that same Digest call rather than from a follow-on wording node
+  - ordinary forward progression is deterministic Reading Runner settlement rather than a route action
+- Under the approved current shape:
+  - `Ingest` owns forward next-unit selection and the LLM-side prior-reading recall intention through bounded `retrieve_unit_memory` action-tool args
+  - `Digest` owns model-facing `understanding`, `response`, and `marginalia`
+  - `Reading Runner` owns anchor governance, Unit Memory retrieval/selection, Digest `ReadingMemory` rendering, post-Digest settlement, and cursor advance
+  - `slow cycle` owns chapter-end consolidation and promotion
+
+## Frozen Next-Shape Contract
+- This section freezes the approved next target shape after the post-E3 quality review.
+- The LLM-facing `Digest` contract minimally exposes:
+  - `understanding`
+    - one holistic source-faithful string
+    - it may integrate several source-established meanings, but it must not split one unit into multiple understanding fragments
+    - runtime converts this string into zero or one internal `memory_uptake_ops[]` entry targeting `recent_reading_memory`
+  - `response`
+    - the temporary natural-language response left by the current unit
+    - this is intentionally compact; it is the reader's immediate feeling, thought, pressure, question, or aftertaste after understanding the unit
+  - `marginalia`
+    - zero to many visible page-margin reading marks surfaced directly by `Digest`
+    - Marginalia include two independent reader actions: Highlights and Notes
+    - each Marginalia item should carry:
+      - `kind: "highlight" | "note"`
+      - `source_quote`
+      - empty/omitted `content` plus private `selection_reason` for `kind == "highlight"`
+      - non-empty visible `content` for `kind == "note"`
+    - Highlights preserve exact source text worth carrying forward by itself; they must be durable out-of-context excerpts, not merely locally important facts, plot evidence, or scene details
+    - Notes attach valuable reader-facing thought to a precise source anchor; they should add useful knowledge, context, or a non-obvious connection that a thoughtful ordinary reader may not know, notice, or infer on their own; ordinary close-reading / technique comments are demoted unless they provide non-obvious gain
+    - Highlight and Note quotes may overlap; runtime does not dedupe by quote when the two actions serve different purposes
+    - the normal model-facing Marginalia item does not carry `prior_link`, `outside_link`, or `search_intent`; older artifacts may still be read through compatibility adapters
+    - `Digest` still understands the whole `unit`, but each `source_quote` should be chosen as the smallest complete contiguous local meaning span that can honestly carry that Marginalia note
+      - if one sentence already stands on its own, it may anchor a Marginalia item by itself
+      - if a sentence would lose meaning when isolated, `Digest` should use the smallest multi-sentence span that keeps the meaning intact
+      - a larger paragraph-sized anchor is allowed only when that larger span is genuinely the smallest complete footing, not as a lazy default
+    - one `unit` may legitimately yield more than one Marginalia item when it contains multiple independently complete local triggers
+      - a sharper later sentence should not automatically swallow an earlier framing line, premise line, or hinge line that also stands on its own
+      - `Digest` should do a final swallowed-line check before it settles on one Marginalia item: if an earlier line independently frames the later move, it should not be left stranded inside `response` merely because a later line sounds more dramatic
+      - this applies especially to premise-plus-sharpening pairs: when the earlier line states the premise and the later line cashes it out, `Digest` should not default to surfacing only the later line if both independently stand
+      - this is bounded plurality, not pressure to spray Marginalia everywhere; the default density still stays low unless the unit honestly contains multiple independently valuable spans
+    - Note `content` must stay reader-facing and natural-language.
+      - it may refer back to earlier material, but it must not expose system handles such as sentence ids, `ref_ids`, anchor ids, thread ids, concept ids, or reaction ids
+      - legacy `prior_link.ref_ids` remain internal structured linkage for compatibility runtimes and audits, not wording that should leak into visible text
+      - if visible wording briefly quotes earlier material, it should do so sparingly with a short fragment rather than pasting a whole earlier sentence back into the Marginalia note
+- Internal `DigestResult` exposes canonical `marginalia` plus deprecated `surfaced_reactions`, along with `reading_impression` and normalized `memory_uptake_ops`, so existing settlement, reaction persistence, and read-audit surfaces remain stable during migration.
+- Model-emitted legacy `reading_impression`, `surfaced_reactions`, `annotations`, `recent_reading_memory`, and `memory_uptake_ops` are not part of the current Digest LLM contract, except that runtime may accept legacy `annotations[]` as a compatibility fallback when a malformed/old payload is normalized.
+- Marginalia are now the primary visible-note truth in the approved contract.
+  - for `attentional_v2`, native visible-note truth is the Marginalia semantic payload itself, not a reaction-family label.
+  - old family labels remain compatibility projections only.
+  - the current persisted surfaced fields remain useful evidence and may be reused through compatibility aliases during migration.
+- `silent` is no longer a primary reaction type.
+  - it is simply the absence of a surfaced reaction in that unit.
+
+## Visible-Reaction Compatibility Vocabulary
+- The old `highlight / association / curious / discern / retrospect / silent` family remains available only as a compatibility adapter vocabulary.
+- It is no longer the approved prompt-first ontology for the next-shape mechanism.
+- The compatibility posture is:
+  - `silent`
+    - no longer a primary reaction type
+    - compatibility adapter maps "no surfaced reaction in this unit" into old `silent` territory only when an older surface still expects it
+  - `retrospect`
+    - no longer a primary reaction type
+    - compatibility adapter uses it only when a surfaced `prior_link` must be rendered into older family-based outputs
+    - the surfaced wording itself should still speak naturally to the reader rather than mentioning runtime coordinates
+  - `association`
+    - compatibility adapter uses it when a surfaced `outside_link` must be rendered into older family-based outputs
+  - `curious`
+    - compatibility adapter uses it when surfaced `search_intent` must be rendered into older family-based outputs
+  - `highlight / discern`
+    - compatibility adapter may still use these for bounded local source-referenced reactions that remain fully inside the current unit
+    - they are no longer prompt-time native generation families for `attentional_v2`
+    - `highlight` now means a compat-projected `kind == "highlight"` Marginalia item whose surfaced payload stays inside the current unit and does not explicitly surface legacy `prior_link`, `outside_link`, or `search_intent`
+    - native Reading Product `kind == "note"` maps to the existing public `association` family only when `product_compatibility.py` builds the old UI chapter envelope
+    - `discern` remains a compat-side split for a more interpretively explicit local source-referenced reaction, not a native Digest-time type field
+- This mapping is transitional.
+  - Legacy family vocabulary may still appear in slow-cycle/eval compatibility, but the Product Note-to-`association` conversion itself belongs only to the old UI compatibility layer.
+  - Chapter/UI compatibility is derived from committed Reading Product Units rather than treating reaction records as persisted product truth.
+  - Reading Product and Annotation Pack retain native `note`; neither exposes `association` as the annotation kind.
+  - It must not become the governing shape of the current `Digest` prompt.
+- Default current call types are:
+  - `Ingest`
+    - choose the next exact coverage unit that should be read now
+    - chooses from the bounded forward preview without skill use
+  - `Digest`
+    - interpret the chosen unit with compact carry-forward context
+  - `chapter consolidation`
+    - update broader hypotheses and unresolved tensions at a local milestone
+
+## Context Packaging
+- Each LLM call should receive a role-specific projection rather than the full persisted state bundle.
+- Digest prompt assembly now has one live path:
+  - `llm_calls.digest(...)` always uses the XML prompt assembly path
+  - live prompt manifests are written to `prompt_manifests/digest.json`
+  - no live legacy assembly toggle or old concrete-node prompt manifest remains
+- Current prompt assembly separates the product-level `ReaderRole` from per-call `Instruction`.
+  - The reader role fragment is `reader.role`, owned by `attentional_v2/prompts/reader_role.py`.
+  - Ingest reuses the same reader role and supplies its own `Instruction` fragment.
+  - Ingest XML context uses top-level `ReaderRole`, `Instruction`, `BookInfo`, `CurrentView`, an empty self-closing `RetrievalSurface`, and `OutputContract`.
+  - The current Ingest final-output contract carries `unit.end_paragraph_n`, `unit.end_at`, `preview_partition[]`, and optional boundary-rationale `reason`; transport is selected by the shared LLM gateway from the active profile.
+  - Ingest prompt version `attentional_v2.ingest.v19` / promptset `attentional_v2-phase6-v76` uses the reviewed window-partition selector plus a preview-partition audit map: it asks Ingest to view the visible lookahead as fine-grained coherent partitions, title each provisional partition, then commit the current Digest unit by growing a continuous left prefix `preview_partition[0..k]`. The boundary still uses visible paragraph `n` plus `paragraph_end` or a paragraph-local exact tail quote, and must match one complete partition boundary. The v18 same-local-function rule remains active, while v19 adds unit-size guardrails so short aphorism/list partitions can be grouped when they share a larger semantic movement. Only the committed Digest unit receives the optional top-level boundary `reason`; later preview partitions remain compact audit entries. Recall intent is expressed only through `retrieve_unit_memory`, not by final-output `memory_recalls[]`.
+  - Runtime derives `unit_partition_range`, `unit_partition_titles`, `unit_estimated_token_count`, `unit_size_policy`, and `unit_size_status` as mechanism-private audit metadata. Later `preview_partition[]` entries beyond the committed prefix are mechanism-private planning/audit metadata only. Runtime also derives `preview_partition_audit[]` with paragraph-char `source_span` / `source_span_id` where boundaries resolve, and later unresolved or non-advancing partitions mark the audit as partial without changing the accepted Digest unit.
+  - The same-language / basis recall contract is enforced in code as well as in prompt text: `retrieve_unit_memory` action-tool preflight receives the current source text and rejects clear cross-language model-side recalls or non-`selected_source_unit` basis values before retrieval execution.
+  - Invalid optional `retrieve_unit_memory` recall args are a non-fatal retrieval degradation: runtime records an `invalid_tool_noop` / `invalid_skipped` audit result, skips Unit Memory retrieval for that cycle, and continues with the accepted Ingest boundary plus hot/recent memory.
+  - Empty optional `retrieve_unit_memory` calls with no recall targets are treated as no-op / not-requested events, not as fatal recall-contract failures.
+  - If Ingest calls `retrieve_unit_memory` with recall targets, runtime derives audit/private `memory_recalls[]` from the tool args. Final-output `memory_recalls[]` is not a live contract field and any legacy echo is ignored rather than treated as a second recall authority.
+  - Digest XML renders `ReaderRole` and `Instruction` as separate top-level blocks; all fixed non-role Digest directions live under `Instruction`, while runtime context/data blocks remain separate.
+  - Digest `Instruction` uses direct child blocks `CurrentStep`, `ContextUseGuide`, `Understanding`, `Response`, `Marginalia`, `SourceGrounding`, and `ResponseDiscipline`.
+  - Digest prompt version `attentional_v2.digest.v24` / promptset `attentional_v2-phase6-v84` uses content-level Understanding rules, text-type compression guidance, grammatical-subject guidance, source-established-content calibration, subject-continuity rules, approved examples, and Marginalia-specific page-margin wording to keep stored Understanding memory self-contained while keeping visible marks source-anchored and reader-facing.
+  - Digest v24 keeps Marginalia as two independent reader actions rather than a single highlight-only / note-bearing choice. Highlights preserve exact source text worth carrying forward by itself and now require intrinsic quote value: the quoted words themselves must already carry the portable cognitive gain, and private `selection_reason` may identify but not invent that value by abstracting a local scene/fact/testimony after the fact. Notes attach useful knowledge, context, or non-obvious connections that a thoughtful ordinary reader may not know, notice, or infer on their own. Dense high-value units should preserve every source span that genuinely passes the relevant action gates, Highlight and Note quotes may overlap, adjacent Highlight sentences should be merged when they form one complete reusable idea, and `source_quote` selection treats "smallest complete" as the shortest contiguous span that preserves the full action-specific idea rather than the shortest possible sentence.
+  - The current Digest output contract carries `understanding`, `response`, and `marginalia[]`; each new live Marginalia item requires `kind: "highlight" | "note"` and `source_quote`. Highlights require private `selection_reason` and empty/omitted `content`; Notes require non-empty visible `content` and may omit `selection_reason`. New live outputs do not emit top-level `marginalia_audit[]`; legacy artifacts without `kind`, legacy `annotations[]`, and old `marginalia_audit[]` may still be read as compatibility input. Transport is selected by the shared LLM gateway from the active profile.
+- Current `attentional_v2` structured outputs use protocol-neutral project schemas with provider-specific transport at the shared gateway boundary.
+  - Anthropic-compatible and legacy callers keep the forced final-output tool path.
+  - OpenAI-compatible profiles configured with `response_format: {"type": "json_object"}` use JSON-object final output plus local validation/repair for Ingest and Digest.
+  - Final-output tools are mechanism-private result channels when that transport is selected, not business action tools.
+  - The live final-output tools are `submit_ingest_result`, `submit_digest_result`, `submit_bridge_resolution_result`, `submit_reflective_promotion_result`, `submit_reconsolidation_result`, `submit_chapter_consolidation_result`, and `submit_survey_chapter_zone_result`.
+  - `retrieve_unit_memory` remains the only current action tool; it is available to Ingest as `tool_choice="auto"` before final structured output and is never forced merely to transport final JSON.
+  - Missing submit-tool calls, wrong submit-tool names, non-object tool args, malformed JSON objects, or business-validator failures are repaired once and then reported as public `llm_contract` problems if still invalid. When a trace context exists, the shared gateway also writes bounded final-response diagnostics to `contract_failures.jsonl` and carries a compact `structured_output_contract` pointer in the raised `ReaderLLMError`.
+  - Public/runtime connection failures still use the coarse compatibility problem code `network_blocked`, but private standard/debug traces now retain provider exception details: `provider_error_type`, `provider_error_repr`, `provider_error_cause_type`, `provider_error_cause_repr`, and `connection_error_kind` (`api_connection_error`, `remote_protocol_error`, `connect_error`, `read_error`, `ssl_error`, or `unknown_connection_error`).
+  - Focused Digest Marginalia diagnostics use layered same-cursor recovery: gateway provider-call retries run first; then the runner retries recoverable unit failures from the same cursor with a long-task recovery budget. Under `failure_policy=partial`, the default unit recovery policy is `6` extra unit-level retries, delay schedule `0,120,300,600,900,1200` seconds, bounded timeout escalation, and a `3600` second per-unit recovery budget. Recovery currently treats all unit failures as retryable except known non-recoverable auth/configuration failures such as `llm_auth`; exhausted recoverable failures stop only the affected segment as `partial` without advancing over unread source text.
+  - `retry_attempts` in gateway/profile configuration means total provider-call attempts, including the first call.
+  - Raw provider reasoning/thinking content is not a standard runtime artifact; standard traces keep only normal content, usage, and compact metadata.
+  - Current CPA / Luna Medium function-tool protocol details and historical OpenCode / DeepSeek and MiniMax transport notes are recorded in `docs/implementation/new-reading-mechanism/llm-structured-output-protocol-note.md`.
+- Subject continuity is implemented in Digest prompt `attentional_v2.digest.v24` and documented in `docs/implementation/new-reading-mechanism/ingest-recall-and-digest-memory-context-design.md`.
+  - Prior Understanding in `ReadingMemory` carries narrator / speaker / actor / concept continuity forward; Digest uses that memory plus current source text to establish new subjects, continue known subjects, or explicitly preserve meaningful ambiguity.
+  - Boundary: do not add raw prior-source backfill, Ingest reference-resolution fields, or a durable referent store for this slice.
+  - Rule: Digest Understanding should be self-contained and memory-readable; it may use pronouns when their referent is explicit inside the same Understanding, but should not store floating pronouns.
+- The stable carry taxonomy is now:
+  - `always carry`
+  - `selective carry`
+  - `not carry`
+- Persisted state is therefore not the same thing as prompt-visible state.
+  - Current `Ingest` carries only the source frontier needed to choose the next unit and name any prior-reading recalls that the selected unit naturally asks for.
+  - Ingest does not receive recent memory, active attention, retired structured-memory digests, or old navigation context.
+  - Unit Memory retrieval is separate from the retired source-skill or backread path: Ingest expresses zero to three recalls, the `retrieve_unit_memory` tool loop triggers runtime retrieval, Reading Runner selects prompt-facing prior Understanding lines, and Digest receives them through top-level `ReadingMemory`.
+- `Digest` prompt-visible carry is now intentionally narrow:
+  - top-level `ReadingMemory`
+    - hot current-chapter Understanding lines from `recent_reading_memory`
+    - runtime-selected long-distance Unit Memory Understanding lines
+    - long-distance selection excludes the hot lines that are already prompt-visible, while leaving non-hot active Recent Reading Memory available for retrieval when it is genuinely relevant
+    - simple position-prefixed text lines under the fixed `5K hot / 10K retrieved / 15K total` estimated-token budget
+  - `CurrentFocus`
+    - the accepted source unit as the immediate object of careful reading
+    - reading path / position / intent metadata needed to orient that unit
+  - `BookInfo` and `OutputContract`
+- `Digest` does not receive retired structured-memory digests, `active_attention`, `reflective_digest`, raw prior source text, prior Response, prior Marginalia, full refs, reaction / Marginalia history, read-audit history, or old navigation context on the current live prompt path.
+- Deprecated stores such as `active_attention` may still exist in runtime, settlement, slow-cycle, or audit artifacts while cleanup remains pending; their existence is not a prompt-carry rule for Digest.
+- `slow cycle` may carry a broader chapter slice because it is the dedicated chapter-end maintenance pass.
+- Default carried context must stay small and stable.
+  - long-distance memory now travels as compact runtime-selected Understanding lines rather than full stores
+  - source-grounded earlier text should not be injected into Digest unless a later design explicitly approves a bounded reader-safe locator
+- Mainline unitization preview is intentionally source-local and deterministic.
+  - It previews from the exact paragraph-offset cursor, not from a precomputed sentence index.
+  - It always includes the current paragraph remainder and may append following paragraphs to provide a bounded reading lookahead window for a natural unit-boundary decision.
+  - The semantic choice of where to stop inside that preview is prompt-led through the returned `unit.end_paragraph_n` / `unit.end_at` boundary.
+  - Runtime imposes deterministic preview guardrails through `reader_policy.unitize.preview_soft_min_tokens`, `preview_target_max_tokens`, `preview_hard_max_tokens`, and `emergency_max_preview_paragraphs`; normal preview stopping is token-bounded and paragraph-aligned rather than capped by a small lookahead paragraph count or the interim 7000-character budget. The separate `unit_soft_min_tokens`, `unit_target_max_tokens`, and `unit_hard_max_tokens` values guide and audit Digest-unit grouping, but they are not runtime hard failures.
+- Search posture is separate from prior-knowledge posture.
+  - Version-one search states are:
+    - `no_search`
+    - `defer_search`
+    - `search_now`
+  - The normal posture is `no_search`.
+  - `defer_search` is used for genuine curiosity when text-grounded reading can continue honestly.
+  - `search_now` is a rare escape hatch for interpretation-blocking references or allusions rather than a normal reading behavior.
+
+## State Layers And Ownership
+- The mechanism now distinguishes current state territories plus inline source evidence:
+  - `Reading Product Store` (shared product boundary)
+    - owns the sole committed record of every accepted Unit's exact source range, `understanding`, `response`, and valid Marginalia
+    - commits atomically before accepted cursor advancement; all mechanism-private state below is derived or operational
+  - `local_continuity`
+    - reading-flow position, paragraph-offset `mainline_cursor`, recent unit boundaries, and resume semantics
+  - `active_attention` (deprecated store, pending removal)
+    - `active_attention` / ActiveTension was an attempted hot attention layer, but it is no longer the target architecture for near-term reading memory
+    - keep the runtime store only until `recent_reading_memory` formation is validated, consolidation is designed, and a cleanup removal is approved
+    - new post-cleanup product runs should write the new state shape only; do not preserve `active_attention` for old-state compatibility unless a future task explicitly approves old-run migration / resume support
+    - do not add new capabilities, metrics, or report contracts that make `active_attention` the primary short-term memory layer again
+    - native runtime truth remains `active_attention.active_items[]` while the current code path still writes it
+    - existing item labels and fields (`attention_tags[]`, `tension_from`, `tension_focus`, `working_interpretation`, `source_refs`, `development_source_refs`, terminal reasons / coordinates, and `status`) are deprecated shape, not a forward design target
+    - empty, `active`, `cooling`, and `open` may remain meaningful to legacy runtime or slow-cycle maintenance while this deprecated store exists; `answered`, `resolved`, and `closed` are lineage/history and are not carried into the Digest prompt
+    - near-term continuity is now owned by `recent_reading_memory`; do not use new ActiveTension design work to cover per-unit semantic memory
+    - long-lived tensions, arcs, watchpoints, and unresolved thematic/narrative pulls should be handled through current/future Unit Memory retrieval design, not kept alive in a separate ActiveTension layer
+  - `recent_reading_memory`
+    - owns near-term semantic memory of just-read units
+    - Digest returns one LLM-facing `understanding` string; runtime converts it into at most one `memory_uptake_ops[]` entry with `target_store="recent_reading_memory"` and `op="append"`
+    - the LLM provides only the understanding text; runtime stores it as `memory_text`, and Recent Memory append operations do not use an operation-level `reason` or content-type `kind`
+    - the runner owns `entry_id`, `source_unit_span_id`, `created_at_unit_index`, `status`, and `archived_by_consolidation_id`
+    - entries are grounded by the accepted read unit span as a whole; the first implementation does not require fine-grained `source_refs` or quote matching
+    - this store remains append-only: Digest does not update, merge, resolve, close, link, or route recent entries into typed long-memory destinations
+    - `status="active"` entries feed hot current-chapter `ReadingMemory` lines; future archival/consolidation may mark processed entries as `archived`, and archived entries are retained for audit but not prompt-carried
+  - `reflective_frames`
+    - chapter-level reflective summaries remain a slow-cycle artifact
+  - `unit_memory`
+    - current content-neutral long-distance memory substrate after `DEC-110`
+    - one Unit Memory Entry is derived per Product-committed source Unit after Digest settlement
+    - each entry preserves the accepted source unit plus the model-facing `understanding`, `response`, and `marginalia`
+    - it is rebuildable retrieval state, not an alternative accepted-Unit/product truth source
+    - retrieval documents are derived from source, understanding, response, and Marginalia surfaces
+    - FTS5 text retrieval is always available when SQLite supports FTS5; sqlite-vec + local Ollama embedding is optional and degrades to text-only behavior
+    - hybrid readiness can be checked without starting services through `cd reading-companion-backend && .venv/bin/python scripts/check_unit_memory_hybrid_readiness.py`; current Phase 2 live validation requires sqlite-vec load, Ollama reachability, the configured Qwen embedding model, a valid embedding dimension, dense candidates, and RRF contribution
+    - all retrieval documents may participate in FTS retrieval, but lexical ranking prioritizes `unit_understanding` over source / response / Marginalia auxiliary surfaces; only `unit_understanding` participates in dense vector retrieval in the current policy, and dense candidates are filtered by distance before aggregation
+    - selected long-distance units must pass renderability and quality gates before Digest context rendering; runtime can select fewer entries than the configured cap when candidates are weak
+    - prompt-visible Digest memory is Understanding-only and rendered through one `ReadingMemory` block
+  - `artifacts / history`
+    - `reaction_records` / Marginalia compatibility records
+    - `read_audit`
+    - `knowledge_activations` as helper territory rather than primary carried memory
+- Source evidence now travels as inline `source_refs[]` on the state objects that need it.
+  - A `SourceRef` is an inline citation shape, not a registry entry.
+  - Its id is deterministically derived from the paragraph-offset span, for example `src:c1:p3@12-p3@48`.
+  - New runtime truth does not write or require an `anchor_bank.json` artifact.
+  - Chapter-end carry-forward preserves existing `active_attention` source refs by deterministic `item_id` merge after cooling, so a `chapter_consolidation` omission cannot erase evidence coordinates while the deprecated store still exists.
+    - This preservation is temporary deprecated-store behavior only; it should not be extended into a new ActiveTension design line.
+  - Carry-forward does not fuzzy-match by statement and does not invent source refs for newly introduced items; new statement-only carry-forward items are rejected instead of becoming current Active Attention.
+  - Deprecated-store ActiveTension merges preserve `tension_from`, update `working_interpretation` only when the payload explicitly provides one, preserve terminal reasons / coordinates, and dedupe both `source_refs` and `development_source_refs`.
+  - Digest-output `source_quote` values are resolved into paragraph-offset `SourceRef` objects before settlement; model-emitted coordinate objects are not trusted.
+    - The LLM is responsible for citing exact source text snippets, not for producing trusted coordinates.
+    - If an active item is grounded in title / chapter framing / prior memory rather than a current-source phrase, the deprecated-store runtime records unit lifecycle coordinates without manufacturing precise `source_refs`.
+    - The runtime resolves coordinates by raw exact match, normalized exact match, then ordered-fragment match for stitched-but-source-real snippets. If none match, the run keeps a `fallback_unit_span` caveat rather than pretending to have precise evidence.
+- Ownership is now:
+  - `Ingest`
+    - owns the LLM boundary judgment for forward next-unit selection
+    - owns the LLM-side Unit Memory recall intention by calling `retrieve_unit_memory` with zero to three recall targets when prior memory is needed
+    - must call the `retrieve_unit_memory` tool when it submits one or more valid recall targets
+  - `Reading Runner`
+    - owns `local_continuity`, cursor advancement, anchor resolution, retry/fallback, Unit Memory retrieval execution, trace writing, prompt-facing `ReadingMemory` selection/budgeting, and settlement
+  - `Digest`
+    - owns model-facing `understanding`, `response`, and `marginalia`
+    - must write `understanding` as concise, source-faithful content-level understanding from the current source text: what is said or shown, who appears, what happens, what someone thinks or claims, what is defined or distinguished, or what relationship, condition, consequence, scene, image, tone, method, or evidence boundary becomes clear
+    - should normally let the grammatical subject be a person, event, concept, claim, relationship, scene, method, or condition from the source text rather than the source container itself
+    - should not emit or rely on an operation-level `reason` for `understanding`; runtime stores each entry's `content` as the retained `memory_text`
+    - `understanding` should be written as natural reading understanding, not as a default `<label>: <explanation>` heading pattern; colons are appropriate only when the source itself names a term, stage, framework, or quoted source term
+    - `understanding` should not copy the source passage, predict future importance, guess typed long-memory targets, create nested memory points, recap prior context for its own sake, or turn a concrete source unit into unsupported essay-like analysis or forced abstract naming
+    - author stance, evidence boundaries, writing method, intended reader, and explicit scope limits count as meaningful source-established content rather than empty structure
+    - does not own ActiveTension lifecycle intent on the current prompt path; any remaining `active_attention` operations are deprecated runtime/slow-cycle compatibility territory pending removal
+  - `slow cycle`
+    - owns chapter-end cooling, promotion, reconsolidation, and `reflective_frames`
+  - `Reading Runner`
+    - owns deterministic orchestration, apply, and persistence only
+    - it does not own semantic reading decisions
+- `Anchor Bank` is historical after the source-ref cutover.
+  - Older reports and older runtime trees may still contain anchor wording.
+  - New `attentional_v2` runs cite source through paragraph-offset `SourceRef` fields embedded directly in current runtime objects such as `active_attention`, `reflective_frames`, `knowledge_activations`, and `reaction_records`.
+- Non-mainline jump-reading interfaces are removed from the current live surface after `DEC-105`.
+  - Old Detour/source-backread vocabulary remains only in historical docs, old reports, and old output trees.
+  - New live runs do not use non-mainline jump reading, path-redirection read output, or source-backread skills.
+  - Prior-context support now uses the Unit Memory recall/tool path rather than live path steering.
+- Sentence intake no longer runs a parallel heuristic trigger layer.
+  - Protection against missing a crucial single sentence now comes from bounded preview construction plus semantic unitization, not from a separate `zoom_now` gate.
+- Historical bridge-resolution helpers may still appear in old reports or archives.
+  - they are not part of the current live route layer
+  - the current live Runner no longer invokes the old Anchor Bank relation-writing Bridge path
+  - current prior-memory reference honesty is handled by surfaced reaction linkage, inline source refs, Unit Memory / ReadingMemory evidence, and evaluation/audit evidence rather than by a post-read route action
+
+## Removed Non-Mainline Path Interfaces
+- `DEC-104` retired Detour search and source-backread from the live path.
+- `DEC-105` hard-purged the retired compatibility interfaces from current code, prompts, schemas, audits, and tests.
+- New live runs do not:
+  - prompt `Digest` to emit path-redirection requests
+  - write non-mainline path fields into new continuity state
+  - call source skills from `Ingest`
+  - return non-mainline selection modes from `Ingest`
+  - drain chapter-tail non-mainline reads before chapter slow-cycle close
+- Old output trees from before `DEC-105` are historical artifacts, not current resume/checkpoint compatibility targets.
+- Prior context that previously motivated live backread should be handled through the Unit Memory retrieval path, not by reviving live non-mainline path selection.
+
+## Runtime Artifacts
+- Shared substrate dependency
+  - `public/book_document.json`
+  - The shared substrate includes canonical chapter order and paragraph records. Those paragraphs are the current `attentional_v2` mainline substrate.
+  - Parse-time sentence records with stable ids and locators may still exist in the same document, but for this mechanism they are compatibility and historical-evidence handles, not the mainline reading lattice.
+  - `text_role` on paragraph records is a weak structure cue. `auxiliary` paragraphs are filtered before mainline preview construction, so footnote-like or apparatus-like content that survives only as `auxiliary` never reaches `Ingest` on the live mainline path.
+  - `Source Normalization` is now live for newly created parsed-book documents as deterministic-only v1.2. It attaches richer `source_normalization` metadata to existing paragraph records rather than introducing persistent `reading_blocks[]`; raw paragraph coordinates remain the highlight/source-reference authority. The parser preserves ancestor container and inline-anchor metadata, skips duplicate parent containers such as `blockquote > p` aggregates, excludes only strong source apparatus evidence such as explicit footnote/endnote/reference containers or note-definition anchors, and keeps inline note references / malformed orphan-note candidates in正文 unless later reviewed. No default parse-time LLM classifier can change `text_role`; uncertain cases preserve mainline visibility. The design and follow-ups live in `docs/implementation/new-reading-mechanism/source-normalization-design.md`.
+- Shared Reading Product artifacts
+  - `_runtime/reading-products/<reading_uuid>/ledger.sqlite3`
+    - sole accepted-Unit commit truth for the active reading revision
+  - `_runtime/reading-products/<reading_uuid>/reading-product.partial.json`
+    - atomically rebuilt inspection/recovery projection; never a Pack input or independent truth
+  - `public/reading-products/current.json` and `public/reading-products/revisions/<product_sha256>/`
+    - immutable complete-product publication selected only after whole-book finalization validates the approved plan and exact source
+- Current scaffolded mechanism-private derived artifacts
+  - `_mechanisms/attentional_v2/derived/survey_map.json`
+    - now includes:
+      - chapter-level `chapter_zone`
+      - `zone_confidence`
+      - `zone_reason`
+      - one machine-readable `reading_plan`
+- `_mechanisms/attentional_v2/derived/revisit_index.json`
+  - historical/transition artifact from earlier revisit vocabulary
+  - this historical file is retained for compatibility territory until a later cleanup slice
+- `_mechanisms/attentional_v2/derived/chapter_result_compatibility/*.json`
+  - live compatibility chapter results used by current chapter/detail and marks surfaces when `attentional_v2` is the active mechanism
+  - projected from committed Product Units; deleting reaction/audit/memory artifacts does not remove the inputs needed to rebuild this envelope
+  - Product Note maps to `association` only here for the old UI shape
+- Current scaffolded mechanism-private runtime artifacts
+  - `_mechanisms/attentional_v2/runtime/local_buffer.json`
+    - rolling intake buffer only
+  - `_mechanisms/attentional_v2/runtime/local_continuity.json`
+    - compact continuity for forward mainline reading
+    - persists the paragraph-offset `mainline_cursor` for current runs
+    - also carries the current `reading_queue_stage` (`mainline` or `deferred_support`) for resume/observability
+    - current schema contains no non-mainline path fields
+  - `_mechanisms/attentional_v2/runtime/continuation_capsule.json`
+  - `_mechanisms/attentional_v2/runtime/unitization_audit.jsonl`
+    - canonical runtime audit for Ingest's raw selection and resolver outcome
+  - `_mechanisms/attentional_v2/runtime/memory_retrieval_config.json`
+    - persisted Unit Memory retrieval configuration for the current run
+    - default mode is `hybrid`; explicit backend launches may choose `text_only`
+    - resume restores the stored mode unless the operator explicitly passes a different mode, in which case the change is traced
+  - `_mechanisms/attentional_v2/runtime/unit_memory.sqlite`
+    - mechanism-private Unit Memory ledger and rebuildable retrieval indexes
+    - `unit_memory_entries` is the durable retrieval-memory source for this mechanism, but Reading Product remains the accepted-Unit product truth
+    - `retrieval_docs`, FTS5 rows, vector rows, and query-embedding cache are derived retrieval/index state
+    - sqlite-vec and local Ollama embedding are optional; when unavailable, retrieval degrades to text-only behavior
+    - use `scripts/check_unit_memory_hybrid_readiness.py` to distinguish sqlite-vec readiness from Ollama/model availability before claiming live `hybrid` validation
+  - `_mechanisms/attentional_v2/runtime/unit_memory_retrieval_trace.jsonl`
+    - trace record of retrieval attempts and ReadingMemory selection between `Ingest` and `Digest`
+    - records recall count, per-recall candidate counts, prompt-visible hot span exclusion counts, effective retrieval mode, channel availability/degradation, selected/suppressed units, latency, and prompt-facing memory token accounting
+    - tool results exposed to Ingest stay status/count-only; retrieved Understanding text and selected ids remain runtime-owned
+  - `_mechanisms/attentional_v2/runtime/unit_span_ledger.jsonl`
+    - mechanism-private projection of Product-committed mainline source units
+    - records `unit_id`, sequence index, start/end source cursors, preview cursors, char/paragraph counts, end anchor text, and resolution status
+    - used for reading-history continuity and resume validation rather than treated as a debug-only stream
+  - `_mechanisms/attentional_v2/runtime/read_audit.jsonl`
+    - canonical runtime audit for each whole read cycle
+    - records carry-forward refs, `ingest_trace`, canonical `marginalia`, deprecated `surfaced_reactions` aliases, `reading_impression`, and the normalized `memory_uptake_ops` converted from Digest output
+    - also records the current source span when the read is mainline paragraph-offset reading
+    - also records memory-op counts by target store so durable-memory settlement can be diagnosed without replaying raw model output
+  - `_mechanisms/attentional_v2/runtime/settlement_audit.jsonl`
+    - canonical runtime audit for each completed `Digest -> Reading Runner settlement` transaction
+    - records compact before/after counts and changed ids for active attention, recent memory, and reactions
+    - also records the current source span when the settlement belongs to mainline paragraph-offset reading
+    - does not persist full state snapshots, raw prompt/response payloads, or per-op accepted/skipped judgments
+  - `_mechanisms/attentional_v2/runtime/active_attention.json`
+  - `_mechanisms/attentional_v2/runtime/reflective_frames.json`
+  - `_mechanisms/attentional_v2/runtime/knowledge_activations.json`
+  - `_mechanisms/attentional_v2/runtime/reaction_records.json`
+    - compatibility filename for derived visible Marginalia records; it is not Product or Annotation Pack truth
+    - new rows store native Marginalia semantics first:
+      - `thought`
+      - `source_quote`
+      - `primary_source_ref`
+      - `related_source_refs`
+      - optional legacy compatibility metadata such as `prior_link`, `outside_link`, and `search_intent` when present in older/internal callers
+    - legacy `type`, `compat_family`, and `search_query` remain as compatibility sidecars
+  - `_mechanisms/attentional_v2/runtime/reconsolidation_records.json`
+  - `_mechanisms/attentional_v2/runtime/reader_policy.json`
+  - `_mechanisms/attentional_v2/runtime/resume_metadata.json`
+  - `_mechanisms/attentional_v2/runtime/checkpoints/*`
+    - full checkpoints carry `reading_id`, `last_product_unit_id`, and `last_product_unit_sequence` alongside private continuity so resume can reconcile to Product Store truth
+- Legacy load/projection artifacts may still appear in older output trees:
+  - `_mechanisms/attentional_v2/runtime/working_pressure.json`
+  - `_mechanisms/attentional_v2/runtime/anchor_memory.json`
+  - `_mechanisms/attentional_v2/runtime/anchor_bank.json`
+  - `_mechanisms/attentional_v2/runtime/reflective_summaries.json`
+  - these are no longer accepted by the live `attentional_v2` runtime/resume path after the legacy gate/pressure and SourceRef cleanup
+  - they remain historical evidence from older runs, not a supported live-state format
+- Current scaffolded shared runtime resume artifacts
+  - `_runtime/runtime_shell.json`
+    - shared cursor, last-checkpoint pointer, observability mode, `reading_id`, `last_product_unit_id`, and `last_product_unit_sequence`
+    - Product markers locate the committed frontier but do not override the Product Store
+    - for current `attentional_v2` mainline progress, the shared cursor uses `position_kind = "span"` with paragraph-offset start/end cursor data
+  - `_runtime/checkpoint_summaries/*.json`
+    - thin resume-kind, observability mode, and visible-reaction checkpoint summaries
+- Later mechanism-private runtime artifacts may still add further controller-facing state if implementation proves they are needed.
+- Current scaffolded mechanism-private internal artifacts
+  - `_mechanisms/attentional_v2/internal/diagnostics/events.jsonl`
+    - debug-only diagnostics stream once Phase 8 debug mode is enabled
+  - `_mechanisms/attentional_v2/internal/prompt_manifests/*.json`
+- Current scaffolded prompt manifests now include:
+  - `ingest`
+    - current forward-only source boundary selector
+    - outputs the accepted boundary fields for one unit from the bounded preview without skill use
+    - may also call the mechanism-private `retrieve_unit_memory` tool with bounded Unit Memory recalls
+  - `digest`
+  - `reflective_promotion`
+  - `reconsolidation`
+  - `chapter_consolidation`
+- Planned mechanism-private internal artifacts
+  - `_mechanisms/attentional_v2/internal/analysis/*`
+- Planned optional exports
+  - `_mechanisms/attentional_v2/exports/normalized_eval_bundle.json` for explicit eval-mode runs
+
+## Public-State Projection
+- `attentional_v2` should adapt its private state into the same shared public-state surfaces as other mechanisms.
+- Shared public surfaces should continue to expose stable transport fields such as:
+  - `current_reading_activity`
+  - `current_excerpt`
+  - `search_query` when applicable
+- Live parse/read integration now means those surfaces can be populated by `attentional_v2` through the same upload/start/resume flows as other mechanisms, without requiring `_mechanisms/iterator_v1/derived/structure.json`.
+- The current compatibility projector shapes committed Reading Product Units into the existing chapter-result envelope. It can rebuild chapter views without reaction records, audit, or memory, and keeps all existing API/frontend field names stable during this migration.
+- Native Product Note becomes old-family `association` only inside that UI compatibility projection; the Product and Annotation Pack continue to expose Note.
+- Phase 7 now adds bounded resume helpers that keep non-warm rereads chapter-local, preserve durable state, and explicitly mark reconstructed hot state instead of presenting it as warm continuity.
+- Phase D now adds persisted continuation capsules so warm resume can restore a bounded continuity seed instead of reconstructing context only from raw state files.
+- Phase 8 now lands the first additive public-surface projection layer:
+  - `current_reading_activity.reading_locus`
+  - `current_reading_activity.reconstructed_hot_state`
+  - `current_reading_activity.last_resume_kind`
+  - `current_reading_activity.active_reaction_id`
+  - reaction/mark `primary_source_ref`
+  - `related_source_refs`
+  - reconsolidation lineage via `supersedes_reaction_id`
+- Phase 8 now also resolves the first observability split:
+  - shared `standard` mode keeps:
+    - thin runtime shell
+    - thin checkpoint summaries
+    - shared checkpoint/resume activity events
+    - mechanism-private full checkpoints for resume correctness
+  - mechanism-private `debug` mode adds:
+    - deep diagnostics events under `_mechanisms/attentional_v2/internal/diagnostics/events.jsonl`
+    - controller/candidate/prompt forensics that should not become the default runtime trace
+- Current runtime observability boundary:
+  - `attentional_v2/observability.py` owns mechanism-private runtime audit writers and standard/debug activity hooks
+  - Reading Runner announces lifecycle moments such as unitization, read completion, checkpoint/resume, and optional probe capture; it should not own audit schema details
+  - the settlement audit is produced as deterministic before/after runtime-state diff, not as an LLM-authored summary
+  - Memory Quality probe capture is an optional observability consumer for evaluation runs, not a product-path Reading Runner responsibility
+  - normal product runs do not build Memory Quality probe snapshots unless `memory_quality_probe_export` is explicitly enabled with semantic `probe_targets`
+- Phase 8 now also lands the first evaluation-export slice:
+  - `_mechanisms/attentional_v2/exports/normalized_eval_bundle.json` can now be built from persisted runtime, reaction, compatibility, and reflective artifacts for explicit eval-mode runs
+  - structural integrity checks now validate:
+    - shared cursor sentence resolution
+    - source-ref locator fidelity
+    - reconsolidation append-and-link integrity
+    - Q7 resume-policy bounds
+    - compatibility projection fidelity
+- The mechanism's internal locus will not necessarily be a fixed `section`.
+  - Adapters must project the current focal span and reading phase into shared public fields without claiming that the private ontology is section-based.
+- The Phase 8 rule is:
+  - keep `section_ref` / `segment_ref` only as compatibility sidecars
+  - treat locus- and source-ref-native fields as the long-term public direction
+- When possible, the projected live attention text should reflect:
+  - the current focal span
+  - or the current interpretive question if that better explains what the mechanism is doing now
+
+## Annotation Pack Handoff
+- Default export reads only the complete Reading Product selected by `public/reading-products/current.json`; it does not read this mechanism's run state, reaction records, audit, or memory.
+- Product Marginalia maps directly through the neutral handoff:
+  - `highlight | note` remains Highlight/Note
+  - exact `source_range` and `source_quote` become the Pack anchor inputs
+  - Note `body_text` becomes the body; Highlight carries no body
+  - Product Unit `settled_at` becomes annotation creation time
+- `SecondReaderProducerAdapter` remains only as an explicitly selected `attentional_v2-phase9` legacy adapter. There is no automatic fallback when complete Product is missing or invalid; phase8 remains rejected.
+- Book/EPUB identity, manifest href, public TextPosition, W3C fields, IDs, ordering, validation, and packaging remain outside `attentional_v2` ownership.
+- Deterministic Tiny Reader/offline lifecycle evidence proves this consumer path without a provider call, and the later bounded Tiny Reader CPA Luna run proves the same ordinary whole-book path with real model calls. Neither is a production-scale or historical-book claim. Public schema hosting is deferred under `DEC-159`; the reserved IRI is not live.
+
+## Evaluation Questions
+- These are the enduring mechanism-specific questions `attentional_v2` should eventually be able to answer well.
+- They are not the same thing as benchmark case lists or current temporary thresholds.
+- They state what this mechanism must prove as a mechanism.
+- `sentence_order_intake_honesty`
+  - Does the mechanism preserve source-order intake and avoid future-text leakage while still remaining selective at the reasoning layer?
+- `coverage_unit_interpretation_quality`
+  - Does the mechanism form strong coverage-unit interpretations instead of producing sentence-by-sentence sparks or vague paragraph blur?
+- `forward_settlement_integrity`
+  - After each read, does the Reading Runner settle the exact chosen unit, apply memory updates, persist visible Marginalia, and advance the cursor without inventing a second route taxonomy?
+- `prior_memory_grounding_honesty`
+  - When the mechanism refers back through Marginalia or Digest `ReadingMemory`, are those references source-grounded and interpretively justified rather than merely suggestive or overclaimed?
+- `marginalia_selectivity_and_anchor_fidelity`
+  - When the mechanism emits visible Marginalia, are they selective, worthwhile, and honestly anchored to the text?
+- `reconsolidation_integrity`
+  - When later reading changes earlier understanding, does the mechanism preserve historical integrity through append-and-link reconsolidation instead of silent overwrite?
+- `resume_reconstitution_honesty`
+  - After interruption, does the mechanism rebuild the same reading mind honestly enough without hiding oversized reread windows or fake warm continuity?
+- `projection_faithfulness`
+  - Do current public/API compatibility projections preserve the original attentional thought direction instead of forcing it back into old section ontology?
+
+## Known Limits / Drift Notes
+- `attentional_v2` is now the default deep-reading mechanism, but the product is still in a compatibility-first cutover posture rather than a fully V2-native presentation posture.
+- The retired legacy `book_analysis` mode is intentionally unsupported for `attentional_v2` in this slice.
+- The current compatibility projector is still intentionally temporary and section-shaped, even though Phase 8 now exposes additive source-ref/locus fields on shared public surfaces.
+- Shared public-surface adapter work is now partially landed, but the frontend and stable API are still section-first in chapter/detail and marks views.
+- `iterator_v1` remains supported as an explicit fallback and as a legacy-resume continuity path for older runs that predate runtime-shell mechanism metadata.
+- Future migration still needed:
+  - redesign chapter/detail around chapter text plus source-referenced reactions instead of semantic sections as the primary container
+  - retire section-first requirements from the stable API/frontend contract once the frontend has switched to locus/source-ref-native rendering
+- Future observability work still needed:
+  - add deeper per-op state-operation instrumentation if durable-memory debugging needs accepted/skipped/invalid classification for individual `memory_uptake_ops`
+  - deepen standard/debug node-level traces now that the live parse/read path exists
+  - keep debug mode optional rather than making deep diagnostics the baseline requirement for normal evaluation runs
+- Current evaluation note:
+  - post-Ingest/Digest Long Span diagnostics should evaluate `Ingest -> Unit Memory retrieval -> Digest ReadingMemory -> settlement` mechanism conformance, Memory Quality with Unit Memory / ReadingMemory evidence, and prior-memory continuity / safety.
+  - older excerpt-surface, accumulation, and callback-bridge runs remain historical evidence for the pre-Unit-Memory mechanism route; they are not the current active evaluation surface.
+- Historical narrow-repair drift note:
+  - the bounded local-anchor / callback-bridge repair loop had landed two focused code rounds in the older repair track and both targeted test slices were green
+  - however, the second repair-round smoke exposed a new late-tail failure:
+    - `xidaduo_private_zh__chapter_15` drifted into a `91`-sentence open meaning-unit span by `c15-s248` even after pressure had cooled
+  - the same smoke also showed that explicit callback-cue routing alone still did not produce a concrete earlier-target bridge in `nawaer_baodian_private_zh__chapter_22`
+  - until that blocker is resolved, do not treat the current working-tree repair state as ready for another full formal excerpt rerun
+- The survey stage must stay coarse enough that it does not become hidden full-book cheating.
+  - even with the new LLM-based `chapter_zone` classifier, the survey pass is still limited to bounded structural samples and scheduling output
+  - it must not turn into chapter summarization, theme extraction, or durable understanding
+- Retrieval pressure and rare-search gating will likely need careful budget control during future Ingest / Digest work.

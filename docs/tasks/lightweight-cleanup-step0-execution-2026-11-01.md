@@ -77,3 +77,28 @@ FAILED tests/test_f4a_quality_audit.py::test_case_target_assignments_stay_balanc
 - 相同模型 transport 替身下，固定 judge / 核心 Ingest、Digest prompt / Product U/R/M / Pack 与 Batch 0 完全相同；真实本地 ledger 不再出现 chapter_consolidation / reflective_promotion。socket 封锁，零外部模型请求。
 - 章节完成、checkpoint warm/cold/reconstitution、Product commit 后故障恢复、finalizer 和 Pack 生命周期测试通过。没有执行 D4，也没有新增真实跑书。
 - 证据：`state/cleanup_step0/batch3/accepted-tests.log`、`resume-tests.log`、`probe-final.json`、`probe-final.log`。静态 F821 检查通过。
+
+## Batch 5：归档、版本核查与最终验收
+
+- 118 个历史文档移入根/后端 `docs/archive/pre-cleanup-2026-11/`，逐项映射见根归档 `move-map.json`；另保留清理前 v2 文档完整快照。当前 approved Ingest/Digest/Unit Memory 设计、真人批注/切分资产、已有 review packet archives 留在原位。decision-log 原条目完整保留并追加 DEC-160；run ledger / evidence catalog 仅修移动后的定位引用。
+- 同步 AGENTS、README、current-state、任务 registry、机制/生命周期/恢复/聚合/评测/API 文档；API enum 和前端契约不变。旧书显示和启动 backfill 不改。`eval/compare_highlights.py` 未改。
+- [历史数字只读核查](lightweight-cleanup-step0-historical-evidence-2026-11-01.md)：`attentional_v2_user_level_selective_v1_active_rerun_20260419` 的 10 个 shard selection 均指向 April 16 的 203-case / 5-segment 包，aggregate 原值为 0.3498 / 0.1232。June 14 是 202 cases，June 29 当前指针是 158 unique cases。只修文档/静态 inventory 和相应漂移测试；未重算、回写原始数据集或历史 aggregate。
+- 已写[中文演进说明](../reading-mechanism-evolution-step0.md)，采用用户核准的 slow-cycle 消费者表述，保留 Phase 6 日期、原意、当前上下文接续机制、15 次 / 77,614 token 实测及历史证据/tag。
+- 遇到报告漏列的 `contract-check.sh → check-reading-mechanism-doc.py → iterator_reader/mechanism_spec.py` 依赖后，按停止条件暂停；用户确认纳入本批后，删除旧机制专属检查及调用项。其他契约检查保留。该脚本的“current default”标题原先实际指向 iterator 文档/常量。
+- 最终 `make test` 后端：**1747 passed / 2 failed**（54.74 秒）；仅剩 Batch 0 两项已有 survey monkeypatch 失败。inventory 漂移在本批纠正；旧能力专属测试随能力移除。`make test` 遇 pytest 失败会短路，因此前端和 agent-check 分别补跑：前端 typecheck/build 通过（既有 chunk size 提示），Product/Pack/schema/生成副本/API/OpenAPI/前端静态契约检查通过。
+- 文档 traceability 与 Batch 0 同为 **17 条既有告警**，无新增。清理删除的历史证据代码引用改为 `pre-cleanup-2026-11` tag 链接；归档 Markdown 相对链接检查无新增断链。ledger/catalog `--check` 通过。
+- 最终证据目录：`reading-companion-backend/state/cleanup_step0/batch5/`。所有模型行为验证均使用固定替身；未启动付费评测或真实模型跑书。此批不因既有 survey 测试失败扩大到 survey 实现修复。
+
+## 与原报告/执行指令的差异
+
+- 按用户指令跳过 Batch 4，未实现 survey 去重、reading_plan 固定或启动 backfill 改动。
+- 两处报告漏列依赖均先暂停并获得确认：Batch 2 的 accumulation v2 编排链；Batch 5 的旧机制文档检查链。除此之外没有自行扩大代码改动范围。
+- 历史 recall 的核查结果是 April 16 的 203-case 包，而非问题中举例的两个 June 版本；据原始 selection/aggregate 修正文档，没有改历史结果。
+- `make test` 未全绿：两项既有 survey 失败和 17 条既有 traceability 告警明确保留，不以跳过测试或降低检查标准消除。独立完成了被短路的后续检查。
+- D4 待办：**resume 时固定原 reading_plan，避免重新 survey 改变阅读范围**，作为第 1 步重建评测前置项，已登记 `TASK-RESUME-READING-PLAN-FREEZE`。
+
+## 最终规模与安全复核
+
+- 相对 `pre-cleanup-2026-11`：实际删除 45 个文件，文档归档移动 118 个文件；无 Markdown 文档删除。代码/配置（`.py`、`.sh`、`.toml`、`.lock`）净减 **30,301 行**，不把归档移动计作删除收益。
+- 最终再次确认远端 tag peeled HEAD 为 `cdd987edadd10cac3b1d199c8c094fe6d22f6430`；bundle verify 通过（备份时全部 14 refs）。annotation-hub worktree 仍在且未推送；本轮未推任何分支。
+- Batch 0–3 commits：`d389338` / `021c65a` / `1b67553` / `cc253f8`；Batch 5 为本执行记录最后更新所在提交。最终 `agent-check-final.log` 与基线逐条对照，17 条既有追踪告警完全相同。

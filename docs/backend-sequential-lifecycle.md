@@ -10,7 +10,7 @@ Use `docs/backend-reading-mechanism.md` when the question is about shared mechan
 
 ## Terminology Guard
 - In this document, `analysis` means the current sequential deep-reading workflow exposed through `POST /api/uploads/epub`, `POST /api/books/{book_id}/analysis/start`, `POST /api/books/{book_id}/analysis/resume`, and `GET /api/books/{book_id}/analysis-state`.
-- It does not mean the older `book_analysis` capability. That capability is now a retired legacy path kept temporarily for compatibility/debugging; it is not part of the current product workflow and should not drive default decisions.
+- It does not mean the older `book_analysis` capability. That capability is now a retired capability whose execution options explicitly fail; it is not part of the current product workflow and should not drive default decisions.
 
 ## Entry Points
 - `POST /api/uploads/epub`
@@ -19,7 +19,7 @@ Use `docs/backend-reading-mechanism.md` when the question is about shared mechan
   - Provisions a minimal book shell immediately so the frontend can resolve a book card and book route before deep reading starts.
   - The public route does not expose a mechanism selector yet.
   - New product-path launches now default to `attentional_v2`.
-  - Backend-internal override can still choose `iterator_v1` through shared `mechanism_key` plumbing.
+  - Backend-internal `iterator_v1` selection is explicitly retired.
   - Optional backend parameter `memory_retrieval_mode` controls `attentional_v2` Unit Memory retrieval for the run; allowed values are `hybrid` and `text_only`, defaulting to `hybrid`.
   - `start_mode=immediate` launches a `read` job for the main sequential workflow.
   - `start_mode=deferred` launches a `parse` job that stops after structure parsing.
@@ -27,12 +27,12 @@ Use `docs/backend-reading-mechanism.md` when the question is about shared mechan
   - Starts the main sequential workflow for an uploaded book that is currently `not_started`.
   - Reuses the copied source asset under the book output directory rather than requiring a new upload.
   - This now launches the `attentional_v2` deep-reading path by default.
-  - `iterator_v1` remains a valid internal fallback override for debugging, recovery, or legacy continuity.
+  - `iterator_v1` is not an executable override or resume target.
   - Optional backend query parameter `memory_retrieval_mode` starts `attentional_v2` with `hybrid` or `text_only` Unit Memory retrieval.
   - The `/analysis/start` route name is a historical compatibility label; it always launches the current deep-reading workflow rather than the retired `book_analysis` capability.
 - `POST /api/books/{book_id}/analysis/resume`
   - Resumes the latest paused or interrupted sequential job from the newest compatible checkpoint.
-  - In demo/prod mode, an incompatible checkpoint triggers a fresh rerun instead of an unsafe resume.
+  - Incompatible or pre-cleanup checkpoints are explicitly rejected with `pre-cleanup-2026-11`; no automatic fresh rerun occurs.
   - A compatible Reading Product-aware resume reuses the persisted `reading_id` and reconciles private state to the last Product-committed Unit. A fresh rerun creates a new reading revision.
   - If `memory_retrieval_mode` is omitted, resume restores the persisted run mode; if provided, the explicit mode change is recorded in retrieval trace.
 - `GET /api/jobs/{job_id}`
@@ -48,14 +48,13 @@ Use `docs/backend-reading-mechanism.md` when the question is about shared mechan
 1. Upload accepts an EPUB and writes a provisional manifest plus an initial run-state shell so the book exists immediately.
    - If provisioning cannot resolve that canonical book/output identity, the API returns the existing internal-error envelope and does not start a background worker. This prevents an identity-less worker from racing another upload into the same output directory.
 2. A canonical background job record is created in `state/job_registry/jobs/<job_id>.json` with `job_kind=parse` or `job_kind=read`.
-  - When backend-internal rollout selected the non-default fallback mechanism, the job record also carries `mechanism_key`.
+  - The job record carries the selected current `mechanism_key`; old metadata remains readable.
   - For `attentional_v2` read jobs, the job record also carries `memory_retrieval_mode`.
   - `state/jobs/<job_id>.json` remains a compatibility shadow during the current migration window; it is no longer the primary store.
 3. The job enters `queued`, then begins structure preparation under `parsing_structure`.
 4. Parse preparation now has two layers:
   - canonical parse writes `public/book_document.json` as the mechanism-neutral book substrate
   - the selected mechanism then derives its own parse-side artifacts from that substrate:
-    - `iterator_v1` derives `_mechanisms/iterator_v1/derived/structure.json`
     - `attentional_v2` initializes survey/runtime artifacts under `_mechanisms/attentional_v2/`
       - this now includes one narrow survey-side `chapter_zone` classification pass plus a `reading_plan`
       - the plan is orientation-only scheduling metadata, not hidden full-book understanding
@@ -72,7 +71,7 @@ Use `docs/backend-reading-mechanism.md` when the question is about shared mechan
 9. When the approved whole-book `mainline + deferred` plan is complete, the deterministic finalizer validates the exact source and committed sequence, writes an immutable complete revision under `public/reading-products/revisions/`, and atomically switches `public/reading-products/current.json`.
   - Chapter-only, audit-window, partial, source-mutated, or plan-incomplete reads do not seal a complete Product.
   - The current chapter/API compatibility files are projected from Product Units; only that old UI layer maps native Note to `association`.
-10. An `attentional_v2` read run becomes `completed` only after Product finalization succeeds. Otherwise a recoverable bounded/partial run is `paused`; unsafe failures become `error` or start a fresh revision under the existing recovery rules. Explicit legacy/fallback mechanisms keep their documented completion semantics until they adopt this shared product boundary.
+10. An `attentional_v2` read run becomes `completed` only after Product finalization succeeds. Otherwise a recoverable bounded/partial run is `paused`; unsafe failures become `error` or start a fresh revision under the existing recovery rules. Historical completion metadata remains displayable, with no legacy execution path.
 11. Terminal runs are mirrored into `_history/runs/<job_id>/` so the latest live artifacts and run history stay separate.
 
 ## Source Asset Territories
@@ -109,10 +108,10 @@ Promotion from user upload into the durable source library or evaluation corpus 
   - `attentional_v2`
     - default sentence-order meaning-unit reader
   - `iterator_v1`
-    - explicit fallback / legacy-compatible section/subsegment reader
+    - retired; historical section/subsegment artifacts remain displayable
 - Read-time mutable mechanism artifacts remain mechanism-private, while Reading Product is the shared accepted-Unit boundary:
   - shared Product Store and partial projection use `_runtime/reading-products/<reading_uuid>/`
-  - `iterator_v1` uses `_mechanisms/iterator_v1/runtime/`
+  - historical `iterator_v1` artifacts remain under `_mechanisms/iterator_v1/runtime/` without resume support
   - `attentional_v2` uses `_mechanisms/attentional_v2/runtime/`
 
 ### Status semantics
@@ -141,7 +140,7 @@ Promotion from user upload into the durable source library or evaluation corpus 
   - Continue/retry affordances should only be shown when `resume_available = true`.
 - `completed`
   - For the current default `attentional_v2` path, deep reading finished, whole-book Reading Product finalization succeeded, and `public/reading-products/current.json` selects the immutable complete revision.
-  - Explicit legacy/fallback mechanisms retain their mechanism-specific completion contract until migrated; their status must not be mistaken for a complete Reading Product publication.
+  - Historical completion metadata must not be mistaken for a complete Reading Product publication.
 - `error`
   - The job cannot continue safely in its current form. Some `error` situations still surface `resume_available`, but they should be treated as recovery cases, not normal progress states.
 
@@ -168,13 +167,13 @@ Promotion from user upload into the durable source library or evaluation corpus 
   - Manual resume checks the recorded PID birth identity twice, including immediately before signaling, then terminates and reaps the verified old process before rotating generation; an unavailable identity check fails closed. Post-launch registry/heartbeat failure terminates and reaps the exact new child before releasing its lease.
 - `resume_compat_version`
   - Demo/prod resume safety is governed by `resume_compat_version` across the job record, `run_state`, and `parse_state`.
-  - If those versions do not match the current runtime, the backend archives the old run, clears live artifacts, emits `resume_incompatible` plus `fresh_rerun_started`, and launches a fresh run without `--continue`.
+  - If versions do not match the current runtime, the backend rejects resume without clearing old artifacts or automatically relaunching work.
 - Mechanism selection continuity
-  - Resume and incompatible fresh rerun preserve the selected mechanism through shared job/runtime plumbing.
+  - Compatible resume preserves the current mechanism and reading_id; incompatible runs are not relaunched.
   - Source of truth order is:
     1. `_runtime/runtime_shell.json.mechanism_key`
     2. persisted job-record `mechanism_key`
-    3. legacy iterator-artifact inference for old runs that predate shell/job mechanism metadata
+    3. legacy iterator-artifact inference for read-only display; execution is rejected
     4. current default mechanism only when neither earlier source exists
 - Stale runtime handling
   - Public active truth now comes from two coordinated signals:
@@ -227,3 +226,9 @@ The canonical implementation, privacy, aggregation, and version rules live in `d
   - Provide the book-scoped snapshot used by the main overview page.
 - `ready` and `paused`
   - Are product-significant states. `ready` means structure is available but deep reading has not started yet. `paused` means recovery should continue from the book overview rather than from a fresh upload.
+
+## Step 0 recovery boundary
+
+Resume compatibility is `2`; attentional runtime schema is `2`, and full checkpoints require `checkpoint_format=lightweight-cleanup-2026-11`. Older runs explicitly report retirement and point to `pre-cleanup-2026-11`. Old books remain readable; startup backfill is unchanged. Chapter completion/checkpoint/Product finalization continue without slow-cycle model calls.
+
+Before Step 1 evaluation work: **resume 时固定原 reading_plan，避免重新 survey 改变阅读范围**. Step 0 deliberately leaves survey scheduling unchanged.

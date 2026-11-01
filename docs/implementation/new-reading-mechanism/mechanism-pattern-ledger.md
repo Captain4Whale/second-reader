@@ -303,7 +303,7 @@ This file is a living working ledger. Stable rules still belong in `docs/backend
   - The biggest user-facing regression after the temporary `Read -> Express` split was sparse visible output that felt withheld, delayed, or summary-like.
   - Returning visible reaction ownership to `Read` materially restored "I am here reading this now" presence without forcing a return to the old family checklist.
 - Evidence:
-  - `reading-companion-backend/docs/research/attentional_v2_f4a_focused_quality_audit_20260419.md`
+  - `reading-companion-backend/docs/archive/pre-cleanup-2026-11/research/attentional_v2_f4a_focused_quality_audit_20260419.md`
   - `reading-companion-backend/eval/runs/attentional_v2/attentional_v2_f4a_quality_audit_20260419/summary/report.md`
   - six-case density snapshot:
     - `supremacy_private_en__chapter_13`: `7` reactions / `8` units
@@ -322,7 +322,7 @@ This file is a living working ledger. Stable rules still belong in `docs/backend
   - A mechanism can look locally alive and still fail an important part of its promised control shape if it never surfaces `detour_need`, `prior_link`, `outside_link`, or `search_intent`.
   - If we celebrate the density recovery alone, we risk shipping a reader that only does the easy half of the new contract.
 - Evidence:
-  - `reading-companion-backend/docs/research/attentional_v2_f4a_focused_quality_audit_20260419.md`
+  - `reading-companion-backend/docs/archive/pre-cleanup-2026-11/research/attentional_v2_f4a_focused_quality_audit_20260419.md`
   - `reading-companion-backend/eval/runs/attentional_v2/attentional_v2_f4a_quality_audit_20260419/summary/aggregate.json`
   - across the first F4A six-case pack:
     - `detour_trace_count = 0` in all six shards
@@ -546,7 +546,7 @@ This file is a living working ledger. Stable rules still belong in `docs/backend
   - formal excerpt run:
     - `reading-companion-backend/eval/runs/attentional_v2/attentional_v2_excerpt_surface_v1_1_judged_20260406/summary/aggregate.json`
     - `reading-companion-backend/eval/runs/attentional_v2/attentional_v2_excerpt_surface_v1_1_judged_20260406/summary/report.md`
-    - `reading-companion-backend/docs/evaluation/excerpt/attentional_v2_excerpt_surface_v1_1_judged_20260406_interpretation.md`
+    - `reading-companion-backend/docs/archive/pre-cleanup-2026-11/evaluation/excerpt/attentional_v2_excerpt_surface_v1_1_judged_20260406_interpretation.md`
   - strongest chapter/profile evidence:
     - `huochu_shengming_de_yiyi_private_zh__8`
     - `nawaer_baodian_private_zh__22`
@@ -571,7 +571,7 @@ This file is a living working ledger. Stable rules still belong in `docs/backend
   - formal excerpt interpretation cases:
     - `xidaduo_private_zh__15__tension_reversal__seed_1`
     - `meiguoren_de_xingge_private_zh__19__tension_reversal__seed_5`
-    - `reading-companion-backend/docs/evaluation/excerpt/attentional_v2_excerpt_surface_v1_1_judged_20260406_interpretation.md`
+    - `reading-companion-backend/docs/archive/pre-cleanup-2026-11/evaluation/excerpt/attentional_v2_excerpt_surface_v1_1_judged_20260406_interpretation.md`
 - Status: `observed`
 - Next action:
   - keep the next mechanism repair narrow:
@@ -592,7 +592,7 @@ This file is a living working ledger. Stable rules still belong in `docs/backend
   - formal excerpt interpretation cases:
     - `xidaduo_private_zh__15__tension_reversal__seed_1`
     - `nawaer_baodian_private_zh__22__callback_bridge__seed_1`
-    - `reading-companion-backend/docs/evaluation/excerpt/attentional_v2_excerpt_surface_v1_1_judged_20260406_interpretation.md`
+    - `reading-companion-backend/docs/archive/pre-cleanup-2026-11/evaluation/excerpt/attentional_v2_excerpt_surface_v1_1_judged_20260406_interpretation.md`
 - Status: `candidate_for_adoption`
 - Next action:
   - look for a selective way to preserve V1-style exact local placement and tiny backward-bridge honesty inside V2

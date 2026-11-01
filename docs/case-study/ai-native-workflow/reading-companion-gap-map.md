@@ -89,7 +89,7 @@ Reading Companion 中形成的方法论可以概括为七个环节：
 ### Reading Companion 中的体现
 
 - [Backend Sequential Lifecycle](../../backend-sequential-lifecycle.md) 定义 upload/start/resume、job records、checkpoint 和 recovery semantics。
-- [Execution Tracker](../../implementation/new-reading-mechanism/new-reading-mechanism-execution-tracker.md) 记录 phased implementation、landed behavior、validation posture 和 next moves。
+- [Execution Tracker](../../archive/pre-cleanup-2026-11/implementation/new-reading-mechanism/new-reading-mechanism-execution-tracker.md) 记录 phased implementation、landed behavior、validation posture 和 next moves。
 - [Dataset Platform Closed Loop](../../implementation/new-reading-mechanism/dataset-platform-closed-loop.md) 展示 source intake、case generation、packet review、repair loop、stop condition 的闭环。
 - `bundle -> judge -> merge`、job registry、watchdogs 和 expected outputs 让 long-running eval 可以跨线程恢复，而不是靠聊天窗口记住。
 

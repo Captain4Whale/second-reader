@@ -92,8 +92,8 @@ def test_lane_a_distinguishes_active_dataset_from_formal_evidence_dataset() -> N
 
     assert lane_a["status"] == "active_benchmark_lane"
     assert lane_a["formal_authority"] is True
-    assert lane_a["active_dataset_pointer"]["dataset_id"] == "attentional_v2_user_level_selective_v1_repaired_20260422"
-    assert "20260422" in lane_a["active_dataset_pointer"]["workspace_path"]
+    assert lane_a["active_dataset_pointer"]["dataset_id"] == "attentional_v2_user_level_selective_v1_repaired_20260629_source_norm_v1_2_unique_notes"
+    assert "20260629_source_norm_v1_2_unique_notes" in lane_a["active_dataset_pointer"]["workspace_path"]
 
     formal_evidence = lane_a["current_formal_evidence"]
     assert formal_evidence["run_id"] == "attentional_v2_user_level_selective_v1_active_rerun_20260419"

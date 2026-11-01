@@ -10,9 +10,9 @@ The current active benchmark is `user-level selective v1`:
 - active split manifest:
   - [attentional_v2_user_level_selective_v1_draft.json](../../../eval/manifests/splits/attentional_v2_user_level_selective_v1_draft.json)
 - active dataset package:
-  - [manifest.json](../../../state/eval_local_datasets/user_level_benchmarks/attentional_v2_user_level_selective_v1_repaired_20260614_source_norm_v1_2/manifest.json)
-  - [segments.jsonl](../../../state/eval_local_datasets/user_level_benchmarks/attentional_v2_user_level_selective_v1_repaired_20260614_source_norm_v1_2/segments.jsonl)
-  - [note_cases.jsonl](../../../state/eval_local_datasets/user_level_benchmarks/attentional_v2_user_level_selective_v1_repaired_20260614_source_norm_v1_2/note_cases.jsonl)
+  - [manifest.json](../../../state/eval_local_datasets/user_level_benchmarks/attentional_v2_user_level_selective_v1_repaired_20260629_source_norm_v1_2_unique_notes/manifest.json)
+  - [segments.jsonl](../../../state/eval_local_datasets/user_level_benchmarks/attentional_v2_user_level_selective_v1_repaired_20260629_source_norm_v1_2_unique_notes/segments.jsonl)
+  - [note_cases.jsonl](../../../state/eval_local_datasets/user_level_benchmarks/attentional_v2_user_level_selective_v1_repaired_20260629_source_norm_v1_2_unique_notes/note_cases.jsonl)
 - active comparison runner:
   - [run_user_level_selective_comparison.py](../../../eval/attentional_v2/run_user_level_selective_comparison.py)
 
@@ -23,7 +23,7 @@ Current formal evidence bundle:
 - formal-run dataset root used by that run:
   - [manifest.json](../../../state/eval_local_datasets/user_level_benchmarks/attentional_v2_user_level_selective_v1_repaired_20260416/manifest.json)
 - current active dataset root:
-  - [manifest.json](../../../state/eval_local_datasets/user_level_benchmarks/attentional_v2_user_level_selective_v1_repaired_20260614_source_norm_v1_2/manifest.json)
+  - [manifest.json](../../../state/eval_local_datasets/user_level_benchmarks/attentional_v2_user_level_selective_v1_repaired_20260629_source_norm_v1_2_unique_notes/manifest.json)
 - machine outputs:
   - [aggregate.json](../../../eval/runs/attentional_v2/attentional_v2_user_level_selective_v1_active_rerun_20260419/summary/aggregate.json)
   - [report.md](../../../eval/runs/attentional_v2/attentional_v2_user_level_selective_v1_active_rerun_20260419/summary/report.md)
@@ -50,42 +50,11 @@ Current formal evidence bundle:
   - only `focused_hit` also counts toward recall
   - `incidental_cover` stays supporting-only
   - visible reactions without usable source locators fail the run instead of falling back to string matching
-- current eligible source count:
-  - `5 / 5`
-  - `nawaer_baodian_private_zh` remains included after repairing the library-notes alignment fallback and then rebuilding the active package with a stricter body-start rule, followed by the April 22 active-window repair
-  - current package size:
-    - `5` reading segments
-    - `202` note cases
-  - current source-normalized repair:
-    - active package root is `attentional_v2_user_level_selective_v1_repaired_20260614_source_norm_v1_2`
-    - source substrate was rebuilt from fresh isolated parses using Source Normalization v1.2 deterministic-only metadata
-    - all `202` note cases remain present, every case has non-empty `source_span_slices`, and source-span text is unchanged relative to the previous active `20260422` package
-    - structural footnote definitions in `xidaduo_private_zh__segment_1` such as `Brahmanen`, `Magadha`, `[2]Vishnus`, and `[3]Lakschmi` are removed from the segment source while body note references remain
-    - the conservative Siddhartha orphan residue `1《爱经》...` remains visible as body text by design and is tracked as follow-up residue rather than guessed away
-  - current active-pointer repair:
-    - `nawaer_baodian_private_zh__segment_1` now starts at `c13-s1`
-    - it ends at `c13-s168`
-    - active `nawaer` note cases are now exactly `e0001-e0023`
-    - the old preface-side case `e0056` is no longer part of the active package
-  - evidence boundary:
-    - the completed April 19 formal rerun still reflects the then-active prior repaired package `attentional_v2_user_level_selective_v1_repaired_20260416`
-    - that run therefore still reports `203` note cases
-  - superseded historical predecessor:
-    - [manifest.json](../../../state/eval_local_datasets/user_level_benchmarks/attentional_v2_user_level_selective_v1/manifest.json)
-    - `5` reading segments
-    - `202` note cases
-    - status: `superseded`
-  - superseded prior repaired package:
-    - [manifest.json](../../../state/eval_local_datasets/user_level_benchmarks/attentional_v2_user_level_selective_v1_repaired_20260416/manifest.json)
-    - `5` reading segments
-    - `203` note cases
-    - status: `superseded`
-  - superseded previous active package:
-    - [manifest.json](../../../state/eval_local_datasets/user_level_benchmarks/attentional_v2_user_level_selective_v1_repaired_20260422/manifest.json)
-    - `5` reading segments
-    - `202` note cases
-    - status: `superseded by source-normalized v1.2 active package`
-  - every note case includes `source_span_slices` in the rendered segment coordinate system used by the reader runtime
+- active dataset: `20260629_source_norm_v1_2_unique_notes`, `158` unique note cases / `5` segments. Target 20 is based on unique source spans; `210` raw covered rows include `52` duplicate aliases retained as provenance.
+- historical source-normalized package: June 14 `20260614_source_norm_v1_2`, `202` cases / `5` segments. Its local manifest still says active; the checked-in split manifest selects June 29. Historical manifests are not rewritten.
+- formal evidence: April 19 run uses April 16 `20260416`, `203` cases / `5` segments. Its ten shard `meta/selection.json` files all name that package. Aggregate recall is `(32 + 39) / 203 = 0.3498` for attentional_v2, `(9 + 16) / 203 = 0.1232` for iterator_v1.
+- these historical numbers are not a result for either June package or for the post-cleanup Product-only input contract. See [read-only verification](../../../../docs/tasks/lightweight-cleanup-step0-historical-evidence-2026-11-01.md).
+- new runs support attentional_v2 only and normalize Product-accepted Marginalia; historical result readers and note matching/judge remain available. No historical aggregate or raw output was rewritten.
 
 ## Body-Start Rule
 
@@ -120,7 +89,7 @@ For human auditing, a local-only Markdown export is now available:
 - default command:
   - `cd reading-companion-backend && .venv/bin/python eval/attentional_v2/render_user_level_selective_audit.py`
 - default output directory:
-  - `state/eval_local_datasets/user_level_benchmarks/attentional_v2_user_level_selective_v1_repaired_20260614_source_norm_v1_2/audit_human_readable/`
+  - `state/eval_local_datasets/user_level_benchmarks/attentional_v2_user_level_selective_v1_repaired_20260629_source_norm_v1_2_unique_notes/audit_human_readable/`
 - output shape:
   - `index.md`
   - `windows/<segment_id>.md`
@@ -180,12 +149,12 @@ Current formal evidence bundle:
     - `attentional_v2` note recall: `0.0`
     - `iterator_v1` note recall: `0.2118`
   - interpretation:
-    - [attentional_v2_user_level_selective_v1_repaired_rejudge_20260416_interpretation.md](./attentional_v2_user_level_selective_v1_repaired_rejudge_20260416_interpretation.md)
+    - [attentional_v2_user_level_selective_v1_repaired_rejudge_20260416_interpretation.md](../../archive/pre-cleanup-2026-11/evaluation/user_level/attentional_v2_user_level_selective_v1_repaired_rejudge_20260416_interpretation.md)
 
 Current active rerun posture:
 
 - the repaired `202`-case package is now the active benchmark pointer:
-  - `attentional_v2_user_level_selective_v1_repaired_20260614_source_norm_v1_2`
+  - `attentional_v2_user_level_selective_v1_repaired_20260629_source_norm_v1_2_unique_notes`
 - the completed April 19 formal evidence bundle still used the then-active prior repaired `203`-case package:
   - `attentional_v2_user_level_selective_v1_repaired_20260416`
 - the previous active `20260422` package is preserved as the direct comparison baseline for the source-normalized v1.2 rebuild
@@ -249,4 +218,4 @@ Also upsert the run into [../evidence_catalog.json](../evidence_catalog.json) th
 
 ## Historical Predecessor
 
-The older chapter-scoped `excerpt surface v1.1` reports remain available under [../excerpt/README.md](../excerpt/README.md), but that line is now historical / superseded rather than the active user-level pointer.
+The older chapter-scoped `excerpt surface v1.1` reports remain available under [../excerpt/README.md](../../archive/pre-cleanup-2026-11/evaluation/excerpt/README.md), but that line is now historical / superseded rather than the active user-level pointer.

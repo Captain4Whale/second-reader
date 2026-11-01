@@ -7,7 +7,7 @@ Update when: task status, priority, blockers, decision refs, job refs, evidence 
 
 This document is the human-readable companion to `docs/tasks/registry.json`.
 
-Last updated: `2026-09-13T13:30:49+08:00`
+Last updated: `2026-11-01`
 
 ## Status Values
 - `active`
@@ -17,6 +17,11 @@ Last updated: `2026-09-13T13:30:49+08:00`
 - `parked`
 - `done`
 - `cancelled`
+
+## Step 0 完成与下一步
+
+- `TASK-LIGHTWEIGHT-CLEANUP-STEP0` — `done`，mechanism_runtime / high。D1–D7 已按执行指令实施，Batch 4 跳过。依据 DEC-160；[执行与验收](lightweight-cleanup-step0-execution-2026-11-01.md)，[历史数字核查](lightweight-cleanup-step0-historical-evidence-2026-11-01.md)。
+- `TASK-RESUME-READING-PLAN-FREEZE` — `queued`，mechanism_runtime / high。**resume 时固定原 reading_plan，避免重新 survey 改变阅读范围**；第 1 步重建评测前置项，本次只记录、不实现。依据 DEC-160 与执行记录。
 
 ## Done
 
@@ -273,14 +278,14 @@ Last updated: `2026-09-13T13:30:49+08:00`
   - `reading-companion-backend/src/reading_runtime/source_normalization.py`
   - `reading-companion-backend/src/reading_core/book_document.py`
   - `reading-companion-backend/src/iterator_reader/parse.py`
-  - `reading-companion-backend/scripts/run_source_normalization_v1_1_multibook_validation.py`
+  - `https://github.com/Captain4Whale/second-reader/blob/pre-cleanup-2026-11/reading-companion-backend/scripts/run_source_normalization_v1_1_multibook_validation.py`
   - `reading-companion-backend/tests/test_iterator_parse.py`
   - `reading-companion-backend/tests/test_attentional_v2_source_spans.py`
   - `docs/implementation/new-reading-mechanism/mechanism-pattern-ledger.md`
   - `docs/implementation/new-reading-mechanism/unit-memory-retrieval-repair-validation-plan.md`
   - `docs/implementation/new-reading-mechanism/llm-structured-output-protocol-note.md`
   - `docs/implementation/new-reading-mechanism/codex/reports/Ingest-Digest-UnitMemory-Conformance-Smoke-Post-run-Report v0.md`
-  - `docs/implementation/new-reading-mechanism/second-reader-memory-planning/README.md`
+  - `docs/archive/pre-cleanup-2026-11/implementation/new-reading-mechanism/second-reader-memory-planning/README.md`
   - `reading-companion-backend/eval/runs/attentional_v2/attentional_v2_unit_memory_text_only_smoke_value_20260606/analysis/unit_memory_retrieval_health/summary.json`
   - `reading-companion-backend/eval/runs/attentional_v2/attentional_v2_unit_memory_text_only_smoke_value_20260606/analysis/unit_memory_retrieval_health/README.md`
   - `reading-companion-backend/eval/runs/attentional_v2/attentional_v2_unit_memory_text_only_smoke_xidaduo_post_r9_20260606/analysis/unit_memory_retrieval_health/summary.json`
@@ -314,7 +319,7 @@ Last updated: `2026-09-13T13:30:49+08:00`
 - Status: `active`
 - Lane: `mechanism_runtime`
 - Priority: `high`
-- Detail: `docs/implementation/new-reading-mechanism/attentional_v2_structural_rework_plan.md` (historical slice ledger after `DEC-108`)
+- Detail: `docs/archive/pre-cleanup-2026-11/implementation/new-reading-mechanism/attentional_v2_structural_rework_plan.md` (historical slice ledger after `DEC-108`)
 - Next: continue implementation from the current `Ingest -> Digest -> Reading Runner settlement` baseline:
   - keep the work under the existing `attentional_v2` mechanism key rather than minting `attentional_v3`
   - treat the structural rework plan as backend-only historical context; current mechanism authority lives in `docs/backend-reading-mechanisms/attentional_v2.md`
@@ -391,7 +396,7 @@ Last updated: `2026-09-13T13:30:49+08:00`
     - dead live ownership paths for the old `Express` persistence flow and `raw_reaction` fallback are now removed
   - `Phase F4A` is now landed as the first focused quality-audit pack:
     - temporary one-off launcher / harness:
-      - `reading-companion-backend/scripts/temporary/attentional_v2_f4a_oneoff_quality_audit.py`
+      - `https://github.com/Captain4Whale/second-reader/blob/pre-cleanup-2026-11/reading-companion-backend/scripts/temporary/attentional_v2_f4a_oneoff_quality_audit.py`
     - completed job:
       - `bgjob_attentional_v2_f4a_quality_audit_20260419`
     - run id:
@@ -408,7 +413,7 @@ Last updated: `2026-09-13T13:30:49+08:00`
         - `outside_link_count = 0`
         - `search_intent_count = 0`
     - audit note:
-      - `reading-companion-backend/docs/research/attentional_v2_f4a_focused_quality_audit_20260419.md`
+      - `reading-companion-backend/docs/archive/pre-cleanup-2026-11/research/attentional_v2_f4a_focused_quality_audit_20260419.md`
     - run summary:
       - `reading-companion-backend/eval/runs/attentional_v2/attentional_v2_f4a_quality_audit_20260419/summary/report.md`
     - follow-up visibility fix already landed:
@@ -479,9 +484,9 @@ Last updated: `2026-09-13T13:30:49+08:00`
   - current audit direction:
     - treat the next durable output as the cross-run comparative audit set rather than another rerun
     - use these new evidence docs as the audit entrypoint:
-      - `reading-companion-backend/docs/research/attentional_v2_post_phase_d_eval_comparative_audit_20260414.md`
-      - `reading-companion-backend/docs/research/attentional_v2_post_phase_d_eval_comparative_audit_20260414_longspan_appendix.md`
-      - `reading-companion-backend/docs/research/attentional_v2_post_phase_d_eval_comparative_audit_20260414_excerpt_appendix.md`
+      - `reading-companion-backend/docs/archive/pre-cleanup-2026-11/research/attentional_v2_post_phase_d_eval_comparative_audit_20260414.md`
+      - `reading-companion-backend/docs/archive/pre-cleanup-2026-11/research/attentional_v2_post_phase_d_eval_comparative_audit_20260414_longspan_appendix.md`
+      - `reading-companion-backend/docs/archive/pre-cleanup-2026-11/research/attentional_v2_post_phase_d_eval_comparative_audit_20260414_excerpt_appendix.md`
   - current interpretation constraint:
     - the key hard signal is not only winner movement but `attentional_v2` evidence-density collapse
     - excerpt average matched reactions dropped from `7.0` to `1.0`
@@ -553,7 +558,7 @@ Last updated: `2026-09-13T13:30:49+08:00`
     - reused the repaired active `user-level selective v1` reading windows
   - archived frozen reviewed seed set:
     - unified review / freeze record:
-      - `reading-companion-backend/docs/evaluation/long_span/target_centered_candidate_review.md`
+      - `reading-companion-backend/docs/archive/pre-cleanup-2026-11/evaluation/long_span/target_centered_candidate_review.md`
     - frozen dataset:
       - `reading-companion-backend/state/eval_local_datasets/accumulation_target_cases/attentional_v2_accumulation_benchmark_v2_cases_frozen`
     - frozen split manifest:
@@ -748,7 +753,7 @@ Last updated: `2026-09-13T13:30:49+08:00`
 - Status: `parked`
 - Lane: `mechanism_eval`
 - Priority: `high`
-- Detail: `docs/implementation/new-reading-mechanism/second-reader-memory-planning/C设计11-Read Context Layer Contract v0.md`
+- Detail: `docs/archive/pre-cleanup-2026-11/implementation/new-reading-mechanism/second-reader-memory-planning/C设计11-Read Context Layer Contract v0.md`
 - Next: diagnostic completed and remains available as historical evidence, but it is no longer the next implementation driver after `DEC-103`. Do not continue the old concrete-node XML prompt migration or Recent Memory consolidation from this task unless the new ingest/digest feasibility audit explicitly re-adopts a piece of it. Keep this diagnostic out of the evidence catalog until explicit review.
 - Jobs:
   - `bgjob_read_prompt_xml_full_diagnostic_20260526_huochu`
@@ -758,19 +763,19 @@ Last updated: `2026-09-13T13:30:49+08:00`
   - `bgjob_read_prompt_xml_full_diagnostic_20260526_xidaduo`
   - parent ledger run: `attentional_v2_read_prompt_xml_full_active_diagnostic_20260526`
 - Evidence:
-  - `docs/implementation/new-reading-mechanism/second-reader-memory-planning/codex/reports/ReadPromptXML-Full-Active-Diagnostic-Post-run-Report v0.md`
-  - `docs/implementation/new-reading-mechanism/second-reader-memory-planning/codex/reports/ReadPromptXML-Full-Active-Diagnostic-Reactions-And-RecentMemory-Full-Review v0.md`
+  - `docs/archive/pre-cleanup-2026-11/implementation/new-reading-mechanism/second-reader-memory-planning/codex/reports/ReadPromptXML-Full-Active-Diagnostic-Post-run-Report v0.md`
+  - `docs/archive/pre-cleanup-2026-11/implementation/new-reading-mechanism/second-reader-memory-planning/codex/reports/ReadPromptXML-Full-Active-Diagnostic-Reactions-And-RecentMemory-Full-Review v0.md`
   - `reading-companion-backend/docs/evaluation/run_ledger.md`
 
 ### `TASK-SECOND-READER-RECENT-READING-MEMORY-CONSOLIDATION-DESIGN-20260523` — Design Recent Reading Memory consolidation into long-distance memory
 - Status: `parked`
 - Lane: `mechanism_runtime`
 - Priority: `high`
-- Detail: `docs/implementation/new-reading-mechanism/second-reader-memory-planning/C设计10-Recent Reading Memory Design v0.md`
+- Detail: `docs/archive/pre-cleanup-2026-11/implementation/new-reading-mechanism/second-reader-memory-planning/C设计10-Recent Reading Memory Design v0.md`
 - Next: parked by `DEC-103`. Do not continue the Recent Memory -> long-distance-memory consolidation design as the next implementation path. Keep the prior docs as historical/reference material unless a new ingest/digest feasibility audit explicitly re-adopts a slice.
 - Evidence:
-  - `docs/implementation/new-reading-mechanism/second-reader-memory-planning/C设计10-Recent Reading Memory Design v0.md`
-  - `docs/implementation/new-reading-mechanism/second-reader-memory-planning/README.md`
+  - `docs/archive/pre-cleanup-2026-11/implementation/new-reading-mechanism/second-reader-memory-planning/C设计10-Recent Reading Memory Design v0.md`
+  - `docs/archive/pre-cleanup-2026-11/implementation/new-reading-mechanism/second-reader-memory-planning/README.md`
   - `docs/backend-reading-mechanisms/attentional_v2.md`
   - `docs/backend-reader-evaluation.md`
   - `reading-companion-backend/docs/evaluation/reporting_standard.md`
@@ -780,7 +785,7 @@ Last updated: `2026-09-13T13:30:49+08:00`
 - Status: `parked`
 - Lane: `mechanism_eval`
 - Priority: `high`
-- Detail: `docs/implementation/new-reading-mechanism/second-reader-memory-planning/codex/reports/RecentReadingMemory-Micro-Diagnostic-Huochu-Post-run-Report v0.md`
+- Detail: `docs/archive/pre-cleanup-2026-11/implementation/new-reading-mechanism/second-reader-memory-planning/codex/reports/RecentReadingMemory-Micro-Diagnostic-Huochu-Post-run-Report v0.md`
 - Next: parked by `DEC-103`. Keep the micro diagnostics as historical evidence about the paused Recent Reading Memory direction; do not use them as the next prompt/runtime implementation driver unless a new audit explicitly re-adopts the direction.
 - Jobs:
   - `bgjob_recent_reading_memory_micro_huochu_20260523` (`completed`)
@@ -790,11 +795,11 @@ Last updated: `2026-09-13T13:30:49+08:00`
   - `bgjob_recent_reading_memory_beginning_huochu_20260524_retry3` (`completed / superseded prompt direction`)
   - `bgjob_recent_reading_memory_beginning_huochu_20260524_retry4` (`completed / review_pending`)
 - Evidence:
-  - `docs/implementation/new-reading-mechanism/second-reader-memory-planning/codex/reports/RecentReadingMemory-Micro-Diagnostic-Huochu-Post-run-Report v0.md`
-  - `docs/implementation/new-reading-mechanism/second-reader-memory-planning/codex/reports/RecentReadingMemory-Beginning-Micro-Diagnostic-Huochu-Post-run-Report v0.md`
-  - `docs/implementation/new-reading-mechanism/second-reader-memory-planning/codex/reports/RecentReadingMemory-Beginning-Micro-Diagnostic-Huochu-Retry1-Post-run-Report v0.md`
-  - `docs/implementation/new-reading-mechanism/second-reader-memory-planning/codex/reports/RecentReadingMemory-Beginning-Micro-Diagnostic-Huochu-Retry2-Post-run-Report v0.md`
-  - `docs/implementation/new-reading-mechanism/second-reader-memory-planning/codex/reports/RecentReadingMemory-Beginning-Micro-Diagnostic-Huochu-Retry3-Post-run-Report v0.md`
+  - `docs/archive/pre-cleanup-2026-11/implementation/new-reading-mechanism/second-reader-memory-planning/codex/reports/RecentReadingMemory-Micro-Diagnostic-Huochu-Post-run-Report v0.md`
+  - `docs/archive/pre-cleanup-2026-11/implementation/new-reading-mechanism/second-reader-memory-planning/codex/reports/RecentReadingMemory-Beginning-Micro-Diagnostic-Huochu-Post-run-Report v0.md`
+  - `docs/archive/pre-cleanup-2026-11/implementation/new-reading-mechanism/second-reader-memory-planning/codex/reports/RecentReadingMemory-Beginning-Micro-Diagnostic-Huochu-Retry1-Post-run-Report v0.md`
+  - `docs/archive/pre-cleanup-2026-11/implementation/new-reading-mechanism/second-reader-memory-planning/codex/reports/RecentReadingMemory-Beginning-Micro-Diagnostic-Huochu-Retry2-Post-run-Report v0.md`
+  - `docs/archive/pre-cleanup-2026-11/implementation/new-reading-mechanism/second-reader-memory-planning/codex/reports/RecentReadingMemory-Beginning-Micro-Diagnostic-Huochu-Retry3-Post-run-Report v0.md`
   - `reading-companion-backend/docs/evaluation/run_ledger.md`
   - `reading-companion-backend/eval/runs/attentional_v2/attentional_v2_recent_reading_memory_micro_huochu_20260523/summary/aggregate.json`
   - `reading-companion-backend/eval/runs/attentional_v2/attentional_v2_recent_reading_memory_micro_huochu_20260523/summary/llm_usage.json`
@@ -806,7 +811,7 @@ Last updated: `2026-09-13T13:30:49+08:00`
   - `reading-companion-backend/eval/runs/attentional_v2/attentional_v2_recent_reading_memory_beginning_huochu_20260524_retry2/summary/llm_usage.json`
   - `reading-companion-backend/eval/runs/attentional_v2/attentional_v2_recent_reading_memory_beginning_huochu_20260524_retry3/summary/aggregate.json`
   - `reading-companion-backend/eval/runs/attentional_v2/attentional_v2_recent_reading_memory_beginning_huochu_20260524_retry3/summary/llm_usage.json`
-  - `docs/implementation/new-reading-mechanism/second-reader-memory-planning/codex/reports/RecentReadingMemory-Beginning-Micro-Diagnostic-Huochu-Retry4-Post-run-Report v0.md`
+  - `docs/archive/pre-cleanup-2026-11/implementation/new-reading-mechanism/second-reader-memory-planning/codex/reports/RecentReadingMemory-Beginning-Micro-Diagnostic-Huochu-Retry4-Post-run-Report v0.md`
   - `reading-companion-backend/eval/runs/attentional_v2/attentional_v2_recent_reading_memory_beginning_huochu_20260524_retry4/summary/aggregate.json`
   - `reading-companion-backend/eval/runs/attentional_v2/attentional_v2_recent_reading_memory_beginning_huochu_20260524_retry4/summary/llm_usage.json`
 
@@ -814,10 +819,10 @@ Last updated: `2026-09-13T13:30:49+08:00`
 - Status: `parked`
 - Lane: `mechanism_runtime`
 - Priority: `medium`
-- Detail: `docs/implementation/new-reading-mechanism/second-reader-memory-planning/C设计10-Recent Reading Memory Design v0.md`
+- Detail: `docs/archive/pre-cleanup-2026-11/implementation/new-reading-mechanism/second-reader-memory-planning/C设计10-Recent Reading Memory Design v0.md`
 - Next: parked by `DEC-103`. Revisit `reading_impression` only inside the new digest / reader-facing note contract design; do not clean it up as a continuation of the paused Recent Memory consolidation track.
 - Evidence:
-  - `docs/implementation/new-reading-mechanism/second-reader-memory-planning/C设计10-Recent Reading Memory Design v0.md`
+  - `docs/archive/pre-cleanup-2026-11/implementation/new-reading-mechanism/second-reader-memory-planning/C设计10-Recent Reading Memory Design v0.md`
   - `docs/backend-reading-mechanisms/attentional_v2.md`
   - `docs/current-state.md`
 
@@ -825,7 +830,7 @@ Last updated: `2026-09-13T13:30:49+08:00`
 - Status: `parked`
 - Lane: `mechanism_eval`
 - Priority: `high`
-- Detail: `docs/implementation/new-reading-mechanism/second-reader-memory-planning/codex/reports/ActiveAttention-Prompt-Context-Grounded-Full-Window-Diagnostic-Retry1-ActiveTension-Lifecycle-Review v0.md`
+- Detail: `docs/archive/pre-cleanup-2026-11/implementation/new-reading-mechanism/second-reader-memory-planning/codex/reports/ActiveAttention-Prompt-Context-Grounded-Full-Window-Diagnostic-Retry1-ActiveTension-Lifecycle-Review v0.md`
 - Next: parked by `DEC-103`. Keep the completed retry1 diagnostic and lifecycle review as historical diagnostic material only. Do not expand ActiveTension or use this lane as the next mechanism-design direction.
 - Jobs:
   - `bgjob_active_attention_prompt_context_window_diagnostic_20260522_retry1_huochu` (`completed`)
@@ -834,14 +839,14 @@ Last updated: `2026-09-13T13:30:49+08:00`
   - `bgjob_active_attention_prompt_context_window_diagnostic_20260522_retry1_value_of_others` (`completed`)
   - `bgjob_active_attention_prompt_context_window_diagnostic_20260522_retry1_xidaduo` (`completed`)
 - Evidence:
-  - `docs/implementation/new-reading-mechanism/second-reader-memory-planning/codex/reports/ActiveAttention-Prompt-Context-Grounded-Full-Window-Diagnostic-Retry1-ActiveTension-Lifecycle-Review v0.md`
+  - `docs/archive/pre-cleanup-2026-11/implementation/new-reading-mechanism/second-reader-memory-planning/codex/reports/ActiveAttention-Prompt-Context-Grounded-Full-Window-Diagnostic-Retry1-ActiveTension-Lifecycle-Review v0.md`
   - `reading-companion-backend/docs/evaluation/run_ledger.md`
 
 ### `TASK-SECOND-READER-ACTIVE-ATTENTION-PROMPT-CONTEXT-DIAGNOSTIC-REPORT-REVIEW` — Review Active Attention prompt-context full-window diagnostic report
 - Status: `parked`
 - Lane: `mechanism_eval`
 - Priority: `high`
-- Detail: `docs/implementation/new-reading-mechanism/second-reader-memory-planning/codex/reports/ActiveAttention-Prompt-Context-Grounded-Full-Window-Diagnostic-Post-run-Report v0.md`
+- Detail: `docs/archive/pre-cleanup-2026-11/implementation/new-reading-mechanism/second-reader-memory-planning/codex/reports/ActiveAttention-Prompt-Context-Grounded-Full-Window-Diagnostic-Post-run-Report v0.md`
 - Next: parked by `DEC-103`. Preserve the report as historical repair/diagnostic material only; do not continue Active Attention prompt-context work as the next implementation path.
 - Jobs:
   - `bgjob_active_attention_prompt_context_window_diagnostic_20260522_huochu` (`failed`, exit `-15`)
@@ -850,20 +855,20 @@ Last updated: `2026-09-13T13:30:49+08:00`
   - `bgjob_active_attention_prompt_context_window_diagnostic_20260522_value_of_others` (`failed`, exit `-15`)
   - `bgjob_active_attention_prompt_context_window_diagnostic_20260522_xidaduo` (`failed`, exit `-15`)
 - Evidence:
-  - `docs/implementation/new-reading-mechanism/second-reader-memory-planning/codex/reports/ActiveAttention-Prompt-Context-Grounded-Full-Window-Diagnostic-Post-run-Report v0.md`
+  - `docs/archive/pre-cleanup-2026-11/implementation/new-reading-mechanism/second-reader-memory-planning/codex/reports/ActiveAttention-Prompt-Context-Grounded-Full-Window-Diagnostic-Post-run-Report v0.md`
   - `reading-companion-backend/docs/evaluation/run_ledger.md`
 
 ### `TASK-SECOND-READER-ACTIVE-ATTENTION-FORWARD-PULL-RETRY4-REPORT-REVIEW` — Review Active Attention forward-pull Retry4 report
 - Status: `parked`
 - Lane: `mechanism_eval`
 - Priority: `high`
-- Detail: `docs/implementation/new-reading-mechanism/second-reader-memory-planning/codex/reports/ActiveAttention-Forward-Pull-Micro-Eval-Huochu-Retry4-Post-run-Report v0.md`
+- Detail: `docs/archive/pre-cleanup-2026-11/implementation/new-reading-mechanism/second-reader-memory-planning/codex/reports/ActiveAttention-Forward-Pull-Micro-Eval-Huochu-Retry4-Post-run-Report v0.md`
 - Next: parked by `DEC-103`. Preserve Retry4 as historical evidence about the abandoned Active Attention direction; do not continue this repair lane without a new accepted plan.
 - Jobs:
   - `bgjob_active_attention_live_question_micro_huochu_20260521_retry4` (`completed`)
 - Evidence:
-  - `docs/implementation/new-reading-mechanism/second-reader-memory-planning/codex/reports/ActiveAttention-Forward-Pull-Micro-Eval-Huochu-Retry4-Post-run-Report v0.md`
-  - `docs/implementation/new-reading-mechanism/second-reader-memory-planning/codex/reports/ActiveAttention-Answered-Reason-Micro-Eval-Huochu-Retry3-Post-run-Report v0.md`
+  - `docs/archive/pre-cleanup-2026-11/implementation/new-reading-mechanism/second-reader-memory-planning/codex/reports/ActiveAttention-Forward-Pull-Micro-Eval-Huochu-Retry4-Post-run-Report v0.md`
+  - `docs/archive/pre-cleanup-2026-11/implementation/new-reading-mechanism/second-reader-memory-planning/codex/reports/ActiveAttention-Answered-Reason-Micro-Eval-Huochu-Retry3-Post-run-Report v0.md`
   - `reading-companion-backend/eval/runs/attentional_v2/attentional_v2_active_attention_live_question_micro_huochu_20260521_retry4/summary/aggregate.json`
   - `reading-companion-backend/eval/runs/attentional_v2/attentional_v2_active_attention_live_question_micro_huochu_20260521_retry4/analysis/active_attention_lifecycle_audit/README.md`
 
@@ -871,12 +876,12 @@ Last updated: `2026-09-13T13:30:49+08:00`
 - Status: `parked`
 - Lane: `mechanism_eval`
 - Priority: `high`
-- Detail: `docs/implementation/new-reading-mechanism/second-reader-memory-planning/codex/reports/ActiveAttention-Inquiry-Boundary-Micro-Eval-Huochu-Retry2-Post-run-Report v0.md`
+- Detail: `docs/archive/pre-cleanup-2026-11/implementation/new-reading-mechanism/second-reader-memory-planning/codex/reports/ActiveAttention-Inquiry-Boundary-Micro-Eval-Huochu-Retry2-Post-run-Report v0.md`
 - Next: parked by `DEC-103`. Preserve Retry2 as historical evidence about the abandoned Active Attention direction; do not continue this repair lane without a new accepted plan.
 - Jobs:
   - `bgjob_active_attention_live_question_micro_huochu_20260521_retry2` (`completed`)
 - Evidence:
-  - `docs/implementation/new-reading-mechanism/second-reader-memory-planning/codex/reports/ActiveAttention-Inquiry-Boundary-Micro-Eval-Huochu-Retry2-Post-run-Report v0.md`
+  - `docs/archive/pre-cleanup-2026-11/implementation/new-reading-mechanism/second-reader-memory-planning/codex/reports/ActiveAttention-Inquiry-Boundary-Micro-Eval-Huochu-Retry2-Post-run-Report v0.md`
   - `reading-companion-backend/eval/runs/attentional_v2/attentional_v2_active_attention_live_question_micro_huochu_20260521_retry2/summary/aggregate.json`
   - `reading-companion-backend/eval/runs/attentional_v2/attentional_v2_active_attention_live_question_micro_huochu_20260521_retry2/analysis/active_attention_lifecycle_audit/README.md`
 
@@ -884,12 +889,12 @@ Last updated: `2026-09-13T13:30:49+08:00`
 - Status: `parked`
 - Lane: `mechanism_eval`
 - Priority: `high`
-- Detail: `docs/implementation/new-reading-mechanism/second-reader-memory-planning/codex/reports/ActiveAttention-Live-Question-Micro-Eval-Huochu-Retry1-Post-run-Report v0.md`
+- Detail: `docs/archive/pre-cleanup-2026-11/implementation/new-reading-mechanism/second-reader-memory-planning/codex/reports/ActiveAttention-Live-Question-Micro-Eval-Huochu-Retry1-Post-run-Report v0.md`
 - Next: parked by `DEC-103`. Preserve Retry1 as historical evidence about the abandoned Active Attention direction; do not continue this repair lane without a new accepted plan.
 - Jobs:
   - `bgjob_active_attention_live_question_micro_huochu_20260521_retry1` (`completed`)
 - Evidence:
-  - `docs/implementation/new-reading-mechanism/second-reader-memory-planning/codex/reports/ActiveAttention-Live-Question-Micro-Eval-Huochu-Retry1-Post-run-Report v0.md`
+  - `docs/archive/pre-cleanup-2026-11/implementation/new-reading-mechanism/second-reader-memory-planning/codex/reports/ActiveAttention-Live-Question-Micro-Eval-Huochu-Retry1-Post-run-Report v0.md`
   - `reading-companion-backend/eval/runs/attentional_v2/attentional_v2_active_attention_live_question_micro_huochu_20260521_retry1/summary/aggregate.json`
   - `reading-companion-backend/eval/runs/attentional_v2/attentional_v2_active_attention_live_question_micro_huochu_20260521_retry1/analysis/active_attention_lifecycle_audit/README.md`
 
@@ -897,7 +902,7 @@ Last updated: `2026-09-13T13:30:49+08:00`
 - Status: `parked`
 - Lane: `mechanism_eval`
 - Priority: `high`
-- Detail: `docs/implementation/new-reading-mechanism/new-reading-mechanism-execution-tracker.md`
+- Detail: `docs/archive/pre-cleanup-2026-11/implementation/new-reading-mechanism/new-reading-mechanism-execution-tracker.md`
 - Next: the April 7 retry landed new `llm_calls.py` / `prompts.py` / `runner.py` behavior plus the long-span harness support in `run_accumulation_comparison.py`, and the targeted tests all passed. The repair gate run on `attentional_v2_excerpt_micro_slice_v1_smoke_excerpt_repair_laneA_retry1_20260407` finished cleanly, but its judged stage regressed against the April 5 micro-slice baseline. Keep the known misses explicit, but do not reopen this repair lane by default while the product/demo decision is using the completed excerpt formal run as good-enough evidence and long-span smoke is the active priority.
 - Jobs: none
 
@@ -905,7 +910,7 @@ Last updated: `2026-09-13T13:30:49+08:00`
 - Status: `parked`
 - Lane: `mechanism_eval`
 - Priority: `medium`
-- Detail: `docs/implementation/new-reading-mechanism/new-reading-mechanism-execution-tracker.md`
+- Detail: `docs/archive/pre-cleanup-2026-11/implementation/new-reading-mechanism/new-reading-mechanism-execution-tracker.md`
 - Next: reuse the existing runtime-viability and durable-trace evidence; do not relaunch those lanes unless one of the three kept north-star dimensions later requires them or the cost posture changes explicitly
 - Jobs:
   - `bgjob_durable_trace_reentry_gate_20260401` (`failed`)
@@ -920,14 +925,14 @@ Last updated: `2026-09-13T13:30:49+08:00`
 - Status: `cancelled`
 - Lane: `mechanism_eval`
 - Priority: `high`
-- Detail: `docs/implementation/new-reading-mechanism/second-reader-memory-planning/codex/reports/Eval1-Full-Active-Evaluation-Post-Slice8H-Aborted-Run-Report v0.md`
+- Detail: `docs/archive/pre-cleanup-2026-11/implementation/new-reading-mechanism/second-reader-memory-planning/codex/reports/Eval1-Full-Active-Evaluation-Post-Slice8H-Aborted-Run-Report v0.md`
 - Next: Eval-1 was stopped before completion after LLM-health investigation showed that partial Long Span producer progress included runtime fallback during `network_blocked` / `llm_timeout` failures and no summary outputs were produced. Do not reuse partial outputs, launch Lane A reuse shards, update the evidence catalog, promote Long Span vNext, or claim product quality. Any retry requires a separate accepted brief or patch plan for LLM-health / fallback guardrails plus fresh run ids.
 - Jobs:
   - `bgjob_full_user_level_selective_post_slice8h_20260518` (`abandoned`)
   - `bgjob_full_long_span_vnext_post_slice8h_20260518` (`abandoned`)
   - `bgjob_full_long_span_vnext_post_slice8h_20260518_parallel5` (`abandoned`)
 - Evidence:
-  - `docs/implementation/new-reading-mechanism/second-reader-memory-planning/codex/reports/Eval1-Full-Active-Evaluation-Post-Slice8H-Aborted-Run-Report v0.md`
+  - `docs/archive/pre-cleanup-2026-11/implementation/new-reading-mechanism/second-reader-memory-planning/codex/reports/Eval1-Full-Active-Evaluation-Post-Slice8H-Aborted-Run-Report v0.md`
   - `reading-companion-backend/state/job_registry/jobs/bgjob_full_user_level_selective_post_slice8h_20260518.json`
   - `reading-companion-backend/state/job_registry/jobs/bgjob_full_long_span_vnext_post_slice8h_20260518.json`
   - `reading-companion-backend/state/job_registry/jobs/bgjob_full_long_span_vnext_post_slice8h_20260518_parallel5.json`
@@ -984,11 +989,11 @@ No provider-access blocker remains after the CPA Luna Medium switch. The bounded
 - Status: `waiting`
 - Lane: `mechanism_eval`
 - Priority: `high`
-- Detail: `docs/implementation/new-reading-mechanism/second-reader-memory-planning/codex/reports/Eval1-Full-Active-Evaluation-Post-Slice8H-Retry1-High-Parallel-Post-run-Report v0.md`
+- Detail: `docs/archive/pre-cleanup-2026-11/implementation/new-reading-mechanism/second-reader-memory-planning/codex/reports/Eval1-Full-Active-Evaluation-Post-Slice8H-Retry1-High-Parallel-Post-run-Report v0.md`
 - Next: review the completed Eval-1 Retry1 high-parallel full active evaluation. Do not update the evidence catalog, promote Long Span vNext, launch broader eval, or claim product quality before human review.
 - Jobs: none
 - Evidence:
-  - `docs/implementation/new-reading-mechanism/second-reader-memory-planning/codex/reports/Eval1-Full-Active-Evaluation-Post-Slice8H-Retry1-High-Parallel-Post-run-Report v0.md`
+  - `docs/archive/pre-cleanup-2026-11/implementation/new-reading-mechanism/second-reader-memory-planning/codex/reports/Eval1-Full-Active-Evaluation-Post-Slice8H-Retry1-High-Parallel-Post-run-Report v0.md`
   - `reading-companion-backend/eval/runs/attentional_v2/attentional_v2_eval1_long_span_post_slice8h_20260519_huochu/summary/aggregate.json`
   - `reading-companion-backend/eval/runs/attentional_v2/attentional_v2_eval1_long_span_post_slice8h_20260519_mangge/summary/aggregate.json`
   - `reading-companion-backend/eval/runs/attentional_v2/attentional_v2_eval1_long_span_post_slice8h_20260519_nawaer/summary/aggregate.json`
@@ -1001,10 +1006,10 @@ No provider-access blocker remains after the CPA Luna Medium switch. The bounded
 - Status: `done`
 - Lane: `mechanism_runtime`
 - Priority: `high`
-- Detail: `docs/implementation/new-reading-mechanism/second-reader-memory-planning/C设计10-Recent Reading Memory Design v0.md`
+- Detail: `docs/archive/pre-cleanup-2026-11/implementation/new-reading-mechanism/second-reader-memory-planning/C设计10-Recent Reading Memory Design v0.md`
 - Next: first-half formation is implemented and tested, but the follow-up consolidation task is now parked by `DEC-103`. Do not continue this as the next mechanism path unless the new ingest/digest feasibility audit explicitly re-adopts a slice.
 - Evidence:
-  - `docs/implementation/new-reading-mechanism/second-reader-memory-planning/C设计10-Recent Reading Memory Design v0.md`
+  - `docs/archive/pre-cleanup-2026-11/implementation/new-reading-mechanism/second-reader-memory-planning/C设计10-Recent Reading Memory Design v0.md`
   - `docs/backend-reading-mechanisms/attentional_v2.md`
   - `docs/backend-reader-evaluation.md`
   - `reading-companion-backend/docs/evaluation/reporting_standard.md`
@@ -1019,7 +1024,7 @@ No provider-access blocker remains after the CPA Luna Medium switch. The bounded
 - Status: `done`
 - Lane: `mechanism_eval`
 - Priority: `high`
-- Detail: `docs/implementation/new-reading-mechanism/second-reader-memory-planning/codex/reports/ActiveAttention-Prompt-Context-Grounded-Full-Window-Diagnostic-Post-run-Report v0.md`
+- Detail: `docs/archive/pre-cleanup-2026-11/implementation/new-reading-mechanism/second-reader-memory-planning/codex/reports/ActiveAttention-Prompt-Context-Grounded-Full-Window-Diagnostic-Post-run-Report v0.md`
 - Next: implementation and diagnostic attempt are recorded in `TASK-SECOND-READER-ACTIVE-ATTENTION-PROMPT-CONTEXT-DIAGNOSTIC-REPORT-REVIEW`. Treat the five-window diagnostic as invalidated because all shards were manually terminated before terminal summaries; do not treat partial traces as behavior evidence or catalog input.
 - Jobs:
   - `bgjob_active_attention_prompt_context_window_diagnostic_20260522_huochu` (`failed`, exit `-15`)
@@ -1033,19 +1038,19 @@ No provider-access blocker remains after the CPA Luna Medium switch. The bounded
   - `docs/history/decision-log.md`
   - `reading-companion-backend/docs/evaluation/reporting_standard.md`
   - `reading-companion-backend/docs/evaluation/run_ledger.md`
-  - `docs/implementation/new-reading-mechanism/second-reader-memory-planning/codex/reports/ActiveAttention-Prompt-Context-Grounded-Full-Window-Diagnostic-Post-run-Report v0.md`
+  - `docs/archive/pre-cleanup-2026-11/implementation/new-reading-mechanism/second-reader-memory-planning/codex/reports/ActiveAttention-Prompt-Context-Grounded-Full-Window-Diagnostic-Post-run-Report v0.md`
 
 ### `TASK-SECOND-READER-ACTIVE-ATTENTION-FORWARD-PULL-RETRY4-20260521` — Implement Active Attention source-grounding / forward-pull repair and run Retry4 micro eval on `huochu`
 - Status: `done`
 - Lane: `mechanism_eval`
 - Priority: `high`
-- Detail: `docs/implementation/new-reading-mechanism/second-reader-memory-planning/codex/reports/ActiveAttention-Forward-Pull-Micro-Eval-Huochu-Retry4-Post-run-Report v0.md`
+- Detail: `docs/archive/pre-cleanup-2026-11/implementation/new-reading-mechanism/second-reader-memory-planning/codex/reports/ActiveAttention-Forward-Pull-Micro-Eval-Huochu-Retry4-Post-run-Report v0.md`
 - Next: Retry4 diagnostic execution is complete and recorded in `TASK-SECOND-READER-ACTIVE-ATTENTION-FORWARD-PULL-RETRY4-REPORT-REVIEW`. Treat the result as mixed diagnostic evidence: source grounding improved, but Active Attention can still over-import book-level themes. Do not treat it as cataloged evidence, product-quality proof, or authorization for broader eval.
 - Jobs:
   - `bgjob_active_attention_live_question_micro_huochu_20260521_retry4` (`completed`)
 - Evidence:
   - `reading-companion-backend/docs/evaluation/run_ledger.md`
-  - `docs/implementation/new-reading-mechanism/second-reader-memory-planning/codex/reports/ActiveAttention-Forward-Pull-Micro-Eval-Huochu-Retry4-Post-run-Report v0.md`
+  - `docs/archive/pre-cleanup-2026-11/implementation/new-reading-mechanism/second-reader-memory-planning/codex/reports/ActiveAttention-Forward-Pull-Micro-Eval-Huochu-Retry4-Post-run-Report v0.md`
   - `reading-companion-backend/eval/runs/attentional_v2/attentional_v2_active_attention_live_question_micro_huochu_20260521_retry4/summary/aggregate.json`
   - `reading-companion-backend/eval/runs/attentional_v2/attentional_v2_active_attention_live_question_micro_huochu_20260521_retry4/summary/llm_usage.json`
   - `reading-companion-backend/eval/runs/attentional_v2/attentional_v2_active_attention_live_question_micro_huochu_20260521_retry4/analysis/active_attention_lifecycle_audit/README.md`
@@ -1054,13 +1059,13 @@ No provider-access blocker remains after the CPA Luna Medium switch. The bounded
 - Status: `done`
 - Lane: `mechanism_eval`
 - Priority: `high`
-- Detail: `docs/implementation/new-reading-mechanism/second-reader-memory-planning/codex/reports/ActiveAttention-Answered-Reason-Micro-Eval-Huochu-Retry3-Post-run-Report v0.md`
+- Detail: `docs/archive/pre-cleanup-2026-11/implementation/new-reading-mechanism/second-reader-memory-planning/codex/reports/ActiveAttention-Answered-Reason-Micro-Eval-Huochu-Retry3-Post-run-Report v0.md`
 - Next: Retry3 diagnostic execution is complete and is now supporting evidence for Retry4 review. The result was partial-positive: live-inquiry creation/update/answered lifecycle worked, while source grounding still had fallback caveats and close/downstream lineage were not exercised.
 - Jobs:
   - `bgjob_active_attention_live_question_micro_huochu_20260521_retry3` (`completed`)
 - Evidence:
   - `reading-companion-backend/docs/evaluation/run_ledger.md`
-  - `docs/implementation/new-reading-mechanism/second-reader-memory-planning/codex/reports/ActiveAttention-Answered-Reason-Micro-Eval-Huochu-Retry3-Post-run-Report v0.md`
+  - `docs/archive/pre-cleanup-2026-11/implementation/new-reading-mechanism/second-reader-memory-planning/codex/reports/ActiveAttention-Answered-Reason-Micro-Eval-Huochu-Retry3-Post-run-Report v0.md`
   - `reading-companion-backend/eval/runs/attentional_v2/attentional_v2_active_attention_live_question_micro_huochu_20260521_retry3/summary/aggregate.json`
   - `reading-companion-backend/eval/runs/attentional_v2/attentional_v2_active_attention_live_question_micro_huochu_20260521_retry3/summary/llm_usage.json`
   - `reading-companion-backend/eval/runs/attentional_v2/attentional_v2_active_attention_live_question_micro_huochu_20260521_retry3/analysis/active_attention_lifecycle_audit/README.md`
@@ -1069,13 +1074,13 @@ No provider-access blocker remains after the CPA Luna Medium switch. The bounded
 - Status: `done`
 - Lane: `mechanism_eval`
 - Priority: `high`
-- Detail: `docs/implementation/new-reading-mechanism/second-reader-memory-planning/codex/reports/ActiveAttention-Inquiry-Boundary-Micro-Eval-Huochu-Retry2-Post-run-Report v0.md`
+- Detail: `docs/archive/pre-cleanup-2026-11/implementation/new-reading-mechanism/second-reader-memory-planning/codex/reports/ActiveAttention-Inquiry-Boundary-Micro-Eval-Huochu-Retry2-Post-run-Report v0.md`
 - Next: Retry2 diagnostic execution is complete and recorded in `TASK-SECOND-READER-ACTIVE-ATTENTION-INQUIRY-BOUNDARY-REPAIR-RETRY2-REPORT-REVIEW`. The result is partial-positive diagnostic evidence: the `answer_boundary` contract is wired, but answer-boundary satisfaction still needs human review before any next repair. Do not treat it as cataloged evidence, product-quality proof, or authorization for broader eval.
 - Jobs:
   - `bgjob_active_attention_live_question_micro_huochu_20260521_retry2` (`completed`)
 - Evidence:
   - `reading-companion-backend/docs/evaluation/run_ledger.md`
-  - `docs/implementation/new-reading-mechanism/second-reader-memory-planning/codex/reports/ActiveAttention-Inquiry-Boundary-Micro-Eval-Huochu-Retry2-Post-run-Report v0.md`
+  - `docs/archive/pre-cleanup-2026-11/implementation/new-reading-mechanism/second-reader-memory-planning/codex/reports/ActiveAttention-Inquiry-Boundary-Micro-Eval-Huochu-Retry2-Post-run-Report v0.md`
   - `reading-companion-backend/eval/runs/attentional_v2/attentional_v2_active_attention_live_question_micro_huochu_20260521_retry2/summary/aggregate.json`
   - `reading-companion-backend/eval/runs/attentional_v2/attentional_v2_active_attention_live_question_micro_huochu_20260521_retry2/summary/llm_usage.json`
   - `reading-companion-backend/eval/runs/attentional_v2/attentional_v2_active_attention_live_question_micro_huochu_20260521_retry2/analysis/active_attention_lifecycle_audit/README.md`
@@ -1084,7 +1089,7 @@ No provider-access blocker remains after the CPA Luna Medium switch. The bounded
 - Status: `done`
 - Lane: `mechanism_eval`
 - Priority: `high`
-- Detail: `docs/implementation/new-reading-mechanism/second-reader-memory-planning/codex/reports/ActiveAttention-Live-Question-Micro-Eval-Huochu-Post-run-Report v0.md`
+- Detail: `docs/archive/pre-cleanup-2026-11/implementation/new-reading-mechanism/second-reader-memory-planning/codex/reports/ActiveAttention-Live-Question-Micro-Eval-Huochu-Post-run-Report v0.md`
 - Next: diagnostic execution is complete and recorded in `TASK-SECOND-READER-ACTIVE-ATTENTION-MICRO-EVAL-REPORT-REVIEW`. The result is a useful failure case for Active Attention live-question behavior; do not treat it as cataloged evidence, product-quality proof, or authorization for broader eval.
 - Jobs:
   - `bgjob_active_attention_live_question_micro_huochu_20260521` (`completed`)
@@ -1097,7 +1102,7 @@ No provider-access blocker remains after the CPA Luna Medium switch. The bounded
 - Status: `done`
 - Lane: `mechanism_eval`
 - Priority: `high`
-- Detail: `docs/implementation/new-reading-mechanism/second-reader-memory-planning/codex/reports/ActiveAttention-Live-Question-Micro-Eval-Huochu-Retry1-Post-run-Report v0.md`
+- Detail: `docs/archive/pre-cleanup-2026-11/implementation/new-reading-mechanism/second-reader-memory-planning/codex/reports/ActiveAttention-Live-Question-Micro-Eval-Huochu-Retry1-Post-run-Report v0.md`
 - Next: Retry1 diagnostic execution is complete and recorded in `TASK-SECOND-READER-ACTIVE-ATTENTION-MICRO-EVAL-RETRY1-REPORT-REVIEW`. The result is positive diagnostic evidence for the targeted Active Attention live-question behavior; do not treat it as cataloged evidence, product-quality proof, or authorization for broader eval.
 - Jobs:
   - `bgjob_active_attention_live_question_micro_huochu_20260521_retry1` (`completed`)
@@ -1111,7 +1116,7 @@ No provider-access blocker remains after the CPA Luna Medium switch. The bounded
 - Status: `done`
 - Lane: `mechanism_eval`
 - Priority: `high`
-- Detail: `docs/implementation/new-reading-mechanism/second-reader-memory-planning/codex/reports/Eval1-Full-Active-Evaluation-Post-Slice8H-Retry1-High-Parallel-Post-run-Report v0.md`
+- Detail: `docs/archive/pre-cleanup-2026-11/implementation/new-reading-mechanism/second-reader-memory-planning/codex/reports/Eval1-Full-Active-Evaluation-Post-Slice8H-Retry1-High-Parallel-Post-run-Report v0.md`
 - Next: Eval-1 Retry1 completed all 5 active Long Span semantic-probe windows and all 5 Lane A user-level reuse shards for `attentional_v2`. Results are pending human review; no evidence catalog update, Long Span formal-authority promotion, broader eval, or product-quality claim is authorized.
 - Jobs:
   - `bgjob_eval1_long_span_post_slice8h_20260519_huochu` (`completed`)
@@ -1125,17 +1130,17 @@ No provider-access blocker remains after the CPA Luna Medium switch. The bounded
   - `bgjob_eval1_user_level_post_slice8h_20260519_reuse_value_of_others` (`completed`)
   - `bgjob_eval1_user_level_post_slice8h_20260519_reuse_xidaduo` (`completed`)
 - Evidence:
-  - `docs/implementation/new-reading-mechanism/second-reader-memory-planning/codex/reports/Eval1-Full-Active-Evaluation-Post-Slice8H-Retry1-High-Parallel-Post-run-Report v0.md`
+  - `docs/archive/pre-cleanup-2026-11/implementation/new-reading-mechanism/second-reader-memory-planning/codex/reports/Eval1-Full-Active-Evaluation-Post-Slice8H-Retry1-High-Parallel-Post-run-Report v0.md`
 
 ### `TASK-SECOND-READER-MEMORY-PLANNING-EVAL1-LLM-HEALTH-REPAIR-REPORT-REVIEW` — Review Eval-1 LLM health and eval strictness repair report
 - Status: `done`
 - Lane: `mechanism_eval`
 - Priority: `high`
-- Detail: `docs/implementation/new-reading-mechanism/second-reader-memory-planning/codex/reports/Eval1-LLM-Health-and-Eval-Strictness-Repair-Post-implementation-Report v0.md`
+- Detail: `docs/archive/pre-cleanup-2026-11/implementation/new-reading-mechanism/second-reader-memory-planning/codex/reports/Eval1-LLM-Health-and-Eval-Strictness-Repair-Post-implementation-Report v0.md`
 - Next: repair accepted and used by Eval-1 Retry1. Keep strict eval health gates, live target preflight, and same-tier failover in force for future eval runs.
 - Jobs: none
 - Evidence:
-  - `docs/implementation/new-reading-mechanism/second-reader-memory-planning/codex/reports/Eval1-LLM-Health-and-Eval-Strictness-Repair-Post-implementation-Report v0.md`
+  - `docs/archive/pre-cleanup-2026-11/implementation/new-reading-mechanism/second-reader-memory-planning/codex/reports/Eval1-LLM-Health-and-Eval-Strictness-Repair-Post-implementation-Report v0.md`
   - `reading-companion-backend/eval/attentional_v2/llm_health.py`
   - `reading-companion-backend/scripts/check_llm_targets_live.py`
   - `reading-companion-backend/scripts/check_eval_llm_health.py`
@@ -1144,32 +1149,32 @@ No provider-access blocker remains after the CPA Luna Medium switch. The bounded
 - Status: `done`
 - Lane: `mechanism_runtime`
 - Priority: `high`
-- Detail: `docs/implementation/new-reading-mechanism/second-reader-memory-planning/codex/reports/Slice8H-Diagnostic-Evidence-Catalog-Entry-for-Minimal-Eval-Suite-Smoke-Post-implementation-Report v0.md`
+- Detail: `docs/archive/pre-cleanup-2026-11/implementation/new-reading-mechanism/second-reader-memory-planning/codex/reports/Slice8H-Diagnostic-Evidence-Catalog-Entry-for-Minimal-Eval-Suite-Smoke-Post-implementation-Report v0.md`
 - Next: Slice 8H Post-implementation Report is accepted. The Memory / Planning / Minimal Eval implementation track is closed after Slice 8H. The completed Slice 8C through Slice 8G Minimal Eval Suite smoke is cataloged as `diagnostic_smoke` only; any broader eval, formal-authority promotion, runtime patch, further catalog entry, or product-quality claim requires a separate future brief.
 - Jobs:
   - `bgjob_minimal_eval_suite_lane_a_smoke_20260517` (`failed`)
   - `bgjob_minimal_eval_suite_lane_a_smoke_20260517_retry1` (`completed`)
   - `bgjob_minimal_eval_suite_lane_b_smoke_20260517` (`completed`)
 - Evidence:
-  - `docs/implementation/new-reading-mechanism/second-reader-memory-planning/README.md`
-  - `docs/implementation/new-reading-mechanism/second-reader-memory-planning/E实施0-Implementation Roadmap & Handoff v0.md`
-  - `docs/implementation/new-reading-mechanism/second-reader-memory-planning/codex/E实施1-Implementation Feasibility & Delta Audit v0.md`
-  - `docs/implementation/new-reading-mechanism/second-reader-memory-planning/codex/briefs/Slice6B-Slow-cycle-Re-entry-Reconsolidation-and-Eval-readiness-Smoke-Pre-implementation-Brief v0.md`
-  - `docs/implementation/new-reading-mechanism/second-reader-memory-planning/codex/briefs/Slice7A-Minimal-Eval-Asset-Inventory-and-Evidence-Wiring-Pre-implementation-Brief v0.md`
-  - `docs/implementation/new-reading-mechanism/second-reader-memory-planning/codex/reports/Slice7A-Minimal-Eval-Asset-Inventory-and-Evidence-Wiring-Post-implementation-Report v0.md`
-  - `docs/implementation/new-reading-mechanism/second-reader-memory-planning/codex/briefs/Slice7B-Minimal-Eval-Smoke-Harness-and-Evidence-Availability-Validation-Pre-implementation-Brief v0.md`
-  - `docs/implementation/new-reading-mechanism/second-reader-memory-planning/codex/reports/Slice7B-Minimal-Eval-Smoke-Harness-and-Evidence-Availability-Validation-Post-implementation-Report v0.md`
-  - `docs/implementation/new-reading-mechanism/second-reader-memory-planning/codex/briefs/Slice8A-Post-implementation-Review-and-Minimal-Eval-Readiness-Gate-Pre-implementation-Brief v0.md`
-  - `docs/implementation/new-reading-mechanism/second-reader-memory-planning/codex/reports/Slice8A-Post-implementation-Review-and-Minimal-Eval-Readiness-Gate-Post-implementation-Report v0.md`
-  - `docs/implementation/new-reading-mechanism/second-reader-memory-planning/codex/briefs/Slice8B-Minimal-Eval-Suite-Run-Brief-and-Execution-Guardrails-Pre-implementation-Brief v0.md`
-  - `docs/implementation/new-reading-mechanism/second-reader-memory-planning/codex/briefs/Slice8C-Minimal-Eval-Suite-Execution-Preflight-and-Bounded-Run-Pre-implementation-Brief v0.md`
-  - `docs/implementation/new-reading-mechanism/second-reader-memory-planning/codex/reports/Slice8C-Minimal-Eval-Suite-Execution-Preflight-and-Bounded-Run-Post-implementation-Report v0.md`
-  - `docs/implementation/new-reading-mechanism/second-reader-memory-planning/codex/reports/Slice8D-Lane-A-Source-locator-Compatibility-Triage-and-Minimal-Patch-Post-implementation-Report v0.md`
-  - `docs/implementation/new-reading-mechanism/second-reader-memory-planning/codex/reports/Slice8E-Lane-A-Retry1-Bounded-Execution-Post-run-Report v0.md`
-  - `docs/implementation/new-reading-mechanism/second-reader-memory-planning/codex/reports/Slice8F-Lane-B-Bounded-Diagnostic-Smoke-Post-run-Report v0.md`
-  - `docs/implementation/new-reading-mechanism/second-reader-memory-planning/codex/reports/Slice8G-Minimal-Eval-Suite-Smoke-Closure-and-Evidence-Interpretation-Report v0.md`
-  - `docs/implementation/new-reading-mechanism/second-reader-memory-planning/codex/briefs/Slice8H-Diagnostic-Evidence-Catalog-Entry-for-Minimal-Eval-Suite-Smoke-Pre-implementation-Brief v0.md`
-  - `docs/implementation/new-reading-mechanism/second-reader-memory-planning/codex/reports/Slice8H-Diagnostic-Evidence-Catalog-Entry-for-Minimal-Eval-Suite-Smoke-Post-implementation-Report v0.md`
+  - `docs/archive/pre-cleanup-2026-11/implementation/new-reading-mechanism/second-reader-memory-planning/README.md`
+  - `docs/archive/pre-cleanup-2026-11/implementation/new-reading-mechanism/second-reader-memory-planning/E实施0-Implementation Roadmap & Handoff v0.md`
+  - `docs/archive/pre-cleanup-2026-11/implementation/new-reading-mechanism/second-reader-memory-planning/codex/E实施1-Implementation Feasibility & Delta Audit v0.md`
+  - `docs/archive/pre-cleanup-2026-11/implementation/new-reading-mechanism/second-reader-memory-planning/codex/briefs/Slice6B-Slow-cycle-Re-entry-Reconsolidation-and-Eval-readiness-Smoke-Pre-implementation-Brief v0.md`
+  - `docs/archive/pre-cleanup-2026-11/implementation/new-reading-mechanism/second-reader-memory-planning/codex/briefs/Slice7A-Minimal-Eval-Asset-Inventory-and-Evidence-Wiring-Pre-implementation-Brief v0.md`
+  - `docs/archive/pre-cleanup-2026-11/implementation/new-reading-mechanism/second-reader-memory-planning/codex/reports/Slice7A-Minimal-Eval-Asset-Inventory-and-Evidence-Wiring-Post-implementation-Report v0.md`
+  - `docs/archive/pre-cleanup-2026-11/implementation/new-reading-mechanism/second-reader-memory-planning/codex/briefs/Slice7B-Minimal-Eval-Smoke-Harness-and-Evidence-Availability-Validation-Pre-implementation-Brief v0.md`
+  - `docs/archive/pre-cleanup-2026-11/implementation/new-reading-mechanism/second-reader-memory-planning/codex/reports/Slice7B-Minimal-Eval-Smoke-Harness-and-Evidence-Availability-Validation-Post-implementation-Report v0.md`
+  - `docs/archive/pre-cleanup-2026-11/implementation/new-reading-mechanism/second-reader-memory-planning/codex/briefs/Slice8A-Post-implementation-Review-and-Minimal-Eval-Readiness-Gate-Pre-implementation-Brief v0.md`
+  - `docs/archive/pre-cleanup-2026-11/implementation/new-reading-mechanism/second-reader-memory-planning/codex/reports/Slice8A-Post-implementation-Review-and-Minimal-Eval-Readiness-Gate-Post-implementation-Report v0.md`
+  - `docs/archive/pre-cleanup-2026-11/implementation/new-reading-mechanism/second-reader-memory-planning/codex/briefs/Slice8B-Minimal-Eval-Suite-Run-Brief-and-Execution-Guardrails-Pre-implementation-Brief v0.md`
+  - `docs/archive/pre-cleanup-2026-11/implementation/new-reading-mechanism/second-reader-memory-planning/codex/briefs/Slice8C-Minimal-Eval-Suite-Execution-Preflight-and-Bounded-Run-Pre-implementation-Brief v0.md`
+  - `docs/archive/pre-cleanup-2026-11/implementation/new-reading-mechanism/second-reader-memory-planning/codex/reports/Slice8C-Minimal-Eval-Suite-Execution-Preflight-and-Bounded-Run-Post-implementation-Report v0.md`
+  - `docs/archive/pre-cleanup-2026-11/implementation/new-reading-mechanism/second-reader-memory-planning/codex/reports/Slice8D-Lane-A-Source-locator-Compatibility-Triage-and-Minimal-Patch-Post-implementation-Report v0.md`
+  - `docs/archive/pre-cleanup-2026-11/implementation/new-reading-mechanism/second-reader-memory-planning/codex/reports/Slice8E-Lane-A-Retry1-Bounded-Execution-Post-run-Report v0.md`
+  - `docs/archive/pre-cleanup-2026-11/implementation/new-reading-mechanism/second-reader-memory-planning/codex/reports/Slice8F-Lane-B-Bounded-Diagnostic-Smoke-Post-run-Report v0.md`
+  - `docs/archive/pre-cleanup-2026-11/implementation/new-reading-mechanism/second-reader-memory-planning/codex/reports/Slice8G-Minimal-Eval-Suite-Smoke-Closure-and-Evidence-Interpretation-Report v0.md`
+  - `docs/archive/pre-cleanup-2026-11/implementation/new-reading-mechanism/second-reader-memory-planning/codex/briefs/Slice8H-Diagnostic-Evidence-Catalog-Entry-for-Minimal-Eval-Suite-Smoke-Pre-implementation-Brief v0.md`
+  - `docs/archive/pre-cleanup-2026-11/implementation/new-reading-mechanism/second-reader-memory-planning/codex/reports/Slice8H-Diagnostic-Evidence-Catalog-Entry-for-Minimal-Eval-Suite-Smoke-Post-implementation-Report v0.md`
   - `reading-companion-backend/docs/evaluation/evidence_catalog.md`
   - `reading-companion-backend/docs/evaluation/evidence_catalog.json`
   - `reading-companion-backend/eval/runs/attentional_v2/attentional_v2_minimal_eval_suite_lane_a_smoke_20260517_retry1/summary/aggregate.json`
@@ -1179,13 +1184,13 @@ No provider-access blocker remains after the CPA Luna Medium switch. The bounded
   - `reading-companion-backend/eval/runs/attentional_v2/attentional_v2_minimal_eval_suite_lane_b_smoke_20260517/summary/report.md`
   - `reading-companion-backend/eval/runs/attentional_v2/attentional_v2_minimal_eval_suite_lane_b_smoke_20260517/summary/llm_usage.json`
   - `reading-companion-backend/eval/runs/attentional_v2/attentional_v2_minimal_eval_suite_lane_b_smoke_20260517/meta/output_sourcing.json`
-  - `docs/implementation/new-reading-mechanism/second-reader-memory-planning/codex/E实施-progress-ledger.md`
+  - `docs/archive/pre-cleanup-2026-11/implementation/new-reading-mechanism/second-reader-memory-planning/codex/E实施-progress-ledger.md`
 
 ### `TASK-DATASET-QUESTION-ALIGNED-CASE-CONSTRUCTION` — Build question-aligned case construction for evaluation datasets
 - Status: `waiting`
 - Lane: `dataset_platform`
 - Priority: `high`
-- Detail: `docs/implementation/new-reading-mechanism/new-reading-mechanism-execution-tracker.md`
+- Detail: `docs/archive/pre-cleanup-2026-11/implementation/new-reading-mechanism/new-reading-mechanism-execution-tracker.md`
 - Next: keep the landed builder available as support infrastructure, but do not open a new general builder wave by default now that the current decisive eval lanes are resolved; broader construction should resume only if later regression work exposes a concrete blocker or if one explicitly scoped audit-stage-only reproducibility pass is requested
 - Jobs:
   - `bgjob_closed_loop_en_broader_callbackpromptfix_20260331` (`completed`)
@@ -1206,7 +1211,7 @@ No provider-access blocker remains after the CPA Luna Medium switch. The bounded
 - Status: `waiting`
 - Lane: `dataset_platform`
 - Priority: `high`
-- Detail: `docs/implementation/new-reading-mechanism/new-reading-mechanism-execution-tracker.md`
+- Detail: `docs/archive/pre-cleanup-2026-11/implementation/new-reading-mechanism/new-reading-mechanism-execution-tracker.md`
 - Next: keep the bounded controller scratch-safe and reusable, but do not widen automation by default now that the current decisive mechanism-eval lane is closed; with current model cost pressure, do not spend on non-mainline comparison support loops unless later work needs one explicitly scoped audit-stage-only reproducibility pass or another concrete support-lane unblocker
 - Jobs:
   - `bgjob_closed_loop_en_broader_callbackpromptfix_20260331` (`completed`)
@@ -1264,631 +1269,631 @@ No provider-access blocker remains after the CPA Luna Medium switch. The bounded
 - Status: `queued`
 - Lane: `migration`
 - Priority: `medium`
-- Detail: `docs/implementation/new-reading-mechanism/new-reading-mechanism-execution-tracker.md`
+- Detail: `docs/archive/pre-cleanup-2026-11/implementation/new-reading-mechanism/new-reading-mechanism-execution-tracker.md`
 - Blocked by: `TASK-V2-NATIVE-READING-PRESENTATION`
 - Next: keep section-first compatibility fields and containers only as migration sidecars; start removal only after the V2-native overview, chapter, and marks surfaces are stable enough that the older presentation model is no longer needed for normal product use
 ### `TASK-SECOND-READER-MEMORY-PLANNING-SLICE8H-BRIEF-ACCEPTANCE` — Review Slice 8H Diagnostic Evidence Catalog Entry Brief
 - Status: `done`
 - Lane: `mechanism_runtime`
 - Priority: `high`
-- Detail: `docs/implementation/new-reading-mechanism/second-reader-memory-planning/codex/briefs/Slice8H-Diagnostic-Evidence-Catalog-Entry-for-Minimal-Eval-Suite-Smoke-Pre-implementation-Brief v0.md`
+- Detail: `docs/archive/pre-cleanup-2026-11/implementation/new-reading-mechanism/second-reader-memory-planning/codex/briefs/Slice8H-Diagnostic-Evidence-Catalog-Entry-for-Minimal-Eval-Suite-Smoke-Pre-implementation-Brief v0.md`
 - Next: Slice 8H Pre-implementation Brief is accepted. Slice 8H catalog entry implementation has landed and is recorded in `TASK-SECOND-READER-MEMORY-PLANNING-SLICE8H-REPORT-REVIEW`; do not run eval, promote Long Span vNext, add further catalog entries, or claim product quality until the Slice 8H report is reviewed.
 - Jobs:
   - `bgjob_minimal_eval_suite_lane_a_smoke_20260517` (`failed`)
   - `bgjob_minimal_eval_suite_lane_a_smoke_20260517_retry1` (`completed`)
   - `bgjob_minimal_eval_suite_lane_b_smoke_20260517` (`completed`)
 - Evidence:
-  - `docs/implementation/new-reading-mechanism/second-reader-memory-planning/codex/briefs/Slice8H-Diagnostic-Evidence-Catalog-Entry-for-Minimal-Eval-Suite-Smoke-Pre-implementation-Brief v0.md`
+  - `docs/archive/pre-cleanup-2026-11/implementation/new-reading-mechanism/second-reader-memory-planning/codex/briefs/Slice8H-Diagnostic-Evidence-Catalog-Entry-for-Minimal-Eval-Suite-Smoke-Pre-implementation-Brief v0.md`
   - `reading-companion-backend/docs/evaluation/evidence_catalog.md`
   - `reading-companion-backend/docs/evaluation/evidence_catalog.json`
-  - `docs/implementation/new-reading-mechanism/second-reader-memory-planning/codex/reports/Slice8H-Diagnostic-Evidence-Catalog-Entry-for-Minimal-Eval-Suite-Smoke-Post-implementation-Report v0.md`
-  - `docs/implementation/new-reading-mechanism/second-reader-memory-planning/codex/E实施-progress-ledger.md`
+  - `docs/archive/pre-cleanup-2026-11/implementation/new-reading-mechanism/second-reader-memory-planning/codex/reports/Slice8H-Diagnostic-Evidence-Catalog-Entry-for-Minimal-Eval-Suite-Smoke-Post-implementation-Report v0.md`
+  - `docs/archive/pre-cleanup-2026-11/implementation/new-reading-mechanism/second-reader-memory-planning/codex/E实施-progress-ledger.md`
 
 ### `TASK-SECOND-READER-MEMORY-PLANNING-SLICE8G-REPORT-REVIEW` — Review Slice 8G Minimal Eval Suite Smoke Closure Report
 - Status: `done`
 - Lane: `mechanism_runtime`
 - Priority: `high`
-- Detail: `docs/implementation/new-reading-mechanism/second-reader-memory-planning/codex/reports/Slice8G-Minimal-Eval-Suite-Smoke-Closure-and-Evidence-Interpretation-Report v0.md`
+- Detail: `docs/archive/pre-cleanup-2026-11/implementation/new-reading-mechanism/second-reader-memory-planning/codex/reports/Slice8G-Minimal-Eval-Suite-Smoke-Closure-and-Evidence-Interpretation-Report v0.md`
 - Next: Slice 8G Minimal Eval Suite smoke closure report is accepted. Slice 8H diagnostic evidence catalog entry brief is pending review; do not update the evidence catalog, promote Long Span vNext, run broader eval, or start another eval slice until the Slice 8H brief is reviewed.
 - Jobs:
   - `bgjob_minimal_eval_suite_lane_a_smoke_20260517` (`failed`)
   - `bgjob_minimal_eval_suite_lane_a_smoke_20260517_retry1` (`completed`)
   - `bgjob_minimal_eval_suite_lane_b_smoke_20260517` (`completed`)
 - Evidence:
-  - `docs/implementation/new-reading-mechanism/second-reader-memory-planning/codex/reports/Slice8G-Minimal-Eval-Suite-Smoke-Closure-and-Evidence-Interpretation-Report v0.md`
-  - `docs/implementation/new-reading-mechanism/second-reader-memory-planning/codex/briefs/Slice8H-Diagnostic-Evidence-Catalog-Entry-for-Minimal-Eval-Suite-Smoke-Pre-implementation-Brief v0.md`
-  - `docs/implementation/new-reading-mechanism/second-reader-memory-planning/codex/E实施-progress-ledger.md`
+  - `docs/archive/pre-cleanup-2026-11/implementation/new-reading-mechanism/second-reader-memory-planning/codex/reports/Slice8G-Minimal-Eval-Suite-Smoke-Closure-and-Evidence-Interpretation-Report v0.md`
+  - `docs/archive/pre-cleanup-2026-11/implementation/new-reading-mechanism/second-reader-memory-planning/codex/briefs/Slice8H-Diagnostic-Evidence-Catalog-Entry-for-Minimal-Eval-Suite-Smoke-Pre-implementation-Brief v0.md`
+  - `docs/archive/pre-cleanup-2026-11/implementation/new-reading-mechanism/second-reader-memory-planning/codex/E实施-progress-ledger.md`
 
 ### `TASK-SECOND-READER-MEMORY-PLANNING-SLICE8F-REPORT-REVIEW` — Review Slice 8F Post-run Report for Lane B Bounded Diagnostic Smoke
 - Status: `done`
 - Lane: `mechanism_runtime`
 - Priority: `high`
-- Detail: `docs/implementation/new-reading-mechanism/second-reader-memory-planning/codex/reports/Slice8F-Lane-B-Bounded-Diagnostic-Smoke-Post-run-Report v0.md`
+- Detail: `docs/archive/pre-cleanup-2026-11/implementation/new-reading-mechanism/second-reader-memory-planning/codex/reports/Slice8F-Lane-B-Bounded-Diagnostic-Smoke-Post-run-Report v0.md`
 - Next: Slice 8F Post-run Report is accepted. Minimal Eval Suite smoke closure and evidence interpretation has landed and is recorded in `TASK-SECOND-READER-MEMORY-PLANNING-SLICE8G-REPORT-REVIEW`; do not update the evidence catalog, promote Long Span vNext, run broader eval, or start another eval slice until the Slice 8G report is reviewed.
 - Jobs:
   - `bgjob_minimal_eval_suite_lane_b_smoke_20260517` (`completed`)
 - Evidence:
-  - `docs/implementation/new-reading-mechanism/second-reader-memory-planning/codex/reports/Slice8F-Lane-B-Bounded-Diagnostic-Smoke-Post-run-Report v0.md`
+  - `docs/archive/pre-cleanup-2026-11/implementation/new-reading-mechanism/second-reader-memory-planning/codex/reports/Slice8F-Lane-B-Bounded-Diagnostic-Smoke-Post-run-Report v0.md`
   - `reading-companion-backend/eval/runs/attentional_v2/attentional_v2_minimal_eval_suite_lane_b_smoke_20260517/summary/aggregate.json`
   - `reading-companion-backend/eval/runs/attentional_v2/attentional_v2_minimal_eval_suite_lane_b_smoke_20260517/summary/report.md`
   - `reading-companion-backend/eval/runs/attentional_v2/attentional_v2_minimal_eval_suite_lane_b_smoke_20260517/summary/llm_usage.json`
   - `reading-companion-backend/eval/runs/attentional_v2/attentional_v2_minimal_eval_suite_lane_b_smoke_20260517/meta/output_sourcing.json`
-  - `docs/implementation/new-reading-mechanism/second-reader-memory-planning/codex/E实施-progress-ledger.md`
+  - `docs/archive/pre-cleanup-2026-11/implementation/new-reading-mechanism/second-reader-memory-planning/codex/E实施-progress-ledger.md`
 
 ### `TASK-SECOND-READER-MEMORY-PLANNING-SLICE8E-REPORT-REVIEW` — Review Slice 8E Post-run Report for Lane A `_retry1` Bounded Execution
 - Status: `done`
 - Lane: `mechanism_runtime`
 - Priority: `high`
-- Detail: `docs/implementation/new-reading-mechanism/second-reader-memory-planning/codex/reports/Slice8E-Lane-A-Retry1-Bounded-Execution-Post-run-Report v0.md`
+- Detail: `docs/archive/pre-cleanup-2026-11/implementation/new-reading-mechanism/second-reader-memory-planning/codex/reports/Slice8E-Lane-A-Retry1-Bounded-Execution-Post-run-Report v0.md`
 - Next: Slice 8E Post-run Report is accepted. Lane B bounded diagnostic smoke is accepted, and the smoke closure report is recorded in `TASK-SECOND-READER-MEMORY-PLANNING-SLICE8G-REPORT-REVIEW`; do not update the evidence catalog, promote Long Span vNext, or start another eval slice until the Slice 8G report is reviewed.
 - Jobs:
   - `bgjob_minimal_eval_suite_lane_a_smoke_20260517_retry1` (`completed`)
 - Evidence:
-  - `docs/implementation/new-reading-mechanism/second-reader-memory-planning/codex/reports/Slice8E-Lane-A-Retry1-Bounded-Execution-Post-run-Report v0.md`
+  - `docs/archive/pre-cleanup-2026-11/implementation/new-reading-mechanism/second-reader-memory-planning/codex/reports/Slice8E-Lane-A-Retry1-Bounded-Execution-Post-run-Report v0.md`
   - `reading-companion-backend/eval/runs/attentional_v2/attentional_v2_minimal_eval_suite_lane_a_smoke_20260517_retry1/summary/aggregate.json`
   - `reading-companion-backend/eval/runs/attentional_v2/attentional_v2_minimal_eval_suite_lane_a_smoke_20260517_retry1/summary/report.md`
   - `reading-companion-backend/eval/runs/attentional_v2/attentional_v2_minimal_eval_suite_lane_a_smoke_20260517_retry1/summary/llm_usage.json`
-  - `docs/implementation/new-reading-mechanism/second-reader-memory-planning/codex/E实施-progress-ledger.md`
+  - `docs/archive/pre-cleanup-2026-11/implementation/new-reading-mechanism/second-reader-memory-planning/codex/E实施-progress-ledger.md`
 
 ### `TASK-SECOND-READER-MEMORY-PLANNING-SLICE8D-REPORT-REVIEW` — Review Slice 8D Post-implementation Report for Lane A Source-locator Compatibility Triage and Minimal Patch
 - Status: `done`
 - Lane: `mechanism_runtime`
 - Priority: `high`
-- Detail: `docs/implementation/new-reading-mechanism/second-reader-memory-planning/codex/reports/Slice8D-Lane-A-Source-locator-Compatibility-Triage-and-Minimal-Patch-Post-implementation-Report v0.md`
+- Detail: `docs/archive/pre-cleanup-2026-11/implementation/new-reading-mechanism/second-reader-memory-planning/codex/reports/Slice8D-Lane-A-Source-locator-Compatibility-Triage-and-Minimal-Patch-Post-implementation-Report v0.md`
 - Next: Slice 8D Post-implementation Report is accepted. Lane A `_retry1` and Lane B bounded diagnostic smoke are accepted, and the smoke closure report is recorded in `TASK-SECOND-READER-MEMORY-PLANNING-SLICE8G-REPORT-REVIEW`; do not update the evidence catalog or start another eval slice until the Slice 8G report is reviewed.
 - Jobs:
   - `bgjob_minimal_eval_suite_lane_a_smoke_20260517` (`failed`)
 - Evidence:
-  - `docs/implementation/new-reading-mechanism/second-reader-memory-planning/codex/reports/Slice8D-Lane-A-Source-locator-Compatibility-Triage-and-Minimal-Patch-Post-implementation-Report v0.md`
+  - `docs/archive/pre-cleanup-2026-11/implementation/new-reading-mechanism/second-reader-memory-planning/codex/reports/Slice8D-Lane-A-Source-locator-Compatibility-Triage-and-Minimal-Patch-Post-implementation-Report v0.md`
   - `reading-companion-backend/eval/attentional_v2/run_user_level_selective_comparison.py`
   - `reading-companion-backend/tests/test_run_user_level_selective_comparison.py`
-  - `docs/implementation/new-reading-mechanism/second-reader-memory-planning/codex/E实施-progress-ledger.md`
+  - `docs/archive/pre-cleanup-2026-11/implementation/new-reading-mechanism/second-reader-memory-planning/codex/E实施-progress-ledger.md`
 
 ### `TASK-SECOND-READER-MEMORY-PLANNING-SLICE8C-REPORT-REVIEW` — Review Slice 8C Post-implementation Report for Minimal Eval Suite Execution Preflight and Bounded Run
 - Status: `done`
 - Lane: `mechanism_runtime`
 - Priority: `high`
-- Detail: `docs/implementation/new-reading-mechanism/second-reader-memory-planning/codex/reports/Slice8C-Minimal-Eval-Suite-Execution-Preflight-and-Bounded-Run-Post-implementation-Report v0.md`
+- Detail: `docs/archive/pre-cleanup-2026-11/implementation/new-reading-mechanism/second-reader-memory-planning/codex/reports/Slice8C-Minimal-Eval-Suite-Execution-Preflight-and-Bounded-Run-Post-implementation-Report v0.md`
 - Next: Slice 8C Post-implementation Report is accepted as failed execution evidence. Continue with `TASK-SECOND-READER-MEMORY-PLANNING-SLICE8D-REPORT-REVIEW`; do not retry Lane A, launch Lane B, update the evidence catalog, or start another eval slice until the Slice 8D patch report is reviewed.
 - Jobs:
   - `bgjob_minimal_eval_suite_lane_a_smoke_20260517` (`failed`)
 - Evidence:
-  - `docs/implementation/new-reading-mechanism/second-reader-memory-planning/README.md`
-  - `docs/implementation/new-reading-mechanism/second-reader-memory-planning/E实施0-Implementation Roadmap & Handoff v0.md`
-  - `docs/implementation/new-reading-mechanism/second-reader-memory-planning/codex/E实施1-Implementation Feasibility & Delta Audit v0.md`
-  - `docs/implementation/new-reading-mechanism/second-reader-memory-planning/codex/briefs/Slice6B-Slow-cycle-Re-entry-Reconsolidation-and-Eval-readiness-Smoke-Pre-implementation-Brief v0.md`
-  - `docs/implementation/new-reading-mechanism/second-reader-memory-planning/codex/briefs/Slice7A-Minimal-Eval-Asset-Inventory-and-Evidence-Wiring-Pre-implementation-Brief v0.md`
-  - `docs/implementation/new-reading-mechanism/second-reader-memory-planning/codex/reports/Slice7A-Minimal-Eval-Asset-Inventory-and-Evidence-Wiring-Post-implementation-Report v0.md`
-  - `docs/implementation/new-reading-mechanism/second-reader-memory-planning/codex/briefs/Slice7B-Minimal-Eval-Smoke-Harness-and-Evidence-Availability-Validation-Pre-implementation-Brief v0.md`
-  - `docs/implementation/new-reading-mechanism/second-reader-memory-planning/codex/reports/Slice7B-Minimal-Eval-Smoke-Harness-and-Evidence-Availability-Validation-Post-implementation-Report v0.md`
-  - `docs/implementation/new-reading-mechanism/second-reader-memory-planning/codex/briefs/Slice8A-Post-implementation-Review-and-Minimal-Eval-Readiness-Gate-Pre-implementation-Brief v0.md`
-  - `docs/implementation/new-reading-mechanism/second-reader-memory-planning/codex/reports/Slice8A-Post-implementation-Review-and-Minimal-Eval-Readiness-Gate-Post-implementation-Report v0.md`
-  - `docs/implementation/new-reading-mechanism/second-reader-memory-planning/codex/briefs/Slice8B-Minimal-Eval-Suite-Run-Brief-and-Execution-Guardrails-Pre-implementation-Brief v0.md`
-  - `docs/implementation/new-reading-mechanism/second-reader-memory-planning/codex/briefs/Slice8C-Minimal-Eval-Suite-Execution-Preflight-and-Bounded-Run-Pre-implementation-Brief v0.md`
-  - `docs/implementation/new-reading-mechanism/second-reader-memory-planning/codex/reports/Slice8C-Minimal-Eval-Suite-Execution-Preflight-and-Bounded-Run-Post-implementation-Report v0.md`
-  - `docs/implementation/new-reading-mechanism/second-reader-memory-planning/codex/E实施-progress-ledger.md`
+  - `docs/archive/pre-cleanup-2026-11/implementation/new-reading-mechanism/second-reader-memory-planning/README.md`
+  - `docs/archive/pre-cleanup-2026-11/implementation/new-reading-mechanism/second-reader-memory-planning/E实施0-Implementation Roadmap & Handoff v0.md`
+  - `docs/archive/pre-cleanup-2026-11/implementation/new-reading-mechanism/second-reader-memory-planning/codex/E实施1-Implementation Feasibility & Delta Audit v0.md`
+  - `docs/archive/pre-cleanup-2026-11/implementation/new-reading-mechanism/second-reader-memory-planning/codex/briefs/Slice6B-Slow-cycle-Re-entry-Reconsolidation-and-Eval-readiness-Smoke-Pre-implementation-Brief v0.md`
+  - `docs/archive/pre-cleanup-2026-11/implementation/new-reading-mechanism/second-reader-memory-planning/codex/briefs/Slice7A-Minimal-Eval-Asset-Inventory-and-Evidence-Wiring-Pre-implementation-Brief v0.md`
+  - `docs/archive/pre-cleanup-2026-11/implementation/new-reading-mechanism/second-reader-memory-planning/codex/reports/Slice7A-Minimal-Eval-Asset-Inventory-and-Evidence-Wiring-Post-implementation-Report v0.md`
+  - `docs/archive/pre-cleanup-2026-11/implementation/new-reading-mechanism/second-reader-memory-planning/codex/briefs/Slice7B-Minimal-Eval-Smoke-Harness-and-Evidence-Availability-Validation-Pre-implementation-Brief v0.md`
+  - `docs/archive/pre-cleanup-2026-11/implementation/new-reading-mechanism/second-reader-memory-planning/codex/reports/Slice7B-Minimal-Eval-Smoke-Harness-and-Evidence-Availability-Validation-Post-implementation-Report v0.md`
+  - `docs/archive/pre-cleanup-2026-11/implementation/new-reading-mechanism/second-reader-memory-planning/codex/briefs/Slice8A-Post-implementation-Review-and-Minimal-Eval-Readiness-Gate-Pre-implementation-Brief v0.md`
+  - `docs/archive/pre-cleanup-2026-11/implementation/new-reading-mechanism/second-reader-memory-planning/codex/reports/Slice8A-Post-implementation-Review-and-Minimal-Eval-Readiness-Gate-Post-implementation-Report v0.md`
+  - `docs/archive/pre-cleanup-2026-11/implementation/new-reading-mechanism/second-reader-memory-planning/codex/briefs/Slice8B-Minimal-Eval-Suite-Run-Brief-and-Execution-Guardrails-Pre-implementation-Brief v0.md`
+  - `docs/archive/pre-cleanup-2026-11/implementation/new-reading-mechanism/second-reader-memory-planning/codex/briefs/Slice8C-Minimal-Eval-Suite-Execution-Preflight-and-Bounded-Run-Pre-implementation-Brief v0.md`
+  - `docs/archive/pre-cleanup-2026-11/implementation/new-reading-mechanism/second-reader-memory-planning/codex/reports/Slice8C-Minimal-Eval-Suite-Execution-Preflight-and-Bounded-Run-Post-implementation-Report v0.md`
+  - `docs/archive/pre-cleanup-2026-11/implementation/new-reading-mechanism/second-reader-memory-planning/codex/E实施-progress-ledger.md`
 
 ### `TASK-SECOND-READER-MEMORY-PLANNING-SLICE8C-BRIEF-ACCEPTANCE` — Review Slice 8C Pre-implementation Brief for Minimal Eval Suite Execution Preflight and Bounded Run
 - Status: `done`
 - Lane: `mechanism_runtime`
 - Priority: `high`
-- Detail: `docs/implementation/new-reading-mechanism/second-reader-memory-planning/codex/briefs/Slice8C-Minimal-Eval-Suite-Execution-Preflight-and-Bounded-Run-Pre-implementation-Brief v0.md`
+- Detail: `docs/archive/pre-cleanup-2026-11/implementation/new-reading-mechanism/second-reader-memory-planning/codex/briefs/Slice8C-Minimal-Eval-Suite-Execution-Preflight-and-Bounded-Run-Pre-implementation-Brief v0.md`
 - Next: Slice 8C Pre-implementation Brief is accepted, bounded execution was attempted, Lane A failed before summary generation after the fresh V2 read completed, Lane B was not launched, and the Slice 8C report is accepted as failed execution evidence. Continue with `TASK-SECOND-READER-MEMORY-PLANNING-SLICE8D-REPORT-REVIEW`; do not retry Lane A, launch Lane B, update the evidence catalog, or start another eval slice until the Slice 8D report is reviewed.
 - Jobs:
   - `bgjob_minimal_eval_suite_lane_a_smoke_20260517` (`failed`)
 - Evidence:
-  - `docs/implementation/new-reading-mechanism/second-reader-memory-planning/README.md`
-  - `docs/implementation/new-reading-mechanism/second-reader-memory-planning/E实施0-Implementation Roadmap & Handoff v0.md`
-  - `docs/implementation/new-reading-mechanism/second-reader-memory-planning/codex/E实施1-Implementation Feasibility & Delta Audit v0.md`
-  - `docs/implementation/new-reading-mechanism/second-reader-memory-planning/codex/briefs/Slice6B-Slow-cycle-Re-entry-Reconsolidation-and-Eval-readiness-Smoke-Pre-implementation-Brief v0.md`
-  - `docs/implementation/new-reading-mechanism/second-reader-memory-planning/codex/briefs/Slice7A-Minimal-Eval-Asset-Inventory-and-Evidence-Wiring-Pre-implementation-Brief v0.md`
-  - `docs/implementation/new-reading-mechanism/second-reader-memory-planning/codex/reports/Slice7A-Minimal-Eval-Asset-Inventory-and-Evidence-Wiring-Post-implementation-Report v0.md`
-  - `docs/implementation/new-reading-mechanism/second-reader-memory-planning/codex/briefs/Slice7B-Minimal-Eval-Smoke-Harness-and-Evidence-Availability-Validation-Pre-implementation-Brief v0.md`
-  - `docs/implementation/new-reading-mechanism/second-reader-memory-planning/codex/reports/Slice7B-Minimal-Eval-Smoke-Harness-and-Evidence-Availability-Validation-Post-implementation-Report v0.md`
-  - `docs/implementation/new-reading-mechanism/second-reader-memory-planning/codex/briefs/Slice8A-Post-implementation-Review-and-Minimal-Eval-Readiness-Gate-Pre-implementation-Brief v0.md`
-  - `docs/implementation/new-reading-mechanism/second-reader-memory-planning/codex/reports/Slice8A-Post-implementation-Review-and-Minimal-Eval-Readiness-Gate-Post-implementation-Report v0.md`
-  - `docs/implementation/new-reading-mechanism/second-reader-memory-planning/codex/briefs/Slice8B-Minimal-Eval-Suite-Run-Brief-and-Execution-Guardrails-Pre-implementation-Brief v0.md`
-  - `docs/implementation/new-reading-mechanism/second-reader-memory-planning/codex/briefs/Slice8C-Minimal-Eval-Suite-Execution-Preflight-and-Bounded-Run-Pre-implementation-Brief v0.md`
-  - `docs/implementation/new-reading-mechanism/second-reader-memory-planning/codex/reports/Slice8C-Minimal-Eval-Suite-Execution-Preflight-and-Bounded-Run-Post-implementation-Report v0.md`
-  - `docs/implementation/new-reading-mechanism/second-reader-memory-planning/codex/E实施-progress-ledger.md`
+  - `docs/archive/pre-cleanup-2026-11/implementation/new-reading-mechanism/second-reader-memory-planning/README.md`
+  - `docs/archive/pre-cleanup-2026-11/implementation/new-reading-mechanism/second-reader-memory-planning/E实施0-Implementation Roadmap & Handoff v0.md`
+  - `docs/archive/pre-cleanup-2026-11/implementation/new-reading-mechanism/second-reader-memory-planning/codex/E实施1-Implementation Feasibility & Delta Audit v0.md`
+  - `docs/archive/pre-cleanup-2026-11/implementation/new-reading-mechanism/second-reader-memory-planning/codex/briefs/Slice6B-Slow-cycle-Re-entry-Reconsolidation-and-Eval-readiness-Smoke-Pre-implementation-Brief v0.md`
+  - `docs/archive/pre-cleanup-2026-11/implementation/new-reading-mechanism/second-reader-memory-planning/codex/briefs/Slice7A-Minimal-Eval-Asset-Inventory-and-Evidence-Wiring-Pre-implementation-Brief v0.md`
+  - `docs/archive/pre-cleanup-2026-11/implementation/new-reading-mechanism/second-reader-memory-planning/codex/reports/Slice7A-Minimal-Eval-Asset-Inventory-and-Evidence-Wiring-Post-implementation-Report v0.md`
+  - `docs/archive/pre-cleanup-2026-11/implementation/new-reading-mechanism/second-reader-memory-planning/codex/briefs/Slice7B-Minimal-Eval-Smoke-Harness-and-Evidence-Availability-Validation-Pre-implementation-Brief v0.md`
+  - `docs/archive/pre-cleanup-2026-11/implementation/new-reading-mechanism/second-reader-memory-planning/codex/reports/Slice7B-Minimal-Eval-Smoke-Harness-and-Evidence-Availability-Validation-Post-implementation-Report v0.md`
+  - `docs/archive/pre-cleanup-2026-11/implementation/new-reading-mechanism/second-reader-memory-planning/codex/briefs/Slice8A-Post-implementation-Review-and-Minimal-Eval-Readiness-Gate-Pre-implementation-Brief v0.md`
+  - `docs/archive/pre-cleanup-2026-11/implementation/new-reading-mechanism/second-reader-memory-planning/codex/reports/Slice8A-Post-implementation-Review-and-Minimal-Eval-Readiness-Gate-Post-implementation-Report v0.md`
+  - `docs/archive/pre-cleanup-2026-11/implementation/new-reading-mechanism/second-reader-memory-planning/codex/briefs/Slice8B-Minimal-Eval-Suite-Run-Brief-and-Execution-Guardrails-Pre-implementation-Brief v0.md`
+  - `docs/archive/pre-cleanup-2026-11/implementation/new-reading-mechanism/second-reader-memory-planning/codex/briefs/Slice8C-Minimal-Eval-Suite-Execution-Preflight-and-Bounded-Run-Pre-implementation-Brief v0.md`
+  - `docs/archive/pre-cleanup-2026-11/implementation/new-reading-mechanism/second-reader-memory-planning/codex/reports/Slice8C-Minimal-Eval-Suite-Execution-Preflight-and-Bounded-Run-Post-implementation-Report v0.md`
+  - `docs/archive/pre-cleanup-2026-11/implementation/new-reading-mechanism/second-reader-memory-planning/codex/E实施-progress-ledger.md`
 
 ### `TASK-SECOND-READER-MEMORY-PLANNING-SLICE8B-BRIEF-ACCEPTANCE` — Review Slice 8B Pre-implementation Brief for Minimal Eval Suite Run Brief and Execution Guardrails
 - Status: `done`
 - Lane: `mechanism_runtime`
 - Priority: `high`
-- Detail: `docs/implementation/new-reading-mechanism/second-reader-memory-planning/codex/briefs/Slice8B-Minimal-Eval-Suite-Run-Brief-and-Execution-Guardrails-Pre-implementation-Brief v0.md`
+- Detail: `docs/archive/pre-cleanup-2026-11/implementation/new-reading-mechanism/second-reader-memory-planning/codex/briefs/Slice8B-Minimal-Eval-Suite-Run-Brief-and-Execution-Guardrails-Pre-implementation-Brief v0.md`
 - Next: Slice 8B Pre-implementation Brief is accepted. Continue with `TASK-SECOND-READER-MEMORY-PLANNING-SLICE8C-BRIEF-ACCEPTANCE`; do not run eval before the Slice 8C execution brief is accepted and execution is explicitly requested.
 - Evidence:
-  - `docs/implementation/new-reading-mechanism/second-reader-memory-planning/README.md`
-  - `docs/implementation/new-reading-mechanism/second-reader-memory-planning/E实施0-Implementation Roadmap & Handoff v0.md`
-  - `docs/implementation/new-reading-mechanism/second-reader-memory-planning/codex/E实施1-Implementation Feasibility & Delta Audit v0.md`
-  - `docs/implementation/new-reading-mechanism/second-reader-memory-planning/codex/briefs/Slice6B-Slow-cycle-Re-entry-Reconsolidation-and-Eval-readiness-Smoke-Pre-implementation-Brief v0.md`
-  - `docs/implementation/new-reading-mechanism/second-reader-memory-planning/codex/briefs/Slice7A-Minimal-Eval-Asset-Inventory-and-Evidence-Wiring-Pre-implementation-Brief v0.md`
-  - `docs/implementation/new-reading-mechanism/second-reader-memory-planning/codex/reports/Slice7A-Minimal-Eval-Asset-Inventory-and-Evidence-Wiring-Post-implementation-Report v0.md`
-  - `docs/implementation/new-reading-mechanism/second-reader-memory-planning/codex/briefs/Slice7B-Minimal-Eval-Smoke-Harness-and-Evidence-Availability-Validation-Pre-implementation-Brief v0.md`
-  - `docs/implementation/new-reading-mechanism/second-reader-memory-planning/codex/reports/Slice7B-Minimal-Eval-Smoke-Harness-and-Evidence-Availability-Validation-Post-implementation-Report v0.md`
-  - `docs/implementation/new-reading-mechanism/second-reader-memory-planning/codex/briefs/Slice8A-Post-implementation-Review-and-Minimal-Eval-Readiness-Gate-Pre-implementation-Brief v0.md`
-  - `docs/implementation/new-reading-mechanism/second-reader-memory-planning/codex/reports/Slice8A-Post-implementation-Review-and-Minimal-Eval-Readiness-Gate-Post-implementation-Report v0.md`
-  - `docs/implementation/new-reading-mechanism/second-reader-memory-planning/codex/briefs/Slice8B-Minimal-Eval-Suite-Run-Brief-and-Execution-Guardrails-Pre-implementation-Brief v0.md`
-  - `docs/implementation/new-reading-mechanism/second-reader-memory-planning/codex/briefs/Slice8C-Minimal-Eval-Suite-Execution-Preflight-and-Bounded-Run-Pre-implementation-Brief v0.md`
-  - `docs/implementation/new-reading-mechanism/second-reader-memory-planning/codex/E实施-progress-ledger.md`
+  - `docs/archive/pre-cleanup-2026-11/implementation/new-reading-mechanism/second-reader-memory-planning/README.md`
+  - `docs/archive/pre-cleanup-2026-11/implementation/new-reading-mechanism/second-reader-memory-planning/E实施0-Implementation Roadmap & Handoff v0.md`
+  - `docs/archive/pre-cleanup-2026-11/implementation/new-reading-mechanism/second-reader-memory-planning/codex/E实施1-Implementation Feasibility & Delta Audit v0.md`
+  - `docs/archive/pre-cleanup-2026-11/implementation/new-reading-mechanism/second-reader-memory-planning/codex/briefs/Slice6B-Slow-cycle-Re-entry-Reconsolidation-and-Eval-readiness-Smoke-Pre-implementation-Brief v0.md`
+  - `docs/archive/pre-cleanup-2026-11/implementation/new-reading-mechanism/second-reader-memory-planning/codex/briefs/Slice7A-Minimal-Eval-Asset-Inventory-and-Evidence-Wiring-Pre-implementation-Brief v0.md`
+  - `docs/archive/pre-cleanup-2026-11/implementation/new-reading-mechanism/second-reader-memory-planning/codex/reports/Slice7A-Minimal-Eval-Asset-Inventory-and-Evidence-Wiring-Post-implementation-Report v0.md`
+  - `docs/archive/pre-cleanup-2026-11/implementation/new-reading-mechanism/second-reader-memory-planning/codex/briefs/Slice7B-Minimal-Eval-Smoke-Harness-and-Evidence-Availability-Validation-Pre-implementation-Brief v0.md`
+  - `docs/archive/pre-cleanup-2026-11/implementation/new-reading-mechanism/second-reader-memory-planning/codex/reports/Slice7B-Minimal-Eval-Smoke-Harness-and-Evidence-Availability-Validation-Post-implementation-Report v0.md`
+  - `docs/archive/pre-cleanup-2026-11/implementation/new-reading-mechanism/second-reader-memory-planning/codex/briefs/Slice8A-Post-implementation-Review-and-Minimal-Eval-Readiness-Gate-Pre-implementation-Brief v0.md`
+  - `docs/archive/pre-cleanup-2026-11/implementation/new-reading-mechanism/second-reader-memory-planning/codex/reports/Slice8A-Post-implementation-Review-and-Minimal-Eval-Readiness-Gate-Post-implementation-Report v0.md`
+  - `docs/archive/pre-cleanup-2026-11/implementation/new-reading-mechanism/second-reader-memory-planning/codex/briefs/Slice8B-Minimal-Eval-Suite-Run-Brief-and-Execution-Guardrails-Pre-implementation-Brief v0.md`
+  - `docs/archive/pre-cleanup-2026-11/implementation/new-reading-mechanism/second-reader-memory-planning/codex/briefs/Slice8C-Minimal-Eval-Suite-Execution-Preflight-and-Bounded-Run-Pre-implementation-Brief v0.md`
+  - `docs/archive/pre-cleanup-2026-11/implementation/new-reading-mechanism/second-reader-memory-planning/codex/E实施-progress-ledger.md`
 
 ### `TASK-SECOND-READER-MEMORY-PLANNING-SLICE8A-REPORT-REVIEW` — Review Slice 8A Post-implementation Report for Post-implementation Review and Minimal Eval Readiness Gate
 - Status: `done`
 - Lane: `mechanism_runtime`
 - Priority: `high`
-- Detail: `docs/implementation/new-reading-mechanism/second-reader-memory-planning/codex/reports/Slice8A-Post-implementation-Review-and-Minimal-Eval-Readiness-Gate-Post-implementation-Report v0.md`
+- Detail: `docs/archive/pre-cleanup-2026-11/implementation/new-reading-mechanism/second-reader-memory-planning/codex/reports/Slice8A-Post-implementation-Review-and-Minimal-Eval-Readiness-Gate-Post-implementation-Report v0.md`
 - Next: Slice 8A Post-implementation Report is accepted. Continue with `TASK-SECOND-READER-MEMORY-PLANNING-SLICE8B-BRIEF-ACCEPTANCE`; do not run eval before the Slice 8B run brief and a later execution slice are accepted.
 - Evidence:
-  - `docs/implementation/new-reading-mechanism/second-reader-memory-planning/README.md`
-  - `docs/implementation/new-reading-mechanism/second-reader-memory-planning/E实施0-Implementation Roadmap & Handoff v0.md`
-  - `docs/implementation/new-reading-mechanism/second-reader-memory-planning/codex/E实施1-Implementation Feasibility & Delta Audit v0.md`
-  - `docs/implementation/new-reading-mechanism/second-reader-memory-planning/codex/briefs/Slice6B-Slow-cycle-Re-entry-Reconsolidation-and-Eval-readiness-Smoke-Pre-implementation-Brief v0.md`
-  - `docs/implementation/new-reading-mechanism/second-reader-memory-planning/codex/briefs/Slice7A-Minimal-Eval-Asset-Inventory-and-Evidence-Wiring-Pre-implementation-Brief v0.md`
-  - `docs/implementation/new-reading-mechanism/second-reader-memory-planning/codex/reports/Slice7A-Minimal-Eval-Asset-Inventory-and-Evidence-Wiring-Post-implementation-Report v0.md`
-  - `docs/implementation/new-reading-mechanism/second-reader-memory-planning/codex/briefs/Slice7B-Minimal-Eval-Smoke-Harness-and-Evidence-Availability-Validation-Pre-implementation-Brief v0.md`
-  - `docs/implementation/new-reading-mechanism/second-reader-memory-planning/codex/reports/Slice7B-Minimal-Eval-Smoke-Harness-and-Evidence-Availability-Validation-Post-implementation-Report v0.md`
-  - `docs/implementation/new-reading-mechanism/second-reader-memory-planning/codex/briefs/Slice8A-Post-implementation-Review-and-Minimal-Eval-Readiness-Gate-Pre-implementation-Brief v0.md`
-  - `docs/implementation/new-reading-mechanism/second-reader-memory-planning/codex/reports/Slice8A-Post-implementation-Review-and-Minimal-Eval-Readiness-Gate-Post-implementation-Report v0.md`
-  - `docs/implementation/new-reading-mechanism/second-reader-memory-planning/codex/briefs/Slice8B-Minimal-Eval-Suite-Run-Brief-and-Execution-Guardrails-Pre-implementation-Brief v0.md`
-  - `docs/implementation/new-reading-mechanism/second-reader-memory-planning/codex/E实施-progress-ledger.md`
+  - `docs/archive/pre-cleanup-2026-11/implementation/new-reading-mechanism/second-reader-memory-planning/README.md`
+  - `docs/archive/pre-cleanup-2026-11/implementation/new-reading-mechanism/second-reader-memory-planning/E实施0-Implementation Roadmap & Handoff v0.md`
+  - `docs/archive/pre-cleanup-2026-11/implementation/new-reading-mechanism/second-reader-memory-planning/codex/E实施1-Implementation Feasibility & Delta Audit v0.md`
+  - `docs/archive/pre-cleanup-2026-11/implementation/new-reading-mechanism/second-reader-memory-planning/codex/briefs/Slice6B-Slow-cycle-Re-entry-Reconsolidation-and-Eval-readiness-Smoke-Pre-implementation-Brief v0.md`
+  - `docs/archive/pre-cleanup-2026-11/implementation/new-reading-mechanism/second-reader-memory-planning/codex/briefs/Slice7A-Minimal-Eval-Asset-Inventory-and-Evidence-Wiring-Pre-implementation-Brief v0.md`
+  - `docs/archive/pre-cleanup-2026-11/implementation/new-reading-mechanism/second-reader-memory-planning/codex/reports/Slice7A-Minimal-Eval-Asset-Inventory-and-Evidence-Wiring-Post-implementation-Report v0.md`
+  - `docs/archive/pre-cleanup-2026-11/implementation/new-reading-mechanism/second-reader-memory-planning/codex/briefs/Slice7B-Minimal-Eval-Smoke-Harness-and-Evidence-Availability-Validation-Pre-implementation-Brief v0.md`
+  - `docs/archive/pre-cleanup-2026-11/implementation/new-reading-mechanism/second-reader-memory-planning/codex/reports/Slice7B-Minimal-Eval-Smoke-Harness-and-Evidence-Availability-Validation-Post-implementation-Report v0.md`
+  - `docs/archive/pre-cleanup-2026-11/implementation/new-reading-mechanism/second-reader-memory-planning/codex/briefs/Slice8A-Post-implementation-Review-and-Minimal-Eval-Readiness-Gate-Pre-implementation-Brief v0.md`
+  - `docs/archive/pre-cleanup-2026-11/implementation/new-reading-mechanism/second-reader-memory-planning/codex/reports/Slice8A-Post-implementation-Review-and-Minimal-Eval-Readiness-Gate-Post-implementation-Report v0.md`
+  - `docs/archive/pre-cleanup-2026-11/implementation/new-reading-mechanism/second-reader-memory-planning/codex/briefs/Slice8B-Minimal-Eval-Suite-Run-Brief-and-Execution-Guardrails-Pre-implementation-Brief v0.md`
+  - `docs/archive/pre-cleanup-2026-11/implementation/new-reading-mechanism/second-reader-memory-planning/codex/E实施-progress-ledger.md`
 
 ### `TASK-SECOND-READER-MEMORY-PLANNING-SLICE8A-BRIEF-ACCEPTANCE` — Review Slice 8A Pre-implementation Brief for Post-implementation Review and Minimal Eval Readiness Gate
 - Status: `done`
 - Lane: `mechanism_runtime`
 - Priority: `high`
-- Detail: `docs/implementation/new-reading-mechanism/second-reader-memory-planning/codex/briefs/Slice8A-Post-implementation-Review-and-Minimal-Eval-Readiness-Gate-Pre-implementation-Brief v0.md`
+- Detail: `docs/archive/pre-cleanup-2026-11/implementation/new-reading-mechanism/second-reader-memory-planning/codex/briefs/Slice8A-Post-implementation-Review-and-Minimal-Eval-Readiness-Gate-Pre-implementation-Brief v0.md`
 - Next: Slice 8A Pre-implementation Brief is accepted, the doc-only readiness gate has landed, and the Slice 8A report is accepted. Continue with `TASK-SECOND-READER-MEMORY-PLANNING-SLICE8B-BRIEF-ACCEPTANCE`; do not run eval before the Slice 8B run brief and a later execution slice are accepted.
 - Evidence:
-  - `docs/implementation/new-reading-mechanism/second-reader-memory-planning/README.md`
-  - `docs/implementation/new-reading-mechanism/second-reader-memory-planning/E实施0-Implementation Roadmap & Handoff v0.md`
-  - `docs/implementation/new-reading-mechanism/second-reader-memory-planning/codex/E实施1-Implementation Feasibility & Delta Audit v0.md`
-  - `docs/implementation/new-reading-mechanism/second-reader-memory-planning/codex/briefs/Slice6B-Slow-cycle-Re-entry-Reconsolidation-and-Eval-readiness-Smoke-Pre-implementation-Brief v0.md`
-  - `docs/implementation/new-reading-mechanism/second-reader-memory-planning/codex/briefs/Slice7A-Minimal-Eval-Asset-Inventory-and-Evidence-Wiring-Pre-implementation-Brief v0.md`
-  - `docs/implementation/new-reading-mechanism/second-reader-memory-planning/codex/reports/Slice7A-Minimal-Eval-Asset-Inventory-and-Evidence-Wiring-Post-implementation-Report v0.md`
-  - `docs/implementation/new-reading-mechanism/second-reader-memory-planning/codex/briefs/Slice7B-Minimal-Eval-Smoke-Harness-and-Evidence-Availability-Validation-Pre-implementation-Brief v0.md`
-  - `docs/implementation/new-reading-mechanism/second-reader-memory-planning/codex/reports/Slice7B-Minimal-Eval-Smoke-Harness-and-Evidence-Availability-Validation-Post-implementation-Report v0.md`
-  - `docs/implementation/new-reading-mechanism/second-reader-memory-planning/codex/briefs/Slice8A-Post-implementation-Review-and-Minimal-Eval-Readiness-Gate-Pre-implementation-Brief v0.md`
-  - `docs/implementation/new-reading-mechanism/second-reader-memory-planning/codex/reports/Slice8A-Post-implementation-Review-and-Minimal-Eval-Readiness-Gate-Post-implementation-Report v0.md`
-  - `docs/implementation/new-reading-mechanism/second-reader-memory-planning/codex/E实施-progress-ledger.md`
+  - `docs/archive/pre-cleanup-2026-11/implementation/new-reading-mechanism/second-reader-memory-planning/README.md`
+  - `docs/archive/pre-cleanup-2026-11/implementation/new-reading-mechanism/second-reader-memory-planning/E实施0-Implementation Roadmap & Handoff v0.md`
+  - `docs/archive/pre-cleanup-2026-11/implementation/new-reading-mechanism/second-reader-memory-planning/codex/E实施1-Implementation Feasibility & Delta Audit v0.md`
+  - `docs/archive/pre-cleanup-2026-11/implementation/new-reading-mechanism/second-reader-memory-planning/codex/briefs/Slice6B-Slow-cycle-Re-entry-Reconsolidation-and-Eval-readiness-Smoke-Pre-implementation-Brief v0.md`
+  - `docs/archive/pre-cleanup-2026-11/implementation/new-reading-mechanism/second-reader-memory-planning/codex/briefs/Slice7A-Minimal-Eval-Asset-Inventory-and-Evidence-Wiring-Pre-implementation-Brief v0.md`
+  - `docs/archive/pre-cleanup-2026-11/implementation/new-reading-mechanism/second-reader-memory-planning/codex/reports/Slice7A-Minimal-Eval-Asset-Inventory-and-Evidence-Wiring-Post-implementation-Report v0.md`
+  - `docs/archive/pre-cleanup-2026-11/implementation/new-reading-mechanism/second-reader-memory-planning/codex/briefs/Slice7B-Minimal-Eval-Smoke-Harness-and-Evidence-Availability-Validation-Pre-implementation-Brief v0.md`
+  - `docs/archive/pre-cleanup-2026-11/implementation/new-reading-mechanism/second-reader-memory-planning/codex/reports/Slice7B-Minimal-Eval-Smoke-Harness-and-Evidence-Availability-Validation-Post-implementation-Report v0.md`
+  - `docs/archive/pre-cleanup-2026-11/implementation/new-reading-mechanism/second-reader-memory-planning/codex/briefs/Slice8A-Post-implementation-Review-and-Minimal-Eval-Readiness-Gate-Pre-implementation-Brief v0.md`
+  - `docs/archive/pre-cleanup-2026-11/implementation/new-reading-mechanism/second-reader-memory-planning/codex/reports/Slice8A-Post-implementation-Review-and-Minimal-Eval-Readiness-Gate-Post-implementation-Report v0.md`
+  - `docs/archive/pre-cleanup-2026-11/implementation/new-reading-mechanism/second-reader-memory-planning/codex/E实施-progress-ledger.md`
 
 ### `TASK-SECOND-READER-MEMORY-PLANNING-SLICE7B-REPORT-REVIEW` — Review Slice 7B Post-implementation Report for Minimal Eval Smoke Harness and Evidence Availability Validation
 - Status: `done`
 - Lane: `mechanism_runtime`
 - Priority: `high`
-- Detail: `docs/implementation/new-reading-mechanism/second-reader-memory-planning/codex/reports/Slice7B-Minimal-Eval-Smoke-Harness-and-Evidence-Availability-Validation-Post-implementation-Report v0.md`
+- Detail: `docs/archive/pre-cleanup-2026-11/implementation/new-reading-mechanism/second-reader-memory-planning/codex/reports/Slice7B-Minimal-Eval-Smoke-Harness-and-Evidence-Availability-Validation-Post-implementation-Report v0.md`
 - Next: Slice 7B Post-implementation Report is accepted. Continue with `TASK-SECOND-READER-MEMORY-PLANNING-SLICE8A-BRIEF-ACCEPTANCE`; do not run eval before the Slice 8A readiness gate and later eval-run brief are accepted.
 - Evidence:
-  - `docs/implementation/new-reading-mechanism/second-reader-memory-planning/README.md`
-  - `docs/implementation/new-reading-mechanism/second-reader-memory-planning/E实施0-Implementation Roadmap & Handoff v0.md`
-  - `docs/implementation/new-reading-mechanism/second-reader-memory-planning/codex/E实施1-Implementation Feasibility & Delta Audit v0.md`
-  - `docs/implementation/new-reading-mechanism/second-reader-memory-planning/codex/briefs/Slice6B-Slow-cycle-Re-entry-Reconsolidation-and-Eval-readiness-Smoke-Pre-implementation-Brief v0.md`
-  - `docs/implementation/new-reading-mechanism/second-reader-memory-planning/codex/briefs/Slice7A-Minimal-Eval-Asset-Inventory-and-Evidence-Wiring-Pre-implementation-Brief v0.md`
-  - `docs/implementation/new-reading-mechanism/second-reader-memory-planning/codex/reports/Slice7A-Minimal-Eval-Asset-Inventory-and-Evidence-Wiring-Post-implementation-Report v0.md`
-  - `docs/implementation/new-reading-mechanism/second-reader-memory-planning/codex/briefs/Slice7B-Minimal-Eval-Smoke-Harness-and-Evidence-Availability-Validation-Pre-implementation-Brief v0.md`
-  - `docs/implementation/new-reading-mechanism/second-reader-memory-planning/codex/reports/Slice7B-Minimal-Eval-Smoke-Harness-and-Evidence-Availability-Validation-Post-implementation-Report v0.md`
-  - `docs/implementation/new-reading-mechanism/second-reader-memory-planning/codex/briefs/Slice8A-Post-implementation-Review-and-Minimal-Eval-Readiness-Gate-Pre-implementation-Brief v0.md`
-  - `docs/implementation/new-reading-mechanism/second-reader-memory-planning/codex/E实施-progress-ledger.md`
+  - `docs/archive/pre-cleanup-2026-11/implementation/new-reading-mechanism/second-reader-memory-planning/README.md`
+  - `docs/archive/pre-cleanup-2026-11/implementation/new-reading-mechanism/second-reader-memory-planning/E实施0-Implementation Roadmap & Handoff v0.md`
+  - `docs/archive/pre-cleanup-2026-11/implementation/new-reading-mechanism/second-reader-memory-planning/codex/E实施1-Implementation Feasibility & Delta Audit v0.md`
+  - `docs/archive/pre-cleanup-2026-11/implementation/new-reading-mechanism/second-reader-memory-planning/codex/briefs/Slice6B-Slow-cycle-Re-entry-Reconsolidation-and-Eval-readiness-Smoke-Pre-implementation-Brief v0.md`
+  - `docs/archive/pre-cleanup-2026-11/implementation/new-reading-mechanism/second-reader-memory-planning/codex/briefs/Slice7A-Minimal-Eval-Asset-Inventory-and-Evidence-Wiring-Pre-implementation-Brief v0.md`
+  - `docs/archive/pre-cleanup-2026-11/implementation/new-reading-mechanism/second-reader-memory-planning/codex/reports/Slice7A-Minimal-Eval-Asset-Inventory-and-Evidence-Wiring-Post-implementation-Report v0.md`
+  - `docs/archive/pre-cleanup-2026-11/implementation/new-reading-mechanism/second-reader-memory-planning/codex/briefs/Slice7B-Minimal-Eval-Smoke-Harness-and-Evidence-Availability-Validation-Pre-implementation-Brief v0.md`
+  - `docs/archive/pre-cleanup-2026-11/implementation/new-reading-mechanism/second-reader-memory-planning/codex/reports/Slice7B-Minimal-Eval-Smoke-Harness-and-Evidence-Availability-Validation-Post-implementation-Report v0.md`
+  - `docs/archive/pre-cleanup-2026-11/implementation/new-reading-mechanism/second-reader-memory-planning/codex/briefs/Slice8A-Post-implementation-Review-and-Minimal-Eval-Readiness-Gate-Pre-implementation-Brief v0.md`
+  - `docs/archive/pre-cleanup-2026-11/implementation/new-reading-mechanism/second-reader-memory-planning/codex/E实施-progress-ledger.md`
 
 ### `TASK-SECOND-READER-MEMORY-PLANNING-SLICE7B-BRIEF-ACCEPTANCE` — Review Slice 7B Pre-implementation Brief for Minimal Eval Smoke Harness and Evidence Availability Validation
 - Status: `done`
 - Lane: `mechanism_runtime`
 - Priority: `high`
-- Detail: `docs/implementation/new-reading-mechanism/second-reader-memory-planning/codex/briefs/Slice7B-Minimal-Eval-Smoke-Harness-and-Evidence-Availability-Validation-Pre-implementation-Brief v0.md`
+- Detail: `docs/archive/pre-cleanup-2026-11/implementation/new-reading-mechanism/second-reader-memory-planning/codex/briefs/Slice7B-Minimal-Eval-Smoke-Harness-and-Evidence-Availability-Validation-Pre-implementation-Brief v0.md`
 - Next: Slice 7B Pre-implementation Brief is accepted and implemented. Continue with `TASK-SECOND-READER-MEMORY-PLANNING-SLICE7B-REPORT-REVIEW`; do not start the next eval slice or run eval before the Slice 7B Post-implementation Report is accepted.
 - Evidence:
-  - `docs/implementation/new-reading-mechanism/second-reader-memory-planning/README.md`
-  - `docs/implementation/new-reading-mechanism/second-reader-memory-planning/E实施0-Implementation Roadmap & Handoff v0.md`
-  - `docs/implementation/new-reading-mechanism/second-reader-memory-planning/codex/E实施1-Implementation Feasibility & Delta Audit v0.md`
-  - `docs/implementation/new-reading-mechanism/second-reader-memory-planning/codex/briefs/Slice6B-Slow-cycle-Re-entry-Reconsolidation-and-Eval-readiness-Smoke-Pre-implementation-Brief v0.md`
-  - `docs/implementation/new-reading-mechanism/second-reader-memory-planning/codex/briefs/Slice7A-Minimal-Eval-Asset-Inventory-and-Evidence-Wiring-Pre-implementation-Brief v0.md`
-  - `docs/implementation/new-reading-mechanism/second-reader-memory-planning/codex/reports/Slice7A-Minimal-Eval-Asset-Inventory-and-Evidence-Wiring-Post-implementation-Report v0.md`
-  - `docs/implementation/new-reading-mechanism/second-reader-memory-planning/codex/briefs/Slice7B-Minimal-Eval-Smoke-Harness-and-Evidence-Availability-Validation-Pre-implementation-Brief v0.md`
-  - `docs/implementation/new-reading-mechanism/second-reader-memory-planning/codex/reports/Slice7B-Minimal-Eval-Smoke-Harness-and-Evidence-Availability-Validation-Post-implementation-Report v0.md`
-  - `docs/implementation/new-reading-mechanism/second-reader-memory-planning/codex/E实施-progress-ledger.md`
+  - `docs/archive/pre-cleanup-2026-11/implementation/new-reading-mechanism/second-reader-memory-planning/README.md`
+  - `docs/archive/pre-cleanup-2026-11/implementation/new-reading-mechanism/second-reader-memory-planning/E实施0-Implementation Roadmap & Handoff v0.md`
+  - `docs/archive/pre-cleanup-2026-11/implementation/new-reading-mechanism/second-reader-memory-planning/codex/E实施1-Implementation Feasibility & Delta Audit v0.md`
+  - `docs/archive/pre-cleanup-2026-11/implementation/new-reading-mechanism/second-reader-memory-planning/codex/briefs/Slice6B-Slow-cycle-Re-entry-Reconsolidation-and-Eval-readiness-Smoke-Pre-implementation-Brief v0.md`
+  - `docs/archive/pre-cleanup-2026-11/implementation/new-reading-mechanism/second-reader-memory-planning/codex/briefs/Slice7A-Minimal-Eval-Asset-Inventory-and-Evidence-Wiring-Pre-implementation-Brief v0.md`
+  - `docs/archive/pre-cleanup-2026-11/implementation/new-reading-mechanism/second-reader-memory-planning/codex/reports/Slice7A-Minimal-Eval-Asset-Inventory-and-Evidence-Wiring-Post-implementation-Report v0.md`
+  - `docs/archive/pre-cleanup-2026-11/implementation/new-reading-mechanism/second-reader-memory-planning/codex/briefs/Slice7B-Minimal-Eval-Smoke-Harness-and-Evidence-Availability-Validation-Pre-implementation-Brief v0.md`
+  - `docs/archive/pre-cleanup-2026-11/implementation/new-reading-mechanism/second-reader-memory-planning/codex/reports/Slice7B-Minimal-Eval-Smoke-Harness-and-Evidence-Availability-Validation-Post-implementation-Report v0.md`
+  - `docs/archive/pre-cleanup-2026-11/implementation/new-reading-mechanism/second-reader-memory-planning/codex/E实施-progress-ledger.md`
 
 ### `TASK-SECOND-READER-MEMORY-PLANNING-SLICE7A-REPORT-REVIEW` — Review Slice 7A Post-implementation Report for Minimal Eval Asset Inventory and Evidence Wiring
 - Status: `done`
 - Lane: `mechanism_runtime`
 - Priority: `high`
-- Detail: `docs/implementation/new-reading-mechanism/second-reader-memory-planning/codex/reports/Slice7A-Minimal-Eval-Asset-Inventory-and-Evidence-Wiring-Post-implementation-Report v0.md`
+- Detail: `docs/archive/pre-cleanup-2026-11/implementation/new-reading-mechanism/second-reader-memory-planning/codex/reports/Slice7A-Minimal-Eval-Asset-Inventory-and-Evidence-Wiring-Post-implementation-Report v0.md`
 - Next: Slice 7A Post-implementation Report is accepted. Continue with `TASK-SECOND-READER-MEMORY-PLANNING-SLICE7B-BRIEF-ACCEPTANCE`; do not start Slice 7B implementation or run eval before the Slice 7B Pre-implementation Brief is accepted.
 - Evidence:
-  - `docs/implementation/new-reading-mechanism/second-reader-memory-planning/README.md`
-  - `docs/implementation/new-reading-mechanism/second-reader-memory-planning/E实施0-Implementation Roadmap & Handoff v0.md`
-  - `docs/implementation/new-reading-mechanism/second-reader-memory-planning/codex/E实施1-Implementation Feasibility & Delta Audit v0.md`
-  - `docs/implementation/new-reading-mechanism/second-reader-memory-planning/codex/briefs/Slice6B-Slow-cycle-Re-entry-Reconsolidation-and-Eval-readiness-Smoke-Pre-implementation-Brief v0.md`
-  - `docs/implementation/new-reading-mechanism/second-reader-memory-planning/codex/briefs/Slice7A-Minimal-Eval-Asset-Inventory-and-Evidence-Wiring-Pre-implementation-Brief v0.md`
-  - `docs/implementation/new-reading-mechanism/second-reader-memory-planning/codex/reports/Slice7A-Minimal-Eval-Asset-Inventory-and-Evidence-Wiring-Post-implementation-Report v0.md`
-  - `docs/implementation/new-reading-mechanism/second-reader-memory-planning/codex/briefs/Slice7B-Minimal-Eval-Smoke-Harness-and-Evidence-Availability-Validation-Pre-implementation-Brief v0.md`
-  - `docs/implementation/new-reading-mechanism/second-reader-memory-planning/codex/E实施-progress-ledger.md`
+  - `docs/archive/pre-cleanup-2026-11/implementation/new-reading-mechanism/second-reader-memory-planning/README.md`
+  - `docs/archive/pre-cleanup-2026-11/implementation/new-reading-mechanism/second-reader-memory-planning/E实施0-Implementation Roadmap & Handoff v0.md`
+  - `docs/archive/pre-cleanup-2026-11/implementation/new-reading-mechanism/second-reader-memory-planning/codex/E实施1-Implementation Feasibility & Delta Audit v0.md`
+  - `docs/archive/pre-cleanup-2026-11/implementation/new-reading-mechanism/second-reader-memory-planning/codex/briefs/Slice6B-Slow-cycle-Re-entry-Reconsolidation-and-Eval-readiness-Smoke-Pre-implementation-Brief v0.md`
+  - `docs/archive/pre-cleanup-2026-11/implementation/new-reading-mechanism/second-reader-memory-planning/codex/briefs/Slice7A-Minimal-Eval-Asset-Inventory-and-Evidence-Wiring-Pre-implementation-Brief v0.md`
+  - `docs/archive/pre-cleanup-2026-11/implementation/new-reading-mechanism/second-reader-memory-planning/codex/reports/Slice7A-Minimal-Eval-Asset-Inventory-and-Evidence-Wiring-Post-implementation-Report v0.md`
+  - `docs/archive/pre-cleanup-2026-11/implementation/new-reading-mechanism/second-reader-memory-planning/codex/briefs/Slice7B-Minimal-Eval-Smoke-Harness-and-Evidence-Availability-Validation-Pre-implementation-Brief v0.md`
+  - `docs/archive/pre-cleanup-2026-11/implementation/new-reading-mechanism/second-reader-memory-planning/codex/E实施-progress-ledger.md`
 
 ### `TASK-SECOND-READER-MEMORY-PLANNING-SLICE7A-BRIEF-ACCEPTANCE` — Review Slice 7A Pre-implementation Brief for Minimal Eval Asset Inventory and Evidence Wiring
 - Status: `done`
 - Lane: `mechanism_runtime`
 - Priority: `high`
-- Detail: `docs/implementation/new-reading-mechanism/second-reader-memory-planning/codex/briefs/Slice7A-Minimal-Eval-Asset-Inventory-and-Evidence-Wiring-Pre-implementation-Brief v0.md`
+- Detail: `docs/archive/pre-cleanup-2026-11/implementation/new-reading-mechanism/second-reader-memory-planning/codex/briefs/Slice7A-Minimal-Eval-Asset-Inventory-and-Evidence-Wiring-Pre-implementation-Brief v0.md`
 - Next: Slice 7A Pre-implementation Brief is accepted and implemented. Continue with `TASK-SECOND-READER-MEMORY-PLANNING-SLICE7A-REPORT-REVIEW`; do not start Slice 7B or run eval before the Slice 7A Post-implementation Report is accepted.
 - Evidence:
-  - `docs/implementation/new-reading-mechanism/second-reader-memory-planning/README.md`
-  - `docs/implementation/new-reading-mechanism/second-reader-memory-planning/E实施0-Implementation Roadmap & Handoff v0.md`
-  - `docs/implementation/new-reading-mechanism/second-reader-memory-planning/codex/E实施1-Implementation Feasibility & Delta Audit v0.md`
-  - `docs/implementation/new-reading-mechanism/second-reader-memory-planning/codex/briefs/Slice6B-Slow-cycle-Re-entry-Reconsolidation-and-Eval-readiness-Smoke-Pre-implementation-Brief v0.md`
-  - `docs/implementation/new-reading-mechanism/second-reader-memory-planning/codex/briefs/Slice7A-Minimal-Eval-Asset-Inventory-and-Evidence-Wiring-Pre-implementation-Brief v0.md`
-  - `docs/implementation/new-reading-mechanism/second-reader-memory-planning/codex/reports/Slice7A-Minimal-Eval-Asset-Inventory-and-Evidence-Wiring-Post-implementation-Report v0.md`
-  - `docs/implementation/new-reading-mechanism/second-reader-memory-planning/codex/E实施-progress-ledger.md`
+  - `docs/archive/pre-cleanup-2026-11/implementation/new-reading-mechanism/second-reader-memory-planning/README.md`
+  - `docs/archive/pre-cleanup-2026-11/implementation/new-reading-mechanism/second-reader-memory-planning/E实施0-Implementation Roadmap & Handoff v0.md`
+  - `docs/archive/pre-cleanup-2026-11/implementation/new-reading-mechanism/second-reader-memory-planning/codex/E实施1-Implementation Feasibility & Delta Audit v0.md`
+  - `docs/archive/pre-cleanup-2026-11/implementation/new-reading-mechanism/second-reader-memory-planning/codex/briefs/Slice6B-Slow-cycle-Re-entry-Reconsolidation-and-Eval-readiness-Smoke-Pre-implementation-Brief v0.md`
+  - `docs/archive/pre-cleanup-2026-11/implementation/new-reading-mechanism/second-reader-memory-planning/codex/briefs/Slice7A-Minimal-Eval-Asset-Inventory-and-Evidence-Wiring-Pre-implementation-Brief v0.md`
+  - `docs/archive/pre-cleanup-2026-11/implementation/new-reading-mechanism/second-reader-memory-planning/codex/reports/Slice7A-Minimal-Eval-Asset-Inventory-and-Evidence-Wiring-Post-implementation-Report v0.md`
+  - `docs/archive/pre-cleanup-2026-11/implementation/new-reading-mechanism/second-reader-memory-planning/codex/E实施-progress-ledger.md`
 
 ### `TASK-SECOND-READER-MEMORY-PLANNING-SLICE6B-BRIEF-ACCEPTANCE` — Review Slice 6B Pre-implementation Brief for Slow-cycle Re-entry, Reconsolidation, and Eval-readiness Smoke
 - Status: `done`
 - Lane: `mechanism_runtime`
 - Priority: `high`
-- Detail: `docs/implementation/new-reading-mechanism/second-reader-memory-planning/codex/briefs/Slice6B-Slow-cycle-Re-entry-Reconsolidation-and-Eval-readiness-Smoke-Pre-implementation-Brief v0.md`
+- Detail: `docs/archive/pre-cleanup-2026-11/implementation/new-reading-mechanism/second-reader-memory-planning/codex/briefs/Slice6B-Slow-cycle-Re-entry-Reconsolidation-and-Eval-readiness-Smoke-Pre-implementation-Brief v0.md`
 - Next: Slice 6B no-code closure brief is accepted and Slice 6 is closed. Continue with `TASK-SECOND-READER-MEMORY-PLANNING-SLICE7A-BRIEF-ACCEPTANCE`; do not start eval implementation or run evaluation before the Slice 7A brief is accepted.
 - Evidence:
-  - `docs/implementation/new-reading-mechanism/second-reader-memory-planning/README.md`
-  - `docs/implementation/new-reading-mechanism/second-reader-memory-planning/E实施0-Implementation Roadmap & Handoff v0.md`
-  - `docs/implementation/new-reading-mechanism/second-reader-memory-planning/codex/E实施1-Implementation Feasibility & Delta Audit v0.md`
-  - `docs/implementation/new-reading-mechanism/second-reader-memory-planning/codex/briefs/Slice6A-Slow-cycle-Candidate-and-Settlement-Audit-Envelope-Foundations-Pre-implementation-Brief v0.md`
-  - `docs/implementation/new-reading-mechanism/second-reader-memory-planning/codex/reports/Slice6A-Slow-cycle-Candidate-and-Settlement-Audit-Envelope-Foundations-Post-implementation-Report v0.md`
-  - `docs/implementation/new-reading-mechanism/second-reader-memory-planning/codex/reports/Slice6A-Patch-Carry-forward-Settled-SourceRef-Evidence-Precision-Report v0.md`
-  - `docs/implementation/new-reading-mechanism/second-reader-memory-planning/codex/briefs/Slice6B-Slow-cycle-Re-entry-Reconsolidation-and-Eval-readiness-Smoke-Pre-implementation-Brief v0.md`
-  - `docs/implementation/new-reading-mechanism/second-reader-memory-planning/codex/briefs/Slice7A-Minimal-Eval-Asset-Inventory-and-Evidence-Wiring-Pre-implementation-Brief v0.md`
-  - `docs/implementation/new-reading-mechanism/second-reader-memory-planning/codex/E实施-progress-ledger.md`
+  - `docs/archive/pre-cleanup-2026-11/implementation/new-reading-mechanism/second-reader-memory-planning/README.md`
+  - `docs/archive/pre-cleanup-2026-11/implementation/new-reading-mechanism/second-reader-memory-planning/E实施0-Implementation Roadmap & Handoff v0.md`
+  - `docs/archive/pre-cleanup-2026-11/implementation/new-reading-mechanism/second-reader-memory-planning/codex/E实施1-Implementation Feasibility & Delta Audit v0.md`
+  - `docs/archive/pre-cleanup-2026-11/implementation/new-reading-mechanism/second-reader-memory-planning/codex/briefs/Slice6A-Slow-cycle-Candidate-and-Settlement-Audit-Envelope-Foundations-Pre-implementation-Brief v0.md`
+  - `docs/archive/pre-cleanup-2026-11/implementation/new-reading-mechanism/second-reader-memory-planning/codex/reports/Slice6A-Slow-cycle-Candidate-and-Settlement-Audit-Envelope-Foundations-Post-implementation-Report v0.md`
+  - `docs/archive/pre-cleanup-2026-11/implementation/new-reading-mechanism/second-reader-memory-planning/codex/reports/Slice6A-Patch-Carry-forward-Settled-SourceRef-Evidence-Precision-Report v0.md`
+  - `docs/archive/pre-cleanup-2026-11/implementation/new-reading-mechanism/second-reader-memory-planning/codex/briefs/Slice6B-Slow-cycle-Re-entry-Reconsolidation-and-Eval-readiness-Smoke-Pre-implementation-Brief v0.md`
+  - `docs/archive/pre-cleanup-2026-11/implementation/new-reading-mechanism/second-reader-memory-planning/codex/briefs/Slice7A-Minimal-Eval-Asset-Inventory-and-Evidence-Wiring-Pre-implementation-Brief v0.md`
+  - `docs/archive/pre-cleanup-2026-11/implementation/new-reading-mechanism/second-reader-memory-planning/codex/E实施-progress-ledger.md`
 
 ### `TASK-SECOND-READER-MEMORY-PLANNING-SLICE6A-PATCH-REPORT-REVIEW` — Review Slice 6A patch report for Carry-forward Settled SourceRef Evidence Precision
 - Status: `done`
 - Lane: `mechanism_runtime`
 - Priority: `high`
-- Detail: `docs/implementation/new-reading-mechanism/second-reader-memory-planning/codex/reports/Slice6A-Patch-Carry-forward-Settled-SourceRef-Evidence-Precision-Report v0.md`
+- Detail: `docs/archive/pre-cleanup-2026-11/implementation/new-reading-mechanism/second-reader-memory-planning/codex/reports/Slice6A-Patch-Carry-forward-Settled-SourceRef-Evidence-Precision-Report v0.md`
 - Next: Slice 6A patch report is accepted. Continue with `TASK-SECOND-READER-MEMORY-PLANNING-SLICE6B-BRIEF-ACCEPTANCE`; do not start Slice 7 / Minimal Eval Implementation before the Slice 6B closure brief is accepted.
 - Evidence:
-  - `docs/implementation/new-reading-mechanism/second-reader-memory-planning/README.md`
-  - `docs/implementation/new-reading-mechanism/second-reader-memory-planning/E实施0-Implementation Roadmap & Handoff v0.md`
-  - `docs/implementation/new-reading-mechanism/second-reader-memory-planning/codex/E实施1-Implementation Feasibility & Delta Audit v0.md`
-  - `docs/implementation/new-reading-mechanism/second-reader-memory-planning/codex/briefs/Slice6A-Slow-cycle-Candidate-and-Settlement-Audit-Envelope-Foundations-Pre-implementation-Brief v0.md`
-  - `docs/implementation/new-reading-mechanism/second-reader-memory-planning/codex/reports/Slice6A-Slow-cycle-Candidate-and-Settlement-Audit-Envelope-Foundations-Post-implementation-Report v0.md`
-  - `docs/implementation/new-reading-mechanism/second-reader-memory-planning/codex/reports/Slice6A-Patch-Carry-forward-Settled-SourceRef-Evidence-Precision-Report v0.md`
-  - `docs/implementation/new-reading-mechanism/second-reader-memory-planning/codex/briefs/Slice6B-Slow-cycle-Re-entry-Reconsolidation-and-Eval-readiness-Smoke-Pre-implementation-Brief v0.md`
-  - `docs/implementation/new-reading-mechanism/second-reader-memory-planning/codex/E实施-progress-ledger.md`
+  - `docs/archive/pre-cleanup-2026-11/implementation/new-reading-mechanism/second-reader-memory-planning/README.md`
+  - `docs/archive/pre-cleanup-2026-11/implementation/new-reading-mechanism/second-reader-memory-planning/E实施0-Implementation Roadmap & Handoff v0.md`
+  - `docs/archive/pre-cleanup-2026-11/implementation/new-reading-mechanism/second-reader-memory-planning/codex/E实施1-Implementation Feasibility & Delta Audit v0.md`
+  - `docs/archive/pre-cleanup-2026-11/implementation/new-reading-mechanism/second-reader-memory-planning/codex/briefs/Slice6A-Slow-cycle-Candidate-and-Settlement-Audit-Envelope-Foundations-Pre-implementation-Brief v0.md`
+  - `docs/archive/pre-cleanup-2026-11/implementation/new-reading-mechanism/second-reader-memory-planning/codex/reports/Slice6A-Slow-cycle-Candidate-and-Settlement-Audit-Envelope-Foundations-Post-implementation-Report v0.md`
+  - `docs/archive/pre-cleanup-2026-11/implementation/new-reading-mechanism/second-reader-memory-planning/codex/reports/Slice6A-Patch-Carry-forward-Settled-SourceRef-Evidence-Precision-Report v0.md`
+  - `docs/archive/pre-cleanup-2026-11/implementation/new-reading-mechanism/second-reader-memory-planning/codex/briefs/Slice6B-Slow-cycle-Re-entry-Reconsolidation-and-Eval-readiness-Smoke-Pre-implementation-Brief v0.md`
+  - `docs/archive/pre-cleanup-2026-11/implementation/new-reading-mechanism/second-reader-memory-planning/codex/E实施-progress-ledger.md`
 
 ### `TASK-SECOND-READER-MEMORY-PLANNING-SLICE6A-REPORT-REVIEW` — Review Slice 6A Post-implementation Report for Slow-cycle Candidate and Settlement Audit Envelope Foundations
 - Status: `done`
 - Lane: `mechanism_runtime`
 - Priority: `high`
-- Detail: `docs/implementation/new-reading-mechanism/second-reader-memory-planning/codex/reports/Slice6A-Slow-cycle-Candidate-and-Settlement-Audit-Envelope-Foundations-Post-implementation-Report v0.md`
+- Detail: `docs/archive/pre-cleanup-2026-11/implementation/new-reading-mechanism/second-reader-memory-planning/codex/reports/Slice6A-Slow-cycle-Candidate-and-Settlement-Audit-Envelope-Foundations-Post-implementation-Report v0.md`
 - Next: Slice 6A Post-implementation Report was reviewed; implementation direction accepted with a required carried SourceRef audit precision patch. Continue with `TASK-SECOND-READER-MEMORY-PLANNING-SLICE6A-PATCH-REPORT-REVIEW`; do not start the next implementation slice before the Slice 6A patch report is accepted.
 - Evidence:
-  - `docs/implementation/new-reading-mechanism/second-reader-memory-planning/README.md`
-  - `docs/implementation/new-reading-mechanism/second-reader-memory-planning/E实施0-Implementation Roadmap & Handoff v0.md`
-  - `docs/implementation/new-reading-mechanism/second-reader-memory-planning/codex/E实施1-Implementation Feasibility & Delta Audit v0.md`
-  - `docs/implementation/new-reading-mechanism/second-reader-memory-planning/codex/briefs/Slice6A-Slow-cycle-Candidate-and-Settlement-Audit-Envelope-Foundations-Pre-implementation-Brief v0.md`
-  - `docs/implementation/new-reading-mechanism/second-reader-memory-planning/codex/reports/Slice6A-Slow-cycle-Candidate-and-Settlement-Audit-Envelope-Foundations-Post-implementation-Report v0.md`
-  - `docs/implementation/new-reading-mechanism/second-reader-memory-planning/codex/reports/Slice6A-Patch-Carry-forward-Settled-SourceRef-Evidence-Precision-Report v0.md`
-  - `docs/implementation/new-reading-mechanism/second-reader-memory-planning/codex/E实施-progress-ledger.md`
+  - `docs/archive/pre-cleanup-2026-11/implementation/new-reading-mechanism/second-reader-memory-planning/README.md`
+  - `docs/archive/pre-cleanup-2026-11/implementation/new-reading-mechanism/second-reader-memory-planning/E实施0-Implementation Roadmap & Handoff v0.md`
+  - `docs/archive/pre-cleanup-2026-11/implementation/new-reading-mechanism/second-reader-memory-planning/codex/E实施1-Implementation Feasibility & Delta Audit v0.md`
+  - `docs/archive/pre-cleanup-2026-11/implementation/new-reading-mechanism/second-reader-memory-planning/codex/briefs/Slice6A-Slow-cycle-Candidate-and-Settlement-Audit-Envelope-Foundations-Pre-implementation-Brief v0.md`
+  - `docs/archive/pre-cleanup-2026-11/implementation/new-reading-mechanism/second-reader-memory-planning/codex/reports/Slice6A-Slow-cycle-Candidate-and-Settlement-Audit-Envelope-Foundations-Post-implementation-Report v0.md`
+  - `docs/archive/pre-cleanup-2026-11/implementation/new-reading-mechanism/second-reader-memory-planning/codex/reports/Slice6A-Patch-Carry-forward-Settled-SourceRef-Evidence-Precision-Report v0.md`
+  - `docs/archive/pre-cleanup-2026-11/implementation/new-reading-mechanism/second-reader-memory-planning/codex/E实施-progress-ledger.md`
 
 ### `TASK-SECOND-READER-MEMORY-PLANNING-SLICE6A-BRIEF-ACCEPTANCE` — Review Slice 6A Pre-implementation Brief for Slow-cycle Candidate and Settlement Audit Envelope Foundations
 - Status: `done`
 - Lane: `mechanism_runtime`
 - Priority: `high`
-- Detail: `docs/implementation/new-reading-mechanism/second-reader-memory-planning/codex/briefs/Slice6A-Slow-cycle-Candidate-and-Settlement-Audit-Envelope-Foundations-Pre-implementation-Brief v0.md`
+- Detail: `docs/archive/pre-cleanup-2026-11/implementation/new-reading-mechanism/second-reader-memory-planning/codex/briefs/Slice6A-Slow-cycle-Candidate-and-Settlement-Audit-Envelope-Foundations-Pre-implementation-Brief v0.md`
 - Next: Slice 6A Pre-implementation Brief is accepted and implemented, and the Slice 6A Post-implementation Report has been reviewed with a required patch. Continue with `TASK-SECOND-READER-MEMORY-PLANNING-SLICE6A-PATCH-REPORT-REVIEW`; do not start the next implementation slice before the Slice 6A patch report is accepted.
 - Evidence:
-  - `docs/implementation/new-reading-mechanism/second-reader-memory-planning/README.md`
-  - `docs/implementation/new-reading-mechanism/second-reader-memory-planning/E实施0-Implementation Roadmap & Handoff v0.md`
-  - `docs/implementation/new-reading-mechanism/second-reader-memory-planning/codex/E实施1-Implementation Feasibility & Delta Audit v0.md`
-  - `docs/implementation/new-reading-mechanism/second-reader-memory-planning/codex/briefs/Slice6A-Slow-cycle-Candidate-and-Settlement-Audit-Envelope-Foundations-Pre-implementation-Brief v0.md`
-  - `docs/implementation/new-reading-mechanism/second-reader-memory-planning/codex/reports/Slice6A-Slow-cycle-Candidate-and-Settlement-Audit-Envelope-Foundations-Post-implementation-Report v0.md`
-  - `docs/implementation/new-reading-mechanism/second-reader-memory-planning/codex/E实施-progress-ledger.md`
+  - `docs/archive/pre-cleanup-2026-11/implementation/new-reading-mechanism/second-reader-memory-planning/README.md`
+  - `docs/archive/pre-cleanup-2026-11/implementation/new-reading-mechanism/second-reader-memory-planning/E实施0-Implementation Roadmap & Handoff v0.md`
+  - `docs/archive/pre-cleanup-2026-11/implementation/new-reading-mechanism/second-reader-memory-planning/codex/E实施1-Implementation Feasibility & Delta Audit v0.md`
+  - `docs/archive/pre-cleanup-2026-11/implementation/new-reading-mechanism/second-reader-memory-planning/codex/briefs/Slice6A-Slow-cycle-Candidate-and-Settlement-Audit-Envelope-Foundations-Pre-implementation-Brief v0.md`
+  - `docs/archive/pre-cleanup-2026-11/implementation/new-reading-mechanism/second-reader-memory-planning/codex/reports/Slice6A-Slow-cycle-Candidate-and-Settlement-Audit-Envelope-Foundations-Post-implementation-Report v0.md`
+  - `docs/archive/pre-cleanup-2026-11/implementation/new-reading-mechanism/second-reader-memory-planning/codex/E实施-progress-ledger.md`
 
 ### `TASK-SECOND-READER-MEMORY-PLANNING-SLICE5B-REPORT-REVIEW` — Review Slice 5B Post-implementation Report for Planning Support Signals and Detour Value-Cost Audit Markers
 - Status: `done`
 - Lane: `mechanism_runtime`
 - Priority: `high`
-- Detail: `docs/implementation/new-reading-mechanism/second-reader-memory-planning/codex/reports/Slice5B-Planning-Support-Signals-and-Detour-Value-Cost-Audit-Markers-Post-implementation-Report v0.md`
+- Detail: `docs/archive/pre-cleanup-2026-11/implementation/new-reading-mechanism/second-reader-memory-planning/codex/reports/Slice5B-Planning-Support-Signals-and-Detour-Value-Cost-Audit-Markers-Post-implementation-Report v0.md`
 - Next: Slice 5B Post-implementation Report is accepted. Continue with `TASK-SECOND-READER-MEMORY-PLANNING-SLICE6A-BRIEF-ACCEPTANCE`; do not start Slice 6A implementation before the Slice 6A Pre-implementation Brief is accepted.
 - Evidence:
-  - `docs/implementation/new-reading-mechanism/second-reader-memory-planning/README.md`
-  - `docs/implementation/new-reading-mechanism/second-reader-memory-planning/E实施0-Implementation Roadmap & Handoff v0.md`
-  - `docs/implementation/new-reading-mechanism/second-reader-memory-planning/codex/E实施1-Implementation Feasibility & Delta Audit v0.md`
-  - `docs/implementation/new-reading-mechanism/second-reader-memory-planning/codex/briefs/Slice5B-Planning-Support-Signals-and-Detour-Value-Cost-Audit-Markers-Pre-implementation-Brief v0.md`
-  - `docs/implementation/new-reading-mechanism/second-reader-memory-planning/codex/reports/Slice5B-Planning-Support-Signals-and-Detour-Value-Cost-Audit-Markers-Post-implementation-Report v0.md`
-  - `docs/implementation/new-reading-mechanism/second-reader-memory-planning/codex/briefs/Slice6A-Slow-cycle-Candidate-and-Settlement-Audit-Envelope-Foundations-Pre-implementation-Brief v0.md`
-  - `docs/implementation/new-reading-mechanism/second-reader-memory-planning/codex/E实施-progress-ledger.md`
+  - `docs/archive/pre-cleanup-2026-11/implementation/new-reading-mechanism/second-reader-memory-planning/README.md`
+  - `docs/archive/pre-cleanup-2026-11/implementation/new-reading-mechanism/second-reader-memory-planning/E实施0-Implementation Roadmap & Handoff v0.md`
+  - `docs/archive/pre-cleanup-2026-11/implementation/new-reading-mechanism/second-reader-memory-planning/codex/E实施1-Implementation Feasibility & Delta Audit v0.md`
+  - `docs/archive/pre-cleanup-2026-11/implementation/new-reading-mechanism/second-reader-memory-planning/codex/briefs/Slice5B-Planning-Support-Signals-and-Detour-Value-Cost-Audit-Markers-Pre-implementation-Brief v0.md`
+  - `docs/archive/pre-cleanup-2026-11/implementation/new-reading-mechanism/second-reader-memory-planning/codex/reports/Slice5B-Planning-Support-Signals-and-Detour-Value-Cost-Audit-Markers-Post-implementation-Report v0.md`
+  - `docs/archive/pre-cleanup-2026-11/implementation/new-reading-mechanism/second-reader-memory-planning/codex/briefs/Slice6A-Slow-cycle-Candidate-and-Settlement-Audit-Envelope-Foundations-Pre-implementation-Brief v0.md`
+  - `docs/archive/pre-cleanup-2026-11/implementation/new-reading-mechanism/second-reader-memory-planning/codex/E实施-progress-ledger.md`
 
 ### `TASK-SECOND-READER-MEMORY-PLANNING-SLICE5B-BRIEF-ACCEPTANCE` — Review Slice 5B Pre-implementation Brief for Planning Support Signals and Detour Value-Cost Audit Markers
 - Status: `done`
 - Lane: `mechanism_runtime`
 - Priority: `high`
-- Detail: `docs/implementation/new-reading-mechanism/second-reader-memory-planning/codex/briefs/Slice5B-Planning-Support-Signals-and-Detour-Value-Cost-Audit-Markers-Pre-implementation-Brief v0.md`
+- Detail: `docs/archive/pre-cleanup-2026-11/implementation/new-reading-mechanism/second-reader-memory-planning/codex/briefs/Slice5B-Planning-Support-Signals-and-Detour-Value-Cost-Audit-Markers-Pre-implementation-Brief v0.md`
 - Next: Slice 5B Pre-implementation Brief is accepted and implemented. Continue with `TASK-SECOND-READER-MEMORY-PLANNING-SLICE5B-REPORT-REVIEW`; do not start the next implementation slice before the Slice 5B Post-implementation Report is accepted.
 - Evidence:
-  - `docs/implementation/new-reading-mechanism/second-reader-memory-planning/README.md`
-  - `docs/implementation/new-reading-mechanism/second-reader-memory-planning/E实施0-Implementation Roadmap & Handoff v0.md`
-  - `docs/implementation/new-reading-mechanism/second-reader-memory-planning/codex/E实施1-Implementation Feasibility & Delta Audit v0.md`
-  - `docs/implementation/new-reading-mechanism/second-reader-memory-planning/codex/briefs/Slice5B-Planning-Support-Signals-and-Detour-Value-Cost-Audit-Markers-Pre-implementation-Brief v0.md`
-  - `docs/implementation/new-reading-mechanism/second-reader-memory-planning/codex/reports/Slice5B-Planning-Support-Signals-and-Detour-Value-Cost-Audit-Markers-Post-implementation-Report v0.md`
-  - `docs/implementation/new-reading-mechanism/second-reader-memory-planning/codex/E实施-progress-ledger.md`
+  - `docs/archive/pre-cleanup-2026-11/implementation/new-reading-mechanism/second-reader-memory-planning/README.md`
+  - `docs/archive/pre-cleanup-2026-11/implementation/new-reading-mechanism/second-reader-memory-planning/E实施0-Implementation Roadmap & Handoff v0.md`
+  - `docs/archive/pre-cleanup-2026-11/implementation/new-reading-mechanism/second-reader-memory-planning/codex/E实施1-Implementation Feasibility & Delta Audit v0.md`
+  - `docs/archive/pre-cleanup-2026-11/implementation/new-reading-mechanism/second-reader-memory-planning/codex/briefs/Slice5B-Planning-Support-Signals-and-Detour-Value-Cost-Audit-Markers-Pre-implementation-Brief v0.md`
+  - `docs/archive/pre-cleanup-2026-11/implementation/new-reading-mechanism/second-reader-memory-planning/codex/reports/Slice5B-Planning-Support-Signals-and-Detour-Value-Cost-Audit-Markers-Post-implementation-Report v0.md`
+  - `docs/archive/pre-cleanup-2026-11/implementation/new-reading-mechanism/second-reader-memory-planning/codex/E实施-progress-ledger.md`
 
 ### `TASK-SECOND-READER-MEMORY-PLANNING-SLICE5A-REPORT-REVIEW` — Review Slice 5A Post-implementation Report for Detour Lifecycle and Navigation Trace Audit Hardening
 - Status: `done`
 - Lane: `mechanism_runtime`
 - Priority: `high`
-- Detail: `docs/implementation/new-reading-mechanism/second-reader-memory-planning/codex/reports/Slice5A-Detour-Lifecycle-and-Navigation-Trace-Audit-Hardening-Post-implementation-Report v0.md`
+- Detail: `docs/archive/pre-cleanup-2026-11/implementation/new-reading-mechanism/second-reader-memory-planning/codex/reports/Slice5A-Detour-Lifecycle-and-Navigation-Trace-Audit-Hardening-Post-implementation-Report v0.md`
 - Next: Slice 5A Post-implementation Report is accepted. Continue with `TASK-SECOND-READER-MEMORY-PLANNING-SLICE5B-BRIEF-ACCEPTANCE`; do not start Slice 5B implementation before the Slice 5B Pre-implementation Brief is accepted.
 - Evidence:
-  - `docs/implementation/new-reading-mechanism/second-reader-memory-planning/README.md`
-  - `docs/implementation/new-reading-mechanism/second-reader-memory-planning/E实施0-Implementation Roadmap & Handoff v0.md`
-  - `docs/implementation/new-reading-mechanism/second-reader-memory-planning/codex/E实施1-Implementation Feasibility & Delta Audit v0.md`
-  - `docs/implementation/new-reading-mechanism/second-reader-memory-planning/codex/briefs/Slice5A-Detour-Lifecycle-and-Navigation-Trace-Audit-Hardening-Pre-implementation-Brief v0.md`
-  - `docs/implementation/new-reading-mechanism/second-reader-memory-planning/codex/reports/Slice5A-Detour-Lifecycle-and-Navigation-Trace-Audit-Hardening-Post-implementation-Report v0.md`
-  - `docs/implementation/new-reading-mechanism/second-reader-memory-planning/codex/briefs/Slice5B-Planning-Support-Signals-and-Detour-Value-Cost-Audit-Markers-Pre-implementation-Brief v0.md`
-  - `docs/implementation/new-reading-mechanism/second-reader-memory-planning/codex/E实施-progress-ledger.md`
+  - `docs/archive/pre-cleanup-2026-11/implementation/new-reading-mechanism/second-reader-memory-planning/README.md`
+  - `docs/archive/pre-cleanup-2026-11/implementation/new-reading-mechanism/second-reader-memory-planning/E实施0-Implementation Roadmap & Handoff v0.md`
+  - `docs/archive/pre-cleanup-2026-11/implementation/new-reading-mechanism/second-reader-memory-planning/codex/E实施1-Implementation Feasibility & Delta Audit v0.md`
+  - `docs/archive/pre-cleanup-2026-11/implementation/new-reading-mechanism/second-reader-memory-planning/codex/briefs/Slice5A-Detour-Lifecycle-and-Navigation-Trace-Audit-Hardening-Pre-implementation-Brief v0.md`
+  - `docs/archive/pre-cleanup-2026-11/implementation/new-reading-mechanism/second-reader-memory-planning/codex/reports/Slice5A-Detour-Lifecycle-and-Navigation-Trace-Audit-Hardening-Post-implementation-Report v0.md`
+  - `docs/archive/pre-cleanup-2026-11/implementation/new-reading-mechanism/second-reader-memory-planning/codex/briefs/Slice5B-Planning-Support-Signals-and-Detour-Value-Cost-Audit-Markers-Pre-implementation-Brief v0.md`
+  - `docs/archive/pre-cleanup-2026-11/implementation/new-reading-mechanism/second-reader-memory-planning/codex/E实施-progress-ledger.md`
 
 ### `TASK-SECOND-READER-MEMORY-PLANNING-SLICE5A-BRIEF-ACCEPTANCE` — Review Slice 5A Pre-implementation Brief for Detour Lifecycle and Navigation Trace Audit Hardening
 - Status: `done`
 - Lane: `mechanism_runtime`
 - Priority: `high`
-- Detail: `docs/implementation/new-reading-mechanism/second-reader-memory-planning/codex/briefs/Slice5A-Detour-Lifecycle-and-Navigation-Trace-Audit-Hardening-Pre-implementation-Brief v0.md`
+- Detail: `docs/archive/pre-cleanup-2026-11/implementation/new-reading-mechanism/second-reader-memory-planning/codex/briefs/Slice5A-Detour-Lifecycle-and-Navigation-Trace-Audit-Hardening-Pre-implementation-Brief v0.md`
 - Next: Slice 5A Pre-implementation Brief is accepted and implemented. Continue with `TASK-SECOND-READER-MEMORY-PLANNING-SLICE5A-REPORT-REVIEW`; do not start the next implementation slice before the Slice 5A Post-implementation Report is accepted.
 - Evidence:
-  - `docs/implementation/new-reading-mechanism/second-reader-memory-planning/README.md`
-  - `docs/implementation/new-reading-mechanism/second-reader-memory-planning/E实施0-Implementation Roadmap & Handoff v0.md`
-  - `docs/implementation/new-reading-mechanism/second-reader-memory-planning/codex/E实施1-Implementation Feasibility & Delta Audit v0.md`
-  - `docs/implementation/new-reading-mechanism/second-reader-memory-planning/codex/briefs/Slice5A-Detour-Lifecycle-and-Navigation-Trace-Audit-Hardening-Pre-implementation-Brief v0.md`
-  - `docs/implementation/new-reading-mechanism/second-reader-memory-planning/codex/reports/Slice5A-Detour-Lifecycle-and-Navigation-Trace-Audit-Hardening-Post-implementation-Report v0.md`
-  - `docs/implementation/new-reading-mechanism/second-reader-memory-planning/codex/E实施-progress-ledger.md`
+  - `docs/archive/pre-cleanup-2026-11/implementation/new-reading-mechanism/second-reader-memory-planning/README.md`
+  - `docs/archive/pre-cleanup-2026-11/implementation/new-reading-mechanism/second-reader-memory-planning/E实施0-Implementation Roadmap & Handoff v0.md`
+  - `docs/archive/pre-cleanup-2026-11/implementation/new-reading-mechanism/second-reader-memory-planning/codex/E实施1-Implementation Feasibility & Delta Audit v0.md`
+  - `docs/archive/pre-cleanup-2026-11/implementation/new-reading-mechanism/second-reader-memory-planning/codex/briefs/Slice5A-Detour-Lifecycle-and-Navigation-Trace-Audit-Hardening-Pre-implementation-Brief v0.md`
+  - `docs/archive/pre-cleanup-2026-11/implementation/new-reading-mechanism/second-reader-memory-planning/codex/reports/Slice5A-Detour-Lifecycle-and-Navigation-Trace-Audit-Hardening-Post-implementation-Report v0.md`
+  - `docs/archive/pre-cleanup-2026-11/implementation/new-reading-mechanism/second-reader-memory-planning/codex/E实施-progress-ledger.md`
 
 ### `TASK-SECOND-READER-MEMORY-PLANNING-SLICE4B-REPORT-REVIEW` — Review Slice 4B Post-implementation Report for Retrieval Utilization Trace and Read-audit Evidence
 - Status: `done`
 - Lane: `mechanism_runtime`
 - Priority: `high`
-- Detail: `docs/implementation/new-reading-mechanism/second-reader-memory-planning/codex/reports/Slice4B-Retrieval-Utilization-Trace-and-Read-audit-Evidence-Post-implementation-Report v0.md`
+- Detail: `docs/archive/pre-cleanup-2026-11/implementation/new-reading-mechanism/second-reader-memory-planning/codex/reports/Slice4B-Retrieval-Utilization-Trace-and-Read-audit-Evidence-Post-implementation-Report v0.md`
 - Next: Slice 4B Post-implementation Report is accepted. Continue with `TASK-SECOND-READER-MEMORY-PLANNING-SLICE5A-BRIEF-ACCEPTANCE`; do not start Slice 5A implementation before the Slice 5A Pre-implementation Brief is accepted.
 - Evidence:
-  - `docs/implementation/new-reading-mechanism/second-reader-memory-planning/README.md`
-  - `docs/implementation/new-reading-mechanism/second-reader-memory-planning/E实施0-Implementation Roadmap & Handoff v0.md`
-  - `docs/implementation/new-reading-mechanism/second-reader-memory-planning/codex/E实施1-Implementation Feasibility & Delta Audit v0.md`
-  - `docs/implementation/new-reading-mechanism/second-reader-memory-planning/codex/briefs/Slice4B-Retrieval-Utilization-Trace-and-Read-audit-Evidence-Pre-implementation-Brief v0.md`
-  - `docs/implementation/new-reading-mechanism/second-reader-memory-planning/codex/reports/Slice4B-Retrieval-Utilization-Trace-and-Read-audit-Evidence-Post-implementation-Report v0.md`
-  - `docs/implementation/new-reading-mechanism/second-reader-memory-planning/codex/briefs/Slice5A-Detour-Lifecycle-and-Navigation-Trace-Audit-Hardening-Pre-implementation-Brief v0.md`
-  - `docs/implementation/new-reading-mechanism/second-reader-memory-planning/codex/E实施-progress-ledger.md`
+  - `docs/archive/pre-cleanup-2026-11/implementation/new-reading-mechanism/second-reader-memory-planning/README.md`
+  - `docs/archive/pre-cleanup-2026-11/implementation/new-reading-mechanism/second-reader-memory-planning/E实施0-Implementation Roadmap & Handoff v0.md`
+  - `docs/archive/pre-cleanup-2026-11/implementation/new-reading-mechanism/second-reader-memory-planning/codex/E实施1-Implementation Feasibility & Delta Audit v0.md`
+  - `docs/archive/pre-cleanup-2026-11/implementation/new-reading-mechanism/second-reader-memory-planning/codex/briefs/Slice4B-Retrieval-Utilization-Trace-and-Read-audit-Evidence-Pre-implementation-Brief v0.md`
+  - `docs/archive/pre-cleanup-2026-11/implementation/new-reading-mechanism/second-reader-memory-planning/codex/reports/Slice4B-Retrieval-Utilization-Trace-and-Read-audit-Evidence-Post-implementation-Report v0.md`
+  - `docs/archive/pre-cleanup-2026-11/implementation/new-reading-mechanism/second-reader-memory-planning/codex/briefs/Slice5A-Detour-Lifecycle-and-Navigation-Trace-Audit-Hardening-Pre-implementation-Brief v0.md`
+  - `docs/archive/pre-cleanup-2026-11/implementation/new-reading-mechanism/second-reader-memory-planning/codex/E实施-progress-ledger.md`
 
 ### `TASK-SECOND-READER-MEMORY-PLANNING-SLICE4B-BRIEF-ACCEPTANCE` — Review Slice 4B Pre-implementation Brief for Retrieval Utilization Trace and Read-audit Evidence
 - Status: `done`
 - Lane: `mechanism_runtime`
 - Priority: `high`
-- Detail: `docs/implementation/new-reading-mechanism/second-reader-memory-planning/codex/briefs/Slice4B-Retrieval-Utilization-Trace-and-Read-audit-Evidence-Pre-implementation-Brief v0.md`
+- Detail: `docs/archive/pre-cleanup-2026-11/implementation/new-reading-mechanism/second-reader-memory-planning/codex/briefs/Slice4B-Retrieval-Utilization-Trace-and-Read-audit-Evidence-Pre-implementation-Brief v0.md`
 - Next: Slice 4B Pre-implementation Brief is accepted and implemented. Continue with `TASK-SECOND-READER-MEMORY-PLANNING-SLICE4B-REPORT-REVIEW`; do not start the next implementation slice before the Slice 4B Post-implementation Report is accepted.
 - Evidence:
-  - `docs/implementation/new-reading-mechanism/second-reader-memory-planning/README.md`
-  - `docs/implementation/new-reading-mechanism/second-reader-memory-planning/E实施0-Implementation Roadmap & Handoff v0.md`
-  - `docs/implementation/new-reading-mechanism/second-reader-memory-planning/codex/E实施1-Implementation Feasibility & Delta Audit v0.md`
-  - `docs/implementation/new-reading-mechanism/second-reader-memory-planning/codex/reports/Slice4A-Patch-Precise-Result-Groups-and-Forwarding-Metadata-Report v0.md`
-  - `docs/implementation/new-reading-mechanism/second-reader-memory-planning/codex/briefs/Slice4B-Retrieval-Utilization-Trace-and-Read-audit-Evidence-Pre-implementation-Brief v0.md`
-  - `docs/implementation/new-reading-mechanism/second-reader-memory-planning/codex/reports/Slice4B-Retrieval-Utilization-Trace-and-Read-audit-Evidence-Post-implementation-Report v0.md`
-  - `docs/implementation/new-reading-mechanism/second-reader-memory-planning/codex/E实施-progress-ledger.md`
+  - `docs/archive/pre-cleanup-2026-11/implementation/new-reading-mechanism/second-reader-memory-planning/README.md`
+  - `docs/archive/pre-cleanup-2026-11/implementation/new-reading-mechanism/second-reader-memory-planning/E实施0-Implementation Roadmap & Handoff v0.md`
+  - `docs/archive/pre-cleanup-2026-11/implementation/new-reading-mechanism/second-reader-memory-planning/codex/E实施1-Implementation Feasibility & Delta Audit v0.md`
+  - `docs/archive/pre-cleanup-2026-11/implementation/new-reading-mechanism/second-reader-memory-planning/codex/reports/Slice4A-Patch-Precise-Result-Groups-and-Forwarding-Metadata-Report v0.md`
+  - `docs/archive/pre-cleanup-2026-11/implementation/new-reading-mechanism/second-reader-memory-planning/codex/briefs/Slice4B-Retrieval-Utilization-Trace-and-Read-audit-Evidence-Pre-implementation-Brief v0.md`
+  - `docs/archive/pre-cleanup-2026-11/implementation/new-reading-mechanism/second-reader-memory-planning/codex/reports/Slice4B-Retrieval-Utilization-Trace-and-Read-audit-Evidence-Post-implementation-Report v0.md`
+  - `docs/archive/pre-cleanup-2026-11/implementation/new-reading-mechanism/second-reader-memory-planning/codex/E实施-progress-ledger.md`
 
 ### `TASK-SECOND-READER-MEMORY-PLANNING-SLICE4A-PATCH-REPORT-REVIEW` — Review Slice 4A precision patch report for result groups and forwarding metadata
 - Status: `done`
 - Lane: `mechanism_runtime`
 - Priority: `high`
-- Detail: `docs/implementation/new-reading-mechanism/second-reader-memory-planning/codex/reports/Slice4A-Patch-Precise-Result-Groups-and-Forwarding-Metadata-Report v0.md`
+- Detail: `docs/archive/pre-cleanup-2026-11/implementation/new-reading-mechanism/second-reader-memory-planning/codex/reports/Slice4A-Patch-Precise-Result-Groups-and-Forwarding-Metadata-Report v0.md`
 - Next: Slice 4A precision patch report is accepted. Continue with `TASK-SECOND-READER-MEMORY-PLANNING-SLICE4B-BRIEF-ACCEPTANCE`; do not start Slice 4B implementation before the Slice 4B Pre-implementation Brief is accepted.
 - Evidence:
-  - `docs/implementation/new-reading-mechanism/second-reader-memory-planning/codex/reports/Slice4A-Patch-Precise-Result-Groups-and-Forwarding-Metadata-Report v0.md`
-  - `docs/implementation/new-reading-mechanism/second-reader-memory-planning/codex/briefs/Slice4B-Retrieval-Utilization-Trace-and-Read-audit-Evidence-Pre-implementation-Brief v0.md`
-  - `docs/implementation/new-reading-mechanism/second-reader-memory-planning/codex/E实施-progress-ledger.md`
+  - `docs/archive/pre-cleanup-2026-11/implementation/new-reading-mechanism/second-reader-memory-planning/codex/reports/Slice4A-Patch-Precise-Result-Groups-and-Forwarding-Metadata-Report v0.md`
+  - `docs/archive/pre-cleanup-2026-11/implementation/new-reading-mechanism/second-reader-memory-planning/codex/briefs/Slice4B-Retrieval-Utilization-Trace-and-Read-audit-Evidence-Pre-implementation-Brief v0.md`
+  - `docs/archive/pre-cleanup-2026-11/implementation/new-reading-mechanism/second-reader-memory-planning/codex/E实施-progress-ledger.md`
 
 ### `TASK-SECOND-READER-MEMORY-PLANNING-SLICE4A-REPORT-REVIEW` — Review Slice 4A Post-implementation Report for Supplemental Retrieval Intent and Context Assembly Contract
 - Status: `done`
 - Lane: `mechanism_runtime`
 - Priority: `high`
-- Detail: `docs/implementation/new-reading-mechanism/second-reader-memory-planning/codex/reports/Slice4A-Supplemental-Retrieval-Intent-and-Context-Assembly-Contract-Post-implementation-Report v0.md`
+- Detail: `docs/archive/pre-cleanup-2026-11/implementation/new-reading-mechanism/second-reader-memory-planning/codex/reports/Slice4A-Supplemental-Retrieval-Intent-and-Context-Assembly-Contract-Post-implementation-Report v0.md`
 - Next: Slice 4A implementation direction is accepted with a required precision patch. Continue with `TASK-SECOND-READER-MEMORY-PLANNING-SLICE4A-PATCH-REPORT-REVIEW`; do not start Slice 4B before the Slice 4A patch report is accepted.
 - Evidence:
-  - `docs/implementation/new-reading-mechanism/second-reader-memory-planning/codex/reports/Slice4A-Supplemental-Retrieval-Intent-and-Context-Assembly-Contract-Post-implementation-Report v0.md`
-  - `docs/implementation/new-reading-mechanism/second-reader-memory-planning/codex/reports/Slice4A-Patch-Precise-Result-Groups-and-Forwarding-Metadata-Report v0.md`
-  - `docs/implementation/new-reading-mechanism/second-reader-memory-planning/codex/E实施-progress-ledger.md`
+  - `docs/archive/pre-cleanup-2026-11/implementation/new-reading-mechanism/second-reader-memory-planning/codex/reports/Slice4A-Supplemental-Retrieval-Intent-and-Context-Assembly-Contract-Post-implementation-Report v0.md`
+  - `docs/archive/pre-cleanup-2026-11/implementation/new-reading-mechanism/second-reader-memory-planning/codex/reports/Slice4A-Patch-Precise-Result-Groups-and-Forwarding-Metadata-Report v0.md`
+  - `docs/archive/pre-cleanup-2026-11/implementation/new-reading-mechanism/second-reader-memory-planning/codex/E实施-progress-ledger.md`
 
 ### `TASK-SECOND-READER-MEMORY-PLANNING-SLICE4A-BRIEF-ACCEPTANCE` — Review Slice 4A Pre-implementation Brief for Supplemental Retrieval Intent and Context Assembly Contract
 - Status: `done`
 - Lane: `mechanism_runtime`
 - Priority: `high`
-- Detail: `docs/implementation/new-reading-mechanism/second-reader-memory-planning/codex/briefs/Slice4A-Supplemental-Retrieval-Intent-and-Context-Assembly-Contract-Pre-implementation-Brief v0.md`
+- Detail: `docs/archive/pre-cleanup-2026-11/implementation/new-reading-mechanism/second-reader-memory-planning/codex/briefs/Slice4A-Supplemental-Retrieval-Intent-and-Context-Assembly-Contract-Pre-implementation-Brief v0.md`
 - Next: Slice 4A Pre-implementation Brief is accepted and implemented. Continue with `TASK-SECOND-READER-MEMORY-PLANNING-SLICE4A-REPORT-REVIEW`; do not start the next implementation slice before the Slice 4A Post-implementation Report is accepted.
 - Evidence:
-  - `docs/implementation/new-reading-mechanism/second-reader-memory-planning/README.md`
-  - `docs/implementation/new-reading-mechanism/second-reader-memory-planning/E实施0-Implementation Roadmap & Handoff v0.md`
-  - `docs/implementation/new-reading-mechanism/second-reader-memory-planning/codex/E实施1-Implementation Feasibility & Delta Audit v0.md`
-  - `docs/implementation/new-reading-mechanism/second-reader-memory-planning/codex/briefs/Slice4A-Supplemental-Retrieval-Intent-and-Context-Assembly-Contract-Pre-implementation-Brief v0.md`
-  - `docs/implementation/new-reading-mechanism/second-reader-memory-planning/codex/reports/Slice4A-Supplemental-Retrieval-Intent-and-Context-Assembly-Contract-Post-implementation-Report v0.md`
-  - `docs/implementation/new-reading-mechanism/second-reader-memory-planning/codex/E实施-progress-ledger.md`
+  - `docs/archive/pre-cleanup-2026-11/implementation/new-reading-mechanism/second-reader-memory-planning/README.md`
+  - `docs/archive/pre-cleanup-2026-11/implementation/new-reading-mechanism/second-reader-memory-planning/E实施0-Implementation Roadmap & Handoff v0.md`
+  - `docs/archive/pre-cleanup-2026-11/implementation/new-reading-mechanism/second-reader-memory-planning/codex/E实施1-Implementation Feasibility & Delta Audit v0.md`
+  - `docs/archive/pre-cleanup-2026-11/implementation/new-reading-mechanism/second-reader-memory-planning/codex/briefs/Slice4A-Supplemental-Retrieval-Intent-and-Context-Assembly-Contract-Pre-implementation-Brief v0.md`
+  - `docs/archive/pre-cleanup-2026-11/implementation/new-reading-mechanism/second-reader-memory-planning/codex/reports/Slice4A-Supplemental-Retrieval-Intent-and-Context-Assembly-Contract-Post-implementation-Report v0.md`
+  - `docs/archive/pre-cleanup-2026-11/implementation/new-reading-mechanism/second-reader-memory-planning/codex/E实施-progress-ledger.md`
 
 ### `TASK-SECOND-READER-MEMORY-PLANNING-SLICE3B-REPORT-REVIEW` — Review Slice 3B Post-implementation Report for Lifecycle Semantics and State-op Boundary Hardening
 - Status: `done`
 - Lane: `mechanism_runtime`
 - Priority: `high`
-- Detail: `docs/implementation/new-reading-mechanism/second-reader-memory-planning/codex/reports/Slice3B-Lifecycle-Semantics-and-State-op-Boundary-Hardening-Post-implementation-Report v0.md`
+- Detail: `docs/archive/pre-cleanup-2026-11/implementation/new-reading-mechanism/second-reader-memory-planning/codex/reports/Slice3B-Lifecycle-Semantics-and-State-op-Boundary-Hardening-Post-implementation-Report v0.md`
 - Next: Slice 3B Post-implementation Report is accepted. Continue with `TASK-SECOND-READER-MEMORY-PLANNING-SLICE4A-BRIEF-ACCEPTANCE`; do not start Slice 4A implementation before the Slice 4A Pre-implementation Brief is accepted.
 - Evidence:
-  - `docs/implementation/new-reading-mechanism/second-reader-memory-planning/README.md`
-  - `docs/implementation/new-reading-mechanism/second-reader-memory-planning/E实施0-Implementation Roadmap & Handoff v0.md`
-  - `docs/implementation/new-reading-mechanism/second-reader-memory-planning/codex/E实施1-Implementation Feasibility & Delta Audit v0.md`
-  - `docs/implementation/new-reading-mechanism/second-reader-memory-planning/codex/briefs/Slice3B-Lifecycle-Semantics-and-State-op-Boundary-Hardening-Pre-implementation-Brief v0.md`
-  - `docs/implementation/new-reading-mechanism/second-reader-memory-planning/codex/reports/Slice3B-Lifecycle-Semantics-and-State-op-Boundary-Hardening-Post-implementation-Report v0.md`
-  - `docs/implementation/new-reading-mechanism/second-reader-memory-planning/codex/briefs/Slice4A-Supplemental-Retrieval-Intent-and-Context-Assembly-Contract-Pre-implementation-Brief v0.md`
-  - `docs/implementation/new-reading-mechanism/second-reader-memory-planning/codex/E实施-progress-ledger.md`
+  - `docs/archive/pre-cleanup-2026-11/implementation/new-reading-mechanism/second-reader-memory-planning/README.md`
+  - `docs/archive/pre-cleanup-2026-11/implementation/new-reading-mechanism/second-reader-memory-planning/E实施0-Implementation Roadmap & Handoff v0.md`
+  - `docs/archive/pre-cleanup-2026-11/implementation/new-reading-mechanism/second-reader-memory-planning/codex/E实施1-Implementation Feasibility & Delta Audit v0.md`
+  - `docs/archive/pre-cleanup-2026-11/implementation/new-reading-mechanism/second-reader-memory-planning/codex/briefs/Slice3B-Lifecycle-Semantics-and-State-op-Boundary-Hardening-Pre-implementation-Brief v0.md`
+  - `docs/archive/pre-cleanup-2026-11/implementation/new-reading-mechanism/second-reader-memory-planning/codex/reports/Slice3B-Lifecycle-Semantics-and-State-op-Boundary-Hardening-Post-implementation-Report v0.md`
+  - `docs/archive/pre-cleanup-2026-11/implementation/new-reading-mechanism/second-reader-memory-planning/codex/briefs/Slice4A-Supplemental-Retrieval-Intent-and-Context-Assembly-Contract-Pre-implementation-Brief v0.md`
+  - `docs/archive/pre-cleanup-2026-11/implementation/new-reading-mechanism/second-reader-memory-planning/codex/E实施-progress-ledger.md`
 
 ### `TASK-SECOND-READER-MEMORY-PLANNING-SLICE3B-BRIEF-ACCEPTANCE` — Review Slice 3B Pre-implementation Brief for Lifecycle Semantics and State-op Boundary Hardening
 - Status: `done`
 - Lane: `mechanism_runtime`
 - Priority: `high`
-- Detail: `docs/implementation/new-reading-mechanism/second-reader-memory-planning/codex/briefs/Slice3B-Lifecycle-Semantics-and-State-op-Boundary-Hardening-Pre-implementation-Brief v0.md`
+- Detail: `docs/archive/pre-cleanup-2026-11/implementation/new-reading-mechanism/second-reader-memory-planning/codex/briefs/Slice3B-Lifecycle-Semantics-and-State-op-Boundary-Hardening-Pre-implementation-Brief v0.md`
 - Next: Slice 3B Pre-implementation Brief is accepted and implemented. Continue with `TASK-SECOND-READER-MEMORY-PLANNING-SLICE3B-REPORT-REVIEW`; do not start the next implementation slice before the Slice 3B Post-implementation Report is accepted.
 - Evidence:
-  - `docs/implementation/new-reading-mechanism/second-reader-memory-planning/README.md`
-  - `docs/implementation/new-reading-mechanism/second-reader-memory-planning/E实施0-Implementation Roadmap & Handoff v0.md`
-  - `docs/implementation/new-reading-mechanism/second-reader-memory-planning/codex/E实施1-Implementation Feasibility & Delta Audit v0.md`
-  - `docs/implementation/new-reading-mechanism/second-reader-memory-planning/codex/briefs/Slice1-Contract-Audit-Foundations-Pre-implementation-Brief v0.md`
-  - `docs/implementation/new-reading-mechanism/second-reader-memory-planning/codex/reports/Slice1-Contract-Audit-Foundations-Post-implementation-Report v0.md`
-  - `docs/implementation/new-reading-mechanism/second-reader-memory-planning/codex/briefs/Slice2A-Operation-Vocabulary-and-Admission-Visibility-Hardening-Pre-implementation-Brief v0.md`
-  - `docs/implementation/new-reading-mechanism/second-reader-memory-planning/codex/reports/Slice2A-Operation-Vocabulary-and-Admission-Visibility-Hardening-Post-implementation-Report v0.md`
-  - `docs/implementation/new-reading-mechanism/second-reader-memory-planning/codex/briefs/Slice2B-Store-specific-Admission-and-Target-store-Policy-Hardening-Pre-implementation-Brief v0.md`
-  - `docs/implementation/new-reading-mechanism/second-reader-memory-planning/codex/reports/Slice2B-Store-specific-Admission-and-Target-store-Policy-Hardening-Post-implementation-Report v0.md`
-  - `docs/implementation/new-reading-mechanism/second-reader-memory-planning/codex/briefs/Slice3A-Status-aware-Projection-and-Boundary-Marker-Hardening-Pre-implementation-Brief v0.md`
-  - `docs/implementation/new-reading-mechanism/second-reader-memory-planning/codex/reports/Slice3A-Status-aware-Projection-and-Boundary-Marker-Hardening-Post-implementation-Report v0.md`
-  - `docs/implementation/new-reading-mechanism/second-reader-memory-planning/codex/briefs/Slice3B-Lifecycle-Semantics-and-State-op-Boundary-Hardening-Pre-implementation-Brief v0.md`
-  - `docs/implementation/new-reading-mechanism/second-reader-memory-planning/codex/reports/Slice3B-Lifecycle-Semantics-and-State-op-Boundary-Hardening-Post-implementation-Report v0.md`
-  - `docs/implementation/new-reading-mechanism/second-reader-memory-planning/codex/E实施-progress-ledger.md`
+  - `docs/archive/pre-cleanup-2026-11/implementation/new-reading-mechanism/second-reader-memory-planning/README.md`
+  - `docs/archive/pre-cleanup-2026-11/implementation/new-reading-mechanism/second-reader-memory-planning/E实施0-Implementation Roadmap & Handoff v0.md`
+  - `docs/archive/pre-cleanup-2026-11/implementation/new-reading-mechanism/second-reader-memory-planning/codex/E实施1-Implementation Feasibility & Delta Audit v0.md`
+  - `docs/archive/pre-cleanup-2026-11/implementation/new-reading-mechanism/second-reader-memory-planning/codex/briefs/Slice1-Contract-Audit-Foundations-Pre-implementation-Brief v0.md`
+  - `docs/archive/pre-cleanup-2026-11/implementation/new-reading-mechanism/second-reader-memory-planning/codex/reports/Slice1-Contract-Audit-Foundations-Post-implementation-Report v0.md`
+  - `docs/archive/pre-cleanup-2026-11/implementation/new-reading-mechanism/second-reader-memory-planning/codex/briefs/Slice2A-Operation-Vocabulary-and-Admission-Visibility-Hardening-Pre-implementation-Brief v0.md`
+  - `docs/archive/pre-cleanup-2026-11/implementation/new-reading-mechanism/second-reader-memory-planning/codex/reports/Slice2A-Operation-Vocabulary-and-Admission-Visibility-Hardening-Post-implementation-Report v0.md`
+  - `docs/archive/pre-cleanup-2026-11/implementation/new-reading-mechanism/second-reader-memory-planning/codex/briefs/Slice2B-Store-specific-Admission-and-Target-store-Policy-Hardening-Pre-implementation-Brief v0.md`
+  - `docs/archive/pre-cleanup-2026-11/implementation/new-reading-mechanism/second-reader-memory-planning/codex/reports/Slice2B-Store-specific-Admission-and-Target-store-Policy-Hardening-Post-implementation-Report v0.md`
+  - `docs/archive/pre-cleanup-2026-11/implementation/new-reading-mechanism/second-reader-memory-planning/codex/briefs/Slice3A-Status-aware-Projection-and-Boundary-Marker-Hardening-Pre-implementation-Brief v0.md`
+  - `docs/archive/pre-cleanup-2026-11/implementation/new-reading-mechanism/second-reader-memory-planning/codex/reports/Slice3A-Status-aware-Projection-and-Boundary-Marker-Hardening-Post-implementation-Report v0.md`
+  - `docs/archive/pre-cleanup-2026-11/implementation/new-reading-mechanism/second-reader-memory-planning/codex/briefs/Slice3B-Lifecycle-Semantics-and-State-op-Boundary-Hardening-Pre-implementation-Brief v0.md`
+  - `docs/archive/pre-cleanup-2026-11/implementation/new-reading-mechanism/second-reader-memory-planning/codex/reports/Slice3B-Lifecycle-Semantics-and-State-op-Boundary-Hardening-Post-implementation-Report v0.md`
+  - `docs/archive/pre-cleanup-2026-11/implementation/new-reading-mechanism/second-reader-memory-planning/codex/E实施-progress-ledger.md`
 
 ### `TASK-SECOND-READER-MEMORY-PLANNING-SLICE3A-REPORT-REVIEW` — Review Slice 3A Post-implementation Report for Status-aware Projection and Boundary Marker Hardening
 - Status: `done`
 - Lane: `mechanism_runtime`
 - Priority: `high`
-- Detail: `docs/implementation/new-reading-mechanism/second-reader-memory-planning/codex/reports/Slice3A-Status-aware-Projection-and-Boundary-Marker-Hardening-Post-implementation-Report v0.md`
+- Detail: `docs/archive/pre-cleanup-2026-11/implementation/new-reading-mechanism/second-reader-memory-planning/codex/reports/Slice3A-Status-aware-Projection-and-Boundary-Marker-Hardening-Post-implementation-Report v0.md`
 - Next: Slice 3B Pre-implementation Brief is accepted and implemented, and the Slice 3B Post-implementation Report is pending review. Continue with `TASK-SECOND-READER-MEMORY-PLANNING-SLICE3B-REPORT-REVIEW`; do not start the next implementation slice before the Slice 3B Post-implementation Report is accepted.
 - Evidence:
-  - `docs/implementation/new-reading-mechanism/second-reader-memory-planning/README.md`
-  - `docs/implementation/new-reading-mechanism/second-reader-memory-planning/E实施0-Implementation Roadmap & Handoff v0.md`
-  - `docs/implementation/new-reading-mechanism/second-reader-memory-planning/codex/E实施1-Implementation Feasibility & Delta Audit v0.md`
-  - `docs/implementation/new-reading-mechanism/second-reader-memory-planning/codex/briefs/Slice1-Contract-Audit-Foundations-Pre-implementation-Brief v0.md`
-  - `docs/implementation/new-reading-mechanism/second-reader-memory-planning/codex/reports/Slice1-Contract-Audit-Foundations-Post-implementation-Report v0.md`
-  - `docs/implementation/new-reading-mechanism/second-reader-memory-planning/codex/briefs/Slice2A-Operation-Vocabulary-and-Admission-Visibility-Hardening-Pre-implementation-Brief v0.md`
-  - `docs/implementation/new-reading-mechanism/second-reader-memory-planning/codex/reports/Slice2A-Operation-Vocabulary-and-Admission-Visibility-Hardening-Post-implementation-Report v0.md`
-  - `docs/implementation/new-reading-mechanism/second-reader-memory-planning/codex/briefs/Slice2B-Store-specific-Admission-and-Target-store-Policy-Hardening-Pre-implementation-Brief v0.md`
-  - `docs/implementation/new-reading-mechanism/second-reader-memory-planning/codex/reports/Slice2B-Store-specific-Admission-and-Target-store-Policy-Hardening-Post-implementation-Report v0.md`
-  - `docs/implementation/new-reading-mechanism/second-reader-memory-planning/codex/briefs/Slice3A-Status-aware-Projection-and-Boundary-Marker-Hardening-Pre-implementation-Brief v0.md`
-  - `docs/implementation/new-reading-mechanism/second-reader-memory-planning/codex/reports/Slice3A-Status-aware-Projection-and-Boundary-Marker-Hardening-Post-implementation-Report v0.md`
-  - `docs/implementation/new-reading-mechanism/second-reader-memory-planning/codex/briefs/Slice3B-Lifecycle-Semantics-and-State-op-Boundary-Hardening-Pre-implementation-Brief v0.md`
-  - `docs/implementation/new-reading-mechanism/second-reader-memory-planning/codex/E实施-progress-ledger.md`
+  - `docs/archive/pre-cleanup-2026-11/implementation/new-reading-mechanism/second-reader-memory-planning/README.md`
+  - `docs/archive/pre-cleanup-2026-11/implementation/new-reading-mechanism/second-reader-memory-planning/E实施0-Implementation Roadmap & Handoff v0.md`
+  - `docs/archive/pre-cleanup-2026-11/implementation/new-reading-mechanism/second-reader-memory-planning/codex/E实施1-Implementation Feasibility & Delta Audit v0.md`
+  - `docs/archive/pre-cleanup-2026-11/implementation/new-reading-mechanism/second-reader-memory-planning/codex/briefs/Slice1-Contract-Audit-Foundations-Pre-implementation-Brief v0.md`
+  - `docs/archive/pre-cleanup-2026-11/implementation/new-reading-mechanism/second-reader-memory-planning/codex/reports/Slice1-Contract-Audit-Foundations-Post-implementation-Report v0.md`
+  - `docs/archive/pre-cleanup-2026-11/implementation/new-reading-mechanism/second-reader-memory-planning/codex/briefs/Slice2A-Operation-Vocabulary-and-Admission-Visibility-Hardening-Pre-implementation-Brief v0.md`
+  - `docs/archive/pre-cleanup-2026-11/implementation/new-reading-mechanism/second-reader-memory-planning/codex/reports/Slice2A-Operation-Vocabulary-and-Admission-Visibility-Hardening-Post-implementation-Report v0.md`
+  - `docs/archive/pre-cleanup-2026-11/implementation/new-reading-mechanism/second-reader-memory-planning/codex/briefs/Slice2B-Store-specific-Admission-and-Target-store-Policy-Hardening-Pre-implementation-Brief v0.md`
+  - `docs/archive/pre-cleanup-2026-11/implementation/new-reading-mechanism/second-reader-memory-planning/codex/reports/Slice2B-Store-specific-Admission-and-Target-store-Policy-Hardening-Post-implementation-Report v0.md`
+  - `docs/archive/pre-cleanup-2026-11/implementation/new-reading-mechanism/second-reader-memory-planning/codex/briefs/Slice3A-Status-aware-Projection-and-Boundary-Marker-Hardening-Pre-implementation-Brief v0.md`
+  - `docs/archive/pre-cleanup-2026-11/implementation/new-reading-mechanism/second-reader-memory-planning/codex/reports/Slice3A-Status-aware-Projection-and-Boundary-Marker-Hardening-Post-implementation-Report v0.md`
+  - `docs/archive/pre-cleanup-2026-11/implementation/new-reading-mechanism/second-reader-memory-planning/codex/briefs/Slice3B-Lifecycle-Semantics-and-State-op-Boundary-Hardening-Pre-implementation-Brief v0.md`
+  - `docs/archive/pre-cleanup-2026-11/implementation/new-reading-mechanism/second-reader-memory-planning/codex/E实施-progress-ledger.md`
 
 ### `TASK-SECOND-READER-MEMORY-PLANNING-SLICE3A-BRIEF-ACCEPTANCE` — Review Slice 3A Pre-implementation Brief for Status-aware Projection and Boundary Marker Hardening
 - Status: `done`
 - Lane: `mechanism_runtime`
 - Priority: `high`
-- Detail: `docs/implementation/new-reading-mechanism/second-reader-memory-planning/codex/briefs/Slice3A-Status-aware-Projection-and-Boundary-Marker-Hardening-Pre-implementation-Brief v0.md`
+- Detail: `docs/archive/pre-cleanup-2026-11/implementation/new-reading-mechanism/second-reader-memory-planning/codex/briefs/Slice3A-Status-aware-Projection-and-Boundary-Marker-Hardening-Pre-implementation-Brief v0.md`
 - Next: Slice 3B Pre-implementation Brief is accepted and implemented, and the Slice 3B Post-implementation Report is pending review. Continue with `TASK-SECOND-READER-MEMORY-PLANNING-SLICE3B-REPORT-REVIEW`; do not start the next implementation slice before the Slice 3B Post-implementation Report is accepted.
 - Evidence:
-  - `docs/implementation/new-reading-mechanism/second-reader-memory-planning/README.md`
-  - `docs/implementation/new-reading-mechanism/second-reader-memory-planning/E实施0-Implementation Roadmap & Handoff v0.md`
-  - `docs/implementation/new-reading-mechanism/second-reader-memory-planning/codex/E实施1-Implementation Feasibility & Delta Audit v0.md`
-  - `docs/implementation/new-reading-mechanism/second-reader-memory-planning/codex/briefs/Slice1-Contract-Audit-Foundations-Pre-implementation-Brief v0.md`
-  - `docs/implementation/new-reading-mechanism/second-reader-memory-planning/codex/reports/Slice1-Contract-Audit-Foundations-Post-implementation-Report v0.md`
-  - `docs/implementation/new-reading-mechanism/second-reader-memory-planning/codex/briefs/Slice2A-Operation-Vocabulary-and-Admission-Visibility-Hardening-Pre-implementation-Brief v0.md`
-  - `docs/implementation/new-reading-mechanism/second-reader-memory-planning/codex/reports/Slice2A-Operation-Vocabulary-and-Admission-Visibility-Hardening-Post-implementation-Report v0.md`
-  - `docs/implementation/new-reading-mechanism/second-reader-memory-planning/codex/briefs/Slice2B-Store-specific-Admission-and-Target-store-Policy-Hardening-Pre-implementation-Brief v0.md`
-  - `docs/implementation/new-reading-mechanism/second-reader-memory-planning/codex/reports/Slice2B-Store-specific-Admission-and-Target-store-Policy-Hardening-Post-implementation-Report v0.md`
-  - `docs/implementation/new-reading-mechanism/second-reader-memory-planning/codex/briefs/Slice3A-Status-aware-Projection-and-Boundary-Marker-Hardening-Pre-implementation-Brief v0.md`
-  - `docs/implementation/new-reading-mechanism/second-reader-memory-planning/codex/reports/Slice3A-Status-aware-Projection-and-Boundary-Marker-Hardening-Post-implementation-Report v0.md`
-  - `docs/implementation/new-reading-mechanism/second-reader-memory-planning/codex/E实施-progress-ledger.md`
+  - `docs/archive/pre-cleanup-2026-11/implementation/new-reading-mechanism/second-reader-memory-planning/README.md`
+  - `docs/archive/pre-cleanup-2026-11/implementation/new-reading-mechanism/second-reader-memory-planning/E实施0-Implementation Roadmap & Handoff v0.md`
+  - `docs/archive/pre-cleanup-2026-11/implementation/new-reading-mechanism/second-reader-memory-planning/codex/E实施1-Implementation Feasibility & Delta Audit v0.md`
+  - `docs/archive/pre-cleanup-2026-11/implementation/new-reading-mechanism/second-reader-memory-planning/codex/briefs/Slice1-Contract-Audit-Foundations-Pre-implementation-Brief v0.md`
+  - `docs/archive/pre-cleanup-2026-11/implementation/new-reading-mechanism/second-reader-memory-planning/codex/reports/Slice1-Contract-Audit-Foundations-Post-implementation-Report v0.md`
+  - `docs/archive/pre-cleanup-2026-11/implementation/new-reading-mechanism/second-reader-memory-planning/codex/briefs/Slice2A-Operation-Vocabulary-and-Admission-Visibility-Hardening-Pre-implementation-Brief v0.md`
+  - `docs/archive/pre-cleanup-2026-11/implementation/new-reading-mechanism/second-reader-memory-planning/codex/reports/Slice2A-Operation-Vocabulary-and-Admission-Visibility-Hardening-Post-implementation-Report v0.md`
+  - `docs/archive/pre-cleanup-2026-11/implementation/new-reading-mechanism/second-reader-memory-planning/codex/briefs/Slice2B-Store-specific-Admission-and-Target-store-Policy-Hardening-Pre-implementation-Brief v0.md`
+  - `docs/archive/pre-cleanup-2026-11/implementation/new-reading-mechanism/second-reader-memory-planning/codex/reports/Slice2B-Store-specific-Admission-and-Target-store-Policy-Hardening-Post-implementation-Report v0.md`
+  - `docs/archive/pre-cleanup-2026-11/implementation/new-reading-mechanism/second-reader-memory-planning/codex/briefs/Slice3A-Status-aware-Projection-and-Boundary-Marker-Hardening-Pre-implementation-Brief v0.md`
+  - `docs/archive/pre-cleanup-2026-11/implementation/new-reading-mechanism/second-reader-memory-planning/codex/reports/Slice3A-Status-aware-Projection-and-Boundary-Marker-Hardening-Post-implementation-Report v0.md`
+  - `docs/archive/pre-cleanup-2026-11/implementation/new-reading-mechanism/second-reader-memory-planning/codex/E实施-progress-ledger.md`
 
 ### `TASK-SECOND-READER-MEMORY-PLANNING-SLICE2B-REPORT-REVIEW` — Review Slice 2B Post-implementation Report for Store-specific Admission and Target-store Policy Hardening
 - Status: `done`
 - Lane: `mechanism_runtime`
 - Priority: `high`
-- Detail: `docs/implementation/new-reading-mechanism/second-reader-memory-planning/codex/reports/Slice2B-Store-specific-Admission-and-Target-store-Policy-Hardening-Post-implementation-Report v0.md`
+- Detail: `docs/archive/pre-cleanup-2026-11/implementation/new-reading-mechanism/second-reader-memory-planning/codex/reports/Slice2B-Store-specific-Admission-and-Target-store-Policy-Hardening-Post-implementation-Report v0.md`
 - Next: Slice 3B Pre-implementation Brief is accepted and implemented, and the Slice 3B Post-implementation Report is pending review. Continue with `TASK-SECOND-READER-MEMORY-PLANNING-SLICE3B-REPORT-REVIEW`; do not start the next implementation slice before the Slice 3B Post-implementation Report is accepted.
 - Evidence:
-  - `docs/implementation/new-reading-mechanism/second-reader-memory-planning/README.md`
-  - `docs/implementation/new-reading-mechanism/second-reader-memory-planning/E实施0-Implementation Roadmap & Handoff v0.md`
-  - `docs/implementation/new-reading-mechanism/second-reader-memory-planning/codex/E实施1-Implementation Feasibility & Delta Audit v0.md`
-  - `docs/implementation/new-reading-mechanism/second-reader-memory-planning/codex/briefs/Slice1-Contract-Audit-Foundations-Pre-implementation-Brief v0.md`
-  - `docs/implementation/new-reading-mechanism/second-reader-memory-planning/codex/reports/Slice1-Contract-Audit-Foundations-Post-implementation-Report v0.md`
-  - `docs/implementation/new-reading-mechanism/second-reader-memory-planning/codex/briefs/Slice2A-Operation-Vocabulary-and-Admission-Visibility-Hardening-Pre-implementation-Brief v0.md`
-  - `docs/implementation/new-reading-mechanism/second-reader-memory-planning/codex/reports/Slice2A-Operation-Vocabulary-and-Admission-Visibility-Hardening-Post-implementation-Report v0.md`
-  - `docs/implementation/new-reading-mechanism/second-reader-memory-planning/codex/briefs/Slice2B-Store-specific-Admission-and-Target-store-Policy-Hardening-Pre-implementation-Brief v0.md`
-  - `docs/implementation/new-reading-mechanism/second-reader-memory-planning/codex/reports/Slice2B-Store-specific-Admission-and-Target-store-Policy-Hardening-Post-implementation-Report v0.md`
-  - `docs/implementation/new-reading-mechanism/second-reader-memory-planning/codex/briefs/Slice3A-Status-aware-Projection-and-Boundary-Marker-Hardening-Pre-implementation-Brief v0.md`
-  - `docs/implementation/new-reading-mechanism/second-reader-memory-planning/codex/E实施-progress-ledger.md`
+  - `docs/archive/pre-cleanup-2026-11/implementation/new-reading-mechanism/second-reader-memory-planning/README.md`
+  - `docs/archive/pre-cleanup-2026-11/implementation/new-reading-mechanism/second-reader-memory-planning/E实施0-Implementation Roadmap & Handoff v0.md`
+  - `docs/archive/pre-cleanup-2026-11/implementation/new-reading-mechanism/second-reader-memory-planning/codex/E实施1-Implementation Feasibility & Delta Audit v0.md`
+  - `docs/archive/pre-cleanup-2026-11/implementation/new-reading-mechanism/second-reader-memory-planning/codex/briefs/Slice1-Contract-Audit-Foundations-Pre-implementation-Brief v0.md`
+  - `docs/archive/pre-cleanup-2026-11/implementation/new-reading-mechanism/second-reader-memory-planning/codex/reports/Slice1-Contract-Audit-Foundations-Post-implementation-Report v0.md`
+  - `docs/archive/pre-cleanup-2026-11/implementation/new-reading-mechanism/second-reader-memory-planning/codex/briefs/Slice2A-Operation-Vocabulary-and-Admission-Visibility-Hardening-Pre-implementation-Brief v0.md`
+  - `docs/archive/pre-cleanup-2026-11/implementation/new-reading-mechanism/second-reader-memory-planning/codex/reports/Slice2A-Operation-Vocabulary-and-Admission-Visibility-Hardening-Post-implementation-Report v0.md`
+  - `docs/archive/pre-cleanup-2026-11/implementation/new-reading-mechanism/second-reader-memory-planning/codex/briefs/Slice2B-Store-specific-Admission-and-Target-store-Policy-Hardening-Pre-implementation-Brief v0.md`
+  - `docs/archive/pre-cleanup-2026-11/implementation/new-reading-mechanism/second-reader-memory-planning/codex/reports/Slice2B-Store-specific-Admission-and-Target-store-Policy-Hardening-Post-implementation-Report v0.md`
+  - `docs/archive/pre-cleanup-2026-11/implementation/new-reading-mechanism/second-reader-memory-planning/codex/briefs/Slice3A-Status-aware-Projection-and-Boundary-Marker-Hardening-Pre-implementation-Brief v0.md`
+  - `docs/archive/pre-cleanup-2026-11/implementation/new-reading-mechanism/second-reader-memory-planning/codex/E实施-progress-ledger.md`
 
 ### `TASK-SECOND-READER-MEMORY-PLANNING-SLICE2B-BRIEF-ACCEPTANCE` — Review Slice 2B Pre-implementation Brief for Store-specific Admission and Target-store Policy Hardening
 - Status: `done`
 - Lane: `mechanism_runtime`
 - Priority: `high`
-- Detail: `docs/implementation/new-reading-mechanism/second-reader-memory-planning/codex/briefs/Slice2B-Store-specific-Admission-and-Target-store-Policy-Hardening-Pre-implementation-Brief v0.md`
+- Detail: `docs/archive/pre-cleanup-2026-11/implementation/new-reading-mechanism/second-reader-memory-planning/codex/briefs/Slice2B-Store-specific-Admission-and-Target-store-Policy-Hardening-Pre-implementation-Brief v0.md`
 - Next: Slice 3B Pre-implementation Brief is accepted and implemented, and the Slice 3B Post-implementation Report is pending review. Continue with `TASK-SECOND-READER-MEMORY-PLANNING-SLICE3B-REPORT-REVIEW`; do not start the next implementation slice before the Slice 3B Post-implementation Report is accepted.
 - Evidence:
-  - `docs/implementation/new-reading-mechanism/second-reader-memory-planning/README.md`
-  - `docs/implementation/new-reading-mechanism/second-reader-memory-planning/E实施0-Implementation Roadmap & Handoff v0.md`
-  - `docs/implementation/new-reading-mechanism/second-reader-memory-planning/codex/E实施1-Implementation Feasibility & Delta Audit v0.md`
-  - `docs/implementation/new-reading-mechanism/second-reader-memory-planning/codex/briefs/Slice1-Contract-Audit-Foundations-Pre-implementation-Brief v0.md`
-  - `docs/implementation/new-reading-mechanism/second-reader-memory-planning/codex/reports/Slice1-Contract-Audit-Foundations-Post-implementation-Report v0.md`
-  - `docs/implementation/new-reading-mechanism/second-reader-memory-planning/codex/briefs/Slice2A-Operation-Vocabulary-and-Admission-Visibility-Hardening-Pre-implementation-Brief v0.md`
-  - `docs/implementation/new-reading-mechanism/second-reader-memory-planning/codex/reports/Slice2A-Operation-Vocabulary-and-Admission-Visibility-Hardening-Post-implementation-Report v0.md`
-  - `docs/implementation/new-reading-mechanism/second-reader-memory-planning/codex/briefs/Slice2B-Store-specific-Admission-and-Target-store-Policy-Hardening-Pre-implementation-Brief v0.md`
-  - `docs/implementation/new-reading-mechanism/second-reader-memory-planning/codex/reports/Slice2B-Store-specific-Admission-and-Target-store-Policy-Hardening-Post-implementation-Report v0.md`
-  - `docs/implementation/new-reading-mechanism/second-reader-memory-planning/codex/E实施-progress-ledger.md`
+  - `docs/archive/pre-cleanup-2026-11/implementation/new-reading-mechanism/second-reader-memory-planning/README.md`
+  - `docs/archive/pre-cleanup-2026-11/implementation/new-reading-mechanism/second-reader-memory-planning/E实施0-Implementation Roadmap & Handoff v0.md`
+  - `docs/archive/pre-cleanup-2026-11/implementation/new-reading-mechanism/second-reader-memory-planning/codex/E实施1-Implementation Feasibility & Delta Audit v0.md`
+  - `docs/archive/pre-cleanup-2026-11/implementation/new-reading-mechanism/second-reader-memory-planning/codex/briefs/Slice1-Contract-Audit-Foundations-Pre-implementation-Brief v0.md`
+  - `docs/archive/pre-cleanup-2026-11/implementation/new-reading-mechanism/second-reader-memory-planning/codex/reports/Slice1-Contract-Audit-Foundations-Post-implementation-Report v0.md`
+  - `docs/archive/pre-cleanup-2026-11/implementation/new-reading-mechanism/second-reader-memory-planning/codex/briefs/Slice2A-Operation-Vocabulary-and-Admission-Visibility-Hardening-Pre-implementation-Brief v0.md`
+  - `docs/archive/pre-cleanup-2026-11/implementation/new-reading-mechanism/second-reader-memory-planning/codex/reports/Slice2A-Operation-Vocabulary-and-Admission-Visibility-Hardening-Post-implementation-Report v0.md`
+  - `docs/archive/pre-cleanup-2026-11/implementation/new-reading-mechanism/second-reader-memory-planning/codex/briefs/Slice2B-Store-specific-Admission-and-Target-store-Policy-Hardening-Pre-implementation-Brief v0.md`
+  - `docs/archive/pre-cleanup-2026-11/implementation/new-reading-mechanism/second-reader-memory-planning/codex/reports/Slice2B-Store-specific-Admission-and-Target-store-Policy-Hardening-Post-implementation-Report v0.md`
+  - `docs/archive/pre-cleanup-2026-11/implementation/new-reading-mechanism/second-reader-memory-planning/codex/E实施-progress-ledger.md`
 
 ### `TASK-SECOND-READER-MEMORY-PLANNING-SLICE2A-REPORT-REVIEW` — Review Slice 2A Post-implementation Report for Operation Vocabulary and Admission Visibility Hardening
 - Status: `done`
 - Lane: `mechanism_runtime`
 - Priority: `high`
-- Detail: `docs/implementation/new-reading-mechanism/second-reader-memory-planning/codex/reports/Slice2A-Operation-Vocabulary-and-Admission-Visibility-Hardening-Post-implementation-Report v0.md`
+- Detail: `docs/archive/pre-cleanup-2026-11/implementation/new-reading-mechanism/second-reader-memory-planning/codex/reports/Slice2A-Operation-Vocabulary-and-Admission-Visibility-Hardening-Post-implementation-Report v0.md`
 - Next: Slice 3B Pre-implementation Brief is accepted and implemented, and the Slice 3B Post-implementation Report is pending review. Continue with `TASK-SECOND-READER-MEMORY-PLANNING-SLICE3B-REPORT-REVIEW`; do not start the next implementation slice before the Slice 3B Post-implementation Report is accepted.
 - Evidence:
-  - `docs/implementation/new-reading-mechanism/second-reader-memory-planning/README.md`
-  - `docs/implementation/new-reading-mechanism/second-reader-memory-planning/E实施0-Implementation Roadmap & Handoff v0.md`
-  - `docs/implementation/new-reading-mechanism/second-reader-memory-planning/codex/E实施1-Implementation Feasibility & Delta Audit v0.md`
-  - `docs/implementation/new-reading-mechanism/second-reader-memory-planning/codex/briefs/Slice1-Contract-Audit-Foundations-Pre-implementation-Brief v0.md`
-  - `docs/implementation/new-reading-mechanism/second-reader-memory-planning/codex/reports/Slice1-Contract-Audit-Foundations-Post-implementation-Report v0.md`
-  - `docs/implementation/new-reading-mechanism/second-reader-memory-planning/codex/briefs/Slice2A-Operation-Vocabulary-and-Admission-Visibility-Hardening-Pre-implementation-Brief v0.md`
-  - `docs/implementation/new-reading-mechanism/second-reader-memory-planning/codex/reports/Slice2A-Operation-Vocabulary-and-Admission-Visibility-Hardening-Post-implementation-Report v0.md`
-  - `docs/implementation/new-reading-mechanism/second-reader-memory-planning/codex/briefs/Slice2B-Store-specific-Admission-and-Target-store-Policy-Hardening-Pre-implementation-Brief v0.md`
-  - `docs/implementation/new-reading-mechanism/second-reader-memory-planning/codex/E实施-progress-ledger.md`
+  - `docs/archive/pre-cleanup-2026-11/implementation/new-reading-mechanism/second-reader-memory-planning/README.md`
+  - `docs/archive/pre-cleanup-2026-11/implementation/new-reading-mechanism/second-reader-memory-planning/E实施0-Implementation Roadmap & Handoff v0.md`
+  - `docs/archive/pre-cleanup-2026-11/implementation/new-reading-mechanism/second-reader-memory-planning/codex/E实施1-Implementation Feasibility & Delta Audit v0.md`
+  - `docs/archive/pre-cleanup-2026-11/implementation/new-reading-mechanism/second-reader-memory-planning/codex/briefs/Slice1-Contract-Audit-Foundations-Pre-implementation-Brief v0.md`
+  - `docs/archive/pre-cleanup-2026-11/implementation/new-reading-mechanism/second-reader-memory-planning/codex/reports/Slice1-Contract-Audit-Foundations-Post-implementation-Report v0.md`
+  - `docs/archive/pre-cleanup-2026-11/implementation/new-reading-mechanism/second-reader-memory-planning/codex/briefs/Slice2A-Operation-Vocabulary-and-Admission-Visibility-Hardening-Pre-implementation-Brief v0.md`
+  - `docs/archive/pre-cleanup-2026-11/implementation/new-reading-mechanism/second-reader-memory-planning/codex/reports/Slice2A-Operation-Vocabulary-and-Admission-Visibility-Hardening-Post-implementation-Report v0.md`
+  - `docs/archive/pre-cleanup-2026-11/implementation/new-reading-mechanism/second-reader-memory-planning/codex/briefs/Slice2B-Store-specific-Admission-and-Target-store-Policy-Hardening-Pre-implementation-Brief v0.md`
+  - `docs/archive/pre-cleanup-2026-11/implementation/new-reading-mechanism/second-reader-memory-planning/codex/E实施-progress-ledger.md`
 
 ### `TASK-SECOND-READER-MEMORY-PLANNING-SLICE2A-BRIEF-ACCEPTANCE` — Review Slice 2A Pre-implementation Brief for Operation Vocabulary and Admission Visibility Hardening
 - Status: `done`
 - Lane: `mechanism_runtime`
 - Priority: `high`
-- Detail: `docs/implementation/new-reading-mechanism/second-reader-memory-planning/codex/briefs/Slice2A-Operation-Vocabulary-and-Admission-Visibility-Hardening-Pre-implementation-Brief v0.md`
+- Detail: `docs/archive/pre-cleanup-2026-11/implementation/new-reading-mechanism/second-reader-memory-planning/codex/briefs/Slice2A-Operation-Vocabulary-and-Admission-Visibility-Hardening-Pre-implementation-Brief v0.md`
 - Next: Slice 3B Pre-implementation Brief is accepted and implemented, and the Slice 3B Post-implementation Report is pending review. Continue with `TASK-SECOND-READER-MEMORY-PLANNING-SLICE3B-REPORT-REVIEW`; do not start the next implementation slice before the Slice 3B Post-implementation Report is accepted.
 - Evidence:
-  - `docs/implementation/new-reading-mechanism/second-reader-memory-planning/README.md`
-  - `docs/implementation/new-reading-mechanism/second-reader-memory-planning/E实施0-Implementation Roadmap & Handoff v0.md`
-  - `docs/implementation/new-reading-mechanism/second-reader-memory-planning/codex/E实施1-Implementation Feasibility & Delta Audit v0.md`
-  - `docs/implementation/new-reading-mechanism/second-reader-memory-planning/codex/briefs/Slice2A-Operation-Vocabulary-and-Admission-Visibility-Hardening-Pre-implementation-Brief v0.md`
-  - `docs/implementation/new-reading-mechanism/second-reader-memory-planning/codex/reports/Slice2A-Operation-Vocabulary-and-Admission-Visibility-Hardening-Post-implementation-Report v0.md`
-  - `docs/implementation/new-reading-mechanism/second-reader-memory-planning/codex/E实施-progress-ledger.md`
+  - `docs/archive/pre-cleanup-2026-11/implementation/new-reading-mechanism/second-reader-memory-planning/README.md`
+  - `docs/archive/pre-cleanup-2026-11/implementation/new-reading-mechanism/second-reader-memory-planning/E实施0-Implementation Roadmap & Handoff v0.md`
+  - `docs/archive/pre-cleanup-2026-11/implementation/new-reading-mechanism/second-reader-memory-planning/codex/E实施1-Implementation Feasibility & Delta Audit v0.md`
+  - `docs/archive/pre-cleanup-2026-11/implementation/new-reading-mechanism/second-reader-memory-planning/codex/briefs/Slice2A-Operation-Vocabulary-and-Admission-Visibility-Hardening-Pre-implementation-Brief v0.md`
+  - `docs/archive/pre-cleanup-2026-11/implementation/new-reading-mechanism/second-reader-memory-planning/codex/reports/Slice2A-Operation-Vocabulary-and-Admission-Visibility-Hardening-Post-implementation-Report v0.md`
+  - `docs/archive/pre-cleanup-2026-11/implementation/new-reading-mechanism/second-reader-memory-planning/codex/E实施-progress-ledger.md`
 
 ### `TASK-SECOND-READER-MEMORY-PLANNING-SLICE1-REPORT-REVIEW` — Review Slice 1 Post-implementation Report for Contract and Audit Foundations
 - Status: `done`
 - Lane: `mechanism_runtime`
 - Priority: `high`
-- Detail: `docs/implementation/new-reading-mechanism/second-reader-memory-planning/codex/reports/Slice1-Contract-Audit-Foundations-Post-implementation-Report v0.md`
+- Detail: `docs/archive/pre-cleanup-2026-11/implementation/new-reading-mechanism/second-reader-memory-planning/codex/reports/Slice1-Contract-Audit-Foundations-Post-implementation-Report v0.md`
 - Next: Slice 3B Pre-implementation Brief is accepted and implemented, and the Slice 3B Post-implementation Report is pending review. Continue with `TASK-SECOND-READER-MEMORY-PLANNING-SLICE3B-REPORT-REVIEW`; do not start the next implementation slice before the Slice 3B Post-implementation Report is accepted.
 - Evidence:
-  - `docs/implementation/new-reading-mechanism/second-reader-memory-planning/README.md`
-  - `docs/implementation/new-reading-mechanism/second-reader-memory-planning/E实施0-Implementation Roadmap & Handoff v0.md`
-  - `docs/implementation/new-reading-mechanism/second-reader-memory-planning/codex/E实施1-Implementation Feasibility & Delta Audit v0.md`
-  - `docs/implementation/new-reading-mechanism/second-reader-memory-planning/codex/briefs/Slice1-Contract-Audit-Foundations-Pre-implementation-Brief v0.md`
-  - `docs/implementation/new-reading-mechanism/second-reader-memory-planning/codex/reports/Slice1-Contract-Audit-Foundations-Post-implementation-Report v0.md`
-  - `docs/implementation/new-reading-mechanism/second-reader-memory-planning/codex/briefs/Slice2A-Operation-Vocabulary-and-Admission-Visibility-Hardening-Pre-implementation-Brief v0.md`
-  - `docs/implementation/new-reading-mechanism/second-reader-memory-planning/codex/E实施-progress-ledger.md`
+  - `docs/archive/pre-cleanup-2026-11/implementation/new-reading-mechanism/second-reader-memory-planning/README.md`
+  - `docs/archive/pre-cleanup-2026-11/implementation/new-reading-mechanism/second-reader-memory-planning/E实施0-Implementation Roadmap & Handoff v0.md`
+  - `docs/archive/pre-cleanup-2026-11/implementation/new-reading-mechanism/second-reader-memory-planning/codex/E实施1-Implementation Feasibility & Delta Audit v0.md`
+  - `docs/archive/pre-cleanup-2026-11/implementation/new-reading-mechanism/second-reader-memory-planning/codex/briefs/Slice1-Contract-Audit-Foundations-Pre-implementation-Brief v0.md`
+  - `docs/archive/pre-cleanup-2026-11/implementation/new-reading-mechanism/second-reader-memory-planning/codex/reports/Slice1-Contract-Audit-Foundations-Post-implementation-Report v0.md`
+  - `docs/archive/pre-cleanup-2026-11/implementation/new-reading-mechanism/second-reader-memory-planning/codex/briefs/Slice2A-Operation-Vocabulary-and-Admission-Visibility-Hardening-Pre-implementation-Brief v0.md`
+  - `docs/archive/pre-cleanup-2026-11/implementation/new-reading-mechanism/second-reader-memory-planning/codex/E实施-progress-ledger.md`
 
 ### `TASK-SECOND-READER-MEMORY-PLANNING-SLICE1-BRIEF-ACCEPTANCE` — Review Slice 1 Pre-implementation Brief for Contract and Audit Foundations
 - Status: `done`
 - Lane: `mechanism_runtime`
 - Priority: `high`
-- Detail: `docs/implementation/new-reading-mechanism/second-reader-memory-planning/codex/briefs/Slice1-Contract-Audit-Foundations-Pre-implementation-Brief v0.md`
+- Detail: `docs/archive/pre-cleanup-2026-11/implementation/new-reading-mechanism/second-reader-memory-planning/codex/briefs/Slice1-Contract-Audit-Foundations-Pre-implementation-Brief v0.md`
 - Next: Slice 3B Pre-implementation Brief is accepted and implemented, and the Slice 3B Post-implementation Report is pending review. Continue with `TASK-SECOND-READER-MEMORY-PLANNING-SLICE3B-REPORT-REVIEW`; do not start the next implementation slice before the Slice 3B Post-implementation Report is accepted.
 - Evidence:
-  - `docs/implementation/new-reading-mechanism/second-reader-memory-planning/README.md`
-  - `docs/implementation/new-reading-mechanism/second-reader-memory-planning/codex/briefs/Slice1-Contract-Audit-Foundations-Pre-implementation-Brief v0.md`
-  - `docs/implementation/new-reading-mechanism/second-reader-memory-planning/codex/reports/Slice1-Contract-Audit-Foundations-Post-implementation-Report v0.md`
-  - `docs/implementation/new-reading-mechanism/second-reader-memory-planning/codex/E实施-progress-ledger.md`
+  - `docs/archive/pre-cleanup-2026-11/implementation/new-reading-mechanism/second-reader-memory-planning/README.md`
+  - `docs/archive/pre-cleanup-2026-11/implementation/new-reading-mechanism/second-reader-memory-planning/codex/briefs/Slice1-Contract-Audit-Foundations-Pre-implementation-Brief v0.md`
+  - `docs/archive/pre-cleanup-2026-11/implementation/new-reading-mechanism/second-reader-memory-planning/codex/reports/Slice1-Contract-Audit-Foundations-Post-implementation-Report v0.md`
+  - `docs/archive/pre-cleanup-2026-11/implementation/new-reading-mechanism/second-reader-memory-planning/codex/E实施-progress-ledger.md`
 
 ### `TASK-SECOND-READER-MEMORY-PLANNING-FEASIBILITY-AUDIT` — Run Implementation Feasibility & Delta Audit for Second Reader Memory-Planning optimization
 - Status: `done`
 - Lane: `mechanism_runtime`
 - Priority: `high`
-- Detail: `docs/implementation/new-reading-mechanism/second-reader-memory-planning/codex/E实施1-Implementation Feasibility & Delta Audit v0.md`
+- Detail: `docs/archive/pre-cleanup-2026-11/implementation/new-reading-mechanism/second-reader-memory-planning/codex/E实施1-Implementation Feasibility & Delta Audit v0.md`
 - Next: Slice 3B Pre-implementation Brief is accepted and implemented, and the Slice 3B Post-implementation Report is pending review. Continue with `TASK-SECOND-READER-MEMORY-PLANNING-SLICE3B-REPORT-REVIEW`; do not start the next implementation slice before the Slice 3B Post-implementation Report is accepted.
 - Evidence:
-  - `docs/implementation/new-reading-mechanism/second-reader-memory-planning/README.md`
-  - `docs/implementation/new-reading-mechanism/second-reader-memory-planning/E实施0-Implementation Roadmap & Handoff v0.md`
-  - `docs/implementation/new-reading-mechanism/second-reader-memory-planning/codex/E实施1-Implementation Feasibility & Delta Audit v0.md`
-  - `docs/implementation/new-reading-mechanism/second-reader-memory-planning/codex/briefs/Slice1-Contract-Audit-Foundations-Pre-implementation-Brief v0.md`
-  - `docs/implementation/new-reading-mechanism/second-reader-memory-planning/codex/E实施-progress-ledger.md`
+  - `docs/archive/pre-cleanup-2026-11/implementation/new-reading-mechanism/second-reader-memory-planning/README.md`
+  - `docs/archive/pre-cleanup-2026-11/implementation/new-reading-mechanism/second-reader-memory-planning/E实施0-Implementation Roadmap & Handoff v0.md`
+  - `docs/archive/pre-cleanup-2026-11/implementation/new-reading-mechanism/second-reader-memory-planning/codex/E实施1-Implementation Feasibility & Delta Audit v0.md`
+  - `docs/archive/pre-cleanup-2026-11/implementation/new-reading-mechanism/second-reader-memory-planning/codex/briefs/Slice1-Contract-Audit-Foundations-Pre-implementation-Brief v0.md`
+  - `docs/archive/pre-cleanup-2026-11/implementation/new-reading-mechanism/second-reader-memory-planning/codex/E实施-progress-ledger.md`
 
 ### `TASK-ACTIVE-BENCHMARK-FORMAL-RERUN` — Run the formal active V1/V2 benchmark rerun across excerpt and long-span surfaces
 - Status: `done`
@@ -1930,7 +1935,7 @@ No provider-access blocker remains after the CPA Luna Medium switch. The bounded
 - Status: `done`
 - Lane: `dataset_platform`
 - Priority: `high`
-- Detail: `docs/implementation/new-reading-mechanism/new-reading-mechanism-execution-tracker.md`
+- Detail: `docs/archive/pre-cleanup-2026-11/implementation/new-reading-mechanism/new-reading-mechanism-execution-tracker.md`
 - Next: keep `attentional_v2_accumulation_benchmark_v1_judged_rerun_20260407` as the durable long-span evidence bundle, treat the April 6 lane as diagnosed invalid harness evidence rather than mechanism evidence, and reopen long-span repair only if a future rerun reproduces bundle/probe materialization failure or schema-invalid judge collapse.
 - Jobs:
   - `bgjob_accumulation_benchmark_v1_first_review_20260404` (`completed`)
@@ -1946,7 +1951,7 @@ No provider-access blocker remains after the CPA Luna Medium switch. The bounded
 - Status: `done`
 - Lane: `mechanism_eval`
 - Priority: `high`
-- Detail: `docs/implementation/new-reading-mechanism/new-reading-mechanism-execution-tracker.md`
+- Detail: `docs/archive/pre-cleanup-2026-11/implementation/new-reading-mechanism/new-reading-mechanism-execution-tracker.md`
 - Next: keep `excerpt surface v1.1` as the current durable excerpt evidence bundle, keep the cleaned long-span rerun as the durable long-span evidence bundle, and do not reopen decisive eval reruns by default unless a later product question or regression reproduces a concrete blocker.
 - Jobs:
   - `bgjob_human_notes_excerpt_smoke_light_20260404` (`completed`)
@@ -2064,7 +2069,7 @@ No provider-access blocker remains after the CPA Luna Medium switch. The bounded
 - Status: `done`
 - Lane: `dataset_growth`
 - Priority: `high`
-- Detail: `docs/implementation/new-reading-mechanism/new-reading-mechanism-execution-tracker.md`
+- Detail: `docs/archive/pre-cleanup-2026-11/implementation/new-reading-mechanism/new-reading-mechanism-execution-tracker.md`
 - Next: use the landed round-2 draft plus the March 29 recovery summaries as the source of truth for the next dataset-growth move
 - Jobs: none
 
@@ -2080,7 +2085,7 @@ No provider-access blocker remains after the CPA Luna Medium switch. The bounded
 - Status: `done`
 - Lane: `mechanism_eval`
 - Priority: `high`
-- Detail: `docs/implementation/new-reading-mechanism/new-reading-mechanism-execution-tracker.md`
+- Detail: `docs/archive/pre-cleanup-2026-11/implementation/new-reading-mechanism/new-reading-mechanism-execution-tracker.md`
 - Next: treat the completed backup-tier substantive rerun as evidence only; preserve the `walden` strength, keep the `up_from_slavery` chapter-arc weakness explicit, and do not launch default-cutover or promotion work automatically
 - Jobs:
   - `bgjob_en_chapter_core_rerun_round3_caseiso_judged_followup_20260330` (`completed`)
@@ -2097,6 +2102,6 @@ No provider-access blocker remains after the CPA Luna Medium switch. The bounded
 - Status: `done`
 - Lane: `dataset_platform`
 - Priority: `high`
-- Detail: `docs/implementation/new-reading-mechanism/new-reading-mechanism-execution-tracker.md`
+- Detail: `docs/archive/pre-cleanup-2026-11/implementation/new-reading-mechanism/new-reading-mechanism-execution-tracker.md`
 - Next: keep using the managed inbox plus source catalog as the source of truth for future book additions, and treat public/private only as compatibility metadata instead of a primary workflow branch
 - Jobs: none

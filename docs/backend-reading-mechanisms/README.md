@@ -11,9 +11,11 @@ Use `docs/backend-reading-mechanism.md` for shared platform boundaries. Use `doc
 | Mechanism key | Status | Defaultness | Doc | Artifact root | Notes |
 | --- | --- | --- | --- | --- | --- |
 | `attentional_v2` | `default` | current default/live mechanism | `docs/backend-reading-mechanisms/attentional_v2.md` | `_mechanisms/attentional_v2/` | live attention-frontier reader behind the current product deep-reading path |
-| `iterator_v1` | `fallback` | explicit fallback / legacy-compatible resume path | `docs/backend-reading-mechanisms/iterator_v1.md` | `_mechanisms/iterator_v1/` | supported section/subsegment reader kept for override, comparison, and old-run continuity |
+| `iterator_v1` | `retired` | no execution or resume | `docs/archive/pre-cleanup-2026-11/backend-reading-mechanisms/iterator_v1.md` | `_mechanisms/iterator_v1/` | archived section/subsegment design; old library artifacts remain displayable |
 
 ## Status Meanings
+- `retired`
+  - execution and resume removed; archived documentation and git tag retain history
 - `default`
   - current live/default mechanism for normal product runs
 - `fallback`

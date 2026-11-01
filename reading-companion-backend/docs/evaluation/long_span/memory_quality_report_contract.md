@@ -82,7 +82,7 @@ Each probe should show:
 - score dimensions and judge reason
 - raw snapshot link
 - memory snapshot basis
-- complete probe-time state layers: `active_attention`, `concept_registry`, `thread_trace`, `reflective_frames`
+- current probe-time state: `recent_reading_memory`, Unit Memory and rendered ReadingMemory; retired structured stores are historical snapshot fields only
 - projection digest only as auxiliary compatibility evidence when useful
 
 ## No Current Route Evidence
@@ -104,9 +104,8 @@ Historical reports may still contain `Recent Routes`; they reflect the runtime t
 
 New reports should use current mechanism vocabulary:
 
-- `active_attention`, not `working_state`
-- `active_items[]` with `attention_tags[]`, not fixed `open_questions / live_tensions / live_hypotheses / live_motifs`
-- `reading_impression`, not `unit_delta`
+- `recent_reading_memory`, Unit Memory and `ReadingMemory`; no new active_attention or reflective state
+- accepted Unit `understanding`
 - `memory_uptake_ops`, not `implicit_uptake_ops`
 - no `Recent Routes`, `route_action`, or route-history block for new runs
 

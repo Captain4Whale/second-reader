@@ -28,7 +28,7 @@ Update when: workspace structure, ownership boundaries, or primary shared entryp
 - shared reading runtime and mechanism-hosting code under `src/reading_runtime/`
 - built-in mechanism adapters under `src/reading_mechanisms/`
 - current default reader implementation under `src/attentional_v2/`
-- legacy-compatible fallback reader implementation under `src/iterator_reader/`
+- shared parser/storage/UI helpers (retired reader executor removed) under `src/iterator_reader/`
 - runtime artifacts stored under:
   - `output/`
   - `state/`
@@ -88,7 +88,7 @@ Update when: workspace structure, ownership boundaries, or primary shared entryp
 - Backend runtime shell and mechanism registry: `reading-companion-backend/src/reading_runtime/`
 - Backend built-in mechanism adapters: `reading-companion-backend/src/reading_mechanisms/`
 - Backend current default reader implementation: `reading-companion-backend/src/attentional_v2/`
-- Backend legacy-compatible fallback reader implementation: `reading-companion-backend/src/iterator_reader/`
+- Backend shared parser/storage/UI helpers (retired reader executor removed): `reading-companion-backend/src/iterator_reader/`
 - Frontend route entrypoint: `reading-companion-frontend/src/app/routes.tsx`
 - Frontend API adapter entrypoint: `reading-companion-frontend/src/app/lib/api.ts`
 

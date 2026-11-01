@@ -1,0 +1,1263 @@
+# Attentional_v2 Structural Rework Plan
+
+Purpose: turn the completed Phase 9 evaluation findings into an executable backend implementation plan for structurally reworking `attentional_v2`.
+Use when: deciding backend implementation order, checking which mechanism changes belong in the rework, or converting eval findings into concrete code slices.
+Not for: stable mechanism authority, frontend redesign planning, per-probe evidence, or final project history.
+Update when: the backend implementation sequence, code-slice boundaries, success criteria, or rollout posture materially changes.
+
+Status: `historical_reference_after_DEC-108`
+
+Mechanism key: `attentional_v2`
+
+Scope: `post-Phase-9 backend structural rework under the existing attentional_v2 mechanism key`
+
+Current authority note:
+
+- As of `2026-05-31`, `DEC-103` through `DEC-108` supersede this plan's older Detour / source-backread / source-skill, Navigator, and concrete `Read`-node assumptions.
+- Treat below references to active Detour, source skills, `active_recall`, `look_back`, `NavigateNextUnitResult`, `navigate_choose_next_unit_act`, `Navigate`, or concrete-node `Read` as historical implementation checkpoints unless a later task explicitly re-adopts them.
+- Current stable mechanism authority is `docs/backend-reading-mechanisms/attentional_v2.md`: the live loop is `Ingest -> Digest -> Reading Runner settlement`, `llm_calls.ingest(...)` is the boundary-selection LLM call, `llm_calls.digest(...)` is the per-unit interpretation LLM call, and Reading Runner owns `prepare_next_source_unit_for_read` preparation / boundary governance.
+
+Historical implementation checkpoint:
+
+The items below preserve the sequence of landed historical slices. Local words such as "current", "now", `Navigate`, `read`, or Detour/source-skill references describe the slice at the time it landed, not the current post-`DEC-108` live surface unless the authority note above says so.
+
+- `Phase A` is landed:
+  - trigger output no longer gates whether正文 text gets formal reading
+  - this phase introduced the `Navigate.unitize -> read -> Reading Runner post-read settlement` control skeleton that later cutovers have now absorbed under `Navigate`
+  - span authority now matches the exact chosen unit
+- `Phase B` is landed:
+  - `read` now owns the authoritative unit packet on the live path
+  - bounded `carry-forward context` is now the default continuity path into `read`
+  - `read` may request one bounded `active recall` or `look-back` supplement
+  - that slice introduced a temporary `raw_reaction` compatibility shell that later slices retired
+  - this remains an intermediate baseline rather than the final ownership contract
+- `Phase C.1` is landed:
+  - live prompt inputs now flow through a bounded internal `state_packet.v1` seam
+  - `Navigate.unitize` now receives a packetized `navigation_context`
+  - `read` now receives a packetized read-context view with explicit continuity / working-state / reflective / focus / anchor-bank separation
+  - persisted runtime files and public compatibility surfaces remain unchanged
+- `Phase C.2` is landed as the first state-territory slice:
+  - live state packets now derive a bounded `concept_digest` from the current `motif_index + unresolved_reference_index`
+  - live state packets now derive a bounded `thread_digest` from the current `trace_links + unresolved_reference_index`
+  - `Navigate.unitize` and `read` now both receive those small concept/thread digests through the packet layer
+  - persisted runtime files and public compatibility surfaces remain unchanged
+- `Phase C.3` is landed as the direct main-state cutover:
+  - new runs now treat `active_attention / concept_registry / thread_trace / reflective_frames / anchor_bank` as the primary runtime and checkpoint truth
+  - `working_pressure / anchor_memory / reflective_summaries` were initially demoted to legacy load/projection territory during the cutover
+  - `active_recall` now surfaces first-class `concepts` and `threads` from the new state layers
+  - newly written checkpoints now use only the new primary state keys
+  - public compatibility surfaces remain unchanged
+- `Phase C.4` is landed as the helper-contract cutover and live legacy-state retirement slice:
+  - sentence-intake / bridge / slow-cycle now consume and write the new primary state layers directly
+  - the live runner no longer projects new state into `working_pressure / anchor_memory / reflective_summaries` to execute helpers
+  - live runtime loading and resume now reject pre-`Phase C.3` runtime directories and checkpoints instead of migrating them on the live path
+  - public compatibility surfaces remain unchanged
+- The post-F4 legacy gate/pressure cleanup is now landed:
+  - `active_attention.active_items` is the only current hot-state contract
+  - `gate_state`, `pressure_snapshot`, reader-policy gate/controller defaults, and the old working-pressure runtime file are no longer current schema, prompt, runtime, checkpoint, or evaluation-evidence fields
+  - old `pressure_signals` were removed by the forward-settlement cutover
+- `Phase D` is now landed as the continuity / recall / resume polish slice:
+  - `read` now supports a budget-bounded multi-step supplemental loop
+  - runtime state and full checkpoints now persist a lightweight `continuation capsule` with rehydration entrypoints
+  - warm resume now restores the latest usable continuation capsule together with new-format runtime/checkpoint state
+  - `look_back` now resolves one bounded earlier source span, and `read_audit` now records per-step supplemental activity plus stop reasons
+  - public compatibility surfaces remain unchanged
+- `Phase E1` through `Phase E3` are now landed as an intermediate compatibility-first branch:
+  - that branch preserved the temporary `Read -> Express` split as historical/landed reality
+  - persisted `reaction_records` now keep surfaced semantics first and old family labels survive only as compatibility projections
+  - this branch remains valuable evidence, but it is no longer the approved end-state target for the mechanism
+- `Phase F1` is now landed as the first post-freeze cutover:
+  - the live per-unit loop was cut back to `Navigate.unitize -> read -> Reading Runner post-read settlement`, which is now implemented through the higher-level `Navigate -> read -> Reading Runner post-read settlement` contract
+  - `Read` now directly owns `reading_impression`, surfaced reactions, memory uptake ops, and optional `detour_need`
+  - the dedicated live `Express` node is no longer on the runner path
+  - `Read` prompt packaging now follows compact `always carry / selective carry / not carry` projections
+- Read naturalization is now landed:
+  - current `Read` prompt role is reader-first rather than node-first
+  - current field names are `reading_impression` and `memory_uptake_ops`
+  - historical implementation slices may still refer to `unit_delta` or `implicit_uptake_ops`, but those are no longer current contract names
+- `Phase F2` is now landed as the navigate-owned detour cutover:
+  - the live `Read` contract now emits `detour_need` directly
+  - `Navigate` now owns bounded hierarchical detour search rather than a private supplemental fetch loop
+  - `local_continuity` now persists:
+    - `mainline_cursor`
+    - `active_detour_id`
+    - `active_detour_need`
+    - `detour_trace`
+  - detour search now uses one prompt family whose legal outcomes are:
+    - `narrow_scope`
+    - `land_region`
+    - `defer_detour`
+    - `request_skill`
+  - landed detour regions now re-enter the same normal `Navigate -> read -> Reading Runner post-read settlement` reading loop
+  - chapter-tail detours are now drained before chapter slow-cycle closes
+- `Phase F3` is now landed as the reaction-persistence and compatibility reconvergence slice:
+  - persisted visible reactions now enter the system only through `Read.surfaced_reactions[]`
+  - those native surfaced reactions do not carry a reaction `type`; old family labels now exist only as downstream projections
+  - mainline and detour reading now share one surfaced-native reaction-record builder
+  - chapter-result compatibility projection and normalized eval export now read surfaced-native persisted records and derive legacy family labels only through the compat helper
+  - dead live ownership paths for the old `Express` persistence flow and `raw_reaction` fallback are now removed
+- Forward-settlement cutover is now landed after the route-action contract cleanup:
+  - `Navigate.route`, `route_action`, `route_history`, and `pressure_signals` are no longer current live-path contracts
+  - ordinary forward progression is Reading Runner-owned cursor advancement, not a semantic action
+  - `Detour` remains the only current non-mainline scheduling mechanism
+- `Navigate` cutover is now landed:
+  - historical Navigator contract was `Choose Next Unit That Should Be Read`
+  - Reading Runner called one architecture-level Navigator entrypoint and received one `NavigateNextUnitResult`
+  - mainline unitization and detour search remain private implementation helpers under that entrypoint
+  - mainline and landed-detour reads now share the same Reading Runner settlement path
+- Reading Runner naming boundary is now landed:
+  - `Reading Runner` is the current name for the `attentional_v2`-internal read-progress executor
+  - this does not rename the shared runtime shell, mechanism registry, or `attentional_v2` mechanism key/package
+  - implementation-stage and `V2` labels remain history/artifact vocabulary rather than current node names
+- Navigate book-local Skill Runtime is now landed as the first controlled source-skill slice:
+  - `Navigate` remains the single Navigator entrypoint
+  - only the active detour branch can request skills in this slice
+  - `Reading Runner` executes one requested book-local skill through the mechanism-private Skill Runtime and feeds the result back to `Navigate.detour_search`
+  - the first supported skills are `source_map_overview`, `source_scope_drilldown`, `source_window_fetch`, and `anchor_resolve`
+  - skills provide bounded source evidence only; final `land_region / narrow_scope / defer_detour` decisions remain Navigate-owned
+- historical next after the source-skill slice:
+  - this next step is superseded by `DEC-104` / `DEC-105`; do not validate or extend the retired Detour/source-skill framework unless a future decision explicitly re-adopts it
+
+Primary upstream evidence:
+
+- [long-span after-eval follow-up memo](../../../../../reading-companion-backend/docs/archive/pre-cleanup-2026-11/evaluation/long_span/attentional_v2_accumulation_benchmark_v1_judged_rerun_20260407_followup_reflection_and_decisions.md)
+- [excerpt interpretation report](../../../../../reading-companion-backend/docs/archive/pre-cleanup-2026-11/evaluation/excerpt/attentional_v2_excerpt_surface_v1_1_judged_20260406_interpretation.md)
+- [Claude Code context-management research note](../../../../../reading-companion-backend/docs/research/claude_code_context_management_research_20260412.md)
+- [stable live mechanism doc](../../../../backend-reading-mechanisms/attentional_v2.md)
+
+## 1. Why This Plan Exists
+
+The long-span after-eval memo now captures the main mechanism failures and redesign conclusions, but it is not a good implementation surface.
+
+It is:
+
+- evidence-backed mechanism reflection
+- a record of why certain redesign choices were made
+- a source document for later stable decisions
+
+It is not:
+
+- a code-facing build plan
+- a phased backend slice map
+- a clean statement of what to preserve, what to replace, and what to defer
+
+This document exists to provide that missing implementation layer.
+
+## 2. Working Position
+
+### 2.1 Evolve `attentional_v2` in place
+
+This rework should stay under the existing `attentional_v2` mechanism key.
+
+Why:
+
+- the mechanism's core identity is still right:
+  - sentence-order fidelity
+  - local pressure-driven reading
+  - typed state
+  - source-grounded evidence
+- the failures exposed by formal eval are structural failures inside that direction, not proof that the direction itself should be discarded
+- introducing `attentional_v3` now would create unnecessary mechanism-catalog, runtime, resume, and documentation churn before we know that a separate long-lived mechanism family is warranted
+
+### 2.2 Treat this as a new post-Phase-9 backend line
+
+This work should not be forced back into the old `Phase 0-9` checklist.
+
+Why:
+
+- Phase 9 already answered a different question:
+  - can `attentional_v2` become the default mechanism and produce formal excerpt/long-span evidence?
+- this new line answers a new question:
+  - how should the default mechanism be structurally reworked in response to those formal eval findings?
+
+So the right framing is:
+
+- `Post-Phase-9`
+- `attentional_v2 structural rework`
+- backend-only
+
+### 2.3 This plan is backend-only
+
+This plan should not absorb the current frontend lane.
+
+Why:
+
+- the current frontend direction and page-responsibility work already live in their own documents and tasks
+- the long-span after-eval memo is about mechanism behavior, not frontend presentation
+- mixing frontend implementation details into this plan would blur ownership and make the backend rework harder to execute cleanly
+
+Implication:
+
+- frontend work may continue in parallel
+- but frontend planning remains outside this document
+- this plan only owns backend mechanism rework and the backend-facing compatibility discipline needed while that rework lands
+
+### 2.4 Do not treat the after-eval memo as the execution plan
+
+The long-span follow-up memo remains the mechanism reflection source.
+
+This plan is the execution source.
+
+### 2.5 Do not start with compaction or multi-agent orchestration
+
+The first implementation focus should be:
+
+- control-shape repair
+- continuity-carrying read behavior
+- state usability
+
+Not:
+
+- explicit compaction as a first-class subsystem
+- multi-sub-agent reading orchestration
+
+## 3. What Must Be Preserved From Current V2
+
+This rework is not a license to accidentally destroy the current strengths that helped `attentional_v2` win the excerpt surface.
+
+The following are explicit preservation targets.
+
+### 3.1 Sentence-order fidelity
+
+The reader should continue to read in source order and remain close to the sentence substrate rather than regressing to section-first traversal.
+
+### 3.2 Local pressure discipline
+
+The mechanism should continue to read by following local unresolved pressure rather than by mechanically stepping through fixed large containers.
+
+### 3.3 Dynamic unitization
+
+The system should keep dynamic, semantically bounded reading units rather than falling back to one fixed chunking scheme.
+
+### 3.4 Typed-state spine
+
+The bottom layer should remain typed and structurally clear rather than collapsing back into one large memory blob.
+
+### 3.5 Source-grounded evidence discipline
+
+Bridges, reactions, and memory promotions should remain anchored to source evidence instead of drifting into free-floating summary behavior.
+
+### 3.6 Default no-search honesty
+
+Routine reading should remain text-first.
+
+External search or heavy auxiliary expansion should stay rare and explicitly justified.
+
+### 3.7 Exact local textual-pressure attention
+
+The new `read` contract must preserve V2's best excerpt behavior:
+
+- noticing distinctions
+- actor intention
+- social pressure
+- concrete causal stakes
+- textual reversals
+
+The rework must not flatten local reading back into generic scene summary.
+
+## 4. Problems This Plan Is Meant To Fix
+
+The rework centers on five high-value failures already exposed by the completed eval review.
+
+### 4.1 Semantic permission gating drops important text
+
+The old heuristic trigger can stop important text from ever entering formal LLM reading.
+
+### 4.2 Span visibility and span authority are misaligned
+
+Small visible windows can currently close larger open spans.
+
+### 4.3 Long-distance continuity is weaker than `iterator_v1`
+
+`attentional_v2` does not yet reuse earlier material as stably as `iterator_v1`.
+
+### 4.4 Reading output responsibilities are too fragmented
+
+The current split across trigger, zoom, closure, controller, and reaction gate makes it too hard to explain, debug, and evolve the mechanism honestly.
+
+### 4.5 Raw reaction truth is too easy to thin out
+
+The mechanism can form local understanding that later becomes harder to see because reaction truth is not cleanly owned by the core reading step.
+
+## 5. Rework Scope And Explicit Non-Goals
+
+### 5.1 In scope
+
+- replace heuristic semantic permission gating
+- replace the current fragmented local control shape with `Navigate.unitize + read + Navigate.route`
+- align span visibility and span authority
+- make `read` carry forward prior context and expose prior-material use as an observational result rather than a separate mechanism action
+- restructure state and prompt packetization so long-distance continuity becomes more reliable
+- simplify the read path so surfaced reactions stay close to the same call that formed the reading understanding
+- move detour ownership back under `navigate`
+- keep compatibility projections working while the live path becomes simpler again
+- preserve existing compatibility behavior where practical while the backend shape changes
+
+### 5.2 Explicitly out of scope for this plan
+
+- frontend route, component, or page-redesign planning
+- reopening excerpt surface composition work
+- reopening dataset retuning by default
+- making compaction a first-class subsystem in the first implementation wave
+- introducing multi-sub-agent reading orchestration
+- minting a new `attentional_v3` mechanism key
+
+## 6. Current V2 To New Shape Mapping
+
+The rework should be understood as a controlled remap of current V2 responsibilities, not as an unstructured rewrite.
+
+| Current V2 element | Problem now | New home / treatment |
+| --- | --- | --- |
+| heuristic `trigger` | wrongly acts as permission gate over whether text deserves real LLM reading | remove its authority over正文 reading; replace with mandatory coverage read plus `Navigate.unitize` boundary choice |
+| `zoom_read` | currently carries too much of the real reading responsibility but only opens on gated cases | absorb its reading semantics into `read` |
+| `meaning_unit_closure` | closure authority is entangled with partial visibility windows | split into `read` boundary evidence plus `Navigate.route` close / continue judgment |
+| `controller_decision` | one more control surface in an already over-fragmented chain | absorb into `Navigate.route` |
+| `reaction_emission` | thins out already-formed reading truth | collapse surfaced reactions back into `read` and keep old family handling only as compatibility projection |
+| lazy bridge retrieval / `bridge_resolution` | useful in principle, but too downstream to carry continuity by itself | keep only as optional execution path beneath `carry-forward context` and `active recall / look-back` |
+| `working_pressure` | historical hot-state sidecar from the older local-cycle shape | retired; current hot state is `active_attention.active_items` |
+| `anchor_memory` | useful evidence territory, but too easy to over-expand conceptually | evolve into `anchor_bank` only |
+| `knowledge_activations` | currently too easy to treat as a durable memory layer | keep only as in-read immediate external-knowledge activation, not as a main state layer |
+
+## 7. Backend Implementation Phases
+
+The mechanism rework should be executed in bounded phases.
+
+### 7.1 Phase A — Replace permission gating with a new control skeleton
+
+Goal:
+
+- remove heuristic trigger authority over whether正文 text gets a real LLM reading turn
+- establish the new top-level control shape:
+  - `Navigate.unitize`
+  - `read`
+  - `Navigate.route`
+
+This phase should land the minimum viable structural change that fixes the long-span "important text never truly got read" failure.
+
+#### Concrete design target
+
+The minimum viable loop after Phase A should be:
+
+1. canonical sentence stream defines position
+2. `Navigate.unitize` looks ahead within bounded forward text
+3. one coverage unit is chosen
+4. `read` runs once on that coverage unit
+5. `Navigate.route` decides:
+   - `commit`
+   - `continue / extend`
+   - `bridge_back`
+   - `reframe`
+   - `persist_raw_reaction`
+
+This phase is not yet trying to perfect long-distance memory. It is trying to eliminate the class of failure where important text never becomes a real reading event.
+
+#### Unitization policy that should already be respected in Phase A
+
+`Navigate.unitize` should not degrade into "fixed sentence count" or "always stop at paragraph end."
+
+The first viable unitization policy should already preserve the boundary discipline established in the after-eval review:
+
+- author structure remains the first skeleton
+- semantic judgment only refines inside that skeleton
+- deterministic code may expose structure and budget, but must not replace semantic boundary judgment
+
+The boundary hierarchy should be:
+
+1. hard boundaries
+   - chapter
+   - section / subsection
+   - sentence
+2. strong boundaries
+   - paragraph
+   - speaker switch
+   - list-item switch
+   - obvious scene switch
+3. semantic close signals
+   - a definition has completed
+   - a local contrast has landed
+   - a question-answer move has locally closed
+   - one narrative or argumentative move has relatively completed
+4. continuation signals
+   - unresolved reference
+   - unfinished enumeration
+   - concession / turn that has only opened
+   - the same local move is still being completed
+
+The preview policy should be:
+
+- never cross chapter
+- by default do not cross section / subsection
+- use paragraph as the default semantic shell
+- default preview baseline:
+  - current paragraph remainder
+  - plus the next paragraph in the same section
+- only widen further when:
+  - the current paragraph is very short
+  - the current paragraph is obviously unfinished
+  - there is strong continuation pressure into the next paragraph
+
+The coverage-unit policy should be:
+
+- target one paragraph by default
+- allow two short adjacent paragraphs only when they clearly belong to one local move
+- keep a soft cap around `6-8` sentences
+- keep a hard cap around `10-12` sentences
+- if a long paragraph must be split, split only on sentence boundaries and prefer a natural semantic close
+- if a unit is capped rather than naturally closed, preserve explicit continuation pressure instead of pretending closure
+
+#### Minimum unitization audit contract
+
+Phase A does not need a full final artifact suite yet, but `Navigate.unitize` should already emit enough information that later debugging can answer why it stopped where it stopped.
+
+The minimum audit payload should include:
+
+- `start_sentence_id`
+- `preview_range`
+- `end_sentence_id`
+- `boundary_type`
+  - for example:
+    - `paragraph_end`
+    - `intra_paragraph_semantic_close`
+    - `cross_paragraph_continuation`
+    - `section_end`
+    - `budget_cap`
+- `evidence_sentence_ids`
+- one short reason
+- whether continuation pressure remains
+
+#### Expected outputs
+
+- a new control skeleton inside `attentional_v2`
+- mandatory coverage read for正文 text
+- the first version of bounded semantic unitization
+- explicit alignment between:
+  - what span is being read
+  - what span can be extended
+  - what span can be closed
+
+#### Likely backend touch points
+
+- `reading-companion-backend/src/attentional_v2/runner.py`
+- `reading-companion-backend/src/attentional_v2/llm_calls.py`
+- `reading-companion-backend/src/attentional_v2/prompts.py`
+- `reading-companion-backend/src/attentional_v2/schemas.py`
+- `reading-companion-backend/src/attentional_v2/state_ops.py`
+- `reading-companion-backend/src/reading_mechanisms/attentional_v2.py`
+
+#### Suggested code slices
+
+- `A1. skeleton and naming`
+  - introduce explicit unitization, concrete reading-node, and routing boundaries in code
+  - current post-DEC-108 naming maps the concrete reading-node boundary to `Digest`
+  - do not yet fully delete legacy helpers if adapters keep migration safer
+- `A2. mandatory coverage read`
+  - remove heuristic trigger authority over whether正文 text gets real LLM reading
+  - preserve deterministic watch / substrate logic only where it does not replace reading
+- `A3. bounded unitization`
+  - implement the first bounded forward semantic unitization policy
+  - keep preview bounded by author structure
+- `A4. span authority alignment`
+  - ensure the span being judged is the span actually being read / closed / extended
+- `A5. compatibility guard`
+  - keep enough runtime/public compatibility that current frontend surfaces do not break while internals change
+
+#### Validation target
+
+- the mechanism should no longer depend on heuristic trigger approval for正文 text to enter LLM reading
+- the new loop should preserve sentence-order honesty
+- no regression to section-first traversal
+- no reintroduction of large hidden spans closed by smaller tail windows
+
+### 7.2 Phase B — Rebuild read-context integration and continuity behavior
+
+Status:
+
+- landed on April 12, 2026 as the current read-context baseline under the existing `attentional_v2` key
+
+Goal:
+
+- make `read` explicitly responsible for reading the current unit together with carried-forward context
+- separate default carry-forward continuity from exceptional recall / look-back behavior
+
+This phase should make long-distance continuity part of the normal `read` act instead of a late side effect.
+
+It should not introduce a standalone `reuse` node or a separately executed "reuse action."
+
+If the current unit draws on earlier material, that should show up as a natural consequence of the `read` result, not as an extra mechanism step.
+
+#### Concrete design target
+
+`read` should stop being merely "local interpretation of current text" and become:
+
+- the one place that formally reads the current unit
+- the one place that produces `implicit uptake`
+- the one place that can report whether prior material materially informed the current understanding
+- the one place from which a genuine `raw reaction` can emerge
+
+`read` should also be allowed to request more help when the default carried-forward packet is insufficient:
+
+- `active recall`
+- `look-back`
+
+The mechanism does not need a hard-coded runtime taxonomy for how prior material was used.
+
+If later auditing benefits from lightweight labels such as:
+
+- `continuation`
+- `clarification`
+- `answer`
+- `contrast`
+- `callback`
+- `reframe`
+- `escalation`
+
+those labels should stay optional observational aids only.
+
+They should not become execution authority or a fixed branching logic.
+
+#### Expected outputs
+
+- `carry-forward context`
+- optional `active recall / look-back`
+- `read` packet that clearly reports:
+  - what the current unit did locally
+  - what implicit uptake it produced
+  - whether prior material materially informed the current understanding, and if so, a short explanation of how
+  - whether more recall / look-back is needed
+  - whether a raw reaction genuinely emerged
+
+`carry-forward context` should be treated as the default continuity path.
+
+`active recall / look-back` should remain the narrower path for cases where the carried-forward packet is insufficient.
+
+The intended default is:
+
+- carry forward a small, usable packet
+- let `read` naturally connect current text with that packet
+- escalate only when the current unit genuinely needs more than the default packet provides
+
+That landed baseline solved one class of thinning-out failure, but it also exposed a new voice problem:
+
+- when `read` carries too much control and continuity responsibility, the surfaced output tends to sound like mechanism-authored summary rather than reading-time reaction
+
+The later post-E3 review changed the conclusion again:
+
+- the core problem was not "visible wording needs its own permanent node"
+- it was "the read contract and prompt/context package are too overloaded"
+- the approved next direction is therefore to simplify `read` and return surfaced reactions to that same reading call rather than investing further in a permanent `Express` split
+
+#### Suggested code slices
+
+- `B1. read packet contract`
+  - define a structured packet returned from `read`
+  - include:
+    - `unit_delta`
+    - `implicit_uptake`
+    - `pressure_signals`
+    - `express_signal`
+    - focal text / anchor evidence
+    - optional `context_request`
+- `B2. carry-forward first`
+  - default continuity should come from a small carried-forward packet, not from repeated heavy retrieval
+- `B3. active recall / look-back`
+  - add a narrower explicit path for cases where carry-forward context is insufficient
+- `B4. route integration`
+  - make `Navigate.route` consume the new read packet instead of older closure/controller fragments
+
+#### Runtime discipline
+
+Phase B should keep semantic freedom in the model and keep hard-coded logic narrow.
+
+Deterministic code may still own:
+
+- recall / look-back budget limits
+- safety rails
+- persistence
+- audit serialization
+
+Deterministic code should not hard-code a semantic taxonomy of "allowed reuse types" and branch on it as if that were the reading process itself.
+
+#### Validation target
+
+- earlier material should remain available through carry-forward and bounded recall without adding a standalone `reuse` action
+- the mechanism should behave more like "carry forward by default, recall specifically only when needed"
+- no automatic collapse back into a giant memory blob
+
+#### Landed baseline
+
+- the live runner now builds a small `carry-forward context` from persisted state before each unit read
+- the authoritative live read path is now:
+  - build carry-forward context
+  - `read`
+  - optional budget-bounded supplemental looping through `active recall` or `look-back`
+  - rerun `read` while supplemental budget remains and the current unit still explicitly asks for more context
+  - deterministic `Navigate.route`
+- `read` now owns:
+  - current-unit reading
+  - `implicit_uptake`
+  - optional `context_request`
+- private `read_audit` records now capture:
+  - carry-forward refs used
+  - whether supplemental context was requested and satisfied
+  - final raw-reaction presence
+
+#### Follow-up interpretation
+
+The current Phase B baseline remains valuable because it established:
+
+- carried continuity by default
+- bounded supplemental recall only when genuinely needed
+- deterministic routing downstream of one authoritative read packet
+
+But the later post-E3 review now says the stable next shape should be:
+
+- keep carried continuity and bounded recall
+- simplify the `read` contract
+- return surfaced reactions to `read`
+- move detour dispatch to `navigate`
+
+### 7.3 Phase C — Restructure state and prompt packetization
+
+Goal:
+
+- keep V2's typed-state advantages
+- recover V1's stronger memory usability
+
+This phase should implement the new state shape and the derived prompt-input layer.
+
+Status:
+
+- `Phase C.1` landed on April 12, 2026 as the first packetization seam
+- `Phase C.2` also landed on April 12, 2026 as the first state-territory slice
+  - live packets now include bounded `concept_digest` and `thread_digest` views derived from the current persisted indexes
+- `Phase C.3` also landed on April 12, 2026 as the direct main-state cutover
+  - new runs now write and resume against `active_attention / concept_registry / thread_trace / reflective_frames / anchor_bank` as the primary runtime/checkpoint truth
+  - legacy `working_pressure / anchor_memory / reflective_summaries` were initially accepted on load for cutover compatibility, but that compatibility has since been retired from the current live path
+  - `active_recall` now exposes first-class `concepts` and `threads` from the new layers
+- `Phase C.4` also landed on April 12, 2026 as the helper-contract cutover
+  - sentence-intake / bridge / slow-cycle now operate directly on `active_attention / concept_registry / thread_trace / reflective_frames / anchor_bank`
+  - live helper execution no longer depends on `project_legacy_*` adapters or migrate-back round trips
+  - live runtime loading and resume now reject pre-`Phase C.3` runtime/checkpoint shapes
+- Post-F4 cleanup later removed the remaining gate/pressure sidecar:
+  - `active_attention.active_items` is now the only current hot-state container
+  - `gate_state`, `pressure_snapshot`, and old working-pressure runtime artifacts are historical only
+- `Phase C` is now complete, and the next open work is `Phase D`
+
+#### Concrete design target
+
+Keep V2's typed-state base, but stop exposing it to the model as an unstructured pile of stores.
+
+#### State target
+
+- `active_attention`
+- `concept_registry`
+- `thread_trace`
+- `reflective_frames`
+- `anchor_bank`
+
+#### State semantics that should be explicit in Phase C
+
+- `active_attention`
+  - hot state needed by the next immediate reading step
+  - current focus, open questions, active tensions, bridge pull, local unresolved items as lightweight tagged active items
+- `concept_registry`
+  - object memory
+  - people, places, institutions, terms, abstract concepts, key objects
+  - answers what this thing is, why it matters in this book, and which threads it touches
+- `thread_trace`
+  - plot / argument / relationship / question trace
+  - answers where this line currently stands and whether the present unit continues, turns, answers, counters, or closes it
+- `reflective_frames`
+  - slower chapter-level and book-level understanding
+  - durable chapter understandings, book frames, and stable definitions
+- `anchor_bank`
+  - source-grounded evidence base only
+  - retained anchors, typed relations, detour / bridge support
+  - not a generic semantic memory bucket
+
+#### Current V2 state disposition that should guide migration
+
+Keep and rename or tighten:
+
+- `working_pressure` -> `working_state.active_items` in the final current contract
+- `anchor_memory` -> `anchor_bank`
+- `reflective_summaries` -> `reflective_frames`
+
+Merge or absorb:
+
+- `motif_index`
+  - absorb into `concept_registry` plus `anchor_bank` link structure
+- `trace_links`
+  - absorb into `thread_trace`
+- `unresolved_reference_index`
+  - hot unresolved items into `working_state`
+  - cross-unit unresolved items into `thread_trace`
+
+Keep only as helper territory, not as a competing main memory layer:
+
+- retrieval helpers
+- index-like lookup structures
+
+Do not preserve as future main semantic entry points:
+
+- `trigger_state`
+- `gate_state`
+- `local_buffer`
+- semantics tied to `no_zoom / monitor / zoom_now`
+- semantics tied to the older closure/controller chain
+
+#### Packetization target
+
+- bottom-layer state remains typed
+- model-facing packet becomes query-aware and task-aware
+- detailed state should not be blindly injected in full
+- prompt input should be a derived view, not raw state dumped verbatim
+- `Navigate.unitize`, `read`, and `Navigate.route` should use distinct prompt families even if they share the same model target
+
+#### Load strategy target
+
+The packetization layer should already assume an index-first loading policy.
+
+`always reload` should stay very small and should carry only:
+
+- the current `session continuity capsule`
+- the current `working_state`
+- the current chapter's short `reflective frame`
+- a very small active `concept / thread digest`
+
+`on-demand retrieval` should carry the heavier layers:
+
+- detailed `concept_registry` entries
+- detailed `thread_trace` milestones
+- source evidence from `anchor_bank`
+- historical raw reactions / evidence bundles
+- long original excerpts
+
+#### Suggested code slices
+
+- `C1. state territory migration`
+  - map current state helpers into:
+    - `working_state`
+    - `concept_registry`
+    - `thread_trace`
+    - `reflective_frames`
+    - `anchor_bank`
+- `C2. prompt packet derivation`
+  - derive a small query-aware packet from those state layers for `Navigate.unitize`, `read`, and `Navigate.route`
+- `C3. knowledge activation narrowing`
+  - restrict `knowledge_activations` to immediate in-read use
+- `C4. anchor-bank tightening`
+  - keep `anchor_bank` as evidence territory only, not generic memory
+- `C5. continuity-focused memory usability`
+  - recover V1's practical memory-packet strength without regressing to V1's looser ontology
+
+#### Landed packetization seam
+
+- live prompt inputs no longer need to assemble context ad hoc inside each caller
+- an internal `state_packet.v1` layer now derives bounded prompt inputs from current persisted stores
+- `Navigate.unitize` now receives a packetized `navigation_context`
+- `read` now receives a packetized read-context view that explicitly separates:
+  - `session_continuity_capsule`
+  - `working_state_digest`
+  - `chapter_reflective_frame`
+  - `active_focus_digest`
+  - `concept_digest`
+  - `thread_digest`
+  - `anchor_bank_digest`
+- the current implementation intentionally keeps legacy compatibility aliases alongside the new packet fields so existing helpers and audits do not break while the deeper state migration is still pending
+- the current Phase C.2 slice keeps persisted file names unchanged and derives the new concept/thread packet views from the existing:
+  - `motif_index`
+  - `unresolved_reference_index`
+  - `trace_links`
+
+#### Deterministic versus semantic boundary
+
+Phase C should also make the execution boundary explicit.
+
+Deterministic code should continue to own:
+
+- sentence substrate
+- locator and persistence work
+- budget tracking
+- observability
+- resume / recovery
+- safety guardrails
+
+Deterministic code should not continue to own:
+
+- semantic trigger worthiness
+- semantic closure judgment
+- semantic bridge worthiness
+
+`Navigate.unitize`, `read`, and `Navigate.route` may decide what the mechanism believes, but durable state application should still happen through deterministic executors rather than turning one LLM call into an all-powerful state machine.
+
+#### Validation target
+
+- the mechanism should become better at long-distance continuity without turning back into one giant memory blob
+- source-grounded evidence should stay intact
+- excerpt-local pressure fidelity must still remain strong
+
+### 7.4 Phase D — Recall, persistence, resume, and compaction polish
+
+Goal:
+
+- polish the system after the new reading loop and state shape are already real
+
+This phase is intentionally later.
+
+It should only happen after the earlier phases prove stable enough to justify additional complexity.
+
+#### Landed scope
+
+- `read` now requests supplemental context one bounded step at a time, while the runner may continue resolving those requests inside a budget-bounded multi-step loop rather than stopping after one extra pass
+- runtime state and full checkpoints now persist a lightweight `continuation capsule`
+  - the capsule carries bounded continuity digests plus explicit `rehydration entrypoints`
+  - it is not a replacement summary for the full primary state layers
+- warm resume remains `new-format only`, but it now restores the latest usable continuation capsule together with the new-format runtime/checkpoint state
+- `look_back` remains exact-source only and now resolves at most one bounded earlier span
+- private `read_audit` now records per-step supplemental activity, stop reasons, and budget exhaustion
+
+#### Resulting posture
+
+- Phase D strengthened continuity and resume without reopening the main control skeleton
+- compaction still remains intentionally lighter than a full central compactor
+- the next follow-up is now concretized as a read-native surfaced-reaction simplification rather than as a deeper investment in the `Read -> Express` split
+
+### 7.5 Phase E — Historical `Read / Express` split and compatibility cleanup
+
+Landed status so far:
+
+- `Phase E1` is landed.
+- the first compatibility-first `Phase E2` slice is landed.
+- `Phase E3` is landed.
+
+Goal:
+
+- preserve the historical intermediate branch that split visible wording into a dedicated `Express` node
+- keep old reaction-family expectations only as compatibility adapters while the runtime and evaluation chain catch up
+
+This phase is intentionally split. It should not be implemented as one giant sweep.
+
+Why:
+
+- the current live path, slow-cycle aggregation, eval exports, and compatibility projections still assume old-family reaction records in several places
+- a one-shot rewrite would simultaneously change:
+  - runtime packet shape
+  - visible-reaction ownership
+  - slow-cycle aggregation inputs
+  - normalized eval exports
+  - compatibility/UI adapters
+- high-quality landing therefore depends on freezing the contract first, then cutting the live path, then cleaning the compatibility chain
+
+#### Phase E1 — Contract freeze
+
+Status: `landed`
+
+Freeze the approved next-shape contract before code mutation.
+
+- `Read vNext` should expose:
+  - `unit_delta`
+  - `implicit_uptake`
+  - `pressure_signals`
+  - `express_signal`
+  - optional `context_request`
+  - `anchor_evidence`
+- `Express` should:
+  - use one unified prompt rather than family-specific prompt branching
+  - receive the exact current unit plus one narrow `express_signal`
+  - emit at most one visible reaction in the first implementation slice
+  - return:
+    - `decision`
+    - `anchor_quote`
+    - `content`
+    - optional `prior_link`
+    - optional `outside_link`
+    - optional `search_intent`
+- old `highlight / association / curious / discern / retrospect / silent` family labels should be demoted to compatibility vocabulary only
+  - `silent` becomes the `withhold` outcome of `Express`
+  - `retrospect` becomes one adapter interpretation of surfaced `prior_link`
+
+#### Phase E2 — Live-path cutover
+
+Status: `first compatibility-first slice landed`
+
+Cut the live runner over to the new ownership split.
+
+- change the live path from:
+  - `read.raw_reaction -> Navigate.route`
+- to:
+  - `read -> express(if needed) -> Navigate.route`
+- `Read` should stop returning the final visible reaction payload on the live path
+- `Navigate.route` should consume `pressure_signals` rather than a semantically over-decided `move_hint`
+- `Express` should not own:
+  - memory update
+  - route choice
+  - supplemental recall
+- landed first-slice posture:
+  - `Read` still carries legacy compatibility fields such as `raw_reaction`, `move_hint`, and `prior_material_use`
+  - live visible-reaction persistence now comes from `ExpressResult`, not from `read.raw_reaction`
+  - thin adapter mapping still projects `ExpressResult` back into old family-shaped reaction records for downstream compatibility
+
+#### Phase E3 — Compatibility adapters and evaluation repair
+
+Status: `landed`
+
+Keep the old family only where the rest of the system still needs it.
+
+- persisted visible reactions now keep surfaced semantics first:
+  - `thought`
+  - `prior_link`
+  - `outside_link`
+  - `search_intent`
+- slow-cycle aggregation now derives compatibility family labels from persisted surfaced semantics rather than treating legacy `type` as the record truth
+- eval / normalized bundles now emit legacy family labels as compat projections from those same native records
+- UI/current-activity compatibility surfaces may continue to project old-family vocabulary temporarily
+- those adapters are now thin mappings from persisted surfaced reaction records rather than a runner-side downcast from `ExpressResult`
+- the adapter layer must not re-enter the prompt contract and redefine how `Express` thinks
+- the narrow fallback from missing `ExpressResult` to legacy `read.raw_reaction` remains available only as a marked compatibility/exception path
+
+#### Validation target
+
+- visible reactions should sound like reading-time reactions again rather than mechanism-authored summaries
+- `Read` should become easier to explain as reading plus implicit uptake rather than as a control super-node
+- old-family compatibility should continue working long enough to avoid breaking slow-cycle/eval/public adapters during the transition
+- persisted reaction truth should now be inspectable in native `Express` terms without reconstructing it from legacy family labels
+- implementation should land in the required order:
+  1. freeze contract
+  2. cut live path
+  3. clean compatibility / evaluation chain
+
+### 7.6 Post-E3 contract freeze — Read-native surfaced reactions, prompt projection, and detour ownership
+
+Status: `active design baseline`
+
+This is the current approved target shape after reviewing the landed `Phase E3` branch.
+
+The key conclusion is:
+
+- the dedicated live `Express` node was a useful compatibility-first experiment
+- but it should not remain the mechanism's steady-state center of gravity
+- the next implementation slices should simplify the per-unit loop back toward:
+  - `Navigate.unitize -> read -> Navigate.route`
+
+Why this reset won:
+
+- surfaced reactions should stay closer to the first reading moment instead of being re-worded by a second live node
+- the main problem was an overloaded `Read` contract and overpacked prompt/context assembly, not the mere absence of a wording node
+- detour behavior belongs with `Navigate` because it is fundamentally a reading-window routing decision
+- chapter-level consolidation still belongs with `slow cycle`, not with `Read`
+
+#### Frozen next-shape contract
+
+- `Navigate`
+  - owns coverage-unit choice
+  - owns `local_continuity`
+  - owns detour search and dispatch
+- `Read`
+  - owns current-unit understanding
+  - owns `reading_impression`
+  - owns `surfaced_reactions[]`
+  - owns surfaced semantics directly rather than emitting a native reaction-family label
+  - owns `memory_uptake_ops[]`
+  - owns `pressure_signals`
+  - may emit one `detour_need`
+- `slow cycle`
+  - owns chapter-end cooling, promotion, reconsolidation, and `reflective_frames`
+- `Runner`
+  - remains deterministic orchestration / apply / persist only
+
+#### Frozen state-layer model
+
+- `local_continuity`
+  - reading-flow state, cursor, `mainline_cursor`, active detour trace, and return semantics
+- `working_state`
+  - current hot unresolved items
+- `long-distance memory`
+  - `concept_registry`
+  - `thread_trace`
+  - `reflective_frames`
+- `anchor_bank`
+  - source-grounding substrate for surfaced reactions, detour localization, and evaluation honesty
+- `artifacts / history`
+  - `reaction_records`
+  - `move_history`
+  - `read_audit`
+  - `refs`
+  - `knowledge_activations` as helper territory
+- native visible-reaction truth vs compat family
+  - native truth is `surfaced_reactions[]` plus the surfaced-native persisted reaction record
+  - old `highlight / discern / association / retrospect / curious / silent` labels remain compatibility vocabulary only
+  - `highlight` is no longer a native generation family; it is a compat-side label for one class of local surfaced reaction
+
+#### Frozen prompt-carry posture
+
+Use three carry classes only:
+
+- `always carry`
+- `selective carry`
+- `not carry`
+
+Frozen node projections:
+
+- `Navigate`
+  - `always carry`
+    - `local_continuity`
+    - one thin routing digest from `working_state`
+  - `selective carry`
+    - structure-map cards
+    - minimal anchor/thread/concept handles for detour localization
+  - `not carry`
+    - full history/audit and large earlier source text
+- `Read`
+  - `always carry`
+    - `current_unit`
+    - compact `local_continuity` summary
+    - compact `working_state`
+    - compact `concept_digest`
+    - compact `thread_digest`
+    - compact `reflective_digest`
+  - `selective carry`
+    - bounded detour-context excerpt or anchor detail once `Navigate` has landed a detour region
+    - specific anchor details
+    - sparse supporting refs
+  - `not carry`
+    - full `refs`
+    - full `move_history`
+    - full `reaction_records`
+    - full `read_audit`
+    - full `anchor_bank`
+
+#### Frozen detour contract
+
+- `Read` does not privately complete a detour on its own
+- `Read` only emits `detour_need`
+- `detour_need` is intentionally light:
+  - `reason`
+  - `target_hint`
+  - `status`
+- `Navigate` owns all detour search and return decisions
+- Detour is not a special side-channel retrieval action
+  - once `Navigate` lands a detour region, that region is read through the same normal `Navigate.unitize -> read -> Navigate.route` loop
+- `Navigate` should reason over:
+  - book structure cards
+  - compact long-distance-memory digests
+  - source-grounded anchor handles
+  - current `detour_trace`
+  - `mainline_cursor`
+- Detour localization should be semantic and LLM-led, not a program-led candidate-recall subsystem
+- Detour search should use one prompt family with four legal outcomes after the book-local skill slice:
+  - `narrow_scope`
+  - `land_region`
+  - `defer_detour`
+  - `request_skill`
+- `request_skill` is a controlled evidence request, not a landing decision:
+  - the Reading Runner dispatches one requested book-local skill through the Skill Runtime
+  - the skill result is fed back to `Navigate.detour_search`
+  - final `narrow_scope / land_region / defer_detour` judgment remains Navigate-owned
+- Detour search should be bounded:
+  - one call when the target is already obvious from memory and structure
+  - two calls for ordinary ambiguity
+  - three calls as the hard upper bound before best-effort landing or defer-to-mainline behavior
+- A non-productive detour is not automatically a failure.
+  - the reader may still refresh understanding while looking
+  - if the target remains too vague, the system should return to the mainline instead of searching indefinitely
+
+#### Implementation slices after the freeze
+
+##### Phase F1 — Concrete reading-node contract and prompt-packaging cutover (`landed`)
+
+- historical live per-unit loop at the time ran unitization -> concrete reading node -> routing
+- that then-current concrete reading node owned:
+  - `reading_impression`
+  - `surfaced_reactions`
+  - `memory_uptake_ops`
+  - `pressure_signals`
+  - optional `detour_need`
+- the live runner no longer calls the dedicated `Express` step
+- whole-object memory rewrites were replaced with explicit `append / update / close / link` operations
+- concrete reading-node prompt packaging used the frozen `always / selective / not` posture
+- focused backend validation now covers:
+  - scaffold live-path integration
+  - read-contract prompt packaging
+  - compact prompt-packet projection
+  - slow-cycle compatibility invariants
+
+##### Phase F2 — Navigate-owned detour cutover (`landed`)
+
+- `Read` now emits `detour_need` on the live path instead of the transitional `revisit_need`
+- `Navigate` now runs bounded detour search as a normal navigation responsibility
+- `local_continuity` now maintains:
+  - `mainline_cursor`
+  - `active_detour_id`
+  - `active_detour_need`
+  - `detour_trace`
+- detour targets are now localized through hierarchical semantic search over:
+  - chapter / section structure cards
+  - compact long-distance-memory digests
+  - source-grounded anchor handles
+- one `Navigate.detour_search` prompt family now returns:
+  - `narrow_scope`
+  - `land_region`
+  - `defer_detour`
+  - `request_skill`
+- once a detour region is landed, the runner routes back into normal reading for that region rather than inventing a second reading system
+- detour episodes may chain semantically rather than forcing strict stack-style returns
+- search remains bounded and honest:
+  - target one call when memory and structure make the detour obvious
+  - allow two calls for ordinary ambiguity
+  - cap at three calls before best-effort landing or defer-to-mainline behavior
+- chapter-tail pending detours are now drained before chapter slow-cycle closes so the final mainline unit cannot silently drop a fresh detour request
+
+##### Phase F3 — Reaction persistence and compatibility reconvergence
+
+Status: `landed`
+
+- persisted visible reactions now enter the system only through `Read.surfaced_reactions[]`
+- mainline and detour reading now share one surfaced-native reaction-record builder
+- chapter-result compatibility projection and normalized eval export now read surfaced-native persisted records and derive legacy family labels only through the compat helper
+- dead live ownership paths for the old `Express` persistence flow and `raw_reaction` fallback are now removed
+
+##### Phase F4 — Quality validation and dead-path cleanup
+
+Status: `in_progress`
+
+- `Phase F4A` is now landed as the first focused six-case quality audit:
+  - temporary one-off harness / runner support:
+    - `reading-companion-backend/scripts/temporary/attentional_v2_f4a_oneoff_quality_audit.py`
+    - `reading-companion-backend/src/attentional_v2/runner.py`
+  - evidence:
+    - `reading-companion-backend/docs/archive/pre-cleanup-2026-11/research/attentional_v2_f4a_focused_quality_audit_20260419.md`
+    - `reading-companion-backend/eval/runs/attentional_v2/attentional_v2_f4a_quality_audit_20260419/summary/report.md`
+- first F4A findings:
+  - visible reaction density is back:
+    - the old "almost never speaks" regression did not reproduce
+    - `supremacy_private_en__chapter_13` now produces sustained local reactions again
+  - sampled wording is mostly back in reading-time territory:
+    - local quotes drive the reactions more often
+    - broad chapter-summary / review voice is substantially reduced
+  - compat exports survived:
+    - chapter-result compatibility projection and normalized eval bundles both materialized for all six shards
+  - but the pack did not validate detour behavior:
+    - no shard emitted `detour_need`
+    - no shard created `detour_trace`
+    - the intended `land_region / narrow_scope -> land_region / defer_detour` audit goals therefore remain unproven
+  - surfaced optional semantics also stayed absent in this pack:
+    - `prior_link`
+    - `outside_link`
+    - `search_intent`
+- audit-visibility follow-up already landed after the first F4A run:
+  - future `read_audit.jsonl` rows now persist full `surfaced_reactions`, not only the count
+  - the F4A summary/report harness now records explicit compat / normalized artifact availability instead of leaving those fields null
+- trigger/watch cleanup now also landed on top of the F4A baseline:
+  - sentence intake is now pure `local_buffer` ingest
+  - live runtime / checkpoint / resume no longer carry `trigger_state`
+  - `Navigate.unitize` no longer receives heuristic `watch_state`
+  - the dead `trigger -> zoom_read -> meaning_unit_closure -> controller_decision -> reaction_emission` path has been removed from live code
+  - `text_role` is now explicitly treated as an inherited block-level weak cue rather than sentence-level truth
+- the first special-content handling slice is now also landed on that cleaned baseline:
+  - no new helper node, packet, schema, or parser layer was introduced
+  - `Navigate.unitize` now treats heading roles as weak cues rather than automatic standalone units
+  - meaningful headings may still stand alone, but label-like headings now prefer merging with the immediately following body paragraph when the preview allows
+  - deterministic unitize fallback now widens `heading -> following body paragraph` instead of falling back to a bare heading when that body paragraph is already visible
+  - `Read` now explicitly stays proportionate around thin heading-like units and may remain silent there
+- next move before `Phase F4B`:
+  - make one small repair pass focused on:
+    - detour trigger willingness
+    - explicit surfaced semantic honesty
+    - any remaining over-literary reaction voice in the mixed English / `悉达多` samples
+  - rerun the same six-case focused pack
+  - only move to `Phase F4B` after at least one real detour path is observed and the structured surfaced semantics appear when genuinely warranted
+
+## 8. Backend Compatibility Guardrails During Rework
+
+This plan is backend-only, but it must not ignore existing frontend dependence.
+
+The rule is:
+
+- do not move frontend planning into this document
+- but do keep backend changes compatibility-aware enough that parallel frontend work is not broken by surprise
+
+Current guardrails:
+
+- preserve current compatibility envelopes unless a later explicit contract change is intentionally staged
+- avoid backend-only ontology changes that silently invalidate current public/state adapters
+- prefer additive backend truth and adapter updates over abrupt surface breakage during the rework
+
+## 9. Documentation Routing During This Initiative
+
+To avoid document sprawl, each doc should keep one job.
+
+### 9.1 Evaluation follow-up memo
+
+File:
+
+- [attentional_v2_accumulation_benchmark_v1_judged_rerun_20260407_followup_reflection_and_decisions.md](../../../../../reading-companion-backend/docs/archive/pre-cleanup-2026-11/evaluation/long_span/attentional_v2_accumulation_benchmark_v1_judged_rerun_20260407_followup_reflection_and_decisions.md)
+
+Role:
+
+- mechanism evidence and design reasoning source
+
+### 9.2 This plan document
+
+Role:
+
+- implementation blueprint for the backend structural rework
+
+### 9.3 Execution tracker
+
+File:
+
+- [new-reading-mechanism-execution-tracker.md](new-reading-mechanism-execution-tracker.md)
+
+Role:
+
+- progress tracker
+- current phase / checkpoint summary
+- links to the current implementation plan
+
+### 9.4 Stable docs
+
+Examples:
+
+- [docs/backend-reading-mechanisms/attentional_v2.md](../../../../backend-reading-mechanisms/attentional_v2.md)
+- [docs/backend-reading-mechanism.md](../../../../backend-reading-mechanism.md)
+- [docs/backend-state-aggregation.md](../../../../backend-state-aggregation.md)
+- [docs/api-contract.md](../../../../api-contract.md)
+
+Role:
+
+- only update when real behavior lands
+
+### 9.5 History decision log
+
+File:
+
+- [docs/history/decision-log.md](../../../../history/decision-log.md)
+
+Role:
+
+- record later inflection points once the rework becomes a real project-direction change in implemented behavior, not just a planning intention
+
+## 10. Immediate Next Steps
+
+The next concrete move should be:
+
+1. treat `Phase A` and `Phase B` as the landed backend baseline rather than as open design questions
+2. define the code-facing contract for `Phase C`:
+   - typed state restructuring
+   - carry-forward packet derivation that is easier to use and audit
+   - clearer separation between always-carried continuity and on-demand exact recall
+3. preserve current compatibility surfaces while Phase C lands
+4. keep existing frontend work tracked in its own documents and tasks rather than under this plan
+
+## 11. Success Criteria For This Plan
+
+We should consider this rework direction on track only if all of the following remain true:
+
+- long-span failures are addressed without regressing to section-first reading
+- V2's excerpt strengths are preserved:
+  - local pressure fidelity
+  - anchored local reading
+  - source-groundedness
+- continuity improves without turning the system into one giant memory prompt
+- backend changes stay compatible enough that parallel frontend work is not destabilized by surprise

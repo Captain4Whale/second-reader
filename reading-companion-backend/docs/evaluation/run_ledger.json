@@ -22,7 +22,7 @@
       },
       "job_ids": [],
       "report_paths": [
-        "reading-companion-backend/docs/evaluation/excerpt/attentional_v2_excerpt_surface_v1_1_judged_20260406_interpretation.md"
+        "reading-companion-backend/docs/archive/pre-cleanup-2026-11/evaluation/excerpt/attentional_v2_excerpt_surface_v1_1_judged_20260406_interpretation.md"
       ],
       "catalog_status": "superseded",
       "notes": "Superseded excerpt surface v1.1 formal evidence retained for historical comparison, no longer active benchmark authority.",
@@ -55,8 +55,8 @@
       },
       "job_ids": [],
       "report_paths": [
-        "reading-companion-backend/docs/evaluation/long_span/attentional_v2_accumulation_benchmark_v1_judged_rerun_20260407_interpretation.md",
-        "reading-companion-backend/docs/evaluation/long_span/attentional_v2_accumulation_benchmark_v1_judged_rerun_20260407_score_impact_reaction_appendix.md"
+        "reading-companion-backend/docs/archive/pre-cleanup-2026-11/evaluation/long_span/attentional_v2_accumulation_benchmark_v1_judged_rerun_20260407_interpretation.md",
+        "reading-companion-backend/docs/archive/pre-cleanup-2026-11/evaluation/long_span/attentional_v2_accumulation_benchmark_v1_judged_rerun_20260407_score_impact_reaction_appendix.md"
       ],
       "catalog_status": "historical_evidence",
       "notes": "Historical bounded long-span v1 evidence: iterator_v1 won overall on retrospective bridging and window-end closure.",
@@ -145,7 +145,7 @@
         "bgjob_user_level_selective_v1_repaired_rejudge_20260416"
       ],
       "report_paths": [
-        "reading-companion-backend/docs/evaluation/user_level/attentional_v2_user_level_selective_v1_repaired_rejudge_20260416_interpretation.md"
+        "reading-companion-backend/docs/archive/pre-cleanup-2026-11/evaluation/user_level/attentional_v2_user_level_selective_v1_repaired_rejudge_20260416_interpretation.md"
       ],
       "catalog_status": "superseded",
       "notes": "Superseded repaired strict source-span rejudge; replaced by the April 19 active rerun on the repaired 203-case package.",
@@ -416,7 +416,7 @@
         "bgjob_minimal_eval_suite_lane_a_smoke_20260517"
       ],
       "report_paths": [
-        "docs/implementation/new-reading-mechanism/second-reader-memory-planning/codex/reports/Slice8C-Minimal-Eval-Suite-Execution-Preflight-and-Bounded-Run-Post-implementation-Report v0.md"
+        "docs/archive/pre-cleanup-2026-11/implementation/new-reading-mechanism/second-reader-memory-planning/codex/reports/Slice8C-Minimal-Eval-Suite-Execution-Preflight-and-Bounded-Run-Post-implementation-Report v0.md"
       ],
       "catalog_status": "not_cataloged",
       "notes": "Failed Lane A smoke attempt preserved as execution evidence; missing source-span locator blocked summary generation.",
@@ -449,7 +449,7 @@
         "bgjob_minimal_eval_suite_lane_a_smoke_20260517_retry1"
       ],
       "report_paths": [
-        "docs/implementation/new-reading-mechanism/second-reader-memory-planning/codex/reports/Slice8E-Lane-A-Retry1-Bounded-Execution-Post-run-Report v0.md"
+        "docs/archive/pre-cleanup-2026-11/implementation/new-reading-mechanism/second-reader-memory-planning/codex/reports/Slice8E-Lane-A-Retry1-Bounded-Execution-Post-run-Report v0.md"
       ],
       "catalog_status": "not_cataloged",
       "notes": "Lane A retry1 bounded smoke completed; represented in the synthetic diagnostic smoke catalog entry.",
@@ -485,7 +485,7 @@
         "bgjob_minimal_eval_suite_lane_b_smoke_20260517"
       ],
       "report_paths": [
-        "docs/implementation/new-reading-mechanism/second-reader-memory-planning/codex/reports/Slice8F-Lane-B-Bounded-Diagnostic-Smoke-Post-run-Report v0.md"
+        "docs/archive/pre-cleanup-2026-11/implementation/new-reading-mechanism/second-reader-memory-planning/codex/reports/Slice8F-Lane-B-Bounded-Diagnostic-Smoke-Post-run-Report v0.md"
       ],
       "catalog_status": "not_cataloged",
       "notes": "Lane B bounded diagnostic smoke completed; represented in the synthetic diagnostic smoke catalog entry.",
@@ -532,11 +532,11 @@
         "bgjob_minimal_eval_suite_lane_b_smoke_20260517"
       ],
       "report_paths": [
-        "docs/implementation/new-reading-mechanism/second-reader-memory-planning/codex/reports/Slice8C-Minimal-Eval-Suite-Execution-Preflight-and-Bounded-Run-Post-implementation-Report v0.md",
-        "docs/implementation/new-reading-mechanism/second-reader-memory-planning/codex/reports/Slice8D-Lane-A-Source-locator-Compatibility-Triage-and-Minimal-Patch-Post-implementation-Report v0.md",
-        "docs/implementation/new-reading-mechanism/second-reader-memory-planning/codex/reports/Slice8E-Lane-A-Retry1-Bounded-Execution-Post-run-Report v0.md",
-        "docs/implementation/new-reading-mechanism/second-reader-memory-planning/codex/reports/Slice8F-Lane-B-Bounded-Diagnostic-Smoke-Post-run-Report v0.md",
-        "docs/implementation/new-reading-mechanism/second-reader-memory-planning/codex/reports/Slice8G-Minimal-Eval-Suite-Smoke-Closure-and-Evidence-Interpretation-Report v0.md"
+        "docs/archive/pre-cleanup-2026-11/implementation/new-reading-mechanism/second-reader-memory-planning/codex/reports/Slice8C-Minimal-Eval-Suite-Execution-Preflight-and-Bounded-Run-Post-implementation-Report v0.md",
+        "docs/archive/pre-cleanup-2026-11/implementation/new-reading-mechanism/second-reader-memory-planning/codex/reports/Slice8D-Lane-A-Source-locator-Compatibility-Triage-and-Minimal-Patch-Post-implementation-Report v0.md",
+        "docs/archive/pre-cleanup-2026-11/implementation/new-reading-mechanism/second-reader-memory-planning/codex/reports/Slice8E-Lane-A-Retry1-Bounded-Execution-Post-run-Report v0.md",
+        "docs/archive/pre-cleanup-2026-11/implementation/new-reading-mechanism/second-reader-memory-planning/codex/reports/Slice8F-Lane-B-Bounded-Diagnostic-Smoke-Post-run-Report v0.md",
+        "docs/archive/pre-cleanup-2026-11/implementation/new-reading-mechanism/second-reader-memory-planning/codex/reports/Slice8G-Minimal-Eval-Suite-Smoke-Closure-and-Evidence-Interpretation-Report v0.md"
       ],
       "catalog_status": "diagnostic_smoke",
       "notes": "Reviewed Minimal Eval Suite smoke completed after Lane A retry and Lane B diagnostic smoke; cataloged as diagnostic smoke only, not product-quality proof, not formal benchmark authority, and not Long Span vNext promotion.",
@@ -567,7 +567,7 @@
         "bgjob_full_long_span_vnext_post_slice8h_20260518"
       ],
       "report_paths": [
-        "docs/implementation/new-reading-mechanism/second-reader-memory-planning/codex/reports/Eval1-Full-Active-Evaluation-Post-Slice8H-Aborted-Run-Report v0.md"
+        "docs/archive/pre-cleanup-2026-11/implementation/new-reading-mechanism/second-reader-memory-planning/codex/reports/Eval1-Full-Active-Evaluation-Post-Slice8H-Aborted-Run-Report v0.md"
       ],
       "catalog_status": "not_cataloged",
       "notes": "Conservative Eval-1 Lane B job abandoned and preserved; not reused.",
@@ -596,8 +596,8 @@
         "bgjob_full_long_span_vnext_post_slice8h_20260518_parallel5"
       ],
       "report_paths": [
-        "docs/implementation/new-reading-mechanism/second-reader-memory-planning/codex/reports/Eval1-Full-Active-Evaluation-Post-Slice8H-Aborted-Run-Report v0.md",
-        "docs/implementation/new-reading-mechanism/second-reader-memory-planning/codex/reports/Eval1-LLM-Health-and-Eval-Strictness-Repair-Post-implementation-Report v0.md"
+        "docs/archive/pre-cleanup-2026-11/implementation/new-reading-mechanism/second-reader-memory-planning/codex/reports/Eval1-Full-Active-Evaluation-Post-Slice8H-Aborted-Run-Report v0.md",
+        "docs/archive/pre-cleanup-2026-11/implementation/new-reading-mechanism/second-reader-memory-planning/codex/reports/Eval1-LLM-Health-and-Eval-Strictness-Repair-Post-implementation-Report v0.md"
       ],
       "catalog_status": "not_cataloged",
       "notes": "Optimized but unhealthy producer stopped after LLM fallback/timeouts; partial outputs invalid and not reused.",
@@ -626,7 +626,7 @@
         "bgjob_full_user_level_selective_post_slice8h_20260518"
       ],
       "report_paths": [
-        "docs/implementation/new-reading-mechanism/second-reader-memory-planning/codex/reports/Eval1-Full-Active-Evaluation-Post-Slice8H-Aborted-Run-Report v0.md"
+        "docs/archive/pre-cleanup-2026-11/implementation/new-reading-mechanism/second-reader-memory-planning/codex/reports/Eval1-Full-Active-Evaluation-Post-Slice8H-Aborted-Run-Report v0.md"
       ],
       "catalog_status": "not_cataloged",
       "notes": "Conservative Eval-1 Lane A job abandoned and preserved; not reused.",
@@ -651,7 +651,7 @@
       "summary_paths": {},
       "job_ids": [],
       "report_paths": [
-        "docs/implementation/new-reading-mechanism/second-reader-memory-planning/codex/reports/Eval1-LLM-Health-and-Eval-Strictness-Repair-Post-implementation-Report v0.md"
+        "docs/archive/pre-cleanup-2026-11/implementation/new-reading-mechanism/second-reader-memory-planning/codex/reports/Eval1-LLM-Health-and-Eval-Strictness-Repair-Post-implementation-Report v0.md"
       ],
       "catalog_status": "not_cataloged",
       "notes": "Repair report for LLM health gates and failover; not an eval result run.",
@@ -688,7 +688,7 @@
         "bgjob_eval1_long_span_post_slice8h_20260519_huochu"
       ],
       "report_paths": [
-        "docs/implementation/new-reading-mechanism/second-reader-memory-planning/codex/reports/Eval1-Full-Active-Evaluation-Post-Slice8H-Retry1-High-Parallel-Post-run-Report v0.md"
+        "docs/archive/pre-cleanup-2026-11/implementation/new-reading-mechanism/second-reader-memory-planning/codex/reports/Eval1-Full-Active-Evaluation-Post-Slice8H-Retry1-High-Parallel-Post-run-Report v0.md"
       ],
       "catalog_status": "not_cataloged",
       "notes": "Eval-1 Retry1 Lane B producer for huochu_shengming_de_yiyi_private_zh__segment_1; completed with fresh reading, MQ judge, and reaction audit.",
@@ -725,7 +725,7 @@
         "bgjob_eval1_long_span_post_slice8h_20260519_mangge"
       ],
       "report_paths": [
-        "docs/implementation/new-reading-mechanism/second-reader-memory-planning/codex/reports/Eval1-Full-Active-Evaluation-Post-Slice8H-Retry1-High-Parallel-Post-run-Report v0.md"
+        "docs/archive/pre-cleanup-2026-11/implementation/new-reading-mechanism/second-reader-memory-planning/codex/reports/Eval1-Full-Active-Evaluation-Post-Slice8H-Retry1-High-Parallel-Post-run-Report v0.md"
       ],
       "catalog_status": "not_cataloged",
       "notes": "Eval-1 Retry1 Lane B producer for mangge_zhi_dao_private_zh__segment_1; completed with fresh reading, MQ judge, and reaction audit.",
@@ -762,7 +762,7 @@
         "bgjob_eval1_long_span_post_slice8h_20260519_nawaer"
       ],
       "report_paths": [
-        "docs/implementation/new-reading-mechanism/second-reader-memory-planning/codex/reports/Eval1-Full-Active-Evaluation-Post-Slice8H-Retry1-High-Parallel-Post-run-Report v0.md"
+        "docs/archive/pre-cleanup-2026-11/implementation/new-reading-mechanism/second-reader-memory-planning/codex/reports/Eval1-Full-Active-Evaluation-Post-Slice8H-Retry1-High-Parallel-Post-run-Report v0.md"
       ],
       "catalog_status": "not_cataloged",
       "notes": "Eval-1 Retry1 Lane B producer for nawaer_baodian_private_zh__segment_1; completed with fresh reading, MQ judge, and reaction audit.",
@@ -799,7 +799,7 @@
         "bgjob_eval1_long_span_post_slice8h_20260519_value_of_others"
       ],
       "report_paths": [
-        "docs/implementation/new-reading-mechanism/second-reader-memory-planning/codex/reports/Eval1-Full-Active-Evaluation-Post-Slice8H-Retry1-High-Parallel-Post-run-Report v0.md"
+        "docs/archive/pre-cleanup-2026-11/implementation/new-reading-mechanism/second-reader-memory-planning/codex/reports/Eval1-Full-Active-Evaluation-Post-Slice8H-Retry1-High-Parallel-Post-run-Report v0.md"
       ],
       "catalog_status": "not_cataloged",
       "notes": "Eval-1 Retry1 Lane B producer for value_of_others_private_en__segment_1; completed with fresh reading, MQ judge, and reaction audit.",
@@ -836,7 +836,7 @@
         "bgjob_eval1_long_span_post_slice8h_20260519_xidaduo"
       ],
       "report_paths": [
-        "docs/implementation/new-reading-mechanism/second-reader-memory-planning/codex/reports/Eval1-Full-Active-Evaluation-Post-Slice8H-Retry1-High-Parallel-Post-run-Report v0.md"
+        "docs/archive/pre-cleanup-2026-11/implementation/new-reading-mechanism/second-reader-memory-planning/codex/reports/Eval1-Full-Active-Evaluation-Post-Slice8H-Retry1-High-Parallel-Post-run-Report v0.md"
       ],
       "catalog_status": "not_cataloged",
       "notes": "Eval-1 Retry1 Lane B producer for xidaduo_private_zh__segment_1; completed with fresh reading, MQ judge, and reaction audit.",
@@ -869,7 +869,7 @@
         "bgjob_eval1_user_level_post_slice8h_20260519_reuse_huochu"
       ],
       "report_paths": [
-        "docs/implementation/new-reading-mechanism/second-reader-memory-planning/codex/reports/Eval1-Full-Active-Evaluation-Post-Slice8H-Retry1-High-Parallel-Post-run-Report v0.md"
+        "docs/archive/pre-cleanup-2026-11/implementation/new-reading-mechanism/second-reader-memory-planning/codex/reports/Eval1-Full-Active-Evaluation-Post-Slice8H-Retry1-High-Parallel-Post-run-Report v0.md"
       ],
       "catalog_status": "not_cataloged",
       "notes": "Eval-1 Retry1 Lane A reuse shard for huochu_shengming_de_yiyi_private_zh__segment_1; reused matching Lane B output directory.",
@@ -902,7 +902,7 @@
         "bgjob_eval1_user_level_post_slice8h_20260519_reuse_mangge"
       ],
       "report_paths": [
-        "docs/implementation/new-reading-mechanism/second-reader-memory-planning/codex/reports/Eval1-Full-Active-Evaluation-Post-Slice8H-Retry1-High-Parallel-Post-run-Report v0.md"
+        "docs/archive/pre-cleanup-2026-11/implementation/new-reading-mechanism/second-reader-memory-planning/codex/reports/Eval1-Full-Active-Evaluation-Post-Slice8H-Retry1-High-Parallel-Post-run-Report v0.md"
       ],
       "catalog_status": "not_cataloged",
       "notes": "Eval-1 Retry1 Lane A reuse shard for mangge_zhi_dao_private_zh__segment_1; reused matching Lane B output directory.",
@@ -935,7 +935,7 @@
         "bgjob_eval1_user_level_post_slice8h_20260519_reuse_nawaer"
       ],
       "report_paths": [
-        "docs/implementation/new-reading-mechanism/second-reader-memory-planning/codex/reports/Eval1-Full-Active-Evaluation-Post-Slice8H-Retry1-High-Parallel-Post-run-Report v0.md"
+        "docs/archive/pre-cleanup-2026-11/implementation/new-reading-mechanism/second-reader-memory-planning/codex/reports/Eval1-Full-Active-Evaluation-Post-Slice8H-Retry1-High-Parallel-Post-run-Report v0.md"
       ],
       "catalog_status": "not_cataloged",
       "notes": "Eval-1 Retry1 Lane A reuse shard for nawaer_baodian_private_zh__segment_1; reused matching Lane B output directory.",
@@ -968,7 +968,7 @@
         "bgjob_eval1_user_level_post_slice8h_20260519_reuse_value_of_others"
       ],
       "report_paths": [
-        "docs/implementation/new-reading-mechanism/second-reader-memory-planning/codex/reports/Eval1-Full-Active-Evaluation-Post-Slice8H-Retry1-High-Parallel-Post-run-Report v0.md"
+        "docs/archive/pre-cleanup-2026-11/implementation/new-reading-mechanism/second-reader-memory-planning/codex/reports/Eval1-Full-Active-Evaluation-Post-Slice8H-Retry1-High-Parallel-Post-run-Report v0.md"
       ],
       "catalog_status": "not_cataloged",
       "notes": "Eval-1 Retry1 Lane A reuse shard for value_of_others_private_en__segment_1; reused matching Lane B output directory.",
@@ -1001,7 +1001,7 @@
         "bgjob_eval1_user_level_post_slice8h_20260519_reuse_xidaduo"
       ],
       "report_paths": [
-        "docs/implementation/new-reading-mechanism/second-reader-memory-planning/codex/reports/Eval1-Full-Active-Evaluation-Post-Slice8H-Retry1-High-Parallel-Post-run-Report v0.md"
+        "docs/archive/pre-cleanup-2026-11/implementation/new-reading-mechanism/second-reader-memory-planning/codex/reports/Eval1-Full-Active-Evaluation-Post-Slice8H-Retry1-High-Parallel-Post-run-Report v0.md"
       ],
       "catalog_status": "not_cataloged",
       "notes": "Eval-1 Retry1 Lane A reuse shard for xidaduo_private_zh__segment_1; reused matching Lane B output directory.",
@@ -1029,7 +1029,7 @@
       "summary_paths": {},
       "job_ids": [],
       "report_paths": [
-        "docs/implementation/new-reading-mechanism/second-reader-memory-planning/codex/reports/Eval1-Full-Active-Evaluation-Post-Slice8H-Retry1-High-Parallel-Post-run-Report v0.md"
+        "docs/archive/pre-cleanup-2026-11/implementation/new-reading-mechanism/second-reader-memory-planning/codex/reports/Eval1-Full-Active-Evaluation-Post-Slice8H-Retry1-High-Parallel-Post-run-Report v0.md"
       ],
       "catalog_status": "review_pending",
       "notes": "Eval-1 Retry1 high-parallel full active evaluation completed; pending human review and not yet cataloged.",
@@ -1081,7 +1081,7 @@
         "bgjob_active_attention_live_question_micro_huochu_20260521"
       ],
       "report_paths": [
-        "docs/implementation/new-reading-mechanism/second-reader-memory-planning/codex/reports/ActiveAttention-Live-Question-Micro-Eval-Huochu-Post-run-Report v0.md"
+        "docs/archive/pre-cleanup-2026-11/implementation/new-reading-mechanism/second-reader-memory-planning/codex/reports/ActiveAttention-Live-Question-Micro-Eval-Huochu-Post-run-Report v0.md"
       ],
       "catalog_status": "not_cataloged",
       "notes": "Diagnostic micro eval completed with clean LLM health, but failed the Active Attention live-question lifecycle check: probe-time active_attention was empty and final active items were legacy statement-only and ungrounded.",
@@ -1121,7 +1121,7 @@
         "bgjob_active_attention_live_question_micro_huochu_20260521_retry1"
       ],
       "report_paths": [
-        "docs/implementation/new-reading-mechanism/second-reader-memory-planning/codex/reports/ActiveAttention-Live-Question-Micro-Eval-Huochu-Retry1-Post-run-Report v0.md",
+        "docs/archive/pre-cleanup-2026-11/implementation/new-reading-mechanism/second-reader-memory-planning/codex/reports/ActiveAttention-Live-Question-Micro-Eval-Huochu-Retry1-Post-run-Report v0.md",
         "reading-companion-backend/eval/runs/attentional_v2/attentional_v2_active_attention_live_question_micro_huochu_20260521_retry1/analysis/active_attention_lifecycle_audit/README.md"
       ],
       "catalog_status": "not_cataloged",
@@ -1159,7 +1159,7 @@
         "bgjob_active_attention_live_question_micro_huochu_20260521_retry2"
       ],
       "report_paths": [
-        "docs/implementation/new-reading-mechanism/second-reader-memory-planning/codex/reports/ActiveAttention-Inquiry-Boundary-Micro-Eval-Huochu-Retry2-Post-run-Report v0.md",
+        "docs/archive/pre-cleanup-2026-11/implementation/new-reading-mechanism/second-reader-memory-planning/codex/reports/ActiveAttention-Inquiry-Boundary-Micro-Eval-Huochu-Retry2-Post-run-Report v0.md",
         "reading-companion-backend/eval/runs/attentional_v2/attentional_v2_active_attention_live_question_micro_huochu_20260521_retry2/analysis/active_attention_lifecycle_audit/README.md"
       ],
       "catalog_status": "not_cataloged",
@@ -1197,7 +1197,7 @@
         "bgjob_active_attention_live_question_micro_huochu_20260521_retry3"
       ],
       "report_paths": [
-        "docs/implementation/new-reading-mechanism/second-reader-memory-planning/codex/reports/ActiveAttention-Answered-Reason-Micro-Eval-Huochu-Retry3-Post-run-Report v0.md",
+        "docs/archive/pre-cleanup-2026-11/implementation/new-reading-mechanism/second-reader-memory-planning/codex/reports/ActiveAttention-Answered-Reason-Micro-Eval-Huochu-Retry3-Post-run-Report v0.md",
         "reading-companion-backend/eval/runs/attentional_v2/attentional_v2_active_attention_live_question_micro_huochu_20260521_retry3/analysis/active_attention_lifecycle_audit/README.md"
       ],
       "catalog_status": "not_cataloged",
@@ -1235,7 +1235,7 @@
         "bgjob_active_attention_live_question_micro_huochu_20260521_retry4"
       ],
       "report_paths": [
-        "docs/implementation/new-reading-mechanism/second-reader-memory-planning/codex/reports/ActiveAttention-Forward-Pull-Micro-Eval-Huochu-Retry4-Post-run-Report v0.md",
+        "docs/archive/pre-cleanup-2026-11/implementation/new-reading-mechanism/second-reader-memory-planning/codex/reports/ActiveAttention-Forward-Pull-Micro-Eval-Huochu-Retry4-Post-run-Report v0.md",
         "reading-companion-backend/eval/runs/attentional_v2/attentional_v2_active_attention_live_question_micro_huochu_20260521_retry4/analysis/active_attention_lifecycle_audit/README.md"
       ],
       "catalog_status": "not_cataloged",
@@ -1270,7 +1270,7 @@
         "bgjob_active_attention_prompt_context_window_diagnostic_20260522_xidaduo"
       ],
       "report_paths": [
-        "docs/implementation/new-reading-mechanism/second-reader-memory-planning/codex/reports/ActiveAttention-Prompt-Context-Grounded-Full-Window-Diagnostic-Post-run-Report v0.md"
+        "docs/archive/pre-cleanup-2026-11/implementation/new-reading-mechanism/second-reader-memory-planning/codex/reports/ActiveAttention-Prompt-Context-Grounded-Full-Window-Diagnostic-Post-run-Report v0.md"
       ],
       "catalog_status": "not_cataloged",
       "notes": "Parent entry for the five-shard Active Attention prompt-context diagnostic. The attempt was invalidated for evaluation purposes because all shards were manually terminated with exit -15 before summaries, Memory Quality results, reaction audit results, or complete lifecycle audits were produced. Partial traces are operational artifacts only.",
@@ -1306,7 +1306,7 @@
         "bgjob_active_attention_prompt_context_window_diagnostic_20260522_huochu"
       ],
       "report_paths": [
-        "docs/implementation/new-reading-mechanism/second-reader-memory-planning/codex/reports/ActiveAttention-Prompt-Context-Grounded-Full-Window-Diagnostic-Post-run-Report v0.md",
+        "docs/archive/pre-cleanup-2026-11/implementation/new-reading-mechanism/second-reader-memory-planning/codex/reports/ActiveAttention-Prompt-Context-Grounded-Full-Window-Diagnostic-Post-run-Report v0.md",
         "reading-companion-backend/eval/runs/attentional_v2/attentional_v2_active_attention_prompt_context_window_diagnostic_20260522_huochu/analysis/active_attention_lifecycle_audit/README.md"
       ],
       "catalog_status": "not_cataloged",
@@ -1346,7 +1346,7 @@
         "bgjob_active_attention_prompt_context_window_diagnostic_20260522_mangge"
       ],
       "report_paths": [
-        "docs/implementation/new-reading-mechanism/second-reader-memory-planning/codex/reports/ActiveAttention-Prompt-Context-Grounded-Full-Window-Diagnostic-Post-run-Report v0.md",
+        "docs/archive/pre-cleanup-2026-11/implementation/new-reading-mechanism/second-reader-memory-planning/codex/reports/ActiveAttention-Prompt-Context-Grounded-Full-Window-Diagnostic-Post-run-Report v0.md",
         "reading-companion-backend/eval/runs/attentional_v2/attentional_v2_active_attention_prompt_context_window_diagnostic_20260522_mangge/analysis/active_attention_lifecycle_audit/README.md"
       ],
       "catalog_status": "not_cataloged",
@@ -1386,7 +1386,7 @@
         "bgjob_active_attention_prompt_context_window_diagnostic_20260522_nawaer"
       ],
       "report_paths": [
-        "docs/implementation/new-reading-mechanism/second-reader-memory-planning/codex/reports/ActiveAttention-Prompt-Context-Grounded-Full-Window-Diagnostic-Post-run-Report v0.md",
+        "docs/archive/pre-cleanup-2026-11/implementation/new-reading-mechanism/second-reader-memory-planning/codex/reports/ActiveAttention-Prompt-Context-Grounded-Full-Window-Diagnostic-Post-run-Report v0.md",
         "reading-companion-backend/eval/runs/attentional_v2/attentional_v2_active_attention_prompt_context_window_diagnostic_20260522_nawaer/analysis/active_attention_lifecycle_audit/README.md"
       ],
       "catalog_status": "not_cataloged",
@@ -1430,7 +1430,7 @@
         "bgjob_active_attention_prompt_context_window_diagnostic_20260522_retry1_xidaduo"
       ],
       "report_paths": [
-        "docs/implementation/new-reading-mechanism/second-reader-memory-planning/codex/reports/ActiveAttention-Prompt-Context-Grounded-Full-Window-Diagnostic-Retry1-ActiveTension-Lifecycle-Review v0.md"
+        "docs/archive/pre-cleanup-2026-11/implementation/new-reading-mechanism/second-reader-memory-planning/codex/reports/ActiveAttention-Prompt-Context-Grounded-Full-Window-Diagnostic-Retry1-ActiveTension-Lifecycle-Review v0.md"
       ],
       "catalog_status": "not_cataloged",
       "notes": "Parent ledger entry for retry1 of the Active Attention prompt-context grounded five-window diagnostic. All five registered jobs completed successfully and the run is pending human review through the ActiveTension lifecycle review; diagnostic only, not cataloged.",
@@ -1651,7 +1651,7 @@
         "bgjob_active_attention_prompt_context_window_diagnostic_20260522_value_of_others"
       ],
       "report_paths": [
-        "docs/implementation/new-reading-mechanism/second-reader-memory-planning/codex/reports/ActiveAttention-Prompt-Context-Grounded-Full-Window-Diagnostic-Post-run-Report v0.md",
+        "docs/archive/pre-cleanup-2026-11/implementation/new-reading-mechanism/second-reader-memory-planning/codex/reports/ActiveAttention-Prompt-Context-Grounded-Full-Window-Diagnostic-Post-run-Report v0.md",
         "reading-companion-backend/eval/runs/attentional_v2/attentional_v2_active_attention_prompt_context_window_diagnostic_20260522_value_of_others/analysis/active_attention_lifecycle_audit/README.md"
       ],
       "catalog_status": "not_cataloged",
@@ -1691,7 +1691,7 @@
         "bgjob_active_attention_prompt_context_window_diagnostic_20260522_xidaduo"
       ],
       "report_paths": [
-        "docs/implementation/new-reading-mechanism/second-reader-memory-planning/codex/reports/ActiveAttention-Prompt-Context-Grounded-Full-Window-Diagnostic-Post-run-Report v0.md",
+        "docs/archive/pre-cleanup-2026-11/implementation/new-reading-mechanism/second-reader-memory-planning/codex/reports/ActiveAttention-Prompt-Context-Grounded-Full-Window-Diagnostic-Post-run-Report v0.md",
         "reading-companion-backend/eval/runs/attentional_v2/attentional_v2_active_attention_prompt_context_window_diagnostic_20260522_xidaduo/analysis/active_attention_lifecycle_audit/README.md"
       ],
       "catalog_status": "not_cataloged",
@@ -1737,7 +1737,7 @@
         "bgjob_recent_reading_memory_micro_huochu_20260523"
       ],
       "report_paths": [
-        "docs/implementation/new-reading-mechanism/second-reader-memory-planning/codex/reports/RecentReadingMemory-Micro-Diagnostic-Huochu-Post-run-Report v0.md"
+        "docs/archive/pre-cleanup-2026-11/implementation/new-reading-mechanism/second-reader-memory-planning/codex/reports/RecentReadingMemory-Micro-Diagnostic-Huochu-Post-run-Report v0.md"
       ],
       "catalog_status": "not_cataloged",
       "notes": "Completed diagnostic-only micro run validating Recent Reading Memory formation quality on huochu p45-p61. 8 read units produced 10 active recent-memory entries; LLM health ok with 24 successes, 0 errors, 0 fallback. Consolidation not validated; no evidence catalog update or product-quality claim.",
@@ -1774,7 +1774,7 @@
         "bgjob_recent_reading_memory_beginning_huochu_20260524"
       ],
       "report_paths": [
-        "docs/implementation/new-reading-mechanism/second-reader-memory-planning/codex/reports/RecentReadingMemory-Beginning-Micro-Diagnostic-Huochu-Post-run-Report v0.md",
+        "docs/archive/pre-cleanup-2026-11/implementation/new-reading-mechanism/second-reader-memory-planning/codex/reports/RecentReadingMemory-Beginning-Micro-Diagnostic-Huochu-Post-run-Report v0.md",
         "reading-companion-backend/eval/runs/attentional_v2/attentional_v2_recent_reading_memory_beginning_huochu_20260524/analysis/recent_reading_memory_review/README.md"
       ],
       "catalog_status": "not_cataloged",
@@ -1812,7 +1812,7 @@
         "bgjob_recent_reading_memory_beginning_huochu_20260524_retry1"
       ],
       "report_paths": [
-        "docs/implementation/new-reading-mechanism/second-reader-memory-planning/codex/reports/RecentReadingMemory-Beginning-Micro-Diagnostic-Huochu-Retry1-Post-run-Report v0.md"
+        "docs/archive/pre-cleanup-2026-11/implementation/new-reading-mechanism/second-reader-memory-planning/codex/reports/RecentReadingMemory-Beginning-Micro-Diagnostic-Huochu-Retry1-Post-run-Report v0.md"
       ],
       "catalog_status": "not_cataloged",
       "notes": "Retry1 diagnostic for read.v27 Recent Reading Memory no-reason contract on huochu p1-p24 completed with exit code 0; 18 read units, 18 active recent_reading_memory entries, 0 recent append ops with reason, LLM health ok with 39 successes and 0 fallback. Diagnostic only; no evidence catalog update or product-quality claim.",
@@ -1849,7 +1849,7 @@
         "bgjob_recent_reading_memory_beginning_huochu_20260524_retry2"
       ],
       "report_paths": [
-        "docs/implementation/new-reading-mechanism/second-reader-memory-planning/codex/reports/RecentReadingMemory-Beginning-Micro-Diagnostic-Huochu-Retry2-Post-run-Report v0.md"
+        "docs/archive/pre-cleanup-2026-11/implementation/new-reading-mechanism/second-reader-memory-planning/codex/reports/RecentReadingMemory-Beginning-Micro-Diagnostic-Huochu-Retry2-Post-run-Report v0.md"
       ],
       "catalog_status": "not_cataloged",
       "notes": "Retry2 diagnostic for read.v28 source-established Recent Memory style on huochu p1-p24 completed with exit code 0; 12 read units, 16 active recent_reading_memory entries, 0 recent append ops with reason, LLM health ok with 26 successes and 0 fallback. Captured previously missed author-method unit; residual interpretive endings remain. Diagnostic only; no evidence catalog update or product-quality claim.",
@@ -1886,7 +1886,7 @@
         "bgjob_recent_reading_memory_beginning_huochu_20260524_retry3"
       ],
       "report_paths": [
-        "docs/implementation/new-reading-mechanism/second-reader-memory-planning/codex/reports/RecentReadingMemory-Beginning-Micro-Diagnostic-Huochu-Retry3-Post-run-Report v0.md"
+        "docs/archive/pre-cleanup-2026-11/implementation/new-reading-mechanism/second-reader-memory-planning/codex/reports/RecentReadingMemory-Beginning-Micro-Diagnostic-Huochu-Retry3-Post-run-Report v0.md"
       ],
       "catalog_status": "not_cataloged",
       "notes": "Retry3 diagnostic for read.v29 simplified Recent Memory style on huochu p1-p24 completed with exit code 0; 13 read units, 17 active recent_reading_memory entries, LLM health ok with 29 successes and 0 fallback. The broader rewrite reduced some forced tension labels but felt formulaic and is superseded by the read.v30 return-to-v28-shape prompt direction. Diagnostic only; no evidence catalog update or product-quality claim.",
@@ -1923,7 +1923,7 @@
         "bgjob_recent_reading_memory_beginning_huochu_20260524_retry4"
       ],
       "report_paths": [
-        "docs/implementation/new-reading-mechanism/second-reader-memory-planning/codex/reports/RecentReadingMemory-Beginning-Micro-Diagnostic-Huochu-Retry4-Post-run-Report v0.md"
+        "docs/archive/pre-cleanup-2026-11/implementation/new-reading-mechanism/second-reader-memory-planning/codex/reports/RecentReadingMemory-Beginning-Micro-Diagnostic-Huochu-Retry4-Post-run-Report v0.md"
       ],
       "catalog_status": "not_cataloged",
       "notes": "Retry4 diagnostic for read.v30 restored v28-shape Recent Memory style on huochu p1-p24 completed with exit code 0; 13 read-audit rows, 13 active recent_reading_memory entries, LLM health ok with 28 successes, 0 errors, 1 retry, and 0 fallback. Coverage and continuity are generally strong, but the no-default-heading-colon style rule was only partially effective and Unit 1 still produced no Recent Memory. Diagnostic only; no evidence catalog update or product-quality claim.",
@@ -1957,8 +1957,8 @@
         "bgjob_read_prompt_xml_full_diagnostic_20260526_xidaduo"
       ],
       "report_paths": [
-        "docs/implementation/new-reading-mechanism/second-reader-memory-planning/codex/reports/ReadPromptXML-Full-Active-Diagnostic-Post-run-Report v0.md",
-        "docs/implementation/new-reading-mechanism/second-reader-memory-planning/codex/reports/ReadPromptXML-Full-Active-Diagnostic-Reactions-And-RecentMemory-Full-Review v0.md"
+        "docs/archive/pre-cleanup-2026-11/implementation/new-reading-mechanism/second-reader-memory-planning/codex/reports/ReadPromptXML-Full-Active-Diagnostic-Post-run-Report v0.md",
+        "docs/archive/pre-cleanup-2026-11/implementation/new-reading-mechanism/second-reader-memory-planning/codex/reports/ReadPromptXML-Full-Active-Diagnostic-Reactions-And-RecentMemory-Full-Review v0.md"
       ],
       "catalog_status": "not_cataloged",
       "notes": "Read XML prompt / Recent Reading Memory full active diagnostic completed. Post-run report and full reactions/recent-memory review document are available. Five pipeline jobs finished with exit code 0; all LongSpan producers and Lane A reuse shards emitted summary outputs; strict LLM health passed with zero fallback-backed evidence. Diagnostic only; no evidence catalog update or product-quality claim.",

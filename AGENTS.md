@@ -45,7 +45,7 @@ Update when: document layering, reading order, task routing, or cross-project co
 - Do not remove the frontend repo's Figma Make history or generated structure unless the change has a clear maintenance benefit.
 
 ## Paused Memory / Planning Implementation Track
-- The repo-local Memory / Planning / Evaluation optimization design chain lives at `docs/implementation/new-reading-mechanism/second-reader-memory-planning/README.md`.
+- The repo-local Memory / Planning / Evaluation optimization design chain lives at `docs/archive/pre-cleanup-2026-11/implementation/new-reading-mechanism/second-reader-memory-planning/README.md`.
 - As of `DEC-103`, this track is paused / superseded as the default source for new mechanism implementation.
 - Treat ActiveTension expansion, Recent Reading Memory consolidation, Thread / Progression / Development memory, Read XML context migration, Detour, and source-backread work in that track as historical/reference material unless a later task explicitly re-adopts a slice.
 - As of `DEC-105`, retired Detour / source-backread / source-skill compatibility interfaces are not a current `attentional_v2` code, prompt, schema, audit, or test surface.
@@ -336,7 +336,7 @@ Update when: document layering, reading order, task routing, or cross-project co
 - `reading-companion-backend/AGENTS.md` when the task touches backend code, prompts, runtime, or API shaping
 - `reading-companion-frontend/AGENTS.md` when the task touches frontend routes, API adapters, UI copy, or generated structure
 - `docs/backend-reading-mechanism.md` when the task touches shared backend mechanism boundaries or mechanism doc routing
-- `docs/backend-reading-mechanisms/iterator_v1.md` when the task touches the current live/default reader internals
+- `docs/backend-reading-mechanisms/attentional_v2.md` when the task touches the current live/default reader internals
 - `contract/annotation-pack/v0/README.md` and its canonical schema when the task touches Annotation Pack minimal wire data, exact EPUB identity, Quote/Position anchors, schema IRI, internal pointer/report companions, or examples
 - `docs/implementation/annotation-pack/second-reader-annotation-pack-v0-detailed-design-and-implementation-handoff.md` when implementing or accepting an Annotation Pack slice
 - `contract/reading-product/v1/README.md` and its canonical schema when the task touches accepted Unit product data, U/R/M, BookDocument coordinates, complete-product publication, or downstream product consumers

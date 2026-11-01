@@ -7,7 +7,7 @@ Update when: startup commands, reload behavior, supervision, healthchecks, deplo
 
 This document defines how the Reading Companion project should be started in different environments.
 
-Unless noted otherwise, the runtime and recovery behavior described here refers to the current sequential deep-reading workflow rather than the older `book_analysis` capability, which is now retired and preserved only for compatibility/debugging.
+Unless noted otherwise, the runtime and recovery behavior described here refers to the current sequential deep-reading workflow rather than the older `book_analysis` capability, which is now retired; its old artifacts are display-only.
 
 ## Why This Exists
 - The project now has more than one valid way to run.
@@ -204,8 +204,14 @@ then update this document in the same task.
 - Resume safety is governed by `resume_compat_version`, not by deploy version or git state. Only changes to persisted recovery semantics should bump it.
 - Development mode treats cross-boot unfinished product jobs as untrusted. If a canonical product job record carries an older `boot_id`, the backend abandons that run, writes `dev_run_abandoned` to the internal system activity stream, and expects a fresh rerun.
 - Demo/prod mode resumes only when the job record and persisted runtime artifacts all match the current `resume_compat_version`.
-- If demo/prod detects an incompatible live checkpoint, it archives the current run under `_history/runs/<job_id>/`, clears live runtime artifacts, writes `resume_incompatible` plus `fresh_rerun_started`, and launches a fresh run without `--continue`.
+- If demo/prod detects an incompatible checkpoint, it leaves the old artifacts intact, pauses the job, and reports retirement with tag `pre-cleanup-2026-11`.
 - Stalled demo/prod runtimes may auto-resume once from the latest checkpoint. A second stall leaves the run in `paused` for operator review instead of retrying indefinitely.
 - Registry status meaning:
   - `abandoned` no longer means “process exited without a status file”
   - use it only when the process is gone and the registry cannot infer either trustworthy success or trustworthy failure from runtime state, exit code, outputs, or check probes
+
+## Step 0 recovery boundary
+
+Resume compatibility is `2`; attentional runtime schema is `2`, and full checkpoints require `checkpoint_format=lightweight-cleanup-2026-11`. Older runs explicitly report retirement and point to `pre-cleanup-2026-11`. Old books remain readable; startup backfill is unchanged. Chapter completion/checkpoint/Product finalization continue without slow-cycle model calls.
+
+Before Step 1 evaluation work: **resume 时固定原 reading_plan，避免重新 survey 改变阅读范围**. Step 0 deliberately leaves survey scheduling unchanged.

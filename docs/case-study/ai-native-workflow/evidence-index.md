@@ -33,7 +33,7 @@ Boundary statement: 本索引用于支撑 operator-side AI Harness 方法论，�
 | [Source Mirror](../../implementation/new-reading-mechanism/source-mirror.md) | 上下文治理 / 目标与意图控制 | 证明复杂设计先被 source-faithful mirror 保存，避免 AI 摘要遗漏。 |
 | [Requirement Ledger](../../implementation/new-reading-mechanism/requirement-ledger.md) | 目标与意图控制 / 执行可靠性 | 用 atomic requirements 和 disposition 防止大设计遗漏。 |
 | [Validation Matrix](../../implementation/new-reading-mechanism/validation-matrix.md) | 证据与评测 / 执行可靠性 | 定义 unit、integration、compatibility、runtime、evaluation、docs 验证层。 |
-| [Execution Tracker](../../implementation/new-reading-mechanism/new-reading-mechanism-execution-tracker.md) | 执行可靠性 / 复盘与学习 | 记录 phased implementation、landed behavior、validation posture、next moves。 |
+| [Execution Tracker](../../archive/pre-cleanup-2026-11/implementation/new-reading-mechanism/new-reading-mechanism-execution-tracker.md) | 执行可靠性 / 复盘与学习 | 记录 phased implementation、landed behavior、validation posture、next moves。 |
 | [Mechanism Pattern Ledger](../../implementation/new-reading-mechanism/mechanism-pattern-ledger.md) | 复盘与学习 / 证据与评测 | 保存 strengths、adoption candidates、failure modes、anti-patterns、status、next action。 |
 | [Dataset Platform Closed Loop](../../implementation/new-reading-mechanism/dataset-platform-closed-loop.md) | 证据与评测 / 执行可靠性 | 记录 source intake、case generation、packet review、repair loop、stop condition。 |
 | [Evaluation Evidence Catalog](../../../reading-companion-backend/docs/evaluation/evidence_catalog.md) | 证据与评测 / 可观测与交接 | 分类 current formal evidence、quality audits、historical evidence、superseded、failed、invalidated evidence。 |

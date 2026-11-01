@@ -103,7 +103,7 @@ Those strengths later became things V2 tried to selectively recover, not things 
 
 ### Primary refs
 
-- [iterator_v1.md](../backend-reading-mechanisms/iterator_v1.md)
+- [iterator_v1.md](../archive/pre-cleanup-2026-11/backend-reading-mechanisms/iterator_v1.md)
 - [decision-log.md](./decision-log.md)
   - `DEC-010`
   - `DEC-018`
@@ -131,7 +131,7 @@ So the project was already leaning toward a more runtime-semantic reader before 
 
 - [decision-log.md](./decision-log.md)
   - `DEC-010`
-- [iterator_v1.md](../backend-reading-mechanisms/iterator_v1.md)
+- [iterator_v1.md](../archive/pre-cleanup-2026-11/backend-reading-mechanisms/iterator_v1.md)
 
 ## 3. Shared Runtime and Sentence Substrate: The Precondition for V2
 
@@ -221,7 +221,7 @@ But it wanted those things without making prebuilt `section`s the cognitive cent
 
 ### Primary refs
 
-- [design-capture.md](../implementation/new-reading-mechanism/design-capture.md)
+- [design-capture.md](../archive/pre-cleanup-2026-11/implementation/new-reading-mechanism/design-capture.md)
 - [attentional_v2.md](../backend-reading-mechanisms/attentional_v2.md)
 
 ## 5. The First Implemented V2: Richer, More Dynamic, But Too Fragmented
@@ -282,7 +282,7 @@ So the first implemented V2 was an important success, but not yet a coherent end
   - `DEC-020`
   - `DEC-021`
   - `DEC-022`
-- [runtime-artifact-map.md](../implementation/new-reading-mechanism/runtime-artifact-map.md)
+- [runtime-artifact-map.md](../archive/pre-cleanup-2026-11/implementation/new-reading-mechanism/runtime-artifact-map.md)
 
 ## 6. Formal Evaluation Changed the Question From “Tune It” to “Restructure It”
 
@@ -317,8 +317,8 @@ That decision says a lot about the project's judgment:
 
 ### Primary refs
 
-- [attentional_v2_accumulation_benchmark_v1_judged_rerun_20260407_followup_reflection_and_decisions.md](../../reading-companion-backend/docs/evaluation/long_span/attentional_v2_accumulation_benchmark_v1_judged_rerun_20260407_followup_reflection_and_decisions.md)
-- [attentional_v2_structural_rework_plan.md](../implementation/new-reading-mechanism/attentional_v2_structural_rework_plan.md)
+- [attentional_v2_accumulation_benchmark_v1_judged_rerun_20260407_followup_reflection_and_decisions.md](../../reading-companion-backend/docs/archive/pre-cleanup-2026-11/evaluation/long_span/attentional_v2_accumulation_benchmark_v1_judged_rerun_20260407_followup_reflection_and_decisions.md)
+- [attentional_v2_structural_rework_plan.md](../archive/pre-cleanup-2026-11/implementation/new-reading-mechanism/attentional_v2_structural_rework_plan.md)
 
 ## 7. Post-Eval Structural Rework: From Complex Local Cycle to Simpler Reading Loop
 
@@ -407,7 +407,7 @@ This is the point where V2 finally began to look like the mechanism it had been 
 ### Primary refs
 
 - [attentional_v2.md](../backend-reading-mechanisms/attentional_v2.md)
-- [attentional_v2_structural_rework_plan.md](../implementation/new-reading-mechanism/attentional_v2_structural_rework_plan.md)
+- [attentional_v2_structural_rework_plan.md](../archive/pre-cleanup-2026-11/implementation/new-reading-mechanism/attentional_v2_structural_rework_plan.md)
 - [current-state.md](../current-state.md)
 - [registry.md](../tasks/registry.md)
 
@@ -645,13 +645,13 @@ That is the current frontier.
 - shared mechanism boundary:
   - [backend-reading-mechanism.md](../backend-reading-mechanism.md)
 - current V1 authority:
-  - [iterator_v1.md](../backend-reading-mechanisms/iterator_v1.md)
+  - [iterator_v1.md](../archive/pre-cleanup-2026-11/backend-reading-mechanisms/iterator_v1.md)
 - current V2 authority:
   - [attentional_v2.md](../backend-reading-mechanisms/attentional_v2.md)
 - post-eval V2 rework plan:
-  - [attentional_v2_structural_rework_plan.md](../implementation/new-reading-mechanism/attentional_v2_structural_rework_plan.md)
+  - [attentional_v2_structural_rework_plan.md](../archive/pre-cleanup-2026-11/implementation/new-reading-mechanism/attentional_v2_structural_rework_plan.md)
 - initial V2 design capture:
-  - [design-capture.md](../implementation/new-reading-mechanism/design-capture.md)
+  - [design-capture.md](../archive/pre-cleanup-2026-11/implementation/new-reading-mechanism/design-capture.md)
 - evaluation constitution:
   - [backend-reader-evaluation.md](../backend-reader-evaluation.md)
 - active user-level benchmark:

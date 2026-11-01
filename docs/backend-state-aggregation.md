@@ -41,7 +41,7 @@ Use `docs/api-contract.md` for exact fields and routes. Use this file to underst
   - No current frontend, Library discovery flow, REST route, or WebSocket surface reads or exposes this tree. Its placement under `public/` denotes content-safety and future product-facing eligibility, not current HTTP availability.
   - `tests/annotation_pack/fixtures/tiny-reader/` is the tracked public-safe rebuild/golden proof for this layout, a complete Reading Product producer fixture, exact EPUB identity, and Quote/Position round trips. It is bounded deterministic-fixture evidence, not an additional runtime source, a real-LLM full-book conversion, or an external Reader/public-service claim.
 - `_mechanisms/iterator_v1/derived/structure.json`
-  - Current `iterator_v1`-owned derived traversal artifact.
+  - Historical `iterator_v1` traversal artifact, read only by compatibility views.
   - Carries chapter section trees, `segment_ref`, and iterator-specific traversal metadata.
   - Public aggregation still uses it where section-level backfill or iterator-era chapter structure is required.
 - `_mechanisms/attentional_v2/derived/chapter_result_compatibility/*.json`
@@ -72,19 +72,12 @@ Use `docs/api-contract.md` for exact fields and routes. Use this file to underst
 - `_mechanisms/attentional_v2/internal/diagnostics/events.jsonl`
   - Debug-only diagnostics stream for `attentional_v2`.
   - Controller-facing forensics, candidate traces, and other deep debug events belong here instead of the shared runtime history.
-- `_mechanisms/attentional_v2/runtime/active_attention.json`
-  - Deprecated hot-attention artifact for `attentional_v2`; it may still exist in runtime trees while cleanup remains pending, but it is no longer the target near-term memory design.
-  - The remaining runtime shape is `active_attention.active_items[]`; each item may carry lightweight `attention_tags[]`.
-  - Current Digest prompt-facing continuity is owned by `ReadingMemory` assembled from `recent_reading_memory` plus selected Unit Memory Understanding, not by active-attention projection.
-  - The old `working_state` name and fixed question/tension/hypothesis/motif digest lists are historical, not current aggregation truth.
-  - Historical `local_hypothesis` / `live_hypotheses` labels should be read only as old provenance vocabulary. Current aggregation should treat hypothesis-like hot material as tagged active-attention items, not as a separate state layer.
-  - `gate_state`, `pressure_snapshot`, and old working-pressure files may appear in historical output trees but must not be treated as current aggregation truth.
 - `_mechanisms/attentional_v2/runtime/read_audit.jsonl`
   - Per-unit audit history for `attentional_v2` reads.
   - New rows after the Read naturalization cutover use `reading_impression` for the immediate unit-level read impression.
   - Historical rows may contain `unit_delta`; aggregation should treat that as the old name for the pre-cutover local read impression, not as a current public field.
 - `_mechanisms/iterator_v1/runtime/reader_memory.json`
-  - Iterator-private live reader memory for resume and continuity.
+  - Historical iterator-private memory; not a supported resume source.
   - Shared aggregation should only read it through storage helpers when compatibility or recovery behavior requires it.
 - `_mechanisms/iterator_v1/runtime/checkpoints/*`
   - Iterator-private section progress checkpoints.
@@ -218,7 +211,7 @@ Use `docs/api-contract.md` for exact fields and routes. Use this file to underst
   - Top-level `_runtime/` contains cross-mechanism runtime state: thin shell files plus the Reading Product Store and partial projection under `_runtime/reading-products/`.
   - Only validated complete Reading Product revisions are published under `public/reading-products/`.
   - `_mechanisms/<mechanism_key>/` contains mechanism-private derived structures, runtime memory/checkpoints, diagnostics, and optional eval exports.
-  - `_mechanisms/iterator_v1/derived/structure.json` remains a current-mechanism artifact that aggregation may still consult for `iterator_v1`-shaped section views and compatibility backfill.
+  - `_mechanisms/iterator_v1/derived/structure.json` remains a historical artifact that aggregation may still consult for `iterator_v1`-shaped section views and compatibility backfill.
 - Annotation Pack publication vs runtime truth
   - The exporter is the only boundary that may turn exact verified EPUB identity, coherent `BookDocument` source coordinates, and producer-adapter drafts into the minimal public Annotation Pack wire shape.
   - Responsibility is deliberately split: the verified source substrate owns book/file facts; complete Reading Product owns accepted annotation choice (`kind`, exact source range/quote, conditional Note text, settlement time); the generic resolver/builder owns href/TextPosition projection, W3C shaping, IDs, ordering, validation, and packaging.
@@ -239,6 +232,10 @@ Use `docs/api-contract.md` for exact fields and routes. Use this file to underst
 - Read `docs/backend-sequential-lifecycle.md` first when the question is "how does the job behave over time?"
 - Read `docs/backend-reading-mechanism.md` when the question is "what is shared across mechanisms and which doc owns this concept?"
 - Read `docs/backend-reading-mechanisms/attentional_v2.md` when the question is "how does the current default mechanism turn sentence-order intake into meaning-unit reading and live attention state?"
-- Read `docs/backend-reading-mechanisms/iterator_v1.md` when the question is "how does the supported section-first fallback mechanism turn one selected section into local reader work and live attention state?"
+- Read `docs/archive/pre-cleanup-2026-11/backend-reading-mechanisms/iterator_v1.md` when the question is "how does the supported section-first fallback mechanism turn one selected section into local reader work and live attention state?"
 - Read this file when the question is "which artifacts feed this payload?" or "where does normalization happen?"
 - Only drop into `catalog.py`, `jobs.py`, or `user_marks.py` after the system-level source mapping in this document is no longer enough.
+
+## Step 0 input boundary
+
+New attentional runs do not create active_attention, reflective_frames, knowledge_activations or reconsolidation stores. Product Units remain the source of current chapter/Marginalia projections; `slow_cycle.py` retains their deterministic helpers only. Legacy artifact lookup, startup backfill and explicit Annotation Pack legacy adapter are preserved for old-library display/export. Their availability does not imply executable iterator or old-checkpoint resume support. New evaluation reads Product-accepted Marginalia; historical scores remain immutable.

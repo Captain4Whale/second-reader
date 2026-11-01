@@ -116,7 +116,7 @@ CLI main.py -> reading_runtime.parse_book/read_book
 
 | 内容 | 归档方案 | 影响面 |
 | --- | --- | --- |
-| `docs/backend-reading-mechanisms/iterator_v1.md` | 整篇移入根归档；机制 catalog 改为 retired、链接归档 | README、AGENTS、workspace/lifecycle/mechanism 路由同步；不保留误称 supported fallback 的正文 |
+| `docs/archive/pre-cleanup-2026-11/backend-reading-mechanisms/iterator_v1.md` | 整篇移入根归档；机制 catalog 改为 retired、链接归档 | README、AGENTS、workspace/lifecycle/mechanism 路由同步；不保留误称 supported fallback 的正文 |
 | 只服务旧机制的设计/阶段实施材料、paused Memory/Planning 轨道 | 保留完整内容，按主题移入归档；当前 approved design/运行说明不挪 | 先按 current-state、registry、decision-log、stable docs 引用找入链；不是整目录通配移动 |
 | `B/docs/evaluation/excerpt/`、`long_span/` 等旧结果解读及对应 research 解读 | 旧 interpretation / appendix 移入后端归档；保留 run id、日期、原文件名和证据路径 | run ledger/evidence catalog 的报告路径、Markdown 链接需同步；历史数值不重算、不换口径 |
 | `B/docs/evaluation/user_level/` 中旧评测报告 | 报告可以归档；**数据集、note matching、precision/recall 代码不随报告退役** | 活跃评测指南与可重现来源必须仍可找到 |

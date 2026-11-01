@@ -125,7 +125,7 @@ Deduplication key for future refreshes:
 - Agent note: `这个翻转是全章最锐利的一刀：不是人向生活追问意义，而是生活向人发问。意义不再是被发现的抽象答案，而是被承担的具体责任。`
 - Why selected: good model for compact philosophical reframing that remains tied to the sentence.
 - Quality signal: surfaced in score-impact reaction appendix as a high-value candidate.
-- Source path: `reading-companion-backend/docs/evaluation/long_span/attentional_v2_accumulation_benchmark_v1_judged_rerun_20260407_score_impact_reaction_appendix.md`
+- Source path: `reading-companion-backend/docs/archive/pre-cleanup-2026-11/evaluation/long_span/attentional_v2_accumulation_benchmark_v1_judged_rerun_20260407_score_impact_reaction_appendix.md`
 
 ### 7. Respecting The Teacher, Rejecting The Doctrine
 
@@ -353,7 +353,7 @@ Deduplication key for future refreshes:
 - Agent note: `The pivot 'Instead of being…could become' is the hinge: 'autonomous unit' was a research designation with soft autonomy, while 'Alphabet company' is a corporate subsidiary with hard accountability.`
 - Why selected: very clear structural-turn annotation for narrative nonfiction.
 - Quality signal: high-value candidate in score-impact reaction appendix.
-- Source path: `reading-companion-backend/docs/evaluation/long_span/attentional_v2_accumulation_benchmark_v1_judged_rerun_20260407_score_impact_reaction_appendix.md`
+- Source path: `reading-companion-backend/docs/archive/pre-cleanup-2026-11/evaluation/long_span/attentional_v2_accumulation_benchmark_v1_judged_rerun_20260407_score_impact_reaction_appendix.md`
 
 ### 26. Design Language As Strategy
 
@@ -365,7 +365,7 @@ Deduplication key for future refreshes:
 - Agent note: `'Cheerful but affordable'—not cold, not luxury. Jobs names the exact aesthetic tension: warmth without exclusivity, democratized modernism for the home computer.`
 - Why selected: good example of extracting product strategy from a design adjective.
 - Quality signal: high-value candidate in score-impact reaction appendix.
-- Source path: `reading-companion-backend/docs/evaluation/long_span/attentional_v2_accumulation_benchmark_v1_judged_rerun_20260407_score_impact_reaction_appendix.md`
+- Source path: `reading-companion-backend/docs/archive/pre-cleanup-2026-11/evaluation/long_span/attentional_v2_accumulation_benchmark_v1_judged_rerun_20260407_score_impact_reaction_appendix.md`
 
 ### 27. A Definition Becomes A Control System
 
@@ -453,7 +453,7 @@ High-yield artifact families for future refreshes:
   - use only Agent `best_reaction`; `exact_match` and `focused_hit` are strong quality signals
 - `reading-companion-backend/eval/runs/attentional_v2/attentional_v2_f4a_quality_audit_20260419/summary/report.md`
   - useful for short-window, reading-time style
-- `reading-companion-backend/docs/evaluation/long_span/attentional_v2_accumulation_benchmark_v1_judged_rerun_20260407_score_impact_reaction_appendix.md`
+- `reading-companion-backend/docs/archive/pre-cleanup-2026-11/evaluation/long_span/attentional_v2_accumulation_benchmark_v1_judged_rerun_20260407_score_impact_reaction_appendix.md`
   - useful historical high-score candidates, especially when raw runtime artifacts are hard to locate
 - `reading-companion-backend/docs/evaluation/highlight_comparison_ch1.md`
 - `reading-companion-backend/docs/evaluation/highlight_comparison_ch2.md`

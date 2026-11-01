@@ -96,7 +96,7 @@ Use `docs/backend-sequential-lifecycle.md` for the job-level workflow over time.
     - `Digest`
     - `Reading Runner post-Digest settlement`
     - `surfaced reactions`
-    - `chapter-end slow cycle`
+    - `chapter completion and Product finalization`
   - If a mechanism doc mentions older labels such as `trigger`, `zoom_read`, `meaning_unit_closure`, `controller_decision`, `Navigate`, `Navigate.route`, `bridge_resolution`, `Detour`, `source-backread`, or source skills, it should make clear whether those are historical module-family terms or still-live runtime concepts. After `DEC-105` and `DEC-107`, Detour / source-backread / source-skill compatibility interfaces and the old `Navigate` LLM identity are not a current live surface for `attentional_v2`.
 
 ## Mechanism Status Model
@@ -112,6 +112,8 @@ Use `docs/backend-sequential-lifecycle.md` for the job-level workflow over time.
   - no longer the active direction, preserved for historical or migration reasons
 
 ## Current Catalog Snapshot
+- Only `attentional_v2` is executable after Step 0. `iterator_v1`, `both`, and `book_analysis` explicitly report retirement; no legacy checkpoint conversion or automatic fresh rerun is supported. Shared parser/storage/UI helpers remain in `iterator_reader/` without its executor.
+
 - Current catalog authority lives in `docs/backend-reading-mechanisms/README.md`.
 - Current entries are:
   - `attentional_v2`
@@ -119,8 +121,8 @@ Use `docs/backend-sequential-lifecycle.md` for the job-level workflow over time.
     - doc: `docs/backend-reading-mechanisms/attentional_v2.md`
     - artifact root: `_mechanisms/attentional_v2/`
   - `iterator_v1`
-    - status: `fallback`
-    - doc: `docs/backend-reading-mechanisms/iterator_v1.md`
+    - status: `retired`
+    - doc: `docs/archive/pre-cleanup-2026-11/backend-reading-mechanisms/iterator_v1.md`
     - artifact root: `_mechanisms/iterator_v1/`
 
 ## Routing Guide
@@ -136,10 +138,10 @@ Use `docs/backend-sequential-lifecycle.md` for the job-level workflow over time.
 - Read `docs/backend-reading-mechanisms/attentional_v2.md` when the question is:
   - how does the current default attention-frontier mechanism parse and read today?
   - how does the default deep-reading path package prompts, memory, and progress?
-- Read `docs/backend-reading-mechanisms/iterator_v1.md` when the question is:
-  - how does the legacy-compatible section-first fallback mechanism read?
-  - what do `section` or `subsegment` mean in the fallback system?
-  - how does `iterator_v1` package prompts, memory, and progress when explicitly selected or resumed from old runs?
+- Read `docs/archive/pre-cleanup-2026-11/backend-reading-mechanisms/iterator_v1.md` when the question is:
+  - how did the retired section-first mechanism read?
+  - what do `section` or `subsegment` mean in the historical system?
+  - how does `iterator_v1` package prompts, memory, and progress before its retirement?
   - what ontology or control loop does that mechanism own?
 
 ## Maintenance Rules
@@ -169,7 +171,7 @@ Use `docs/backend-sequential-lifecycle.md` for the job-level workflow over time.
   - owns mechanism catalog details and authoring rules
 - `docs/backend-reading-mechanisms/<mechanism_key>.md`
   - owns one mechanism's internal reading design
-- `docs/implementation/new-reading-mechanism/second-reader-memory-planning/README.md`
+- `docs/archive/pre-cleanup-2026-11/implementation/new-reading-mechanism/second-reader-memory-planning/README.md`
   - preserves the paused / superseded Memory / Planning / Evaluation design chain after `DEC-103`
   - is historical/reference material unless a later task explicitly re-adopts a slice
   - does not redefine shared mechanism boundaries or replace stable mechanism docs

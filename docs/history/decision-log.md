@@ -504,14 +504,14 @@ Update when: a major product or engineering decision is made, reversed, or becom
 
 **Why this path won**: Keeping `docs/backend-reading-mechanism.md` as the shared platform/router doc preserves one stable shared entrypoint, while a dedicated `docs/backend-reading-mechanisms/` folder gives each mechanism equal documentary standing. That makes design-only mechanisms visible early, keeps shared boundaries clean, and prevents one mechanism's ontology from becoming implicit backend law.
 
-**What changed in the system**: `docs/backend-reading-mechanism.md` now owns only shared mechanism-platform rules, status model, and doc routing. `docs/backend-reading-mechanisms/README.md` now owns the mechanism catalog and authoring rules. `docs/backend-reading-mechanisms/iterator_v1.md` now owns the live mechanism internals that previously lived in the shared doc, and `docs/backend-reading-mechanisms/attentional_v2.md` records the future design as a stable `design-only` mechanism doc.
+**What changed in the system**: `docs/backend-reading-mechanism.md` now owns only shared mechanism-platform rules, status model, and doc routing. `docs/backend-reading-mechanisms/README.md` now owns the mechanism catalog and authoring rules. `docs/archive/pre-cleanup-2026-11/backend-reading-mechanisms/iterator_v1.md` now owns the live mechanism internals that previously lived in the shared doc, and `docs/backend-reading-mechanisms/attentional_v2.md` records the future design as a stable `design-only` mechanism doc.
 
 **Why it matters later**: This is the documentation boundary that should keep future multi-mechanism work legible. Later contributors need to know which facts are shared platform rules, which facts belong to one mechanism, and how to add a new mechanism doc without re-centering the whole repo on the current default reader.
 
 **Primary evidence**:
 - `docs/backend-reading-mechanism.md`
 - `docs/backend-reading-mechanisms/README.md`
-- `docs/backend-reading-mechanisms/iterator_v1.md`
+- `docs/archive/pre-cleanup-2026-11/backend-reading-mechanisms/iterator_v1.md`
 - `docs/backend-reading-mechanisms/attentional_v2.md`
 - `AGENTS.md`
 - `reading-companion-backend/AGENTS.md`
@@ -822,7 +822,7 @@ Update when: a major product or engineering decision is made, reversed, or becom
 
 **Primary evidence**:
 - `docs/implementation/new-reading-mechanism/dataset-quality-hardening.md`
-- `docs/implementation/new-reading-mechanism/new-reading-mechanism-execution-tracker.md`
+- `docs/archive/pre-cleanup-2026-11/implementation/new-reading-mechanism/new-reading-mechanism-execution-tracker.md`
 - `docs/agent-handoff.md`
 - `reading-companion-backend/eval/runs/attentional_v2/attentional_v2_integrity_reviewed_slice_round3_repair_pass2_20260326/summary/report.md`
 - `reading-companion-backend/eval/runs/attentional_v2/attentional_v2_vs_iterator_v1_chapter_core_en_round1_20260326/summary/report.md`
@@ -850,7 +850,7 @@ Update when: a major product or engineering decision is made, reversed, or becom
 - `docs/implementation/new-reading-mechanism/modern-nonfiction-expansion-booklist.md`
 - `docs/implementation/new-reading-mechanism/private-library-promotion-round1.md`
 - `docs/implementation/new-reading-mechanism/private-library-promotion-round1-execution.md`
-- `docs/implementation/new-reading-mechanism/new-reading-mechanism-execution-tracker.md`
+- `docs/archive/pre-cleanup-2026-11/implementation/new-reading-mechanism/new-reading-mechanism-execution-tracker.md`
 - `reading-companion-backend/eval/manifests/source_books/attentional_v2_private_library_screen_v2.json`
 - `reading-companion-backend/eval/manifests/local_refs/attentional_v2_private_library_v2.json`
 
@@ -876,7 +876,7 @@ Update when: a major product or engineering decision is made, reversed, or becom
 - `docs/backend-reader-evaluation.md`
 - `reading-companion-backend/AGENTS.md`
 - `docs/implementation/new-reading-mechanism/mechanism-pattern-ledger.md`
-- `docs/implementation/new-reading-mechanism/new-reading-mechanism-execution-tracker.md`
+- `docs/archive/pre-cleanup-2026-11/implementation/new-reading-mechanism/new-reading-mechanism-execution-tracker.md`
 - `docs/agent-handoff.md`
 
 ## Entry 33
@@ -956,7 +956,7 @@ Update when: a major product or engineering decision is made, reversed, or becom
 - `docs/backend-reader-evaluation.md`
 - `docs/current-state.md`
 - `docs/tasks/registry.md`
-- `docs/implementation/new-reading-mechanism/new-reading-mechanism-execution-tracker.md`
+- `docs/archive/pre-cleanup-2026-11/implementation/new-reading-mechanism/new-reading-mechanism-execution-tracker.md`
 
 **Decision / Inflection**: Make new runtime and evaluation processes concurrency-adaptive by default instead of relying on fixed worker counts inside individual scripts.
 
@@ -1134,7 +1134,7 @@ Update when: a major product or engineering decision is made, reversed, or becom
 **Primary evidence**:
 - `docs/implementation/new-reading-mechanism/question-aligned-case-construction.md`
 - `docs/implementation/new-reading-mechanism/dataset-platform-closed-loop.md`
-- `docs/implementation/new-reading-mechanism/new-reading-mechanism-execution-tracker.md`
+- `docs/archive/pre-cleanup-2026-11/implementation/new-reading-mechanism/new-reading-mechanism-execution-tracker.md`
 - `docs/tasks/registry.md`
 - `docs/tasks/registry.json`
 
@@ -1196,7 +1196,7 @@ Update when: a major product or engineering decision is made, reversed, or becom
 - `docs/tasks/registry.json`
 - `docs/implementation/new-reading-mechanism/question-aligned-case-construction.md`
 - `docs/implementation/new-reading-mechanism/dataset-platform-closed-loop.md`
-- `docs/implementation/new-reading-mechanism/new-reading-mechanism-execution-tracker.md`
+- `docs/archive/pre-cleanup-2026-11/implementation/new-reading-mechanism/new-reading-mechanism-execution-tracker.md`
 
 ## Entry 44
 **ID**: DEC-047
@@ -1222,7 +1222,7 @@ Update when: a major product or engineering decision is made, reversed, or becom
 - `docs/tasks/registry.md`
 - `docs/tasks/registry.json`
 - `docs/implementation/new-reading-mechanism/dataset-platform-closed-loop.md`
-- `docs/implementation/new-reading-mechanism/new-reading-mechanism-execution-tracker.md`
+- `docs/archive/pre-cleanup-2026-11/implementation/new-reading-mechanism/new-reading-mechanism-execution-tracker.md`
 
 ## Entry 45
 **ID**: DEC-048
@@ -1287,7 +1287,7 @@ The old active windows `nawaer_baodian_private_zh__wealth`, `nawaer_baodian_priv
 - `docs/current-state.md`
 - `docs/tasks/registry.md`
 - `docs/tasks/registry.json`
-- `docs/implementation/new-reading-mechanism/new-reading-mechanism-execution-tracker.md`
+- `docs/archive/pre-cleanup-2026-11/implementation/new-reading-mechanism/new-reading-mechanism-execution-tracker.md`
 
 ## Entry 47
 **ID**: DEC-050
@@ -1322,7 +1322,7 @@ The old active windows `nawaer_baodian_private_zh__wealth`, `nawaer_baodian_priv
 - `docs/current-state.md`
 - `docs/tasks/registry.md`
 - `docs/tasks/registry.json`
-- `docs/implementation/new-reading-mechanism/new-reading-mechanism-execution-tracker.md`
+- `docs/archive/pre-cleanup-2026-11/implementation/new-reading-mechanism/new-reading-mechanism-execution-tracker.md`
 
 ## Entry 48
 **ID**: DEC-051
@@ -1356,7 +1356,7 @@ The old active windows `nawaer_baodian_private_zh__wealth`, `nawaer_baodian_priv
 - `docs/current-state.md`
 - `docs/tasks/registry.md`
 - `docs/tasks/registry.json`
-- `docs/implementation/new-reading-mechanism/new-reading-mechanism-execution-tracker.md`
+- `docs/archive/pre-cleanup-2026-11/implementation/new-reading-mechanism/new-reading-mechanism-execution-tracker.md`
 
 ## Entry 49
 **ID**: DEC-052
@@ -1388,7 +1388,7 @@ The old active windows `nawaer_baodian_private_zh__wealth`, `nawaer_baodian_priv
 - `docs/current-state.md`
 - `docs/tasks/registry.md`
 - `docs/tasks/registry.json`
-- `docs/implementation/new-reading-mechanism/new-reading-mechanism-execution-tracker.md`
+- `docs/archive/pre-cleanup-2026-11/implementation/new-reading-mechanism/new-reading-mechanism-execution-tracker.md`
 
 ## Entry 50
 **ID**: DEC-053
@@ -1419,7 +1419,7 @@ The old active windows `nawaer_baodian_private_zh__wealth`, `nawaer_baodian_priv
 - `docs/current-state.md`
 - `docs/tasks/registry.md`
 - `docs/tasks/registry.json`
-- `docs/implementation/new-reading-mechanism/new-reading-mechanism-execution-tracker.md`
+- `docs/archive/pre-cleanup-2026-11/implementation/new-reading-mechanism/new-reading-mechanism-execution-tracker.md`
 
 ## Entry 51
 **ID**: DEC-054
@@ -1479,7 +1479,7 @@ The old active windows `nawaer_baodian_private_zh__wealth`, `nawaer_baodian_priv
 - `docs/backend-reading-mechanism.md`
 - `docs/backend-reading-mechanisms/README.md`
 - `docs/backend-reading-mechanisms/attentional_v2.md`
-- `docs/backend-reading-mechanisms/iterator_v1.md`
+- `docs/archive/pre-cleanup-2026-11/backend-reading-mechanisms/iterator_v1.md`
 - `docs/backend-sequential-lifecycle.md`
 - `docs/backend-state-aggregation.md`
 - `docs/api-integration.md`
@@ -1511,7 +1511,7 @@ The old active windows `nawaer_baodian_private_zh__wealth`, `nawaer_baodian_priv
 - `docs/tasks/registry.md`
 - `docs/tasks/registry.json`
 - `docs/implementation/new-reading-mechanism/phase9-compat-cutover-roadmap.md`
-- `docs/implementation/new-reading-mechanism/new-reading-mechanism-execution-tracker.md`
+- `docs/archive/pre-cleanup-2026-11/implementation/new-reading-mechanism/new-reading-mechanism-execution-tracker.md`
 - `docs/api-integration.md`
 - `docs/backend-state-aggregation.md`
 
@@ -1535,8 +1535,8 @@ The old active windows `nawaer_baodian_private_zh__wealth`, `nawaer_baodian_priv
 
 **Primary evidence**:
 - `docs/backend-reading-mechanisms/attentional_v2.md`
-- `docs/implementation/new-reading-mechanism/attentional_v2_structural_rework_plan.md`
-- `reading-companion-backend/docs/evaluation/long_span/attentional_v2_accumulation_benchmark_v1_judged_rerun_20260407_followup_reflection_and_decisions.md`
+- `docs/archive/pre-cleanup-2026-11/implementation/new-reading-mechanism/attentional_v2_structural_rework_plan.md`
+- `reading-companion-backend/docs/archive/pre-cleanup-2026-11/evaluation/long_span/attentional_v2_accumulation_benchmark_v1_judged_rerun_20260407_followup_reflection_and_decisions.md`
 - `reading-companion-backend/src/attentional_v2/runner.py`
 - `reading-companion-backend/src/attentional_v2/nodes.py`
 - `reading-companion-backend/src/attentional_v2/schemas.py`
@@ -1561,7 +1561,7 @@ The old active windows `nawaer_baodian_private_zh__wealth`, `nawaer_baodian_priv
 
 **Primary evidence**:
 - `docs/backend-reading-mechanisms/attentional_v2.md`
-- `docs/implementation/new-reading-mechanism/attentional_v2_structural_rework_plan.md`
+- `docs/archive/pre-cleanup-2026-11/implementation/new-reading-mechanism/attentional_v2_structural_rework_plan.md`
 - `docs/current-state.md`
 - `docs/tasks/registry.md`
 - `reading-companion-backend/src/attentional_v2/runner.py`
@@ -1616,7 +1616,7 @@ The old active windows `nawaer_baodian_private_zh__wealth`, `nawaer_baodian_priv
 - `docs/backend-reading-mechanisms/attentional_v2.md`
 - `docs/current-state.md`
 - `docs/tasks/registry.md`
-- `docs/implementation/new-reading-mechanism/attentional_v2_structural_rework_plan.md`
+- `docs/archive/pre-cleanup-2026-11/implementation/new-reading-mechanism/attentional_v2_structural_rework_plan.md`
 - `reading-companion-backend/src/attentional_v2/runner.py`
 - `reading-companion-backend/src/attentional_v2/resume.py`
 - `reading-companion-backend/src/attentional_v2/state_migration.py`
@@ -1670,7 +1670,7 @@ The old active windows `nawaer_baodian_private_zh__wealth`, `nawaer_baodian_priv
 - `docs/current-state.md`
 - `docs/tasks/registry.md`
 - `docs/tasks/registry.json`
-- `docs/implementation/new-reading-mechanism/attentional_v2_structural_rework_plan.md`
+- `docs/archive/pre-cleanup-2026-11/implementation/new-reading-mechanism/attentional_v2_structural_rework_plan.md`
 - `reading-companion-backend/src/attentional_v2/intake.py`
 - `reading-companion-backend/src/attentional_v2/retrieval.py`
 - `reading-companion-backend/src/attentional_v2/bridge.py`
@@ -1705,8 +1705,8 @@ The old active windows `nawaer_baodian_private_zh__wealth`, `nawaer_baodian_priv
 - `docs/current-state.md`
 - `docs/tasks/registry.md`
 - `docs/tasks/registry.json`
-- `docs/implementation/new-reading-mechanism/attentional_v2_structural_rework_plan.md`
-- `docs/implementation/new-reading-mechanism/new-reading-mechanism-execution-tracker.md`
+- `docs/archive/pre-cleanup-2026-11/implementation/new-reading-mechanism/attentional_v2_structural_rework_plan.md`
+- `docs/archive/pre-cleanup-2026-11/implementation/new-reading-mechanism/new-reading-mechanism-execution-tracker.md`
 - `reading-companion-backend/src/attentional_v2/runner.py`
 - `reading-companion-backend/src/attentional_v2/read_context.py`
 - `reading-companion-backend/src/attentional_v2/resume.py`
@@ -1744,8 +1744,8 @@ The old active windows `nawaer_baodian_private_zh__wealth`, `nawaer_baodian_priv
 - `reading-companion-backend/eval/manifests/splits/attentional_v2_user_level_selective_v1_draft.json`
 - `reading-companion-backend/state/eval_local_datasets/user_level_benchmarks/attentional_v2_user_level_selective_v1/manifest.json`
 - `reading-companion-backend/docs/evaluation/user_level/README.md`
-- `reading-companion-backend/docs/evaluation/excerpt/README.md`
-- `reading-companion-backend/docs/research/attentional_v2_post_phase_d_eval_comparative_audit_20260414.md`
+- `reading-companion-backend/docs/archive/pre-cleanup-2026-11/evaluation/excerpt/README.md`
+- `reading-companion-backend/docs/archive/pre-cleanup-2026-11/research/attentional_v2_post_phase_d_eval_comparative_audit_20260414.md`
 
 ## Entry 60
 **ID**: DEC-063
@@ -1888,7 +1888,7 @@ The old active windows `nawaer_baodian_private_zh__wealth`, `nawaer_baodian_priv
 
 **Primary evidence**:
 - `docs/backend-reading-mechanisms/attentional_v2.md`
-- `docs/implementation/new-reading-mechanism/attentional_v2_structural_rework_plan.md`
+- `docs/archive/pre-cleanup-2026-11/implementation/new-reading-mechanism/attentional_v2_structural_rework_plan.md`
 - `docs/current-state.md`
 - `docs/tasks/registry.md`
 - `docs/tasks/registry.json`
@@ -1913,7 +1913,7 @@ The old active windows `nawaer_baodian_private_zh__wealth`, `nawaer_baodian_priv
 
 **Primary evidence**:
 - `docs/backend-reading-mechanisms/attentional_v2.md`
-- `docs/implementation/new-reading-mechanism/attentional_v2_structural_rework_plan.md`
+- `docs/archive/pre-cleanup-2026-11/implementation/new-reading-mechanism/attentional_v2_structural_rework_plan.md`
 - `docs/current-state.md`
 - `docs/tasks/registry.md`
 - `docs/tasks/registry.json`
@@ -1942,7 +1942,7 @@ The old active windows `nawaer_baodian_private_zh__wealth`, `nawaer_baodian_priv
 
 **Primary evidence**:
 - `docs/backend-reading-mechanisms/attentional_v2.md`
-- `docs/implementation/new-reading-mechanism/attentional_v2_structural_rework_plan.md`
+- `docs/archive/pre-cleanup-2026-11/implementation/new-reading-mechanism/attentional_v2_structural_rework_plan.md`
 - `docs/current-state.md`
 - `docs/tasks/registry.md`
 - `docs/tasks/registry.json`
@@ -1968,7 +1968,7 @@ The old active windows `nawaer_baodian_private_zh__wealth`, `nawaer_baodian_priv
 
 **Primary evidence**:
 - `docs/backend-reading-mechanisms/attentional_v2.md`
-- `docs/implementation/new-reading-mechanism/attentional_v2_structural_rework_plan.md`
+- `docs/archive/pre-cleanup-2026-11/implementation/new-reading-mechanism/attentional_v2_structural_rework_plan.md`
 - `docs/current-state.md`
 - `docs/tasks/registry.md`
 - `docs/tasks/registry.json`
@@ -2003,7 +2003,7 @@ The old active windows `nawaer_baodian_private_zh__wealth`, `nawaer_baodian_priv
 
 **Primary evidence**:
 - `docs/backend-reading-mechanisms/attentional_v2.md`
-- `docs/implementation/new-reading-mechanism/attentional_v2_structural_rework_plan.md`
+- `docs/archive/pre-cleanup-2026-11/implementation/new-reading-mechanism/attentional_v2_structural_rework_plan.md`
 - `docs/current-state.md`
 - `docs/tasks/registry.md`
 - `docs/tasks/registry.json`
@@ -2041,8 +2041,8 @@ The old active windows `nawaer_baodian_private_zh__wealth`, `nawaer_baodian_priv
 **Primary evidence**:
 - `docs/backend-reading-mechanisms/attentional_v2.md`
 - `docs/backend-reading-mechanism.md`
-- `docs/implementation/new-reading-mechanism/attentional_v2_structural_rework_plan.md`
-- `docs/implementation/new-reading-mechanism/runtime-artifact-map.md`
+- `docs/archive/pre-cleanup-2026-11/implementation/new-reading-mechanism/attentional_v2_structural_rework_plan.md`
+- `docs/archive/pre-cleanup-2026-11/implementation/new-reading-mechanism/runtime-artifact-map.md`
 - `docs/current-state.md`
 - `docs/tasks/registry.md`
 - `docs/tasks/registry.json`
@@ -2166,7 +2166,7 @@ The completed repaired run now has a checked-in human interpretation report, tas
 - `docs/tasks/registry.json`
 - `reading-companion-backend/docs/evaluation/README.md`
 - `reading-companion-backend/docs/evaluation/user_level/README.md`
-- `reading-companion-backend/docs/evaluation/user_level/attentional_v2_user_level_selective_v1_repaired_rejudge_20260416_interpretation.md`
+- `reading-companion-backend/docs/archive/pre-cleanup-2026-11/evaluation/user_level/attentional_v2_user_level_selective_v1_repaired_rejudge_20260416_interpretation.md`
 - `reading-companion-backend/state/eval_local_datasets/user_level_benchmarks/attentional_v2_user_level_selective_v1/manifest.json`
 - `reading-companion-backend/state/eval_local_datasets/user_level_benchmarks/attentional_v2_user_level_selective_v1_repaired_20260416/manifest.json`
 - `reading-companion-backend/eval/runs/attentional_v2/attentional_v2_user_level_selective_v1_repaired_rejudge_20260416/summary/aggregate.json`
@@ -2414,7 +2414,7 @@ This new direction is design frozen but not yet implemented as a formal benchmar
 
 **Primary evidence**:
 - `docs/backend-reading-mechanisms/attentional_v2.md`
-- `docs/implementation/new-reading-mechanism/attentional_v2_structural_rework_plan.md`
+- `docs/archive/pre-cleanup-2026-11/implementation/new-reading-mechanism/attentional_v2_structural_rework_plan.md`
 - `docs/current-state.md`
 - `docs/tasks/registry.md`
 - `docs/tasks/registry.json`
@@ -2472,7 +2472,7 @@ This new direction is design frozen but not yet implemented as a formal benchmar
 
 **Primary evidence**:
 - `docs/backend-reading-mechanisms/attentional_v2.md`
-- `docs/implementation/new-reading-mechanism/attentional_v2_structural_rework_plan.md`
+- `docs/archive/pre-cleanup-2026-11/implementation/new-reading-mechanism/attentional_v2_structural_rework_plan.md`
 - `docs/current-state.md`
 - `docs/tasks/registry.md`
 - `docs/tasks/registry.json`
@@ -2693,7 +2693,7 @@ This new direction is design frozen but not yet implemented as a formal benchmar
 
 **Decision / Inflection**: Adopt repo-local Memory-Planning design chain and implementation handoff for `attentional_v2` optimization.
 
-**Period**: May 16, 2026, after the Memory / Planning / Evaluation design chain converged and was added to the repo under `docs/implementation/new-reading-mechanism/second-reader-memory-planning/`.
+**Period**: May 16, 2026, after the Memory / Planning / Evaluation design chain converged and was added to the repo under `docs/archive/pre-cleanup-2026-11/implementation/new-reading-mechanism/second-reader-memory-planning/`.
 
 **Decision**: The Memory / Planning / Evaluation design chain is accepted as implementation-facing guidance for optimizing the existing `attentional_v2` mechanism. The project will proceed through `E实施1-Implementation Feasibility & Delta Audit v0` before code implementation.
 
@@ -2701,13 +2701,13 @@ This new direction is design frozen but not yet implemented as a formal benchmar
 
 **Non-goals**: No greenfield redesign, no replacement mechanism, no route steering UI, no user route choice, no direct PR plan, and no full eval before core instrumentation.
 
-**What changed in the project record**: `docs/implementation/new-reading-mechanism/second-reader-memory-planning/README.md` now defines the directory purpose, authority order, document map, non-goals, implementation posture, and current next step. `docs/source-of-truth-map.md`, `docs/current-state.md`, and `docs/tasks/registry.*` now route future agents to the directory and to the queued feasibility-audit task.
+**What changed in the project record**: `docs/archive/pre-cleanup-2026-11/implementation/new-reading-mechanism/second-reader-memory-planning/README.md` now defines the directory purpose, authority order, document map, non-goals, implementation posture, and current next step. `docs/source-of-truth-map.md`, `docs/current-state.md`, and `docs/tasks/registry.*` now route future agents to the directory and to the queued feasibility-audit task.
 
 **Why it matters later**: Future agents should treat the new directory as an initiative-local implementation workspace for optimizing current `attentional_v2`, not as stable mechanism authority. Stable behavior changes still need to land in code and be promoted to the relevant stable docs.
 
 **Primary evidence**:
-- `docs/implementation/new-reading-mechanism/second-reader-memory-planning/README.md`
-- `docs/implementation/new-reading-mechanism/second-reader-memory-planning/E实施0-Implementation Roadmap & Handoff v0.md`
+- `docs/archive/pre-cleanup-2026-11/implementation/new-reading-mechanism/second-reader-memory-planning/README.md`
+- `docs/archive/pre-cleanup-2026-11/implementation/new-reading-mechanism/second-reader-memory-planning/E实施0-Implementation Roadmap & Handoff v0.md`
 - `docs/source-of-truth-map.md`
 - `docs/current-state.md`
 - `docs/tasks/registry.md`
@@ -2928,7 +2928,7 @@ This new direction is design frozen but not yet implemented as a formal benchmar
 **Why this path won**: This gives the mechanism the missing near-term memory layer without expanding deprecated ActiveTension into a catch-all. It keeps the memory hierarchy simple: Recent Reading Memory for short-range continuity, `concept_registry` / `thread_trace` for structured long-distance memory, and reflective/chapter frames for macro understanding.
 
 **Primary evidence**:
-- `docs/implementation/new-reading-mechanism/second-reader-memory-planning/C设计10-Recent Reading Memory Design v0.md`
+- `docs/archive/pre-cleanup-2026-11/implementation/new-reading-mechanism/second-reader-memory-planning/C设计10-Recent Reading Memory Design v0.md`
 - `docs/backend-reading-mechanisms/attentional_v2.md`
 - `docs/backend-reader-evaluation.md`
 - `reading-companion-backend/docs/evaluation/reporting_standard.md`
@@ -2953,7 +2953,7 @@ This new direction is design frozen but not yet implemented as a formal benchmar
 **Why this path won**: The micro diagnostic showed that formation and continuity worked, but some entries sounded too analytical for a near-term memory layer. The product need is simpler: remember what was just read in a form that later Read steps can understand, without rereading the source and without converting every unit into a mini-interpretive essay.
 
 **Primary evidence**:
-- `docs/implementation/new-reading-mechanism/second-reader-memory-planning/C设计10-Recent Reading Memory Design v0.md`
+- `docs/archive/pre-cleanup-2026-11/implementation/new-reading-mechanism/second-reader-memory-planning/C设计10-Recent Reading Memory Design v0.md`
 - `docs/backend-reading-mechanisms/attentional_v2.md`
 - `reading-companion-backend/src/attentional_v2/prompts.py`
 - `reading-companion-backend/tests/test_attentional_v2_nodes.py`
@@ -2973,7 +2973,7 @@ This new direction is design frozen but not yet implemented as a formal benchmar
 **Why this path won**: Retry2 improved coverage and remembered the previously missed author-method / evidence-boundary material, but several entries still ended by naming or elevating the source content into an abstract label. The chosen repair follows simplicity and universality: remember what the current unit establishes for future reading, use context to understand it, and stop when the source-established contribution is clear.
 
 **Primary evidence**:
-- `docs/implementation/new-reading-mechanism/second-reader-memory-planning/C设计10-Recent Reading Memory Design v0.md`
+- `docs/archive/pre-cleanup-2026-11/implementation/new-reading-mechanism/second-reader-memory-planning/C设计10-Recent Reading Memory Design v0.md`
 - `docs/backend-reading-mechanisms/attentional_v2.md`
 - `reading-companion-backend/docs/evaluation/reporting_standard.md`
 - `reading-companion-backend/src/attentional_v2/prompts.py`
@@ -2994,12 +2994,12 @@ This new direction is design frozen but not yet implemented as a formal benchmar
 **Why this path won**: The retry3 run reduced some forced abstract endings, but the broader rewrite made entries feel more formulaic and did not improve overall quality. The simpler and more universal repair is to return to the more readable `read.v28` body and add only the specific anti-pattern rule that the reviewer identified.
 
 **Primary evidence**:
-- `docs/implementation/new-reading-mechanism/second-reader-memory-planning/C设计10-Recent Reading Memory Design v0.md`
+- `docs/archive/pre-cleanup-2026-11/implementation/new-reading-mechanism/second-reader-memory-planning/C设计10-Recent Reading Memory Design v0.md`
 - `docs/backend-reading-mechanisms/attentional_v2.md`
 - `reading-companion-backend/docs/evaluation/reporting_standard.md`
 - `reading-companion-backend/src/attentional_v2/prompts.py`
 - `reading-companion-backend/tests/test_attentional_v2_nodes.py`
-- `docs/implementation/new-reading-mechanism/second-reader-memory-planning/codex/reports/RecentReadingMemory-Beginning-Micro-Diagnostic-Huochu-Retry3-Post-run-Report v0.md`
+- `docs/archive/pre-cleanup-2026-11/implementation/new-reading-mechanism/second-reader-memory-planning/codex/reports/RecentReadingMemory-Beginning-Micro-Diagnostic-Huochu-Retry3-Post-run-Report v0.md`
 
 ## Entry 97
 **ID**: DEC-100
@@ -3016,7 +3016,7 @@ This new direction is design frozen but not yet implemented as a formal benchmar
 **Why this path won**: This keeps Recent Reading Memory simple and universal. The program owns context assembly; the reader model should use whatever prompt-visible state it receives to understand the current unit as part of the book, without turning the memory layer into explicit recent-to-recent links, a relationship graph, or a per-entry context-expansion task.
 
 **Primary evidence**:
-- `docs/implementation/new-reading-mechanism/second-reader-memory-planning/C设计10-Recent Reading Memory Design v0.md`
+- `docs/archive/pre-cleanup-2026-11/implementation/new-reading-mechanism/second-reader-memory-planning/C设计10-Recent Reading Memory Design v0.md`
 - `docs/backend-reading-mechanisms/attentional_v2.md`
 - `reading-companion-backend/src/attentional_v2/prompts.py`
 - `reading-companion-backend/tests/test_attentional_v2_nodes.py`
@@ -3040,10 +3040,10 @@ This new direction is design frozen but not yet implemented as a formal benchmar
 **Primary evidence**:
 - `docs/current-state.md`
 - `docs/tasks/registry.md`
-- `docs/implementation/new-reading-mechanism/second-reader-memory-planning/README.md`
-- `docs/implementation/new-reading-mechanism/second-reader-memory-planning/C设计10-Recent Reading Memory Design v0.md`
-- `docs/implementation/new-reading-mechanism/second-reader-memory-planning/C设计11-Read Context Layer Contract v0.md`
-- `docs/implementation/new-reading-mechanism/second-reader-memory-planning/C设计12-Prompt Assembly Layer Design v0.md`
+- `docs/archive/pre-cleanup-2026-11/implementation/new-reading-mechanism/second-reader-memory-planning/README.md`
+- `docs/archive/pre-cleanup-2026-11/implementation/new-reading-mechanism/second-reader-memory-planning/C设计10-Recent Reading Memory Design v0.md`
+- `docs/archive/pre-cleanup-2026-11/implementation/new-reading-mechanism/second-reader-memory-planning/C设计11-Read Context Layer Contract v0.md`
+- `docs/archive/pre-cleanup-2026-11/implementation/new-reading-mechanism/second-reader-memory-planning/C设计12-Prompt Assembly Layer Design v0.md`
 
 ## Entry 101
 **ID**: DEC-104
@@ -4455,3 +4455,28 @@ Annotation Pack consumes only complete-product Marginalia and keeps its W3C/DC w
 - `contract/reading-product/v1/README.md`
 - `docs/current-state.md`
 - `docs/implementation/annotation-pack/second-reader-annotation-pack-v0-detailed-design-and-implementation-handoff.md`
+
+## Entry 158
+**ID**: DEC-160
+**Status**: active
+
+**Decision / Inflection**: 第 0 步轻量清理：只保留当前执行路径与后续评测/消融需要的代码，历史实现由 git tag/bundle 保留。
+
+**Period**: 2026-11-01。
+
+**Problem**: 默认 attentional_v2 之外仍有 iterator 执行/旧 resume、双机制评测和不进入核心 prompt 的 slow-cycle 支路；历史数据集文档指针也与当前 manifest 不一致。
+
+**Alternatives considered**: 保留旧 reader 作新旧对比；兼容旧 checkpoint；本步合并 survey 去重、启动 backfill 收尾或拆仓库。用户明确排除这些做法。
+
+**Why this path won**: 用户选择 D1B/D2A/D3A（不碰启动 backfill）/D5B/D6A，并跳过 Batch 4。后续基线为规则切分、全量 Understanding、近期窗口；已确认没有需要续跑的旧 run。
+
+**What changed in the system**: iterator/both/book_analysis 显式退役；新 run 才支持 resume，旧 checkpoint 不自动重跑或转换。slow cycle 的输出不再进入核心 Ingest / Digest prompt，只被 slow cycle 自身、checkpoint 和旧评测消费；本次删除该支路，保留 Product/UI 使用的确定性投影函数。新评测只读取 Product-accepted Marginalia，历史结果不回写。旧书显示、启动 backfill、前端、Pack 及 note recall/precision 资产保留。
+
+**Why it matters later**: 第 1 步先完成“resume 时固定原 reading_plan，避免重新 survey 改变阅读范围”；本次只记录，不实现。0.3498 / 0.1232 是 April 19 run 在 April 16 203-case 包上的历史结果，不是 June 14 202-case 或 June 29 158-case 的结果。
+
+**Primary evidence**:
+- `021c65a`、`1b67553`、`cc253f8`；安全基线 `d389338`；历史 tag `pre-cleanup-2026-11`。
+- [执行记录](../tasks/lightweight-cleanup-step0-execution-2026-11-01.md)
+- [演进说明](../reading-mechanism-evolution-step0.md)
+- [历史数字只读核查](../tasks/lightweight-cleanup-step0-historical-evidence-2026-11-01.md)
+- [归档移动映射](../archive/pre-cleanup-2026-11/move-map.json)

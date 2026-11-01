@@ -7,7 +7,7 @@ Update when: north-star dimensions, anti-goals, taxonomy, method policy, or eval
 
 Use `docs/backend-reading-mechanism.md` for shared mechanism-platform boundaries and `docs/backend-reading-mechanisms/<mechanism>.md` for one mechanism's actual design. Use this file for the stable comparison frame that any current or future reader mechanism should be judged against. Product-purpose authority lives in `docs/product-overview.md`; this file operationalizes that purpose for evaluation rather than redefining it.
 
-The old Memory / Planning / Evaluation implementation guidance chain at `docs/implementation/new-reading-mechanism/second-reader-memory-planning/README.md` is historical/reference material after `DEC-103`, not the default authority for new mechanism work. In that workspace, `C设计9-Evaluation Calibration & Minimal Eval Suite v0.md` remains useful background for implementation-facing eval discipline; this file remains the stable evaluation constitution.
+The old Memory / Planning / Evaluation implementation guidance chain at `docs/archive/pre-cleanup-2026-11/implementation/new-reading-mechanism/second-reader-memory-planning/README.md` is historical/reference material after `DEC-103`, not the default authority for new mechanism work. In that workspace, `C设计9-Evaluation Calibration & Minimal Eval Suite v0.md` remains useful background for implementation-facing eval discipline; this file remains the stable evaluation constitution.
 
 ## Evaluation Constitution
 - The evaluation system is product-first.
@@ -381,21 +381,12 @@ The old Memory / Planning / Evaluation implementation guidance chain at `docs/im
 - Stable docs may name one active benchmark pointer while keeping earlier benchmark packages as historical evidence.
 - An active benchmark does not need to maximize breadth if the current project constraint is iteration speed under real token and time pressure.
 - The active local/user-level benchmark pointer now belongs to the note-aligned `user-level selective v1` package rather than to `excerpt surface v1.1`.
-- The active local/user-level dataset root now belongs to the source-normalized deterministic v1.2 `202`-case package `attentional_v2_user_level_selective_v1_repaired_20260614_source_norm_v1_2`.
-  - this June 14 source-substrate promotion keeps all `202` note cases from the previous active package, preserves non-empty `source_span_slices`, removes structurally marked Siddhartha footnote definitions from the active window, and keeps body note references visible
-  - the conservative Siddhartha orphan residue `1《爱经》...` remains body-visible because deterministic v1.2 does not guess away正文 without structural apparatus evidence
-  - the earlier April 22 repair remains part of the active package lineage and kept `nawaer_baodian_private_zh` on the agreed body-start rule:
-    - start at `c13-s1`
-    - stop at `c13-s168`
-    - keep only the `23` `c13` body notes
-    - remove the old preface-side case `e0056`
-  - the previous active `202`-case package `attentional_v2_user_level_selective_v1_repaired_20260422` remains preserved as the direct comparison baseline for this source-normalized rebuild
-  - the prior repaired `203`-case package `attentional_v2_user_level_selective_v1_repaired_20260416` remains preserved as superseded prior evidence
-  - the earlier `202`-case `attentional_v2_user_level_selective_v1` package remains preserved as superseded historical evidence
+- The active pointer is `attentional_v2_user_level_selective_v1_repaired_20260629_source_norm_v1_2_unique_notes`: 158 unique note cases / 5 segments. June 14's `20260614_source_norm_v1_2` package has 202 cases and is retained as historical evidence; its old local manifest status is not the active-pointer authority.
+- April 19 formal run `attentional_v2_user_level_selective_v1_active_rerun_20260419` used the April 16 package with 203 cases. Read-only verification of all ten selection files and the root aggregate confirms recall 0.3498 / 0.1232. These are historical scores, not June 14 or June 29 scores and not a post-cleanup baseline.
 - If the active benchmark pointer moves after a formal run, stable docs should preserve both truths explicitly:
   - which dataset package is active now
   - which dataset package a completed formal evidence bundle actually used
-  - for the current local/user-level surface, the active pointer is now `20260614_source_norm_v1_2 / 202` cases, while the April 19 formal rerun still reflects the then-active `20260416 / 203`-case package
+  - for the current local/user-level surface, the active pointer is now `20260629_source_norm_v1_2_unique_notes / 158` unique cases, while the April 19 formal rerun still reflects the then-active `20260416 / 203`-case package
 - Older excerpt-surface freezes and their judged reports should remain readable as historical evidence, but they should be labeled `historical` / `superseded` once the active pointer moves.
 - The durable long-span run evidence from bounded accumulation benchmark v1 remains historical mechanism evidence rather than active methodology authority.
   - preserve:
@@ -1143,3 +1134,9 @@ The old Memory / Planning / Evaluation implementation guidance chain at `docs/im
   - narrower direct-probe evidence may coexist with the window audit, but it should be labeled as a different evidence scale
 - A positive focused audit result is sufficient to justify the next bounded validation step, such as a full-window spot check on the same titles.
   - it is not by itself sufficient to claim broad benchmark improvement or to reopen the formal benchmark scoreboard
+
+## Step 0 evaluation boundary
+
+New evaluation consumes Product-accepted Marginalia only, with accepted Unit Understanding as the memory-summary source. It does not append chapter-end/private-ledger reactions or score retired active_attention / reflective state. Note-span candidate matching, fixed-judge behavior, note recall/precision analysis, source imports and segmentation samples/rubric are retained. Iterator and dual-mechanism execution are retired; historical result files remain read-only. Current accumulation, memory/re-entry and runtime diagnosis are retained.
+
+Read-only evidence verification: [dataset versions and run](tasks/lightweight-cleanup-step0-historical-evidence-2026-11-01.md). Before rebuilding evaluation, complete the separate prerequisite: **resume 时固定原 reading_plan，避免重新 survey 改变阅读范围**. No such implementation is included in Step 0.

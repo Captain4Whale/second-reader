@@ -11,6 +11,10 @@ The project is maintained as one product with two sub-applications:
 - `reading-companion-backend`: FastAPI API, upload/job orchestration, sequential deep-reading engine
 - `reading-companion-frontend`: Vite/React web UI
 
+## Step 0 清理后的运行边界
+
+正常运行仅支持 `attentional_v2`。`iterator_v1` / `both` / `book_analysis` 选项显式报已退役；API enum 暂保留。只支持清理后新建 run 的 resume，旧 checkpoint 错误提示 tag `pre-cleanup-2026-11`。旧书只读显示、启动 backfill、前端与 Annotation Pack 保留。验证和备份见 [执行记录](docs/tasks/lightweight-cleanup-step0-execution-2026-11-01.md)。
+
 ## Structure
 - `reading-companion-backend/`: backend code, runtime artifacts, tests, `.env`
 - `reading-companion-frontend/`: frontend code, Vite app, `.env.example`

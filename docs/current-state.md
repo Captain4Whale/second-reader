@@ -7,9 +7,12 @@ Update when: the current objective, active tasks, blockers, active jobs, open de
 
 This file is authoritative for durable current status. Do not keep unique active-state information only in `docs/agent-handoff.md`.
 
-Last verified: `2026-09-13T13:30:49+08:00`
+Last verified: `2026-11-01` (Step 0 scope; prior experiment review states retained)
 
 ## Current Objective
+- `TASK-LIGHTWEIGHT-CLEANUP-STEP0` is complete under `DEC-160`: iterator execution/dual branches and slow-cycle model/state branches removed; current Product/UI projection, Pack, notes evaluation and cost telemetry retained. Only post-cleanup runs resume; old checkpoints explicitly point to tag `pre-cleanup-2026-11`. See [execution](tasks/lightweight-cleanup-step0-execution-2026-11-01.md) and [evolution](reading-mechanism-evolution-step0.md).
+- Next prerequisite before Step 1: `TASK-RESUME-READING-PLAN-FREEZE` — **resume 时固定原 reading_plan，避免重新 survey 改变阅读范围**. Recorded only; no implementation in Step 0. Then rebuild the human-note evaluation loop before cost instrumentation and ablations; old mechanism code is not an experimental baseline.
+- Active note dataset is June 29: 158 unique cases / 5 segments. Historical recall 0.3498 / 0.1232 belongs to April 19 run on the April 16 203-case package, not June 14/29. Earlier milestones below retain their dates; they do not override this current pointer.
 - `TASK-XIDADUO-CONTEXT-SCOPE-DIGEST-20260913` is waiting for manual review of the combined A/B/C packet. Explicitly authorized C-only recovery `xidaduo_context_scope_c_retry_20260913` succeeded on the first additional request in `22.929` seconds (`15,482` input / `989` output tokens, including `65` reasoning); attempts 2/3 were not called. The actual request/settings matched the original C exactly, with one gateway physical attempt, `tool_calls` completion and zero structure errors. C produced `5` marks (`2` Highlights / `3` Notes), all exactly located in the target chapter. New run ledger is `review_pending`, job `bgjob_xidaduo_context_scope_c_retry_20260913` is `completed`. Original A/B outputs and the original HTTP-408 C failure remain untouched; the original batch stays `failed`. The new `40`-item anonymous packet and verification are under `reading-companion-backend/state/experiments/xidaduo_context_scope_c_retry_20260913`. Next: human review; no further generation or product change. Quote validity/counts do not establish semantic quality or a general context-length effect.
 - `TASK-XIDADUO-FULLBOOK-SINGLE-DIGEST-20260913` completed implementation and the authorized generation; the task is `waiting` for the user's manual review and the run ledger is `review_pending`. The September 3 accepted source was reconstructed as `552` paragraphs / `55,185` characters (SHA-256 `6d75c4bdd06668ccfc03c2a96ea4b484a31898fda05f8dfe793b852efcdb3be9`) without reparsing EPUB or rerunning preprocessing. Digest v24 fixed blocks matched the baseline; full-book SourceUnit/focus and empty ReadingMemory were the only context changes. `cpa_codex_local / gpt-5.6-luna`, medium reasoning, temperature `0.2`, output limit `65,536`, timeout `1,800` seconds returned once in `36.79` seconds: `64,158` input + `1,709` output tokens (`140` reasoning), `65,867` total. The response ended with `tool_calls`, no structure errors, and below the output limit. It produced `10` Marginalia (`5` Highlights / `5` Notes): `8` quotes locate exactly and `2` do not locate and remain preserved for review. These are mechanical findings, not a quality verdict; the historical `89` Units / `207` Marginalia are reference material, not gold or proof that splitting is necessary. All local source/raw/parsed/check/review artifacts remain under `reading-companion-backend/state/experiments/xidaduo_fullbook_single_digest_20260913/`; no judge, repair, retry, continuation, or new experiment was run.
 - `TASK-READING-PRODUCT-XIDADUO-FULL-BOOK-LIVE-ACCEPTANCE` is complete. The exact local《悉达多》EPUB at SHA-256 `f239921773ac5abc86527fb78379cbd68cdf2cb901d253e085b2883180984a4f` ran through ordinary `parse_book` / `read_book`, the current `attentional_v2` mechanism, and real `cpa_codex_local` / `gpt-5.6-luna` calls with `reasoning_effort=medium` and `hybrid` memory retrieval. One upstream TLS EOF stopped the fresh attempt after `78` committed Units; normal resume reused reading ID `urn:uuid:f91e6d64-0d70-48e7-a18e-95d7db6504fa`, did not repeat committed work, and reached `completed`. The immutable complete Reading Product has `89` Units over a `16`-chapter / `590`-paragraph BookDocument and `207` Marginalia (`89` Highlights, `118` Notes); `15` chapter compatibility projections were derived from Product Units. The detached minimal Pack exports all `207` items, independently validates and inspects, resolves every quote/position against `22` verified EPUB resources with zero unverifiable hrefs, and returns `unchanged` on both repeat exports. Its producer report has one nonfatal `invalid_publication_identifier` warning because an invalid optional ISBN was omitted; the standalone Pack semantic validator reports zero findings. The local LLM ledger has `325` calls (`324` successful with complete usage, one recovered failure with usage unavailable) and `2,194,331` known tokens; subscription billing leaves actual billed cost unknown. The isolated evidence lives under `reading-companion-backend/state/reading_product_live_acceptance/cpa_luna_xidaduo_full_book_20260903/`. The bounded claim is: **在固定 SHA-256 的真实《悉达多》EPUB 上，当前机制已经通过 CPA Luna 的真实 LLM 调用完成整书阅读，并生成 complete Reading Product、章节兼容投影和独立验证通过的 207-item Annotation Pack。** This is a new run, not migration of historical Xidaduo artifacts, and is not a human quality benchmark or proof of Pages/frontend/API deployment.
@@ -81,7 +84,7 @@ Last verified: `2026-09-13T13:30:49+08:00`
     - `DEC-123` implements Source Normalization v1 for newly created parsed-book documents: parse extracts lightweight HTML/EPUB evidence, runs a whole-book LLM source-flow classifier in bounded chunks, conservatively applies only high-confidence auxiliary/reference/noise/front-back/caption-support labels with structural evidence to the coarse `text_role == "auxiliary"` gate, persists `source_normalization` paragraph metadata, rebuilds sentences, writes parse diagnostics, and degrades to deterministic roles if the classifier fails; existing parsed artifacts are not auto-migrated
     - `DEC-124` upgrades Source Normalization to markup-aware v1.1 for newly parsed books: paragraph records now retain ancestor container and inline-anchor metadata, pure parent containers such as `blockquote > p` aggregates no longer duplicate child正文, deterministic markup evidence can exclude explicit footnote/endnote/note-definition records even when LLM confidence is malformed, and blockquote/poem/verse/letter正文 is protected from unbacked `layout_noise` labels
     - `DEC-125` switches live Source Normalization to deterministic-only v1.2 for new parses: default import no longer calls a whole-book LLM classifier, only strong structural evidence such as explicit footnote/endnote/reference containers or note-definition anchors can change `text_role` to `auxiliary`, inline note references remain mainline, malformed orphan-note candidates are audit-only, and uncertain cases preserve正文
-    - `DEC-126` promotes the source-normalized deterministic v1.2 user-level selective dataset package as the active local/user-level pointer: the active split manifest now points to `attentional_v2_user_level_selective_v1_repaired_20260614_source_norm_v1_2`, with `5` segments and `202` note cases preserved; historical formal evidence remains attached to its original dataset packages
+    - Historical `DEC-126` promoted the source-normalized deterministic v1.2 user-level selective dataset package as the active local/user-level pointer: the then-active split manifest pointed to `attentional_v2_user_level_selective_v1_repaired_20260614_source_norm_v1_2`, with `5` segments and `202` note cases preserved; historical formal evidence remains attached to its original dataset packages
     - `DEC-127` removes the duplicated final-output Unit Memory recall surface from Ingest: `retrieve_unit_memory` action-tool args are now the only model-authored recall intent, while runtime derives `memory_recalls[]` for traces/artifacts from that tool call
     - `DEC-128` promotes Marginalia as the canonical Digest visible-note concept: live Digest prompt `attentional_v2.digest.v10` / promptset `attentional_v2-phase6-v68` outputs `marginalia[]`, Unit Memory stores and retrieves `unit_marginalia`, public API / frontend surfaces expose additive `marginalia_*` fields and routes, and old `annotation` / `reaction` / `surfaced_reactions` names remain compatibility aliases for historical artifacts and legacy public fields
     - `DEC-129` simplifies the live Digest Marginalia item contract: Digest prompt `attentional_v2.digest.v11` / XML spec v11 / promptset `attentional_v2-phase6-v69` / output contract `digest_understanding_response_marginalia_json_v5` asks for only `source_quote` plus optional `content`; empty, null, or omitted `content` is highlight-only, non-empty `content` is note-bearing, and legacy `prior_link` / `outside_link` / `search_intent` fields remain compatibility-read metadata rather than live model-facing output fields
@@ -147,7 +150,7 @@ Last verified: `2026-09-13T13:30:49+08:00`
     - purpose: validate Source Normalization v1.1 on ten books through the live `attentional_v2.parse_book` path without running Ingest/Digest read loops
     - smoke: `zh/beiying_public_v2.epub` completed with status `completed`, `7` LLM calls all `ok`, and no automatic critical failures
     - run dir: `reading-companion-backend/state/source_normalization_probe/source_normalization_v1_1_multibook_validation_20260613`
-    - runner: `reading-companion-backend/scripts/run_source_normalization_v1_1_multibook_validation.py`
+    - runner: `https://github.com/Captain4Whale/second-reader/blob/pre-cleanup-2026-11/reading-companion-backend/scripts/run_source_normalization_v1_1_multibook_validation.py`
     - outcome: the partial multi-book review exposed unacceptable false-positive risk from LLM-backed source-flow classification, especially confusing inline note references with note definitions; current live direction is deterministic-only v1.2, not broad LLM source cleaning
   - focused Ingest v16 larger-preview probe:
     - run id: `ingest_live_v16_token_preview_larger_to_old_unit13_20260613`
@@ -435,15 +438,15 @@ Last verified: `2026-09-13T13:30:49+08:00`
     - Lane A reuse shards: `5 / 5` completed; note-case counts are `40 / 25 / 23 / 94 / 20`, total `202`
     - strict LLM health: `10 / 10` run dirs checked `ok`, with `0` fallback-backed evidence
   - report:
-    - `docs/implementation/new-reading-mechanism/second-reader-memory-planning/codex/reports/ReadPromptXML-Full-Active-Diagnostic-Post-run-Report v0.md`
-    - `docs/implementation/new-reading-mechanism/second-reader-memory-planning/codex/reports/ReadPromptXML-Full-Active-Diagnostic-Reactions-And-RecentMemory-Full-Review v0.md`
+    - `docs/archive/pre-cleanup-2026-11/implementation/new-reading-mechanism/second-reader-memory-planning/codex/reports/ReadPromptXML-Full-Active-Diagnostic-Post-run-Report v0.md`
+    - `docs/archive/pre-cleanup-2026-11/implementation/new-reading-mechanism/second-reader-memory-planning/codex/reports/ReadPromptXML-Full-Active-Diagnostic-Reactions-And-RecentMemory-Full-Review v0.md`
   - next step:
     - preserve the post-run report and the full reactions / Recent Memory listing as historical diagnostic evidence
     - do not keep iterating on the old concrete-node XML context assembly or Recent Memory consolidation as the next implementation path unless the new ingest/digest feasibility audit explicitly re-adopts a slice
     - do not update evidence catalog, promote Long Span, or claim product quality from this diagnostic without explicit human review
 - Recent Reading Memory first-half formation is implemented.
   - design doc:
-    - `docs/implementation/new-reading-mechanism/second-reader-memory-planning/C设计10-Recent Reading Memory Design v0.md`
+    - `docs/archive/pre-cleanup-2026-11/implementation/new-reading-mechanism/second-reader-memory-planning/C设计10-Recent Reading Memory Design v0.md`
   - implementation scope:
     - `recent_reading_memory` is now a runtime store for near-term semantic memory of just-read units
     - the historical concrete-node prompt series permitted compact context-resolvable Recent Reading Memory entries per unit
@@ -482,12 +485,12 @@ Last verified: `2026-09-13T13:30:49+08:00`
     - `bgjob_recent_reading_memory_beginning_huochu_20260524_retry3`
     - `bgjob_recent_reading_memory_beginning_huochu_20260524_retry4`
   - reports:
-    - `docs/implementation/new-reading-mechanism/second-reader-memory-planning/codex/reports/RecentReadingMemory-Micro-Diagnostic-Huochu-Post-run-Report v0.md`
-    - `docs/implementation/new-reading-mechanism/second-reader-memory-planning/codex/reports/RecentReadingMemory-Beginning-Micro-Diagnostic-Huochu-Post-run-Report v0.md`
-    - `docs/implementation/new-reading-mechanism/second-reader-memory-planning/codex/reports/RecentReadingMemory-Beginning-Micro-Diagnostic-Huochu-Retry1-Post-run-Report v0.md`
-    - `docs/implementation/new-reading-mechanism/second-reader-memory-planning/codex/reports/RecentReadingMemory-Beginning-Micro-Diagnostic-Huochu-Retry2-Post-run-Report v0.md`
-    - `docs/implementation/new-reading-mechanism/second-reader-memory-planning/codex/reports/RecentReadingMemory-Beginning-Micro-Diagnostic-Huochu-Retry3-Post-run-Report v0.md`
-    - `docs/implementation/new-reading-mechanism/second-reader-memory-planning/codex/reports/RecentReadingMemory-Beginning-Micro-Diagnostic-Huochu-Retry4-Post-run-Report v0.md`
+    - `docs/archive/pre-cleanup-2026-11/implementation/new-reading-mechanism/second-reader-memory-planning/codex/reports/RecentReadingMemory-Micro-Diagnostic-Huochu-Post-run-Report v0.md`
+    - `docs/archive/pre-cleanup-2026-11/implementation/new-reading-mechanism/second-reader-memory-planning/codex/reports/RecentReadingMemory-Beginning-Micro-Diagnostic-Huochu-Post-run-Report v0.md`
+    - `docs/archive/pre-cleanup-2026-11/implementation/new-reading-mechanism/second-reader-memory-planning/codex/reports/RecentReadingMemory-Beginning-Micro-Diagnostic-Huochu-Retry1-Post-run-Report v0.md`
+    - `docs/archive/pre-cleanup-2026-11/implementation/new-reading-mechanism/second-reader-memory-planning/codex/reports/RecentReadingMemory-Beginning-Micro-Diagnostic-Huochu-Retry2-Post-run-Report v0.md`
+    - `docs/archive/pre-cleanup-2026-11/implementation/new-reading-mechanism/second-reader-memory-planning/codex/reports/RecentReadingMemory-Beginning-Micro-Diagnostic-Huochu-Retry3-Post-run-Report v0.md`
+    - `docs/archive/pre-cleanup-2026-11/implementation/new-reading-mechanism/second-reader-memory-planning/codex/reports/RecentReadingMemory-Beginning-Micro-Diagnostic-Huochu-Retry4-Post-run-Report v0.md`
   - status facts:
     - `p45-p61` diagnostic completed with exit code `0`; strict LLM health passed with `24` traces, `24` successes, `0` errors, and `0` fallback-backed evidence
     - `p45-p61` covered `8` read units and produced `10` active `recent_reading_memory` entries; settlement audit showed append-only behavior before consolidation
@@ -532,7 +535,7 @@ Last verified: `2026-09-13T13:30:49+08:00`
     - expected `summary/aggregate.json`, `summary/report.md`, and `summary/llm_usage.json` outputs exist for all five shards
     - run ledger entries are now `review_pending`
     - lifecycle review aid:
-      - `docs/implementation/new-reading-mechanism/second-reader-memory-planning/codex/reports/ActiveAttention-Prompt-Context-Grounded-Full-Window-Diagnostic-Retry1-ActiveTension-Lifecycle-Review v0.md`
+      - `docs/archive/pre-cleanup-2026-11/implementation/new-reading-mechanism/second-reader-memory-planning/codex/reports/ActiveAttention-Prompt-Context-Grounded-Full-Window-Diagnostic-Retry1-ActiveTension-Lifecycle-Review v0.md`
   - boundaries:
     - the retry1 diagnostic remains diagnostic only and is not cataloged evidence
     - no evidence catalog update, broader eval, Long Span formal promotion, or product-quality claim is authorized from this diagnostic without explicit human review
@@ -543,7 +546,7 @@ Last verified: `2026-09-13T13:30:49+08:00`
     - all 5 Lane A user-level reuse shards completed successfully
     - all 5 producer outputs passed strict LLM health checks with `fallback_count=0`
     - post-run report:
-      - `docs/implementation/new-reading-mechanism/second-reader-memory-planning/codex/reports/Eval1-Full-Active-Evaluation-Post-Slice8H-Retry1-High-Parallel-Post-run-Report v0.md`
+      - `docs/archive/pre-cleanup-2026-11/implementation/new-reading-mechanism/second-reader-memory-planning/codex/reports/Eval1-Full-Active-Evaluation-Post-Slice8H-Retry1-High-Parallel-Post-run-Report v0.md`
   - evaluation facts:
     - Lane A covered the active `20260422` user-level selective package: `5` segments, `202` note cases, `attentional_v2` only
     - Lane A report-level totals: `exact_match_count=28`, `focused_hit_count=42`, `incidental_cover_count=8`, `miss_count=124`, `note_recall=0.3465`, `unlocatable_reaction_count=3`
@@ -558,7 +561,7 @@ Last verified: `2026-09-13T13:30:49+08:00`
   - status:
     - the aborted optimized producer remains invalid operational failure evidence only
     - repair report:
-      - `docs/implementation/new-reading-mechanism/second-reader-memory-planning/codex/reports/Eval1-LLM-Health-and-Eval-Strictness-Repair-Post-implementation-Report v0.md`
+      - `docs/archive/pre-cleanup-2026-11/implementation/new-reading-mechanism/second-reader-memory-planning/codex/reports/Eval1-LLM-Health-and-Eval-Strictness-Repair-Post-implementation-Report v0.md`
   - implementation facts:
     - active eval runners now reject unhealthy `attentional_v2` reading outputs before judge/reuse when traces show `llm_fallback`, all-failed LLM traces, or recent retryable `network_blocked` / `llm_timeout` streaks
     - shared LLM gateway now supports same-tier failover for non-manual `network_blocked` / `llm_timeout` provider failures
@@ -589,7 +592,7 @@ Last verified: `2026-09-13T13:30:49+08:00`
 - Memory / Planning / Minimal Eval implementation track for optimizing the existing `attentional_v2` mechanism is closed after Slice 8H.
   - status:
     - Memory / Planning / Evaluation design phase is effectively complete
-    - `C设计0` through `C设计9` and `E实施0` are now repo-local under `docs/implementation/new-reading-mechanism/second-reader-memory-planning/`
+    - `C设计0` through `C设计9` and `E实施0` are now repo-local under `docs/archive/pre-cleanup-2026-11/implementation/new-reading-mechanism/second-reader-memory-planning/`
     - `E实施1-Implementation Feasibility & Delta Audit v0.md` is accepted with reviewer constraints
     - `Slice1-Contract-Audit-Foundations-Pre-implementation-Brief v0.md` is accepted
     - Slice 1 additive contract / audit scaffolding is implemented, and `Slice1-Contract-Audit-Foundations-Post-implementation-Report v0.md` is accepted
@@ -876,7 +879,7 @@ Last verified: `2026-09-13T13:30:49+08:00`
       - run id:
         - `attentional_v2_user_level_selective_v1_repaired_rejudge_20260416`
       - checked-in interpretation:
-        - `reading-companion-backend/docs/evaluation/user_level/attentional_v2_user_level_selective_v1_repaired_rejudge_20260416_interpretation.md`
+        - `reading-companion-backend/docs/archive/pre-cleanup-2026-11/evaluation/user_level/attentional_v2_user_level_selective_v1_repaired_rejudge_20260416_interpretation.md`
       - machine outputs:
         - `reading-companion-backend/eval/runs/attentional_v2/attentional_v2_user_level_selective_v1_repaired_rejudge_20260416/summary/aggregate.json`
         - `reading-companion-backend/eval/runs/attentional_v2/attentional_v2_user_level_selective_v1_repaired_rejudge_20260416/summary/report.md`
@@ -977,7 +980,7 @@ Last verified: `2026-09-13T13:30:49+08:00`
   - long-span evidence cleanup is now complete, and it is not a blocker on using the new default path
 - A new post-Phase-9 implementation line is now opening for `attentional_v2`:
   - evolve `attentional_v2` in place rather than minting `attentional_v3`
-  - keep `docs/implementation/new-reading-mechanism/attentional_v2_structural_rework_plan.md` as a historical execution blueprint; current implementation authority is `docs/backend-reading-mechanisms/attentional_v2.md` plus the active `DEC-103` through `DEC-108` direction
+  - keep `docs/archive/pre-cleanup-2026-11/implementation/new-reading-mechanism/attentional_v2_structural_rework_plan.md` as a historical execution blueprint; current implementation authority is `docs/backend-reading-mechanisms/attentional_v2.md` plus the active `DEC-103` through `DEC-108` direction
   - treat it as a backend structural rework plan, not a frontend work plan
   - keep the existing frontend lane active in parallel under its own docs and tasks
   - keep the long-span after-eval memo as mechanism-evidence input rather than as the execution plan
@@ -1069,7 +1072,7 @@ Last verified: `2026-09-13T13:30:49+08:00`
     - dead live ownership paths for the old `Express` persistence flow and `raw_reaction` fallback are now removed
   - `Phase F4A` is now landed as the first focused quality-audit pack:
     - temporary one-off launcher / harness:
-      - `reading-companion-backend/scripts/temporary/attentional_v2_f4a_oneoff_quality_audit.py`
+      - `https://github.com/Captain4Whale/second-reader/blob/pre-cleanup-2026-11/reading-companion-backend/scripts/temporary/attentional_v2_f4a_oneoff_quality_audit.py`
     - parent job:
       - `bgjob_attentional_v2_f4a_quality_audit_20260419` (`completed`)
     - run id:
@@ -1092,7 +1095,7 @@ Last verified: `2026-09-13T13:30:49+08:00`
         - `outside_link_count = 0`
         - `search_intent_count = 0`
     - audit-note path:
-      - `reading-companion-backend/docs/research/attentional_v2_f4a_focused_quality_audit_20260419.md`
+      - `reading-companion-backend/docs/archive/pre-cleanup-2026-11/research/attentional_v2_f4a_focused_quality_audit_20260419.md`
     - run summary:
       - `reading-companion-backend/eval/runs/attentional_v2/attentional_v2_f4a_quality_audit_20260419/summary/report.md`
     - small post-run visibility fix already landed:
@@ -1211,9 +1214,9 @@ Last verified: `2026-09-13T13:30:49+08:00`
             - `19.71 -> 2.29`
       - current reporting task:
         - the next durable output is now the cross-run comparative audit set:
-          - `reading-companion-backend/docs/research/attentional_v2_post_phase_d_eval_comparative_audit_20260414.md`
-          - `reading-companion-backend/docs/research/attentional_v2_post_phase_d_eval_comparative_audit_20260414_longspan_appendix.md`
-          - `reading-companion-backend/docs/research/attentional_v2_post_phase_d_eval_comparative_audit_20260414_excerpt_appendix.md`
+          - `reading-companion-backend/docs/archive/pre-cleanup-2026-11/research/attentional_v2_post_phase_d_eval_comparative_audit_20260414.md`
+          - `reading-companion-backend/docs/archive/pre-cleanup-2026-11/research/attentional_v2_post_phase_d_eval_comparative_audit_20260414_longspan_appendix.md`
+          - `reading-companion-backend/docs/archive/pre-cleanup-2026-11/research/attentional_v2_post_phase_d_eval_comparative_audit_20260414_excerpt_appendix.md`
     - the isolated debug-replay lane is now diagnosed but not currently active:
       - first attempt:
         - `bgjob_value_of_others_ch8_debug_trace_20260413`
@@ -1285,7 +1288,7 @@ Last verified: `2026-09-13T13:30:49+08:00`
     - `reading-companion-backend/eval/attentional_v2/run_accumulation_comparison.py`
   - targeted test slices passed:
     - `reading-companion-backend/tests/test_attentional_v2_llm_calls.py`
-    - `reading-companion-backend/tests/test_attentional_v2_bridge.py`
+    - `https://github.com/Captain4Whale/second-reader/blob/pre-cleanup-2026-11/reading-companion-backend/tests/test_attentional_v2_bridge.py`
     - `reading-companion-backend/tests/test_run_accumulation_comparison.py`
     - `reading-companion-backend/tests/test_attentional_v2_scaffold.py`
     - `reading-companion-backend/tests/test_run_excerpt_comparison.py`
@@ -1576,7 +1579,7 @@ Last verified: `2026-09-13T13:30:49+08:00`
           - `selective_legibility`: `59` cases, `attentional_v2 = 27`, `iterator_v1 = 21`, `tie = 11`, average `1.98` vs `1.427`
           - `insight_and_clarification`: `43` cases, `attentional_v2 = 19`, `iterator_v1 = 16`, `tie = 8`, average `2.2` vs `1.688`
         - interpretation evidence:
-          - `reading-companion-backend/docs/evaluation/excerpt/attentional_v2_excerpt_surface_v1_1_judged_20260406_interpretation.md`
+          - `reading-companion-backend/docs/archive/pre-cleanup-2026-11/evaluation/excerpt/attentional_v2_excerpt_surface_v1_1_judged_20260406_interpretation.md`
         - carry-forward interpretation:
           - `attentional_v2` won the first complete excerpt-level formal judged eval without `judge_unavailable` or `mechanism_failure`
           - the main remaining excerpt mechanism issue is now narrow local-anchor carrythrough, not broad throughput collapse
@@ -2321,7 +2324,7 @@ Last verified: `2026-09-13T13:30:49+08:00`
     - the remaining local gap is now concentrated on narrative / reference-heavy English cases rather than on the whole pack
   - live queue record:
     - `docs/implementation/new-reading-mechanism/mechanism-pattern-ledger.md`
-    - `docs/implementation/new-reading-mechanism/new-reading-mechanism-execution-tracker.md`
+    - `docs/archive/pre-cleanup-2026-11/implementation/new-reading-mechanism/new-reading-mechanism-execution-tracker.md`
   - focused two-case substantive rerun:
     - job id:
       - `bgjob_en_chapter_core_rerun_round3_caseiso_judged_substantive_backup_20260331`
@@ -3607,9 +3610,9 @@ Last verified: `2026-09-13T13:30:49+08:00`
 9. `reading-companion-backend/eval/runs/attentional_v2/attentional_v2_active_benchmark_rerun_20260419/summary/report.md`
 10. `reading-companion-backend/docs/evaluation/long_span/README.md`
 11. `reading-companion-backend/docs/evaluation/long_span/target_centered_accumulation_v2_design.md`
-12. `reading-companion-backend/docs/evaluation/long_span/target_centered_candidate_review.md`
+12. `reading-companion-backend/docs/archive/pre-cleanup-2026-11/evaluation/long_span/target_centered_candidate_review.md`
 13. `docs/backend-reading-mechanisms/attentional_v2.md`
-14. `docs/implementation/new-reading-mechanism/attentional_v2_structural_rework_plan.md` (historical/reference only after `DEC-108`)
+14. `docs/archive/pre-cleanup-2026-11/implementation/new-reading-mechanism/attentional_v2_structural_rework_plan.md` (historical/reference only after `DEC-108`)
 15. `docs/implementation/annotation-pack/second-reader-annotation-pack-v0-detailed-design-and-implementation-handoff.md`
 16. `contract/annotation-pack/v0/README.md`
 17. `docs/implementation/reading-product/reading-product-output-v1-detailed-design-and-implementation-handoff.md`
@@ -3618,7 +3621,7 @@ Last verified: `2026-09-13T13:30:49+08:00`
 ## Machine-Readable Appendix
 ```json
 {
-  "updated_at": "2026-09-13T05:30:49.191000+00:00",
+  "updated_at": "2026-11-01T12:00:00+08:00",
   "last_updated_by": "codex",
   "active_task_ids": [
     "TASK-ATTENTIONAL-V2-STRUCTURAL-REWORK",
@@ -3631,12 +3634,14 @@ Last verified: `2026-09-13T13:30:49+08:00`
     "TASK-ANNOTATION-HUB-V0-MINIMAL-PACK-MIGRATION"
   ],
   "queued_task_ids": [
+    "TASK-RESUME-READING-PLAN-FREEZE",
     "TASK-RUNTIME-OBSERVABILITY-COST-V1"
   ],
   "blocked_task_ids": [],
   "active_job_ids": [],
   "open_decision_ids": [],
   "detail_refs": [
+    "docs/tasks/lightweight-cleanup-step0-execution-2026-11-01.md",
     "docs/implementation/reading-product/reading-product-output-v1-detailed-design-and-implementation-handoff.md",
     "contract/reading-product/v1/README.md",
     "docs/implementation/annotation-pack/second-reader-annotation-pack-v0-detailed-design-and-implementation-handoff.md",
@@ -3649,9 +3654,9 @@ Last verified: `2026-09-13T13:30:49+08:00`
     "reading-companion-backend/eval/runs/attentional_v2/attentional_v2_active_benchmark_rerun_20260419/summary/report.md",
     "reading-companion-backend/docs/evaluation/long_span/README.md",
     "reading-companion-backend/docs/evaluation/long_span/target_centered_accumulation_v2_design.md",
-    "reading-companion-backend/docs/evaluation/long_span/target_centered_candidate_review.md",
+    "reading-companion-backend/docs/archive/pre-cleanup-2026-11/evaluation/long_span/target_centered_candidate_review.md",
     "docs/backend-reading-mechanisms/attentional_v2.md",
-    "docs/implementation/new-reading-mechanism/attentional_v2_structural_rework_plan.md",
+    "docs/archive/pre-cleanup-2026-11/implementation/new-reading-mechanism/attentional_v2_structural_rework_plan.md",
     "reading-companion-backend/eval/manifests/splits/attentional_v2_excerpt_micro_slice_v1_draft.json",
     "reading-companion-backend/eval/attentional_v2/ingest_library_sources.py",
     "reading-companion-backend/tests/test_source_intake.py",

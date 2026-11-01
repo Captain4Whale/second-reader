@@ -122,3 +122,7 @@ The JSON block below is the machine-readable appendix used by the integration dr
   ]
 }
 ```
+
+## Step 0 retirement behavior (2026-11-01)
+
+Public enum values and frontend payload shapes are unchanged. Retired iterator / book_analysis execution requests and pre-cleanup checkpoint resumes fail explicitly, with `pre-cleanup-2026-11` in the error; the backend does not silently switch mechanisms or clear artifacts to relaunch a run. Old library items remain readable. New current-run resume and Product publication retain their existing contract.

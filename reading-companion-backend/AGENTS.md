@@ -6,12 +6,12 @@ Not for: canonical product flow, public contract authority, or workspace-level d
 Update when: backend-local constraints, recurring pitfalls, or stable implementation boundaries change.
 
 ## Scope
-- This directory contains the FastAPI API, the shared reading runtime shell, the current default `attentional_v2` implementation, the legacy-compatible `iterator_reader` fallback implementation, and runtime artifacts.
+- This directory contains the FastAPI API, the shared reading runtime shell, the current default `attentional_v2` implementation, shared parser/storage/UI helpers retained under `iterator_reader`, and runtime artifacts.
 - Use `../docs/product-overview.md` for product purpose and reader-quality target.
 - Use `../docs/product-interaction-model.md` for product flow and `../docs/api-contract.md` for the public contract.
 - Use `../docs/backend-reading-mechanism.md` for shared backend mechanism-platform boundaries and documentation routing.
 - Use `../docs/backend-reading-mechanisms/attentional_v2.md` for the current default mechanism's ontology, control loop, prompt assembly, and live attention-projection semantics.
-- Use `../docs/backend-reading-mechanisms/iterator_v1.md` for the supported fallback mechanism's section/subsegment internals.
+- Use `../docs/archive/pre-cleanup-2026-11/backend-reading-mechanisms/iterator_v1.md` for historical section/subsegment design only.
 - Use `../docs/backend-reader-evaluation.md` for reader-quality goals, evaluation layers, and offline eval methodology.
 - Use `../contract/annotation-pack/v0/README.md` and its schema for the minimal W3C/DC Annotation Pack wire, exact EPUB NIH identity, and Quote/Position authority; use `../docs/implementation/annotation-pack/second-reader-annotation-pack-v0-detailed-design-and-implementation-handoff.md` for slice sequencing and acceptance.
 - Use `../contract/reading-product/v1/README.md` and its schema for mechanism-neutral accepted Unit/U-R-M product facts, source coordinates, and complete-product publication; use `../docs/implementation/reading-product/reading-product-output-v1-detailed-design-and-implementation-handoff.md` for settlement/finalizer sequencing and acceptance.
@@ -20,7 +20,7 @@ Update when: backend-local constraints, recurring pitfalls, or stable implementa
 - Default to improving `sequential` deep-reading quality.
 - Treat `book_analysis` as a retired legacy capability and compatibility debt, not as an active secondary product lane, unless the task explicitly prioritizes legacy cleanup or debugging.
 - Treat `attentional_v2` as the current default mechanism for normal product deep-reading runs.
-- Treat `iterator_reader` as a supported fallback and legacy-resume path, not as the current default and not as the only permanent backend architecture.
+- `iterator_v1` is retired: do not restore its executor or resume paths. Shared helpers in `iterator_reader/` and historical library display remain supported.
 - If product intent is unclear, preserve the feeling of a thoughtful co-reader rather than drifting toward a generic summary product.
 - When working on benchmark or evaluation tasks, apply dual diagnosis:
   - inspect mechanism weakness
@@ -82,7 +82,7 @@ Update when: backend-local constraints, recurring pitfalls, or stable implementa
 - Keep shared canonical parse/provisioning and shared sequential manifest/run-state builders in `src/reading_runtime/`.
 - Keep the shared LLM provider registry, invocation gateway, and cross-runtime/eval trace contract in `src/reading_runtime/`.
 - Keep mechanism-internal ontology local to the mechanism that owns it; do not force future readers to reuse `section` / `subsegment` concepts unless they genuinely fit.
-- Prefer wrapping the current `iterator_reader` behind shared mechanism boundaries over copying API/job wiring into each new reader.
+- Reuse the shared runtime boundary; `iterator_reader/` now contains shared parsing/storage/display helpers, not an executable reader.
 - Backend-wide infrastructure must not depend on `src.iterator_reader.models`; shared code should import neutral types from `src.reading_core/`.
 - Treat `state/uploads/` as transient user-upload intake, not as the durable source library for manually curated books.
 - Treat `state/library_inbox/` as the operator drop-zone for future source-book additions before they are canonically ingested.
@@ -97,13 +97,13 @@ Update when: backend-local constraints, recurring pitfalls, or stable implementa
 ## Platform Direction
 - The backend is evolving toward one shared runtime shell plus multiple mechanism-specific reader implementations.
 - `attentional_v2` is now the current default mechanism through that shared boundary.
-- `iterator_reader` remains available through the same shared boundary as a supported fallback and legacy-resume path.
+- `attentional_v2` is the only registered executable reader; iterator selections report retirement.
 - `docs/backend-reading-mechanism.md` is authoritative for shared mechanism-platform rules.
 - `docs/backend-reading-mechanisms/attentional_v2.md` is authoritative for current default-mechanism internals.
-- `docs/backend-reading-mechanisms/iterator_v1.md` is authoritative for fallback `iterator_reader` internals.
+- `docs/archive/pre-cleanup-2026-11/backend-reading-mechanisms/iterator_v1.md` is archived historical documentation, not runtime authority.
 
 ## Paused Memory / Planning Implementation Discipline
-- The old Memory / Planning optimization track at `../docs/implementation/new-reading-mechanism/second-reader-memory-planning/README.md` is paused / superseded as the default implementation authority after `DEC-103`.
+- The old Memory / Planning optimization track at `../docs/archive/pre-cleanup-2026-11/implementation/new-reading-mechanism/second-reader-memory-planning/README.md` is paused / superseded as the default implementation authority after `DEC-103`.
 - Treat `C设计0` through `C设计12`, ActiveTension expansion, Recent Reading Memory consolidation, Thread / Progression / Development memory, Read XML context migration, Detour, and source-backread material in that track as historical/reference material unless a later task explicitly re-adopts a slice.
 - After `DEC-105`, retired Detour / source-backread / source-skill compatibility interfaces are not a current `attentional_v2` code, prompt, schema, audit, or test surface.
 - Do not continue implementation from that track by inertia. Current mechanism work should start from `../docs/current-state.md`, `../docs/tasks/registry.md`, and the user's current product-goal / mechanism instructions.
@@ -118,11 +118,11 @@ Update when: backend-local constraints, recurring pitfalls, or stable implementa
 - `src/reading_mechanisms/attentional_v2.py`
 - `src/attentional_v2/`
 
-## Legacy Fallback Mechanism Path
-- `src/reading_mechanisms/iterator_v1.py`
-- `src/iterator_reader/parse.py`
-- `src/iterator_reader/iterator.py`
-- `src/iterator_reader/reader.py`
+## Retired Execution Boundary
+- Historical iterator/slow-cycle code is available at tag `pre-cleanup-2026-11`.
+- Only post-cleanup runs may resume. Do not migrate old checkpoint state or auto-reset it into a fresh run.
+- slow_cycle.py retains deterministic Product/UI projection functions; it no longer owns model calls or dedicated stores.
+- New evaluation inputs use Product-accepted Marginalia; historical results are read-only.
 
 ## Runtime And Artifact Constraints
 - Preserve existing checkpoints, resume behavior, budget controls, and output artifact conventions unless the task is explicitly migrating them.
@@ -140,7 +140,7 @@ Update when: backend-local constraints, recurring pitfalls, or stable implementa
 - Shared backend code must use neutral storage/runtime helpers instead of hardcoding `iterator_reader`-specific artifact paths.
 - Public aggregation may read mechanism-private artifacts through adapters or helpers, but it must not treat them as universal substrate.
 - Normal product runs must not persist normalized comparison bundles; mechanism export files such as `_mechanisms/<mechanism_key>/exports/normalized_eval_bundle.json` are reserved for explicit eval runs.
-- Compatibility fallback for older output directories is required until an explicit cleanup or migration step removes it.
+- Legacy artifact lookup remains for read-only library display and explicit Pack export. It does not authorize legacy execution/resume. Startup backfill is unchanged by Step 0.
 - Keep public API naming and normalization concerns at the API layer when internal runtime artifacts still use older names or identifiers.
 - Be conservative about changes that mainly benefit retired `book_analysis` compatibility but add complexity to the main sequential path.
 - Keep one stable doc per mechanism under `../docs/backend-reading-mechanisms/`, named by mechanism key.
