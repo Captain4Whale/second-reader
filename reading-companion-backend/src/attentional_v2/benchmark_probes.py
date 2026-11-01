@@ -11,8 +11,6 @@ from .schemas import (
     LocalContinuityState,
     ReactionRecordsState,
     RecentReadingMemoryState,
-    ReflectiveFramesState,
-    ActiveAttention,
 )
 from .state_projection import build_carry_forward_context
 from .storage import load_json, memory_quality_probe_export_file, save_json
@@ -314,16 +312,12 @@ def _reading_memory_probe_projection(reading_memory: Mapping[str, object] | None
 
 def _full_scoring_memory_state(
     *,
-    active_attention: ActiveAttention,
     recent_reading_memory: RecentReadingMemoryState | None = None,
-    reflective_frames: ReflectiveFramesState,
     unit_memory: Mapping[str, object] | None = None,
     reading_memory: Mapping[str, object] | None = None,
 ) -> dict[str, object]:
     return {
-        "active_attention": deepcopy(active_attention) if isinstance(active_attention, Mapping) else {},
         "recent_reading_memory": deepcopy(recent_reading_memory) if isinstance(recent_reading_memory, Mapping) else {"entries": []},
-        "reflective_frames": deepcopy(reflective_frames) if isinstance(reflective_frames, Mapping) else {},
         "unit_memory": deepcopy(unit_memory) if isinstance(unit_memory, Mapping) else {},
         "reading_memory": deepcopy(reading_memory) if isinstance(reading_memory, Mapping) else {},
     }
@@ -340,9 +334,7 @@ def _build_probe_snapshot(
     chapter_ref: str,
     local_buffer: LocalBufferState,
     local_continuity: LocalContinuityState,
-    active_attention: ActiveAttention,
     recent_reading_memory: RecentReadingMemoryState | None = None,
-    reflective_frames: ReflectiveFramesState,
     reaction_records: ReactionRecordsState,
     unit_memory_retrieval: Mapping[str, object] | None = None,
     reading_memory: Mapping[str, object] | None = None,
@@ -353,9 +345,7 @@ def _build_probe_snapshot(
         chapter_ref=chapter_ref,
         current_unit_sentence_ids=[],
         local_buffer=local_buffer,
-        active_attention=active_attention,
         recent_reading_memory=recent_reading_memory or {},
-        reflective_frames=reflective_frames,
         reaction_records=reaction_records,
     )
     target_source_span = _source_span(probe_target.get("target_source_span"))
@@ -365,21 +355,6 @@ def _build_probe_snapshot(
     continuity_context = (
         dict(carry_forward_context.get("session_continuity_capsule", {}))
         if isinstance(carry_forward_context.get("session_continuity_capsule"), dict)
-        else {}
-    )
-    active_attention_digest = (
-        dict(carry_forward_context.get("active_attention_digest", {}))
-        if isinstance(carry_forward_context.get("active_attention_digest"), dict)
-        else {}
-    )
-    reflective_digest = (
-        dict(carry_forward_context.get("chapter_reflective_frame", {}))
-        if isinstance(carry_forward_context.get("chapter_reflective_frame"), dict)
-        else {}
-    )
-    active_focus_digest = (
-        dict(carry_forward_context.get("active_focus_digest", {}))
-        if isinstance(carry_forward_context.get("active_focus_digest"), dict)
         else {}
     )
     source_ref_digest = [
@@ -393,9 +368,6 @@ def _build_probe_snapshot(
     )
     projection_digest = {
         "continuity_context": continuity_context,
-        "active_attention_digest": active_attention_digest,
-        "reflective_digest": reflective_digest,
-        "active_focus_digest": active_focus_digest,
         "source_ref_digest": source_ref_digest,
         "recent_reading_orientation": recent_reading_orientation,
     }
@@ -436,17 +408,12 @@ def _build_probe_snapshot(
             "end_source_span_id": _clean_text(actual_source_span_id) or _source_span_id(capture_source_span),
         },
         "scoring_memory_state": _full_scoring_memory_state(
-            active_attention=active_attention,
             recent_reading_memory=recent_reading_memory,
-            reflective_frames=reflective_frames,
             unit_memory=_unit_memory_probe_projection(unit_memory_retrieval),
             reading_memory=_reading_memory_probe_projection(reading_memory),
         ),
         "projection_digest": projection_digest,
         "continuity_context": continuity_context,
-        "active_attention_digest": active_attention_digest,
-        "reflective_digest": reflective_digest,
-        "active_focus_digest": active_focus_digest,
         "source_ref_digest": source_ref_digest,
         "recent_reading_orientation": recent_reading_orientation,
     }
@@ -461,9 +428,7 @@ def persist_due_memory_quality_probe_snapshots(
     chapter_ref: str,
     local_buffer: LocalBufferState,
     local_continuity: LocalContinuityState,
-    active_attention: ActiveAttention,
     recent_reading_memory: RecentReadingMemoryState | None = None,
-    reflective_frames: ReflectiveFramesState,
     reaction_records: ReactionRecordsState,
     actual_source_span: dict[str, object] | None = None,
     actual_source_span_id: str = "",
@@ -539,9 +504,7 @@ def persist_due_memory_quality_probe_snapshots(
             chapter_ref=chapter_ref,
             local_buffer=local_buffer,
             local_continuity=local_continuity,
-            active_attention=active_attention,
             recent_reading_memory=recent_reading_memory,
-            reflective_frames=reflective_frames,
             reaction_records=reaction_records,
             unit_memory_retrieval=unit_memory_retrieval,
             reading_memory=reading_memory,

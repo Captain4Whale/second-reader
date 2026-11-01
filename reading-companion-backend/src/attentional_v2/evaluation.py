@@ -31,9 +31,6 @@ from .storage import (
     load_json,
     reaction_records_file,
     reader_policy_file,
-    reflective_frames_file,
-    reflective_summaries_file,
-    reconsolidation_records_file,
     save_json,
 )
 
@@ -252,7 +249,37 @@ def _normalized_attention_events(output_dir: Path) -> list[NormalizedAttentionEv
 def _normalized_reactions(output_dir: Path) -> list[NormalizedReaction]:
     """Normalize persisted attentional_v2 reactions into a comparison list."""
 
-    payload = _load_json_if_exists(reaction_records_file(output_dir))
+    from src.reading_product import ReadingProductStore
+    from .product_output import mechanism_span_from_source_range
+    from .source_spans import source_ref_from_span
+    from .slow_cycle import build_reaction_record_from_surfaced_reaction
+    shell_path = runtime_artifacts.existing_runtime_shell_file(output_dir)
+    shell = load_runtime_shell(shell_path) if shell_path.exists() else {}
+    reading_id = _clean_text(shell.get("reading_id"))
+    if not reading_id:
+        raise ValueError("新评测仅支持 Product-accepted Marginalia；该 run 缺少 Reading Product")
+    document = _load_book_document(output_dir)
+    product = ReadingProductStore.open(output_dir, reading_id).snapshot(book_document=document)
+    chapters = {int(chapter["id"]): chapter for chapter in document["chapters"]}
+    records = []
+    for unit in product.units:
+        for item in unit.marginalia:
+            chapter_id = item.source_range.start.chapter_id
+            chapter = chapters[chapter_id]
+            chapter_ref = _clean_text(chapter.get("reference") or chapter.get("title")) or f"Chapter {chapter_id}"
+            span = mechanism_span_from_source_range(item.source_range, chapter_ref=chapter_ref)
+            source_ref = source_ref_from_span(span, quote=item.source_quote, role="reaction_anchor",
+                resolution={"status": "matched", "method": "exact_product_range", "match_count": 1})
+            record = build_reaction_record_from_surfaced_reaction(
+                reaction={"kind": item.kind, "source_quote": item.source_quote, "content": item.body_text or ""},
+                primary_source_ref=source_ref, chapter_id=chapter_id, chapter_ref=chapter_ref,
+                emitted_at_source_span_id=str(source_ref.get("source_span_id", "")),
+                reaction_id=item.marginalia_id, compatibility_section_ref=f"{chapter_id}.{item.source_range.start.paragraph_index}",
+                created_at=unit.settled_at)
+            if record is None:
+                raise ValueError("Accepted Product Marginalia could not be normalized")
+            records.append(record)
+    payload = {"records": records}
     reactions: list[NormalizedReaction] = []
     for raw in payload.get("records", []):
         if not isinstance(raw, dict):
@@ -321,43 +348,19 @@ def _normalized_chapter_outputs(output_dir: Path, document: BookDocument) -> lis
                 "section_count": len(payload.get("sections", [])) if isinstance(payload.get("sections"), list) else 0,
                 "visible_reaction_count": int(payload.get("visible_reaction_count", 0) or 0),
                 "featured_reaction_count": len(featured),
-                "reflection_summary": _clean_text(
-                    payload.get("chapter_reflection", {}).get("summary") if isinstance(payload.get("chapter_reflection"), dict) else ""
-                ),
             }
         )
     return outputs
 
 
 def _memory_summaries(output_dir: Path) -> list[str]:
-    """Extract compact reflective summaries for comparison and audits."""
-
-    payload = _load_json_if_exists(reflective_frames_file(output_dir))
-    if not payload or not any(isinstance(payload.get(bucket), list) and payload.get(bucket) for bucket in (
-        "chapter_understandings",
-        "book_level_frames",
-        "durable_definitions",
-        "stabilized_motifs",
-        "resolved_questions_of_record",
-        "chapter_end_notes",
-    )):
-        payload = _load_json_if_exists(reflective_summaries_file(output_dir))
-    summaries: list[str] = []
-    for bucket in (
-        "chapter_understandings",
-        "book_level_frames",
-        "durable_definitions",
-        "stabilized_motifs",
-        "resolved_questions_of_record",
-        "chapter_end_notes",
-    ):
-        for item in payload.get(bucket, []):
-            if not isinstance(item, dict):
-                continue
-            statement = _clean_text(item.get("statement"))
-            if statement:
-                summaries.append(statement)
-    return summaries[:12]
+    """Current evaluation summaries are accepted Unit Understandings."""
+    from src.reading_product import ReadingProductStore
+    shell = load_runtime_shell(runtime_artifacts.existing_runtime_shell_file(output_dir))
+    reading_id = _clean_text(shell.get("reading_id"))
+    if not reading_id:
+        return []
+    return [unit.understanding for unit in ReadingProductStore.open(output_dir, reading_id).load_units()][:12]
 
 
 def build_normalized_eval_bundle(
@@ -372,6 +375,7 @@ def build_normalized_eval_bundle(
     return {
         "mechanism_key": ATTENTIONAL_V2_MECHANISM_KEY,
         "mechanism_label": "Default deep reading mechanism",
+        "evaluation_input": "product-accepted-marginalia-v1",
         "generated_at": _timestamp(),
         "output_dir": str(output_dir),
         "config_fingerprint": stable_config_fingerprint(
@@ -486,7 +490,6 @@ def run_mechanism_integrity_checks(output_dir: Path) -> MechanismIntegrityReport
     document = _load_book_document(output_dir)
     shell = load_runtime_shell(runtime_artifacts.existing_runtime_shell_file(output_dir))
     reactions_payload = _load_json_if_exists(reaction_records_file(output_dir))
-    recon_payload = _load_json_if_exists(reconsolidation_records_file(output_dir))
     policy = _load_json_if_exists(reader_policy_file(output_dir))
     checks: list[IntegrityCheckResult] = []
 
@@ -545,30 +548,6 @@ def run_mechanism_integrity_checks(output_dir: Path) -> MechanismIntegrityReport
             if not bad_source_ref_reactions
             else "One or more reactions have missing or invalid paragraph-offset source refs.",
             details={"reaction_ids": sorted(set(filter(None, bad_source_ref_reactions)))},
-        )
-    )
-
-    known_reaction_ids = set(reaction_ids)
-    broken_reconsolidations: list[str] = []
-    for record in recon_payload.get("records", []):
-        if not isinstance(record, dict):
-            continue
-        record_id = _clean_text(record.get("record_id")) or "unknown"
-        prior_reaction_id = _clean_text(record.get("prior_reaction_id"))
-        new_reaction_id = _clean_text(record.get("new_reaction_id"))
-        if not prior_reaction_id or not new_reaction_id or prior_reaction_id == new_reaction_id:
-            broken_reconsolidations.append(record_id)
-            continue
-        if prior_reaction_id not in known_reaction_ids or new_reaction_id not in known_reaction_ids:
-            broken_reconsolidations.append(record_id)
-    checks.append(
-        _check_result(
-            "reconsolidation_links_are_append_only",
-            "fail" if broken_reconsolidations else "pass",
-            "Reconsolidation records link prior and later reactions without mutating identity."
-            if not broken_reconsolidations
-            else "One or more reconsolidation records are missing valid prior/new reaction links.",
-            details={"record_ids": broken_reconsolidations},
         )
     )
 

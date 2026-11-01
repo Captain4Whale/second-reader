@@ -4,12 +4,8 @@ from __future__ import annotations
 
 import json
 from pathlib import Path
-import threading
-import time
 
-import pytest
 
-from src.config import get_reader_resume_compat_version
 from src.iterator_reader import parse as parse_module
 from src.iterator_reader.frontend_artifacts import (
     append_activity_event,
@@ -19,9 +15,6 @@ from src.iterator_reader.frontend_artifacts import (
 from src.iterator_reader.storage import (
     activity_file,
     book_manifest_file,
-    chapter_qa_file,
-    chapter_markdown_file,
-    chapter_result_file,
     run_state_file,
 )
 

@@ -30,24 +30,18 @@ from .schemas import (
     LocalContinuityState,
     ResumeMetadataState,
     build_empty_continuation_capsule,
-    build_empty_knowledge_activations,
     build_empty_local_buffer,
     build_empty_local_continuity,
     build_empty_reaction_records,
-    build_empty_reconsolidation_records,
     build_empty_recent_reading_memory,
-    build_empty_reflective_frames,
     build_empty_resume_metadata,
-    build_empty_active_attention,
     build_default_reader_policy,
 )
 from .state_projection import build_carry_forward_context
-from .state_migration import normalize_active_tension_state
 from .storage import (
     ATTENTIONAL_V2_MECHANISM_KEY,
     continuation_capsule_file,
     full_checkpoint_file,
-    knowledge_activations_file,
     load_json,
     local_buffer_file,
     local_continuity_file,
@@ -55,12 +49,8 @@ from .storage import (
     recent_reading_memory_file,
     memory_retrieval_config_file,
     reader_policy_file,
-    reconsolidation_records_file,
-    reflective_frames_file,
     resume_metadata_file,
     save_json,
-    runtime_dir,
-    active_attention_file,
 )
 from .unit_memory import DEFAULT_RETRIEVAL_CONFIG
 
@@ -92,14 +82,10 @@ def _state_builders() -> dict[str, Callable[[], dict[str, object]]]:
         "local_buffer": lambda: build_empty_local_buffer(mechanism_version=ATTENTIONAL_V2_MECHANISM_VERSION),
         "local_continuity": lambda: build_empty_local_continuity(mechanism_version=ATTENTIONAL_V2_MECHANISM_VERSION),
         "continuation_capsule": lambda: build_empty_continuation_capsule(mechanism_version=ATTENTIONAL_V2_MECHANISM_VERSION),
-        "active_attention": lambda: build_empty_active_attention(mechanism_version=ATTENTIONAL_V2_MECHANISM_VERSION),
         "recent_reading_memory": lambda: build_empty_recent_reading_memory(
             mechanism_version=ATTENTIONAL_V2_MECHANISM_VERSION
         ),
-        "reflective_frames": lambda: build_empty_reflective_frames(mechanism_version=ATTENTIONAL_V2_MECHANISM_VERSION),
-        "knowledge_activations": lambda: build_empty_knowledge_activations(mechanism_version=ATTENTIONAL_V2_MECHANISM_VERSION),
         "reaction_records": lambda: build_empty_reaction_records(mechanism_version=ATTENTIONAL_V2_MECHANISM_VERSION),
-        "reconsolidation_records": lambda: build_empty_reconsolidation_records(mechanism_version=ATTENTIONAL_V2_MECHANISM_VERSION),
         "reader_policy": lambda: build_default_reader_policy(
             mechanism_version=ATTENTIONAL_V2_MECHANISM_VERSION,
             policy_version=ATTENTIONAL_V2_POLICY_VERSION,
@@ -119,12 +105,8 @@ def _state_paths(output_dir: Path) -> dict[str, Path]:
         "local_buffer": local_buffer_file(output_dir),
         "local_continuity": local_continuity_file(output_dir),
         "continuation_capsule": continuation_capsule_file(output_dir),
-        "active_attention": active_attention_file(output_dir),
         "recent_reading_memory": recent_reading_memory_file(output_dir),
-        "reflective_frames": reflective_frames_file(output_dir),
-        "knowledge_activations": knowledge_activations_file(output_dir),
         "reaction_records": reaction_records_file(output_dir),
-        "reconsolidation_records": reconsolidation_records_file(output_dir),
         "reader_policy": reader_policy_file(output_dir),
         "resume_metadata": resume_metadata_file(output_dir),
         "memory_retrieval_config": memory_retrieval_config_file(output_dir),
@@ -306,9 +288,7 @@ def _build_runtime_continuation_capsule(
     *,
     local_buffer: LocalBufferState,
     local_continuity: LocalContinuityState,
-    active_attention: dict[str, object],
     recent_reading_memory: dict[str, object],
-    reflective_frames: dict[str, object],
     reaction_records: dict[str, object],
 ) -> ContinuationCapsule:
     """Build one persisted continuation capsule from the current new-format runtime state."""
@@ -317,9 +297,7 @@ def _build_runtime_continuation_capsule(
         chapter_ref=_clean_text(local_continuity.get("chapter_ref")),
         current_unit_sentence_ids=[],
         local_buffer=local_buffer,
-        active_attention=active_attention,
         recent_reading_memory=recent_reading_memory,
-        reflective_frames=reflective_frames,
         reaction_records=reaction_records,
     )
     capsule = carry_forward_context.get("continuation_capsule", {})
@@ -345,45 +323,8 @@ def _usable_continuation_capsule(
 def _load_runtime_bundle(output_dir: Path) -> dict[str, dict[str, object]]:
     """Load all Phase 7 runtime files with defaults for absent artifacts."""
 
-    legacy_route_paths = (
-        runtime_dir(output_dir) / "route_history.json",
-        runtime_dir(output_dir) / "move_history.json",
-    )
-    if any(path.exists() for path in legacy_route_paths):
-        raise RuntimeError(
-            "Pre-forward-settlement attentional_v2 route state is no longer supported; rerun from a fresh runtime directory."
-        )
     builders = _state_builders()
-    bundle: dict[str, dict[str, object]] = {
-        name: _load_or_default(path, builders[name])
-        for name, path in _state_paths(output_dir).items()
-        if name not in {"active_attention", "reflective_frames"}
-    }
-    legacy_paths = {
-        "legacy_hot_state": runtime_dir(output_dir) / ("working_" + "pressure.json"),
-        "anchor_memory": runtime_dir(output_dir) / "anchor_memory.json",
-        "anchor_bank": runtime_dir(output_dir) / "anchor_bank.json",
-        "retired_object_memory": runtime_dir(output_dir) / ("concept_" + "registry.json"),
-        "retired_line_memory": runtime_dir(output_dir) / ("thread_" + "trace.json"),
-        "reflective_summaries": runtime_dir(output_dir) / "reflective_summaries.json",
-    }
-    new_paths = {
-        "active_attention": active_attention_file(output_dir),
-        "reflective_frames": reflective_frames_file(output_dir),
-    }
-    loaded_new = {
-        name: load_json(path)
-        for name, path in new_paths.items()
-        if path.exists()
-    }
-    if not loaded_new and any(path.exists() for path in legacy_paths.values()):
-        raise RuntimeError(
-            "Pre-Phase C.3 attentional_v2 runtime state is no longer supported; rerun from a new-format state directory."
-        )
-    for name in ("active_attention", "reflective_frames"):
-        bundle[name] = loaded_new.get(name) or builders[name]()
-    bundle["active_attention"] = normalize_active_tension_state(bundle["active_attention"])
-    return bundle
+    return {name: _load_or_default(path, builders[name]) for name, path in _state_paths(output_dir).items()}
 
 
 def _save_runtime_bundle(output_dir: Path, bundle: dict[str, dict[str, object]]) -> None:
@@ -392,9 +333,15 @@ def _save_runtime_bundle(output_dir: Path, bundle: dict[str, dict[str, object]])
     for name, path in _state_paths(output_dir).items():
         payload = bundle.get(name)
         if payload is not None:
-            if name == "active_attention":
-                payload = normalize_active_tension_state(payload)
             save_json(path, payload)
+
+
+def require_current_run(output_dir: Path) -> None:
+    """Reject pre-cleanup runs before survey, runtime initialization, or model invocation."""
+    policy_path = reader_policy_file(output_dir)
+    policy = load_json(policy_path) if policy_path.exists() else {}
+    if policy.get("schema_version") != ATTENTIONAL_V2_SCHEMA_VERSION:
+        raise RuntimeError("旧 checkpoint / run 已退役；请使用 tag pre-cleanup-2026-11 查看历史实现。")
 
 
 def load_full_checkpoint(output_dir: Path, checkpoint_id: str | None = None) -> FullCheckpointState | None:
@@ -410,32 +357,8 @@ def load_full_checkpoint(output_dir: Path, checkpoint_id: str | None = None) -> 
     if not path.exists():
         return None
     checkpoint = load_json(path)  # type: ignore[assignment]
-    if isinstance(checkpoint, dict) and not all(
-        key in checkpoint
-        for key in ("active_attention", "reflective_frames")
-    ):
-        raise RuntimeError(
-            "Old structured-memory attentional_v2 checkpoints are no longer supported; create a current-format checkpoint before resuming."
-        )
-    if isinstance(checkpoint, dict) and any(
-        key in checkpoint
-        for key in (
-            "anchor_bank",
-            "concept_" + "registry",
-            "thread_" + "trace",
-        )
-    ):
-        raise RuntimeError(
-            "Retired attentional_v2 checkpoints are no longer supported; rerun from a fresh runtime directory."
-        )
-    if isinstance(checkpoint, dict) and ("route_history" in checkpoint or "move_history" in checkpoint):
-        raise RuntimeError(
-            "Pre-forward-settlement attentional_v2 route checkpoints are no longer supported; rerun to create a current checkpoint."
-        )
-    if isinstance(checkpoint, dict):
-        checkpoint["active_attention"] = normalize_active_tension_state(
-            checkpoint.get("active_attention") if isinstance(checkpoint.get("active_attention"), dict) else None
-        )
+    if not isinstance(checkpoint, dict) or checkpoint.get("checkpoint_format") != "lightweight-cleanup-2026-11":
+        raise RuntimeError("旧 checkpoint 已退役；请使用 tag pre-cleanup-2026-11 查看历史实现。")
     return checkpoint  # type: ignore[return-value]
 
 
@@ -485,6 +408,7 @@ def write_full_checkpoint(
         "mechanism_version": str(shell.get("mechanism_version", "") or ATTENTIONAL_V2_MECHANISM_VERSION),
         "policy_version": str(shell.get("policy_version", "") or ATTENTIONAL_V2_POLICY_VERSION),
         "checkpoint_id": checkpoint_id,
+        "checkpoint_format": "lightweight-cleanup-2026-11",
         "created_at": str(summary.get("created_at", "") or _timestamp()),
         "checkpoint_reason": checkpoint_reason,
         "resume_kind": resume_kind,
@@ -499,17 +423,11 @@ def write_full_checkpoint(
         "continuation_capsule": _build_runtime_continuation_capsule(
             local_buffer=bundle["local_buffer"],  # type: ignore[arg-type]
             local_continuity=continuity,  # type: ignore[arg-type]
-            active_attention=bundle["active_attention"],
             recent_reading_memory=bundle["recent_reading_memory"],
-            reflective_frames=bundle["reflective_frames"],
             reaction_records=bundle["reaction_records"],
         ),  # type: ignore[typeddict-item]
-        "active_attention": bundle["active_attention"],  # type: ignore[typeddict-item]
         "recent_reading_memory": bundle["recent_reading_memory"],  # type: ignore[typeddict-item]
-        "reflective_frames": bundle["reflective_frames"],  # type: ignore[typeddict-item]
-        "knowledge_activations": bundle["knowledge_activations"],  # type: ignore[typeddict-item]
         "reaction_records": reaction_records,  # type: ignore[typeddict-item]
-        "reconsolidation_records": bundle["reconsolidation_records"],  # type: ignore[typeddict-item]
         "reader_policy": bundle["reader_policy"],  # type: ignore[typeddict-item]
         "memory_retrieval_config": bundle["memory_retrieval_config"],  # type: ignore[typeddict-item]
         "resume_metadata": bundle["resume_metadata"],  # type: ignore[typeddict-item]
@@ -805,6 +723,7 @@ def resume_from_checkpoint(
 ) -> dict[str, object]:
     """Restore live runtime state from the latest compatible checkpoint or fall back to live files."""
 
+    require_current_run(output_dir)
     live_bundle = _load_runtime_bundle(output_dir)
     policy = live_bundle["reader_policy"]
     resume_policy = dict(policy.get("resume", {}))
@@ -826,9 +745,7 @@ def resume_from_checkpoint(
             current_policy_version=str(policy.get("policy_version", "") or ATTENTIONAL_V2_POLICY_VERSION),
         )
         if not bool(compatibility.get("compatible", False)):
-            compatibility_status = "fallback_to_live_state"
-            compatibility_issues = [str(issue) for issue in compatibility.get("issues", [])]
-            effective_resume_kind = "warm_resume"
+            raise RuntimeError("checkpoint 不兼容，已拒绝恢复；历史实现请查看 tag pre-cleanup-2026-11")
 
     fallback_checkpoint_source = checkpoint or {
         "checkpoint_id": None,
@@ -836,12 +753,8 @@ def resume_from_checkpoint(
         "local_buffer": live_bundle["local_buffer"],
         "local_continuity": live_bundle["local_continuity"],
         "continuation_capsule": live_bundle["continuation_capsule"],
-        "active_attention": live_bundle["active_attention"],
         "recent_reading_memory": live_bundle["recent_reading_memory"],
-        "reflective_frames": live_bundle["reflective_frames"],
-        "knowledge_activations": live_bundle["knowledge_activations"],
         "reaction_records": live_bundle["reaction_records"],
-        "reconsolidation_records": live_bundle["reconsolidation_records"],
         "reader_policy": live_bundle["reader_policy"],
         "memory_retrieval_config": live_bundle["memory_retrieval_config"],
         "resume_metadata": live_bundle["resume_metadata"],
@@ -850,9 +763,7 @@ def resume_from_checkpoint(
     checkpoint_source = {
         **fallback_checkpoint_source,
         "continuation_capsule": dict((checkpoint or {}).get("continuation_capsule", live_bundle["continuation_capsule"])),
-        "active_attention": dict((checkpoint or {}).get("active_attention", live_bundle["active_attention"])),
         "recent_reading_memory": dict((checkpoint or {}).get("recent_reading_memory", live_bundle["recent_reading_memory"])),
-        "reflective_frames": dict((checkpoint or {}).get("reflective_frames", live_bundle["reflective_frames"])),
         "memory_retrieval_config": dict(
             (checkpoint or {}).get("memory_retrieval_config", live_bundle["memory_retrieval_config"])
         ),
@@ -872,11 +783,9 @@ def resume_from_checkpoint(
         continuation_capsule = _build_runtime_continuation_capsule(
             local_buffer=local_buffer,  # type: ignore[arg-type]
             local_continuity=continuity,  # type: ignore[arg-type]
-            active_attention=dict(checkpoint_source.get("active_attention", live_bundle["active_attention"])),
             recent_reading_memory=dict(
                 checkpoint_source.get("recent_reading_memory", live_bundle["recent_reading_memory"])
             ),
-            reflective_frames=dict(checkpoint_source.get("reflective_frames", live_bundle["reflective_frames"])),
             reaction_records=dict(checkpoint_source.get("reaction_records", live_bundle["reaction_records"])),
         )
 
@@ -928,11 +837,9 @@ def resume_from_checkpoint(
         continuation_capsule = _build_runtime_continuation_capsule(
             local_buffer=local_buffer,  # type: ignore[arg-type]
             local_continuity=continuity,  # type: ignore[arg-type]
-            active_attention=dict(checkpoint_source.get("active_attention", live_bundle["active_attention"])),
             recent_reading_memory=dict(
                 checkpoint_source.get("recent_reading_memory", live_bundle["recent_reading_memory"])
             ),
-            reflective_frames=dict(checkpoint_source.get("reflective_frames", live_bundle["reflective_frames"])),
             reaction_records=dict(checkpoint_source.get("reaction_records", live_bundle["reaction_records"])),
         )
 
@@ -940,14 +847,10 @@ def resume_from_checkpoint(
         "local_buffer": local_buffer,
         "local_continuity": continuity,
         "continuation_capsule": continuation_capsule,
-        "active_attention": dict(checkpoint_source.get("active_attention", live_bundle["active_attention"])),
         "recent_reading_memory": dict(
             checkpoint_source.get("recent_reading_memory", live_bundle["recent_reading_memory"])
         ),
-        "reflective_frames": dict(checkpoint_source.get("reflective_frames", live_bundle["reflective_frames"])),
-        "knowledge_activations": dict(checkpoint_source.get("knowledge_activations", live_bundle["knowledge_activations"])),
         "reaction_records": dict(checkpoint_source.get("reaction_records", live_bundle["reaction_records"])),
-        "reconsolidation_records": dict(checkpoint_source.get("reconsolidation_records", live_bundle["reconsolidation_records"])),
         "reader_policy": policy,
         "memory_retrieval_config": dict(checkpoint_source.get("memory_retrieval_config", live_bundle["memory_retrieval_config"])),
         "resume_metadata": dict(live_bundle["resume_metadata"]),

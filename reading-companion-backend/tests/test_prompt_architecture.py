@@ -4,9 +4,6 @@ from __future__ import annotations
 
 from pathlib import Path
 
-from src.iterator_reader.prompts import ITERATOR_V1_PROMPTS
-from src.prompts.shared import LANGUAGE_OUTPUT_CONTRACT
-from src.reading_core.runtime_contracts import ParseRequest, ReadRequest
 
 
 def test_production_code_no_longer_imports_templates_shim():

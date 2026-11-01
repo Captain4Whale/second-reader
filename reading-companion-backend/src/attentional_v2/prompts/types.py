@@ -65,15 +65,6 @@ class AttentionalV2PromptSet:
     digest_version: str
     digest_system: str
     digest_prompt: str
-    reflective_promotion_version: str
-    reflective_promotion_system: str
-    reflective_promotion_prompt: str
-    reconsolidation_version: str
-    reconsolidation_system: str
-    reconsolidation_prompt: str
-    chapter_consolidation_version: str
-    chapter_consolidation_system: str
-    chapter_consolidation_prompt: str
 
 
 def build_legacy_prompt_set(
@@ -87,9 +78,6 @@ def build_legacy_prompt_set(
     survey = registry.get("attentional_v2.survey_chapter_zone")
     ingest = registry.get("attentional_v2.ingest")
     digest = registry.get("attentional_v2.digest")
-    reflective = registry.get("attentional_v2.reflective_promotion")
-    reconsolidation = registry.get("attentional_v2.reconsolidation")
-    chapter = registry.get("attentional_v2.chapter_consolidation")
     return AttentionalV2PromptSet(
         language_output_contract=language_output_contract,
         promptset_version=promptset_version,
@@ -102,13 +90,4 @@ def build_legacy_prompt_set(
         digest_version=digest.version,
         digest_system=digest.system_prompt,
         digest_prompt=digest.user_prompt_template,
-        reflective_promotion_version=reflective.version,
-        reflective_promotion_system=reflective.system_prompt,
-        reflective_promotion_prompt=reflective.user_prompt_template,
-        reconsolidation_version=reconsolidation.version,
-        reconsolidation_system=reconsolidation.system_prompt,
-        reconsolidation_prompt=reconsolidation.user_prompt_template,
-        chapter_consolidation_version=chapter.version,
-        chapter_consolidation_system=chapter.system_prompt,
-        chapter_consolidation_prompt=chapter.user_prompt_template,
     )

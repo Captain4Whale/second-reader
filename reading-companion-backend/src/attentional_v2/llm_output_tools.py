@@ -82,61 +82,6 @@ DIGEST_RESULT_TOOL = final_output_tool(
 )
 
 
-
-
-REFLECTIVE_PROMOTION_RESULT_TOOL = final_output_tool(
-    "submit_reflective_promotion_result",
-    "Submit the final reflective-promotion result. Use this tool exactly once as the final answer.",
-    _object_schema(
-        {
-            "decision": {"type": "string", "enum": ["promote", "withhold"]},
-            "reason": {"type": "string"},
-            "target_bucket": {"type": "string"},
-            "reflective_item": {"type": "object"},
-            "supersede_bucket": {"type": "string"},
-            "supersede_item_id": {"type": "string"},
-            "state_operations": {"type": "array", "items": {"type": "object"}},
-        },
-        required=["decision", "reason"],
-    ),
-)
-
-
-RECONSOLIDATION_RESULT_TOOL = final_output_tool(
-    "submit_reconsolidation_result",
-    "Submit the final reconsolidation result. Use this tool exactly once as the final answer.",
-    _object_schema(
-        {
-            "decision": {"type": "string", "enum": ["reconsolidate", "keep_prior"]},
-            "reason": {"type": "string"},
-            "reconsolidation_record": {"type": "object"},
-            "later_reaction": {"type": "object"},
-            "state_updates": {"type": "array", "items": {"type": "object"}},
-        },
-        required=["decision", "reason"],
-    ),
-)
-
-
-CHAPTER_CONSOLIDATION_RESULT_TOOL = final_output_tool(
-    "submit_chapter_consolidation_result",
-    "Submit the final chapter-consolidation result. Use this tool exactly once as the final answer.",
-    _object_schema(
-        {
-            "chapter_ref": {"type": "string"},
-            "backward_sweep": {"type": "array", "items": {"type": "object"}},
-            "cooling_operations": {"type": "array", "items": {"type": "object"}},
-            "promotion_candidates": {"type": "array", "items": {"type": "object"}},
-            "knowledge_activation_updates": {"type": "array", "items": {"type": "object"}},
-            "cross_chapter_carry_forward": {"type": "array", "items": {"type": "object"}},
-            "chapter_summary_note": {"type": "string"},
-            "optional_chapter_reaction": {"type": "object"},
-        },
-        required=["chapter_ref"],
-    ),
-)
-
-
 SURVEY_CHAPTER_ZONE_RESULT_TOOL = final_output_tool(
     "submit_survey_chapter_zone_result",
     "Submit the final survey chapter-zone classification. Use this tool exactly once as the final answer.",

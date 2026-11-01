@@ -9,7 +9,6 @@ from types import SimpleNamespace
 from typing import Any
 
 from eval.attentional_v2 import run_excerpt_comparison as excerpt_comparison
-from src.iterator_reader.llm_utils import ReaderLLMError
 
 
 def _write_json(path: Path, payload: object) -> None:

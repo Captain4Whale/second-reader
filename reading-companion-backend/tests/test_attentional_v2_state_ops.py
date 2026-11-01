@@ -4,25 +4,16 @@ from __future__ import annotations
 
 from src.attentional_v2.schemas import (
     build_default_reader_policy,
-    build_empty_knowledge_activations,
     build_empty_local_buffer,
     build_empty_reaction_records,
     build_empty_recent_reading_memory,
-    build_empty_reconsolidation_records,
-    build_empty_reflective_summaries,
-    build_empty_active_attention,
 )
 from src.attentional_v2.state_ops import (
     append_reaction_record,
-    append_reconsolidation_record,
-    apply_active_attention_operations,
     apply_recent_reading_memory_operations,
     close_local_meaning_unit,
     push_local_buffer_sentence,
     replace_policy_section,
-    supersede_reflective_item,
-    upsert_knowledge_activation,
-    upsert_reflective_item,
 )
 
 
@@ -49,77 +40,6 @@ def _find(items: list[dict[str, object]], key: str, value: str) -> dict[str, obj
     raise AssertionError(f"missing {key}={value}")
 
 
-def test_apply_active_attention_operations_handles_append_update_close_link_and_drop():
-    """Active-attention helpers should update tagged active_items without legacy bucket side effects."""
-
-    state = build_empty_active_attention()
-    state = apply_active_attention_operations(
-        state,
-        [
-            {
-                "operation_type": "append",
-                "target_store": "active_attention",
-                "item_id": "m-1",
-                "reason": "motif became active",
-                "payload": {
-                    "attention_tags": ["motif"],
-                    "tension_from": "The chapter introduces value as a recurring problem.",
-                    "tension_focus": "How will value narrow as the chapter develops?",
-                    "working_interpretation": "",
-                    "source_refs": [_source_ref()],
-                    "opened_at_unit_span_id": "unit:c1:p1@0-p1@36",
-                },
-            }
-        ],
-    )
-
-    state = apply_active_attention_operations(
-        state,
-        [
-            {
-                "operation_type": "update",
-                "target_store": "active_attention",
-                "item_id": "m-1",
-                "payload": {
-                    "working_interpretation": "Value is becoming a social exchange problem.",
-                    "development_source_refs": [_source_ref("Value is mediated by other people.")],
-                },
-            },
-            {
-                "operation_type": "close",
-                "target_store": "active_attention",
-                "item_id": "m-1",
-                "payload": {"closed_reason": "The later text stops using this as a live question."},
-            },
-        ],
-    )
-
-    dropped = apply_active_attention_operations(
-        state,
-        [
-            {
-                "operation_type": "drop",
-                "target_store": "active_attention",
-                "item_id": "m-1",
-                "reason": "motif cooled below the hot layer",
-                "payload": {},
-            }
-        ],
-    )
-
-    assert state["active_items"][0]["item_id"] == "m-1"
-    assert state["active_items"][0]["attention_tags"] == ["motif"]
-    assert state["active_items"][0]["tension_from"] == "The chapter introduces value as a recurring problem."
-    assert state["active_items"][0]["tension_focus"] == "How will value narrow as the chapter develops?"
-    assert state["active_items"][0]["working_interpretation"] == "Value is becoming a social exchange problem."
-    assert state["active_items"][0]["status"] == "closed"
-    assert state["active_items"][0]["closed_reason"] == "The later text stops using this as a live question."
-    assert state["active_items"][0]["opened_at_unit_span_id"] == "unit:c1:p1@0-p1@36"
-    assert state["active_items"][0]["source_refs"][0]["source_span_id"] == "src:c1:p1@0-p1@36"
-    assert state["active_items"][0]["development_source_refs"][0]["quote"] == "Value is mediated by other people."
-    assert "bucket" not in state["active_items"][0]
-    assert "kind" not in state["active_items"][0]
-    assert dropped["active_items"] == []
 
 
 def test_apply_recent_reading_memory_operations_appends_unit_level_entries_only():
@@ -175,223 +95,14 @@ def test_apply_recent_reading_memory_operations_appends_unit_level_entries_only(
     assert source_span_state["entries"][0]["entry_id"] == "recent:c2:u0002:m1"
 
 
-def test_active_attention_text_fields_preserve_by_default_and_allow_explicit_clear():
-    """Live-question text fields should distinguish omitted values from explicit replacement."""
-
-    state = build_empty_active_attention()
-    state = apply_active_attention_operations(
-        state,
-        [
-            {
-                "operation_type": "create",
-                "target_store": "active_attention",
-                "item_id": "q-1",
-                "payload": {
-                    "tension_from": "A bomb is placed under the table.",
-                    "tension_focus": "When will the bomb explode?",
-                    "working_interpretation": "No timing clue yet.",
-                },
-            }
-        ],
-    )
-    state = apply_active_attention_operations(
-        state,
-        [
-            {
-                "operation_type": "update",
-                "target_store": "active_attention",
-                "item_id": "q-1",
-                "payload": {"working_interpretation": ""},
-            }
-        ],
-    )
-
-    item = _find(state["active_items"], "item_id", "q-1")
-    assert item["tension_from"] == "A bomb is placed under the table."
-    assert item["tension_focus"] == "When will the bomb explode?"
-    assert item["working_interpretation"] == ""
-    assert "answer_boundary" not in item
 
 
-def test_legacy_question_fields_are_migrated_out_of_active_tension_state():
-    """Legacy question-only fields should be cleaned at the active-tension state boundary."""
-
-    state = apply_active_attention_operations(
-        build_empty_active_attention(),
-        [
-            {
-                "operation_type": "create",
-                "target_store": "active_attention",
-                "item_id": "legacy-q",
-                "payload": {
-                    "question_from": "The old prompt raised a question.",
-                    "driving_question": "What will happen next?",
-                    "working_answer": "No clue yet.",
-                    "answer_boundary": "Old boundary text.",
-                    "answer_source_refs": [_source_ref("Old answer evidence.")],
-                },
-            }
-        ],
-    )
-
-    item = _find(state["active_items"], "item_id", "legacy-q")
-    assert item["tension_from"] == "The old prompt raised a question."
-    assert item["tension_focus"] == "What will happen next?"
-    assert item["working_interpretation"] == "No clue yet."
-    assert item["development_source_refs"][0]["quote"] == "Old answer evidence."
-    for legacy_key in ("question_from", "driving_question", "working_answer", "answer_boundary", "answer_source_refs"):
-        assert legacy_key not in item
 
 
-def test_active_attention_lifecycle_states_preserve_items_until_explicit_drop():
-    """Cooling, closing, and answered states are lifecycle states; only drop removes active items."""
-
-    state = {
-        "active_items": [
-            {
-                "item_id": "cooling-question",
-                "attention_tags": ["question"],
-                "statement": "This question is cooling but still part of lineage.",
-                "source_refs": [_source_ref("Cooling question.")],
-                "status": "active",
-            },
-            {
-                "item_id": "closing-thread",
-                "attention_tags": ["thread"],
-                "statement": "This thread can close without disappearing.",
-                "source_refs": [_source_ref("Closing thread.")],
-                "status": "active",
-            },
-        ]
-    }
-
-    cooled = apply_active_attention_operations(
-        state,
-        [
-            {
-                "operation_type": "cool",
-                "target_store": "active_attention",
-                "item_id": "cooling-question",
-                "payload": {},
-            }
-        ],
-    )
-    cooled_item = _find(cooled["active_items"], "item_id", "cooling-question")
-    assert cooled_item["status"] == "cooling"
-    assert cooled_item["tension_focus"] == "This question is cooling but still part of lineage."
-    assert "statement" not in cooled_item
-    assert cooled_item["source_refs"][0]["source_span_id"] == "src:c1:p1@0-p1@36"
-
-    resolved = apply_active_attention_operations(
-        cooled,
-        [
-            {
-                "operation_type": "resolve",
-                "target_store": "active_attention",
-                "item_id": "cooling-question",
-                "payload": {"answered_reason": "The current unit gives enough answer to stop carrying it."},
-            },
-            {
-                "operation_type": "close",
-                "target_store": "active_attention",
-                "item_id": "closing-thread",
-                "payload": {"closed_reason": "The thread is no longer shaping the next read."},
-            },
-        ],
-    )
-    resolved_item = _find(resolved["active_items"], "item_id", "cooling-question")
-    closed_item = _find(resolved["active_items"], "item_id", "closing-thread")
-    assert resolved_item["status"] == "answered"
-    assert resolved_item["answered_reason"] == "The current unit gives enough answer to stop carrying it."
-    assert resolved_item["source_refs"][0]["quote"] == "Cooling question."
-    assert closed_item["status"] == "closed"
-    assert closed_item["closed_reason"] == "The thread is no longer shaping the next read."
-
-    dropped = apply_active_attention_operations(
-        resolved,
-        [
-            {
-                "operation_type": "drop",
-                "target_store": "active_attention",
-                "item_id": "cooling-question",
-                "payload": {},
-            }
-        ],
-    )
-
-    assert [item["item_id"] for item in dropped["active_items"]] == ["closing-thread"]
-    assert _find(dropped["active_items"], "item_id", "closing-thread")["status"] == "closed"
 
 
-def test_state_ops_apply_resolve_operations_to_active_attention():
-    """Resolve behavior should turn active questions into answered items."""
-
-    active_state = {
-        "active_items": [
-            {
-                "item_id": "hot-question",
-                "tension_focus": "A live tension.",
-                "status": "active",
-            }
-        ]
-    }
-    active_state = apply_active_attention_operations(
-        active_state,
-        [
-            {
-                "operation_type": "resolve",
-                "target_store": "active_attention",
-                "item_id": "hot-question",
-                "payload": {},
-            }
-        ],
-    )
-
-    assert active_state["active_items"][0]["status"] == "answered"
 
 
-def test_activation_helpers_upsert_source_refs_by_id():
-    """Activation helpers should replace existing items while carrying inline source refs."""
-
-    activation_state = build_empty_knowledge_activations()
-    activation_state = upsert_knowledge_activation(
-        activation_state,
-        {
-            "activation_id": "k-1",
-            "trigger_source_ref": _source_ref(),
-            "activation_type": "prior_frame",
-            "source_candidate": "exchange theory",
-            "recognition_confidence": "plausible",
-            "reading_warrant": "author is defining a social market",
-            "role_assessment": "background lens",
-            "evidence_hints": ["market", "value"],
-            "evidence_rationale": "direct lexical overlap",
-            "source_refs": [_source_ref()],
-            "conflict_source_refs": [],
-            "status": "plausible",
-        },
-    )
-    activation_state = upsert_knowledge_activation(
-        activation_state,
-        {
-            "activation_id": "k-1",
-            "trigger_source_ref": _source_ref(),
-            "activation_type": "prior_frame",
-            "source_candidate": "exchange theory",
-            "recognition_confidence": "strong",
-            "reading_warrant": "author is explicitly defining a market relation",
-            "role_assessment": "active lens",
-            "evidence_hints": ["market", "value"],
-            "evidence_rationale": "stronger later confirmation",
-            "source_refs": [_source_ref()],
-            "conflict_source_refs": [],
-            "status": "strong",
-        },
-    )
-
-    assert len(activation_state["activations"]) == 1
-    assert activation_state["activations"][0]["status"] == "strong"
-    assert activation_state["activations"][0]["source_refs"][0]["source_span_id"] == "src:c1:p1@0-p1@36"
 
 
 def test_close_local_meaning_unit_tracks_recent_units():
@@ -429,18 +140,6 @@ def test_close_local_meaning_unit_tracks_recent_units():
 def test_reflective_reaction_reconsolidation_and_policy_helpers_append_cleanly():
     """The helper layer should support the remaining Phase 1 state stores."""
 
-    reflective_state = upsert_reflective_item(
-        build_empty_reflective_summaries(),
-        bucket="chapter_understandings",
-        item={
-            "item_id": "r-1",
-            "statement": "Value is mediated by other people.",
-            "source_refs": [_source_ref()],
-            "confidence_band": "working",
-            "promoted_from": "active_attention_item",
-            "status": "active",
-        },
-    )
     reaction_state = append_reaction_record(
         build_empty_reaction_records(),
         {
@@ -456,31 +155,12 @@ def test_reflective_reaction_reconsolidation_and_policy_helpers_append_cleanly()
             "created_at": "2026-03-23T00:00:30Z",
         },
     )
-    reconsolidation_state = append_reconsolidation_record(
-        build_empty_reconsolidation_records(),
-        {
-            "record_id": "rc-1",
-            "prior_reaction_id": "rx-1",
-            "new_reaction_id": "rx-2",
-            "change_kind": "tightened",
-            "what_changed": "The later sentence makes the earlier claim narrower.",
-            "rationale": "later sentence tightened the earlier claim",
-            "created_at": "2026-03-23T00:01:00Z",
-        },
-    )
-    reflective_state = supersede_reflective_item(
-        reflective_state,
-        bucket="chapter_understandings",
-        item_id="r-1",
-        superseded_by_item_id="r-2",
-    )
     policy = replace_policy_section(
         build_default_reader_policy(),
         section="resume",
         payload={"checkpoint_summary_required": True, "cold_resume_target_sentences": 3},
     )
 
-    assert reflective_state["chapter_understandings"][0]["status"] == "superseded"
     assert reaction_state["records"][0]["reaction_id"] == "rx-1"
     reaction_state = append_reaction_record(
         reaction_state,
@@ -497,9 +177,6 @@ def test_reflective_reaction_reconsolidation_and_policy_helpers_append_cleanly()
             "created_at": "2026-03-23T00:00:45Z",
         },
     )
-    assert reconsolidation_state["records"][0]["record_id"] == "rc-1"
     assert policy["resume"]["cold_resume_target_sentences"] == 3
     assert [record["reaction_id"] for record in reaction_state["records"]] == ["rx-1", "rx-2"]
     assert reaction_state["records"][0]["thought"] == "The later sentence changes the frame."
-    assert reflective_state["chapter_understandings"][0]["statement"] == "Value is mediated by other people."
-    assert reflective_state["chapter_understandings"][0]["superseded_by_item_id"] == "r-2"

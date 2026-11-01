@@ -6,7 +6,7 @@ import json
 from types import SimpleNamespace
 
 from src.attentional_v2 import survey as survey_module
-from src.attentional_v2.survey import build_book_survey, write_book_survey_artifacts
+from src.attentional_v2.survey import build_book_survey
 from src.reading_mechanisms.attentional_v2 import AttentionalV2Mechanism
 from src.reading_runtime.artifacts import mechanism_manifest_file
 

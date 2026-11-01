@@ -67,3 +67,13 @@ FAILED tests/test_f4a_quality_audit.py::test_case_target_assignments_stay_balanc
 - 全量后端：**1763 passed / 5 failed**，5 项均在 Batch 0 既有失败清单内；退役专属测试移除后原有 4 个失败随能力退出。
 - 固定 judge / prompt / Product / Pack 对照通过；零外部请求。修改文件 F821 静态检查通过。日志位于 `state/cleanup_step0/batch2/accepted-tests.log`、`probe.json`。
 - 本批没有实现 D4；接下来 Batch 3。
+
+## Batch 3：退出 slow cycle，收窄当前状态
+
+- 删除 chapter consolidation / reflective promotion / optional chapter-end reaction 模型支路及独占 prompt、state/store、checkpoint/eval 字段；slow_cycle.py 保留 Product/UI 确定性投影。当前 runner、观测和诊断不再 load/save active_attention / reflective_frames / knowledge_activations / reconsolidation_records。
+- 当前 runtime schema / resume compatibility 升为 2，full checkpoint 带独立格式标识；旧 run/checkpoint 显式拒绝并提示历史 tag，不再自动清空/重跑。parse/read 的 continue 入口在 survey/运行状态初始化前拒绝旧 run。共享 canonical parse/provisioning 仍先解析输出位置。
+- 新评测从 Reading Product 已接纳的 Unit/Marginalia 和源坐标构造输入，Understandings 用于 memory summary；私有 reaction ledger 追加的未接纳反应不会进入评测。历史结果及 Pack legacy adapter 保留，只读解释旧快照的 judge fixture 保留。
+- 完整后端验证：**1744 passed / 3 failed**，仅剩 Batch 0 已有 inventory 漂移及两项 survey monkeypatch 失败。追加两个旧 run 入口保护测试后，resume 专项 **11 passed**。
+- 相同模型 transport 替身下，固定 judge / 核心 Ingest、Digest prompt / Product U/R/M / Pack 与 Batch 0 完全相同；真实本地 ledger 不再出现 chapter_consolidation / reflective_promotion。socket 封锁，零外部模型请求。
+- 章节完成、checkpoint warm/cold/reconstitution、Product commit 后故障恢复、finalizer 和 Pack 生命周期测试通过。没有执行 D4，也没有新增真实跑书。
+- 证据：`state/cleanup_step0/batch3/accepted-tests.log`、`resume-tests.log`、`probe-final.json`、`probe-final.log`。静态 F821 检查通过。

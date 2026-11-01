@@ -1880,14 +1880,10 @@ def test_refresh_job_fresh_reruns_incompatible_prod_checkpoint(tmp_path, monkeyp
     reset_run_state = json.loads(run_state_path.read_text(encoding="utf-8"))
     structure = json.loads(_structure_path(output_dir).read_text(encoding="utf-8"))
 
-    assert refreshed["job_id"] != "job-incompat"
-    assert refreshed["pid"] == 8765
-    assert launched and "--continue" not in launched[0]
-    assert [item["type"] for item in activity[:2]] == ["resume_incompatible", "fresh_rerun_started"]
-    assert reset_run_state["stage"] == "ready"
-    assert reset_run_state["completed_chapters"] == 0
-    assert structure["chapters"][0]["status"] == "pending"
-    assert structure["chapters"][0]["segments"][0]["status"] == "pending"
+    assert not launched
+    assert refreshed["status"] == "paused"
+    assert "pre-cleanup-2026-11" in refreshed["error"]
+
 
 
 def test_refresh_job_fresh_rerun_prefers_runtime_shell_mechanism_key(tmp_path, monkeypatch):
@@ -1952,9 +1948,10 @@ def test_refresh_job_fresh_rerun_prefers_runtime_shell_mechanism_key(tmp_path, m
 
     refreshed = refresh_job("job-incompat-attn", root=tmp_path)
 
-    assert launched and "--continue" not in launched[0]
-    assert "--mechanism" not in launched[0]
-    assert refreshed["mechanism_key"] == "attentional_v2"
+    assert not launched
+    assert refreshed["status"] == "paused"
+    assert "pre-cleanup-2026-11" in refreshed["error"]
+
 
 
 def test_refresh_job_pauses_stalled_live_worker_instead_of_auto_resuming(tmp_path, monkeypatch):

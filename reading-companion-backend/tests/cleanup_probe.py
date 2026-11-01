@@ -142,6 +142,20 @@ def product_probe(root, patch):
     assert product.status == "complete" and any(u.marginalia for u in product.units)
     pack = _export_pack(output_dir, output_dir.parent, root)
     assert pack.validation.publishable
+    from src.attentional_v2.evaluation import build_normalized_eval_bundle
+    from src.attentional_v2.storage import reaction_records_file
+    private_path = reaction_records_file(output_dir)
+    private = json.loads(private_path.read_text())
+    private["records"].append({"reaction_id": "unaccepted-chapter-end", "thought": "not a Product fact"})
+    private_path.write_text(json.dumps(private))
+    evaluated = build_normalized_eval_bundle(output_dir)
+    accepted = {item.marginalia_id: item for unit in product.units for item in unit.marginalia}
+    assert {r["reaction_id"] for r in evaluated["reactions"]} == set(accepted)
+    for reaction in evaluated["reactions"]:
+        item = accepted[reaction["reaction_id"]]
+        assert reaction["source_quote"] == item.source_quote
+        assert reaction["content"] == (item.body_text or "")
+    assert evaluated["evaluation_input"] == "product-accepted-marginalia-v1"
     ledger = [json.loads(l) for l in (output_dir / "_runtime/llm_standard.jsonl").read_text().splitlines()]
     assert ledger and all(row["status"] == "ok" for row in ledger)
     return {"prompts": adapter.prompts, "product": document_to_wire(product),

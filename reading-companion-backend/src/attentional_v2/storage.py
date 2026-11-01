@@ -16,13 +16,9 @@ from .schemas import (
     build_empty_local_buffer,
     build_empty_local_continuity,
     build_empty_continuation_capsule,
-    build_empty_knowledge_activations,
     build_empty_reaction_records,
-    build_empty_reconsolidation_records,
     build_empty_recent_reading_memory,
-    build_empty_reflective_frames,
     build_empty_resume_metadata,
-    build_empty_active_attention,
 )
 
 
@@ -77,12 +73,6 @@ def revisit_index_file(output_dir: Path) -> Path:
     return derived_dir(output_dir) / "revisit_index.json"
 
 
-def active_attention_file(output_dir: Path) -> Path:
-    """Return the primary active-attention path."""
-
-    return runtime_dir(output_dir) / "active_attention.json"
-
-
 def recent_reading_memory_file(output_dir: Path) -> Path:
     """Return the near-term recent reading memory path."""
 
@@ -105,24 +95,6 @@ def continuation_capsule_file(output_dir: Path) -> Path:
     """Return the persisted continuation-capsule path."""
 
     return runtime_dir(output_dir) / "continuation_capsule.json"
-
-
-def anchor_memory_file(output_dir: Path) -> Path:
-    """Return the anchor-memory path."""
-
-    return runtime_dir(output_dir) / "anchor_memory.json"
-
-
-def reflective_summaries_file(output_dir: Path) -> Path:
-    """Return the reflective-summaries path."""
-
-    return runtime_dir(output_dir) / "reflective_summaries.json"
-
-
-def reflective_frames_file(output_dir: Path) -> Path:
-    """Return the new primary reflective-frames path."""
-
-    return runtime_dir(output_dir) / "reflective_frames.json"
 
 
 def unit_span_ledger_file(output_dir: Path) -> Path:
@@ -149,22 +121,10 @@ def unit_memory_retrieval_trace_file(output_dir: Path) -> Path:
     return runtime_dir(output_dir) / "unit_memory_retrieval_trace.jsonl"
 
 
-def knowledge_activations_file(output_dir: Path) -> Path:
-    """Return the knowledge-activations path."""
-
-    return runtime_dir(output_dir) / "knowledge_activations.json"
-
-
 def reaction_records_file(output_dir: Path) -> Path:
     """Return the durable anchored-reaction ledger path."""
 
     return runtime_dir(output_dir) / "reaction_records.json"
-
-
-def reconsolidation_records_file(output_dir: Path) -> Path:
-    """Return the reconsolidation-records path."""
-
-    return runtime_dir(output_dir) / "reconsolidation_records.json"
 
 
 def reader_policy_file(output_dir: Path) -> Path:
@@ -210,12 +170,6 @@ def settlement_audit_file(output_dir: Path) -> Path:
     return runtime_dir(output_dir) / "settlement_audit.jsonl"
 
 
-def slow_cycle_audit_file(output_dir: Path) -> Path:
-    """Return the mechanism-private slow-cycle audit stream path."""
-
-    return runtime_dir(output_dir) / "slow_cycle_audit.jsonl"
-
-
 def prompt_manifest_file(output_dir: Path, node_name: str) -> Path:
     """Return one LLM-call prompt-manifest path."""
 
@@ -256,16 +210,12 @@ def artifact_map(output_dir: Path) -> dict[str, str]:
         "local_buffer": str(local_buffer_file(output_dir).relative_to(output_dir)),
         "local_continuity": str(local_continuity_file(output_dir).relative_to(output_dir)),
         "continuation_capsule": str(continuation_capsule_file(output_dir).relative_to(output_dir)),
-        "active_attention": str(active_attention_file(output_dir).relative_to(output_dir)),
         "recent_reading_memory": str(recent_reading_memory_file(output_dir).relative_to(output_dir)),
-        "reflective_frames": str(reflective_frames_file(output_dir).relative_to(output_dir)),
         "unit_span_ledger": str(unit_span_ledger_file(output_dir).relative_to(output_dir)),
         "unit_memory_sqlite": str(unit_memory_sqlite_file(output_dir).relative_to(output_dir)),
         "memory_retrieval_config": str(memory_retrieval_config_file(output_dir).relative_to(output_dir)),
         "unit_memory_retrieval_trace": str(unit_memory_retrieval_trace_file(output_dir).relative_to(output_dir)),
-        "knowledge_activations": str(knowledge_activations_file(output_dir).relative_to(output_dir)),
         "reaction_records": str(reaction_records_file(output_dir).relative_to(output_dir)),
-        "reconsolidation_records": str(reconsolidation_records_file(output_dir).relative_to(output_dir)),
         "reader_policy": str(reader_policy_file(output_dir).relative_to(output_dir)),
         "resume_metadata": str(resume_metadata_file(output_dir).relative_to(output_dir)),
         "chapter_result_compatibility": str(chapter_result_compatibility_file(output_dir, 1).parent.relative_to(output_dir)),
@@ -276,7 +226,6 @@ def artifact_map(output_dir: Path) -> dict[str, str]:
         "debug_event_stream": str(event_stream_file(output_dir).relative_to(output_dir)),
         "read_audit": str(read_audit_file(output_dir).relative_to(output_dir)),
         "settlement_audit": str(settlement_audit_file(output_dir).relative_to(output_dir)),
-        "slow_cycle_audit": str(slow_cycle_audit_file(output_dir).relative_to(output_dir)),
         "prompt_manifests": str(prompt_manifests_dir(output_dir).relative_to(output_dir)),
     }
 
@@ -373,24 +322,11 @@ def initialize_artifact_tree(
         continuation_capsule_file(output_dir),
         build_empty_continuation_capsule(mechanism_version=mechanism_version),
     )
-    ensure_json(active_attention_file(output_dir), build_empty_active_attention(mechanism_version=mechanism_version))
     ensure_json(
         recent_reading_memory_file(output_dir),
         build_empty_recent_reading_memory(mechanism_version=mechanism_version),
     )
-    ensure_json(
-        reflective_frames_file(output_dir),
-        build_empty_reflective_frames(mechanism_version=mechanism_version),
-    )
-    ensure_json(
-        knowledge_activations_file(output_dir),
-        build_empty_knowledge_activations(mechanism_version=mechanism_version),
-    )
     ensure_json(reaction_records_file(output_dir), build_empty_reaction_records(mechanism_version=mechanism_version))
-    ensure_json(
-        reconsolidation_records_file(output_dir),
-        build_empty_reconsolidation_records(mechanism_version=mechanism_version),
-    )
     ensure_json(
         reader_policy_file(output_dir),
         reader_policy,

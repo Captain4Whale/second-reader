@@ -25,15 +25,10 @@ StateOperationType = Literal[
     "reactivate",
     "resolve",
 ]
-BridgeResolutionDecision = Literal["bridge", "decline"]
-ReflectivePromotionDecision = Literal["promote", "withhold"]
 ReconsolidationDecision = Literal["reconsolidate", "keep_prior"]
-KnowledgeUseMode = Literal["book_grounded_only", "book_grounded_plus_prior_knowledge"]
-SearchPolicyMode = Literal["no_search", "defer_search", "search_now"]
 SearchTrigger = Literal["none", "identity_critical_reference", "blocking_allusion", "genuine_curiosity", "ornamental_curiosity"]
 ActivationStatus = Literal["weak", "plausible", "strong", "rejected", "dropped"]
-AnchorRelationType = Literal["echo", "contrast", "cause", "support", "question_opened_by", "question_resolved_by", "callback"]
-ATTENTIONAL_V2_SCHEMA_VERSION = 1
+ATTENTIONAL_V2_SCHEMA_VERSION = 2
 ATTENTIONAL_V2_MECHANISM_VERSION = "attentional_v2-phase9"
 ATTENTIONAL_V2_POLICY_VERSION = "attentional_v2-policy-phase9"
 
@@ -52,42 +47,6 @@ class SourceRef(TypedDict, total=False):
     quote: str
     role: str
     resolution: dict[str, object]
-
-
-class ActiveAttentionItem(TypedDict, total=False):
-    """One ActiveTension item carried in active attention."""
-
-    item_id: str
-    attention_tags: list[str]
-    tension_from: str
-    tension_focus: str
-    working_interpretation: str
-    answered_reason: str
-    closed_reason: str
-    source_refs: list[SourceRef]
-    development_source_refs: list[SourceRef]
-    opened_at_source_span_id: str
-    opened_at_source_span: dict[str, object]
-    opened_at_unit_span_id: str
-    opened_at_unit_span: dict[str, object]
-    answered_at_source_span_id: str
-    answered_at_source_span: dict[str, object]
-    answered_at_unit_span_id: str
-    answered_at_unit_span: dict[str, object]
-    closed_at_source_span_id: str
-    closed_at_source_span: dict[str, object]
-    closed_at_unit_span_id: str
-    closed_at_unit_span: dict[str, object]
-    status: str
-
-
-class ActiveAttention(TypedDict, total=False):
-    """Primary ActiveTension state for readerly charges still alive in attention."""
-
-    schema_version: int
-    mechanism_version: str
-    updated_at: str
-    active_items: list[ActiveAttentionItem]
 
 
 class RecentReadingMemoryEntry(TypedDict, total=False):
@@ -227,18 +186,8 @@ class ContinuationCapsule(TypedDict, total=False):
     chapter_ref: str
     current_sentence_id: str
     session_continuity_capsule: SessionContinuityCapsule
-    active_attention_digest: "ActiveAttentionDigest"
     recent_reading_memory: "RecentReadingMemoryDigest"
-    chapter_reflective_frame: "ReflectiveFrameDigest"
-    active_focus_digest: "ActiveFocusDigest"
     refs: list["CarryForwardRef"]
-
-
-class ActiveAttentionDigest(TypedDict, total=False):
-    """Prompt-facing digest of the current hot active-attention state."""
-
-    active_items: list[dict[str, object]]
-    hot_items: list[dict[str, object]]
 
 
 class RecentReadingMemoryDigest(TypedDict, total=False):
@@ -248,32 +197,13 @@ class RecentReadingMemoryDigest(TypedDict, total=False):
     active_entry_count: int
 
 
-class ReflectiveFrameDigest(TypedDict, total=False):
-    """Bounded reflective frame packet for the current chapter/book."""
-
-    chapter_frames: list[dict[str, object]]
-    book_frames: list[dict[str, object]]
-    durable_definitions: list[dict[str, object]]
-
-
-class ActiveFocusDigest(TypedDict, total=False):
-    """Small digest of currently active attention plus recent moves and reactions."""
-
-    active_items: list[dict[str, object]]
-    recent_reactions: list[dict[str, object]]
-
-
 class CarryForwardContext(TypedDict, total=False):
     """Small stable continuity packet passed into every formal read."""
 
     packet_version: str
     continuation_capsule: ContinuationCapsule
     session_continuity_capsule: SessionContinuityCapsule
-    active_attention_digest: ActiveAttentionDigest
     recent_reading_memory: RecentReadingMemoryDigest
-    chapter_reflective_frame: ReflectiveFrameDigest
-    active_focus_digest: ActiveFocusDigest
-    reflective_digest: list[dict[str, object]]
     source_ref_digest: list[dict[str, object]]
     continuity_digest: dict[str, object]
     refs: list[CarryForwardRef]
@@ -501,20 +431,6 @@ class UnitMemoryEntry(TypedDict, total=False):
     memory_retrieval_mode: MemoryRetrievalMode
 
 
-class BridgeCandidate(TypedDict, total=False):
-    """One bridge candidate record passed to later bridge judgment."""
-
-    candidate_kind: str
-    target_anchor_id: str
-    target_sentence_id: str
-    retrieval_channel: str
-    relation_type: AnchorRelationType | str
-    score: float
-    why_now: str
-    quote: str
-    locator: TextLocator
-
-
 class ReactionCandidate(TypedDict, total=False):
     """One candidate anchored reaction proposed before emission gating."""
 
@@ -549,14 +465,6 @@ class SearchIntent(TypedDict, total=False):
     rationale: str
 
 
-class BridgeAttribution(TypedDict, total=False):
-    """Explicit source-grounded explanation for one accepted bridge."""
-
-    target_quote: str
-    current_quote: str
-    relation_explanation: str
-
-
 class ReactionAnchor(TypedDict, total=False):
     """One persisted source anchor embedded directly into a durable visible reaction."""
 
@@ -582,7 +490,6 @@ class AnchoredReactionRecord(TypedDict, total=False):
     source_quote: str
     primary_source_ref: SourceRef
     related_source_refs: list[SourceRef]
-    reconsolidation_record_id: str
     supersedes_reaction_id: str
     compatibility_section_ref: str
     prior_link: PriorLink | None
@@ -591,22 +498,6 @@ class AnchoredReactionRecord(TypedDict, total=False):
     search_query: str
     search_results: list[SearchHit]
     created_at: str
-
-
-class BridgeResolutionResult(TypedDict, total=False):
-    """Structured bridge-judgment result over deterministic candidate retrieval."""
-
-    decision: BridgeResolutionDecision
-    reason: str
-    primary_bridge: BridgeCandidate | None
-    primary_attribution: BridgeAttribution | None
-    supporting_bridges: list[BridgeCandidate]
-    activation_updates: list[StateOperation]
-    state_operations: list[StateOperation]
-    knowledge_use_mode: KnowledgeUseMode
-    search_policy_mode: SearchPolicyMode
-    search_trigger: SearchTrigger
-    search_query: str
 
 
 class AnchorRecord(TypedDict, total=False):
@@ -624,119 +515,6 @@ class AnchorRecord(TypedDict, total=False):
     linked_activation_ids: list[str]
 
 
-class AnchorRelation(TypedDict, total=False):
-    """One typed relation between retained anchors."""
-
-    relation_id: str
-    relation_type: AnchorRelationType
-    source_anchor_id: str
-    target_anchor_id: str
-    rationale: str
-
-
-class AnchorBankState(TypedDict, total=False):
-    """Primary source-grounded evidence store after the Phase C.3 migration."""
-
-    schema_version: int
-    mechanism_version: str
-    updated_at: str
-    anchor_records: list[AnchorRecord]
-    anchor_relations: list[AnchorRelation]
-
-
-class AnchorMemoryState(TypedDict, total=False):
-    """Retrieval-facing earlier state for bridge and callback behavior."""
-
-    schema_version: int
-    mechanism_version: str
-    updated_at: str
-    anchor_records: list[AnchorRecord]
-    anchor_relations: list[AnchorRelation]
-    motif_index: dict[str, list[str]]
-    unresolved_reference_index: dict[str, list[str]]
-    trace_links: dict[str, list[str]]
-
-
-class ReflectiveItem(TypedDict, total=False):
-    """One promoted reflective understanding retained across local hot state."""
-
-    item_id: str
-    statement: str
-    source_refs: list[SourceRef]
-    confidence_band: str
-    promoted_from: str
-    status: str
-    superseded_by_item_id: str
-    chapter_ref: str
-
-
-class ReflectivePromotionCandidate(TypedDict, total=False):
-    """One candidate statement that may earn promotion into reflective summaries."""
-
-    candidate_id: str
-    statement: str
-    source_refs: list[SourceRef]
-    promoted_from: str
-    target_bucket: str
-    rationale: str
-
-
-class ReflectivePromotionResult(TypedDict, total=False):
-    """Structured result from the reflective-promotion node."""
-
-    decision: ReflectivePromotionDecision
-    reason: str
-    target_bucket: str
-    reflective_item: ReflectiveItem | None
-    supersede_bucket: str
-    supersede_item_id: str
-    state_operations: list[StateOperation]
-
-
-class ReflectiveSummariesState(TypedDict, total=False):
-    """Slower durable understanding promoted from local reading state."""
-
-    schema_version: int
-    mechanism_version: str
-    updated_at: str
-    chapter_understandings: list[ReflectiveItem]
-    book_level_frames: list[ReflectiveItem]
-    durable_definitions: list[ReflectiveItem]
-    stabilized_motifs: list[ReflectiveItem]
-    resolved_questions_of_record: list[ReflectiveItem]
-    chapter_end_notes: list[ReflectiveItem]
-
-
-class ReflectiveFramesState(ReflectiveSummariesState, total=False):
-    """Primary slower reflective layer after the Phase C.3 migration."""
-
-
-class KnowledgeActivation(TypedDict, total=False):
-    """One activated piece of prior knowledge with separate warrant tracking."""
-
-    activation_id: str
-    trigger_source_ref: SourceRef
-    activation_type: str
-    source_candidate: str
-    recognition_confidence: str
-    reading_warrant: str
-    role_assessment: str
-    evidence_hints: list[str]
-    evidence_rationale: str
-    source_refs: list[SourceRef]
-    conflict_source_refs: list[SourceRef]
-    status: ActivationStatus
-
-
-class KnowledgeActivationsState(TypedDict, total=False):
-    """Knowledge-activation ledger plus current use-policy mode."""
-
-    schema_version: int
-    mechanism_version: str
-    updated_at: str
-    knowledge_use_mode: KnowledgeUseMode
-    search_policy_mode: SearchPolicyMode
-    activations: list[KnowledgeActivation]
 
 
 class ReactionRecordsState(TypedDict, total=False):
@@ -746,71 +524,6 @@ class ReactionRecordsState(TypedDict, total=False):
     mechanism_version: str
     updated_at: str
     records: list[AnchoredReactionRecord]
-
-
-class ReconsolidationRecord(TypedDict, total=False):
-    """Append-only record of later reinterpretation linked to earlier thought."""
-
-    record_id: str
-    prior_reaction_id: str
-    new_reaction_id: str
-    change_kind: str
-    what_changed: str
-    rationale: str
-    created_at: str
-
-
-class ReconsolidationRecordsState(TypedDict, total=False):
-    """Append-only ledger of reconsolidation events."""
-
-    schema_version: int
-    mechanism_version: str
-    updated_at: str
-    records: list[ReconsolidationRecord]
-
-
-class ReconsolidationResult(TypedDict, total=False):
-    """Structured result from the reconsolidation node."""
-
-    decision: ReconsolidationDecision
-    reason: str
-    reconsolidation_record: ReconsolidationRecord | None
-    later_reaction: AnchoredReactionRecord | None
-    state_updates: list[StateOperation]
-
-
-class ChapterConsolidationResult(TypedDict, total=False):
-    """Structured chapter-end sweep and carry-forward result."""
-
-    chapter_ref: str
-    backward_sweep: list[dict[str, object]]
-    cooling_operations: list[StateOperation]
-    promotion_candidates: list[ReflectivePromotionCandidate]
-    knowledge_activation_updates: list[StateOperation]
-    cross_chapter_carry_forward: list[ActiveAttentionItem]
-    chapter_summary_note: str
-    optional_chapter_reaction: ReactionCandidate | None
-
-
-class SlowCycleAuditEnvelope(TypedDict, total=False):
-    """Compact audit-only envelope for slow-cycle candidate and settlement evidence."""
-
-    trigger_type: str
-    chapter_ref: str
-    candidate_type: str
-    candidate_id: str
-    source_ref_count: int
-    source_ref_resolution_statuses: list[str]
-    promotion_evidence_status: str
-    settlement_decision: str
-    settlement_reason: str
-    withhold_promotion_reason: str
-    not_carried_reason: str
-    carry_forward_reason: str
-    target_bucket: str
-    settled_item_id: str
-    supersede_bucket: str
-    supersede_item_id: str
 
 
 class LoggingPolicy(TypedDict, total=False):
@@ -832,9 +545,6 @@ class ReaderPolicy(TypedDict, total=False):
     updated_at: str
     unitize: dict[str, object]
     read: dict[str, object]
-    knowledge: dict[str, object]
-    search: dict[str, object]
-    bridge: dict[str, object]
     resume: dict[str, object]
     logging: LoggingPolicy
 
@@ -881,27 +591,11 @@ class FullCheckpointState(TypedDict, total=False):
     local_buffer: LocalBufferState
     local_continuity: LocalContinuityState
     continuation_capsule: ContinuationCapsule
-    active_attention: ActiveAttention
     recent_reading_memory: RecentReadingMemoryState
-    reflective_frames: ReflectiveFramesState
-    reflective_summaries: ReflectiveSummariesState
-    knowledge_activations: KnowledgeActivationsState
     reaction_records: ReactionRecordsState
-    reconsolidation_records: ReconsolidationRecordsState
     reader_policy: ReaderPolicy
     memory_retrieval_config: UnitMemoryRetrievalConfig
     resume_metadata: ResumeMetadataState
-
-
-def build_empty_active_attention(*, mechanism_version: str = ATTENTIONAL_V2_MECHANISM_VERSION) -> ActiveAttention:
-    """Return the default primary hot attention state."""
-
-    return {
-        "schema_version": ATTENTIONAL_V2_SCHEMA_VERSION,
-        "mechanism_version": mechanism_version,
-        "updated_at": _timestamp(),
-        "active_items": [],
-    }
 
 
 def build_empty_recent_reading_memory(
@@ -985,95 +679,11 @@ def build_empty_continuation_capsule(
             "recent_meaning_units": [],
             "recent_reactions": [],
         },
-        "active_attention_digest": {
-            "active_items": [],
-            "hot_items": [],
-        },
         "recent_reading_memory": {
             "active_entries": [],
             "active_entry_count": 0,
         },
-        "chapter_reflective_frame": {
-            "chapter_frames": [],
-            "book_frames": [],
-            "durable_definitions": [],
-        },
-        "active_focus_digest": {
-            "active_items": [],
-            "recent_reactions": [],
-        },
         "refs": [],
-    }
-
-
-def build_empty_anchor_memory(*, mechanism_version: str = ATTENTIONAL_V2_MECHANISM_VERSION) -> AnchorMemoryState:
-    """Return the default anchor-memory state."""
-
-    return {
-        "schema_version": ATTENTIONAL_V2_SCHEMA_VERSION,
-        "mechanism_version": mechanism_version,
-        "updated_at": _timestamp(),
-        "anchor_records": [],
-        "anchor_relations": [],
-        "motif_index": {},
-        "unresolved_reference_index": {},
-        "trace_links": {},
-    }
-
-
-def build_empty_anchor_bank(*, mechanism_version: str = ATTENTIONAL_V2_MECHANISM_VERSION) -> AnchorBankState:
-    """Return the default primary anchor-bank state."""
-
-    return {
-        "schema_version": ATTENTIONAL_V2_SCHEMA_VERSION,
-        "mechanism_version": mechanism_version,
-        "updated_at": _timestamp(),
-        "anchor_records": [],
-        "anchor_relations": [],
-    }
-
-
-def build_empty_reflective_summaries(
-    *,
-    mechanism_version: str = ATTENTIONAL_V2_MECHANISM_VERSION,
-) -> ReflectiveSummariesState:
-    """Return the default reflective-summary state."""
-
-    return {
-        "schema_version": ATTENTIONAL_V2_SCHEMA_VERSION,
-        "mechanism_version": mechanism_version,
-        "updated_at": _timestamp(),
-        "chapter_understandings": [],
-        "book_level_frames": [],
-        "durable_definitions": [],
-        "stabilized_motifs": [],
-        "resolved_questions_of_record": [],
-        "chapter_end_notes": [],
-    }
-
-
-def build_empty_reflective_frames(
-    *,
-    mechanism_version: str = ATTENTIONAL_V2_MECHANISM_VERSION,
-) -> ReflectiveFramesState:
-    """Return the default reflective-frames state."""
-
-    return build_empty_reflective_summaries(mechanism_version=mechanism_version)
-
-
-def build_empty_knowledge_activations(
-    *,
-    mechanism_version: str = ATTENTIONAL_V2_MECHANISM_VERSION,
-) -> KnowledgeActivationsState:
-    """Return the default knowledge-activation state."""
-
-    return {
-        "schema_version": ATTENTIONAL_V2_SCHEMA_VERSION,
-        "mechanism_version": mechanism_version,
-        "updated_at": _timestamp(),
-        "knowledge_use_mode": "book_grounded_only",
-        "search_policy_mode": "no_search",
-        "activations": [],
     }
 
 
@@ -1082,20 +692,6 @@ def build_empty_reaction_records(
     mechanism_version: str = ATTENTIONAL_V2_MECHANISM_VERSION,
 ) -> ReactionRecordsState:
     """Return the default durable anchored-reaction state."""
-
-    return {
-        "schema_version": ATTENTIONAL_V2_SCHEMA_VERSION,
-        "mechanism_version": mechanism_version,
-        "updated_at": _timestamp(),
-        "records": [],
-    }
-
-
-def build_empty_reconsolidation_records(
-    *,
-    mechanism_version: str = ATTENTIONAL_V2_MECHANISM_VERSION,
-) -> ReconsolidationRecordsState:
-    """Return the default reconsolidation state."""
 
     return {
         "schema_version": ATTENTIONAL_V2_SCHEMA_VERSION,
@@ -1127,17 +723,6 @@ def build_default_reader_policy(
             "unit_hard_max_tokens": 1600,
             "emergency_max_preview_paragraphs": 200,
         },
-        "knowledge": {
-            "default_mode": "book_grounded_only",
-            "allow_prior_knowledge_when_warranted": True,
-        },
-        "search": {
-            "default_mode": "no_search",
-            "allow_search_now": True,
-            "rare_search_posture": True,
-            "defer_curiosity_by_default": True,
-        },
-        "bridge": {"enabled": False, "source_ref_required": True, "max_supporting_candidates": 2},
         "resume": {
             "default_mode": "warm_resume",
             "cold_resume_target_sentences": 8,

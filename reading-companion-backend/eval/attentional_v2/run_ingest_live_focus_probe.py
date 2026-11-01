@@ -69,11 +69,9 @@ from src.attentional_v2.runner import (  # noqa: E402
 )
 from src.attentional_v2.schemas import (  # noqa: E402
     build_default_reader_policy,
-    build_empty_active_attention,
     build_empty_local_buffer,
     build_empty_local_continuity,
     build_empty_reaction_records,
-    build_empty_reflective_frames,
 )
 from src.attentional_v2.source_spans import (  # noqa: E402
     cursor_less_than,
@@ -326,8 +324,6 @@ def _state_bundle() -> dict[str, dict[str, object]]:
         "local_buffer": build_empty_local_buffer(),
         "local_continuity": build_empty_local_continuity(),
         "continuation_capsule": {},
-        "active_attention": build_empty_active_attention(),
-        "reflective_frames": build_empty_reflective_frames(),
         "reaction_records": build_empty_reaction_records(),
     }
 
@@ -388,8 +384,6 @@ def _run_one_unit(
             current_cursor=dict(cursor),
             local_buffer=state["local_buffer"],  # type: ignore[arg-type]
             continuation_capsule=state["continuation_capsule"],
-            active_attention=state["active_attention"],  # type: ignore[arg-type]
-            reflective_frames=state["reflective_frames"],  # type: ignore[arg-type]
             reaction_records=state["reaction_records"],  # type: ignore[arg-type]
             local_continuity=state["local_continuity"],  # type: ignore[arg-type]
             reader_policy=reader_policy,

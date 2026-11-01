@@ -3,11 +3,9 @@ from __future__ import annotations
 import json
 from contextlib import nullcontext
 from pathlib import Path
-from types import SimpleNamespace
 from typing import Any
 
 from eval.attentional_v2 import run_accumulation_comparison as accumulation_comparison
-from src.iterator_reader.llm_utils import ReaderLLMError
 
 
 def _write_json(path: Path, payload: object) -> None:

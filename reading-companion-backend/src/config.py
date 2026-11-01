@@ -8,7 +8,7 @@ from pathlib import Path
 from dotenv import load_dotenv
 
 
-READER_RESUME_COMPAT_VERSION = 1
+READER_RESUME_COMPAT_VERSION = 2
 _BACKEND_BOOT_ID = uuid.uuid4().hex
 BACKEND_ROOT = Path(__file__).resolve().parents[1]
 

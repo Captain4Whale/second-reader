@@ -1210,83 +1210,9 @@ def _abandon_dev_run(record: dict, *, book_id: str | None, run_state: dict | Non
 
 
 def _fresh_rerun_after_incompatibility(record: dict, *, book_id: str | None, root: Path | None = None) -> dict:
-    """Archive one incompatible run, reset live artifacts, and launch a fresh job."""
-    normalized = _normalize_record(record)
-    resolved_book_id = str(book_id or normalized.get("book_id", "") or "").strip() or None
-    mechanism_key = _resume_mechanism_key(normalized, book_id=resolved_book_id, root=root)
-    reason = "Detected an incompatible resume checkpoint; clearing live analysis artifacts and starting a fresh run."
-    fenced_lease, stopped = _fence_and_terminate(normalized, root)
-    if not stopped:
-        return save_job(
-            {
-                **normalized,
-                "status": "paused",
-                "book_id": resolved_book_id,
-                "lease": sanitized_lease_metadata(fenced_lease) or normalized.get("lease", {}),
-                "error": f"{reason} The previous worker did not exit, so no replacement was launched.",
-            },
-            root,
-        )
-    archived_job = save_job(
-        {
-            **normalized,
-            "status": "error",
-            "book_id": resolved_book_id,
-            "pid": None,
-            "lease": sanitized_lease_metadata(fenced_lease) or normalized.get("lease", {}),
-            "error": reason,
-        },
-        root,
-    )
-    if resolved_book_id:
-        _archive_run_artifacts(book_id=resolved_book_id, job=archived_job, root=root)
-        _clear_live_analysis_artifacts(resolved_book_id, root)
-
-    fresh_record = _launch_subprocess_job(
-        upload_path=Path(str(normalized.get("upload_path", ""))),
-        command=_job_command(normalized, continue_mode=False, mechanism_key=mechanism_key),
-        job_kind=str(normalized.get("job_kind", "read") or "read"),
-        mechanism_key=mechanism_key,
-        language=str(normalized.get("language", "auto") or "auto"),
-        intent=normalized.get("intent"),
-        memory_retrieval_mode=normalized.get("memory_retrieval_mode"),
-        root=root,
-        job_id=uuid.uuid4().hex[:12],
-        initial_status="queued",
-        book_id=resolved_book_id,
-        confirmed_stopped_attempt=(
-            str(normalized.get("job_id", "")),
-            str(normalized.get("run_attempt_id", "")),
-            int((normalized.get("lease", {}) or {}).get("generation", 0) or 0),
-        )
-        if normalized.get("run_attempt_id")
-        and int((normalized.get("lease", {}) or {}).get("generation", 0) or 0) > 0
-        else None,
-    )
-    if resolved_book_id:
-        append_activity_event(
-            _book_output_dir(resolved_book_id, root),
-            {
-                "type": "resume_incompatible",
-                "message": "Detected an incompatible checkpoint from an older reader runtime; restarting this analysis from scratch.",
-                "details": {
-                    "previous_job_id": str(normalized.get("job_id", "")),
-                    "resume_compat_version": _record_resume_compat(normalized),
-                    "current_resume_compat_version": get_reader_resume_compat_version(),
-                },
-            },
-        )
-        append_activity_event(
-            _book_output_dir(resolved_book_id, root),
-            {
-                "type": "fresh_rerun_started",
-                "message": "Started a fresh analysis run after discarding incompatible live runtime artifacts.",
-                "details": {
-                    "job_id": str(fresh_record.get("job_id", "")),
-                },
-            },
-        )
-    return fresh_record
+    """Leave old artifacts untouched and explicitly refuse incompatible recovery."""
+    return {**record, "book_id": book_id or record.get("book_id"), "status": "paused",
+            "error": "旧 checkpoint 已退役；请使用 tag pre-cleanup-2026-11 查看历史实现。"}
 
 
 def _resume_supported(record: dict) -> bool:
@@ -1480,11 +1406,7 @@ def resume_job_for_book(
         run_state=run_state,
         parse_state=parse_state,
     ):
-        return _fresh_rerun_after_incompatibility(
-            {**record, "memory_retrieval_mode": memory_retrieval_mode or record.get("memory_retrieval_mode")},
-            book_id=book_id,
-            root=root,
-        )
+        raise RuntimeError("旧 checkpoint 已退役；请使用 tag pre-cleanup-2026-11 查看历史实现。")
     if not _resume_supported(record):
         raise RuntimeError("No resumable checkpoint is available for this book.")
     return _resume_job(

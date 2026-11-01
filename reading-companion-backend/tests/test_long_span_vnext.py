@@ -15,8 +15,6 @@ from src.attentional_v2.schemas import (
     build_empty_local_continuity,
     build_empty_reaction_records,
     build_empty_recent_reading_memory,
-    build_empty_reflective_frames,
-    build_empty_active_attention,
 )
 from src.attentional_v2.storage import initialize_artifact_tree, memory_quality_probe_export_file
 
@@ -227,8 +225,6 @@ def test_persist_due_memory_quality_probe_snapshots_emits_once_per_semantic_targ
         chapter_ref="Chapter 1",
         local_buffer=local_buffer,
         local_continuity=local_continuity,
-        active_attention=build_empty_active_attention(),
-        reflective_frames=build_empty_reflective_frames(),
         reaction_records=build_empty_reaction_records(),
     )
 
@@ -247,8 +243,6 @@ def test_persist_due_memory_quality_probe_snapshots_emits_once_per_semantic_targ
         chapter_ref="Chapter 1",
         local_buffer=local_buffer,
         local_continuity=local_continuity,
-        active_attention=build_empty_active_attention(),
-        reflective_frames=build_empty_reflective_frames(),
         reaction_records=build_empty_reaction_records(),
     )
     assert second == []
@@ -261,8 +255,6 @@ def test_persist_due_memory_quality_probe_snapshots_emits_once_per_semantic_targ
         chapter_ref="Chapter 1",
         local_buffer=local_buffer,
         local_continuity=local_continuity,
-        active_attention=build_empty_active_attention(),
-        reflective_frames=build_empty_reflective_frames(),
         reaction_records=build_empty_reaction_records(),
     )
     assert len(final) == 1
@@ -281,10 +273,6 @@ def test_source_native_memory_quality_probe_fires_by_source_cursor(tmp_path: Pat
         "start_cursor": {"chapter_id": 1, "chapter_ref": "Chapter 1", "paragraph_index": 2, "char_offset": 6},
         "end_cursor": {"chapter_id": 1, "chapter_ref": "Chapter 1", "paragraph_index": 2, "char_offset": 13},
     }
-    active_attention = build_empty_active_attention()
-    active_attention["active_items"] = [{"item_id": "active-a", "statement": "Alpha remains salient."}]
-    reflective_frames = build_empty_reflective_frames()
-    reflective_frames["chapter_understandings"] = [{"frame_id": "frame-a", "summary": "Alpha frame."}]
 
     captured = persist_due_memory_quality_probe_snapshots(
         output_dir=output_dir,
@@ -294,8 +282,6 @@ def test_source_native_memory_quality_probe_fires_by_source_cursor(tmp_path: Pat
         chapter_ref="Chapter 1",
         local_buffer=local_buffer,
         local_continuity=local_continuity,
-        active_attention=active_attention,
-        reflective_frames=reflective_frames,
         reaction_records=build_empty_reaction_records(),
         actual_source_span={
             "start_cursor": {"chapter_id": 1, "chapter_ref": "Chapter 1", "paragraph_index": 2, "char_offset": 6},
@@ -322,10 +308,9 @@ def test_source_native_memory_quality_probe_fires_by_source_cursor(tmp_path: Pat
     assert snapshot["target_source_span_id"] == "src:c1:p2@0-p2@6"
     assert snapshot["capture_source_span_id"] == "src:c1:p2@6-p2@13"
     assert snapshot["recent_reading_orientation"]["current_source_span_id"] == "src:c1:p2@6-p2@13"
-    assert snapshot["scoring_memory_state"]["active_attention"]["active_items"][0]["item_id"] == "active-a"
     assert snapshot["scoring_memory_state"]["recent_reading_memory"]["entries"] == []
-    assert snapshot["scoring_memory_state"]["reflective_frames"]["chapter_understandings"][0]["frame_id"] == "frame-a"
-    assert snapshot["projection_digest"]["active_attention_digest"] == snapshot["active_attention_digest"]
+    assert "active_attention" not in snapshot["scoring_memory_state"]
+    assert "reflective_frames" not in snapshot["scoring_memory_state"]
 
 
 def test_source_native_memory_quality_probe_does_not_fall_back_to_sentence_threshold(tmp_path: Path) -> None:
@@ -340,8 +325,6 @@ def test_source_native_memory_quality_probe_does_not_fall_back_to_sentence_thres
         chapter_ref="Chapter 1",
         local_buffer=build_empty_local_buffer(),
         local_continuity=build_empty_local_continuity(),
-        active_attention=build_empty_active_attention(),
-        reflective_frames=build_empty_reflective_frames(),
         reaction_records=build_empty_reaction_records(),
     )
 
@@ -383,8 +366,6 @@ def test_memory_quality_probe_observability_hook_is_disabled_by_default(tmp_path
         chapter_ref="Chapter 1",
         local_buffer=build_empty_local_buffer(),
         local_continuity=build_empty_local_continuity(),
-        active_attention=build_empty_active_attention(),
-        reflective_frames=build_empty_reflective_frames(),
         reaction_records=build_empty_reaction_records(),
     )
 
@@ -400,8 +381,6 @@ def test_memory_quality_probe_observability_hook_is_disabled_by_default(tmp_path
         chapter_ref="Chapter 1",
         local_buffer=build_empty_local_buffer(),
         local_continuity=build_empty_local_continuity(),
-        active_attention=build_empty_active_attention(),
-        reflective_frames=build_empty_reflective_frames(),
         reaction_records=build_empty_reaction_records(),
     )
     assert default_product_path == []
@@ -421,8 +400,6 @@ def test_memory_quality_probe_observability_hook_captures_when_enabled(tmp_path:
         chapter_ref="Chapter 1",
         local_buffer=build_empty_local_buffer(),
         local_continuity=build_empty_local_continuity(),
-        active_attention=build_empty_active_attention(),
-        reflective_frames=build_empty_reflective_frames(),
         reaction_records=build_empty_reaction_records(),
     )
 
@@ -451,8 +428,6 @@ def test_memory_quality_probe_export_requires_explicit_targets(tmp_path: Path) -
             chapter_ref="Chapter 1",
             local_buffer=build_empty_local_buffer(),
             local_continuity=build_empty_local_continuity(),
-            active_attention=build_empty_active_attention(),
-                    reflective_frames=build_empty_reflective_frames(),
             reaction_records=build_empty_reaction_records(),
         )
     except ValueError as exc:

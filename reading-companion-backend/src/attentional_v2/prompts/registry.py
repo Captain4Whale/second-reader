@@ -4,11 +4,8 @@ from __future__ import annotations
 
 from src.prompts.shared import LANGUAGE_OUTPUT_CONTRACT
 
-from .chapter_consolidation import CHAPTER_CONSOLIDATION_PROMPT, CHAPTER_CONSOLIDATION_PROMPT_VERSION
 from .ingest import INGEST_PROMPT, INGEST_PROMPT_VERSION
 from .digest import DIGEST_PROMPT, DIGEST_PROMPT_VERSION
-from .reconsolidation import RECONSOLIDATION_PROMPT, RECONSOLIDATION_PROMPT_VERSION
-from .reflective_promotion import REFLECTIVE_PROMOTION_PROMPT, REFLECTIVE_PROMOTION_PROMPT_VERSION
 from .survey_chapter_zone import SURVEY_CHAPTER_ZONE_PROMPT, SURVEY_CHAPTER_ZONE_PROMPT_VERSION
 from .types import AttentionalV2PromptSet, PromptDefinition, PromptRegistry, build_legacy_prompt_set
 
@@ -21,9 +18,6 @@ ATTENTIONAL_V2_PROMPT_REGISTRY = PromptRegistry(
         SURVEY_CHAPTER_ZONE_PROMPT,
         INGEST_PROMPT,
         DIGEST_PROMPT,
-        REFLECTIVE_PROMOTION_PROMPT,
-        RECONSOLIDATION_PROMPT,
-        CHAPTER_CONSOLIDATION_PROMPT,
     ]
 )
 
@@ -42,9 +36,6 @@ __all__ = [
     "SURVEY_CHAPTER_ZONE_PROMPT_VERSION",
     "INGEST_PROMPT_VERSION",
     "DIGEST_PROMPT_VERSION",
-    "REFLECTIVE_PROMOTION_PROMPT_VERSION",
-    "RECONSOLIDATION_PROMPT_VERSION",
-    "CHAPTER_CONSOLIDATION_PROMPT_VERSION",
     "AttentionalV2PromptSet",
     "PromptDefinition",
     "PromptRegistry",

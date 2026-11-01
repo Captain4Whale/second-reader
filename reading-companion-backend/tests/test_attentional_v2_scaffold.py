@@ -50,36 +50,28 @@ from src.attentional_v2.slow_cycle import (
 from src.attentional_v2.schemas import (
     ATTENTIONAL_V2_MECHANISM_VERSION,
     ATTENTIONAL_V2_POLICY_VERSION,
-    ATTENTIONAL_V2_SCHEMA_VERSION,
-    build_empty_active_attention,
     build_empty_local_buffer,
     build_empty_local_continuity,
     build_empty_reaction_records,
-    build_empty_reflective_frames,
 )
 from src.attentional_v2.storage import (
     ATTENTIONAL_V2_MECHANISM_KEY,
     chapter_result_compatibility_file,
     event_stream_file,
-    knowledge_activations_file,
     local_buffer_file,
     local_continuity_file,
     reaction_records_file,
     reader_policy_file,
     read_audit_file,
-    reflective_frames_file,
-    reconsolidation_records_file,
     revisit_index_file,
     resume_metadata_file,
     settlement_audit_file,
-    slow_cycle_audit_file,
     survey_map_file,
     memory_retrieval_config_file,
     unit_memory_retrieval_trace_file,
     unit_memory_sqlite_file,
     unit_span_ledger_file,
     unitization_audit_file,
-    active_attention_file,
 )
 from src.attentional_v2.unit_memory import UnitMemoryIndex, build_unit_memory_entry
 from src.reading_core.runtime_contracts import ParseRequest, ReadRequest
@@ -1324,15 +1316,12 @@ def test_attentional_v2_prompt_registry_contains_node_definitions() -> None:
     definitions = ATTENTIONAL_V2_PROMPT_REGISTRY.list()
     prompt_ids = [definition.prompt_id for definition in definitions]
 
-    assert len(definitions) == 6
+    assert len(definitions) == 3
     assert len(set(prompt_ids)) == len(prompt_ids)
     assert prompt_ids == [
         "attentional_v2.survey_chapter_zone",
         "attentional_v2.ingest",
         "attentional_v2.digest",
-        "attentional_v2.reflective_promotion",
-        "attentional_v2.reconsolidation",
-        "attentional_v2.chapter_consolidation",
     ]
     assert all(definition.status == "active" for definition in definitions)
     assert all(definition.required_inputs for definition in definitions)
@@ -1345,7 +1334,6 @@ def test_attentional_v2_prompt_registry_contains_node_definitions() -> None:
 def test_attentional_v2_prompt_registry_projects_current_bundle() -> None:
     digest = ATTENTIONAL_V2_PROMPT_REGISTRY.get("attentional_v2.digest")
     ingest = ATTENTIONAL_V2_PROMPT_REGISTRY.get("attentional_v2.ingest")
-    chapter = ATTENTIONAL_V2_PROMPT_REGISTRY.get("attentional_v2.chapter_consolidation")
 
     assert ATTENTIONAL_V2_PROMPTSET_VERSION == "attentional_v2-phase6-v84"
     assert ATTENTIONAL_V2_PROMPTS.promptset_version == ATTENTIONAL_V2_PROMPTSET_VERSION
@@ -1356,7 +1344,6 @@ def test_attentional_v2_prompt_registry_projects_current_bundle() -> None:
     assert ingest.version == INGEST_PROMPT_VERSION == "attentional_v2.ingest.v19"
     assert ATTENTIONAL_V2_PROMPTS.ingest_version == ingest.version
     assert ATTENTIONAL_V2_PROMPTS.ingest_system == ingest.system_prompt
-    assert ATTENTIONAL_V2_PROMPTS.chapter_consolidation_prompt == chapter.user_prompt_template
 
 
 def test_highlight_marginalia_persists_without_fabricated_note_text() -> None:
@@ -1833,11 +1820,6 @@ def test_attentional_v2_initialization_writes_mechanism_artifacts(tmp_path):
     manifest = json.loads(mechanism_manifest_file(output_dir, ATTENTIONAL_V2_MECHANISM_KEY).read_text(encoding="utf-8"))
     assert manifest["mechanism_key"] == ATTENTIONAL_V2_MECHANISM_KEY
 
-    active_attention = json.loads(active_attention_file(output_dir).read_text(encoding="utf-8"))
-    assert active_attention["schema_version"] == ATTENTIONAL_V2_SCHEMA_VERSION
-    assert active_attention["active_items"] == []
-    assert ("gate_" + "state") not in active_attention
-
     local_buffer = json.loads(local_buffer_file(output_dir).read_text(encoding="utf-8"))
     assert local_buffer["recent_sentences"] == []
     assert local_buffer["recent_meaning_units"] == []
@@ -1848,22 +1830,12 @@ def test_attentional_v2_initialization_writes_mechanism_artifacts(tmp_path):
         {"recent_sentence_ids", "open_meaning_unit_sentence_ids", "recent_meaning_units", "mainline_cursor"}
     )
 
-    assert not (active_attention_file(output_dir).parent / "anchor_bank.json").exists()
-    assert not (active_attention_file(output_dir).parent / ("concept_" + "registry.json")).exists()
-    assert not (active_attention_file(output_dir).parent / ("thread_" + "trace.json")).exists()
 
-    reflective = json.loads(reflective_frames_file(output_dir).read_text(encoding="utf-8"))
-    assert reflective["chapter_understandings"] == []
 
-    activations = json.loads(knowledge_activations_file(output_dir).read_text(encoding="utf-8"))
-    assert activations["knowledge_use_mode"] == "book_grounded_only"
-    assert activations["search_policy_mode"] == "no_search"
 
     reaction_records = json.loads(reaction_records_file(output_dir).read_text(encoding="utf-8"))
     assert reaction_records["records"] == []
 
-    reconsolidation = json.loads(reconsolidation_records_file(output_dir).read_text(encoding="utf-8"))
-    assert reconsolidation["records"] == []
 
     policy = json.loads(reader_policy_file(output_dir).read_text(encoding="utf-8"))
     assert policy["policy_version"] == ATTENTIONAL_V2_POLICY_VERSION
@@ -1877,9 +1849,6 @@ def test_attentional_v2_initialization_writes_mechanism_artifacts(tmp_path):
     assert policy["unitize"]["emergency_max_preview_paragraphs"] == 200
     assert "preview_hard_max_chars" not in policy["unitize"]
     assert "max_lookahead_paragraphs" not in policy["unitize"]
-    assert policy["bridge"]["enabled"] is False
-    assert policy["bridge"]["source_ref_required"] is True
-    assert policy["search"]["default_mode"] == "no_search"
     assert policy["resume"]["cold_resume_target_sentences"] == 8
     assert policy["resume"]["reconstitution_resume_max_sentences"] == 30
     assert policy["logging"]["observability_mode"] == "standard"
@@ -1900,14 +1869,11 @@ def test_attentional_v2_initialization_writes_mechanism_artifacts(tmp_path):
     assert revisit["anchors"] == {}
 
     assert event_stream_file(output_dir).read_text(encoding="utf-8") == ""
-    assert result["artifact_map"]["active_attention"].endswith("active_attention.json")
     assert result["artifact_map"]["settlement_audit"].endswith("settlement_audit.jsonl")
-    assert result["artifact_map"]["slow_cycle_audit"].endswith("slow_cycle_audit.jsonl")
     assert result["artifact_map"]["unit_span_ledger"].endswith("unit_span_ledger.jsonl")
     assert result["artifact_map"]["unit_memory_sqlite"].endswith("unit_memory.sqlite")
     assert result["artifact_map"]["memory_retrieval_config"].endswith("memory_retrieval_config.json")
     assert result["artifact_map"]["unit_memory_retrieval_trace"].endswith("unit_memory_retrieval_trace.jsonl")
-    assert not slow_cycle_audit_file(output_dir).exists()
     assert unit_span_ledger_file(output_dir).read_text(encoding="utf-8") == ""
 
 
@@ -1965,9 +1931,6 @@ def test_attentional_v2_runner_prefers_main_body_before_supporting_chapters(tmp_
         return {
             "chapter_consolidation": {"chapter_ref": kwargs["chapter"].get("reference", "")},
             "promotion_results": [],
-            "active_attention": kwargs["active_attention"],
-            "reflective_frames": kwargs["reflective_frames"],
-            "knowledge_activations": kwargs["knowledge_activations"],
             "reaction_records": kwargs["reaction_records"],
             "compatibility_payload": compatibility_payload,
         }
@@ -1975,7 +1938,6 @@ def test_attentional_v2_runner_prefers_main_body_before_supporting_chapters(tmp_
 
     monkeypatch.setattr(runner_module, "_call_ingest", _fake_single_sentence_ingest_boundary)
     monkeypatch.setattr(runner_module, "_call_digest", fake_digest)
-    monkeypatch.setattr(runner_module, "run_phase6_chapter_cycle", fake_phase6_chapter_cycle)
 
     mechanism = AttentionalV2Mechanism()
     result = mechanism.read_book(
@@ -2028,8 +1990,6 @@ def _empty_prepare_next_source_unit_state() -> dict[str, dict[str, object]]:
         "local_buffer": build_empty_local_buffer(),
         "local_continuity": build_empty_local_continuity(),
         "continuation_capsule": {},
-        "active_attention": build_empty_active_attention(),
-        "reflective_frames": build_empty_reflective_frames(),
         "reaction_records": build_empty_reaction_records(),
     }
 
@@ -2091,8 +2051,6 @@ def test_prepare_next_source_unit_for_read_selects_mainline_unit(tmp_path, monke
         current_cursor={"paragraph_index": 1, "char_offset": 0},
         local_buffer=state["local_buffer"],  # type: ignore[arg-type]
         continuation_capsule=state["continuation_capsule"],
-        active_attention=state["active_attention"],  # type: ignore[arg-type]
-        reflective_frames=state["reflective_frames"],  # type: ignore[arg-type]
         reaction_records=state["reaction_records"],  # type: ignore[arg-type]
         local_continuity=state["local_continuity"],  # type: ignore[arg-type]
         reader_policy=runner_module.build_default_reader_policy(),
@@ -2169,8 +2127,6 @@ def test_prepare_next_source_unit_degrades_bad_recall_tool_args(monkeypatch):
         current_cursor={"paragraph_index": 1, "char_offset": 0},
         local_buffer=state["local_buffer"],  # type: ignore[arg-type]
         continuation_capsule=state["continuation_capsule"],
-        active_attention=state["active_attention"],  # type: ignore[arg-type]
-        reflective_frames=state["reflective_frames"],  # type: ignore[arg-type]
         reaction_records=state["reaction_records"],  # type: ignore[arg-type]
         local_continuity=state["local_continuity"],  # type: ignore[arg-type]
         reader_policy=runner_module.build_default_reader_policy(),
@@ -2228,8 +2184,6 @@ def test_prepare_next_source_unit_for_read_accepts_prefix_grouped_partitions(tmp
         current_cursor={"paragraph_index": 1, "char_offset": 0},
         local_buffer=state["local_buffer"],  # type: ignore[arg-type]
         continuation_capsule=state["continuation_capsule"],
-        active_attention=state["active_attention"],  # type: ignore[arg-type]
-        reflective_frames=state["reflective_frames"],  # type: ignore[arg-type]
         reaction_records=state["reaction_records"],  # type: ignore[arg-type]
         local_continuity=state["local_continuity"],  # type: ignore[arg-type]
         reader_policy=runner_module.build_default_reader_policy(),
@@ -2301,8 +2255,6 @@ def test_prepare_next_source_unit_for_read_retries_unresolved_boundary(tmp_path,
         current_cursor={"paragraph_index": 1, "char_offset": 0},
         local_buffer=state["local_buffer"],  # type: ignore[arg-type]
         continuation_capsule=state["continuation_capsule"],
-        active_attention=state["active_attention"],  # type: ignore[arg-type]
-        reflective_frames=state["reflective_frames"],  # type: ignore[arg-type]
         reaction_records=state["reaction_records"],  # type: ignore[arg-type]
         local_continuity=state["local_continuity"],  # type: ignore[arg-type]
         reader_policy=runner_module.build_default_reader_policy(),
@@ -2376,9 +2328,6 @@ def test_attentional_v2_read_book_runs_live_loop_and_persists_compatibility_resu
         return {
             "chapter_consolidation": {"chapter_ref": kwargs["chapter"].get("reference", "")},
             "promotion_results": [],
-            "active_attention": kwargs["active_attention"],
-            "reflective_frames": kwargs["reflective_frames"],
-            "knowledge_activations": kwargs["knowledge_activations"],
             "reaction_records": kwargs["reaction_records"],
             "compatibility_payload": compatibility_payload,
         }
@@ -2386,7 +2335,6 @@ def test_attentional_v2_read_book_runs_live_loop_and_persists_compatibility_resu
 
     monkeypatch.setattr(runner_module, "_call_ingest", _fake_single_sentence_ingest_boundary)
     monkeypatch.setattr(runner_module, "_call_digest", fake_digest)
-    monkeypatch.setattr(runner_module, "run_phase6_chapter_cycle", fake_phase6_chapter_cycle)
 
     mechanism = AttentionalV2Mechanism()
     result = mechanism.read_book(
@@ -2411,7 +2359,7 @@ def test_attentional_v2_read_book_runs_live_loop_and_persists_compatibility_resu
     assert chapter_payload["visible_reaction_count"] >= 1
     assert captured_unit_reads == [["c1-s1"], ["c1-s2"]]
     assert captured_carry_forward_contexts[0]["packet_version"] == "attentional_v2.state_packet.v1"
-    assert "active_attention_digest" in captured_carry_forward_contexts[0]
+    assert "recent_reading_memory" in captured_carry_forward_contexts[0]
     assert captured_carry_forward_contexts[0]["continuity_digest"]["recent_reactions"] == []
     assert captured_carry_forward_contexts[1]["continuity_digest"]["recent_reactions"]
     assert len(unitize_lines) == 2
@@ -2512,16 +2460,12 @@ def test_attentional_v2_runner_persists_multiple_read_surface_reactions(tmp_path
         return {
             "chapter_consolidation": {"chapter_ref": kwargs["chapter"].get("reference", "")},
             "promotion_results": [],
-            "active_attention": kwargs["active_attention"],
-            "reflective_frames": kwargs["reflective_frames"],
-            "knowledge_activations": kwargs["knowledge_activations"],
             "reaction_records": kwargs["reaction_records"],
             "compatibility_payload": compatibility_payload,
         }
 
     monkeypatch.setattr(runner_module, "_call_ingest", _fake_single_sentence_ingest_boundary)
     monkeypatch.setattr(runner_module, "_call_digest", fake_digest)
-    monkeypatch.setattr(runner_module, "run_phase6_chapter_cycle", fake_phase6_chapter_cycle)
 
     mechanism = AttentionalV2Mechanism()
     result = mechanism.read_book(
@@ -2567,9 +2511,6 @@ def test_attentional_v2_read_book_tolerates_missing_reaction_payload(tmp_path, m
         return {
             "chapter_consolidation": {"chapter_ref": kwargs["chapter"].get("reference", "")},
             "promotion_results": [],
-            "active_attention": kwargs["active_attention"],
-            "reflective_frames": kwargs["reflective_frames"],
-            "knowledge_activations": kwargs["knowledge_activations"],
             "reaction_records": kwargs["reaction_records"],
             "compatibility_payload": compatibility_payload,
         }
@@ -2577,7 +2518,6 @@ def test_attentional_v2_read_book_tolerates_missing_reaction_payload(tmp_path, m
 
     monkeypatch.setattr(runner_module, "_call_ingest", _fake_single_sentence_ingest_boundary)
     monkeypatch.setattr(runner_module, "_call_digest", fake_digest)
-    monkeypatch.setattr(runner_module, "run_phase6_chapter_cycle", fake_phase6_chapter_cycle)
 
     mechanism = AttentionalV2Mechanism()
     result = mechanism.read_book(
@@ -2615,9 +2555,6 @@ def test_attentional_v2_read_book_runs_source_anchor_units_without_sentence_curs
         return {
             "chapter_consolidation": {"chapter_ref": kwargs["chapter"].get("reference", "")},
             "promotion_results": [],
-            "active_attention": kwargs["active_attention"],
-            "reflective_frames": kwargs["reflective_frames"],
-            "knowledge_activations": kwargs["knowledge_activations"],
             "reaction_records": kwargs["reaction_records"],
             "compatibility_payload": compatibility_payload,
         }
@@ -2641,7 +2578,6 @@ def test_attentional_v2_read_book_runs_source_anchor_units_without_sentence_curs
 
     monkeypatch.setattr(runner_module, "_call_ingest", _fake_single_sentence_ingest_boundary)
     monkeypatch.setattr(runner_module, "_call_digest", fake_digest)
-    monkeypatch.setattr(runner_module, "run_phase6_chapter_cycle", fake_phase6_chapter_cycle)
 
     mechanism = AttentionalV2Mechanism()
     result = mechanism.read_book(
@@ -2699,11 +2635,6 @@ def test_attentional_v2_runner_stops_at_audit_window_cap_and_persists_partial_ou
 
     monkeypatch.setattr(runner_module, "_call_ingest", _fake_single_sentence_ingest_boundary)
     monkeypatch.setattr(runner_module, "_call_digest", fake_digest)
-    monkeypatch.setattr(
-        runner_module,
-        "run_phase6_chapter_cycle",
-        lambda **_kwargs: pytest.fail("phase6 should not run when audit_window_max_units stops the loop early"),
-    )
 
     mechanism = AttentionalV2Mechanism()
     result = mechanism.read_book(
@@ -2754,14 +2685,9 @@ def test_attentional_v2_runner_stops_at_audit_window_cap_and_persists_partial_ou
                 "chapter_ref": kwargs["chapter"].get("reference", ""),
             },
             "promotion_results": [],
-            "active_attention": kwargs["active_attention"],
-            "reflective_frames": kwargs["reflective_frames"],
-            "knowledge_activations": kwargs["knowledge_activations"],
             "reaction_records": kwargs["reaction_records"],
             "compatibility_payload": compatibility_payload,
         }
-
-    monkeypatch.setattr(runner_module, "run_phase6_chapter_cycle", fake_phase6_chapter_cycle)
     continued = mechanism.read_book(
         ReadRequest(
             book_path=_fixture_epub(),
@@ -2815,16 +2741,12 @@ def test_attentional_v2_runner_replays_product_commit_after_derived_projection_c
                 "chapter_ref": kwargs["chapter"].get("reference", ""),
             },
             "promotion_results": [],
-            "active_attention": kwargs["active_attention"],
-            "reflective_frames": kwargs["reflective_frames"],
-            "knowledge_activations": kwargs["knowledge_activations"],
             "reaction_records": kwargs["reaction_records"],
             "compatibility_payload": compatibility_payload,
         }
 
     monkeypatch.setattr(runner_module, "_call_ingest", _fake_single_sentence_ingest_boundary)
     monkeypatch.setattr(runner_module, "_call_digest", fake_digest)
-    monkeypatch.setattr(runner_module, "run_phase6_chapter_cycle", fake_phase6_chapter_cycle)
     persist_marginalia = runner_module._persist_marginalia
 
     def crash_after_product_commit(**_kwargs):
@@ -2940,9 +2862,6 @@ def _install_offline_product_runner_stubs(monkeypatch, provisioned):
                 "chapter_ref": kwargs["chapter"].get("reference", ""),
             },
             "promotion_results": [],
-            "active_attention": kwargs["active_attention"],
-            "reflective_frames": kwargs["reflective_frames"],
-            "knowledge_activations": kwargs["knowledge_activations"],
             "reaction_records": kwargs["reaction_records"],
             "compatibility_payload": compatibility_payload,
         }
@@ -2958,11 +2877,6 @@ def _install_offline_product_runner_stubs(monkeypatch, provisioned):
         _fake_single_sentence_ingest_boundary,
     )
     monkeypatch.setattr(runner_module, "_call_digest", fake_digest)
-    monkeypatch.setattr(
-        runner_module,
-        "run_phase6_chapter_cycle",
-        fake_phase6_chapter_cycle,
-    )
 
 
 def test_attentional_v2_chapter_only_run_remains_partial_and_unsealed(
@@ -3034,7 +2948,7 @@ def test_attentional_v2_rejects_book_analysis_mode(tmp_path, monkeypatch):
     monkeypatch.chdir(tmp_path)
     mechanism = AttentionalV2Mechanism()
 
-    with pytest.raises(ValueError, match=r"does not support .*book_analysis mode"):
+    with pytest.raises(ValueError, match="book_analysis 已退役"):
         mechanism.read_book(
             ReadRequest(
                 book_path=_fixture_epub(),

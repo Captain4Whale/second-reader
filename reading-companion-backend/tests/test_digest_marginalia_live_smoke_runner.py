@@ -200,12 +200,8 @@ def test_run_segment_units_retries_transient_digest_failure(monkeypatch, tmp_pat
         return {
             "local_buffer": kwargs["local_buffer"],
             "local_continuity": kwargs["local_continuity"],
-            "active_attention": kwargs["active_attention"],
             "recent_reading_memory": kwargs["recent_reading_memory"],
-            "reflective_frames": kwargs["reflective_frames"],
-            "knowledge_activations": kwargs["knowledge_activations"],
             "reaction_records": kwargs["reaction_records"],
-            "reconsolidation_records": kwargs["reconsolidation_records"],
             "bundle": kwargs["bundle"],
             "selected_source_unit": source_unit,
             "source_span": source_span,

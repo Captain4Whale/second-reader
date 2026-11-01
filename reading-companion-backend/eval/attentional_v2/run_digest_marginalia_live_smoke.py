@@ -351,20 +351,16 @@ def _summarize_marginalia(
 
 def _empty_runtime_context(chapter_ref: str) -> dict[str, object]:
     from src.attentional_v2.schemas import (  # local import keeps script import surface compact for tests
-        build_empty_active_attention,
         build_empty_local_buffer,
         build_empty_reaction_records,
         build_empty_recent_reading_memory,
-        build_empty_reflective_frames,
     )
 
     return build_carry_forward_context(
         chapter_ref=chapter_ref,
         current_unit_sentence_ids=[],
         local_buffer=build_empty_local_buffer(),
-        active_attention=build_empty_active_attention(),
         recent_reading_memory=build_empty_recent_reading_memory(),
-        reflective_frames=build_empty_reflective_frames(),
         reaction_records=build_empty_reaction_records(),
         continuation_capsule=None,
     )
@@ -956,12 +952,8 @@ def run_segment_units(
     )
     local_buffer = bundle["local_buffer"]
     local_continuity = bundle["local_continuity"]
-    active_attention = bundle["active_attention"]
     recent_reading_memory = bundle["recent_reading_memory"]
-    reflective_frames = bundle["reflective_frames"]
-    knowledge_activations = bundle["knowledge_activations"]
     reaction_records = bundle["reaction_records"]
-    reconsolidation_records = bundle["reconsolidation_records"]
     chapter_ref = _chapter_ref(chapter)
     cursor = normalize_cursor_for_chapter(chapter, start_cursor) if start_cursor is not None else first_cursor_for_chapter(chapter)
     units: list[dict[str, object]] = []
@@ -1037,9 +1029,7 @@ def run_segment_units(
                         current_cursor=dict(cursor),
                         local_buffer=local_buffer,  # type: ignore[arg-type]
                         continuation_capsule=dict(bundle.get("continuation_capsule", {})),
-                        active_attention=active_attention,  # type: ignore[arg-type]
                         recent_reading_memory=recent_reading_memory,  # type: ignore[arg-type]
-                        reflective_frames=reflective_frames,  # type: ignore[arg-type]
                         reaction_records=reaction_records,  # type: ignore[arg-type]
                         local_continuity=local_continuity,  # type: ignore[arg-type]
                         reader_policy=reader_policy,  # type: ignore[arg-type]
@@ -1056,12 +1046,8 @@ def run_segment_units(
                         local_buffer=local_buffer,  # type: ignore[arg-type]
                         local_continuity=local_continuity,  # type: ignore[arg-type]
                         continuation_capsule=dict(bundle.get("continuation_capsule", {})),
-                        active_attention=active_attention,  # type: ignore[arg-type]
                         recent_reading_memory=recent_reading_memory,  # type: ignore[arg-type]
-                        reflective_frames=reflective_frames,  # type: ignore[arg-type]
-                        knowledge_activations=knowledge_activations,  # type: ignore[arg-type]
                         reaction_records=reaction_records,  # type: ignore[arg-type]
-                        reconsolidation_records=reconsolidation_records,
                         reader_policy=reader_policy,  # type: ignore[arg-type]
                         output_language=_clean_text(segment.get("output_language")) or "zh",
                         output_dir=output_dir,
@@ -1211,12 +1197,8 @@ def run_segment_units(
 
         local_buffer = settled_unit["local_buffer"]  # type: ignore[assignment]
         local_continuity = settled_unit["local_continuity"]  # type: ignore[assignment]
-        active_attention = settled_unit["active_attention"]  # type: ignore[assignment]
         recent_reading_memory = settled_unit["recent_reading_memory"]  # type: ignore[assignment]
-        reflective_frames = settled_unit["reflective_frames"]  # type: ignore[assignment]
-        knowledge_activations = settled_unit["knowledge_activations"]  # type: ignore[assignment]
         reaction_records = settled_unit["reaction_records"]  # type: ignore[assignment]
-        reconsolidation_records = settled_unit["reconsolidation_records"]  # type: ignore[assignment]
         bundle = settled_unit["bundle"]  # type: ignore[assignment]
 
         selected_source_unit = (

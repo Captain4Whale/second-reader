@@ -16,7 +16,6 @@ from .benchmark_probes import (
     persist_due_memory_quality_probe_snapshots,
 )
 from .schemas import (
-    ActiveAttention,
     CarryForwardContext,
     FullCheckpointState,
     LocalBufferState,
@@ -24,15 +23,12 @@ from .schemas import (
     ReactionRecordsState,
     ReaderPolicy,
     RecentReadingMemoryState,
-    ReflectiveFramesState,
     UnitizeDecision,
 )
 from .state_projection import context_ref_ids
 from .storage import append_jsonl, event_stream_file, read_audit_file, settlement_audit_file, unitization_audit_file
 
-_MISSING_TARGET_STORE_WARNING = "missing_target_store_defaulted"
 _SETTLED_STORE_ID_KEYS = {
-    "active_attention": "item_id",
     "recent_reading_memory": "entry_id",
 }
 _OUTCOME_BASIS = "audit_observed_inferred_from_compact_state_delta"
@@ -194,7 +190,7 @@ def _target_store_emitted(operation: Mapping[str, object]) -> str:
 def _effective_target_store(operation: Mapping[str, object]) -> str:
     """Return the target store used by the current runtime after compatibility defaults."""
 
-    return _clean_text(operation.get("effective_target_store")) or _clean_text(operation.get("target_store")) or "active_attention"
+    return _clean_text(operation.get("effective_target_store")) or _clean_text(operation.get("target_store"))
 
 
 def _compatibility_warnings(operation: Mapping[str, object]) -> list[str]:
@@ -204,12 +200,6 @@ def _compatibility_warnings(operation: Mapping[str, object]) -> list[str]:
     raw_warnings = operation.get("compatibility_warnings")
     if isinstance(raw_warnings, list):
         warnings.extend(_clean_text(item) for item in raw_warnings if _clean_text(item))
-    if (
-        not _target_store_emitted(operation)
-        and _effective_target_store(operation) == "active_attention"
-        and _MISSING_TARGET_STORE_WARNING not in warnings
-    ):
-        warnings.append(_MISSING_TARGET_STORE_WARNING)
     return warnings
 
 
@@ -460,8 +450,6 @@ def record_settlement(
     unit_sentence_ids: list[str],
     focal_sentence_id: str,
     memory_uptake_ops: object,
-    before_active_attention: ActiveAttention,
-    after_active_attention: ActiveAttention,
     before_recent_reading_memory: RecentReadingMemoryState | None = None,
     after_recent_reading_memory: RecentReadingMemoryState | None = None,
     before_reaction_records: ReactionRecordsState,
@@ -480,11 +468,6 @@ def record_settlement(
         return
     normalized_ops = _normalized_operations(memory_uptake_ops)
     state_deltas = {
-        "active_attention": _id_delta(
-            before_active_attention.get("active_items", []),
-            after_active_attention.get("active_items", []),
-            id_key="item_id",
-        ),
         "recent_reading_memory": _id_delta(
             (before_recent_reading_memory or {}).get("entries", []),
             (after_recent_reading_memory or {}).get("entries", []),
@@ -542,9 +525,7 @@ def maybe_capture_memory_quality_probe(
     chapter_ref: str,
     local_buffer: LocalBufferState,
     local_continuity: LocalContinuityState,
-    active_attention: ActiveAttention,
     recent_reading_memory: RecentReadingMemoryState | None = None,
-    reflective_frames: ReflectiveFramesState,
     reaction_records: ReactionRecordsState,
     actual_source_span: dict[str, object] | None = None,
     actual_source_span_id: str = "",
@@ -563,9 +544,7 @@ def maybe_capture_memory_quality_probe(
         chapter_ref=chapter_ref,
         local_buffer=local_buffer,
         local_continuity=local_continuity,
-        active_attention=active_attention,
         recent_reading_memory=recent_reading_memory or {},
-        reflective_frames=reflective_frames,
         reaction_records=reaction_records,
         actual_source_span=actual_source_span,
         actual_source_span_id=actual_source_span_id,
@@ -623,17 +602,11 @@ def _checkpoint_state_counts(checkpoint: FullCheckpointState) -> dict[str, int]:
     """Return compact checkpoint counts that are useful for debug forensics."""
 
     local_buffer = checkpoint.get("local_buffer", {})
-    reflective_frames = checkpoint.get("reflective_frames", {}) or checkpoint.get("reflective_summaries", {})
-    knowledge_activations = checkpoint.get("knowledge_activations", {})
     reaction_records = checkpoint.get("reaction_records", {})
-    reconsolidation_records = checkpoint.get("reconsolidation_records", {})
     return {
         "recent_sentence_count": len(local_buffer.get("recent_sentences", [])),
         "open_meaning_unit_sentence_count": len(local_buffer.get("open_meaning_unit_sentence_ids", [])),
-        "reflective_item_count": len(reflective_frames.get("chapter_understandings", [])),
-        "activation_count": len(knowledge_activations.get("activations", [])),
         "reaction_count": len(reaction_records.get("records", [])),
-        "reconsolidation_count": len(reconsolidation_records.get("records", [])),
     }
 
 

@@ -281,16 +281,15 @@ def test_product_read_emits_recomputable_cost_and_efficiency_observability(tmp_p
 
     events = [json.loads(line) for line in ledger_path.read_text(encoding="utf-8").splitlines()]
     event_kinds = [event["event_kind"] for event in events]
-    assert event_kinds.count("llm_logical_call_finished") == 4
-    assert event_kinds.count("llm_provider_attempt_started") == 4
-    assert event_kinds.count("llm_provider_attempt_finished") == 4
+    assert event_kinds.count("llm_logical_call_finished") == 3
+    assert event_kinds.count("llm_provider_attempt_started") == 3
+    assert event_kinds.count("llm_provider_attempt_finished") == 3
     assert "unit_selected" in event_kinds
     assert "unit_settled" in event_kinds
     assert [call["node"] for call in adapter.calls] == [
         "survey",
         "ingest",
         "digest",
-        "chapter_consolidation",
     ]
 
     attempts = [
@@ -310,12 +309,11 @@ def test_product_read_emits_recomputable_cost_and_efficiency_observability(tmp_p
     assert all(event.get("chapter_id") == "1" for event in attempts)
     assert {event.get("job_id") for event in attempts} == {events[0]["job_id"]}
     assert {event.get("run_attempt_id") for event in attempts} == {events[0]["run_attempt_id"]}
-    assert {event.get("stage") for event in attempts} == {"survey", "phase4", "phase6"}
+    assert {event.get("stage") for event in attempts} == {"survey", "phase4"}
     assert {event.get("node") for event in attempts} == {
         "chapter_zone_classifier",
         "ingest",
         "digest",
-        "chapter_consolidation",
     }
     selected = next(event for event in events if event["event_kind"] == "unit_selected")
     phase4_attempts = [event for event in attempts if event.get("stage") == "phase4"]
@@ -330,23 +328,23 @@ def test_product_read_emits_recomputable_cost_and_efficiency_observability(tmp_p
     quality = json.loads(data_quality_path.read_text(encoding="utf-8"))
     assert metrics["accepted_source_chars"] == len("Alpha sentence. Beta sentence.")
     assert metrics["accepted_unit_count"] == 1
-    assert metrics["call_count"] == 4
-    assert metrics["expected_physical_attempt_count"] == 4
-    assert metrics["observed_physical_attempt_count"] == 4
-    assert metrics["total_tokens"] == "4400"
-    assert metrics["estimated_usage_value_usd"] == "0.001136"
+    assert metrics["call_count"] == 3
+    assert metrics["expected_physical_attempt_count"] == 3
+    assert metrics["observed_physical_attempt_count"] == 3
+    assert metrics["total_tokens"] == "3300"
+    assert metrics["estimated_usage_value_usd"] == "0.000852"
     assert metrics["by_stage"]["survey"]["attempt_count"] == 1
     assert metrics["by_stage"]["phase4"]["attempt_count"] == 2
     assert metrics["by_stage"]["phase4"]["accepted_source_chars"] == 30
     assert metrics["by_stage"]["phase4"]["total_tokens_per_10000_chars"] is not None
-    assert metrics["by_stage"]["phase6"]["attempt_count"] == 1
+    assert "phase6" not in metrics["by_stage"]
     assert metrics["by_chapter"]["1"]["accepted_source_chars"] == 30
     assert metrics["by_unit"]["1/u000001"]["attempt_count"] == 2
-    assert metrics["by_unit"]["1/unavailable"]["attempt_count"] == 2
+    assert metrics["by_unit"]["1/unavailable"]["attempt_count"] == 1
     assert quality["usage_coverage"] == "1"
     assert quality["pricing_coverage"] == "1"
     assert quality["chapter_correlation_coverage"] == "1"
     assert quality["unit_correlation_coverage"] == "1"
     assert quality["stage_appropriate_correlation_coverage"] == "1"
-    assert "Estimated usage value (USD): 0.001136" in report_path.read_text(encoding="utf-8")
+    assert "Estimated usage value (USD): 0.000852" in report_path.read_text(encoding="utf-8")
     assert not normalized_eval_bundle_file(result.output_dir).exists()

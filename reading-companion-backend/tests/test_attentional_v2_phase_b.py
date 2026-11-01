@@ -11,15 +11,11 @@ from src.attentional_v2 import llm_calls as llm_calls_module
 from src.attentional_v2 import runner as runner_module
 from src.attentional_v2.llm_calls import digest
 from src.attentional_v2.schemas import (
-    build_empty_knowledge_activations,
     build_empty_local_buffer,
     build_empty_reaction_records,
     build_empty_recent_reading_memory,
-    build_empty_reflective_summaries,
-    build_empty_active_attention,
 )
 from src.attentional_v2.state_projection import build_carry_forward_context
-from src.attentional_v2.state_migration import migrate_reflective_summaries_to_frames
 from src.attentional_v2.storage import read_audit_file
 from src.iterator_reader.llm_utils import ReaderLLMError
 from src.reading_mechanisms.attentional_v2 import AttentionalV2Mechanism
@@ -104,32 +100,6 @@ def test_digest_projects_compact_packet_and_returns_f1_surface_contract(tmp_path
         }
     ]
     local_buffer["recent_meaning_units"] = [["c1-s1"]]
-
-    active_attention = build_empty_active_attention()
-    active_attention["active_items"] = [
-        {
-            "item_id": "question-1",
-            "attention_tags": ["question"],
-            "tension_from": "Alpha sentence creates a turn.",
-            "tension_focus": "Why the chapter turns here remains alive in attention.",
-            "working_interpretation": "",
-            "support_anchor_ids": [],
-            "status": "open",
-        }
-    ]
-
-    reflective_summaries = build_empty_reflective_summaries()
-    reflective_summaries["chapter_understandings"] = [
-        {
-            "item_id": "frame-1",
-            "statement": "The chapter is opening a practical dilemma.",
-            "chapter_ref": "Chapter 1",
-            "confidence_band": "working",
-            "support_anchor_ids": ["a-1"],
-        }
-    ]
-    reflective_frames = migrate_reflective_summaries_to_frames(reflective_summaries)
-
     reaction_records = build_empty_reaction_records()
     reaction_records["records"] = [
         {
@@ -145,9 +115,6 @@ def test_digest_projects_compact_packet_and_returns_f1_surface_contract(tmp_path
         chapter_ref="Chapter 1",
         current_unit_sentence_ids=["c1-s2"],
         local_buffer=local_buffer,
-        active_attention=active_attention,
-        reflective_frames=reflective_frames,
-        reflective_summaries=reflective_summaries,
         reaction_records=reaction_records,
     )
 
@@ -200,7 +167,6 @@ def test_run_digest_for_source_unit_reads_once_without_accepting_unit_audit(tmp_
     AttentionalV2Mechanism().initialize_artifacts(output_dir)
     book_document = _book_document()
     chapter = book_document["chapters"][0]
-    reflective_frames = migrate_reflective_summaries_to_frames(build_empty_reflective_summaries())
     calls: list[dict[str, object]] = []
 
     def fake_digest(**kwargs):
@@ -244,10 +210,7 @@ def test_run_digest_for_source_unit_reads_once_without_accepting_unit_audit(tmp_
         },
         local_buffer=build_empty_local_buffer(),
         continuation_capsule={},
-        active_attention=build_empty_active_attention(),
         recent_reading_memory=build_empty_recent_reading_memory(),
-        reflective_frames=reflective_frames,
-        knowledge_activations=build_empty_knowledge_activations(),
         reaction_records=build_empty_reaction_records(),
         output_language="en",
         output_dir=output_dir,
@@ -272,7 +235,6 @@ def test_run_digest_for_source_unit_propagates_llm_error_without_empty_audit(tmp
     AttentionalV2Mechanism().initialize_artifacts(output_dir)
     book_document = _book_document()
     chapter = book_document["chapters"][0]
-    reflective_frames = migrate_reflective_summaries_to_frames(build_empty_reflective_summaries())
 
     def fake_digest(**_kwargs):
         raise ReaderLLMError("Connection error.", problem_code="network_blocked")
@@ -292,10 +254,7 @@ def test_run_digest_for_source_unit_propagates_llm_error_without_empty_audit(tmp
             },
             local_buffer=build_empty_local_buffer(),
             continuation_capsule={},
-            active_attention=build_empty_active_attention(),
             recent_reading_memory=build_empty_recent_reading_memory(),
-            reflective_frames=reflective_frames,
-            knowledge_activations=build_empty_knowledge_activations(),
             reaction_records=build_empty_reaction_records(),
             output_language="en",
             output_dir=output_dir,

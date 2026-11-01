@@ -55,7 +55,7 @@ from .observability import (
     record_settlement,
     record_unitization,
 )
-from .resume import persist_reading_position, resume_from_checkpoint, write_full_checkpoint
+from .resume import persist_reading_position, require_current_run, resume_from_checkpoint, write_full_checkpoint
 from .product_output import (
     build_and_commit_product_unit,
     digest_result_for_committed_unit,
@@ -84,7 +84,6 @@ from .schemas import (
     ATTENTIONAL_V2_MECHANISM_VERSION,
     ATTENTIONAL_V2_POLICY_VERSION,
     AnchoredReactionRecord,
-    KnowledgeActivationsState,
     LocalBufferState,
     LocalContinuityState,
     IngestBoundaryResult,
@@ -93,36 +92,27 @@ from .schemas import (
     PreparedSourceUnit,
     ReactionRecordsState,
     ReaderPolicy,
-    ReflectiveFramesState,
     UnitizeDecision,
     DigestResult,
-    ActiveAttention,
     build_empty_continuation_capsule,
     build_default_reader_policy,
-    build_empty_knowledge_activations,
     build_empty_local_buffer,
     build_empty_local_continuity,
     build_empty_reaction_records,
-    build_empty_reconsolidation_records,
     build_empty_recent_reading_memory,
-    build_empty_reflective_frames,
     build_empty_resume_metadata,
-    build_empty_active_attention,
     RecentReadingMemoryState,
 )
 from .slow_cycle import (
     build_reaction_record_from_surfaced_reaction,
     compat_reaction_family,
     reaction_records_for_chapter,
-    run_phase6_chapter_cycle,
 )
 from .state_ops import (
     append_reaction_record,
     apply_recent_reading_memory_operations,
     close_local_meaning_unit,
-    apply_active_attention_operations,
 )
-from .state_migration import normalize_active_tension_state
 from .state_projection import build_carry_forward_context
 from .memory_tokens import estimate_tokens, token_estimate_payload, tokens_from_estimate
 from .storage import (
@@ -130,7 +120,6 @@ from .storage import (
     checkpoints_dir,
     continuation_capsule_file,
     initialize_artifact_tree,
-    knowledge_activations_file,
     load_json,
     local_buffer_file,
     local_continuity_file,
@@ -140,8 +129,6 @@ from .storage import (
     reaction_records_file,
     recent_reading_memory_file,
     reader_policy_file,
-    reconsolidation_records_file,
-    reflective_frames_file,
     resume_metadata_file,
     runtime_dir,
     save_json,
@@ -152,7 +139,6 @@ from .storage import (
     unit_memory_sqlite_file,
     unit_span_ledger_file,
     unitization_audit_file,
-    active_attention_file,
 )
 from .survey import write_book_survey_artifacts
 from .unit_memory import (
@@ -545,14 +531,10 @@ def _default_builder(name: str) -> Callable[[], dict[str, object]]:
         "continuation_capsule": lambda: build_empty_continuation_capsule(
             mechanism_version=ATTENTIONAL_V2_MECHANISM_VERSION,
         ),
-        "active_attention": lambda: build_empty_active_attention(mechanism_version=ATTENTIONAL_V2_MECHANISM_VERSION),
         "recent_reading_memory": lambda: build_empty_recent_reading_memory(
             mechanism_version=ATTENTIONAL_V2_MECHANISM_VERSION
         ),
-        "reflective_frames": lambda: build_empty_reflective_frames(mechanism_version=ATTENTIONAL_V2_MECHANISM_VERSION),
-        "knowledge_activations": lambda: build_empty_knowledge_activations(mechanism_version=ATTENTIONAL_V2_MECHANISM_VERSION),
         "reaction_records": lambda: build_empty_reaction_records(mechanism_version=ATTENTIONAL_V2_MECHANISM_VERSION),
-        "reconsolidation_records": lambda: build_empty_reconsolidation_records(mechanism_version=ATTENTIONAL_V2_MECHANISM_VERSION),
         "reader_policy": lambda: build_default_reader_policy(
             mechanism_version=ATTENTIONAL_V2_MECHANISM_VERSION,
             policy_version=ATTENTIONAL_V2_POLICY_VERSION,
@@ -576,52 +558,13 @@ def _load_or_default(path: Path, builder: Callable[[], dict[str, object]]) -> di
 def _load_runtime_bundle(output_dir: Path) -> dict[str, dict[str, object]]:
     """Load the attentional runtime bundle from persisted artifacts."""
 
-    legacy_route_paths = (
-        runtime_dir(output_dir) / "route_history.json",
-        runtime_dir(output_dir) / "move_history.json",
-    )
-    if any(path.exists() for path in legacy_route_paths):
-        raise RuntimeError(
-            "Pre-forward-settlement attentional_v2 route state is no longer supported; rerun from a fresh runtime directory."
-        )
-    bundle = {
-        "local_buffer": _load_or_default(local_buffer_file(output_dir), _default_builder("local_buffer")),
-        "local_continuity": _load_or_default(local_continuity_file(output_dir), _default_builder("local_continuity")),
-        "continuation_capsule": _load_or_default(continuation_capsule_file(output_dir), _default_builder("continuation_capsule")),
-        "knowledge_activations": _load_or_default(
-            knowledge_activations_file(output_dir),
-            _default_builder("knowledge_activations"),
-        ),
-        "reaction_records": _load_or_default(reaction_records_file(output_dir), _default_builder("reaction_records")),
-        "reconsolidation_records": _load_or_default(
-            reconsolidation_records_file(output_dir),
-            _default_builder("reconsolidation_records"),
-        ),
-        "reader_policy": _load_or_default(reader_policy_file(output_dir), _default_builder("reader_policy")),
-        "resume_metadata": _load_or_default(resume_metadata_file(output_dir), _default_builder("resume_metadata")),
+    paths = {
+        "local_buffer": local_buffer_file, "local_continuity": local_continuity_file,
+        "continuation_capsule": continuation_capsule_file, "reaction_records": reaction_records_file,
+        "reader_policy": reader_policy_file, "resume_metadata": resume_metadata_file,
+        "recent_reading_memory": recent_reading_memory_file,
     }
-    legacy_paths = {
-        "legacy_hot_state": runtime_dir(output_dir) / ("working_" + "pressure.json"),
-        "anchor_memory": runtime_dir(output_dir) / "anchor_memory.json",
-        "anchor_bank": runtime_dir(output_dir) / "anchor_bank.json",
-        "retired_object_memory": runtime_dir(output_dir) / ("concept_" + "registry.json"),
-        "retired_line_memory": runtime_dir(output_dir) / ("thread_" + "trace.json"),
-        "reflective_summaries": runtime_dir(output_dir) / "reflective_summaries.json",
-    }
-    new_state_paths = {
-        "active_attention": active_attention_file(output_dir),
-        "recent_reading_memory": recent_reading_memory_file(output_dir),
-        "reflective_frames": reflective_frames_file(output_dir),
-    }
-    loaded_new = {name: load_json(path) for name, path in new_state_paths.items() if path.exists()}
-    if not loaded_new and any(path.exists() for path in legacy_paths.values()):
-        raise RuntimeError(
-            "Pre-Phase C.3 attentional_v2 runtime state is no longer supported; rerun from a new-format state directory."
-        )
-    for name in ("active_attention", "recent_reading_memory", "reflective_frames"):
-        bundle[name] = loaded_new.get(name) or _default_builder(name)()
-    bundle["active_attention"] = normalize_active_tension_state(bundle["active_attention"])
-    return bundle
+    return {name: _load_or_default(path(output_dir), _default_builder(name)) for name, path in paths.items()}
 
 
 def _save_runtime_bundle(output_dir: Path, bundle: dict[str, dict[str, object]]) -> None:
@@ -630,12 +573,8 @@ def _save_runtime_bundle(output_dir: Path, bundle: dict[str, dict[str, object]])
     save_json(local_buffer_file(output_dir), bundle["local_buffer"])
     save_json(local_continuity_file(output_dir), bundle["local_continuity"])
     save_json(continuation_capsule_file(output_dir), bundle["continuation_capsule"])
-    save_json(active_attention_file(output_dir), normalize_active_tension_state(bundle["active_attention"]))
     save_json(recent_reading_memory_file(output_dir), bundle["recent_reading_memory"])
-    save_json(reflective_frames_file(output_dir), bundle["reflective_frames"])
-    save_json(knowledge_activations_file(output_dir), bundle["knowledge_activations"])
     save_json(reaction_records_file(output_dir), bundle["reaction_records"])
-    save_json(reconsolidation_records_file(output_dir), bundle["reconsolidation_records"])
     save_json(reader_policy_file(output_dir), bundle["reader_policy"])
     save_json(resume_metadata_file(output_dir), bundle["resume_metadata"])
 
@@ -1086,15 +1025,12 @@ def _reset_live_runtime(output_dir: Path) -> None:
     """Clear live attentional runtime artifacts for one fresh full rerun."""
 
     for path in (
-        active_attention_file(output_dir),
         recent_reading_memory_file(output_dir),
+        reader_policy_file(output_dir),
         local_buffer_file(output_dir),
         local_continuity_file(output_dir),
         continuation_capsule_file(output_dir),
-        reflective_frames_file(output_dir),
-        knowledge_activations_file(output_dir),
         reaction_records_file(output_dir),
-        reconsolidation_records_file(output_dir),
         resume_metadata_file(output_dir),
         memory_retrieval_config_file(output_dir),
         read_audit_file(output_dir),
@@ -2107,9 +2043,7 @@ def prepare_next_source_unit_for_read(
     current_cursor: dict[str, object],
     local_buffer: LocalBufferState,
     continuation_capsule: dict[str, object],
-    active_attention: ActiveAttention,
     recent_reading_memory: RecentReadingMemoryState | None = None,
-    reflective_frames: ReflectiveFramesState,
     reaction_records: ReactionRecordsState,
     local_continuity: LocalContinuityState,
     reader_policy: ReaderPolicy,
@@ -2406,123 +2340,15 @@ def _normalize_memory_uptake_ops_source_refs(
     *,
     source_unit: dict[str, object] | None,
 ) -> list[dict[str, object]]:
-    """Resolve Digest-proposed source quotes into inline source refs before settlement."""
-
-    if not isinstance(memory_uptake_ops, list):
-        return []
-    normalized: list[dict[str, object]] = []
-
-    def _unit_span() -> dict[str, object]:
-        source_span = source_unit.get("source_span") if isinstance(source_unit, dict) else {}
-        return dict(source_span) if isinstance(source_span, dict) else {}
-
-    def _unit_span_id() -> str:
-        if not isinstance(source_unit, dict):
-            return ""
-        return _clean_text(source_unit.get("source_span_id")) or source_span_id(_unit_span())
-
-    def _first_ref_span(refs: object) -> tuple[str, dict[str, object]]:
-        if not isinstance(refs, list):
-            return "", {}
-        for ref in refs:
-            if not isinstance(ref, dict):
-                continue
-            ref_span = ref.get("source_span")
-            span = dict(ref_span) if isinstance(ref_span, dict) else {}
-            span_id = _clean_text(ref.get("source_span_id")) or source_span_id(span)
-            if span_id or span:
-                return span_id, span
-        return "", {}
-
+    """Keep only current recent-memory operations; their source grounding is program-owned."""
+    normalized = []
     for item in memory_uptake_ops:
-        if not isinstance(item, dict):
+        if not isinstance(item, dict) or item.get("target_store") != "recent_reading_memory":
             continue
         operation = dict(item)
-        payload = dict(operation.get("payload", {})) if isinstance(operation.get("payload"), dict) else {}
-        operation_type = _clean_text(operation.get("op") or operation.get("operation_type")).lower().replace("-", "_")
-        target_store = _clean_text(operation.get("target_store") or operation.get("effective_target_store"))
-        if target_store == "active_attention":
-            if "tension_from" not in payload and _clean_text(payload.get("question_from")):
-                payload["tension_from"] = _clean_text(payload.get("question_from"))
-            if "tension_focus" not in payload:
-                for legacy_key in ("driving_question", "statement", "answer_boundary"):
-                    if _clean_text(payload.get(legacy_key)):
-                        payload["tension_focus"] = _clean_text(payload.get(legacy_key))
-                        break
-            if "working_interpretation" not in payload and "working_answer" in payload:
-                payload["working_interpretation"] = _clean_text(payload.get("working_answer"))
-            for legacy_key in (
-                "question_from",
-                "driving_question",
-                "working_answer",
-                "answer_source_refs",
-                "statement",
-                "answer_boundary",
-            ):
-                payload.pop(legacy_key, None)
-
-        source_quote = _clean_text(payload.get("source_quote") or payload.get("quote") or payload.get("evidence_quote"))
-        source_role = _clean_text(payload.get("source_role")) or "support"
-        if target_store == "recent_reading_memory":
-            for recent_memory_source_key in (
-                "source_refs",
-                "development_source_refs",
-                "answer_source_refs",
-                "source_quote",
-                "quote",
-                "evidence_quote",
-                "source_role",
-                "development_source_quote",
-                "answer_source_quote",
-                "development_source_role",
-                "answer_source_role",
-            ):
-                payload.pop(recent_memory_source_key, None)
-            operation["payload"] = payload
-            normalized.append(operation)
-            continue
-        if isinstance(source_unit, dict) and source_unit and source_quote:
-            payload["source_refs"] = [source_ref_from_unit(source_unit, quote=source_quote, role=source_role)]
-        elif "source_refs" in payload:
-            payload.pop("source_refs", None)
-        development_source_quote = _clean_text(payload.get("development_source_quote") or payload.get("answer_source_quote"))
-        development_source_role = (
-            _clean_text(payload.get("development_source_role") or payload.get("answer_source_role"))
-            or "development_support"
-        )
-        if isinstance(source_unit, dict) and source_unit and development_source_quote:
-            payload["development_source_refs"] = [
-                source_ref_from_unit(source_unit, quote=development_source_quote, role=development_source_role)
-            ]
-        else:
-            payload.pop("development_source_refs", None)
-        payload.pop("answer_source_refs", None)
-        if target_store == "active_attention":
-            unit_span = _unit_span()
-            unit_span_id = _unit_span_id()
-            if operation_type in {"append", "create", "reactivate"}:
-                source_span_ref_id, source_span_ref = _first_ref_span(payload.get("source_refs"))
-                payload.setdefault("opened_at_source_span_id", source_span_ref_id or unit_span_id)
-                payload.setdefault("opened_at_source_span", source_span_ref or unit_span)
-                payload.setdefault("opened_at_unit_span_id", unit_span_id)
-                payload.setdefault("opened_at_unit_span", unit_span)
-            if operation_type == "resolve":
-                if not _clean_text(payload.get("answered_reason")):
-                    payload["answered_reason"] = _clean_text(operation.get("reason"))
-                answer_span_ref_id, answer_span_ref = _first_ref_span(payload.get("development_source_refs"))
-                source_span_ref_id, source_span_ref = _first_ref_span(payload.get("source_refs"))
-                payload.setdefault("answered_at_source_span_id", answer_span_ref_id or source_span_ref_id or unit_span_id)
-                payload.setdefault("answered_at_source_span", answer_span_ref or source_span_ref or unit_span)
-                payload.setdefault("answered_at_unit_span_id", unit_span_id)
-                payload.setdefault("answered_at_unit_span", unit_span)
-            if operation_type == "close":
-                if not _clean_text(payload.get("closed_reason")):
-                    payload["closed_reason"] = _clean_text(operation.get("reason"))
-                source_span_ref_id, source_span_ref = _first_ref_span(payload.get("source_refs"))
-                payload.setdefault("closed_at_source_span_id", source_span_ref_id or unit_span_id)
-                payload.setdefault("closed_at_source_span", source_span_ref or unit_span)
-                payload.setdefault("closed_at_unit_span_id", unit_span_id)
-                payload.setdefault("closed_at_unit_span", unit_span)
+        payload = dict(operation.get("payload") or {})
+        for key in ("source_refs", "development_source_refs", "answer_source_refs", "source_quote", "quote", "evidence_quote", "source_role", "development_source_quote", "answer_source_quote", "development_source_role", "answer_source_role"):
+            payload.pop(key, None)
         operation["payload"] = payload
         normalized.append(operation)
     return normalized
@@ -2615,9 +2441,7 @@ def _build_runtime_continuation_capsule(
     *,
     chapter_ref: str,
     local_buffer: LocalBufferState,
-    active_attention: ActiveAttention,
     recent_reading_memory: RecentReadingMemoryState,
-    reflective_frames: ReflectiveFramesState,
     reaction_records: ReactionRecordsState,
 ) -> dict[str, object]:
     """Build the persisted continuation capsule from the current live primary state."""
@@ -2626,9 +2450,7 @@ def _build_runtime_continuation_capsule(
         chapter_ref=chapter_ref,
         current_unit_sentence_ids=[],
         local_buffer=local_buffer,
-        active_attention=active_attention,
         recent_reading_memory=recent_reading_memory,
-        reflective_frames=reflective_frames,
         reaction_records=reaction_records,
     )
     capsule = carry_forward_context.get("continuation_capsule", {})
@@ -2643,10 +2465,7 @@ def _run_digest_for_source_unit(
     current_unit_source: dict[str, object] | None = None,
     local_buffer: LocalBufferState,
     continuation_capsule: dict[str, object],
-    active_attention: ActiveAttention,
     recent_reading_memory: RecentReadingMemoryState,
-    reflective_frames: ReflectiveFramesState,
-    knowledge_activations: KnowledgeActivationsState,
     reaction_records: ReactionRecordsState,
     output_language: str,
     output_dir: Path | None,
@@ -2669,9 +2488,7 @@ def _run_digest_for_source_unit(
             if _clean_text(sentence.get("sentence_id"))
         ],
         local_buffer=local_buffer,
-        active_attention=active_attention,
         recent_reading_memory=recent_reading_memory,
-        reflective_frames=reflective_frames,
         reaction_records=reaction_records,
         continuation_capsule=continuation_capsule,
     )
@@ -2702,12 +2519,8 @@ def _settle_next_unit(
     local_buffer: LocalBufferState,
     local_continuity: LocalContinuityState,
     continuation_capsule: dict[str, object],
-    active_attention: ActiveAttention,
     recent_reading_memory: RecentReadingMemoryState,
-    reflective_frames: ReflectiveFramesState,
-    knowledge_activations: KnowledgeActivationsState,
     reaction_records: ReactionRecordsState,
-    reconsolidation_records: dict[str, object],
     reader_policy: ReaderPolicy,
     output_language: str,
     output_dir: Path,
@@ -2732,12 +2545,8 @@ def _settle_next_unit(
         return {
             "local_buffer": local_buffer,
             "local_continuity": local_continuity,
-            "active_attention": active_attention,
             "recent_reading_memory": recent_reading_memory,
-            "reflective_frames": reflective_frames,
-            "knowledge_activations": knowledge_activations,
             "reaction_records": reaction_records,
-            "reconsolidation_records": reconsolidation_records,
             "bundle": bundle,
             "emitted_reactions": [],
             "current_source_ref": None,
@@ -2762,12 +2571,8 @@ def _settle_next_unit(
         return {
             "local_buffer": local_buffer,
             "local_continuity": local_continuity,
-            "active_attention": active_attention,
             "recent_reading_memory": recent_reading_memory,
-            "reflective_frames": reflective_frames,
-            "knowledge_activations": knowledge_activations,
             "reaction_records": reaction_records,
-            "reconsolidation_records": reconsolidation_records,
             "bundle": bundle,
             "emitted_reactions": [],
             "current_source_ref": None,
@@ -2892,10 +2697,7 @@ def _settle_next_unit(
         unitize_decision=unitize_decision,  # type: ignore[arg-type]
         local_buffer=local_buffer,
         continuation_capsule=continuation_capsule,
-        active_attention=active_attention,
         recent_reading_memory=recent_reading_memory,
-        reflective_frames=reflective_frames,
-        knowledge_activations=knowledge_activations,
         reaction_records=reaction_records,
         output_language=output_language,
         output_dir=output_dir,
@@ -2971,9 +2773,7 @@ def _settle_next_unit(
             if _clean_text(sentence.get("sentence_id"))
         ],
         local_buffer=local_buffer,
-        active_attention=active_attention,
         recent_reading_memory=recent_reading_memory,
-        reflective_frames=reflective_frames,
         reaction_records=reaction_records,
         continuation_capsule=continuation_capsule,
     )
@@ -2991,13 +2791,8 @@ def _settle_next_unit(
     )
 
     memory_uptake_ops = digest_result.get("memory_uptake_ops", [])
-    before_active_attention = active_attention
     before_recent_reading_memory = recent_reading_memory
     before_reaction_records = reaction_records
-    active_attention = apply_active_attention_operations(
-        active_attention,
-        memory_uptake_ops,
-    )
     recent_reading_memory = apply_recent_reading_memory_operations(
         recent_reading_memory,
         memory_uptake_ops,
@@ -3026,8 +2821,6 @@ def _settle_next_unit(
         source_span=source_span if has_selected_source_unit else None,
         source_span_id=source_id if has_selected_source_unit else "",
         memory_uptake_ops=memory_uptake_ops,
-        before_active_attention=before_active_attention,
-        after_active_attention=active_attention,
         before_recent_reading_memory=before_recent_reading_memory,
         after_recent_reading_memory=recent_reading_memory,
         before_reaction_records=before_reaction_records,
@@ -3104,17 +2897,11 @@ def _settle_next_unit(
             "continuation_capsule": _build_runtime_continuation_capsule(
                 chapter_ref=chapter_ref,
                 local_buffer=local_buffer,
-                active_attention=active_attention,
                 recent_reading_memory=recent_reading_memory,
-                reflective_frames=reflective_frames,
                 reaction_records=reaction_records,
             ),
-            "active_attention": active_attention,
             "recent_reading_memory": recent_reading_memory,
-            "reflective_frames": reflective_frames,
-            "knowledge_activations": knowledge_activations,
             "reaction_records": reaction_records,
-            "reconsolidation_records": reconsolidation_records,
             "reader_policy": reader_policy,
             "resume_metadata": bundle.get("resume_metadata", {}),
         }
@@ -3129,9 +2916,7 @@ def _settle_next_unit(
         chapter_ref=chapter_ref,
         local_buffer=local_buffer,
         local_continuity=local_continuity,
-        active_attention=active_attention,
         recent_reading_memory=recent_reading_memory,
-        reflective_frames=reflective_frames,
         reaction_records=reaction_records,
         actual_source_span=source_span if has_selected_source_unit else {},
         actual_source_span_id=source_id if has_selected_source_unit else "",
@@ -3159,12 +2944,8 @@ def _settle_next_unit(
     return {
         "local_buffer": local_buffer,
         "local_continuity": local_continuity,
-        "active_attention": active_attention,
         "recent_reading_memory": recent_reading_memory,
-        "reflective_frames": reflective_frames,
-        "knowledge_activations": knowledge_activations,
         "reaction_records": reaction_records,
-        "reconsolidation_records": reconsolidation_records,
         "bundle": bundle,
         "emitted_reactions": emitted_reactions,
         "current_source_ref": current_source_ref,
@@ -3184,6 +2965,8 @@ def parse_attentional_v2(request: ParseRequest, mechanism: MechanismInfo) -> Par
     if provisioned.book_document is None:
         raise RuntimeError("Shared canonical parse did not produce book_document.json.")
 
+    if request.continue_mode:
+        require_current_run(provisioned.output_dir)
     save_book_document(book_document_file(provisioned.output_dir), provisioned.book_document)
     created = not runtime_artifacts.book_manifest_file(provisioned.output_dir).exists()
     with (
@@ -3261,13 +3044,15 @@ def run_reading_runner(request: ReadRequest, mechanism: MechanismInfo) -> ReadRe
     """Run the mechanism-internal Reading Runner loop."""
 
     if request.task_mode == "book_analysis":
-        raise ValueError("attentional_v2 does not support the retired legacy book_analysis mode.")
+        raise ValueError("book_analysis 已退役；请查看 tag pre-cleanup-2026-11")
 
     provisioned = ensure_canonical_parse(request.book_path, language_mode=request.language_mode)
     if provisioned.book_document is None:
         raise RuntimeError("Shared canonical parse did not produce book_document.json.")
 
     output_dir = provisioned.output_dir
+    if request.continue_mode:
+        require_current_run(output_dir)
     save_book_document(book_document_file(output_dir), provisioned.book_document)
     created = not runtime_artifacts.book_manifest_file(output_dir).exists()
     observation_manager = (
@@ -3341,12 +3126,8 @@ def run_reading_runner(request: ReadRequest, mechanism: MechanismInfo) -> ReadRe
         touched_chapter_ids: set[int] = set()
         local_buffer: LocalBufferState = bundle["local_buffer"]  # type: ignore[assignment]
         local_continuity: LocalContinuityState = bundle["local_continuity"]  # type: ignore[assignment]
-        active_attention: ActiveAttention = bundle["active_attention"]  # type: ignore[assignment]
         recent_reading_memory: RecentReadingMemoryState = bundle["recent_reading_memory"]  # type: ignore[assignment]
-        reflective_frames: ReflectiveFramesState = bundle["reflective_frames"]  # type: ignore[assignment]
-        knowledge_activations: KnowledgeActivationsState = bundle["knowledge_activations"]  # type: ignore[assignment]
         reaction_records: ReactionRecordsState = bundle["reaction_records"]  # type: ignore[assignment]
-        reconsolidation_records = bundle["reconsolidation_records"]
         resume_metadata = bundle["resume_metadata"]
         survey_map = load_json(survey_map_file(output_dir)) if survey_map_file(output_dir).exists() else {}
         sentence_lookup, chapter_lookup = _build_sentence_lookup(provisioned.book_document)
@@ -3453,9 +3234,7 @@ def run_reading_runner(request: ReadRequest, mechanism: MechanismInfo) -> ReadRe
                         current_cursor=cursor,
                         local_buffer=local_buffer,
                         continuation_capsule=dict(bundle.get("continuation_capsule", {})),
-                        active_attention=active_attention,
                         recent_reading_memory=recent_reading_memory,
-                        reflective_frames=reflective_frames,
                         reaction_records=reaction_records,
                         local_continuity=local_continuity,
                         reader_policy=reader_policy,
@@ -3491,12 +3270,8 @@ def run_reading_runner(request: ReadRequest, mechanism: MechanismInfo) -> ReadRe
                         local_buffer=local_buffer,
                         local_continuity=local_continuity,
                         continuation_capsule=dict(bundle.get("continuation_capsule", {})),
-                        active_attention=active_attention,
                         recent_reading_memory=recent_reading_memory,
-                        reflective_frames=reflective_frames,
-                        knowledge_activations=knowledge_activations,
                         reaction_records=reaction_records,
-                        reconsolidation_records=reconsolidation_records,
                         reader_policy=reader_policy,
                         output_language=provisioned.output_language,
                         output_dir=output_dir,
@@ -3518,12 +3293,8 @@ def run_reading_runner(request: ReadRequest, mechanism: MechanismInfo) -> ReadRe
                     )
                 local_buffer = settled_unit["local_buffer"]  # type: ignore[assignment]
                 local_continuity = settled_unit["local_continuity"]  # type: ignore[assignment]
-                active_attention = settled_unit["active_attention"]  # type: ignore[assignment]
                 recent_reading_memory = settled_unit["recent_reading_memory"]  # type: ignore[assignment]
-                reflective_frames = settled_unit["reflective_frames"]  # type: ignore[assignment]
-                knowledge_activations = settled_unit["knowledge_activations"]  # type: ignore[assignment]
                 reaction_records = settled_unit["reaction_records"]  # type: ignore[assignment]
-                reconsolidation_records = settled_unit["reconsolidation_records"]  # type: ignore[assignment]
                 bundle = settled_unit["bundle"]  # type: ignore[assignment]
                 touched_chapter_ids.update(int(item) for item in settled_unit.get("touched_chapter_ids", []) if int(item) > 0)
                 audit_window_units_read += int(settled_unit.get("units_read_delta", 0) or 0)
@@ -3540,41 +3311,6 @@ def run_reading_runner(request: ReadRequest, mechanism: MechanismInfo) -> ReadRe
                 chapter_observation.settle("partial")
                 break
 
-            end_cursor = chapter_end_cursor(chapter)
-            end_source_unit = source_unit_from_span(
-                chapter=chapter,
-                source_span={
-                    "start_cursor": dict(end_cursor),
-                    "end_cursor": dict(end_cursor),
-                },
-            )
-            last_paragraph = readable[-1] if readable else {}
-            chapter_end_source_ref = source_ref_from_span(
-                end_source_unit.get("source_span") if isinstance(end_source_unit.get("source_span"), dict) else {},
-                quote=_clean_text(last_paragraph.get("text"))[-220:] if isinstance(last_paragraph, dict) else chapter_ref,
-                role="chapter_end",
-                resolution={"status": "chapter_end"},
-            )
-            phase6 = run_phase6_chapter_cycle(
-                book_id=runtime_artifacts.book_id_from_output_dir(output_dir),
-                chapter=chapter,
-                meaning_units_in_chapter=meaning_units_in_chapter,
-                chapter_end_source_ref=chapter_end_source_ref,
-                active_attention=active_attention,
-                reflective_frames=reflective_frames,
-                knowledge_activations=knowledge_activations,
-                reaction_records=reaction_records,
-                reader_policy=reader_policy,
-                output_language=provisioned.output_language,
-                output_dir=output_dir,
-                persist_compatibility_projection=False,
-                book_title=provisioned.title,
-                author=provisioned.author,
-            )
-            active_attention = phase6["active_attention"]  # type: ignore[assignment]
-            reflective_frames = phase6["reflective_frames"]  # type: ignore[assignment]
-            knowledge_activations = phase6["knowledge_activations"]  # type: ignore[assignment]
-            reaction_records = phase6["reaction_records"]  # type: ignore[assignment]
             bundle.update(
                 {
                     "local_buffer": local_buffer,
@@ -3582,17 +3318,11 @@ def run_reading_runner(request: ReadRequest, mechanism: MechanismInfo) -> ReadRe
                     "continuation_capsule": _build_runtime_continuation_capsule(
                         chapter_ref=chapter_ref,
                         local_buffer=local_buffer,
-                        active_attention=active_attention,
                         recent_reading_memory=recent_reading_memory,
-                        reflective_frames=reflective_frames,
                         reaction_records=reaction_records,
                     ),
-                    "active_attention": active_attention,
                     "recent_reading_memory": recent_reading_memory,
-                    "reflective_frames": reflective_frames,
-                    "knowledge_activations": knowledge_activations,
                     "reaction_records": reaction_records,
-                    "reconsolidation_records": reconsolidation_records,
                     "reader_policy": reader_policy,
                     "resume_metadata": resume_metadata,
                 }

@@ -22,7 +22,6 @@ from src.annotation_pack.exporter import ExportPolicy, export_annotation_pack
 from src.annotation_pack.ids import default_creator_id
 from src.annotation_pack.packaging import validate_detached_annotations
 from src.attentional_v2 import runner as runner_module
-from src.attentional_v2 import slow_cycle as slow_cycle_module
 from src.attentional_v2 import survey as survey_module
 from src.attentional_v2.storage import (
     ATTENTIONAL_V2_MECHANISM_KEY,
@@ -211,11 +210,6 @@ def test_real_epub_offline_runner_resume_finalizes_and_exports_pack(
         runner_module,
         "_call_digest",
         _deterministic_digest_factory(digest_calls),
-    )
-    monkeypatch.setattr(
-        slow_cycle_module,
-        "invoke_structured_output",
-        _deterministic_slow_cycle,
     )
 
     mechanism = AttentionalV2Mechanism()

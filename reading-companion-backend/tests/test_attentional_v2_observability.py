@@ -19,9 +19,9 @@ def test_record_settlement_writes_compact_state_deltas(tmp_path: Path) -> None:
         memory_uptake_ops=[
             {
                 "operation_type": "append",
-                "target_store": "active_attention",
-                "target_store_emitted": "active_attention",
-                "effective_target_store": "active_attention",
+                "target_store": "recent_reading_memory",
+                "target_store_emitted": "recent_reading_memory",
+                "effective_target_store": "recent_reading_memory",
                 "target_key": "hot-2",
                 "payload": {
                     "source_refs": [
@@ -31,18 +31,8 @@ def test_record_settlement_writes_compact_state_deltas(tmp_path: Path) -> None:
                 },
             },
         ],
-        before_active_attention={
-            "active_items": [
-                {"item_id": "hot-1", "statement": "old"},
-                {"item_id": "hot-removed", "statement": "drop"},
-            ]
-        },
-        after_active_attention={
-            "active_items": [
-                {"item_id": "hot-1", "statement": "updated"},
-                {"item_id": "hot-2", "statement": "new"},
-            ]
-        },
+        before_recent_reading_memory={"entries": [{"entry_id": "hot-1", "content": "before"}, {"entry_id": "hot-removed"}]},
+        after_recent_reading_memory={"entries": [{"entry_id": "hot-1", "content": "after"}, {"entry_id": "hot-2"}]},
         before_reaction_records={"records": [{"reaction_id": "reaction-1", "thought": "old"}]},
         after_reaction_records={
             "records": [
@@ -56,12 +46,12 @@ def test_record_settlement_writes_compact_state_deltas(tmp_path: Path) -> None:
     audit_line = json.loads(settlement_audit_file(output_dir).read_text(encoding="utf-8").strip())
 
     assert audit_line["memory_uptake_op_count"] == 1
-    assert audit_line["memory_uptake_ops_by_target_store"] == {"active_attention": 1}
+    assert audit_line["memory_uptake_ops_by_target_store"] == {"recent_reading_memory": 1}
     assert audit_line["memory_uptake_op_outcomes"][0] == {
         "operation_index": 0,
         "operation_type": "append",
-        "target_store_emitted": "active_attention",
-        "effective_target_store": "active_attention",
+        "target_store_emitted": "recent_reading_memory",
+        "effective_target_store": "recent_reading_memory",
         "target_key": "hot-2",
         "item_id": "hot-2",
         "source_ref_count": 2,
@@ -71,7 +61,7 @@ def test_record_settlement_writes_compact_state_deltas(tmp_path: Path) -> None:
         "outcome": "accepted_observed",
         "outcome_basis": "audit_observed_inferred_from_compact_state_delta",
     }
-    assert audit_line["state_deltas"]["active_attention"] == {
+    assert audit_line["state_deltas"]["recent_reading_memory"] == {
         "before_count": 2,
         "after_count": 2,
         "added_ids": ["hot-2"],
@@ -98,9 +88,9 @@ def test_record_read_writes_memory_uptake_op_contracts(tmp_path: Path) -> None:
             "memory_uptake_ops": [
                 {
                     "op": "append",
-                    "target_store": "active_attention",
+                    "target_store": "recent_reading_memory",
                     "target_store_emitted": "",
-                    "effective_target_store": "active_attention",
+                    "effective_target_store": "recent_reading_memory",
                     "target_key": "hot-1",
                     "compatibility_warnings": ["missing_target_store_defaulted"],
                     "payload": {
@@ -119,7 +109,7 @@ def test_record_read_writes_memory_uptake_op_contracts(tmp_path: Path) -> None:
                     "operation_type_emitted": "append",
                     "operation_type_normalized": "append",
                     "target_store_emitted": "",
-                    "effective_target_store": "active_attention",
+                    "effective_target_store": "recent_reading_memory",
                     "target_key": "hot-1",
                     "item_id": "hot-1",
                     "compatibility_warnings": ["missing_target_store_defaulted"],
@@ -147,16 +137,16 @@ def test_record_read_writes_memory_uptake_op_contracts(tmp_path: Path) -> None:
     audit_line = json.loads(read_audit_file(output_dir).read_text(encoding="utf-8").strip())
 
     assert audit_line["digest_result"]["reading_impression"] == "A hinge appears."
-    assert audit_line["digest_result"]["memory_uptake_ops"][0]["target_store"] == "active_attention"
-    assert audit_line["memory_uptake_ops"][0]["target_store"] == "active_attention"
+    assert audit_line["digest_result"]["memory_uptake_ops"][0]["target_store"] == "recent_reading_memory"
+    assert audit_line["memory_uptake_ops"][0]["target_store"] == "recent_reading_memory"
     assert audit_line["memory_uptake_op_count"] == 1
-    assert audit_line["memory_uptake_ops_by_target_store"] == {"active_attention": 1}
+    assert audit_line["memory_uptake_ops_by_target_store"] == {"recent_reading_memory": 1}
     assert audit_line["memory_uptake_op_contracts"] == [
         {
             "operation_index": 0,
             "operation_type": "append",
             "target_store_emitted": "",
-            "effective_target_store": "active_attention",
+            "effective_target_store": "recent_reading_memory",
             "target_key": "hot-1",
             "item_id": "hot-1",
             "source_ref_count": 3,
@@ -171,7 +161,7 @@ def test_record_read_writes_memory_uptake_op_contracts(tmp_path: Path) -> None:
             "operation_type_emitted": "append",
             "operation_type_normalized": "append",
             "target_store_emitted": "",
-            "effective_target_store": "active_attention",
+            "effective_target_store": "recent_reading_memory",
             "target_key": "hot-1",
             "item_id": "hot-1",
             "compatibility_warnings": ["missing_target_store_defaulted"],
@@ -250,11 +240,9 @@ def test_record_settlement_prefers_unclassified_for_duplicate_target_causality(t
         unit_sentence_ids=["c1-s1"],
         focal_sentence_id="c1-s1",
         memory_uptake_ops=[
-            {"operation_type": "append", "target_store": "active_attention", "target_key": "hot-1"},
-            {"operation_type": "update", "target_store": "active_attention", "target_key": "hot-1"},
+            {"operation_type": "append", "target_store": "recent_reading_memory", "target_key": "hot-1"},
+            {"operation_type": "update", "target_store": "recent_reading_memory", "target_key": "hot-1"},
         ],
-        before_active_attention={"active_items": []},
-        after_active_attention={"active_items": [{"item_id": "hot-1", "statement": "new"}]},
         before_reaction_records={"records": []},
         after_reaction_records={"records": []},
     )

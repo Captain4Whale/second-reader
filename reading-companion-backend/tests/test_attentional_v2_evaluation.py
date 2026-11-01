@@ -2,24 +2,18 @@
 
 from __future__ import annotations
 
-import json
 
 from src.attentional_v2.runner import _chapter_ref
-from src.attentional_v2.evaluation import normalized_eval_bundle_file
 from src.attentional_v2.schemas import (
     build_empty_reaction_records,
-    build_empty_reconsolidation_records,
-    build_empty_reflective_frames,
 )
 from src.attentional_v2.slow_cycle import (
     build_reaction_record,
-    build_reaction_record_from_surfaced_reaction,
-    project_chapter_result_compatibility,
 )
-from src.attentional_v2.storage import reaction_records_file, reconsolidation_records_file, reflective_frames_file, save_json
+from src.attentional_v2.storage import reaction_records_file, save_json
 from src.reading_core.storage import save_book_document
 from src.reading_mechanisms.attentional_v2 import AttentionalV2Mechanism
-from src.reading_runtime.artifacts import activity_file, runtime_shell_file
+from src.reading_runtime.artifacts import runtime_shell_file
 from src.reading_runtime.shell_state import load_runtime_shell, save_runtime_shell
 
 
@@ -130,165 +124,8 @@ def _source_ref(quote: str, paragraph_index: int) -> dict[str, object]:
     }
 
 
-def test_attentional_v2_can_build_and_persist_normalized_eval_bundle(tmp_path):
-    """The Phase 8 scaffold should export a normalized eval bundle from persisted artifacts."""
-
-    output_dir = tmp_path / "output" / "demo-book"
-    mechanism = AttentionalV2Mechanism()
-    mechanism.initialize_artifacts(output_dir)
-    save_book_document(output_dir / "public" / "book_document.json", _book_document())
-
-    shell = load_runtime_shell(runtime_shell_file(output_dir))
-    shell["status"] = "deep_reading"
-    shell["phase"] = "thinking"
-    shell["cursor"] = {
-        "position_kind": "span",
-        "chapter_id": 1,
-        "chapter_ref": "Chapter 1",
-        "span_start_cursor": {"chapter_id": 1, "chapter_ref": "Chapter 1", "paragraph_index": 1, "char_offset": 0},
-        "span_end_cursor": {"chapter_id": 1, "chapter_ref": "Chapter 1", "paragraph_index": 2, "char_offset": 45},
-    }
-    shell["active_artifact_refs"] = {"reaction_id": "rx:Chapter_1:c1-s1:highlight"}
-    shell["resume_available"] = True
-    shell["last_checkpoint_at"] = "2026-03-23T08:00:00Z"
-    save_runtime_shell(runtime_shell_file(output_dir), shell)
-
-    reaction_records = build_empty_reaction_records()
-    reaction_records["records"] = [
-        build_reaction_record(
-            reaction={
-                "type": "highlight",
-                "source_quote": "Markets begin as relations among people.",
-                "content": "The opening sentence frames value as social relation.",
-                "related_source_quotes": ["Later the author narrows what counts as value."],
-                "search_query": "",
-                "search_results": [],
-            },
-            primary_source_ref=_source_ref("Markets begin as relations among people.", 1),
-            related_source_refs=[_source_ref("Later the author narrows what counts as value.", 2)],
-            chapter_id=1,
-            chapter_ref="Chapter 1",
-            emitted_at_source_span_id="src:c1:p1@0-p1@40",
-        )
-    ]
-    save_json(reaction_records_file(output_dir), reaction_records)
-
-    reflective = build_empty_reflective_frames()
-    reflective["chapter_understandings"] = [
-        {
-            "item_id": "ru-1",
-            "statement": "The chapter opens socially and then narrows its claim.",
-            "source_refs": [_source_ref("Markets begin as relations among people.", 1), _source_ref("Later the author narrows what counts as value.", 2)],
-            "confidence_band": "stable",
-            "promoted_from": "chapter_sweep",
-            "status": "active",
-            "chapter_ref": "Chapter 1",
-        }
-    ]
-    save_json(reflective_frames_file(output_dir), reflective)
-
-    project_chapter_result_compatibility(
-        book_id="demo-book",
-        chapter={**_book_document()["chapters"][0], "reference": "Chapter 1"},
-        reaction_records=reaction_records,
-        output_language="en",
-        output_dir=output_dir,
-        persist=True,
-    )
-
-    activity_path = activity_file(output_dir)
-    activity_path.parent.mkdir(parents=True, exist_ok=True)
-    activity_path.write_text(
-        json.dumps(
-            {
-                "event_id": "evt-1",
-                "timestamp": "2026-03-23T08:01:00Z",
-                "stream": "mindstream",
-                "kind": "thought",
-                "message": "The opening line sets the social frame.",
-                "chapter_ref": "Chapter 1",
-                "segment_ref": "1.1",
-                "source_quote": "Markets begin as relations among people.",
-                "active_reaction_id": "rx:Chapter_1:c1-s1:highlight",
-                "reading_locus": {
-                    "kind": "span",
-                    "chapter_id": 1,
-                    "chapter_ref": "Chapter 1",
-                    "span_start_cursor": {"chapter_id": 1, "chapter_ref": "Chapter 1", "paragraph_index": 1, "char_offset": 0},
-                    "span_end_cursor": {"chapter_id": 1, "chapter_ref": "Chapter 1", "paragraph_index": 1, "char_offset": 40},
-                },
-            },
-            ensure_ascii=False,
-        )
-        + "\n",
-        encoding="utf-8",
-    )
-
-    bundle = mechanism.build_normalized_eval_bundle(output_dir, config_payload={"benchmark": "attentional_v2_local"})
-
-    assert bundle["mechanism_key"] == "attentional_v2"
-    assert bundle["run_snapshot"]["current_chapter_ref"] == "Chapter 1"
-    assert bundle["run_snapshot"]["current_reading_locus"]["kind"] == "source_span"
-    assert bundle["run_snapshot"]["current_reading_locus"]["start_cursor"]["paragraph_index"] == 1
-    assert bundle["run_snapshot"]["current_reading_locus"]["end_cursor"]["paragraph_index"] == 2
-    assert "route_action" not in bundle["attention_events"][0]
-    assert bundle["reactions"][0]["primary_source_ref"]["quote"] == "Markets begin as relations among people."
-    assert bundle["reactions"][0]["related_source_refs"][0]["source_span_id"].startswith("src:c1:p2@")
-    assert bundle["chapters"][0]["visible_reaction_count"] == 1
-    assert bundle["memory_summaries"] == ["The chapter opens socially and then narrows its claim."]
-
-    export_path = mechanism.persist_normalized_eval_bundle(output_dir, config_payload={"benchmark": "attentional_v2_local"})
-    assert export_path == normalized_eval_bundle_file(output_dir)
-    assert export_path.exists()
 
 
-def test_normalized_eval_bundle_projects_compat_fields_from_native_reaction_record(tmp_path):
-    """Normalized eval export should derive legacy fields from native surfaced reaction semantics."""
-
-    output_dir = tmp_path / "output" / "demo-book"
-    mechanism = AttentionalV2Mechanism()
-    mechanism.initialize_artifacts(output_dir)
-    save_book_document(output_dir / "public" / "book_document.json", _book_document())
-
-    reaction_records = build_empty_reaction_records()
-    reaction_records["records"] = [
-        build_reaction_record_from_surfaced_reaction(
-            reaction={
-                "source_quote": "Markets begin as relations among people.",
-                "content": "The social frame opens a question worth following.",
-                "prior_link": None,
-                "outside_link": None,
-                "search_intent": {
-                    "query": "social marketplace framing",
-                    "rationale": "Useful follow-up for later comparison.",
-                },
-            },
-            primary_source_ref=_source_ref("Markets begin as relations among people.", 1),
-            chapter_id=1,
-            chapter_ref="Chapter 1",
-            emitted_at_source_span_id="src:c1:p1@0-p1@40",
-        )
-    ]
-    save_json(reaction_records_file(output_dir), reaction_records)
-
-    project_chapter_result_compatibility(
-        book_id="demo-book",
-        chapter={**_book_document()["chapters"][0], "reference": "Chapter 1"},
-        reaction_records=reaction_records,
-        output_language="en",
-        output_dir=output_dir,
-        persist=True,
-    )
-
-    bundle = mechanism.build_normalized_eval_bundle(output_dir, config_payload={"benchmark": "attentional_v2_local"})
-
-    assert bundle["reactions"][0]["type"] == "curious"
-    assert bundle["reactions"][0]["compat_family"] == "curious"
-    assert bundle["reactions"][0]["content"] == "The social frame opens a question worth following."
-    assert bundle["reactions"][0]["prior_link"] is None
-    assert bundle["reactions"][0]["outside_link"] is None
-    assert bundle["reactions"][0]["search_intent"]["query"] == "social marketplace framing"
-    assert bundle["reactions"][0]["search_query"] == "social marketplace framing"
 
 
 def test_attentional_v2_integrity_checks_flag_cursor_source_ref_and_reconsolidation_drift(tmp_path):
@@ -329,24 +166,17 @@ def test_attentional_v2_integrity_checks_flag_cursor_source_ref_and_reconsolidat
     broken_reactions["records"] = [broken_record]
     save_json(reaction_records_file(output_dir), broken_reactions)
 
-    reconsolidations = build_empty_reconsolidation_records()
-    reconsolidations["records"] = [
-        {
-            "record_id": "rc-1",
-            "prior_reaction_id": broken_record["reaction_id"],
-            "new_reaction_id": broken_record["reaction_id"],
-            "change_kind": "tightened",
-            "what_changed": "The same reaction id was reused incorrectly.",
-            "rationale": "Intentional test corruption.",
-            "created_at": "2026-03-23T08:02:00Z",
-        }
-    ]
-    save_json(reconsolidation_records_file(output_dir), reconsolidations)
-
     report = mechanism.run_mechanism_integrity_checks(output_dir)
     by_code = {check["code"]: check for check in report["checks"]}
 
     assert report["passed"] is False
     assert by_code["runtime_cursor_source_span_resolves"]["status"] == "fail"
     assert by_code["reactions_have_resolvable_source_refs"]["status"] == "fail"
-    assert by_code["reconsolidation_links_are_append_only"]["status"] == "fail"
+    assert "reconsolidation_links_are_append_only" not in by_code
+
+
+def test_new_evaluation_rejects_private_reactions_without_product(tmp_path):
+    import pytest
+    from src.attentional_v2.evaluation import _normalized_reactions
+    with pytest.raises(ValueError, match="Product-accepted Marginalia"):
+        _normalized_reactions(tmp_path)

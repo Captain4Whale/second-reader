@@ -18,11 +18,9 @@ from src.attentional_v2.storage import (
     local_buffer_file,
     reaction_records_file,
     reader_policy_file,
-    reflective_frames_file,
     resume_metadata_file,
     runtime_dir,
     save_json,
-    active_attention_file,
 )
 from src.reading_mechanisms.attentional_v2 import AttentionalV2Mechanism
 from src.reading_runtime.artifacts import activity_file, checkpoint_summary_file, runtime_shell_file
@@ -281,8 +279,8 @@ def test_persist_reading_position_recreates_missing_runtime_shell(tmp_path: Path
     assert shell["phase"] == "preparing"
 
 
-def test_incompatible_checkpoint_falls_back_to_live_warm_resume(tmp_path: Path):
-    """Compatibility failure should fall back to live-state warm resume rather than fake a cold reconstruction."""
+def test_incompatible_checkpoint_is_rejected_without_mutation(tmp_path: Path):
+    """Incompatible checkpoints are explicitly rejected and remain byte-for-byte unchanged."""
 
     output_dir = tmp_path / "output" / "demo-book"
     AttentionalV2Mechanism().initialize_artifacts(output_dir)
@@ -295,12 +293,10 @@ def test_incompatible_checkpoint_falls_back_to_live_warm_resume(tmp_path: Path):
     checkpoint["mechanism_version"] = "attentional_v2-phase0"
     save_json(full_checkpoint_file(output_dir, "cp-1"), checkpoint)
 
-    resumed = resume_from_checkpoint(output_dir, book_document=book_document, requested_resume_kind="cold_resume")
-
-    assert resumed["compatibility_status"] == "fallback_to_live_state"
-    assert "mechanism_version_mismatch" in resumed["compatibility_issues"]
-    assert resumed["effective_resume_kind"] == "warm_resume"
-    assert resumed["local_buffer"]["is_reconstructed"] is False
+    before = full_checkpoint_file(output_dir, "cp-1").read_bytes()
+    with pytest.raises(RuntimeError, match="pre-cleanup-2026-11"):
+        resume_from_checkpoint(output_dir, book_document=book_document, requested_resume_kind="cold_resume")
+    assert full_checkpoint_file(output_dir, "cp-1").read_bytes() == before
 
 
 def test_resume_rejects_legacy_runtime_and_old_checkpoint_shapes(tmp_path: Path):
@@ -312,64 +308,18 @@ def test_resume_rejects_legacy_runtime_and_old_checkpoint_shapes(tmp_path: Path)
     local_buffer = _build_buffer(total_sentences=6, closed_breaks=[3])
     persist_reading_position(output_dir, chapter_id=1, chapter_ref="Chapter 1", local_buffer=local_buffer)
 
-    legacy_hot_state = {
-        "schema_version": 1,
-        "mechanism_version": "legacy",
-        "updated_at": "2026-04-12T00:00:00Z",
-        "local_questions": [
-        {
-            "item_id": "q-1",
-            "kind": "question",
-            "statement": "What is still unresolved?",
-            "status": "open",
-            "support_anchor_ids": ["a-1"],
-        }
-        ],
-    }
-    for path in (
-        active_attention_file(output_dir),
-        runtime_dir(output_dir) / ("concept_" + "registry.json"),
-        runtime_dir(output_dir) / ("thread_" + "trace.json"),
-        reflective_frames_file(output_dir),
-        runtime_dir(output_dir) / "anchor_bank.json",
-    ):
-        path.unlink(missing_ok=True)
-
-    save_json(runtime_dir(output_dir) / ("working_" + "pressure.json"), legacy_hot_state)
-    save_json(runtime_dir(output_dir) / "anchor_bank.json", {"anchor_records": [], "anchor_relations": []})
-
-    shell = load_runtime_shell(runtime_shell_file(output_dir))
-    legacy_checkpoint = {
-        "schema_version": 1,
-        "mechanism_version": shell.get("mechanism_version"),
-        "policy_version": shell.get("policy_version"),
-        "checkpoint_id": "legacy-cp",
-        "created_at": "2026-04-12T00:00:00Z",
-        "checkpoint_reason": "legacy_test",
-        "resume_kind": "warm_resume",
-        "cursor": dict(shell.get("cursor", {})),
-        "active_artifact_refs": {},
-        "visible_reaction_ids": [],
-        "local_buffer": load_json(local_buffer_file(output_dir)),
-        "local_continuity": load_json(runtime_dir(output_dir) / "local_continuity.json"),
-        "legacy_hot_state": legacy_hot_state,
-        "anchor_bank": {"anchor_records": [], "anchor_relations": []},
-        "knowledge_activations": load_json(runtime_dir(output_dir) / "knowledge_activations.json"),
-        "route_history": {"routes": []},
-        "reaction_records": load_json(reaction_records_file(output_dir)),
-        "reconsolidation_records": load_json(runtime_dir(output_dir) / "reconsolidation_records.json"),
-        "reader_policy": load_json(reader_policy_file(output_dir)),
-        "resume_metadata": load_json(resume_metadata_file(output_dir)),
-    }
-    save_json(full_checkpoint_file(output_dir, "legacy-cp"), legacy_checkpoint)
-    shell["last_checkpoint_id"] = "legacy-cp"
-    save_runtime_shell(runtime_shell_file(output_dir), shell)
-
-    with pytest.raises(
-        RuntimeError,
-        match=r"(Pre-Phase C\.3|Anchor-bank) attentional_v2 (runtime state is|checkpoints are|checkpoints are no longer supported)",
-    ):
-        resume_from_checkpoint(output_dir, book_document=book_document, requested_resume_kind="warm_resume")
+    write_full_checkpoint(output_dir, checkpoint_id="old")
+    path = full_checkpoint_file(output_dir, "old")
+    payload = load_json(path)
+    payload.pop("checkpoint_format")
+    save_json(path, payload)
+    with pytest.raises(RuntimeError, match="旧 checkpoint.*pre-cleanup-2026-11"):
+        resume_from_checkpoint(output_dir, book_document=book_document)
+    policy = load_json(reader_policy_file(output_dir))
+    policy["schema_version"] = 1
+    save_json(reader_policy_file(output_dir), policy)
+    with pytest.raises(RuntimeError, match="旧 checkpoint / run.*pre-cleanup-2026-11"):
+        resume_from_checkpoint(output_dir, book_document=book_document)
 
 
 def test_debug_observability_writes_internal_diagnostics_events(tmp_path: Path):
@@ -401,3 +351,32 @@ def test_debug_observability_writes_internal_diagnostics_events(tmp_path: Path):
     checkpoint_summary = load_json(checkpoint_summary_file(output_dir, "cp-debug"))
     assert shell["observability_mode"] == "debug"
     assert checkpoint_summary["observability_mode"] == "debug"
+
+
+@pytest.mark.parametrize("entrypoint", ["parse", "read"])
+def test_old_run_is_rejected_before_survey_or_runtime_initialization(tmp_path, monkeypatch, entrypoint):
+    from types import SimpleNamespace
+    from src.attentional_v2 import runner
+    from src.reading_core.runtime_contracts import ParseRequest, ReadRequest
+
+    output = tmp_path / "old-run"
+    output.mkdir()
+    policy_path = reader_policy_file(output)
+    policy_path.parent.mkdir(parents=True, exist_ok=True)
+    policy_path.write_text('{"schema_version": 1}')
+    original = policy_path.read_bytes()
+    monkeypatch.setattr(runner, "ensure_canonical_parse", lambda *a, **kw: SimpleNamespace(
+        output_dir=output, book_document=_make_book_document(1)))
+
+    def unexpected(*a, **kw):
+        pytest.fail("old run reached survey or runtime initialization")
+
+    monkeypatch.setattr(runner, "write_book_survey_artifacts", unexpected)
+    monkeypatch.setattr(runner, "initialize_artifact_tree", unexpected)
+    mechanism = AttentionalV2Mechanism()
+    with pytest.raises(RuntimeError, match="pre-cleanup-2026-11"):
+        if entrypoint == "parse":
+            runner.parse_attentional_v2(ParseRequest(tmp_path / "old.epub", continue_mode=True), mechanism.info)
+        else:
+            runner.run_reading_runner(ReadRequest(tmp_path / "old.epub", continue_mode=True), mechanism.info)
+    assert policy_path.read_bytes() == original

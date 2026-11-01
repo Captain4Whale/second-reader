@@ -24,11 +24,7 @@ from .prompts import (
 )
 from .state_projection import build_digest_prompt_packet
 from .schemas import (
-    AnchorBankState,
-    AnchorMemoryState,
-    BridgeCandidate,
     CarryForwardContext,
-    KnowledgeActivationsState,
     MarginaliaItem,
     MemoryUptakeAdmissionEvent,
     IngestBoundaryResult,
@@ -131,42 +127,6 @@ def _contains_internal_reference_markup(text: str) -> bool:
     if not cleaned:
         return False
     return any(pattern.search(cleaned) for pattern in _VISIBLE_INTERNAL_REFERENCE_PATTERNS)
-
-
-def _anchor_context(anchor_memory: AnchorMemoryState | AnchorBankState, *, limit: int = 4) -> list[dict[str, object]]:
-    """Build a compact anchor context packet."""
-
-    context: list[dict[str, object]] = []
-    for anchor in anchor_memory.get("anchor_records", [])[:limit]:
-        if not isinstance(anchor, dict):
-            continue
-        context.append(
-            {
-                "anchor_id": str(anchor.get("anchor_id", "") or ""),
-                "quote": str(anchor.get("quote", "") or ""),
-                "anchor_kind": str(anchor.get("anchor_kind", "") or ""),
-                "status": str(anchor.get("status", "") or ""),
-            }
-        )
-    return context
-
-
-def _activation_context(activations: KnowledgeActivationsState, *, limit: int = 4) -> list[dict[str, object]]:
-    """Build a compact activation context packet."""
-
-    context: list[dict[str, object]] = []
-    for activation in activations.get("activations", [])[:limit]:
-        if not isinstance(activation, dict):
-            continue
-        context.append(
-            {
-                "activation_id": str(activation.get("activation_id", "") or ""),
-                "source_candidate": str(activation.get("source_candidate", "") or ""),
-                "reading_warrant": str(activation.get("reading_warrant", "") or ""),
-                "status": str(activation.get("status", "") or ""),
-            }
-        )
-    return context
 
 
 def _find_sentence_for_anchor_quote(
@@ -350,22 +310,8 @@ def build_unitize_preview(
 _MISSING_TARGET_STORE_WARNING = "missing_target_store_defaulted"
 _UNSUPPORTED_TARGET_STORE_WARNING = "unsupported_target_store"
 _UNSUPPORTED_OPERATION_STORE_WARNING = "unsupported_operation_for_target_store"
-_MEMORY_UPTAKE_TARGET_STORES = {"active_attention", "recent_reading_memory"}
-_MEMORY_UPTAKE_OPERATION_STORE_POLICY = {
-    "recent_reading_memory": {"append"},
-    "active_attention": {
-        "append",
-        "create",
-        "update",
-        "reactivate",
-        "cool",
-        "close",
-        "resolve",
-        "link",
-        "link_anchors",
-        "drop",
-    },
-}
+_MEMORY_UPTAKE_TARGET_STORES = {"recent_reading_memory"}
+_MEMORY_UPTAKE_OPERATION_STORE_POLICY = {"recent_reading_memory": {"append"}}
 
 
 def _memory_uptake_store_policy(
@@ -443,7 +389,7 @@ def _normalize_state_operations_with_admission(
         payload = item.get("payload")
         target_key = _clean_text(item.get("target_key") or item.get("item_id"))
         target_store_emitted = _clean_text(item.get("target_store"))
-        effective_target_store = target_store_emitted or "active_attention"
+        effective_target_store = target_store_emitted
         compatibility_warnings: list[str] = []
         if not target_store_emitted:
             compatibility_warnings.append(_MISSING_TARGET_STORE_WARNING)
@@ -548,47 +494,6 @@ def _normalize_state_operations(value: object) -> list[StateOperation]:
 
     operations, _admission_events = _normalize_state_operations_with_admission(value)
     return operations
-
-
-def _normalize_bridge_candidate(value: object) -> BridgeCandidate | None:
-    """Normalize one optional bridge candidate."""
-
-    if not isinstance(value, dict):
-        return None
-    target_anchor_id = _clean_text(value.get("target_anchor_id"))
-    target_sentence_id = _clean_text(value.get("target_sentence_id"))
-    quote = _clean_text(value.get("quote"))
-    if not any([target_anchor_id, target_sentence_id, quote]):
-        return None
-    relation_type = _clean_text(value.get("relation_type")) or "echo"
-    raw_score = value.get("score")
-    try:
-        score = float(raw_score) if raw_score is not None else 0.0
-    except (TypeError, ValueError):
-        score = 0.0
-    return {
-        "candidate_kind": _clean_text(value.get("candidate_kind")) or "llm_hint",
-        "target_anchor_id": target_anchor_id,
-        "target_sentence_id": target_sentence_id,
-        "retrieval_channel": _clean_text(value.get("retrieval_channel")) or "llm_hint",
-        "relation_type": relation_type,
-        "score": score,
-        "why_now": _clean_text(value.get("why_now")),
-        "quote": quote,
-    }
-
-
-def _normalize_bridge_candidates(value: object) -> list[BridgeCandidate]:
-    """Normalize a list of bridge candidates."""
-
-    candidates: list[BridgeCandidate] = []
-    if not isinstance(value, list):
-        return candidates
-    for item in value:
-        candidate = _normalize_bridge_candidate(item)
-        if candidate is not None:
-            candidates.append(candidate)
-    return candidates
 
 
 def _normalize_reaction_candidate(value: object) -> ReactionCandidate | None:

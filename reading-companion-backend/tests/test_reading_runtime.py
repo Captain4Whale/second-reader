@@ -2,7 +2,6 @@
 
 from __future__ import annotations
 
-import json
 from contextlib import contextmanager
 from pathlib import Path
 from types import SimpleNamespace
@@ -11,9 +10,6 @@ import pytest
 
 import main as main_module
 from src import config as config_module
-from src.iterator_reader.storage import activity_file, chapter_result_file, normalized_eval_bundle_file, reader_memory_file, run_state_file, save_json
-from src.reading_core.runtime_contracts import ReadRequest
-from src.reading_core.storage import save_book_document
 from src.reading_runtime import available_mechanism_keys, default_mechanism_key, get_mechanism
 
 
