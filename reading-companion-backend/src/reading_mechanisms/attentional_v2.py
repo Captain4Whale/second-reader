@@ -17,7 +17,7 @@ from src.attentional_v2.storage import (
     artifact_map,
     initialize_artifact_tree,
 )
-from src.attentional_v2.survey import write_book_survey_artifacts
+from src.attentional_v2.chapter_planner import write_chapter_plan_artifacts
 from src.reading_core import BookDocument
 from src.reading_core.runtime_contracts import MechanismInfo, ParseRequest, ParseResult, ReadRequest, ReadResult
 
@@ -52,16 +52,16 @@ class AttentionalV2Mechanism:
 
         return artifact_map(output_dir)
 
-    def build_survey_artifacts(
+    def build_chapter_planner_artifacts(
         self,
         output_dir: Path,
         book_document: BookDocument,
         *,
         policy_snapshot: dict[str, object] | None = None,
     ) -> dict[str, object]:
-        """Persist the orientation-only survey artifacts for one parsed book."""
+        """Persist the chapter scheduling chapter_planner artifacts for one parsed book."""
 
-        return write_book_survey_artifacts(
+        return write_chapter_plan_artifacts(
             output_dir,
             book_document,
             policy_snapshot=policy_snapshot,

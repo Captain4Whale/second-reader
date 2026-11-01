@@ -127,8 +127,8 @@ class _DeterministicReadingAdapter:
         message_blob = "\n".join(str(getattr(message, "content", "")) for message in messages)
         del messages, api_key, timeout_seconds, tool_choice, invocation_options
         contract_blob = json.dumps(tools or (), ensure_ascii=False) + message_blob
-        if "submit_survey_chapter_zone_result" in contract_blob:
-            node = "survey"
+        if "submit_chapter_zone_result" in contract_blob:
+            node = "chapter_planner"
         elif "submit_ingest_result" in contract_blob:
             node = "ingest"
         elif "submit_chapter_consolidation_result" in contract_blob:
@@ -142,7 +142,7 @@ class _DeterministicReadingAdapter:
                 "model": profile.model,
             }
         )
-        if node == "survey":
+        if node == "chapter_planner":
             payload = {
                 "zone": "main_body",
                 "confidence": "high",
@@ -287,7 +287,7 @@ def test_product_read_emits_recomputable_cost_and_efficiency_observability(tmp_p
     assert "unit_selected" in event_kinds
     assert "unit_settled" in event_kinds
     assert [call["node"] for call in adapter.calls] == [
-        "survey",
+        "chapter_planner",
         "ingest",
         "digest",
     ]
@@ -309,7 +309,7 @@ def test_product_read_emits_recomputable_cost_and_efficiency_observability(tmp_p
     assert all(event.get("chapter_id") == "1" for event in attempts)
     assert {event.get("job_id") for event in attempts} == {events[0]["job_id"]}
     assert {event.get("run_attempt_id") for event in attempts} == {events[0]["run_attempt_id"]}
-    assert {event.get("stage") for event in attempts} == {"survey", "phase4"}
+    assert {event.get("stage") for event in attempts} == {"chapter_planner", "phase4"}
     assert {event.get("node") for event in attempts} == {
         "chapter_zone_classifier",
         "ingest",
@@ -333,7 +333,7 @@ def test_product_read_emits_recomputable_cost_and_efficiency_observability(tmp_p
     assert metrics["observed_physical_attempt_count"] == 3
     assert metrics["total_tokens"] == "3300"
     assert metrics["estimated_usage_value_usd"] == "0.000852"
-    assert metrics["by_stage"]["survey"]["attempt_count"] == 1
+    assert metrics["by_stage"]["chapter_planner"]["attempt_count"] == 1
     assert metrics["by_stage"]["phase4"]["attempt_count"] == 2
     assert metrics["by_stage"]["phase4"]["accepted_source_chars"] == 30
     assert metrics["by_stage"]["phase4"]["total_tokens_per_10000_chars"] is not None

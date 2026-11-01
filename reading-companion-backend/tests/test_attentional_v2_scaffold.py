@@ -63,10 +63,9 @@ from src.attentional_v2.storage import (
     reaction_records_file,
     reader_policy_file,
     read_audit_file,
-    revisit_index_file,
     resume_metadata_file,
     settlement_audit_file,
-    survey_map_file,
+    chapter_plan_file,
     memory_retrieval_config_file,
     unit_memory_retrieval_trace_file,
     unit_memory_sqlite_file,
@@ -1319,7 +1318,7 @@ def test_attentional_v2_prompt_registry_contains_node_definitions() -> None:
     assert len(definitions) == 3
     assert len(set(prompt_ids)) == len(prompt_ids)
     assert prompt_ids == [
-        "attentional_v2.survey_chapter_zone",
+        "attentional_v2.chapter_zone",
         "attentional_v2.ingest",
         "attentional_v2.digest",
     ]
@@ -1713,10 +1712,10 @@ def _provisioned_book_with_supporting_chapters() -> ProvisionedBook:
 
 
 @pytest.fixture(autouse=True)
-def _stub_survey_artifacts(monkeypatch):
-    """Keep scaffold tests deterministic by stubbing the survey artifact writer."""
+def _stub_chapter_planner_artifacts(monkeypatch):
+    """Keep scaffold tests deterministic by stubbing the chapter_planner artifact writer."""
 
-    def fake_write_book_survey_artifacts(output_dir, book_document, *, policy_snapshot=None):
+    def fake_write_chapter_plan_artifacts(output_dir, book_document, *, policy_snapshot=None):
         chapters = [dict(chapter) for chapter in book_document.get("chapters", []) if isinstance(chapter, dict)]
         chapter_map = []
         mainline_chapter_ids: list[int] = []
@@ -1742,8 +1741,6 @@ def _stub_survey_artifacts(monkeypatch):
                     "title": title,
                     "chapter_number": chapter.get("chapter_number"),
                     "level": int(chapter.get("level", 1) or 1),
-                    "structural_role_guess": "body",
-                    "role_confidence": "weak",
                     "chapter_zone": zone,
                     "zone_confidence": "stub",
                     "zone_reason": "test_stub",
@@ -1759,11 +1756,11 @@ def _stub_survey_artifacts(monkeypatch):
                 for chapter in chapters
                 if int(chapter.get("id", 0) or 0) > 0 and int(chapter.get("id", 0) or 0) not in deferred_chapter_ids
             ]
-        survey = {
+        chapter_planner = {
             "schema_version": 1,
             "mechanism_version": "attentional_v2-phase6",
             "generated_at": "2026-04-22T00:00:00Z",
-            "status": "orientation_only",
+            "status": "body_first",
             "book_frame": {
                 "book": str(book_document.get("metadata", {}).get("book", "") or ""),
                 "author": str(book_document.get("metadata", {}).get("author", "") or ""),
@@ -1775,24 +1772,12 @@ def _stub_survey_artifacts(monkeypatch):
                 "mainline_chapter_ids": mainline_chapter_ids,
                 "deferred_chapter_ids": deferred_chapter_ids,
             },
-            "initial_motif_seeds": [],
-            "survey_caveats": [],
             "policy_snapshot": dict(policy_snapshot or {}),
         }
-        revisit = {
-            "schema_version": 1,
-            "mechanism_version": "attentional_v2-phase6",
-            "generated_at": "2026-04-22T00:00:00Z",
-            "status": "survey_seeded",
-            "anchors": {},
-            "chapter_boundaries": {},
-            "opening_sentence_ids": [],
-        }
-        survey_map_file(output_dir).write_text(json.dumps(survey, ensure_ascii=False, indent=2), encoding="utf-8")
-        revisit_index_file(output_dir).write_text(json.dumps(revisit, ensure_ascii=False, indent=2), encoding="utf-8")
-        return {"survey_map": survey, "revisit_index": revisit}
+        chapter_plan_file(output_dir).write_text(json.dumps(chapter_planner, ensure_ascii=False, indent=2), encoding="utf-8")
+        return {"chapter_plan": chapter_planner}
 
-    monkeypatch.setattr(runner_module, "write_book_survey_artifacts", fake_write_book_survey_artifacts)
+    monkeypatch.setattr(runner_module, "write_chapter_plan_artifacts", fake_write_chapter_plan_artifacts)
 
 
 def test_attentional_v2_initialization_writes_mechanism_artifacts(tmp_path):
@@ -1858,15 +1843,13 @@ def test_attentional_v2_initialization_writes_mechanism_artifacts(tmp_path):
     assert resume_metadata["resume_available"] is False
     assert resume_metadata["default_resume_kind"] == "warm_resume"
 
-    survey = json.loads(survey_map_file(output_dir).read_text(encoding="utf-8"))
-    assert survey["status"] == "not_started"
-    assert survey["chapter_map"] == []
-    assert survey["reading_plan"]["mode"] == "body_first"
-    assert survey["reading_plan"]["mainline_chapter_ids"] == []
-    assert survey["reading_plan"]["deferred_chapter_ids"] == []
+    chapter_planner = json.loads(chapter_plan_file(output_dir).read_text(encoding="utf-8"))
+    assert chapter_planner["status"] == "not_started"
+    assert chapter_planner["chapter_map"] == []
+    assert chapter_planner["reading_plan"]["mode"] == "body_first"
+    assert chapter_planner["reading_plan"]["mainline_chapter_ids"] == []
+    assert chapter_planner["reading_plan"]["deferred_chapter_ids"] == []
 
-    revisit = json.loads(revisit_index_file(output_dir).read_text(encoding="utf-8"))
-    assert revisit["anchors"] == {}
 
     assert event_stream_file(output_dir).read_text(encoding="utf-8") == ""
     assert result["artifact_map"]["settlement_audit"].endswith("settlement_audit.jsonl")
@@ -1892,14 +1875,14 @@ def test_attentional_v2_parse_book_creates_ready_artifacts_without_iterator_stru
 
     assert result.book_document["chapters"]
     assert result.mechanism_artifact is not None
-    assert result.mechanism_artifact["artifact_map"]["survey_map"].endswith("survey_map.json")
-    assert survey_map_file(result.output_dir).exists()
+    assert result.mechanism_artifact["artifact_map"]["chapter_plan"].endswith("chapter_plan.json")
+    assert chapter_plan_file(result.output_dir).exists()
     assert not (result.output_dir / "_mechanisms" / "iterator_v1" / "derived" / "structure.json").exists()
     shell = load_runtime_shell(runtime_shell_file(result.output_dir))
     assert shell["mechanism_key"] == ATTENTIONAL_V2_MECHANISM_KEY
     assert json.loads((result.output_dir / "public" / "book_manifest.json").read_text(encoding="utf-8"))["chapters"]
-    survey = json.loads(survey_map_file(result.output_dir).read_text(encoding="utf-8"))
-    assert survey["reading_plan"]["mode"] == "body_first"
+    chapter_planner = json.loads(chapter_plan_file(result.output_dir).read_text(encoding="utf-8"))
+    assert chapter_planner["reading_plan"]["mode"] == "body_first"
 
 
 def test_attentional_v2_runner_prefers_main_body_before_supporting_chapters(tmp_path, monkeypatch):
@@ -1963,7 +1946,7 @@ def test_attentional_v2_chapter_selection_honors_explicit_request_over_reading_p
     document = _provisioned_book_with_supporting_chapters().book_document
     output_dir = tmp_path / "output" / "support-book"
     AttentionalV2Mechanism().initialize_artifacts(output_dir)
-    survey_map = {
+    chapter_plan = {
         "reading_plan": {
             "mode": "body_first",
             "mainline_chapter_ids": [2],
@@ -1974,7 +1957,7 @@ def test_attentional_v2_chapter_selection_honors_explicit_request_over_reading_p
     chapters = runner_module._chapter_selection(  # noqa: SLF001
         document,
         output_dir,
-        survey_map=survey_map,
+        chapter_plan=chapter_plan,
         chapter_number=3,
         continue_mode=False,
         resume_chapter_id=None,

@@ -28,7 +28,7 @@ StateOperationType = Literal[
 ReconsolidationDecision = Literal["reconsolidate", "keep_prior"]
 SearchTrigger = Literal["none", "identity_critical_reference", "blocking_allusion", "genuine_curiosity", "ornamental_curiosity"]
 ActivationStatus = Literal["weak", "plausible", "strong", "rejected", "dropped"]
-ATTENTIONAL_V2_SCHEMA_VERSION = 2
+ATTENTIONAL_V2_SCHEMA_VERSION = 3
 ATTENTIONAL_V2_MECHANISM_VERSION = "attentional_v2-phase9"
 ATTENTIONAL_V2_POLICY_VERSION = "attentional_v2-policy-phase9"
 
@@ -543,6 +543,7 @@ class ReaderPolicy(TypedDict, total=False):
     mechanism_version: str
     policy_version: str
     updated_at: str
+    chapter_planning_mode: str
     unitize: dict[str, object]
     read: dict[str, object]
     resume: dict[str, object]
@@ -712,6 +713,7 @@ def build_default_reader_policy(
         "schema_version": ATTENTIONAL_V2_SCHEMA_VERSION,
         "mechanism_version": mechanism_version,
         "policy_version": policy_version,
+        "chapter_planning_mode": "body_first",
         "updated_at": _timestamp(),
         "unitize": {
             "max_coverage_unit_sentences": 12,

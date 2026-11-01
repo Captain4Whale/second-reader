@@ -133,14 +133,14 @@ from .storage import (
     runtime_dir,
     save_json,
     settlement_audit_file,
-    survey_map_file,
+    chapter_plan_file,
     read_audit_file,
     unit_memory_retrieval_trace_file,
     unit_memory_sqlite_file,
     unit_span_ledger_file,
     unitization_audit_file,
 )
-from .survey import write_book_survey_artifacts
+from .chapter_planner import write_chapter_plan_artifacts
 from .unit_memory import (
     UnitMemoryIndex,
     build_unit_memory_entry,
@@ -314,11 +314,11 @@ def _chapter_statuses(document: BookDocument, output_dir: Path) -> dict[int, str
     return statuses
 
 
-def _survey_chapter_zone_index(survey_map: dict[str, object]) -> dict[int, str]:
-    """Return the chapter-id to zone index from one persisted survey map."""
+def _chapter_zone_index(chapter_plan: dict[str, object]) -> dict[int, str]:
+    """Return the chapter-id to zone index from one persisted chapter_planner map."""
 
     index: dict[int, str] = {}
-    for entry in survey_map.get("chapter_map", []):
+    for entry in chapter_plan.get("chapter_map", []):
         if not isinstance(entry, dict):
             continue
         chapter_id = int(entry.get("chapter_id", 0) or 0)
@@ -329,15 +329,15 @@ def _survey_chapter_zone_index(survey_map: dict[str, object]) -> dict[int, str]:
     return index
 
 
-def _reading_plan_from_survey(document: BookDocument, survey_map: dict[str, object]) -> dict[str, object]:
-    """Return one validated reading plan from the survey artifact or a conservative fallback."""
+def _reading_plan_from_chapter_planner(document: BookDocument, chapter_plan: dict[str, object]) -> dict[str, object]:
+    """Return one validated reading plan from the chapter_planner artifact or a conservative fallback."""
 
     chapter_ids = [
         int(chapter.get("id", 0) or 0)
         for chapter in document.get("chapters", [])
         if isinstance(chapter, dict) and int(chapter.get("id", 0) or 0) > 0
     ]
-    plan = survey_map.get("reading_plan", {})
+    plan = chapter_plan.get("reading_plan", {})
     if not isinstance(plan, dict):
         plan = {}
     allowed_ids = set(chapter_ids)
@@ -358,7 +358,7 @@ def _reading_plan_from_survey(document: BookDocument, survey_map: dict[str, obje
         for chapter_id in _validated_ids(plan.get("deferred_chapter_ids"))
         if chapter_id not in mainline_chapter_ids
     ]
-    zone_index = _survey_chapter_zone_index(survey_map)
+    zone_index = _chapter_zone_index(chapter_plan)
     auxiliary_chapter_ids = [
         chapter_id
         for chapter_id in chapter_ids
@@ -388,10 +388,10 @@ def _reading_plan_from_survey(document: BookDocument, survey_map: dict[str, obje
     }
 
 
-def _scheduled_chapter_ids(document: BookDocument, survey_map: dict[str, object]) -> list[int]:
+def _scheduled_chapter_ids(document: BookDocument, chapter_plan: dict[str, object]) -> list[int]:
     """Return the ordered readable chapter ids for one body-first run."""
 
-    plan = _reading_plan_from_survey(document, survey_map)
+    plan = _reading_plan_from_chapter_planner(document, chapter_plan)
     queue = [
         int(chapter_id)
         for chapter_id in [*plan.get("mainline_chapter_ids", []), *plan.get("deferred_chapter_ids", [])]
@@ -404,24 +404,24 @@ def _apply_reading_plan_statuses(
     chapter_statuses: dict[int, str],
     *,
     document: BookDocument,
-    survey_map: dict[str, object],
+    chapter_plan: dict[str, object],
     chapter_number: int | None,
 ) -> dict[int, str]:
     """Mark default-skipped auxiliary chapters as completed for body-first scheduling."""
 
     if chapter_number is not None:
         return chapter_statuses
-    plan = _reading_plan_from_survey(document, survey_map)
+    plan = _reading_plan_from_chapter_planner(document, chapter_plan)
     for chapter_id in plan.get("auxiliary_chapter_ids", []):
         if int(chapter_id) > 0:
             chapter_statuses[int(chapter_id)] = "done"
     return chapter_statuses
 
 
-def _reading_queue_stage_for_chapter(chapter_id: int, *, survey_map: dict[str, object]) -> str:
+def _reading_queue_stage_for_chapter(chapter_id: int, *, chapter_plan: dict[str, object]) -> str:
     """Return the current queue stage label for one scheduled chapter."""
 
-    plan = survey_map.get("reading_plan", {})
+    plan = chapter_plan.get("reading_plan", {})
     deferred_ids = plan.get("deferred_chapter_ids", []) if isinstance(plan, dict) else []
     if int(chapter_id) in {int(item or 0) for item in deferred_ids if int(item or 0) > 0}:
         return "deferred_support"
@@ -490,7 +490,7 @@ def _artifact_summary(
     book_document: BookDocument,
     *,
     artifact_tree: dict[str, object],
-    survey_summary: dict[str, object],
+    chapter_planner_summary: dict[str, object],
 ) -> dict[str, object]:
     """Build the attentional parse/read artifact summary returned through runtime contracts."""
 
@@ -518,7 +518,7 @@ def _artifact_summary(
         "chapter_count": len(chapters),
         "chapters": chapters,
         "artifact_map": artifact_tree.get("artifact_map", {}),
-        "survey_status": survey_summary.get("survey_map", {}).get("status", "ready"),
+        "chapter_planner_status": chapter_planner_summary.get("chapter_plan", {}).get("status", "ready"),
     }
 
 
@@ -1061,7 +1061,7 @@ def _chapter_selection(
     document: BookDocument,
     output_dir: Path,
     *,
-    survey_map: dict[str, object],
+    chapter_plan: dict[str, object],
     chapter_number: int | None,
     continue_mode: bool,
     resume_chapter_id: int | None,
@@ -1076,7 +1076,7 @@ def _chapter_selection(
             raise ValueError(f"Chapter {chapter_number} was not found in the parsed book.")
         return selected
 
-    queue_ids = _scheduled_chapter_ids(document, survey_map)
+    queue_ids = _scheduled_chapter_ids(document, chapter_plan)
     chapter_lookup = {
         int(chapter.get("id", 0) or 0): chapter
         for chapter in chapters
@@ -2985,7 +2985,7 @@ def parse_attentional_v2(request: ParseRequest, mechanism: MechanismInfo) -> Par
         ),
     ):
         artifact_tree = initialize_artifact_tree(provisioned.output_dir)
-        survey_summary = write_book_survey_artifacts(
+        chapter_planner_summary = write_chapter_plan_artifacts(
             provisioned.output_dir,
             provisioned.book_document,
             policy_snapshot=build_default_reader_policy(),
@@ -3023,7 +3023,7 @@ def parse_attentional_v2(request: ParseRequest, mechanism: MechanismInfo) -> Par
             provisioned.output_dir,
             {
                 "type": "structure_ready",
-                "message": "Default deep-reading parse is ready; the shared sentence substrate and survey artifacts are available.",
+                "message": "Default deep-reading parse is ready; the shared sentence substrate and chapter_planner artifacts are available.",
             },
         )
         return ParseResult(
@@ -3035,7 +3035,7 @@ def parse_attentional_v2(request: ParseRequest, mechanism: MechanismInfo) -> Par
                 provisioned,
                 provisioned.book_document,
                 artifact_tree=artifact_tree,
-                survey_summary=survey_summary,
+                chapter_planner_summary=chapter_planner_summary,
             ),
         )
 
@@ -3074,7 +3074,7 @@ def run_reading_runner(request: ReadRequest, mechanism: MechanismInfo) -> ReadRe
         if not request.continue_mode:
             _reset_live_runtime(output_dir)
         artifact_tree = initialize_artifact_tree(output_dir)
-        survey_summary = write_book_survey_artifacts(
+        chapter_planner_summary = write_chapter_plan_artifacts(
             output_dir,
             provisioned.book_document,
             policy_snapshot=build_default_reader_policy(),
@@ -3129,7 +3129,7 @@ def run_reading_runner(request: ReadRequest, mechanism: MechanismInfo) -> ReadRe
         recent_reading_memory: RecentReadingMemoryState = bundle["recent_reading_memory"]  # type: ignore[assignment]
         reaction_records: ReactionRecordsState = bundle["reaction_records"]  # type: ignore[assignment]
         resume_metadata = bundle["resume_metadata"]
-        survey_map = load_json(survey_map_file(output_dir)) if survey_map_file(output_dir).exists() else {}
+        chapter_plan = load_json(chapter_plan_file(output_dir)) if chapter_plan_file(output_dir).exists() else {}
         sentence_lookup, chapter_lookup = _build_sentence_lookup(provisioned.book_document)
         memory_quality_probe_config = memory_quality_probe_observability_settings(dict(request.mechanism_config or {}))
 
@@ -3137,16 +3137,16 @@ def run_reading_runner(request: ReadRequest, mechanism: MechanismInfo) -> ReadRe
         chapter_statuses = _apply_reading_plan_statuses(
             chapter_statuses,
             document=provisioned.book_document,
-            survey_map=survey_map,
+            chapter_plan=chapter_plan,
             chapter_number=request.chapter_number,
         )
         _write_manifest(output_dir, provisioned.book_document, chapter_statuses=chapter_statuses)
-        scheduled_chapter_ids = _scheduled_chapter_ids(provisioned.book_document, survey_map)
+        scheduled_chapter_ids = _scheduled_chapter_ids(provisioned.book_document, chapter_plan)
         resume_chapter_id = int(resume_payload.get("local_continuity", {}).get("chapter_id", 0) or 0) if isinstance(resume_payload, dict) else None
         chapters = _chapter_selection(
             provisioned.book_document,
             output_dir,
-            survey_map=survey_map,
+            chapter_plan=chapter_plan,
             chapter_number=request.chapter_number,
             continue_mode=request.continue_mode,
             resume_chapter_id=resume_chapter_id,
@@ -3177,7 +3177,7 @@ def run_reading_runner(request: ReadRequest, mechanism: MechanismInfo) -> ReadRe
             chapter_ref = _chapter_ref(chapter)
             reading_queue_stage = ""
             if request.chapter_number is None:
-                reading_queue_stage = _reading_queue_stage_for_chapter(chapter_id, survey_map=survey_map)
+                reading_queue_stage = _reading_queue_stage_for_chapter(chapter_id, chapter_plan=chapter_plan)
             if reading_queue_stage:
                 local_continuity["reading_queue_stage"] = reading_queue_stage
             else:
@@ -3516,7 +3516,7 @@ def run_reading_runner(request: ReadRequest, mechanism: MechanismInfo) -> ReadRe
                 provisioned,
                 provisioned.book_document,
                 artifact_tree=artifact_tree,
-                survey_summary=survey_summary,
+                chapter_planner_summary=chapter_planner_summary,
             ),
             normalized_eval_bundle=normalized_eval_bundle,
         )

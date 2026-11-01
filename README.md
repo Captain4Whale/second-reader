@@ -559,3 +559,5 @@ Registry files live under `reading-companion-backend/state/job_registry/`:
 - Read the relevant child `AGENTS.md` before making subproject-local changes.
 - Read `docs/tasks/registry.md` for the active task router and evidence chain.
 - Read `docs/source-of-truth-map.md` when deciding where durable information belongs.
+
+章节调度由 `attentional_v2/chapter_planner.py` 的 `build_chapter_plan` 负责；新产物为 `derived/chapter_plan.json`，不再生成 revisit/motif 索引。当前 runtime schema 为 3；旧格式显式拒绝，禁止转换旧 checkpoint。

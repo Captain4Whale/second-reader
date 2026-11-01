@@ -56,9 +56,9 @@ class AttentionalV2PromptSet:
 
     language_output_contract: str
     promptset_version: str
-    survey_chapter_zone_version: str
-    survey_chapter_zone_system: str
-    survey_chapter_zone_prompt: str
+    chapter_zone_version: str
+    chapter_zone_system: str
+    chapter_zone_prompt: str
     ingest_version: str
     ingest_system: str
     ingest_prompt: str
@@ -75,15 +75,15 @@ def build_legacy_prompt_set(
 ) -> AttentionalV2PromptSet:
     """Build the legacy dataclass from PromptRegistry definitions."""
 
-    survey = registry.get("attentional_v2.survey_chapter_zone")
+    chapter_planner = registry.get("attentional_v2.chapter_zone")
     ingest = registry.get("attentional_v2.ingest")
     digest = registry.get("attentional_v2.digest")
     return AttentionalV2PromptSet(
         language_output_contract=language_output_contract,
         promptset_version=promptset_version,
-        survey_chapter_zone_version=survey.version,
-        survey_chapter_zone_system=survey.system_prompt,
-        survey_chapter_zone_prompt=survey.user_prompt_template,
+        chapter_zone_version=chapter_planner.version,
+        chapter_zone_system=chapter_planner.system_prompt,
+        chapter_zone_prompt=chapter_planner.user_prompt_template,
         ingest_version=ingest.version,
         ingest_system=ingest.system_prompt,
         ingest_prompt=ingest.user_prompt_template,

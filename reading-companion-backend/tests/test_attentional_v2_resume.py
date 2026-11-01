@@ -354,7 +354,7 @@ def test_debug_observability_writes_internal_diagnostics_events(tmp_path: Path):
 
 
 @pytest.mark.parametrize("entrypoint", ["parse", "read"])
-def test_old_run_is_rejected_before_survey_or_runtime_initialization(tmp_path, monkeypatch, entrypoint):
+def test_old_run_is_rejected_before_chapter_planner_or_runtime_initialization(tmp_path, monkeypatch, entrypoint):
     from types import SimpleNamespace
     from src.attentional_v2 import runner
     from src.reading_core.runtime_contracts import ParseRequest, ReadRequest
@@ -369,9 +369,9 @@ def test_old_run_is_rejected_before_survey_or_runtime_initialization(tmp_path, m
         output_dir=output, book_document=_make_book_document(1)))
 
     def unexpected(*a, **kw):
-        pytest.fail("old run reached survey or runtime initialization")
+        pytest.fail("old run reached chapter_planner or runtime initialization")
 
-    monkeypatch.setattr(runner, "write_book_survey_artifacts", unexpected)
+    monkeypatch.setattr(runner, "write_chapter_plan_artifacts", unexpected)
     monkeypatch.setattr(runner, "initialize_artifact_tree", unexpected)
     mechanism = AttentionalV2Mechanism()
     with pytest.raises(RuntimeError, match="pre-cleanup-2026-11"):

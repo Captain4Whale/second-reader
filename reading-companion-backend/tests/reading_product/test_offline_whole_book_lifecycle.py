@@ -22,7 +22,7 @@ from src.annotation_pack.exporter import ExportPolicy, export_annotation_pack
 from src.annotation_pack.ids import default_creator_id
 from src.annotation_pack.packaging import validate_detached_annotations
 from src.attentional_v2 import runner as runner_module
-from src.attentional_v2 import survey as survey_module
+from src.attentional_v2 import chapter_planner as chapter_planner_module
 from src.attentional_v2.storage import (
     ATTENTIONAL_V2_MECHANISM_KEY,
     chapter_result_compatibility_file,
@@ -186,24 +186,24 @@ def test_real_epub_offline_runner_resume_finalizes_and_exports_pack(
     monkeypatch.setenv("READING_OBSERVABILITY_OTLP_ENABLED", "0")
     digest_calls: list[str] = []
 
-    # Survey already has an explicit deterministic structural fallback.  Make
+    # Chapter planner already has an explicit deterministic structural fallback.  Make
     # that path mandatory and fail loudly if its optional model boundary is
     # reached.  Ingest, Digest, and chapter slow-cycle calls are test doubles;
     # no provider/preflight/key path is exercised by this test.
-    monkeypatch.setattr(survey_module, "current_llm_scope", lambda: None)
+    monkeypatch.setattr(chapter_planner_module, "current_llm_scope", lambda: None)
     monkeypatch.setattr(
         runner_module,
         "llm_invocation_scope",
         lambda *_args, **_kwargs: nullcontext(),
     )
 
-    def forbidden_survey_call(*_args: object, **_kwargs: object) -> None:
-        pytest.fail("offline acceptance reached the survey model boundary")
+    def forbidden_chapter_planner_call(*_args: object, **_kwargs: object) -> None:
+        pytest.fail("offline acceptance reached the chapter_planner model boundary")
 
     monkeypatch.setattr(
-        survey_module,
+        chapter_planner_module,
         "invoke_structured_output",
-        forbidden_survey_call,
+        forbidden_chapter_planner_call,
     )
     monkeypatch.setattr(runner_module, "_call_ingest", _deterministic_ingest)
     monkeypatch.setattr(

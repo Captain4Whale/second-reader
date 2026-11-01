@@ -32,15 +32,19 @@ Use `docs/backend-reading-mechanism.md` for shared platform boundaries. Use `doc
 - The mechanism adapter remains under `reading-companion-backend/src/reading_mechanisms/attentional_v2.py`.
 - The current implementation still lives under the `attentional_v2` mechanism key and package for artifact/history continuity, but current behavior should be explained through `Reading Runner`, `Ingest`, `Digest`, memory, and settlement roles rather than through rollout-phase labels or `V2` as a node name.
 
+## Chapter planner naming (2026-11-01)
+
+`chapter_planner` 原名 survey（DEC-075，2026-04-22 引入）。开读前给每章分类（正文/辅助等），生成阅读计划，并据此判定整书是否读完。只保留当前调度与分类输入；revisit/motif/structural-role 猜测退出新产物。运行 schema 为 `3`，checkpoint format 为 `chapter-planner-2026-11`；旧 run 显式拒绝，Step 0 记录可在 `4bc7ee0` 查看，更早版本见 `pre-cleanup-2026-11`。ledger node 仍为 `chapter_zone_classifier`。
+
 ## Step 0 runtime boundary (2026-11-01)
 
-`attentional_v2` is the only executable reader. Iterator/both/book_analysis selections report retirement. Only runs created with runtime schema/resume compatibility `2` and checkpoint format `lightweight-cleanup-2026-11` may resume; old checkpoints are rejected with the historical tag in the error. Startup backfill and old-library display remain available.
+`attentional_v2` is the only executable reader. Iterator/both/book_analysis selections report retirement. Only runs created with runtime schema/resume compatibility `3` and checkpoint format `chapter-planner-2026-11` may resume; old checkpoints are rejected with the historical tag in the error. Startup backfill and old-library display remain available.
 
 slow cycle 的输出不再进入核心 Ingest / Digest prompt，只被 slow cycle 自身、checkpoint 和旧评测消费；本次删除该支路，保留 Product/UI 使用的确定性投影函数。
 
 Chapter completion now persists current state, projects Product Units to the UI envelope, records chapter status/checkpoint, and finalizes the Product without a chapter-end model call. Recent-window Understanding and retrieved Unit Memory remain the prompt-facing continuity sources. No new active_attention, reflective_frames, knowledge_activations or reconsolidation stores are created. Historical Pack adapter fields remain readable.
 
-The core Ingest/Digest prompts and accepted Product U/R/M / Pack passed exact offline before/after comparison. Resume still re-runs survey: **resume 时固定原 reading_plan，避免重新 survey 改变阅读范围** is a prerequisite for Step 1, deliberately not implemented here. See [evolution](../reading-mechanism-evolution-step0.md) and [execution evidence](../tasks/lightweight-cleanup-step0-execution-2026-11-01.md).
+The core Ingest/Digest prompts and accepted Product U/R/M / Pack passed exact offline before/after comparison. Resume still re-runs chapter planner: **resume 时固定原 reading_plan，避免重新 chapter planner 改变阅读范围** is a prerequisite for Step 1, deliberately not implemented here. See [evolution](../reading-mechanism-evolution-step0.md) and [execution evidence](../tasks/lightweight-cleanup-step0-execution-2026-11-01.md).
 
 ## Purpose And Status
 - `attentional_v2` is the current live/default mechanism for the product's deep-reading path.
@@ -52,7 +56,7 @@ The core Ingest/Digest prompts and accepted Product U/R/M / Pack passed exact of
   - The landed implementation includes:
   - shared chapter / paragraph substrate, with parse-time sentence records retained as compatibility and historical evidence handles rather than the mainline reading lattice
   - shared canonical parse/provisioning and shared manifest/run-state shells
-  - orientation-only survey artifacts
+  - chapter scheduling chapter planner artifacts
   - deterministic intake/retrieval helpers
   - LLM calls with prompt-version manifests
       - Phase 5 knowledge and retained-evidence helper history, with the old Bridge path now paused from the live Runner
@@ -103,14 +107,14 @@ The core Ingest/Digest prompts and accepted Product U/R/M / Pack passed exact of
   - persisted visible reactions now share one surfaced-native reaction-record builder for the current forward path; old detour reads remain historical artifacts only
   - chapter-result compatibility projection and normalized eval export now derive legacy family labels only through the compat helper
   - dead live ownership paths for the old `Express` persistence flow and `raw_reaction` fallback are now removed
-- Phase F4B is now landed as the survey-led `body-first` chapter scheduling slice.
-  - `survey` now performs one narrow LLM-backed `chapter_zone` classification pass over lightweight chapter samples.
-  - the legal survey scheduling zones are:
+- Phase F4B is now landed as the chapter planner-led `body-first` chapter scheduling slice.
+  - `chapter planner` now performs one narrow LLM-backed `chapter_zone` classification pass over lightweight chapter samples.
+  - the legal chapter planner scheduling zones are:
     - `main_body`
     - `front_support`
     - `back_support`
     - `auxiliary`
-  - `survey` now persists one machine-readable `reading_plan`:
+  - `chapter planner` now persists one machine-readable `reading_plan`:
     - `mode`
     - `mainline_chapter_ids`
     - `deferred_chapter_ids`
@@ -225,7 +229,7 @@ The core Ingest/Digest prompts and accepted Product U/R/M / Pack passed exact of
   - the primary reasoning unit
   - usually one paragraph or a short paragraph span
   - sometimes one sentence when a line is unusually dense, pivotal, or ambiguous
-- `survey map`
+- `chapter planner map`
   - the initial structural map of the book or chapter
   - built from chapter order, headings, openings, closings, and obvious pivots
 - `attention candidate`
@@ -239,9 +243,9 @@ The core Ingest/Digest prompts and accepted Product U/R/M / Pack passed exact of
 - `working hypothesis`
   - a provisional claim about what the chapter or book is doing
 ## Reading Progression Logic
-- The mechanism starts with a survey pass.
+- The mechanism starts with a chapter planner pass.
   - It uses the shared `book document` to build a rough structural map of chapters, headings, likely pivots, and a narrow `chapter_zone` classification for scheduling.
-  - That survey pass remains an orientation layer rather than hidden full-book reading:
+  - That chapter planner pass remains an chapter scheduling layer rather than hidden full-book reading:
     - it classifies structural role only
     - it does not produce user-visible Marginalia
     - it does not write durable reading memory
@@ -308,7 +312,7 @@ The core Ingest/Digest prompts and accepted Product U/R/M / Pack passed exact of
     - but a heading paragraph now falls back to `heading + first body paragraph` when the preview clearly contains that body paragraph
   - `Preface`, `Foreword`, `Introduction`, `Appendix`, `Afterword`, and similar support chapters still remain legitimate reading material.
     - but they are no longer treated as unconditional mainline reading territory
-    - `survey` now classifies them into `front_support` or `back_support` when appropriate
+    - `chapter planner` now classifies them into `front_support` or `back_support` when appropriate
     - `Reading Runner` then reads them after the `main_body` queue drains
     - explicit chapter-targeted runs may still select them directly
 - `Digest` is the current formal unit interpretation LLM call, with a reader-first prompt role rather than a node-first role.
@@ -360,11 +364,11 @@ The core Ingest/Digest prompts and accepted Product U/R/M / Pack passed exact of
   - Coverage prevents wandering forever.
   - Interpretive pressure prevents mechanical traversal.
 - The mechanism should not see future text beyond the current reading frontier.
-  - Survey context may include coarse chapter structure, but live interpretive calls must not use future paragraphs as if they were already read.
+  - Chapter planner context may include coarse chapter structure, but live interpretive calls must not use future paragraphs as if they were already read.
 
 ## LLM Call Schedule
 - The main LLM is now called for every formal coverage unit, not for every sentence.
-- The current live LLM-call bundle is (plus survey chapter-zone classification at parse/read setup):
+- The current live LLM-call bundle is (plus chapter planner chapter-zone classification at parse/read setup):
   - `Ingest`
   - `Digest`
 - The runtime schedule is intentionally narrower than the old executed-call inventory:
@@ -481,7 +485,7 @@ The core Ingest/Digest prompts and accepted Product U/R/M / Pack passed exact of
   - Anthropic-compatible and legacy callers keep the forced final-output tool path.
   - OpenAI-compatible profiles configured with `response_format: {"type": "json_object"}` use JSON-object final output plus local validation/repair for Ingest and Digest.
   - Final-output tools are mechanism-private result channels when that transport is selected, not business action tools.
-  - The live final-output tools are `submit_ingest_result`, `submit_digest_result`, and `submit_survey_chapter_zone_result`.
+  - The live final-output tools are `submit_ingest_result`, `submit_digest_result`, and `submit_chapter_zone_result`.
   - `retrieve_unit_memory` remains the only current action tool; it is available to Ingest as `tool_choice="auto"` before final structured output and is never forced merely to transport final JSON.
   - Missing submit-tool calls, wrong submit-tool names, non-object tool args, malformed JSON objects, or business-validator failures are repaired once and then reported as public `llm_contract` problems if still invalid. When a trace context exists, the shared gateway also writes bounded final-response diagnostics to `contract_failures.jsonl` and carries a compact `structured_output_contract` pointer in the raised `ReaderLLMError`.
   - Public/runtime connection failures still use the coarse compatibility problem code `network_blocked`, but private standard/debug traces now retain provider exception details: `provider_error_type`, `provider_error_repr`, `provider_error_cause_type`, `provider_error_cause_repr`, and `connection_error_kind` (`api_connection_error`, `remote_protocol_error`, `connect_error`, `read_error`, `ssl_error`, or `unknown_connection_error`).
@@ -622,15 +626,10 @@ The core Ingest/Digest prompts and accepted Product U/R/M / Pack passed exact of
   - `public/reading-products/current.json` and `public/reading-products/revisions/<product_sha256>/`
     - immutable complete-product publication selected only after whole-book finalization validates the approved plan and exact source
 - Current scaffolded mechanism-private derived artifacts
-  - `_mechanisms/attentional_v2/derived/survey_map.json`
+  - `_mechanisms/attentional_v2/derived/chapter_plan.json`
     - now includes:
       - chapter-level `chapter_zone`
-      - `zone_confidence`
-      - `zone_reason`
       - one machine-readable `reading_plan`
-- `_mechanisms/attentional_v2/derived/revisit_index.json`
-  - historical/transition artifact from earlier revisit vocabulary
-  - this historical file is retained for compatibility territory until a later cleanup slice
 - `_mechanisms/attentional_v2/derived/chapter_result_compatibility/*.json`
   - live compatibility chapter results used by current chapter/detail and marks surfaces when `attentional_v2` is the active mechanism
   - projected from committed Product Units; deleting reaction/audit/memory artifacts does not remove the inputs needed to rebuild this envelope
@@ -818,7 +817,7 @@ The core Ingest/Digest prompts and accepted Product U/R/M / Pack passed exact of
     - `xidaduo_private_zh__chapter_15` drifted into a `91`-sentence open meaning-unit span by `c15-s248` even after pressure had cooled
   - the same smoke also showed that explicit callback-cue routing alone still did not produce a concrete earlier-target bridge in `nawaer_baodian_private_zh__chapter_22`
   - until that blocker is resolved, do not treat the current working-tree repair state as ready for another full formal excerpt rerun
-- The survey stage must stay coarse enough that it does not become hidden full-book cheating.
-  - even with the new LLM-based `chapter_zone` classifier, the survey pass is still limited to bounded structural samples and scheduling output
+- The chapter planner stage must stay coarse enough that it does not become hidden full-book cheating.
+  - even with the new LLM-based `chapter_zone` classifier, the chapter planner pass is still limited to bounded structural samples and scheduling output
   - it must not turn into chapter summarization, theme extraction, or durable understanding
 - Retrieval pressure and rare-search gating will likely need careful budget control during future Ingest / Digest work.

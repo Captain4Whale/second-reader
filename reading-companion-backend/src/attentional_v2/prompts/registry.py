@@ -6,7 +6,7 @@ from src.prompts.shared import LANGUAGE_OUTPUT_CONTRACT
 
 from .ingest import INGEST_PROMPT, INGEST_PROMPT_VERSION
 from .digest import DIGEST_PROMPT, DIGEST_PROMPT_VERSION
-from .survey_chapter_zone import SURVEY_CHAPTER_ZONE_PROMPT, SURVEY_CHAPTER_ZONE_PROMPT_VERSION
+from .chapter_zone import CHAPTER_ZONE_PROMPT, CHAPTER_ZONE_PROMPT_VERSION
 from .types import AttentionalV2PromptSet, PromptDefinition, PromptRegistry, build_legacy_prompt_set
 
 
@@ -15,7 +15,7 @@ ATTENTIONAL_V2_PROMPTSET_VERSION = "attentional_v2-phase6-v84"
 
 ATTENTIONAL_V2_PROMPT_REGISTRY = PromptRegistry(
     [
-        SURVEY_CHAPTER_ZONE_PROMPT,
+        CHAPTER_ZONE_PROMPT,
         INGEST_PROMPT,
         DIGEST_PROMPT,
     ]
@@ -33,7 +33,7 @@ __all__ = [
     "ATTENTIONAL_V2_PROMPTS",
     "ATTENTIONAL_V2_PROMPTSET_VERSION",
     "ATTENTIONAL_V2_PROMPT_REGISTRY",
-    "SURVEY_CHAPTER_ZONE_PROMPT_VERSION",
+    "CHAPTER_ZONE_PROMPT_VERSION",
     "INGEST_PROMPT_VERSION",
     "DIGEST_PROMPT_VERSION",
     "AttentionalV2PromptSet",

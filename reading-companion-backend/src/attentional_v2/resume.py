@@ -337,11 +337,11 @@ def _save_runtime_bundle(output_dir: Path, bundle: dict[str, dict[str, object]])
 
 
 def require_current_run(output_dir: Path) -> None:
-    """Reject pre-cleanup runs before survey, runtime initialization, or model invocation."""
+    """Reject pre-cleanup runs before chapter_planner, runtime initialization, or model invocation."""
     policy_path = reader_policy_file(output_dir)
     policy = load_json(policy_path) if policy_path.exists() else {}
     if policy.get("schema_version") != ATTENTIONAL_V2_SCHEMA_VERSION:
-        raise RuntimeError("旧 checkpoint / run 已退役；请使用 tag pre-cleanup-2026-11 查看历史实现。")
+        raise RuntimeError("旧 checkpoint / run 已退役；Step 0 格式请查看 commit 4bc7ee0，更早版本请查看 tag pre-cleanup-2026-11。")
 
 
 def load_full_checkpoint(output_dir: Path, checkpoint_id: str | None = None) -> FullCheckpointState | None:
@@ -357,8 +357,8 @@ def load_full_checkpoint(output_dir: Path, checkpoint_id: str | None = None) -> 
     if not path.exists():
         return None
     checkpoint = load_json(path)  # type: ignore[assignment]
-    if not isinstance(checkpoint, dict) or checkpoint.get("checkpoint_format") != "lightweight-cleanup-2026-11":
-        raise RuntimeError("旧 checkpoint 已退役；请使用 tag pre-cleanup-2026-11 查看历史实现。")
+    if not isinstance(checkpoint, dict) or checkpoint.get("checkpoint_format") != "chapter-planner-2026-11":
+        raise RuntimeError("旧 checkpoint 已退役；Step 0 格式请查看 commit 4bc7ee0，更早版本请查看 tag pre-cleanup-2026-11。")
     return checkpoint  # type: ignore[return-value]
 
 
@@ -408,7 +408,7 @@ def write_full_checkpoint(
         "mechanism_version": str(shell.get("mechanism_version", "") or ATTENTIONAL_V2_MECHANISM_VERSION),
         "policy_version": str(shell.get("policy_version", "") or ATTENTIONAL_V2_POLICY_VERSION),
         "checkpoint_id": checkpoint_id,
-        "checkpoint_format": "lightweight-cleanup-2026-11",
+        "checkpoint_format": "chapter-planner-2026-11",
         "created_at": str(summary.get("created_at", "") or _timestamp()),
         "checkpoint_reason": checkpoint_reason,
         "resume_kind": resume_kind,

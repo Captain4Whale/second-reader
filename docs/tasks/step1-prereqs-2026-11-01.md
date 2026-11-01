@@ -10,7 +10,7 @@
 | --- | --- | --- |
 | `chapter_map[].chapter_id / chapter_zone` | runner 的队列、章节状态、完成判定及 fallback 计划 | 保留 |
 | `reading_plan.mode / mainline_chapter_ids / deferred_chapter_ids` | `_reading_plan_from_survey`、`_scheduled_chapter_ids`、`_apply_reading_plan_statuses`、`_reading_queue_stage_for_chapter`、最终完成判断 | 保留 |
-| `title / chapter_number / level / heading_text / pivot_headings` | 分类器 sample、book_frame TOC、相邻标题 | 保留输入；分类后无独立运行消费者的 sample 字段不再重复落盘 |
+| `title / chapter_number / level / heading_text / pivot_headings` | 分类器 sample、book_frame TOC、相邻标题 | 保留，chapter_map 同时用作分类 sample |
 | `opening_sentences / closing_sentences`（含 `sentence_id / text`） | 分类器 sample（每端最多两句） | 保留输入，不能作为死输入删除 |
 | `first_sentence_id / last_sentence_id` | 仅旧 revisit builder 与测试 | 删除新输出 |
 | `structural_role_guess / role_confidence` | 无当前消费者（共享 parser 的同名 role_confidence 是另一字段） | 删除 |
@@ -36,4 +36,6 @@
 
 ## 验证与进度
 
-A 已完成；离线基线位于 ignored `reading-companion-backend/state/step1_prereqs/`。模型 transport 使用固定替身，socket 连接被封锁。B–F 待实施。
+A 已完成；B 改名及死输出清理已完成。改前封网全量测试 1747 passed / 2 failed（原有 monkeypatch）；改名前后固定 transport 的阅读计划、核心 prompt、Product U/R/M、Pack、固定 judge 匹配完全一致。离线基线位于 ignored `reading-companion-backend/state/step1_prereqs/`。模型 transport 使用固定替身，socket 连接被封锁。B–F 待实施。
+
+B 命名：`survey.py` → `chapter_planner.py`；`build_book_survey` → `build_chapter_plan`；`_classify_chapter_zone` → `classify_chapter_zones`；writer → `write_chapter_plan_artifacts`；`SurveyMap` → `ChapterPlan`；`survey_map.json` / `survey_map` → `chapter_plan.json` / `chapter_plan`；`survey_status` → `chapter_planner_status`；prompt `survey_chapter_zone` → `chapter_zone`，submit tool 同步。成本 ledger 的 node 不变。

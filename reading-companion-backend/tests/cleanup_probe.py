@@ -64,9 +64,9 @@ class ReadingAdapter:
         elif name == "submit_digest_result":
             payload = self.pending_digest
             node = "digest"
-        elif name == "submit_survey_chapter_zone_result":
+        elif name == "submit_chapter_zone_result":
             payload = {"zone": "main_body", "confidence": "high", "reason": "Offline fixture body."}
-            node = "survey"
+            node = "chapter_planner"
         elif name == "submit_chapter_consolidation_result":
             payload = {"chapter_ref": "fixture", "promotion_candidates": [], "cross_chapter_carry_forward": []}
             node = "chapter_consolidation"
@@ -158,8 +158,8 @@ def product_probe(root, patch):
     assert evaluated["evaluation_input"] == "product-accepted-marginalia-v1"
     ledger = [json.loads(l) for l in (output_dir / "_runtime/llm_standard.jsonl").read_text().splitlines()]
     assert ledger and all(row["status"] == "ok" for row in ledger)
-    from src.attentional_v2.storage import survey_map_file
-    reading_plan = json.loads(survey_map_file(output_dir).read_text())["reading_plan"]
+    from src.attentional_v2.storage import chapter_plan_file
+    reading_plan = json.loads(chapter_plan_file(output_dir).read_text())["reading_plan"]
     return {"reading_plan": reading_plan, "prompts": adapter.prompts, "product": document_to_wire(product),
             "pack": json.loads(pack.annotations_json.read_text()),
             "ledger_nodes": [row["node"] for row in ledger]}

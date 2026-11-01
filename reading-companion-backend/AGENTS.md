@@ -151,3 +151,5 @@ Update when: backend-local constraints, recurring pitfalls, or stable implementa
 - Backend owns content language, not full UI localization.
 - When a system-state message must drive primary UI decisions, expose structured keys/params in addition to raw text.
 - Raw activity/program-log text may remain backend-authored for compatibility and debugging.
+
+章节调度由 `attentional_v2/chapter_planner.py` 的 `build_chapter_plan` 负责；新产物为 `derived/chapter_plan.json`，不再生成 revisit/motif 索引。当前 runtime schema 为 3；旧格式显式拒绝，禁止转换旧 checkpoint。

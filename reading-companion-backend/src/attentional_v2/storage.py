@@ -61,16 +61,10 @@ def checkpoints_dir(output_dir: Path) -> Path:
     return runtime_dir(output_dir) / "checkpoints"
 
 
-def survey_map_file(output_dir: Path) -> Path:
-    """Return the future survey-map artifact path."""
+def chapter_plan_file(output_dir: Path) -> Path:
+    """Return the future chapter_planner-map artifact path."""
 
-    return derived_dir(output_dir) / "survey_map.json"
-
-
-def revisit_index_file(output_dir: Path) -> Path:
-    """Return the future revisit-index artifact path."""
-
-    return derived_dir(output_dir) / "revisit_index.json"
+    return derived_dir(output_dir) / "chapter_plan.json"
 
 
 def recent_reading_memory_file(output_dir: Path) -> Path:
@@ -205,8 +199,7 @@ def artifact_map(output_dir: Path) -> dict[str, str]:
     return {
         "runtime_shell": str(runtime_artifacts.runtime_shell_file(output_dir).relative_to(output_dir)),
         "shared_checkpoint_summaries": str(runtime_artifacts.checkpoint_summaries_dir(output_dir).relative_to(output_dir)),
-        "survey_map": str(survey_map_file(output_dir).relative_to(output_dir)),
-        "revisit_index": str(revisit_index_file(output_dir).relative_to(output_dir)),
+        "chapter_plan": str(chapter_plan_file(output_dir).relative_to(output_dir)),
         "local_buffer": str(local_buffer_file(output_dir).relative_to(output_dir)),
         "local_continuity": str(local_continuity_file(output_dir).relative_to(output_dir)),
         "continuation_capsule": str(continuation_capsule_file(output_dir).relative_to(output_dir)),
@@ -294,7 +287,7 @@ def initialize_artifact_tree(
         ),
     )
     ensure_json(
-        survey_map_file(output_dir),
+        chapter_plan_file(output_dir),
         {
             "schema_version": ATTENTIONAL_V2_SCHEMA_VERSION,
             "mechanism_version": mechanism_version,
@@ -305,15 +298,6 @@ def initialize_artifact_tree(
                 "mainline_chapter_ids": [],
                 "deferred_chapter_ids": [],
             },
-        },
-    )
-    ensure_json(
-        revisit_index_file(output_dir),
-        {
-            "schema_version": ATTENTIONAL_V2_SCHEMA_VERSION,
-            "mechanism_version": mechanism_version,
-            "anchors": {},
-            "motifs": {},
         },
     )
     ensure_json(local_buffer_file(output_dir), build_empty_local_buffer(mechanism_version=mechanism_version))

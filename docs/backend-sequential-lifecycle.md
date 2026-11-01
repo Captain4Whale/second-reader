@@ -55,9 +55,9 @@ Use `docs/backend-reading-mechanism.md` when the question is about shared mechan
 4. Parse preparation now has two layers:
   - canonical parse writes `public/book_document.json` as the mechanism-neutral book substrate
   - the selected mechanism then derives its own parse-side artifacts from that substrate:
-    - `attentional_v2` initializes survey/runtime artifacts under `_mechanisms/attentional_v2/`
-      - this now includes one narrow survey-side `chapter_zone` classification pass plus a `reading_plan`
-      - the plan is orientation-only scheduling metadata, not hidden full-book understanding
+    - `attentional_v2` initializes chapter planner/runtime artifacts under `_mechanisms/attentional_v2/`
+      - this now includes one narrow chapter planner-side `chapter_zone` classification pass plus a `reading_plan`
+      - the plan is chapter scheduling scheduling metadata, not hidden full-book understanding
 5. Deferred uploads stop at `ready`, which means the canonical book substrate and the selected mechanism's parse-stage readiness artifacts exist but deep reading has not started.
 6. Immediate uploads or `analysis/start` move from preparation into chapter-by-chapter deep reading on the same long-task surface.
   - `attentional_v2` now defaults to `body_first` chapter scheduling in full-book mode:
@@ -196,7 +196,7 @@ Promotion from user upload into the durable source library or evaluation corpus 
 Runtime OpenTelemetry is a derived overlay on this lifecycle, not another lifecycle authority.
 
 - Export is disabled by default and is enabled only for a newly started backend process with `READING_OBSERVABILITY_OTLP_ENABLED=1` plus the optional backend observability dependencies.
-- Each lease-fenced worker execution creates `reading.run_attempt`; unit-bearing work uses `reading.chapter -> reading.unit_attempt -> llm.call -> llm.attempt`, while chapter-only survey/parse calls remain below `reading.chapter` without a fabricated unit. Individual provider requests stay separate so retries remain visible and billable-attempt usage is not collapsed.
+- Each lease-fenced worker execution creates `reading.run_attempt`; unit-bearing work uses `reading.chapter -> reading.unit_attempt -> llm.call -> llm.attempt`, while chapter-only chapter planner/parse calls remain below `reading.chapter` without a fabricated unit. Individual provider requests stay separate so retries remain visible and billable-attempt usage is not collapsed.
 - The short HTTP upload/start/resume request does not stay open for the background job's lifetime. V1 correlates the worker through stable job/run/book/chapter/cycle/unit IDs; HTTP-request-to-worker OpenTelemetry links are explicitly deferred.
 - Book, chapter, job, mechanism, reading-cycle, and unit identifiers are span attributes rather than low-cardinality resource attributes. V1 does not claim source-text hashes or resume-lineage attributes that are not available at the shared observation hook.
 - The append-only runtime-observability JSONL ledger is the canonical source for observability facts and generated JSON/Markdown aggregates; Phoenix is its derived trace UI. The Product Store is the accepted-Unit product truth; runtime shell/checkpoints still own operational resume/status coordination, while mechanism-private audits are evidence only. A trace may describe those transitions but cannot cause or certify a Product commit, cursor advance, checkpoint, or completion.
@@ -231,4 +231,4 @@ The canonical implementation, privacy, aggregation, and version rules live in `d
 
 Resume compatibility is `2`; attentional runtime schema is `2`, and full checkpoints require `checkpoint_format=lightweight-cleanup-2026-11`. Older runs explicitly report retirement and point to `pre-cleanup-2026-11`. Old books remain readable; startup backfill is unchanged. Chapter completion/checkpoint/Product finalization continue without slow-cycle model calls.
 
-Before Step 1 evaluation work: **resume 时固定原 reading_plan，避免重新 survey 改变阅读范围**. Step 0 deliberately leaves survey scheduling unchanged.
+Before Step 1 evaluation work: **resume 时固定原 reading_plan，避免重新 chapter planner 改变阅读范围**. Step 0 deliberately leaves chapter planner scheduling unchanged.

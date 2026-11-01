@@ -1,20 +1,20 @@
-"""Prompt definition for attentional_v2 survey_chapter_zone."""
+"""Prompt definition for attentional_v2 chapter_zone."""
 
 from __future__ import annotations
 
 from .types import PromptDefinition
 
 
-SURVEY_CHAPTER_ZONE_PROMPT_VERSION = 'attentional_v2.survey_chapter_zone.v2'
+CHAPTER_ZONE_PROMPT_VERSION = 'attentional_v2.chapter_zone.v2'
 
 
-SURVEY_CHAPTER_ZONE_PROMPT = PromptDefinition(
-    prompt_id='attentional_v2.survey_chapter_zone',
-    version=SURVEY_CHAPTER_ZONE_PROMPT_VERSION,
-    owner_node='survey_chapter_zone',
+CHAPTER_ZONE_PROMPT = PromptDefinition(
+    prompt_id='attentional_v2.chapter_zone',
+    version=CHAPTER_ZONE_PROMPT_VERSION,
+    owner_node='chapter_zone',
     status='active',
     purpose='Classify one chapter functional role in the book-level reading order.',
-    system_prompt="""You are a survey-only chapter-role classifier for a text-grounded reading mechanism.
+    system_prompt="""You are a chapter_planner-only chapter-role classifier for a text-grounded reading mechanism.
 
 Your job is to classify one chapter's functional role in the book-level reading order.
 
@@ -31,7 +31,7 @@ Rules:
 - Prefer `main_body` unless the evidence for a support/auxiliary role is clear.
 - Use the heuristic hint only as a weak prior. It is allowed to be wrong.
 - Keep `reason` short, structural, and non-interpretive.
-- Submit the final result through the required submit_survey_chapter_zone_result tool only.""",
+- Submit the final result through the required submit_chapter_zone_result tool only.""",
     user_prompt_template="""Book frame:
 {book_frame}
 
@@ -51,5 +51,5 @@ Submit this shape through the required final output tool:
   "reason": "<short structural reason>"
 }""",
     required_inputs=('book_frame', 'chapter_sample', 'neighbor_titles', 'heuristic_hint'),
-    output_contract='survey_chapter_zone_json_v1',
+    output_contract='chapter_zone_json_v1',
 )

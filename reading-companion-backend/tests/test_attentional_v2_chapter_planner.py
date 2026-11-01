@@ -1,12 +1,12 @@
-"""Tests for attentional_v2 orientation-only survey artifacts."""
+"""Tests for attentional_v2 chapter scheduling chapter_planner artifacts."""
 
 from __future__ import annotations
 
 import json
 from types import SimpleNamespace
 
-from src.attentional_v2 import survey as survey_module
-from src.attentional_v2.survey import build_book_survey
+from src.attentional_v2 import chapter_planner as chapter_planner_module
+from src.attentional_v2.chapter_planner import build_chapter_plan
 from src.reading_mechanisms.attentional_v2 import AttentionalV2Mechanism
 from src.reading_runtime.artifacts import mechanism_manifest_file
 
@@ -157,68 +157,62 @@ def _sample_book_document() -> dict[str, object]:
     }
 
 
-def test_build_book_survey_stays_orientation_only():
-    """Survey output should keep only boundaries, openings/closings, pivots, and tentative seeds."""
+def test_build_chapter_plan_stays_body_first():
+    """Chapter planner output should keep only boundaries, openings/closings, pivots, and tentative seeds."""
 
-    survey = build_book_survey(
+    chapter_planner = build_chapter_plan(
         _sample_book_document(),  # type: ignore[arg-type]
-        policy_snapshot={"survey_mode": "orientation_only"},
+        policy_snapshot={"chapter_planning_mode": "body_first"},
     )
 
-    assert survey["status"] == "orientation_only"
-    assert survey["book_frame"]["total_chapters"] == 2
-    assert survey["chapter_map"][0]["opening_sentences"][0]["sentence_id"] == "c1-s1"
-    assert survey["chapter_map"][0]["closing_sentences"][-1]["sentence_id"] == "c1-s7"
-    assert survey["chapter_map"][0]["pivot_headings"] == ["The covert calculator"]
-    assert survey["chapter_map"][1]["structural_role_guess"] == "back_matter"
-    assert survey["chapter_map"][0]["chapter_zone"] == "main_body"
-    assert survey["chapter_map"][1]["chapter_zone"] == "auxiliary"
-    assert survey["reading_plan"]["mode"] == "body_first"
-    assert survey["reading_plan"]["mainline_chapter_ids"] == [1]
-    assert survey["reading_plan"]["deferred_chapter_ids"] == []
+    assert chapter_planner["status"] == "ready"
+    assert chapter_planner["book_frame"]["total_chapters"] == 2
+    assert chapter_planner["chapter_map"][0]["opening_sentences"][0]["sentence_id"] == "c1-s1"
+    assert chapter_planner["chapter_map"][0]["closing_sentences"][-1]["sentence_id"] == "c1-s7"
+    assert chapter_planner["chapter_map"][0]["pivot_headings"] == ["The covert calculator"]
+    assert chapter_planner["chapter_map"][0]["chapter_zone"] == "main_body"
+    assert chapter_planner["chapter_map"][1]["chapter_zone"] == "auxiliary"
+    assert chapter_planner["reading_plan"]["mode"] == "body_first"
+    assert chapter_planner["reading_plan"]["mainline_chapter_ids"] == [1]
+    assert chapter_planner["reading_plan"]["deferred_chapter_ids"] == []
     assert "Markets arise in relationships." not in {
         sentence["text"]
-        for chapter in survey["chapter_map"]
+        for chapter in chapter_planner["chapter_map"]
         for sentence in chapter.get("opening_sentences", []) + chapter.get("closing_sentences", [])
     }
-    assert survey["initial_motif_seeds"][0]["confidence"] == "tentative"
 
 
-def test_write_book_survey_artifacts_persists_survey_and_revisit_index(tmp_path):
-    """Survey helpers should write the orientation artifacts under the mechanism artifact root."""
+def test_write_chapter_plan_artifacts_persists_chapter_plan_only(tmp_path):
+    """Chapter planner helpers should write the orientation artifacts under the mechanism artifact root."""
 
     output_dir = tmp_path / "output" / "demo-book"
     mechanism = AttentionalV2Mechanism()
     mechanism.initialize_artifacts(output_dir)
 
-    result = mechanism.build_survey_artifacts(
+    result = mechanism.build_chapter_planner_artifacts(
         output_dir,
         _sample_book_document(),  # type: ignore[arg-type]
-        policy_snapshot={"survey_mode": "orientation_only"},
+        policy_snapshot={"chapter_planning_mode": "body_first"},
     )
 
-    survey_path = output_dir / "_mechanisms" / "attentional_v2" / "derived" / "survey_map.json"
+    chapter_planner_path = output_dir / "_mechanisms" / "attentional_v2" / "derived" / "chapter_plan.json"
     revisit_path = output_dir / "_mechanisms" / "attentional_v2" / "derived" / "revisit_index.json"
-    assert survey_path.exists()
-    assert revisit_path.exists()
+    assert chapter_planner_path.exists()
+    assert not revisit_path.exists()
 
-    survey = json.loads(survey_path.read_text(encoding="utf-8"))
-    revisit = json.loads(revisit_path.read_text(encoding="utf-8"))
+    chapter_planner = json.loads(chapter_planner_path.read_text(encoding="utf-8"))
     manifest = json.loads(mechanism_manifest_file(output_dir, "attentional_v2").read_text(encoding="utf-8"))
 
-    assert result["survey_map"]["status"] == "orientation_only"
-    assert survey["policy_snapshot"]["survey_mode"] == "orientation_only"
-    assert survey["reading_plan"]["mode"] == "body_first"
-    assert survey["chapter_map"][0]["chapter_zone"] == "main_body"
-    assert survey["chapter_map"][1]["chapter_zone"] == "auxiliary"
-    assert revisit["status"] == "survey_seeded"
-    assert revisit["chapter_boundaries"]["1"]["first_sentence_id"] == "c1-s1"
-    assert revisit["opening_sentence_ids"][:2] == ["c1-s1", "c1-s2"]
+    assert result["chapter_plan"]["status"] == "ready"
+    assert chapter_planner["policy_snapshot"]["chapter_planning_mode"] == "body_first"
+    assert chapter_planner["reading_plan"]["mode"] == "body_first"
+    assert chapter_planner["chapter_map"][0]["chapter_zone"] == "main_body"
+    assert chapter_planner["chapter_map"][1]["chapter_zone"] == "auxiliary"
     assert manifest["mechanism_key"] == "attentional_v2"
 
 
-def test_build_book_survey_uses_llm_zone_classifier_when_available(monkeypatch):
-    """Survey should accept LLM chapter-zone classifications and derive a body-first plan."""
+def test_build_chapter_plan_uses_llm_zone_classifier_when_available(monkeypatch):
+    """Chapter planner should accept LLM chapter-zone classifications and derive a body-first plan."""
 
     document = _sample_book_document()
     document["chapters"].insert(0, {  # type: ignore[union-attr]
@@ -249,35 +243,35 @@ def test_build_book_survey_uses_llm_zone_classifier_when_available(monkeypatch):
             return SimpleNamespace(payload={"zone": "main_body", "confidence": "high", "reason": "This is the main chapter."})
         return SimpleNamespace(payload={"zone": "back_support", "confidence": "medium", "reason": "Appendix-like supporting material."})
 
-    monkeypatch.setattr(survey_module, "current_llm_scope", lambda: object())
-    monkeypatch.setattr(survey_module, "invoke_structured_output_tool", fake_structured_output)
+    monkeypatch.setattr(chapter_planner_module, "current_llm_scope", lambda: object())
+    monkeypatch.setattr(chapter_planner_module, "invoke_structured_output_tool", fake_structured_output)
 
-    survey = build_book_survey(
+    chapter_planner = build_chapter_plan(
         document,  # type: ignore[arg-type]
-        policy_snapshot={"survey_mode": "orientation_only"},
+        policy_snapshot={"chapter_planning_mode": "body_first"},
     )
 
     assert len(calls) == 3
-    assert [chapter["chapter_zone"] for chapter in survey["chapter_map"]] == [
+    assert [chapter["chapter_zone"] for chapter in chapter_planner["chapter_map"]] == [
         "front_support",
         "main_body",
         "back_support",
     ]
-    assert survey["reading_plan"]["mainline_chapter_ids"] == [1]
-    assert survey["reading_plan"]["deferred_chapter_ids"] == [3, 2]
+    assert chapter_planner["reading_plan"]["mainline_chapter_ids"] == [1]
+    assert chapter_planner["reading_plan"]["deferred_chapter_ids"] == [3, 2]
 
 
-def test_build_book_survey_falls_back_when_llm_classifier_errors(monkeypatch):
-    """Survey should keep generating a plan even if the chapter-zone classifier fails."""
+def test_build_chapter_plan_falls_back_when_llm_classifier_errors(monkeypatch):
+    """Chapter planner should keep generating a plan even if the chapter-zone classifier fails."""
 
-    monkeypatch.setattr(survey_module, "current_llm_scope", lambda: object())
-    monkeypatch.setattr(survey_module, "invoke_structured_output_tool", lambda *_args, **_kwargs: (_ for _ in ()).throw(RuntimeError("boom")))
+    monkeypatch.setattr(chapter_planner_module, "current_llm_scope", lambda: object())
+    monkeypatch.setattr(chapter_planner_module, "invoke_structured_output_tool", lambda *_args, **_kwargs: (_ for _ in ()).throw(RuntimeError("boom")))
 
-    survey = build_book_survey(
+    chapter_planner = build_chapter_plan(
         _sample_book_document(),  # type: ignore[arg-type]
-        policy_snapshot={"survey_mode": "orientation_only"},
+        policy_snapshot={"chapter_planning_mode": "body_first"},
     )
 
-    assert survey["chapter_map"][0]["chapter_zone"] == "main_body"
-    assert survey["chapter_map"][1]["chapter_zone"] == "auxiliary"
-    assert survey["reading_plan"]["mainline_chapter_ids"] == [1]
+    assert chapter_planner["chapter_map"][0]["chapter_zone"] == "main_body"
+    assert chapter_planner["chapter_map"][1]["chapter_zone"] == "auxiliary"
+    assert chapter_planner["reading_plan"]["mainline_chapter_ids"] == [1]

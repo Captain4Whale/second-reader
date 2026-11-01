@@ -82,9 +82,9 @@ DIGEST_RESULT_TOOL = final_output_tool(
 )
 
 
-SURVEY_CHAPTER_ZONE_RESULT_TOOL = final_output_tool(
-    "submit_survey_chapter_zone_result",
-    "Submit the final survey chapter-zone classification. Use this tool exactly once as the final answer.",
+CHAPTER_ZONE_RESULT_TOOL = final_output_tool(
+    "submit_chapter_zone_result",
+    "Submit the final chapter_planner chapter-zone classification. Use this tool exactly once as the final answer.",
     _object_schema(
         {
             "zone": {"type": "string", "enum": ["main_body", "front_support", "back_support", "auxiliary"]},
