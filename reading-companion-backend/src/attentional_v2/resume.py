@@ -40,6 +40,7 @@ from .schemas import (
 from .state_projection import build_carry_forward_context
 from .storage import (
     ATTENTIONAL_V2_MECHANISM_KEY,
+    chapter_plan_file,
     continuation_capsule_file,
     full_checkpoint_file,
     load_json,
@@ -409,6 +410,7 @@ def write_full_checkpoint(
         "policy_version": str(shell.get("policy_version", "") or ATTENTIONAL_V2_POLICY_VERSION),
         "checkpoint_id": checkpoint_id,
         "checkpoint_format": "chapter-planner-2026-11",
+        "chapter_plan_fingerprint": _load_or_default(chapter_plan_file(output_dir), dict).get("fingerprint"),
         "created_at": str(summary.get("created_at", "") or _timestamp()),
         "checkpoint_reason": checkpoint_reason,
         "resume_kind": resume_kind,

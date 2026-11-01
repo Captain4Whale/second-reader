@@ -44,7 +44,7 @@ slow cycle 的输出不再进入核心 Ingest / Digest prompt，只被 slow cycl
 
 Chapter completion now persists current state, projects Product Units to the UI envelope, records chapter status/checkpoint, and finalizes the Product without a chapter-end model call. Recent-window Understanding and retrieved Unit Memory remain the prompt-facing continuity sources. No new active_attention, reflective_frames, knowledge_activations or reconsolidation stores are created. Historical Pack adapter fields remain readable.
 
-The core Ingest/Digest prompts and accepted Product U/R/M / Pack passed exact offline before/after comparison. Resume still re-runs chapter planner: **resume 时固定原 reading_plan，避免重新 chapter planner 改变阅读范围** is a prerequisite for Step 1, deliberately not implemented here. See [evolution](../reading-mechanism-evolution-step0.md) and [execution evidence](../tasks/lightweight-cleanup-step0-execution-2026-11-01.md).
+The core Ingest/Digest prompts and accepted Product U/R/M / Pack passed exact offline before/after comparison. Parse/read reuse a verified chapter plan. Resume validates source digest, classification prompt version, policy version/content and the checkpoint-bound plan fingerprint; mismatch fails without regeneration. See [evolution](../reading-mechanism-evolution-step0.md) and [execution evidence](../tasks/lightweight-cleanup-step0-execution-2026-11-01.md).
 
 ## Purpose And Status
 - `attentional_v2` is the current live/default mechanism for the product's deep-reading path.

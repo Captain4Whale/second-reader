@@ -38,13 +38,14 @@
       "last_updated": "2026-11-01T12:00:00+08:00",
       "last_updated_by": "codex",
       "id": "TASK-RESUME-READING-PLAN-FREEZE",
-      "title": "resume 时固定原 reading_plan，避免重新 survey 改变阅读范围",
-      "status": "queued",
-      "detail_ref": "docs/tasks/lightweight-cleanup-step0-execution-2026-11-01.md#边界与待办",
-      "acceptance_ref": "docs/tasks/lightweight-cleanup-step0-execution-2026-11-01.md#边界与待办",
-      "next_action": "第 1 步重建评测前置项；本步只记录，不实现。",
+      "title": "resume 固定原 reading_plan，避免重新章节规划改变阅读范围",
+      "status": "done",
+      "detail_ref": "docs/tasks/step1-prereqs-2026-11-01.md#d-计划冻结",
+      "acceptance_ref": "docs/tasks/step1-prereqs-2026-11-01.md#d-计划冻结",
+      "next_action": "Preserve verified reuse and fail-closed resume; finish E/F prerequisites.",
       "evidence_refs": [
-        "docs/tasks/lightweight-cleanup-step0-execution-2026-11-01.md"
+        "docs/tasks/lightweight-cleanup-step0-execution-2026-11-01.md",
+        "docs/tasks/step1-prereqs-2026-11-01.md"
       ]
     },
     {

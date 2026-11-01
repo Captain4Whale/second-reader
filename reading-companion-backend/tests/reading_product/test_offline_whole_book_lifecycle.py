@@ -186,25 +186,16 @@ def test_real_epub_offline_runner_resume_finalizes_and_exports_pack(
     monkeypatch.setenv("READING_OBSERVABILITY_OTLP_ENABLED", "0")
     digest_calls: list[str] = []
 
-    # Chapter planner already has an explicit deterministic structural fallback.  Make
-    # that path mandatory and fail loudly if its optional model boundary is
-    # reached.  Ingest, Digest, and chapter slow-cycle calls are test doubles;
-    # no provider/preflight/key path is exercised by this test.
-    monkeypatch.setattr(chapter_planner_module, "current_llm_scope", lambda: None)
-    monkeypatch.setattr(
-        runner_module,
-        "llm_invocation_scope",
-        lambda *_args, **_kwargs: nullcontext(),
-    )
+    # Exercise the real classifier/planner with a fixed model boundary.
+    classifier_calls: list[str] = []
+    monkeypatch.setattr(chapter_planner_module, "current_llm_scope", lambda: object())
+    monkeypatch.setattr(runner_module, "llm_invocation_scope", lambda **_kwargs: nullcontext())
 
-    def forbidden_chapter_planner_call(*_args: object, **_kwargs: object) -> None:
-        pytest.fail("offline acceptance reached the chapter_planner model boundary")
+    def classify(_system, prompt, **_kwargs):
+        classifier_calls.append(prompt)
+        return SimpleNamespace(payload={"zone": "main_body", "confidence": "high", "reason": "offline fixture"})
 
-    monkeypatch.setattr(
-        chapter_planner_module,
-        "invoke_structured_output",
-        forbidden_chapter_planner_call,
-    )
+    monkeypatch.setattr(chapter_planner_module, "invoke_structured_output", classify)
     monkeypatch.setattr(runner_module, "_call_ingest", _deterministic_ingest)
     monkeypatch.setattr(
         runner_module,
@@ -220,6 +211,9 @@ def test_real_epub_offline_runner_resume_finalizes_and_exports_pack(
         )
     )
     output_dir = parse_result.output_dir.resolve()
+    from src.attentional_v2.storage import chapter_plan_file
+    original_plan_bytes = chapter_plan_file(output_dir).read_bytes()
+    assert len(classifier_calls) == len(parse_result.book_document["chapters"]) == 2
     output_root = output_dir.parent
     assert parse_result.book_document["metadata"]["book"] == (  # type: ignore[index]
         "Tiny Reader: Returning Light"
@@ -294,6 +288,8 @@ def test_real_epub_offline_runner_resume_finalizes_and_exports_pack(
             mechanism_config={"memory_retrieval_mode": "text_only"},
         )
     )
+    assert chapter_plan_file(output_dir).read_bytes() == original_plan_bytes
+    assert len(classifier_calls) == 2  # parse -> read -> crash -> resume: once per chapter
     assert completed.output_dir.resolve() == output_dir
     shell = load_runtime_shell(runtime_shell_file(output_dir))
     assert shell["status"] == "completed"

@@ -2984,12 +2984,14 @@ def parse_attentional_v2(request: ParseRequest, mechanism: MechanismInfo) -> Par
             ),
         ),
     ):
-        artifact_tree = initialize_artifact_tree(provisioned.output_dir)
         chapter_planner_summary = write_chapter_plan_artifacts(
             provisioned.output_dir,
             provisioned.book_document,
             policy_snapshot=build_default_reader_policy(),
+            source_path=provisioned.book_path,
+            continue_mode=bool(request.continue_mode),
         )
+        artifact_tree = initialize_artifact_tree(provisioned.output_dir)
         chapter_ids = [
             int(chapter.get("id", 0) or 0)
             for chapter in provisioned.book_document.get("chapters", [])
@@ -3071,14 +3073,21 @@ def run_reading_runner(request: ReadRequest, mechanism: MechanismInfo) -> ReadRe
             ),
         ),
     ):
-        if not request.continue_mode:
-            _reset_live_runtime(output_dir)
-        artifact_tree = initialize_artifact_tree(output_dir)
         chapter_planner_summary = write_chapter_plan_artifacts(
             output_dir,
             provisioned.book_document,
             policy_snapshot=build_default_reader_policy(),
+            source_path=provisioned.book_path,
+            continue_mode=bool(request.continue_mode),
         )
+        if request.continue_mode:
+            from .resume import load_full_checkpoint
+            checkpoint = load_full_checkpoint(output_dir)
+            if checkpoint and checkpoint.get("reading_id") and checkpoint.get("chapter_plan_fingerprint") != chapter_planner_summary["chapter_plan"]["fingerprint"]:
+                raise RuntimeError("Resume chapter plan fingerprint differs from the reading checkpoint.")
+        if not request.continue_mode:
+            _reset_live_runtime(output_dir)
+        artifact_tree = initialize_artifact_tree(output_dir)
         if not request.continue_mode:
             _write_manifest(output_dir, provisioned.book_document)
         _update_shell_phase(output_dir, status="running", phase="preparing")

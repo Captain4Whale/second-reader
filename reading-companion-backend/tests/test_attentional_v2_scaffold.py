@@ -1715,7 +1715,7 @@ def _provisioned_book_with_supporting_chapters() -> ProvisionedBook:
 def _stub_chapter_planner_artifacts(monkeypatch):
     """Keep scaffold tests deterministic by stubbing the chapter_planner artifact writer."""
 
-    def fake_write_chapter_plan_artifacts(output_dir, book_document, *, policy_snapshot=None):
+    def fake_write_chapter_plan_artifacts(output_dir, book_document, *, policy_snapshot=None, **_kwargs):
         chapters = [dict(chapter) for chapter in book_document.get("chapters", []) if isinstance(chapter, dict)]
         chapter_map = []
         mainline_chapter_ids: list[int] = []
@@ -1760,6 +1760,7 @@ def _stub_chapter_planner_artifacts(monkeypatch):
             "schema_version": 1,
             "mechanism_version": "attentional_v2-phase6",
             "generated_at": "2026-04-22T00:00:00Z",
+            "fingerprint": "scaffold-fixed-plan",
             "status": "body_first",
             "book_frame": {
                 "book": str(book_document.get("metadata", {}).get("book", "") or ""),
@@ -1774,6 +1775,7 @@ def _stub_chapter_planner_artifacts(monkeypatch):
             },
             "policy_snapshot": dict(policy_snapshot or {}),
         }
+        chapter_plan_file(output_dir).parent.mkdir(parents=True, exist_ok=True)
         chapter_plan_file(output_dir).write_text(json.dumps(chapter_planner, ensure_ascii=False, indent=2), encoding="utf-8")
         return {"chapter_plan": chapter_planner}
 

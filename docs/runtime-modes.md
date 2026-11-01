@@ -214,4 +214,4 @@ then update this document in the same task.
 
 Resume compatibility is `2`; attentional runtime schema is `2`, and full checkpoints require `checkpoint_format=lightweight-cleanup-2026-11`. Older runs explicitly report retirement and point to `pre-cleanup-2026-11`. Old books remain readable; startup backfill is unchanged. Chapter completion/checkpoint/Product finalization continue without slow-cycle model calls.
 
-Before Step 1 evaluation work: **resume 时固定原 reading_plan，避免重新 chapter planner 改变阅读范围**. Step 0 deliberately leaves chapter planner scheduling unchanged.
+The Step 1 prerequisite now freezes `chapter_plan.json`: parse/read reuse matching source digest, classification prompt version and policy version/content. Fresh generation records invalidation reasons; resume only validates and rejects mismatches, including changed plan contents. See [prerequisite evidence](tasks/step1-prereqs-2026-11-01.md).

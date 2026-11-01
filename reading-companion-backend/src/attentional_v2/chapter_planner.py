@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import hashlib
 import json
 from datetime import datetime, timezone
 from pathlib import Path
@@ -13,7 +14,7 @@ from src.reading_runtime.observation_context import chapter_observation_scope
 
 from .llm_output_tools import CHAPTER_ZONE_RESULT_TOOL, require_mapping_fields
 from .schemas import ATTENTIONAL_V2_MECHANISM_VERSION, ATTENTIONAL_V2_SCHEMA_VERSION
-from .storage import prompt_manifest_file, save_json, chapter_plan_file
+from .storage import append_jsonl, event_stream_file, load_json, prompt_manifest_file, save_json, chapter_plan_file
 from .prompts import ATTENTIONAL_V2_PROMPTS
 
 
@@ -76,6 +77,9 @@ class ChapterPlan(TypedDict, total=False):
     chapter_map: list[ChapterPlanEntry]
     reading_plan: ReadingPlan
     policy_snapshot: dict[str, object]
+    input_identity: dict[str, object]
+    fingerprint: str
+    generation: dict[str, object]
 
 
 def _timestamp() -> str:
@@ -412,8 +416,48 @@ def write_chapter_plan_artifacts(
     *,
     policy_snapshot: dict[str, object] | None = None,
     mechanism_version: str = ATTENTIONAL_V2_MECHANISM_VERSION,
+    source_path: Path | None = None,
+    continue_mode: bool = False,
 ) -> dict[str, object]:
-    """Persist the chapter scheduling chapter_planner artifacts for attentional_v2."""
+    """Reuse a verified plan; resume may validate but must never regenerate it."""
+
+    def digest(value: object) -> str:
+        return hashlib.sha256(json.dumps(value, ensure_ascii=False, sort_keys=True, separators=(",", ":")).encode()).hexdigest()
+
+    policy = {key: value for key, value in (policy_snapshot or {}).items() if key != "updated_at"}
+    identity = {
+        "source_digest": hashlib.sha256(source_path.read_bytes()).hexdigest() if source_path else digest(document),
+        "classification_prompt_version": ATTENTIONAL_V2_PROMPTS.chapter_zone_version,
+        "policy_version": policy.get("policy_version", "unspecified"),
+        "policy_digest": digest(policy),
+        "schema_version": ATTENTIONAL_V2_SCHEMA_VERSION,
+    }
+    path = chapter_plan_file(output_dir)
+    try:
+        existing = load_json(path) if path.exists() else {}
+    except (OSError, ValueError):
+        existing = {}
+    previous_identity = existing.get("input_identity", {})
+    if not isinstance(previous_identity, dict):
+        previous_identity = {}
+    reasons = [key + "_changed" for key, value in identity.items() if previous_identity.get(key) != value]
+    if not existing.get("fingerprint"):
+        reasons = ["missing_verified_plan"]
+    elif existing["fingerprint"] != chapter_plan_fingerprint(existing):
+        reasons.append("plan_content_changed")
+    event = {
+        "event_type": "chapter_plan",
+        "recorded_at": _timestamp(),
+        "action": "resume_rejected" if continue_mode and reasons else "generated" if reasons else "reused",
+        "reasons": reasons,
+        "previous_fingerprint": existing.get("fingerprint"),
+    }
+    if continue_mode and reasons:
+        append_jsonl(event_stream_file(output_dir), event)
+        raise RuntimeError("Resume chapter plan mismatch: " + ", ".join(reasons) + "; resume never regenerates the reading plan.")
+    if not reasons:
+        append_jsonl(event_stream_file(output_dir), {**event, "fingerprint": existing["fingerprint"]})
+        return {"chapter_plan": existing}
 
     chapter_planner = build_chapter_plan(
         document,
@@ -421,7 +465,19 @@ def write_chapter_plan_artifacts(
         policy_snapshot=policy_snapshot,
         mechanism_version=mechanism_version,
     )
+    chapter_planner["input_identity"] = identity
+    chapter_planner["fingerprint"] = chapter_plan_fingerprint(chapter_planner)
+    chapter_planner["generation"] = event
     save_json(chapter_plan_file(output_dir), chapter_planner)
+    append_jsonl(event_stream_file(output_dir), {**event, "fingerprint": chapter_planner["fingerprint"]})
     return {
         "chapter_plan": chapter_planner,
     }
+
+
+def chapter_plan_fingerprint(plan: dict[str, object]) -> str:
+    """Bind the validated input identity to the exact persisted planning output."""
+    payload = {key: value for key, value in plan.items() if key not in {"generated_at", "fingerprint", "generation"}}
+    # Policy timestamps describe a write, not a planning input.
+    payload["policy_snapshot"] = {key: value for key, value in dict(payload.get("policy_snapshot", {})).items() if key != "updated_at"}
+    return hashlib.sha256(json.dumps(payload, ensure_ascii=False, sort_keys=True, separators=(",", ":")).encode()).hexdigest()

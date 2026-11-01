@@ -45,3 +45,9 @@ B 命名：`survey.py` → `chapter_planner.py`；`build_book_survey` → `build
 两项失败均为测试 monkeypatch 入口过期：生产分类器已使用协议中立的 `invoke_structured_output`，测试仍替换不存在的 `invoke_structured_output_tool`，在模型调用前即报 AttributeError。只修测试；成功分类和错误时规则 fallback 的功能未改。
 
 C 封网全量后端：1749 passed（改前 1747 passed / 2 failed），日志 `state/step1_prereqs/c-tests.log`。
+
+## D. 计划冻结
+
+`chapter_plan.json` 带源文件 SHA-256、分类 prompt 版本、policy 版本/内容摘要及整份计划 fingerprint。parse/read 在身份一致时复用；缺失/变化时仅非 resume 允许显式生成，原因写入计划 generation 与既有 diagnostics/events.jsonl。resume 校验失败即报错，不改写计划；checkpoint 绑定原计划 fingerprint。
+
+离线 Tiny Reader（2 章）实际走 parse → read → Product 提交后故障 → resume：分类器总计 2 次，恢复前后计划文件逐字节相同。prompt / policy / source 逐项变更：resume 零新增调用且拒绝；非 resume 从 2 次增到 4 次并记录原因。缺失和内容篡改均拒绝恢复。专项 99 passed。

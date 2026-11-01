@@ -25,7 +25,7 @@ Last updated: `2026-11-01`
 ## Step 0 完成与下一步
 
 - `TASK-LIGHTWEIGHT-CLEANUP-STEP0` — `done`，mechanism_runtime / high。D1–D7 已按执行指令实施，Batch 4 跳过。依据 DEC-160；[执行与验收](lightweight-cleanup-step0-execution-2026-11-01.md)，[历史数字核查](lightweight-cleanup-step0-historical-evidence-2026-11-01.md)。
-- `TASK-RESUME-READING-PLAN-FREEZE` — `queued`，mechanism_runtime / high。**resume 时固定原 reading_plan，避免重新 survey 改变阅读范围**；第 1 步重建评测前置项，本次只记录、不实现。依据 DEC-160 与执行记录。
+- `TASK-RESUME-READING-PLAN-FREEZE` — `done`，mechanism_runtime / high。已实现计划身份校验、复用与拒绝不一致 resume。[离线证据](step1-prereqs-2026-11-01.md#d-计划冻结)。
 
 ## Done
 
