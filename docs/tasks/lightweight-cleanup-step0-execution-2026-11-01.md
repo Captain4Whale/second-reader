@@ -39,6 +39,20 @@ FAILED tests/test_attentional_v2_survey.py::test_build_book_survey_falls_back_wh
 FAILED tests/test_f4a_quality_audit.py::test_case_target_assignments_stay_balanced
 ```
 
-## 后续批次
+## Batch 1：真人批注评测入口
 
-尚未执行。
+- 移除 user-level runner / completed-output reuse 对 IteratorV1Mechanism 的导入和执行分支；默认仅 attentional_v2，iterator_v1 / both 在数据访问前明确报已退役。
+- orchestrator 的完整机制集合改为当前机制，历史结果匹配和分析保持可读；未修改 compare_highlights.py。
+- 验证：主要评测测试 45 passed；library notes / human-note manifest 11 passed；CLI help 通过；固定 judge 匹配结果和核心 prompt/Product/Pack 与 Batch 0 完全一致，socket 封锁，无外部请求。无新增失败。
+- 本地证据：`reading-companion-backend/state/cleanup_step0/batch1/`。
+
+## Batch 2 前暂停：报告漏列的依赖
+
+依照用户停止条件第 4 条，暂停后续清理。尚未执行 Batch 2/3/5，尚未删除文件。
+
+- `eval/attentional_v2/run_accumulation_evaluation_v2.py:34` 直接导入 IteratorV1Mechanism；`:268` 仍有旧执行器分支；`:1125` 和 CLI 默认 both。
+- `scripts/orchestrate_accumulation_v2_eval.py:25` 导入上述 runner；`scripts/orchestrate_active_benchmark_eval.py:34` 调用其 orchestrator。
+- 这条 target-centered accumulation v2 链不同于报告 K12 明列的 `run_accumulation_comparison.py`，报告未列出该依赖和对应编排/测试影响面。
+- 待用户确认建议：纳入 Batch 2，保留当前 accumulation 数据/evidence/judge/运行能力，移除 iterator/双机制执行分支，补跑 `test_run_accumulation_evaluation_v2.py` 及对应 orchestrator 测试。未自行扩展实施。
+- 历史 0.35/0.12 数据集/run id 核查与演进说明属于尚未执行的 Batch 5，暂无新结论。
+

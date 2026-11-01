@@ -22,7 +22,6 @@ from eval.attentional_v2.user_level_selective_v1 import DATASET_DIR, MANIFEST_PA
 from src.iterator_reader.llm_utils import ReaderLLMError, invoke_json, llm_invocation_scope
 from src.reading_core.runtime_contracts import ReadRequest
 from src.reading_mechanisms.attentional_v2 import AttentionalV2Mechanism
-from src.reading_mechanisms.iterator_v1 import IteratorV1Mechanism
 from src.reading_runtime.llm_gateway import eval_trace_context
 from src.reading_runtime.llm_registry import DEFAULT_EVAL_JUDGE_PROFILE_ID
 from src.reading_runtime.output_dir_overrides import override_output_dir
@@ -34,7 +33,7 @@ DEFAULT_USER_INTENT = (
     "Read as a thoughtful co-reader and surface visible reactions when a user's highlighted note would clearly deserve notice."
 )
 DEFAULT_TARGET = "user_level_selective_comparison"
-MECHANISM_KEYS = ("attentional_v2", "iterator_v1")
+MECHANISM_KEYS = ("attentional_v2",)
 MECHANISM_FILTER_VALUES = ("attentional_v2", "iterator_v1", "both")
 JUDGE_MODE_VALUES = ("llm", "none")
 LABEL_PRIORITY = {
@@ -187,8 +186,8 @@ def _load_note_cases(dataset_dir: Path) -> list[NoteCase]:
 def _mechanism_keys_for_filter(mechanism_filter: str) -> tuple[str, ...]:
     if mechanism_filter not in MECHANISM_FILTER_VALUES:
         raise ValueError(f"unsupported mechanism filter: {mechanism_filter}")
-    if mechanism_filter == "both":
-        return MECHANISM_KEYS
+    if mechanism_filter in {"both", "iterator_v1"}:
+        raise ValueError(f"{mechanism_filter} 已退役；历史实现请查看 tag pre-cleanup-2026-11")
     return (mechanism_filter,)
 
 
@@ -201,8 +200,8 @@ def _isolated_output_dir(output_dir: Path):
 def _mechanism_for_key(mechanism_key: str):
     if mechanism_key == "attentional_v2":
         return AttentionalV2Mechanism()
-    if mechanism_key == "iterator_v1":
-        return IteratorV1Mechanism()
+    if mechanism_key in {"iterator_v1", "both"}:
+        raise ValueError(f"{mechanism_key} 已退役；历史实现请查看 tag pre-cleanup-2026-11")
     raise ValueError(f"unsupported mechanism: {mechanism_key}")
 
 
@@ -961,12 +960,13 @@ def run_user_level_selective_comparison(
     *,
     run_id: str,
     manifest_path: Path = MANIFEST_PATH,
-    mechanism_filter: str = "both",
+    mechanism_filter: str = "attentional_v2",
     judge_mode: str = "llm",
     segment_ids: list[str] | None = None,
     note_case_ids: list[str] | None = None,
     reuse_output_dir: Path | None = None,
 ) -> dict[str, Any]:
+    mechanism_keys = _mechanism_keys_for_filter(mechanism_filter)
     dataset_dir = _resolve_dataset_dir(manifest_path)
     segments = _load_segments(dataset_dir)
     note_cases = _load_note_cases(dataset_dir)
@@ -988,7 +988,6 @@ def run_user_level_selective_comparison(
 
     run_root = DEFAULT_RUNS_ROOT / run_id
     run_root.mkdir(parents=True, exist_ok=True)
-    mechanism_keys = _mechanism_keys_for_filter(mechanism_filter)
     reuse_output_dirs: dict[tuple[str, str], Path] = {}
     if reuse_output_dir is not None:
         if len(segments) != 1 or len(mechanism_keys) != 1:
@@ -1085,7 +1084,7 @@ def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--run-id", default=f"attentional_v2_user_level_selective_{datetime.now(timezone.utc).strftime('%Y%m%d_%H%M%S')}")
     parser.add_argument("--manifest-path", type=Path, default=MANIFEST_PATH)
-    parser.add_argument("--mechanism-filter", choices=MECHANISM_FILTER_VALUES, default="both")
+    parser.add_argument("--mechanism-filter", choices=MECHANISM_FILTER_VALUES, default="attentional_v2")
     parser.add_argument("--judge-mode", choices=JUDGE_MODE_VALUES, default="llm")
     parser.add_argument("--segment-id", action="append", dest="segment_ids", default=[])
     parser.add_argument("--note-case-id", action="append", dest="note_case_ids", default=[])

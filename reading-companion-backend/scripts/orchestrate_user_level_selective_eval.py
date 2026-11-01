@@ -45,7 +45,7 @@ RETRYABLE_ERROR_MARKERS = (
     "Error code: 529",
     "network_blocked",
 )
-FULL_MECHANISM_SET = {"attentional_v2", "iterator_v1"}
+FULL_MECHANISM_SET = {"attentional_v2"}
 
 
 @dataclass(frozen=True)
@@ -500,7 +500,6 @@ def _update_catalog_or_warn(
     try:
         mechanisms = aggregate.get("mechanisms") or {}
         v2_recall = (mechanisms.get("attentional_v2") or {}).get("note_recall")
-        v1_recall = (mechanisms.get("iterator_v1") or {}).get("note_recall")
         dataset_dir = str(aggregate.get("dataset_dir") or "")
         entry = build_entry(
             run_id=run_id,
@@ -512,7 +511,7 @@ def _update_catalog_or_warn(
             manifest_path=str(aggregate.get("manifest_path") or ""),
             one_line_conclusion=(
                 "Formal user-level selective rerun completed; "
-                f"attentional_v2 note_recall={v2_recall}, iterator_v1 note_recall={v1_recall}."
+                f"attentional_v2 note_recall={v2_recall}."
             ),
         )
         upsert_catalog_entry(entry)
@@ -528,7 +527,7 @@ def parse_args() -> argparse.Namespace:
         default=f"attentional_v2_user_level_selective_v1_judged_{datetime.now(timezone.utc).strftime('%Y%m%d')}",
     )
     parser.add_argument("--manifest-path", type=Path, default=MANIFEST_PATH)
-    parser.add_argument("--mechanism-filter", choices=("both", "attentional_v2", "iterator_v1"), default="both")
+    parser.add_argument("--mechanism-filter", choices=("both", "attentional_v2", "iterator_v1"), default="attentional_v2")
     parser.add_argument("--judge-mode", choices=("llm",), default="llm")
     parser.add_argument("--target-id", action="append", dest="target_ids", default=[])
     parser.add_argument("--segment-id", action="append", dest="segment_ids", default=[])

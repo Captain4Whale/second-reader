@@ -626,3 +626,15 @@ def test_run_user_level_selective_comparison_reuses_existing_output_without_read
 
     assert aggregate["segment_count"] == 1
     assert rebuilt_calls == [reuse_output_dir]
+
+
+def test_retired_executor_filters_fail_before_dataset_access(tmp_path):
+    import pytest
+    from eval.attentional_v2.run_user_level_selective_comparison import run_user_level_selective_comparison
+    from eval.attentional_v2.completed_output_reuse import rebuild_normalized_bundle_from_completed_output
+
+    for key in ("iterator_v1", "both"):
+        with pytest.raises(ValueError, match="已退役.*pre-cleanup-2026-11"):
+            run_user_level_selective_comparison(run_id="unused", manifest_path=tmp_path / "absent", mechanism_filter=key)
+        with pytest.raises(ValueError, match="已退役.*pre-cleanup-2026-11"):
+            rebuild_normalized_bundle_from_completed_output(mechanism_key=key, source_output_dir=tmp_path / "absent", segment_id="unused")
