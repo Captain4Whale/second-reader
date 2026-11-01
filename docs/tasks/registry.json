@@ -3,6 +3,27 @@
   "updated_at": "2026-11-01T12:00:00+08:00",
   "tasks": [
     {
+      "id": "TASK-STEP1-PREREQS",
+      "title": "Chapter planner / frozen plan / reproducible run prerequisites",
+      "status": "active",
+      "lane": "mechanism_runtime",
+      "priority": "high",
+      "detail_ref": "docs/tasks/step1-prereqs-2026-11-01.md",
+      "acceptance_ref": "docs/tasks/step1-prereqs-2026-11-01.md#验证与进度",
+      "truth_refs": [
+        "docs/backend-reading-mechanisms/attentional_v2.md"
+      ],
+      "decision_refs": [],
+      "job_refs": [],
+      "blocked_by": [],
+      "next_action": "Complete B–F with offline validation and separate commits; no push.",
+      "evidence_refs": [
+        "docs/tasks/step1-prereqs-2026-11-01.md"
+      ],
+      "last_updated": "2026-11-01T12:00:00+08:00",
+      "last_updated_by": "codex"
+    },
+    {
       "lane": "mechanism_runtime",
       "priority": "high",
       "truth_refs": [

@@ -10,6 +10,7 @@ This file is authoritative for durable current status. Do not keep unique active
 Last verified: `2026-11-01` (Step 0 scope; prior experiment review states retained)
 
 ## Current Objective
+- `TASK-STEP1-PREREQS` is active on `codex/step1-prereqs`: chapter planner naming, frozen reading plan, explicit retrieval and reproducible configuration records. Offline substitutes only; no push or evaluation redesign. [Execution](tasks/step1-prereqs-2026-11-01.md).
 - `TASK-LIGHTWEIGHT-CLEANUP-STEP0` is complete under `DEC-160`: iterator execution/dual branches and slow-cycle model/state branches removed; current Product/UI projection, Pack, notes evaluation and cost telemetry retained. Only post-cleanup runs resume; old checkpoints explicitly point to tag `pre-cleanup-2026-11`. See [execution](tasks/lightweight-cleanup-step0-execution-2026-11-01.md) and [evolution](reading-mechanism-evolution-step0.md).
 - Next prerequisite before Step 1: `TASK-RESUME-READING-PLAN-FREEZE` — **resume 时固定原 reading_plan，避免重新 survey 改变阅读范围**. Recorded only; no implementation in Step 0. Then rebuild the human-note evaluation loop before cost instrumentation and ablations; old mechanism code is not an experimental baseline.
 - Active note dataset is June 29: 158 unique cases / 5 segments. Historical recall 0.3498 / 0.1232 belongs to April 19 run on the April 16 203-case package, not June 14/29. Earlier milestones below retain their dates; they do not override this current pointer.

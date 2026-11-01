@@ -158,7 +158,9 @@ def product_probe(root, patch):
     assert evaluated["evaluation_input"] == "product-accepted-marginalia-v1"
     ledger = [json.loads(l) for l in (output_dir / "_runtime/llm_standard.jsonl").read_text().splitlines()]
     assert ledger and all(row["status"] == "ok" for row in ledger)
-    return {"prompts": adapter.prompts, "product": document_to_wire(product),
+    from src.attentional_v2.storage import survey_map_file
+    reading_plan = json.loads(survey_map_file(output_dir).read_text())["reading_plan"]
+    return {"reading_plan": reading_plan, "prompts": adapter.prompts, "product": document_to_wire(product),
             "pack": json.loads(pack.annotations_json.read_text()),
             "ledger_nodes": [row["node"] for row in ledger]}
 
@@ -181,7 +183,7 @@ def main():
     output.write_text(json.dumps(evidence, ensure_ascii=False, indent=2) + "\n")
     if baseline:
         assert evidence["matching"] == baseline["matching"], "STOP: matching changed"
-        for key in ("prompts", "product", "pack"):
+        for key in ("reading_plan", "prompts", "product", "pack"):
             assert evidence["product"][key] == baseline["product"][key], f"STOP: {key} changed"
     if args.without_slow_cycle:
         assert not {"chapter_consolidation", "reflective_promotion"}.intersection(evidence["product"]["ledger_nodes"])
