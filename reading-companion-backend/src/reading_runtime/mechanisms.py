@@ -45,6 +45,8 @@ def register_mechanism(mechanism: ReadingMechanism, *, default: bool = False) ->
 def get_mechanism(key: str | None = None) -> ReadingMechanism:
     """Resolve one registered mechanism, falling back to the default."""
 
+    if key in {"iterator_v1", "both", "book_analysis"}:
+        raise ValueError(f"{key} 已退役；历史实现请查看 tag pre-cleanup-2026-11")
     resolved_key = key or _DEFAULT_MECHANISM_KEY
     if resolved_key is None:
         raise RuntimeError("No reading mechanisms have been registered.")

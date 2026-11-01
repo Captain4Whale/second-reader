@@ -131,29 +131,7 @@ def cmd_read(args: argparse.Namespace) -> int:
     """Run the selected backend reading mechanism."""
     book_path = _require_book_path(args.book_file)
     try:
-        budget_policy = {
-            "max_search_queries_per_segment": args.max_search_per_segment,
-            "max_search_queries_per_chapter": args.max_search_per_chapter,
-            "segment_timeout_seconds": args.segment_timeout,
-            "max_revisions": args.max_revisions,
-            "token_budget_ratio": args.token_budget_ratio,
-            "slice_target_tokens": args.slice_target_tokens,
-            "slice_max_tokens": args.slice_max_tokens,
-            "slice_max_subsegments": args.slice_max_subsegments,
-        }
-        analysis_policy = {
-            "deep_target_ratio": args.analysis_deep_target_ratio,
-            "min_deep_per_chapter": args.analysis_min_deep_per_chapter,
-            "max_core_claims": args.analysis_max_core_claims,
-            "max_web_queries": args.analysis_max_web_queries,
-            "max_queries_per_claim": args.analysis_max_queries_per_claim,
-            "reuse_existing_notes": bool(args.analysis_reuse_existing_notes),
-        }
-        mechanism_config = {
-            "skill_profile": args.skill_profile,
-            "budget_policy": budget_policy,
-            "analysis_policy": analysis_policy,
-        }
+        mechanism_config = {}
         if args.memory_retrieval_mode is not None:
             mechanism_config["memory_retrieval_mode"] = args.memory_retrieval_mode
         result = read_book(
@@ -182,6 +160,22 @@ def cmd_read(args: argparse.Namespace) -> int:
     return 0
 
 
+def _mechanism_arg(value: str) -> str:
+    if value in {"iterator_v1", "both"}:
+        raise argparse.ArgumentTypeError(f"{value} 已退役；历史实现请查看 tag pre-cleanup-2026-11")
+    return value
+
+
+def _retired_option(value: str) -> str:
+    raise argparse.ArgumentTypeError("旧 reader / book_analysis 选项已退役；请查看 tag pre-cleanup-2026-11")
+
+
+def _mode_arg(value: str) -> str:
+    if value == "book_analysis":
+        return _retired_option(value)
+    return value
+
+
 def build_parser() -> argparse.ArgumentParser:
     """Build CLI parser."""
     parser = argparse.ArgumentParser(description="Reading Companion - 阅读伴侣")
@@ -205,6 +199,7 @@ def build_parser() -> argparse.ArgumentParser:
     )
     parse_parser.add_argument(
         "--mechanism",
+        type=_mechanism_arg,
         choices=mechanism_choices,
         default=default_mechanism,
         help=f"Backend reading mechanism scaffold to use (default: {default_mechanism})",
@@ -232,110 +227,112 @@ def build_parser() -> argparse.ArgumentParser:
     )
     read_parser.add_argument(
         "--mode",
+        type=_mode_arg,
         choices=["sequential", "book_analysis"],
         default="sequential",
         help="Reader orchestration mode (default: sequential; book_analysis is retired legacy mode)",
     )
     read_parser.add_argument(
         "--skill-profile",
+        type=_retired_option,
         choices=["balanced", "analytical", "curious", "quiet"],
-        default="balanced",
+        default=None,
         help="Pluggable reading skill profile (default: balanced)",
     )
     read_parser.add_argument(
         "--max-search-per-segment",
-        type=int,
+        type=_retired_option,
         default=2,
         metavar="N",
         help="Max curiosity tool calls per segment",
     )
     read_parser.add_argument(
         "--max-search-per-chapter",
-        type=int,
+        type=_retired_option,
         default=12,
         metavar="N",
         help="Max curiosity tool calls per chapter",
     )
     read_parser.add_argument(
         "--segment-timeout",
-        type=int,
+        type=_retired_option,
         default=120,
         metavar="SECONDS",
         help="Segment-level timeout budget in seconds",
     )
     read_parser.add_argument(
         "--max-revisions",
-        type=int,
+        type=_retired_option,
         default=2,
         metavar="N",
         help="Max reflection-driven revise loops per segment",
     )
     read_parser.add_argument(
         "--token-budget-ratio",
-        type=float,
+        type=_retired_option,
         default=1.5,
         metavar="RATIO",
         help="Token-driven depth ratio (higher = deeper per-segment processing)",
     )
     read_parser.add_argument(
         "--slice-target-tokens",
-        type=int,
+        type=_retired_option,
         default=420,
         metavar="N",
         help="Target token size for dynamic sub-segment slicing",
     )
     read_parser.add_argument(
         "--slice-max-tokens",
-        type=int,
+        type=_retired_option,
         default=700,
         metavar="N",
         help="Trigger slicing when a segment exceeds this token estimate",
     )
     read_parser.add_argument(
         "--slice-max-subsegments",
-        type=int,
+        type=_retired_option,
         default=4,
         metavar="N",
         help="Maximum dynamic sub-segments produced from one semantic segment",
     )
     read_parser.add_argument(
         "--analysis-deep-target-ratio",
-        type=float,
+        type=_retired_option,
         default=0.30,
         metavar="RATIO",
         help="Share of segments selected for deep-read during book_analysis mode",
     )
     read_parser.add_argument(
         "--analysis-min-deep-per-chapter",
-        type=int,
+        type=_retired_option,
         default=1,
         metavar="N",
         help="Minimum deep-read targets per non-low-value chapter in book_analysis mode",
     )
     read_parser.add_argument(
         "--analysis-max-core-claims",
-        type=int,
+        type=_retired_option,
         default=20,
         metavar="N",
         help="Maximum number of core claims in the final book analysis report",
     )
     read_parser.add_argument(
         "--analysis-max-web-queries",
-        type=int,
+        type=_retired_option,
         default=18,
         metavar="N",
         help="Maximum number of web verification queries in book_analysis mode",
     )
     read_parser.add_argument(
         "--analysis-max-queries-per-claim",
-        type=int,
+        type=_retired_option,
         default=2,
         metavar="N",
         help="Maximum number of verification queries per claim",
     )
     read_parser.add_argument(
         "--analysis-reuse-existing-notes",
-        type=int,
+        type=_retired_option,
         choices=[0, 1],
         default=1,
         metavar="0|1",
@@ -349,6 +346,7 @@ def build_parser() -> argparse.ArgumentParser:
     )
     read_parser.add_argument(
         "--mechanism",
+        type=_mechanism_arg,
         choices=mechanism_choices,
         default=default_mechanism,
         help=f"Backend reading mechanism scaffold to use (default: {default_mechanism})",

@@ -57,6 +57,8 @@ def parse_book(request: ParseRequest) -> ParseResult:
 def read_book(request: ReadRequest) -> ReadResult:
     """Read one book through the selected backend reading mechanism."""
 
+    if request.task_mode == "book_analysis":
+        raise ValueError("book_analysis 已退役；历史实现请查看 tag pre-cleanup-2026-11")
     return get_mechanism(request.mechanism_key).read_book(request)
 
 

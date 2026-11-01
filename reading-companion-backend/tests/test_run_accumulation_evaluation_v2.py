@@ -555,7 +555,7 @@ def test_run_accumulation_evaluation_v2_writes_absolute_results(tmp_path: Path, 
     summary = accumulation_v2_runner.run_accumulation_evaluation_v2(
         run_id="demo_v2_run",
         formal_manifest_path=manifest_path,
-        mechanism_filter="both",
+        mechanism_filter="attentional_v2",
         judge_mode="llm",
     )
 

@@ -1324,13 +1324,12 @@ def test_attentional_v2_prompt_registry_contains_node_definitions() -> None:
     definitions = ATTENTIONAL_V2_PROMPT_REGISTRY.list()
     prompt_ids = [definition.prompt_id for definition in definitions]
 
-    assert len(definitions) == 7
+    assert len(definitions) == 6
     assert len(set(prompt_ids)) == len(prompt_ids)
     assert prompt_ids == [
         "attentional_v2.survey_chapter_zone",
         "attentional_v2.ingest",
         "attentional_v2.digest",
-        "attentional_v2.bridge_resolution",
         "attentional_v2.reflective_promotion",
         "attentional_v2.reconsolidation",
         "attentional_v2.chapter_consolidation",
@@ -1973,18 +1972,8 @@ def test_attentional_v2_runner_prefers_main_body_before_supporting_chapters(tmp_
             "compatibility_payload": compatibility_payload,
         }
 
-    def fake_process_sentence_intake(sentence, *, local_buffer, window_size=6):
-        return {
-            **local_buffer,
-            "current_sentence_id": sentence["sentence_id"],
-            "current_sentence_index": sentence["sentence_index"],
-            "recent_sentences": [*local_buffer.get("recent_sentences", []), dict(sentence)][-window_size:],
-            "open_meaning_unit_sentence_ids": [sentence["sentence_id"]],
-            "seen_sentence_ids": [*local_buffer.get("seen_sentence_ids", []), sentence["sentence_id"]],
-        }
 
     monkeypatch.setattr(runner_module, "_call_ingest", _fake_single_sentence_ingest_boundary)
-    monkeypatch.setattr(runner_module, "process_sentence_intake", fake_process_sentence_intake)
     monkeypatch.setattr(runner_module, "_call_digest", fake_digest)
     monkeypatch.setattr(runner_module, "run_phase6_chapter_cycle", fake_phase6_chapter_cycle)
 
@@ -2394,19 +2383,8 @@ def test_attentional_v2_read_book_runs_live_loop_and_persists_compatibility_resu
             "compatibility_payload": compatibility_payload,
         }
 
-    def fake_process_sentence_intake(sentence, *, local_buffer, window_size=6):
-        next_buffer = {
-            **local_buffer,
-            "current_sentence_id": sentence["sentence_id"],
-            "current_sentence_index": sentence["sentence_index"],
-            "recent_sentences": [*local_buffer.get("recent_sentences", []), dict(sentence)][-window_size:],
-            "open_meaning_unit_sentence_ids": [sentence["sentence_id"]],
-            "seen_sentence_ids": [*local_buffer.get("seen_sentence_ids", []), sentence["sentence_id"]],
-        }
-        return next_buffer
 
     monkeypatch.setattr(runner_module, "_call_ingest", _fake_single_sentence_ingest_boundary)
-    monkeypatch.setattr(runner_module, "process_sentence_intake", fake_process_sentence_intake)
     monkeypatch.setattr(runner_module, "_call_digest", fake_digest)
     monkeypatch.setattr(runner_module, "run_phase6_chapter_cycle", fake_phase6_chapter_cycle)
 
@@ -2521,16 +2499,6 @@ def test_attentional_v2_runner_persists_multiple_read_surface_reactions(tmp_path
             "memory_uptake_ops": [],
         }
 
-    def fake_process_sentence_intake(sentence, *, local_buffer, window_size=6):
-        next_buffer = {
-            **local_buffer,
-            "current_sentence_id": sentence["sentence_id"],
-            "current_sentence_index": sentence["sentence_index"],
-            "recent_sentences": [*local_buffer.get("recent_sentences", []), dict(sentence)][-window_size:],
-            "open_meaning_unit_sentence_ids": [sentence["sentence_id"]],
-            "seen_sentence_ids": [*local_buffer.get("seen_sentence_ids", []), sentence["sentence_id"]],
-        }
-        return next_buffer
 
     def fake_phase6_chapter_cycle(**kwargs):
         compatibility_payload = project_chapter_result_compatibility(
@@ -2552,7 +2520,6 @@ def test_attentional_v2_runner_persists_multiple_read_surface_reactions(tmp_path
         }
 
     monkeypatch.setattr(runner_module, "_call_ingest", _fake_single_sentence_ingest_boundary)
-    monkeypatch.setattr(runner_module, "process_sentence_intake", fake_process_sentence_intake)
     monkeypatch.setattr(runner_module, "_call_digest", fake_digest)
     monkeypatch.setattr(runner_module, "run_phase6_chapter_cycle", fake_phase6_chapter_cycle)
 
@@ -2607,19 +2574,8 @@ def test_attentional_v2_read_book_tolerates_missing_reaction_payload(tmp_path, m
             "compatibility_payload": compatibility_payload,
         }
 
-    def fake_process_sentence_intake(sentence, *, local_buffer, window_size=6):
-        next_buffer = {
-            **local_buffer,
-            "current_sentence_id": sentence["sentence_id"],
-            "current_sentence_index": sentence["sentence_index"],
-            "recent_sentences": [*local_buffer.get("recent_sentences", []), dict(sentence)][-window_size:],
-            "open_meaning_unit_sentence_ids": [sentence["sentence_id"]],
-            "seen_sentence_ids": [*local_buffer.get("seen_sentence_ids", []), sentence["sentence_id"]],
-        }
-        return next_buffer
 
     monkeypatch.setattr(runner_module, "_call_ingest", _fake_single_sentence_ingest_boundary)
-    monkeypatch.setattr(runner_module, "process_sentence_intake", fake_process_sentence_intake)
     monkeypatch.setattr(runner_module, "_call_digest", fake_digest)
     monkeypatch.setattr(runner_module, "run_phase6_chapter_cycle", fake_phase6_chapter_cycle)
 
@@ -2666,16 +2622,6 @@ def test_attentional_v2_read_book_runs_source_anchor_units_without_sentence_curs
             "compatibility_payload": compatibility_payload,
         }
 
-    def fake_process_sentence_intake(sentence, *, local_buffer, window_size=6):
-        next_buffer = {
-            **local_buffer,
-            "current_sentence_id": sentence["sentence_id"],
-            "current_sentence_index": sentence["sentence_index"],
-            "recent_sentences": [*local_buffer.get("recent_sentences", []), dict(sentence)][-window_size:],
-            "open_meaning_unit_sentence_ids": [sentence["sentence_id"]],
-            "seen_sentence_ids": [*local_buffer.get("seen_sentence_ids", []), sentence["sentence_id"]],
-        }
-        return next_buffer
 
     read_calls: list[list[str]] = []
 
@@ -2694,7 +2640,6 @@ def test_attentional_v2_read_book_runs_source_anchor_units_without_sentence_curs
         }
 
     monkeypatch.setattr(runner_module, "_call_ingest", _fake_single_sentence_ingest_boundary)
-    monkeypatch.setattr(runner_module, "process_sentence_intake", fake_process_sentence_intake)
     monkeypatch.setattr(runner_module, "_call_digest", fake_digest)
     monkeypatch.setattr(runner_module, "run_phase6_chapter_cycle", fake_phase6_chapter_cycle)
 
@@ -2751,19 +2696,8 @@ def test_attentional_v2_runner_stops_at_audit_window_cap_and_persists_partial_ou
             "memory_uptake_ops": [],
         }
 
-    def fake_process_sentence_intake(sentence, *, local_buffer, window_size=6):
-        next_buffer = {
-            **local_buffer,
-            "current_sentence_id": sentence["sentence_id"],
-            "current_sentence_index": sentence["sentence_index"],
-            "recent_sentences": [*local_buffer.get("recent_sentences", []), dict(sentence)][-window_size:],
-            "open_meaning_unit_sentence_ids": [sentence["sentence_id"]],
-            "seen_sentence_ids": [*local_buffer.get("seen_sentence_ids", []), sentence["sentence_id"]],
-        }
-        return next_buffer
 
     monkeypatch.setattr(runner_module, "_call_ingest", _fake_single_sentence_ingest_boundary)
-    monkeypatch.setattr(runner_module, "process_sentence_intake", fake_process_sentence_intake)
     monkeypatch.setattr(runner_module, "_call_digest", fake_digest)
     monkeypatch.setattr(
         runner_module,
@@ -2866,21 +2800,6 @@ def test_attentional_v2_runner_replays_product_commit_after_derived_projection_c
             "memory_uptake_ops": [],
         }
 
-    def fake_process_sentence_intake(sentence, *, local_buffer, window_size=6):
-        return {
-            **local_buffer,
-            "current_sentence_id": sentence["sentence_id"],
-            "current_sentence_index": sentence["sentence_index"],
-            "recent_sentences": [
-                *local_buffer.get("recent_sentences", []),
-                dict(sentence),
-            ][-window_size:],
-            "open_meaning_unit_sentence_ids": [sentence["sentence_id"]],
-            "seen_sentence_ids": [
-                *local_buffer.get("seen_sentence_ids", []),
-                sentence["sentence_id"],
-            ],
-        }
 
     def fake_phase6_chapter_cycle(**kwargs):
         compatibility_payload = project_chapter_result_compatibility(
@@ -2904,7 +2823,6 @@ def test_attentional_v2_runner_replays_product_commit_after_derived_projection_c
         }
 
     monkeypatch.setattr(runner_module, "_call_ingest", _fake_single_sentence_ingest_boundary)
-    monkeypatch.setattr(runner_module, "process_sentence_intake", fake_process_sentence_intake)
     monkeypatch.setattr(runner_module, "_call_digest", fake_digest)
     monkeypatch.setattr(runner_module, "run_phase6_chapter_cycle", fake_phase6_chapter_cycle)
     persist_marginalia = runner_module._persist_marginalia
@@ -3007,21 +2925,6 @@ def _install_offline_product_runner_stubs(monkeypatch, provisioned):
             "memory_uptake_ops": [],
         }
 
-    def fake_process_sentence_intake(sentence, *, local_buffer, window_size=6):
-        return {
-            **local_buffer,
-            "current_sentence_id": sentence["sentence_id"],
-            "current_sentence_index": sentence["sentence_index"],
-            "recent_sentences": [
-                *local_buffer.get("recent_sentences", []),
-                dict(sentence),
-            ][-window_size:],
-            "open_meaning_unit_sentence_ids": [sentence["sentence_id"]],
-            "seen_sentence_ids": [
-                *local_buffer.get("seen_sentence_ids", []),
-                sentence["sentence_id"],
-            ],
-        }
 
     def fake_phase6_chapter_cycle(**kwargs):
         compatibility_payload = project_chapter_result_compatibility(
@@ -3055,11 +2958,6 @@ def _install_offline_product_runner_stubs(monkeypatch, provisioned):
         _fake_single_sentence_ingest_boundary,
     )
     monkeypatch.setattr(runner_module, "_call_digest", fake_digest)
-    monkeypatch.setattr(
-        runner_module,
-        "process_sentence_intake",
-        fake_process_sentence_intake,
-    )
     monkeypatch.setattr(
         runner_module,
         "run_phase6_chapter_cycle",

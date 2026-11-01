@@ -25,7 +25,6 @@ from src.iterator_reader.llm_utils import LLMTraceContext, ReaderLLMError, invok
 from src.reading_core.runtime_contracts import ReadRequest
 from src.reading_core.storage import existing_book_document_file, load_book_document
 from src.reading_mechanisms.attentional_v2 import AttentionalV2Mechanism
-from src.reading_mechanisms.iterator_v1 import IteratorV1Mechanism
 from src.reading_runtime.job_concurrency import resolve_worker_policy, submit_inherited_context
 from src.reading_runtime.llm_registry import DEFAULT_EVAL_JUDGE_PROFILE_ID
 from src.reading_runtime.output_dir_overrides import override_output_dir
@@ -49,7 +48,7 @@ DEFAULT_USER_INTENT = (
     "Read as a thoughtful co-reader and notice meaningful turns, tensions, callbacks, definitions, and chapter-level development."
 )
 SELECTION_ROLES = ("expository", "argumentative", "narrative_reflective", "reference_heavy")
-MECHANISM_KEYS = ("attentional_v2", "iterator_v1")
+MECHANISM_KEYS = ("attentional_v2",)
 RESUME_KIND_MAP = {
     "warm": "warm_resume",
     "cold": "cold_resume",
@@ -408,7 +407,7 @@ def _run_mechanism_for_case(
     if mechanism_key == "attentional_v2":
         mechanism = AttentionalV2Mechanism()
     elif mechanism_key == "iterator_v1":
-        mechanism = IteratorV1Mechanism()
+        raise ValueError("iterator_v1 已退役；请查看 tag pre-cleanup-2026-11")
     else:
         raise ValueError(f"unsupported mechanism: {mechanism_key}")
     book_path = ROOT / str(source["relative_local_path"])
@@ -456,49 +455,6 @@ def _run_mechanism_for_case(
     }
 
 
-def _judge_durable_trace(
-    *,
-    case: ChapterCase,
-    attentional: dict[str, Any],
-    iterator: dict[str, Any],
-    run_root: Path,
-    judge_mode: str,
-) -> dict[str, Any]:
-    if not bool(attentional.get("success")) or not bool(iterator.get("success")):
-        error_parts = [str(side.get("error", "")).strip() for side in (attentional, iterator) if str(side.get("error", "")).strip()]
-        return _mechanism_failure_judgment("; ".join(error_parts))
-    if judge_mode == "none":
-        return _default_judgment()
-    try:
-        with llm_invocation_scope(
-            profile_id=DEFAULT_EVAL_JUDGE_PROFILE_ID,
-            trace_context=LLMTraceContext(stage="durable_trace_reentry", node="durable_trace_judge"),
-        ):
-            payload = invoke_json(
-                JUDGE_SYSTEM,
-                JUDGE_PROMPT.format(
-                    case_json=json.dumps(
-                        {
-                            "chapter_case_id": case.chapter_case_id,
-                            "book_title": case.book_title,
-                            "author": case.author,
-                            "language_track": case.language_track,
-                            "selection_role": case.selection_role,
-                            "chapter_title": case.chapter_title,
-                        },
-                        ensure_ascii=False,
-                        indent=2,
-                    ),
-                    left_json=json.dumps(attentional["bundle_summary"], ensure_ascii=False, indent=2),
-                    right_json=json.dumps(iterator["bundle_summary"], ensure_ascii=False, indent=2),
-                ),
-                _default_judgment(),
-            )
-    except ReaderLLMError:
-        payload = {}
-    except Exception:
-        payload = {}
-    return _normalize_judgment(payload)
 
 
 def _run_reentry_audits(
@@ -575,13 +531,6 @@ def _evaluate_case(
         mechanism_key: _run_mechanism_for_case(case, source, mechanism_key=mechanism_key, run_root=run_root)
         for mechanism_key in MECHANISM_KEYS
     }
-    durable_trace = _judge_durable_trace(
-        case=case,
-        attentional=mechanism_results["attentional_v2"],
-        iterator=mechanism_results["iterator_v1"],
-        run_root=run_root,
-        judge_mode=judge_mode,
-    )
     reentry_audits = _run_reentry_audits(
         case=case,
         attentional_output_dir=Path(mechanism_results["attentional_v2"]["output_dir"]),
@@ -619,7 +568,6 @@ def _evaluate_case(
             }
             for key, value in mechanism_results.items()
         },
-        "durable_trace": durable_trace,
         "reentry_audits": reentry_audits,
     }
 
@@ -724,7 +672,7 @@ def _aggregate(case_results: list[dict[str, Any]]) -> dict[str, Any]:
     failed_case_results = [
         item for item in case_results if _clean_text(item.get("case_status") or "completed") != "completed"
     ]
-    durable_rows = [item["durable_trace"] for item in completed_case_results]
+    durable_rows = [item["durable_trace"] for item in completed_case_results if "durable_trace" in item]
     winner_counts = Counter(result["winner"] for result in durable_rows)
     aggregate: dict[str, Any] = {
         "case_count": len(case_results),

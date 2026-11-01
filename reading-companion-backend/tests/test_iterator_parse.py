@@ -344,17 +344,6 @@ def test_classify_paragraph_records_detects_heading_roles_generically():
     ]
 
 
-def test_source_normalization_offline_prompt_mentions_source_flow_and_false_positive_rules():
-    """The optional classifier prompt should frame source-flow labels, not importance judgment."""
-
-    system_prompt = source_normalization_module.SOURCE_NORMALIZATION_SYSTEM_PROMPT
-
-    assert "source-flow classification" in system_prompt
-    assert "not importance judgment" in system_prompt
-    assert "letters, poems, dialogue, fictional documents" in system_prompt
-    assert "numbered main-body aphorisms" in system_prompt
-    assert "source markup as evidence" in system_prompt
-    assert "Never mark blockquote, poem, verse" in system_prompt
 
 
 def test_source_normalization_marks_explicit_note_definitions_auxiliary_and_rebuilds_sentences(tmp_path):

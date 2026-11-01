@@ -134,13 +134,6 @@ def get_pipeline_prefetch_window() -> int:
     return _env_int("PIPELINE_PREFETCH_WINDOW", 3)
 
 
-def get_tavily_api_key() -> str:
-    """Get Tavily API key from environment variables.
-
-    Returns:
-        Tavily API key
-    """
-    return os.getenv("TAVILY_API_KEY", "")
 def get_upload_max_bytes() -> int:
     """Return the maximum accepted EPUB upload size in bytes."""
     raw = os.getenv("UPLOAD_MAX_BYTES", "").strip()
@@ -214,8 +207,8 @@ def get_backend_reading_mechanism_key() -> str | None:
     raw = os.getenv("BACKEND_READING_MECHANISM", "").strip().lower()
     if not raw or raw == "attentional_v2":
         return None
-    if raw == "iterator_v1":
-        return raw
+    if raw in {"iterator_v1", "both", "book_analysis"}:
+        raise ValueError(f"{raw} 已退役；历史实现请查看 tag pre-cleanup-2026-11")
     return None
 
 

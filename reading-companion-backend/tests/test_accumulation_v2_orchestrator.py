@@ -317,7 +317,7 @@ def test_update_catalog_only_for_complete_mechanism_set(monkeypatch, tmp_path: P
         run_id="run_full",
         run_root=tmp_path / "run_full",
         aggregate=aggregate,
-        mechanism_keys=("attentional_v2", "iterator_v1"),
+        mechanism_keys=("attentional_v2",),
         full_scope=True,
     )
     orchestrator._update_catalog_or_warn(
@@ -338,4 +338,4 @@ def test_update_catalog_only_for_complete_mechanism_set(monkeypatch, tmp_path: P
     assert len(upserts) == 1
     assert upserts[0]["entry"]["surface"] == "target_centered_accumulation_v2"
     assert upserts[0]["entry"]["status"] == "current_formal_evidence"
-    assert "3.0" in upserts[0]["entry"]["one_line_conclusion"]
+    assert "2.5" in upserts[0]["entry"]["one_line_conclusion"]

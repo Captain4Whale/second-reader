@@ -27,7 +27,6 @@ from src.iterator_reader.llm_utils import ReaderLLMError, invoke_json, llm_invoc
 from src.reading_core.runtime_contracts import ReadRequest
 from src.reading_core.storage import book_document_file
 from src.reading_mechanisms.attentional_v2 import AttentionalV2Mechanism
-from src.reading_mechanisms.iterator_v1 import IteratorV1Mechanism
 from src.reading_runtime.llm_gateway import eval_trace_context
 from src.reading_runtime.llm_registry import DEFAULT_EVAL_JUDGE_PROFILE_ID
 from src.reading_runtime.output_dir_overrides import override_output_dir
@@ -44,7 +43,7 @@ PROBE_SELECTION_METHOD = "semantic_boundary_with_distance_reference"
 DEFAULT_USER_INTENT = (
     "Read as a thoughtful co-reader, maintain meaningful memory continuity, and surface visible reactions when earlier material naturally comes back into view."
 )
-MECHANISM_KEYS = ("attentional_v2", "iterator_v1")
+MECHANISM_KEYS = ("attentional_v2",)
 PRIOR_MEMORY_AUDIT_LABELS = (
     "local_only",
     "grounded_prior_memory_use",
@@ -528,76 +527,13 @@ def _validate_reuse_window_match(
     return True, report
 
 
-def find_reaction_reuse_output(
-    *,
-    current_dataset_dir: Path,
-    window: ReadingWindow,
-    mechanism_key: str,
-    reuse_run_root: Path | None,
-) -> dict[str, Any] | None:
-    if mechanism_key != "iterator_v1" or reuse_run_root is None:
-        return None
-    reuse_run_root = reuse_run_root.resolve()
-    if not reuse_run_root.exists():
-        return None
-
-    matched, validation = _validate_reuse_window_match(
-        current_dataset_dir=current_dataset_dir,
-        current_window=window,
-        reuse_run_root=reuse_run_root,
-        mechanism_key=mechanism_key,
-    )
-    if not matched:
-        return {
-            "status": "rejected",
-            "mechanism_key": mechanism_key,
-            "segment_id": window.segment_id,
-            "validation": validation,
-        }
-
-    for output_dir in _candidate_reuse_output_dirs(
-        reuse_run_root=reuse_run_root,
-        window=window,
-        mechanism_key=mechanism_key,
-    ):
-        if run_state_status(output_dir) != "completed":
-            continue
-        try:
-            payload = _completed_output_payload(
-                mechanism_key=mechanism_key,
-                output_dir=output_dir,
-                segment_id=window.segment_id,
-            )
-        except Exception as exc:
-            validation = dict(validation)
-            validation["reason"] = "completed_output_rebuild_failed"
-            validation["error"] = str(exc)
-            return {
-                "status": "rejected",
-                "mechanism_key": mechanism_key,
-                "segment_id": window.segment_id,
-                "validation": validation,
-            }
-        payload["run_mode"] = "reuse_reaction_output"
-        payload["reuse_source_run_root"] = str(reuse_run_root)
-        payload["reuse_validation"] = validation
-        return payload
-
-    validation = dict(validation)
-    validation["reason"] = "missing_completed_output"
-    return {
-        "status": "rejected",
-        "mechanism_key": mechanism_key,
-        "segment_id": window.segment_id,
-        "validation": validation,
-    }
 
 
 def _mechanism_for_key(mechanism_key: str):
     if mechanism_key == "attentional_v2":
         return AttentionalV2Mechanism()
     if mechanism_key == "iterator_v1":
-        return IteratorV1Mechanism()
+        raise ValueError("iterator_v1 已退役；请查看 tag pre-cleanup-2026-11")
     raise ValueError(f"unsupported mechanism: {mechanism_key}")
 
 
@@ -1909,35 +1845,6 @@ def run_long_span_vnext(
             continue
 
         output_tasks.append((window, "attentional_v2"))
-        if "iterator_v1" not in mechanism_keys:
-            continue
-        reuse_payload = find_reaction_reuse_output(
-            current_dataset_dir=dataset_dir,
-            window=window,
-            mechanism_key="iterator_v1",
-            reuse_run_root=reaction_reuse_run_root,
-        )
-        if reuse_payload and reuse_payload.get("status") == "completed":
-            output_payloads[(window.segment_id, "iterator_v1")] = reuse_payload
-            reuse_decisions.append(
-                {
-                    "segment_id": window.segment_id,
-                    "mechanism_key": "iterator_v1",
-                    "decision": "reused",
-                    "output_dir": reuse_payload.get("output_dir"),
-                    "validation": reuse_payload.get("reuse_validation"),
-                }
-            )
-        else:
-            output_tasks.append((window, "iterator_v1"))
-            reuse_decisions.append(
-                {
-                    "segment_id": window.segment_id,
-                    "mechanism_key": "iterator_v1",
-                    "decision": "fresh_required",
-                    "validation": (reuse_payload or {}).get("validation") if isinstance(reuse_payload, dict) else None,
-                }
-            )
 
     def _ensure_output(task: tuple[ReadingWindow, str]) -> tuple[tuple[str, str], dict[str, Any]]:
         window, mechanism_key = task

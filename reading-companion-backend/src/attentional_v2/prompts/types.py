@@ -65,9 +65,6 @@ class AttentionalV2PromptSet:
     digest_version: str
     digest_system: str
     digest_prompt: str
-    bridge_resolution_version: str
-    bridge_resolution_system: str
-    bridge_resolution_prompt: str
     reflective_promotion_version: str
     reflective_promotion_system: str
     reflective_promotion_prompt: str
@@ -90,7 +87,6 @@ def build_legacy_prompt_set(
     survey = registry.get("attentional_v2.survey_chapter_zone")
     ingest = registry.get("attentional_v2.ingest")
     digest = registry.get("attentional_v2.digest")
-    bridge = registry.get("attentional_v2.bridge_resolution")
     reflective = registry.get("attentional_v2.reflective_promotion")
     reconsolidation = registry.get("attentional_v2.reconsolidation")
     chapter = registry.get("attentional_v2.chapter_consolidation")
@@ -106,9 +102,6 @@ def build_legacy_prompt_set(
         digest_version=digest.version,
         digest_system=digest.system_prompt,
         digest_prompt=digest.user_prompt_template,
-        bridge_resolution_version=bridge.version,
-        bridge_resolution_system=bridge.system_prompt,
-        bridge_resolution_prompt=bridge.user_prompt_template,
         reflective_promotion_version=reflective.version,
         reflective_promotion_system=reflective.system_prompt,
         reflective_promotion_prompt=reflective.user_prompt_template,

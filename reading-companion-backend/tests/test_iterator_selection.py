@@ -2,23 +2,9 @@
 
 from __future__ import annotations
 
-from src.iterator_reader.iterator import _chapter_selection
 from src.iterator_reader.storage import chapter_output_name, display_segment_id, segment_reference
 
 
-def test_chapter_selection_prefers_human_chapter_number():
-    """--chapter N should resolve to the visible chapter number, not internal id."""
-    structure = {
-        "chapters": [
-            {"id": 10, "title": "Chapter 4", "chapter_number": 4, "status": "pending", "level": 1, "segments": []},
-            {"id": 16, "title": "Chapter 10", "chapter_number": 10, "status": "pending", "level": 1, "segments": []},
-        ]
-    }
-
-    selected = _chapter_selection(structure, chapter_number=10, continue_mode=False)
-
-    assert len(selected) == 1
-    assert selected[0]["title"] == "Chapter 10"
 
 
 def test_chapter_output_name_uses_human_chapter_number():

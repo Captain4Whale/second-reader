@@ -43,7 +43,6 @@ from src.reading_runtime.shell_state import load_runtime_shell, save_runtime_she
 from src.iterator_reader.llm_utils import llm_invocation_scope, runtime_trace_context
 
 from .evaluation import build_normalized_eval_bundle, persist_normalized_eval_bundle
-from .intake import process_sentence_intake  # noqa: F401 - legacy monkeypatch seam for older tests
 from .llm_calls import (
     ingest as _call_ingest,
     digest as _call_digest,

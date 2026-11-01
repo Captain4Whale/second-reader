@@ -49,7 +49,7 @@ RETRYABLE_ERROR_MARKERS = (
     "Error code: 529",
     "network_blocked",
 )
-FULL_MECHANISM_SET = {"attentional_v2", "iterator_v1"}
+FULL_MECHANISM_SET = {"attentional_v2"}
 
 
 @dataclass(frozen=True)
@@ -544,7 +544,6 @@ def _update_catalog_or_warn(
     try:
         mechanisms = aggregate.get("mechanisms") or {}
         v2_quality = (mechanisms.get("attentional_v2") or {}).get("average_quality_score")
-        v1_quality = (mechanisms.get("iterator_v1") or {}).get("average_quality_score")
         dataset_dir = str(aggregate.get("dataset_dir") or "")
         entry = build_entry(
             run_id=run_id,
@@ -557,7 +556,6 @@ def _update_catalog_or_warn(
             one_line_conclusion=(
                 "Formal target-centered accumulation v2 rerun completed; "
                 f"attentional_v2 average_quality_score={v2_quality}, "
-                f"iterator_v1 average_quality_score={v1_quality}."
             ),
         )
         upsert_catalog_entry(entry)
@@ -573,7 +571,7 @@ def parse_args() -> argparse.Namespace:
         default=f"attentional_v2_accumulation_benchmark_v2_frozen_judged_{datetime.now(timezone.utc).strftime('%Y%m%d')}",
     )
     parser.add_argument("--manifest-path", type=Path, default=FROZEN_MANIFEST_PATH)
-    parser.add_argument("--mechanism-filter", choices=("both", "attentional_v2", "iterator_v1"), default="both")
+    parser.add_argument("--mechanism-filter", choices=("both", "attentional_v2", "iterator_v1"), default="attentional_v2")
     parser.add_argument("--judge-mode", choices=("llm",), default="llm")
     parser.add_argument("--target-id", action="append", dest="target_ids", default=[])
     parser.add_argument("--segment-id", action="append", dest="segment_ids", default=[])

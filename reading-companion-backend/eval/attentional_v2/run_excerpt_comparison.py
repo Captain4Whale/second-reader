@@ -6,16 +6,12 @@ import argparse
 import json
 import os
 import re
-import shutil
-import subprocess
-import sys
 import tempfile
 import threading
 import unicodedata
 from collections import Counter, defaultdict
-from concurrent.futures import ThreadPoolExecutor, as_completed
 from contextlib import contextmanager
-from dataclasses import asdict, dataclass
+from dataclasses import dataclass
 from datetime import datetime, timezone
 from pathlib import Path
 from statistics import mean
@@ -23,14 +19,9 @@ from typing import Any
 
 from eval.common.taxonomy import DETERMINISTIC_METRICS, PAIRWISE_JUDGE, RUBRIC_JUDGE, normalize_methods, validate_target_slug
 from eval.attentional_v2.llm_usage_summary import write_llm_usage_summary
-from eval.attentional_v2.runtime_progress import runtime_progress_heartbeat
 from src.iterator_reader.llm_utils import ReaderLLMError, eval_trace_context, invoke_json, llm_invocation_scope
 from src.reading_core import BookDocument
-from src.reading_core.runtime_contracts import ReadRequest
-from src.reading_mechanisms.attentional_v2 import AttentionalV2Mechanism
-from src.reading_mechanisms.iterator_v1 import IteratorV1Mechanism
-from src.reading_runtime.job_concurrency import resolve_worker_policy, submit_inherited_context
-from src.reading_runtime.llm_registry import DEFAULT_EVAL_JUDGE_PROFILE_ID, DEFAULT_RUNTIME_PROFILE_ID
+from src.reading_runtime.llm_registry import DEFAULT_EVAL_JUDGE_PROFILE_ID
 from src.reading_runtime.output_dir_overrides import override_output_dir
 from src.reading_runtime.provisioning import ProvisionedBook, ensure_canonical_parse
 
@@ -57,7 +48,7 @@ DEFAULT_COMPARISON_TARGET = "attentional_v2 vs iterator_v1 on formal excerpt-sca
 DEFAULT_USER_INTENT = (
     "Read as a thoughtful co-reader and notice meaningful turns, tensions, callbacks, definitions, and chapter-level development."
 )
-MECHANISM_KEYS = ("attentional_v2", "iterator_v1")
+MECHANISM_KEYS = ("attentional_v2",)
 MECHANISM_FILTER_VALUES = ("attentional_v2", "iterator_v1", "both")
 TARGET_SLICE_VALUES = ("selective_legibility", "insight_and_clarification", "both")
 STAGE_VALUES = ("all", "bundle", "judge", "merge")
@@ -806,8 +797,8 @@ def _case_payload_path(run_root: Path, shard_id: str, case_id: str) -> Path:
 def _mechanism_keys_for_filter(mechanism_filter: str) -> tuple[str, ...]:
     if mechanism_filter not in MECHANISM_FILTER_VALUES:
         raise ValueError(f"unsupported mechanism filter: {mechanism_filter}")
-    if mechanism_filter == "both":
-        return MECHANISM_KEYS
+    if mechanism_filter in {"both", "iterator_v1"}:
+        raise ValueError(f"{mechanism_filter} 已退役；请查看 tag pre-cleanup-2026-11")
     return (mechanism_filter,)
 
 
@@ -910,7 +901,7 @@ def excerpt_unit_is_ready_for_judging(
     run_root: Path,
     *,
     unit_key: str,
-    mechanism_filter: str = "both",
+    mechanism_filter: str = "attentional_v2",
 ) -> bool:
     for mechanism_key in _mechanism_keys_for_filter(mechanism_filter):
         existing = _existing_bundle_payload(run_root, unit_key=unit_key, mechanism_key=mechanism_key)
@@ -1057,256 +1048,22 @@ def _mechanism_failure_payload(mechanism_key: str, *, error: str, status: str = 
     }
 
 
-def _run_state_path(output_dir: Path) -> Path:
-    return output_dir / "_runtime" / "run_state.json"
 
 
-def _recoverable_resume_context(output_dir: Path, *, error: Exception | None = None) -> dict[str, str] | None:
-    payload = _load_json_if_exists(_run_state_path(output_dir))
-    if not isinstance(payload, dict):
-        payload = {}
-    current_activity = payload.get("current_reading_activity")
-    if not isinstance(current_activity, dict):
-        current_activity = {}
-    problem_code = _clean_text(getattr(error, "problem_code", "")).lower()
-    if not problem_code:
-        problem_code = _clean_text(current_activity.get("problem_code")).lower()
-    if not problem_code:
-        problem_code = _clean_text(payload.get("problem_code")).lower()
-    if problem_code not in RECOVERABLE_MECHANISM_PROBLEM_CODES:
-        return None
-    if not bool(payload.get("resume_available")):
-        return None
-    stage = _clean_text(payload.get("stage")).lower()
-    if stage == "completed":
-        return None
-    return {
-        "problem_code": problem_code,
-        "last_checkpoint_at": _clean_text(payload.get("last_checkpoint_at")),
-        "stage": stage,
-    }
 
 
-def _run_mechanism_attempt(
-    unit: ChapterUnit,
-    source: dict[str, Any],
-    *,
-    mechanism_key: str,
-    shard_root: Path,
-    resume_from_existing: bool,
-) -> dict[str, Any]:
-    if mechanism_key == "attentional_v2":
-        mechanism = AttentionalV2Mechanism()
-    elif mechanism_key == "iterator_v1":
-        mechanism = IteratorV1Mechanism()
-    else:
-        raise ValueError(f"unsupported mechanism: {mechanism_key}")
-
-    book_path = ROOT / str(source["relative_local_path"])
-    isolated_output_dir = shard_root / "outputs" / _chapter_unit_key(unit.source_id, unit.chapter_id) / mechanism_key
-    runtime_dir = isolated_output_dir / "_runtime"
-    _log_unit_progress(
-        unit,
-        f"[mechanism-start] {mechanism_key}"
-        + (" resume=true" if resume_from_existing else ""),
-    )
-    if not resume_from_existing:
-        shutil.rmtree(isolated_output_dir, ignore_errors=True)
-    isolated_output_dir.parent.mkdir(parents=True, exist_ok=True)
-    with runtime_progress_heartbeat(
-        runtime_dir=runtime_dir,
-        mechanism_key=mechanism_key,
-        emit=lambda message: _log_unit_progress(unit, message),
-    ):
-        with _isolated_output_dir(isolated_output_dir):
-            result = mechanism.read_book(
-                ReadRequest(
-                    book_path=book_path,
-                    chapter_number=int(unit.chapter_id),
-                    continue_mode=False,
-                    user_intent=DEFAULT_USER_INTENT,
-                    language_mode=unit.output_language,
-                    task_mode="sequential",
-                    mechanism_key=mechanism_key,
-                    mechanism_config={"persist_normalized_eval_bundle": True},
-                )
-            )
-    bundle = dict(result.normalized_eval_bundle or {})
-    _log_unit_progress(unit, f"[mechanism-completed] {mechanism_key}")
-    return {
-        "status": "completed",
-        "mechanism_key": mechanism_key,
-        "mechanism_label": result.mechanism.label,
-        "output_dir": str(result.output_dir),
-        "normalized_eval_bundle": bundle,
-        "bundle_summary": _summarize_bundle(bundle),
-        "error": "",
-    }
 
 
-def _run_mechanism_for_unit(
-    unit: ChapterUnit,
-    source: dict[str, Any],
-    *,
-    mechanism_key: str,
-    shard_root: Path,
-) -> dict[str, Any]:
-    isolated_output_dir = shard_root / "outputs" / _chapter_unit_key(unit.source_id, unit.chapter_id) / mechanism_key
-    recovery_context = _recoverable_resume_context(isolated_output_dir)
-    resume_from_existing = recovery_context is not None
-    recovery_count = 1 if recovery_context is not None else 0
-    if recovery_context is not None:
-        checkpoint_note = (
-            f" last_checkpoint_at={recovery_context['last_checkpoint_at']}"
-            if recovery_context.get("last_checkpoint_at")
-            else ""
-        )
-        stage_note = f" stage={recovery_context['stage']}" if recovery_context.get("stage") else ""
-        _log_unit_progress(
-            unit,
-            f"[mechanism-resume-existing] {mechanism_key} problem_code={recovery_context['problem_code']}"
-            f"{checkpoint_note}{stage_note} recovery={recovery_count}/{MAX_MECHANISM_AUTO_RECOVERIES}",
-        )
-
-    while True:
-        try:
-            return _run_mechanism_attempt(
-                unit,
-                source,
-                mechanism_key=mechanism_key,
-                shard_root=shard_root,
-                resume_from_existing=resume_from_existing,
-            )
-        except Exception as exc:
-            recovery_context = _recoverable_resume_context(isolated_output_dir, error=exc)
-            if recovery_context is None or recovery_count >= MAX_MECHANISM_AUTO_RECOVERIES:
-                raise
-            checkpoint_note = (
-                f" last_checkpoint_at={recovery_context['last_checkpoint_at']}"
-                if recovery_context.get("last_checkpoint_at")
-                else ""
-            )
-            next_recovery_count = recovery_count + 1
-            _log_unit_progress(
-                unit,
-                f"[mechanism-auto-recover] {mechanism_key} problem_code={recovery_context['problem_code']}"
-                f"{checkpoint_note} recovery={next_recovery_count}/{MAX_MECHANISM_AUTO_RECOVERIES}",
-            )
-            resume_from_existing = True
-            recovery_count = next_recovery_count
 
 
-def _run_mechanism_worker(payload_path: Path, result_path: Path) -> int:
-    payload = json.loads(payload_path.read_text(encoding="utf-8"))
-    unit = ChapterUnit(**dict(payload["unit"]))
-    source = dict(payload["source"])
-    result = _run_mechanism_for_unit(
-        unit,
-        source,
-        mechanism_key=str(payload["mechanism_key"]),
-        shard_root=Path(str(payload["shard_root"])),
-    )
-    _write_json_payload(result_path, result)
-    return 0
 
 
-def _run_unit_bundle_worker(payload_path: Path, result_path: Path) -> int:
-    payload = json.loads(payload_path.read_text(encoding="utf-8"))
-    unit = ChapterUnit(**dict(payload["unit"]))
-    source = dict(payload["source"])
-    result = _run_unit_bundle(
-        unit,
-        source=source,
-        run_root=Path(str(payload["run_root"])),
-        shard_id=str(payload["shard_id"]),
-        mechanism_execution_mode=str(payload["mechanism_execution_mode"]),
-        mechanism_filter=str(payload["mechanism_filter"]),
-        skip_existing=bool(payload.get("skip_existing", False)),
-    )
-    _write_json_payload(result_path, result)
-    return 0
 
 
-def _run_payload_worker(payload_path: Path, result_path: Path) -> int:
-    payload = json.loads(payload_path.read_text(encoding="utf-8"))
-    worker_kind = str(payload.get("worker_kind", "mechanism")).strip() or "mechanism"
-    if worker_kind == "mechanism":
-        return _run_mechanism_worker(payload_path, result_path)
-    if worker_kind == "unit_bundle":
-        return _run_unit_bundle_worker(payload_path, result_path)
-    raise ValueError(f"unsupported worker kind: {worker_kind}")
 
 
-def _run_mechanism_subprocess(
-    unit: ChapterUnit,
-    source: dict[str, Any],
-    *,
-    mechanism_key: str,
-    shard_root: Path,
-) -> dict[str, Any]:
-    with tempfile.TemporaryDirectory(prefix="excerpt-comparison-mechanism-worker-") as temp_dir_str:
-        temp_dir = Path(temp_dir_str)
-        payload_path = temp_dir / "payload.json"
-        result_path = temp_dir / "result.json"
-        _write_json_payload(
-            payload_path,
-            {
-                "worker_kind": "mechanism",
-                "unit": asdict(unit),
-                "source": source,
-                "mechanism_key": mechanism_key,
-                "shard_root": str(shard_root),
-            },
-        )
-        command = [
-            sys.executable,
-            str(Path(__file__).resolve()),
-            "--worker-payload",
-            str(payload_path),
-            "--worker-result",
-            str(result_path),
-        ]
-        subprocess.run(command, cwd=str(ROOT), check=True)
-        return json.loads(result_path.read_text(encoding="utf-8"))
 
 
-def _run_unit_subprocess(
-    unit: ChapterUnit,
-    *,
-    source: dict[str, Any],
-    run_root: Path,
-    shard_id: str,
-    mechanism_execution_mode: str,
-    mechanism_filter: str,
-    skip_existing: bool,
-) -> dict[str, Any]:
-    with tempfile.TemporaryDirectory(prefix="excerpt-comparison-unit-worker-") as temp_dir_str:
-        temp_dir = Path(temp_dir_str)
-        payload_path = temp_dir / "payload.json"
-        result_path = temp_dir / "result.json"
-        _write_json_payload(
-            payload_path,
-            {
-                "worker_kind": "unit_bundle",
-                "unit": asdict(unit),
-                "source": source,
-                "run_root": str(run_root),
-                "shard_id": shard_id,
-                "mechanism_execution_mode": mechanism_execution_mode,
-                "mechanism_filter": mechanism_filter,
-                "skip_existing": bool(skip_existing),
-            },
-        )
-        command = [
-            sys.executable,
-            str(Path(__file__).resolve()),
-            "--worker-payload",
-            str(payload_path),
-            "--worker-result",
-            str(result_path),
-        ]
-        subprocess.run(command, cwd=str(ROOT), check=True)
-        return json.loads(result_path.read_text(encoding="utf-8"))
 
 
 def _unit_result_payload(
@@ -1358,81 +1115,6 @@ def _write_bundle_payload(
     _json_dump(_bundle_payload_path(run_root, shard_id, mechanism_key, _chapter_unit_key(unit.source_id, unit.chapter_id)), payload)
 
 
-def _run_unit_bundle(
-    unit: ChapterUnit,
-    *,
-    source: dict[str, Any],
-    run_root: Path,
-    shard_id: str,
-    mechanism_execution_mode: str,
-    mechanism_filter: str,
-    skip_existing: bool,
-) -> dict[str, Any]:
-    if mechanism_execution_mode not in {"serial", "parallel"}:
-        raise ValueError(f"unsupported mechanism execution mode: {mechanism_execution_mode}")
-    mechanism_keys = _mechanism_keys_for_filter(mechanism_filter)
-    shard_root = _shard_root(run_root, shard_id)
-    unit_key = _chapter_unit_key(unit.source_id, unit.chapter_id)
-
-    def _run_one(mechanism_key: str) -> dict[str, Any]:
-        existing = _existing_bundle_payload(run_root, unit_key=unit_key, mechanism_key=mechanism_key)
-        if skip_existing and existing is not None and _reusable_completed_bundle_payload(existing[1]):
-            _log_unit_progress(unit, f"[mechanism-skip-existing] {mechanism_key}")
-            return existing[1]
-        try:
-            payload = _run_mechanism_for_unit(unit, source, mechanism_key=mechanism_key, shard_root=shard_root)
-            _write_bundle_payload(
-                run_root=run_root,
-                shard_id=shard_id,
-                unit=unit,
-                mechanism_key=mechanism_key,
-                payload=payload,
-            )
-            return payload
-        except Exception as exc:
-            _log_unit_progress(unit, f"[mechanism-failed] {mechanism_key} error={exc}")
-            payload = _mechanism_failure_payload(mechanism_key, error=str(exc))
-            _write_bundle_payload(
-                run_root=run_root,
-                shard_id=shard_id,
-                unit=unit,
-                mechanism_key=mechanism_key,
-                payload=payload,
-            )
-            return payload
-
-    results: dict[str, dict[str, Any]] = {}
-    if mechanism_execution_mode == "serial" or len(mechanism_keys) <= 1:
-        for mechanism_key in mechanism_keys:
-            results[mechanism_key] = _run_one(mechanism_key)
-    else:
-        with ThreadPoolExecutor(max_workers=len(mechanism_keys), thread_name_prefix="excerpt-mechanism") as executor:
-            future_to_mechanism = {
-                executor.submit(
-                    _run_mechanism_subprocess,
-                    unit,
-                    source,
-                    mechanism_key=mechanism_key,
-                    shard_root=shard_root,
-                ): mechanism_key
-                for mechanism_key in mechanism_keys
-            }
-            for future in as_completed(future_to_mechanism):
-                mechanism_key = future_to_mechanism[future]
-                try:
-                    results[mechanism_key] = future.result()
-                except Exception as exc:
-                    results[mechanism_key] = _mechanism_failure_payload(mechanism_key, error=str(exc))
-                    _write_bundle_payload(
-                        run_root=run_root,
-                        shard_id=shard_id,
-                        unit=unit,
-                        mechanism_key=mechanism_key,
-                        payload=results[mechanism_key],
-                    )
-    payload = _build_unit_result_from_existing_bundles(run_root=run_root, unit=unit, fallback_results=results)
-    _json_dump(_unit_payload_path(run_root, shard_id, unit_key), payload)
-    return payload
 
 
 def _judge_target(
@@ -1513,57 +1195,6 @@ def _judge_target(
     return judgment
 
 
-def _judge_targets_for_case(
-    *,
-    case: ExcerptCase,
-    case_targets: list[str],
-    mechanisms: dict[str, dict[str, Any]],
-    run_root: Path,
-    judge_mode: str,
-    judge_execution_mode: str,
-    shard_id: str,
-) -> dict[str, dict[str, Any]]:
-    if judge_execution_mode not in {"serial", "parallel"}:
-        raise ValueError(f"unsupported judge execution mode: {judge_execution_mode}")
-    if judge_execution_mode == "serial" or judge_mode == "none" or len(case_targets) <= 1:
-        return {
-            target_name: {
-                "judgment": _judge_target(
-                    target_name=target_name,
-                    case=case,
-                    attentional=mechanisms["attentional_v2"],
-                    iterator=mechanisms["iterator_v1"],
-                    run_root=run_root,
-                    judge_mode=judge_mode,
-                    shard_id=shard_id,
-                )
-            }
-            for target_name in case_targets
-        }
-
-    target_results: dict[str, dict[str, Any]] = {}
-    with ThreadPoolExecutor(max_workers=len(case_targets), thread_name_prefix="excerpt-judge") as executor:
-        future_to_target = {
-            executor.submit(
-                _judge_target,
-                target_name=target_name,
-                case=case,
-                attentional=mechanisms["attentional_v2"],
-                iterator=mechanisms["iterator_v1"],
-                run_root=run_root,
-                judge_mode=judge_mode,
-                shard_id=shard_id,
-            ): target_name
-            for target_name in case_targets
-        }
-        for future in as_completed(future_to_target):
-            target_name = future_to_target[future]
-            try:
-                judgment = future.result()
-            except Exception:
-                judgment = _default_judgment(tuple(TARGET_CONFIGS[target_name]["score_keys"]), reason="judge_unavailable")
-            target_results[target_name] = {"judgment": judgment}
-    return {target_name: target_results[target_name] for target_name in case_targets}
 
 
 def _score_average(side_scores: dict[str, int]) -> float:
@@ -1704,67 +1335,6 @@ def _build_markdown_report(
     return "\n".join(lines).strip() + "\n"
 
 
-def _evaluate_case(
-    case: ExcerptCase,
-    *,
-    case_targets: list[str],
-    unit_result: dict[str, Any],
-    document: BookDocument,
-    run_root: Path,
-    judge_mode: str,
-    judge_execution_mode: str,
-    shard_id: str,
-) -> dict[str, Any]:
-    _log_case_progress(case, f"[case-start] judge_mode={judge_mode} judge_execution_mode={judge_execution_mode}")
-    mechanisms: dict[str, dict[str, Any]] = {}
-    for mechanism_key in MECHANISM_KEYS:
-        mechanism_result = dict(unit_result["mechanisms"][mechanism_key])
-        if mechanism_result.get("status") == "completed":
-            local_evidence = _extract_case_local_evidence(
-                case=case,
-                bundle=dict(mechanism_result.get("normalized_eval_bundle") or {}),
-                document=document,
-            )
-        else:
-            local_evidence = {
-                "error": _clean_text(mechanism_result.get("error")),
-                "matched_reaction_count": 0,
-                "matched_attention_event_count": 0,
-                "matched_reactions": [],
-                "matched_attention_events": [],
-                "match_method_counts": {},
-            }
-        mechanisms[mechanism_key] = {
-            "status": str(mechanism_result.get("status", "failed") or "failed"),
-            "mechanism_label": _clean_text(mechanism_result.get("mechanism_label")) or mechanism_key,
-            "output_dir": _clean_text(mechanism_result.get("output_dir")),
-            "bundle_summary": dict(mechanism_result.get("bundle_summary") or {}),
-            "local_evidence": local_evidence,
-            "error": _clean_text(mechanism_result.get("error")),
-        }
-    target_results = _judge_targets_for_case(
-        case=case,
-        case_targets=case_targets,
-        mechanisms=mechanisms,
-        run_root=run_root,
-        judge_mode=judge_mode,
-        judge_execution_mode=judge_execution_mode,
-        shard_id=shard_id,
-    )
-    _log_case_progress(case, "[case-completed]")
-    return {
-        "case_id": case.case_id,
-        "case_title": case.case_title,
-        "source_id": case.source_id,
-        "chapter_id": case.chapter_id,
-        "chapter_title": case.chapter_title,
-        "book_title": case.book_title,
-        "author": case.author,
-        "output_language": case.output_language,
-        "case_targets": case_targets,
-        "mechanisms": mechanisms,
-        "target_results": target_results,
-    }
 
 
 def _case_failure_result(
@@ -1915,76 +1485,6 @@ def _document_for_source(
     return document
 
 
-def _judge_cases_for_unit(
-    unit: ChapterUnit,
-    *,
-    selection: ExcerptRunSelection,
-    run_root: Path,
-    shard_id: str,
-    judge_mode: str,
-    judge_execution_mode: str,
-    skip_existing: bool,
-    document_cache: dict[str, ProvisionedBook],
-    document_cache_lock: threading.Lock,
-) -> dict[str, dict[str, Any]]:
-    unit_key = _chapter_unit_key(unit.source_id, unit.chapter_id)
-    cases = selection.cases_by_unit[unit_key]
-    unit_result = _build_unit_result_from_existing_bundles(run_root=run_root, unit=unit)
-    results: dict[str, dict[str, Any]] = {}
-    try:
-        document = _document_for_source(
-            source_id=unit.source_id,
-            selection=selection,
-            output_language=unit.output_language,
-            cache=document_cache,
-            cache_lock=document_cache_lock,
-        )
-    except Exception as exc:
-        document = {}
-        document_error = f"{type(exc).__name__}: {exc}"
-    else:
-        document_error = ""
-
-    for case in cases:
-        case_targets = [target_name for target_name, ids in selection.target_case_ids.items() if case.case_id in ids]
-        if skip_existing:
-            existing = _existing_case_payload(
-                run_root,
-                case_id=case.case_id,
-                target_names=case_targets,
-                judge_mode=judge_mode,
-            )
-            if existing is not None and _case_payload_has_reusable_targets(
-                existing[1],
-                target_names=case_targets,
-                judge_mode=judge_mode,
-            ):
-                _log_case_progress(case, "[case-skip-existing]")
-                results[case.case_id] = existing[1]
-                continue
-        try:
-            if document_error:
-                raise ValueError(document_error)
-            case_result = _evaluate_case(
-                case,
-                case_targets=case_targets,
-                unit_result=unit_result,
-                document=document,
-                run_root=run_root,
-                judge_mode=judge_mode,
-                judge_execution_mode=judge_execution_mode,
-                shard_id=shard_id,
-            )
-        except Exception as exc:
-            case_result = _case_failure_result(
-                case,
-                case_targets=case_targets,
-                unit_result=unit_result,
-                error=f"{type(exc).__name__}: {exc}",
-            )
-        results[case.case_id] = case_result
-        _json_dump(_case_payload_path(run_root, shard_id, case.case_id), case_result)
-    return results
 
 
 def _write_shard_usage_summary(run_root: Path, *, shard_id: str) -> dict[str, Any]:
@@ -2047,267 +1547,6 @@ def _write_merge_outputs(
     return aggregate, report_path
 
 
-def run_benchmark(
-    *,
-    dataset_dirs: list[Path],
-    source_manifest_paths: list[Path],
-    formal_manifest_path: Path,
-    runs_root: Path,
-    run_id: str | None = None,
-    target_slice: str = "both",
-    case_ids: list[str] | None = None,
-    judge_mode: str = "llm",
-    mechanism_execution_mode: str = "parallel",
-    judge_execution_mode: str = "serial",
-    case_workers: int | None = None,
-    stage: str = "all",
-    shard_id: str = "default",
-    unit_keys: list[str] | None = None,
-    mechanism_filter: str = "both",
-    skip_existing: bool = False,
-    unit_workers: int | None = None,
-    judge_workers: int | None = None,
-) -> dict[str, Any]:
-    if stage not in STAGE_VALUES:
-        raise ValueError(f"unsupported stage: {stage}")
-    run_name = run_id or datetime.now(timezone.utc).strftime("attentional_v2_vs_iterator_v1_excerpt_comparison_%Y%m%d-%H%M%S")
-    run_root = runs_root / run_name
-    run_root.mkdir(parents=True, exist_ok=True)
-
-    if case_workers and unit_workers is None:
-        unit_workers = case_workers
-
-    selection = _prepare_selection(
-        dataset_dirs=dataset_dirs,
-        source_manifest_paths=source_manifest_paths,
-        formal_manifest_path=formal_manifest_path,
-        target_slice=target_slice,
-        case_ids=case_ids,
-    )
-    _write_selection_metadata(
-        run_root=run_root,
-        selection=selection,
-        judge_mode=judge_mode,
-        mechanism_execution_mode=mechanism_execution_mode,
-        judge_execution_mode=judge_execution_mode,
-    )
-    units = _filtered_units(selection, unit_keys=unit_keys)
-    target_unit_keys = [_chapter_unit_key(unit.source_id, unit.chapter_id) for unit in units]
-
-    summary: dict[str, Any] = {
-        "run_id": run_name,
-        "run_root": str(run_root),
-        "stage": stage,
-        "shard_id": shard_id,
-        "selected_unit_count": len(units),
-    }
-
-    if stage == "merge":
-        case_results = _merge_case_results(
-            run_root=run_root,
-            selection=selection,
-            judge_mode=judge_mode,
-            unit_keys=target_unit_keys if unit_keys else None,
-        )
-        aggregate, report_path = _write_merge_outputs(
-            run_root=run_root,
-            run_name=run_name,
-            selection=selection,
-            case_results=case_results,
-        )
-        summary["aggregate"] = aggregate
-        summary["report_path"] = str(report_path)
-        return summary
-
-    document_cache: dict[str, ProvisionedBook] = {}
-    document_cache_lock = threading.Lock()
-
-    if stage == "judge":
-        judge_policy = resolve_worker_policy(
-            job_kind="excerpt_case_judge",
-            profile_id=DEFAULT_EVAL_JUDGE_PROFILE_ID,
-            task_count=len(units),
-            per_worker_parallelism=1,
-            explicit_max_workers=judge_workers if judge_workers and judge_workers > 0 else None,
-        )
-        results_by_case_id: dict[str, dict[str, Any]] = {}
-        with ThreadPoolExecutor(max_workers=max(1, judge_policy.worker_count), thread_name_prefix="excerpt-judge-unit") as executor:
-            future_to_unit = {
-                submit_inherited_context(
-                    executor,
-                    _judge_cases_for_unit,
-                    unit,
-                    selection=selection,
-                    run_root=run_root,
-                    shard_id=shard_id,
-                    judge_mode=judge_mode,
-                    judge_execution_mode=judge_execution_mode,
-                    skip_existing=skip_existing,
-                    document_cache=document_cache,
-                    document_cache_lock=document_cache_lock,
-                ): unit
-                for unit in units
-            }
-            for future in as_completed(future_to_unit):
-                unit = future_to_unit[future]
-                try:
-                    results_by_case_id.update(future.result())
-                except Exception as exc:
-                    unit_key = _chapter_unit_key(unit.source_id, unit.chapter_id)
-                    unit_result = _build_unit_result_from_existing_bundles(run_root=run_root, unit=unit)
-                    for case in selection.cases_by_unit[unit_key]:
-                        case_targets = [target_name for target_name, ids in selection.target_case_ids.items() if case.case_id in ids]
-                        failure = _case_failure_result(
-                            case,
-                            case_targets=case_targets,
-                            unit_result=unit_result,
-                            error=f"{type(exc).__name__}: {exc}",
-                        )
-                        results_by_case_id[case.case_id] = failure
-                        _json_dump(_case_payload_path(run_root, shard_id, case.case_id), failure)
-        summary["case_count"] = len(results_by_case_id)
-        summary["llm_usage"] = _write_shard_usage_summary(run_root, shard_id=shard_id)
-        return summary
-
-    per_worker_parallelism = len(_mechanism_keys_for_filter(mechanism_filter)) if mechanism_execution_mode == "parallel" else 1
-    worker_policy = resolve_worker_policy(
-        job_kind="excerpt_case_bundle",
-        profile_id=DEFAULT_RUNTIME_PROFILE_ID,
-        task_count=len(units),
-        per_worker_parallelism=per_worker_parallelism,
-        explicit_max_workers=unit_workers if unit_workers and unit_workers > 0 else None,
-    )
-    unit_runner = _run_unit_subprocess if worker_policy.worker_count > 1 else _run_unit_bundle
-    unit_results: dict[str, dict[str, Any]] = {}
-
-    if stage == "bundle":
-        with ThreadPoolExecutor(max_workers=max(1, worker_policy.worker_count), thread_name_prefix="excerpt-unit") as executor:
-            future_to_unit: dict[Any, ChapterUnit] = {}
-            for index, unit in enumerate(units, start=1):
-                print(f"[submitted {index}/{len(units)}] {_unit_log_label(unit)}", flush=True)
-                future = submit_inherited_context(
-                    executor,
-                    unit_runner,
-                    unit,
-                    source=selection.source_index[unit.source_id],
-                    run_root=run_root,
-                    shard_id=shard_id,
-                    mechanism_execution_mode=mechanism_execution_mode,
-                    mechanism_filter=mechanism_filter,
-                    skip_existing=skip_existing,
-                )
-                future_to_unit[future] = unit
-            for future in as_completed(future_to_unit):
-                unit = future_to_unit[future]
-                try:
-                    payload = future.result()
-                except Exception as exc:
-                    payload = _unit_result_payload(
-                        unit,
-                        mechanisms={
-                            mechanism_key: _mechanism_failure_payload(mechanism_key, error=str(exc))
-                            for mechanism_key in MECHANISM_KEYS
-                        },
-                    )
-                unit_results[payload["unit_key"]] = payload
-                _json_dump(_unit_payload_path(run_root, shard_id, payload["unit_key"]), payload)
-                print(f"[completed] {payload['unit_key']}", flush=True)
-        summary["unit_count"] = len(unit_results)
-        summary["llm_usage"] = _write_shard_usage_summary(run_root, shard_id=shard_id)
-        return summary
-
-    judge_policy = resolve_worker_policy(
-        job_kind="excerpt_case_judge",
-        profile_id=DEFAULT_EVAL_JUDGE_PROFILE_ID,
-        task_count=len(units),
-        per_worker_parallelism=1,
-        explicit_max_workers=judge_workers if judge_workers and judge_workers > 0 else None,
-    )
-    results_by_case_id: dict[str, dict[str, Any]] = {}
-    with ThreadPoolExecutor(max_workers=max(1, worker_policy.worker_count), thread_name_prefix="excerpt-unit") as bundle_executor, ThreadPoolExecutor(
-        max_workers=max(1, judge_policy.worker_count),
-        thread_name_prefix="excerpt-judge-unit",
-    ) as judge_executor:
-        future_to_unit: dict[Any, ChapterUnit] = {}
-        judge_futures: dict[Any, ChapterUnit] = {}
-        for index, unit in enumerate(units, start=1):
-            print(f"[submitted {index}/{len(units)}] {_unit_log_label(unit)}", flush=True)
-            future = submit_inherited_context(
-                bundle_executor,
-                unit_runner,
-                unit,
-                source=selection.source_index[unit.source_id],
-                run_root=run_root,
-                shard_id=shard_id,
-                mechanism_execution_mode=mechanism_execution_mode,
-                mechanism_filter=mechanism_filter,
-                skip_existing=skip_existing,
-            )
-            future_to_unit[future] = unit
-        for future in as_completed(future_to_unit):
-            unit = future_to_unit[future]
-            try:
-                payload = future.result()
-            except Exception as exc:
-                payload = _unit_result_payload(
-                    unit,
-                    mechanisms={
-                        mechanism_key: _mechanism_failure_payload(mechanism_key, error=str(exc))
-                            for mechanism_key in MECHANISM_KEYS
-                    },
-                )
-            unit_results[payload["unit_key"]] = payload
-            _json_dump(_unit_payload_path(run_root, shard_id, payload["unit_key"]), payload)
-            print(f"[completed] {payload['unit_key']}", flush=True)
-            judge_future = submit_inherited_context(
-                judge_executor,
-                _judge_cases_for_unit,
-                unit,
-                selection=selection,
-                run_root=run_root,
-                shard_id=shard_id,
-                judge_mode=judge_mode,
-                judge_execution_mode=judge_execution_mode,
-                skip_existing=skip_existing,
-                document_cache=document_cache,
-                document_cache_lock=document_cache_lock,
-            )
-            judge_futures[judge_future] = unit
-        for future in as_completed(judge_futures):
-            unit = judge_futures[future]
-            try:
-                results_by_case_id.update(future.result())
-            except Exception as exc:
-                unit_key = _chapter_unit_key(unit.source_id, unit.chapter_id)
-                unit_result = unit_results.get(unit_key) or _build_unit_result_from_existing_bundles(run_root=run_root, unit=unit)
-                for case in selection.cases_by_unit[unit_key]:
-                    case_targets = [target_name for target_name, ids in selection.target_case_ids.items() if case.case_id in ids]
-                    failure = _case_failure_result(
-                        case,
-                        case_targets=case_targets,
-                        unit_result=unit_result,
-                        error=f"{type(exc).__name__}: {exc}",
-                    )
-                    results_by_case_id[case.case_id] = failure
-                    _json_dump(_case_payload_path(run_root, shard_id, case.case_id), failure)
-    summary["unit_count"] = len(unit_results)
-    summary["case_count"] = len(results_by_case_id)
-    summary["llm_usage"] = _write_shard_usage_summary(run_root, shard_id=shard_id)
-    case_results = _merge_case_results(
-        run_root=run_root,
-        selection=selection,
-        judge_mode=judge_mode,
-        unit_keys=target_unit_keys if unit_keys else None,
-    )
-    aggregate, report_path = _write_merge_outputs(
-        run_root=run_root,
-        run_name=run_name,
-        selection=selection,
-        case_results=case_results,
-    )
-    summary["aggregate"] = aggregate
-    summary["report_path"] = str(report_path)
-    return summary
 
 
 def _parse_args() -> argparse.Namespace:
@@ -2333,7 +1572,7 @@ def _parse_args() -> argparse.Namespace:
     parser.add_argument("--judge-mode", choices=["llm", "none"], default="llm")
     parser.add_argument("--mechanism-execution-mode", choices=["serial", "parallel"], default="parallel")
     parser.add_argument("--judge-execution-mode", choices=["serial", "parallel"], default="serial")
-    parser.add_argument("--mechanism-filter", choices=MECHANISM_FILTER_VALUES, default="both")
+    parser.add_argument("--mechanism-filter", choices=MECHANISM_FILTER_VALUES, default="attentional_v2")
     parser.add_argument("--skip-existing", action="store_true")
     parser.add_argument("--unit-workers", type=int, default=0)
     parser.add_argument("--judge-workers", type=int, default=0)
@@ -2347,53 +1586,8 @@ def _parse_args() -> argparse.Namespace:
 
 
 def main() -> int:
-    args = _parse_args()
-    if args.worker_payload:
-        if not args.worker_result:
-            raise ValueError("--worker-result is required when --worker-payload is set")
-        return _run_payload_worker(Path(args.worker_payload).resolve(), Path(args.worker_result).resolve())
-    formal_manifest_path = Path(args.formal_manifest).resolve()
-    formal_manifest = _load_formal_manifest(formal_manifest_path)
-    dataset_dirs = (
-        [Path(item).resolve() for item in args.dataset_dir]
-        if args.dataset_dir
-        else _dataset_dirs_from_manifest(formal_manifest)
-    )
-    source_manifest_paths = (
-        [Path(item).resolve() for item in args.source_manifest]
-        if args.source_manifest
-        else _source_manifest_paths_from_manifest(formal_manifest)
-    )
-    case_ids = [item.strip() for item in args.case_id if str(item).strip()]
-    if args.case_ids:
-        case_ids.extend([item.strip() for item in str(args.case_ids).split(",") if item.strip()])
-    unit_keys = [item.strip() for item in args.unit_key if item.strip()]
-    summary = run_benchmark(
-        dataset_dirs=dataset_dirs,
-        source_manifest_paths=source_manifest_paths,
-        formal_manifest_path=formal_manifest_path,
-        runs_root=Path(args.runs_root).resolve(),
-        run_id=args.run_id or None,
-        stage=args.stage,
-        shard_id=args.shard_id,
-        target_slice=args.target_slice,
-        case_ids=case_ids or None,
-        judge_mode=args.judge_mode,
-        mechanism_execution_mode=args.mechanism_execution_mode,
-        judge_execution_mode=args.judge_execution_mode,
-        case_workers=args.case_workers or None,
-        unit_keys=unit_keys or None,
-        mechanism_filter=args.mechanism_filter,
-        skip_existing=bool(args.skip_existing),
-        unit_workers=args.unit_workers or None,
-        judge_workers=args.judge_workers or None,
-    )
-    print(json.dumps(summary.get("aggregate", summary), ensure_ascii=False, indent=2))
-    print(f"run_root={summary['run_root']}")
-    if summary.get("report_path"):
-        print(f"report_path={summary['report_path']}")
-    return 0
+    raise SystemExit("旧双机制评测执行器已退役；历史实现请查看 tag pre-cleanup-2026-11")
 
 
 if __name__ == "__main__":
-    raise SystemExit(main())
+    main()

@@ -292,14 +292,12 @@ def _render_report(*, run_id: str, excerpt_child: dict[str, Any], accumulation_c
         f"- job id: `{excerpt_child['job_id']}`",
         f"- note cases: `{excerpt_aggregate['note_case_count']}`",
         f"- attentional_v2 note recall: `{excerpt_aggregate['mechanisms']['attentional_v2']['note_recall']}`",
-        f"- iterator_v1 note recall: `{excerpt_aggregate['mechanisms']['iterator_v1']['note_recall']}`",
         "",
         "## Long-Span",
         f"- run id: `{accumulation_child['run_id']}`",
         f"- job id: `{accumulation_child['job_id']}`",
         f"- target cases: `{accumulation_aggregate['case_count']}`",
         f"- attentional_v2 average quality score: `{accumulation_aggregate['mechanisms']['attentional_v2']['average_quality_score']}`",
-        f"- iterator_v1 average quality score: `{accumulation_aggregate['mechanisms']['iterator_v1']['average_quality_score']}`",
         "",
     ]
     return "\n".join(lines).rstrip() + "\n"
@@ -312,23 +310,21 @@ def _update_catalog_or_warn(*, run_id: str, run_root: Path, summary_payload: dic
             Path(str(summary_payload["accumulation"]["aggregate_path"])).read_text(encoding="utf-8")
         )
         v2_recall = excerpt_aggregate["mechanisms"]["attentional_v2"]["note_recall"]
-        v1_recall = excerpt_aggregate["mechanisms"]["iterator_v1"]["note_recall"]
         v2_quality = accumulation_aggregate["mechanisms"]["attentional_v2"]["average_quality_score"]
-        v1_quality = accumulation_aggregate["mechanisms"]["iterator_v1"]["average_quality_score"]
         entry = build_entry(
             run_id=run_id,
             surface="active_benchmark_bundle",
             status="current_formal_evidence",
             run_dir=run_root,
-            mechanisms=["attentional_v2", "iterator_v1"],
+            mechanisms=["attentional_v2"],
             job_ids=[
                 str(summary_payload["excerpt"]["job_id"]),
                 str(summary_payload["accumulation"]["job_id"]),
             ],
             one_line_conclusion=(
                 "Active benchmark bundle completed: "
-                f"excerpt note_recall attentional_v2={v2_recall} vs iterator_v1={v1_recall}; "
-                f"long-span average_quality_score attentional_v2={v2_quality} vs iterator_v1={v1_quality}."
+                f"excerpt note_recall attentional_v2={v2_recall}; "
+                f"long-span average_quality_score attentional_v2={v2_quality}."
             ),
         )
         upsert_catalog_entry(entry)
@@ -371,7 +367,7 @@ def main() -> int:
         "--manifest-path",
         str(Path(args.manifest_path).resolve()),
         "--mechanism-filter",
-        "both",
+        "attentional_v2",
         "--judge-mode",
         "llm",
         "--max-shard-attempts",
@@ -388,7 +384,7 @@ def main() -> int:
         "--manifest-path",
         str(Path(args.accumulation_manifest_path).resolve()),
         "--mechanism-filter",
-        "both",
+        "attentional_v2",
         "--judge-mode",
         "llm",
         "--max-shard-attempts",
@@ -460,7 +456,7 @@ def main() -> int:
         expected_outputs=[excerpt_child["aggregate_path"], excerpt_child["report_path"]],
         aggregate_path=excerpt_child["aggregate_path"],
         report_path=excerpt_child["report_path"],
-        mechanism_keys=("attentional_v2", "iterator_v1"),
+        mechanism_keys=("attentional_v2",),
         count_key="note_case_count",
     )
     if str(excerpt_launch.get("status") or "") != "completed_from_outputs":
@@ -475,7 +471,7 @@ def main() -> int:
         expected_outputs=[accumulation_child["aggregate_path"], accumulation_child["report_path"]],
         aggregate_path=accumulation_child["aggregate_path"],
         report_path=accumulation_child["report_path"],
-        mechanism_keys=("attentional_v2", "iterator_v1"),
+        mechanism_keys=("attentional_v2",),
         count_key="case_count",
     )
     if str(accumulation_launch.get("status") or "") != "completed_from_outputs":
@@ -488,7 +484,7 @@ def main() -> int:
         status_path=run_root / "meta" / "excerpt_status.json",
         aggregate_path=excerpt_child["aggregate_path"],
         report_path=excerpt_child["report_path"],
-        mechanism_keys=("attentional_v2", "iterator_v1"),
+        mechanism_keys=("attentional_v2",),
         count_key="note_case_count",
     )
     _json_dump(run_root / "meta" / "excerpt_completed_record.json", excerpt_record)
@@ -500,7 +496,7 @@ def main() -> int:
         status_path=run_root / "meta" / "accumulation_status.json",
         aggregate_path=accumulation_child["aggregate_path"],
         report_path=accumulation_child["report_path"],
-        mechanism_keys=("attentional_v2", "iterator_v1"),
+        mechanism_keys=("attentional_v2",),
         count_key="case_count",
     )
     _json_dump(run_root / "meta" / "accumulation_completed_record.json", accumulation_record)

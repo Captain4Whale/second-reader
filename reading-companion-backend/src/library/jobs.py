@@ -33,7 +33,7 @@ from src.config import (
     get_backend_version,
     get_reader_resume_compat_version,
 )
-from src.reading_runtime import default_mechanism_key
+from src.reading_runtime import default_mechanism_key, get_mechanism
 from src.reading_runtime.artifacts import existing_runtime_shell_file
 from src.reading_runtime.background_job_registry import (
     PRODUCT_RUNTIME_DOMAIN,
@@ -983,16 +983,8 @@ def launch_book_analysis_job(
     memory_retrieval_mode: str | None = None,
     root: Path | None = None,
 ) -> dict:
-    """Deprecated compatibility alias for the active existing-book deep-reading launcher."""
-
-    return launch_existing_book_read_job(
-        book_id,
-        mechanism_key=mechanism_key,
-        language=language,
-        intent=intent,
-        memory_retrieval_mode=memory_retrieval_mode,
-        root=root,
-    )
+    """Reject the retired book-analysis entrypoint explicitly."""
+    raise ValueError("book_analysis 已退役；请查看 tag pre-cleanup-2026-11")
 
 
 def _book_output_dir(book_id: str, root: Path | None = None) -> Path:
@@ -1019,13 +1011,6 @@ def _load_book_runtime_shell(book_id: str, root: Path | None = None) -> dict | N
     return load_runtime_json(path) if path.exists() else None
 
 
-def _legacy_resume_mechanism_key(book_id: str, root: Path | None = None) -> str | None:
-    """Infer one legacy mechanism key for old resumable runs that predate shell metadata."""
-
-    output_dir = _book_output_dir(book_id, root)
-    if existing_structure_file(output_dir).exists():
-        return "iterator_v1"
-    return None
 
 
 def _resume_mechanism_key(record: dict, *, book_id: str | None, root: Path | None = None) -> str | None:
@@ -1040,10 +1025,8 @@ def _resume_mechanism_key(record: dict, *, book_id: str | None, root: Path | Non
     mechanism_key = _normalized_mechanism_key(record.get("mechanism_key"))
     if mechanism_key:
         return mechanism_key
-    if book_id:
-        legacy_mechanism_key = _legacy_resume_mechanism_key(book_id, root)
-        if legacy_mechanism_key:
-            return legacy_mechanism_key
+    if book_id and existing_structure_file(_book_output_dir(book_id, root)).exists():
+        return "iterator_v1"  # Read-only identification of legacy library artifacts.
     return default_mechanism_key()
 
 
@@ -1318,6 +1301,7 @@ def _resume_job(record: dict, root: Path | None = None, *, automatic: bool) -> d
     book_id = str(normalized.get("book_id", "") or "") or find_book_id_by_source(Path(str(normalized.get("upload_path", ""))), root=root)
     target_status = _resume_target_status(normalized, book_id, root)
     mechanism_key = _resume_mechanism_key(normalized, book_id=book_id, root=root)
+    get_mechanism(mechanism_key)  # Reject retired executors before fencing or launching.
     command = _job_command(normalized, continue_mode=True, mechanism_key=mechanism_key)
     process_alive, _active_pid, _lease_payload, _lease_fresh = _worker_liveness(normalized, root)
     if process_alive and automatic:
@@ -1584,6 +1568,11 @@ def refresh_job(job_id: str, root: Path | None = None) -> dict:
         error = state_error or error
     elif running:
         status = "parsing_structure"
+
+    if book_id and _resume_mechanism_key(record, book_id=book_id, root=root) == "iterator_v1":
+        if status in ACTIVE_JOB_STATUSES:
+            return {**record, "book_id": book_id, "status": "paused", "error": "iterator_v1 resume 已退役；请查看 tag pre-cleanup-2026-11"}
+        return {**record, "book_id": book_id, "status": status, "error": error}
 
     if status in ACTIVE_JOB_STATUSES and _is_dev_boot_mismatch(record):
         return _abandon_dev_run(record, book_id=book_id, run_state=run_state, root=root)

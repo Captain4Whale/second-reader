@@ -56,3 +56,14 @@ FAILED tests/test_f4a_quality_audit.py::test_case_target_assignments_stay_balanc
 - 待用户确认建议：纳入 Batch 2，保留当前 accumulation 数据/evidence/judge/运行能力，移除 iterator/双机制执行分支，补跑 `test_run_accumulation_evaluation_v2.py` 及对应 orchestrator 测试。未自行扩展实施。
 - 历史 0.35/0.12 数据集/run id 核查与演进说明属于尚未执行的 Batch 5，暂无新结论。
 
+
+## Batch 2：旧执行能力退役
+
+用户已确认把漏列的 target-centered accumulation v2 / active benchmark 编排链纳入本批，保留当前评测与 judge，移除 iterator/双机制执行分支。
+
+- 删除旧 reader/adapter、bridge/intake/retrieval、旧 prompt shim/book_analysis/search、已批准的一次性脚本及专属测试。保留 iterator 目录内共享 parse/storage/language/frontend projection。
+- 旧 subsegment 和 excerpt/chapter/accumulation 双机制执行器退出；数据集、匹配、rubric 和历史结果分析仍在。当前 accumulation v2、memory/re-entry、runtime viability 只执行 attentional_v2。
+- 旧机制、book_analysis 和旧 reader 专属 CLI 参数明确报“已退役”；API enum 不变。旧书仍可只读显示，旧 reader 不再自动/手动 resume；启动 backfill 未改。
+- 全量后端：**1763 passed / 5 failed**，5 项均在 Batch 0 既有失败清单内；退役专属测试移除后原有 4 个失败随能力退出。
+- 固定 judge / prompt / Product / Pack 对照通过；零外部请求。修改文件 F821 静态检查通过。日志位于 `state/cleanup_step0/batch2/accepted-tests.log`、`probe.json`。
+- 本批没有实现 D4；接下来 Batch 3。

@@ -31,7 +31,6 @@ from eval.attentional_v2.llm_usage_summary import write_llm_usage_summary
 from src.iterator_reader.llm_utils import ReaderLLMError, invoke_json, llm_invocation_scope
 from src.reading_core.runtime_contracts import ReadRequest
 from src.reading_mechanisms.attentional_v2 import AttentionalV2Mechanism
-from src.reading_mechanisms.iterator_v1 import IteratorV1Mechanism
 from src.reading_runtime.llm_gateway import eval_trace_context
 from src.reading_runtime.llm_registry import DEFAULT_EVAL_JUDGE_PROFILE_ID
 from src.reading_runtime.output_dir_overrides import override_output_dir
@@ -42,7 +41,7 @@ DEFAULT_TARGET = "accumulation_evaluation_v2"
 DEFAULT_USER_INTENT = (
     "Read as a thoughtful co-reader and keep long-range narrative or argumentative threads alive until they matter again."
 )
-MECHANISM_KEYS = ("attentional_v2", "iterator_v1")
+MECHANISM_KEYS = ("attentional_v2",)
 MECHANISM_FILTER_VALUES = ("attentional_v2", "iterator_v1", "both")
 JUDGE_MODE_VALUES = ("llm", "none")
 TARGET_PROXIMAL_REACTION_LIMIT = 3
@@ -256,7 +255,9 @@ def _prepare_selection(
 def _mechanism_keys_for_filter(mechanism_filter: str) -> tuple[str, ...]:
     if mechanism_filter not in MECHANISM_FILTER_VALUES:
         raise ValueError(f"unsupported mechanism filter: {mechanism_filter}")
-    return MECHANISM_KEYS if mechanism_filter == "both" else (mechanism_filter,)
+    if mechanism_filter in {"both", "iterator_v1"}:
+        raise ValueError(f"{mechanism_filter} 已退役；请查看 tag pre-cleanup-2026-11")
+    return (mechanism_filter,)
 
 
 @contextmanager
@@ -269,7 +270,7 @@ def _mechanism_for_key(mechanism_key: str):
     if mechanism_key == "attentional_v2":
         return AttentionalV2Mechanism()
     if mechanism_key == "iterator_v1":
-        return IteratorV1Mechanism()
+        raise ValueError("iterator_v1 已退役；请查看 tag pre-cleanup-2026-11")
     raise ValueError(f"unsupported mechanism: {mechanism_key}")
 
 
@@ -1122,7 +1123,7 @@ def run_accumulation_evaluation_v2(
     *,
     run_id: str,
     formal_manifest_path: Path = DRAFT_MANIFEST_PATH,
-    mechanism_filter: str = "both",
+    mechanism_filter: str = "attentional_v2",
     judge_mode: str = "llm",
     segment_ids: list[str] | None = None,
     case_ids: list[str] | None = None,
@@ -1257,7 +1258,7 @@ def _parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--run-id", required=True)
     parser.add_argument("--manifest-path", type=Path, default=DRAFT_MANIFEST_PATH)
-    parser.add_argument("--mechanism-filter", choices=MECHANISM_FILTER_VALUES, default="both")
+    parser.add_argument("--mechanism-filter", choices=MECHANISM_FILTER_VALUES, default="attentional_v2")
     parser.add_argument("--judge-mode", choices=JUDGE_MODE_VALUES, default="llm")
     parser.add_argument("--segment-id", action="append", dest="segment_ids", default=[])
     parser.add_argument("--case-id", action="append", dest="case_ids", default=[])

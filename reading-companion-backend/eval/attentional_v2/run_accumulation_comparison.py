@@ -5,15 +5,11 @@ from __future__ import annotations
 import argparse
 import json
 import os
-import shutil
-import subprocess
-import sys
 import tempfile
 import threading
 from collections import Counter, defaultdict
-from concurrent.futures import ThreadPoolExecutor, as_completed
 from contextlib import contextmanager
-from dataclasses import asdict, dataclass
+from dataclasses import dataclass
 from datetime import datetime, timezone
 from pathlib import Path
 from statistics import mean
@@ -21,7 +17,6 @@ from typing import Any
 
 from eval.common.taxonomy import DETERMINISTIC_METRICS, PAIRWISE_JUDGE, RUBRIC_JUDGE, normalize_methods, validate_target_slug
 from eval.attentional_v2.llm_usage_summary import write_llm_usage_summary
-from eval.attentional_v2.runtime_progress import runtime_progress_heartbeat
 from eval.attentional_v2.run_excerpt_comparison import (
     _clean_text,
     _default_judgment,
@@ -36,11 +31,7 @@ from eval.attentional_v2.run_excerpt_comparison import (
 )
 from src.iterator_reader.llm_utils import ReaderLLMError, eval_trace_context, invoke_json, llm_invocation_scope
 from src.reading_core import BookDocument
-from src.reading_core.runtime_contracts import ReadRequest
-from src.reading_mechanisms.attentional_v2 import AttentionalV2Mechanism
-from src.reading_mechanisms.iterator_v1 import IteratorV1Mechanism
-from src.reading_runtime.job_concurrency import resolve_worker_policy, submit_inherited_context
-from src.reading_runtime.llm_registry import DEFAULT_EVAL_JUDGE_PROFILE_ID, DEFAULT_RUNTIME_PROFILE_ID
+from src.reading_runtime.llm_registry import DEFAULT_EVAL_JUDGE_PROFILE_ID
 from src.reading_runtime.output_dir_overrides import override_output_dir
 from src.reading_runtime.provisioning import ProvisionedBook, ensure_canonical_parse
 
@@ -54,7 +45,7 @@ DEFAULT_COMPARISON_TARGET = "attentional_v2 vs iterator_v1 on bounded long-span 
 DEFAULT_USER_INTENT = (
     "Read as a thoughtful co-reader and preserve meaningful continuity, carryover, tension, and clarification across the bounded reading window."
 )
-MECHANISM_KEYS = ("attentional_v2", "iterator_v1")
+MECHANISM_KEYS = ("attentional_v2",)
 MECHANISM_FILTER_VALUES = ("attentional_v2", "iterator_v1", "both")
 TARGET_SLICE_VALUES = ("coherent_accumulation", "insight_and_clarification", "both")
 STAGE_VALUES = ("all", "bundle", "judge", "merge")
@@ -485,8 +476,8 @@ def _selection_windows_manifest_path(run_root: Path) -> Path:
 def _mechanism_keys_for_filter(mechanism_filter: str) -> tuple[str, ...]:
     if mechanism_filter not in MECHANISM_FILTER_VALUES:
         raise ValueError(f"unsupported mechanism filter: {mechanism_filter}")
-    if mechanism_filter == "both":
-        return MECHANISM_KEYS
+    if mechanism_filter in {"both", "iterator_v1"}:
+        raise ValueError(f"{mechanism_filter} 已退役；请查看 tag pre-cleanup-2026-11")
     return (mechanism_filter,)
 
 
@@ -654,34 +645,8 @@ def _isolated_output_dir(output_dir: Path):
         yield
 
 
-def _run_state_path(output_dir: Path) -> Path:
-    return output_dir / "_runtime" / "run_state.json"
 
 
-def _recoverable_resume_context(output_dir: Path, *, error: Exception | None = None) -> dict[str, str] | None:
-    payload = _load_json_if_exists(_run_state_path(output_dir))
-    if not isinstance(payload, dict):
-        payload = {}
-    current_activity = payload.get("current_reading_activity")
-    if not isinstance(current_activity, dict):
-        current_activity = {}
-    problem_code = _clean_text(getattr(error, "problem_code", "")).lower()
-    if not problem_code:
-        problem_code = _clean_text(current_activity.get("problem_code")).lower()
-    if not problem_code:
-        problem_code = _clean_text(payload.get("problem_code")).lower()
-    if problem_code not in RECOVERABLE_MECHANISM_PROBLEM_CODES:
-        return None
-    if not bool(payload.get("resume_available")):
-        return None
-    stage = _clean_text(payload.get("stage")).lower()
-    if stage == "completed":
-        return None
-    return {
-        "problem_code": problem_code,
-        "last_checkpoint_at": _clean_text(payload.get("last_checkpoint_at")),
-        "stage": stage,
-    }
 
 
 def _summarize_bundle(bundle: dict[str, Any]) -> dict[str, Any]:
@@ -724,229 +689,18 @@ def _summarize_bundle(bundle: dict[str, Any]) -> dict[str, Any]:
     }
 
 
-def _run_mechanism_attempt(
-    window: WindowCase,
-    source: dict[str, Any],
-    *,
-    mechanism_key: str,
-    shard_root: Path,
-    resume_from_existing: bool,
-) -> dict[str, Any]:
-    if mechanism_key == "attentional_v2":
-        mechanism = AttentionalV2Mechanism()
-    elif mechanism_key == "iterator_v1":
-        mechanism = IteratorV1Mechanism()
-    else:
-        raise ValueError(f"unsupported mechanism: {mechanism_key}")
-
-    book_path = ROOT / str(source["relative_local_path"])
-    isolated_output_dir = shard_root / "outputs" / window.window_case_id / mechanism_key
-    runtime_dir = isolated_output_dir / "_runtime"
-    _log_window_progress(
-        window,
-        f"[mechanism-start] {mechanism_key}"
-        + (" resume=true" if resume_from_existing else ""),
-    )
-    if not resume_from_existing:
-        shutil.rmtree(isolated_output_dir, ignore_errors=True)
-    isolated_output_dir.parent.mkdir(parents=True, exist_ok=True)
-    result = None
-    with runtime_progress_heartbeat(
-        runtime_dir=runtime_dir,
-        mechanism_key=mechanism_key,
-        emit=lambda message: _log_window_progress(window, message),
-    ):
-        with _isolated_output_dir(isolated_output_dir):
-            for index, chapter_case_id in enumerate(window.chapter_case_ids):
-                chapter_id = int(chapter_case_id.rsplit("__", 1)[-1])
-                result = mechanism.read_book(
-                    ReadRequest(
-                        book_path=book_path,
-                        chapter_number=chapter_id,
-                        continue_mode=resume_from_existing or index > 0,
-                        user_intent=DEFAULT_USER_INTENT,
-                        language_mode=window.output_language,
-                        task_mode="sequential",
-                        mechanism_key=mechanism_key,
-                        mechanism_config={"persist_normalized_eval_bundle": True},
-                    )
-                )
-    bundle = dict((result.normalized_eval_bundle if result else {}) or {})
-    _log_window_progress(window, f"[mechanism-completed] {mechanism_key}")
-    return {
-        "status": "completed",
-        "mechanism_key": mechanism_key,
-        "mechanism_label": result.mechanism.label if result else mechanism_key,
-        "output_dir": str(result.output_dir) if result else "",
-        "normalized_eval_bundle": bundle,
-        "bundle_summary": _summarize_bundle(bundle),
-        "error": "",
-    }
 
 
-def _run_mechanism_for_window(
-    window: WindowCase,
-    source: dict[str, Any],
-    *,
-    mechanism_key: str,
-    shard_root: Path,
-) -> dict[str, Any]:
-    isolated_output_dir = shard_root / "outputs" / window.window_case_id / mechanism_key
-    recovery_context = _recoverable_resume_context(isolated_output_dir)
-    resume_from_existing = recovery_context is not None
-    recovery_count = 1 if resume_from_existing else 0
-    if recovery_context is not None:
-        checkpoint_note = (
-            f" last_checkpoint_at={recovery_context['last_checkpoint_at']}"
-            if recovery_context.get("last_checkpoint_at")
-            else ""
-        )
-        stage_note = f" stage={recovery_context['stage']}" if recovery_context.get("stage") else ""
-        _log_window_progress(
-            window,
-            f"[mechanism-resume-existing] {mechanism_key} problem_code={recovery_context['problem_code']}"
-            f"{checkpoint_note}{stage_note} recovery={recovery_count}/{MAX_MECHANISM_AUTO_RECOVERIES}",
-        )
-
-    while True:
-        try:
-            return _run_mechanism_attempt(
-                window,
-                source,
-                mechanism_key=mechanism_key,
-                shard_root=shard_root,
-                resume_from_existing=resume_from_existing,
-            )
-        except Exception as exc:
-            recovery_context = _recoverable_resume_context(isolated_output_dir, error=exc)
-            if recovery_context is None or recovery_count >= MAX_MECHANISM_AUTO_RECOVERIES:
-                raise
-            checkpoint_note = (
-                f" last_checkpoint_at={recovery_context['last_checkpoint_at']}"
-                if recovery_context.get("last_checkpoint_at")
-                else ""
-            )
-            next_recovery_count = recovery_count + 1
-            _log_window_progress(
-                window,
-                f"[mechanism-auto-recover] {mechanism_key} problem_code={recovery_context['problem_code']}"
-                f"{checkpoint_note} recovery={next_recovery_count}/{MAX_MECHANISM_AUTO_RECOVERIES}",
-            )
-            resume_from_existing = True
-            recovery_count = next_recovery_count
 
 
-def _run_mechanism_worker(payload_path: Path, result_path: Path) -> int:
-    payload = json.loads(payload_path.read_text(encoding="utf-8"))
-    window = WindowCase(**dict(payload["window"]))
-    source = dict(payload["source"])
-    result = _run_mechanism_for_window(
-        window,
-        source,
-        mechanism_key=str(payload["mechanism_key"]),
-        shard_root=Path(str(payload["shard_root"])),
-    )
-    _write_json_payload(result_path, result)
-    return 0
 
 
-def _run_window_bundle_worker(payload_path: Path, result_path: Path) -> int:
-    payload = json.loads(payload_path.read_text(encoding="utf-8"))
-    window = WindowCase(**dict(payload["window"]))
-    source = dict(payload["source"])
-    result = _run_window_bundle(
-        window,
-        source=source,
-        run_root=Path(str(payload["run_root"])),
-        shard_id=str(payload["shard_id"]),
-        mechanism_execution_mode=str(payload["mechanism_execution_mode"]),
-        mechanism_filter=str(payload["mechanism_filter"]),
-        skip_existing=bool(payload.get("skip_existing", False)),
-    )
-    _write_json_payload(result_path, result)
-    return 0
 
 
-def _run_payload_worker(payload_path: Path, result_path: Path) -> int:
-    payload = json.loads(payload_path.read_text(encoding="utf-8"))
-    worker_kind = str(payload.get("worker_kind", "mechanism")).strip() or "mechanism"
-    if worker_kind == "mechanism":
-        return _run_mechanism_worker(payload_path, result_path)
-    if worker_kind == "window_bundle":
-        return _run_window_bundle_worker(payload_path, result_path)
-    raise ValueError(f"unsupported worker kind: {worker_kind}")
 
 
-def _run_mechanism_subprocess(
-    window: WindowCase,
-    source: dict[str, Any],
-    *,
-    mechanism_key: str,
-    shard_root: Path,
-) -> dict[str, Any]:
-    with tempfile.TemporaryDirectory(prefix="accumulation-comparison-mechanism-worker-") as temp_dir_str:
-        temp_dir = Path(temp_dir_str)
-        payload_path = temp_dir / "payload.json"
-        result_path = temp_dir / "result.json"
-        _write_json_payload(
-            payload_path,
-            {
-                "worker_kind": "mechanism",
-                "window": asdict(window),
-                "source": source,
-                "mechanism_key": mechanism_key,
-                "shard_root": str(shard_root),
-            },
-        )
-        command = [
-            sys.executable,
-            str(Path(__file__).resolve()),
-            "--worker-payload",
-            str(payload_path),
-            "--worker-result",
-            str(result_path),
-        ]
-        subprocess.run(command, cwd=str(ROOT), check=True)
-        return json.loads(result_path.read_text(encoding="utf-8"))
 
 
-def _run_window_subprocess(
-    window: WindowCase,
-    *,
-    source: dict[str, Any],
-    run_root: Path,
-    shard_id: str,
-    mechanism_execution_mode: str,
-    mechanism_filter: str,
-    skip_existing: bool,
-) -> dict[str, Any]:
-    with tempfile.TemporaryDirectory(prefix="accumulation-comparison-window-worker-") as temp_dir_str:
-        temp_dir = Path(temp_dir_str)
-        payload_path = temp_dir / "payload.json"
-        result_path = temp_dir / "result.json"
-        _write_json_payload(
-            payload_path,
-            {
-                "worker_kind": "window_bundle",
-                "window": asdict(window),
-                "source": source,
-                "run_root": str(run_root),
-                "shard_id": shard_id,
-                "mechanism_execution_mode": mechanism_execution_mode,
-                "mechanism_filter": mechanism_filter,
-                "skip_existing": bool(skip_existing),
-            },
-        )
-        command = [
-            sys.executable,
-            str(Path(__file__).resolve()),
-            "--worker-payload",
-            str(payload_path),
-            "--worker-result",
-            str(result_path),
-        ]
-        subprocess.run(command, cwd=str(ROOT), check=True)
-        return json.loads(result_path.read_text(encoding="utf-8"))
 
 
 def _window_result_payload(
@@ -997,80 +751,6 @@ def _write_bundle_payload(
     _json_dump(_bundle_payload_path(run_root, shard_id, mechanism_key, window_case_id), payload)
 
 
-def _run_window_bundle(
-    window: WindowCase,
-    *,
-    source: dict[str, Any],
-    run_root: Path,
-    shard_id: str,
-    mechanism_execution_mode: str,
-    mechanism_filter: str,
-    skip_existing: bool,
-) -> dict[str, Any]:
-    if mechanism_execution_mode not in {"serial", "parallel"}:
-        raise ValueError(f"unsupported mechanism execution mode: {mechanism_execution_mode}")
-    mechanism_keys = _mechanism_keys_for_filter(mechanism_filter)
-    shard_root = _shard_root(run_root, shard_id)
-
-    def _run_one(mechanism_key: str) -> dict[str, Any]:
-        existing = _existing_bundle_payload(run_root, window_case_id=window.window_case_id, mechanism_key=mechanism_key)
-        if skip_existing and existing is not None and _bundle_payload_is_structurally_complete(existing[1]):
-            _log_window_progress(window, f"[mechanism-skip-existing] {mechanism_key}")
-            return existing[1]
-        try:
-            payload = _run_mechanism_for_window(window, source, mechanism_key=mechanism_key, shard_root=shard_root)
-            _write_bundle_payload(
-                run_root=run_root,
-                shard_id=shard_id,
-                window_case_id=window.window_case_id,
-                mechanism_key=mechanism_key,
-                payload=payload,
-            )
-            return payload
-        except Exception as exc:
-            _log_window_progress(window, f"[mechanism-failed] {mechanism_key} error={exc}")
-            payload = _mechanism_failure_payload(mechanism_key, error=str(exc))
-            _write_bundle_payload(
-                run_root=run_root,
-                shard_id=shard_id,
-                window_case_id=window.window_case_id,
-                mechanism_key=mechanism_key,
-                payload=payload,
-            )
-            return payload
-
-    results: dict[str, dict[str, Any]] = {}
-    if mechanism_execution_mode == "serial" or len(mechanism_keys) <= 1:
-        for mechanism_key in mechanism_keys:
-            results[mechanism_key] = _run_one(mechanism_key)
-    else:
-        with ThreadPoolExecutor(max_workers=len(mechanism_keys), thread_name_prefix="accumulation-mechanism") as executor:
-            future_to_mechanism = {
-                executor.submit(
-                    _run_mechanism_subprocess,
-                    window,
-                    source,
-                    mechanism_key=mechanism_key,
-                    shard_root=shard_root,
-                ): mechanism_key
-                for mechanism_key in mechanism_keys
-            }
-            for future in as_completed(future_to_mechanism):
-                mechanism_key = future_to_mechanism[future]
-                try:
-                    results[mechanism_key] = future.result()
-                except Exception as exc:
-                    results[mechanism_key] = _mechanism_failure_payload(mechanism_key, error=str(exc))
-                    _write_bundle_payload(
-                        run_root=run_root,
-                        shard_id=shard_id,
-                        window_case_id=window.window_case_id,
-                        mechanism_key=mechanism_key,
-                        payload=results[mechanism_key],
-                    )
-    payload = _build_window_result_from_existing_bundles(run_root=run_root, window=window, fallback_results=results)
-    _json_dump(_window_payload_path(run_root, shard_id, window.window_case_id), payload)
-    return payload
 
 
 def _find_anchor_span(document: BookDocument, anchor: dict[str, Any]) -> tuple[dict[str, Any], list[dict[str, Any]]]:
@@ -1301,128 +981,8 @@ def _judge_target(
     return judgment
 
 
-def _judge_targets_for_probe(
-    *,
-    probe: Probe,
-    window: WindowCase,
-    probe_targets: list[str],
-    mechanisms: dict[str, dict[str, Any]],
-    run_root: Path,
-    judge_mode: str,
-    judge_execution_mode: str,
-    shard_id: str,
-) -> dict[str, dict[str, Any]]:
-    if judge_execution_mode not in {"serial", "parallel"}:
-        raise ValueError(f"unsupported judge execution mode: {judge_execution_mode}")
-    if judge_execution_mode == "serial" or judge_mode == "none" or len(probe_targets) <= 1:
-        return {
-            target_name: {
-                "judgment": _judge_target(
-                    target_name=target_name,
-                    probe=probe,
-                    window=window,
-                    attentional=mechanisms["attentional_v2"],
-                    iterator=mechanisms["iterator_v1"],
-                    run_root=run_root,
-                    judge_mode=judge_mode,
-                    shard_id=shard_id,
-                )
-            }
-            for target_name in probe_targets
-        }
-
-    target_results: dict[str, dict[str, Any]] = {}
-    with ThreadPoolExecutor(max_workers=len(probe_targets), thread_name_prefix="accumulation-judge") as executor:
-        future_to_target = {
-            executor.submit(
-                _judge_target,
-                target_name=target_name,
-                probe=probe,
-                window=window,
-                attentional=mechanisms["attentional_v2"],
-                iterator=mechanisms["iterator_v1"],
-                run_root=run_root,
-                judge_mode=judge_mode,
-                shard_id=shard_id,
-            ): target_name
-            for target_name in probe_targets
-        }
-        for future in as_completed(future_to_target):
-            target_name = future_to_target[future]
-            try:
-                judgment = future.result()
-            except Exception:
-                judgment = _default_judgment(tuple(TARGET_CONFIGS[target_name]["score_keys"]), reason="judge_unavailable")
-            target_results[target_name] = {"judgment": judgment}
-    return {target_name: target_results[target_name] for target_name in probe_targets}
 
 
-def _evaluate_probe(
-    probe: Probe,
-    *,
-    probe_targets: list[str],
-    window: WindowCase,
-    unit_result: dict[str, Any],
-    document: BookDocument,
-    run_root: Path,
-    judge_mode: str,
-    judge_execution_mode: str,
-    shard_id: str,
-) -> dict[str, Any]:
-    _log_probe_progress(probe, f"[probe-start] judge_mode={judge_mode} judge_execution_mode={judge_execution_mode}")
-    mechanisms: dict[str, dict[str, Any]] = {}
-    for mechanism_key in MECHANISM_KEYS:
-        mechanism_result = dict(unit_result["mechanisms"][mechanism_key])
-        if mechanism_result.get("status") == "completed":
-            local_evidence = _extract_probe_local_evidence(
-                probe=probe,
-                bundle=dict(mechanism_result.get("normalized_eval_bundle") or {}),
-                document=document,
-                window=window,
-            )
-        else:
-            local_evidence = {
-                "error": _clean_text(mechanism_result.get("error")),
-                "anchor_count": len(probe.anchor_refs),
-                "anchor_hit_count": 0,
-                "matched_reaction_count": 0,
-                "matched_attention_event_count": 0,
-                "anchor_summaries": [],
-                "matched_reactions": [],
-                "matched_attention_events": [],
-                "match_method_counts": {},
-            }
-        mechanisms[mechanism_key] = {
-            "status": str(mechanism_result.get("status", "failed") or "failed"),
-            "mechanism_label": _clean_text(mechanism_result.get("mechanism_label")) or mechanism_key,
-            "output_dir": _clean_text(mechanism_result.get("output_dir")),
-            "bundle_summary": dict(mechanism_result.get("bundle_summary") or {}),
-            "local_evidence": local_evidence,
-            "error": _clean_text(mechanism_result.get("error")),
-        }
-    target_results = _judge_targets_for_probe(
-        probe=probe,
-        window=window,
-        probe_targets=probe_targets,
-        mechanisms=mechanisms,
-        run_root=run_root,
-        judge_mode=judge_mode,
-        judge_execution_mode=judge_execution_mode,
-        shard_id=shard_id,
-    )
-    _log_probe_progress(probe, "[probe-completed]")
-    return {
-        "probe_id": probe.probe_id,
-        "window_case_id": window.window_case_id,
-        "probe_type": probe.probe_type,
-        "source_id": probe.source_id,
-        "book_title": probe.book_title,
-        "author": probe.author,
-        "output_language": probe.output_language,
-        "probe_targets": probe_targets,
-        "mechanisms": mechanisms,
-        "target_results": target_results,
-    }
 
 
 def _probe_failure_result(
@@ -1728,77 +1288,6 @@ def _document_for_source(
     return document
 
 
-def _judge_probes_for_window(
-    window: WindowCase,
-    *,
-    selection: AccumulationRunSelection,
-    run_root: Path,
-    shard_id: str,
-    judge_mode: str,
-    judge_execution_mode: str,
-    skip_existing: bool,
-    document_cache: dict[str, ProvisionedBook],
-    document_cache_lock: threading.Lock,
-) -> dict[str, dict[str, Any]]:
-    unit_result = _build_window_result_from_existing_bundles(run_root=run_root, window=window)
-    probes = selection.probes_by_window.get(window.window_case_id, [])
-    results: dict[str, dict[str, Any]] = {}
-    try:
-        document = _document_for_source(
-            source_id=window.source_id,
-            selection=selection,
-            output_language=window.output_language,
-            cache=document_cache,
-            cache_lock=document_cache_lock,
-        )
-    except Exception as exc:
-        document = {}
-        document_error = f"{type(exc).__name__}: {exc}"
-    else:
-        document_error = ""
-
-    for probe in probes:
-        probe_targets = [target_name for target_name, ids in selection.target_probe_ids.items() if probe.probe_id in ids]
-        if skip_existing:
-            existing = _existing_probe_payload(
-                run_root,
-                probe_id=probe.probe_id,
-                target_names=probe_targets,
-                judge_mode=judge_mode,
-            )
-            if existing is not None and _probe_payload_has_reusable_targets(
-                existing[1],
-                target_names=probe_targets,
-                judge_mode=judge_mode,
-            ):
-                _log_probe_progress(probe, "[probe-skip-existing]")
-                results[probe.probe_id] = existing[1]
-                continue
-        try:
-            if document_error:
-                raise ValueError(document_error)
-            probe_result = _evaluate_probe(
-                probe,
-                probe_targets=probe_targets,
-                window=window,
-                unit_result=unit_result,
-                document=document,
-                run_root=run_root,
-                judge_mode=judge_mode,
-                judge_execution_mode=judge_execution_mode,
-                shard_id=shard_id,
-            )
-        except Exception as exc:
-            probe_result = _probe_failure_result(
-                probe,
-                probe_targets=probe_targets,
-                window=window,
-                unit_result=unit_result,
-                error=f"{type(exc).__name__}: {exc}",
-            )
-        results[probe.probe_id] = probe_result
-        _json_dump(_probe_payload_path(run_root, shard_id, probe.probe_id), probe_result)
-    return results
 
 
 def _write_shard_usage_summary(run_root: Path, *, shard_id: str) -> dict[str, Any]:
@@ -1854,260 +1343,6 @@ def _write_merge_outputs(
     return aggregate, report_path
 
 
-def run_benchmark(
-    *,
-    formal_manifest_path: Path,
-    runs_root: Path,
-    target_slice: str = "both",
-    probe_ids: list[str] | None = None,
-    judge_mode: str = "llm",
-    mechanism_execution_mode: str = "parallel",
-    judge_execution_mode: str = "serial",
-    case_workers: int | None = None,
-    run_id: str | None = None,
-    stage: str = "all",
-    shard_id: str = "default",
-    window_case_ids: list[str] | None = None,
-    mechanism_filter: str = "both",
-    skip_existing: bool = False,
-    unit_workers: int | None = None,
-    judge_workers: int | None = None,
-) -> dict[str, Any]:
-    if stage not in STAGE_VALUES:
-        raise ValueError(f"unsupported stage: {stage}")
-    if case_workers and unit_workers is None:
-        unit_workers = case_workers
-
-    run_name = run_id or datetime.now(timezone.utc).strftime("attentional_v2_vs_iterator_v1_accumulation_comparison_%Y%m%d-%H%M%S")
-    run_root = runs_root / run_name
-    run_root.mkdir(parents=True, exist_ok=True)
-
-    selection = _prepare_selection(
-        formal_manifest_path=formal_manifest_path,
-        target_slice=target_slice,
-        probe_ids=probe_ids,
-    )
-    _write_selection_metadata(
-        run_root=run_root,
-        selection=selection,
-        judge_mode=judge_mode,
-        mechanism_execution_mode=mechanism_execution_mode,
-        judge_execution_mode=judge_execution_mode,
-    )
-    windows = _filtered_windows(selection, window_case_ids=window_case_ids)
-
-    summary: dict[str, Any] = {
-        "run_id": run_name,
-        "run_root": str(run_root),
-        "stage": stage,
-        "shard_id": shard_id,
-        "selected_window_count": len(windows),
-    }
-
-    if stage == "merge":
-        probe_results = _merge_probe_results(
-            run_root=run_root,
-            selection=selection,
-            window_case_ids=[window.window_case_id for window in windows] if window_case_ids else None,
-        )
-        aggregate, report_path = _write_merge_outputs(
-            run_root=run_root,
-            run_name=run_name,
-            selection=selection,
-            probe_results=probe_results,
-        )
-        summary["aggregate"] = aggregate
-        summary["report_path"] = str(report_path)
-        return summary
-
-    document_cache: dict[str, ProvisionedBook] = {}
-    document_cache_lock = threading.Lock()
-
-    if stage == "judge":
-        judge_policy = resolve_worker_policy(
-            job_kind="accumulation_probe_judge",
-            profile_id=DEFAULT_EVAL_JUDGE_PROFILE_ID,
-            task_count=len(windows),
-            per_worker_parallelism=1,
-            explicit_max_workers=judge_workers if judge_workers and judge_workers > 0 else None,
-        )
-        results_by_probe_id: dict[str, dict[str, Any]] = {}
-        with ThreadPoolExecutor(max_workers=max(1, judge_policy.worker_count), thread_name_prefix="accumulation-judge-window") as executor:
-            future_to_window = {
-                submit_inherited_context(
-                    executor,
-                    _judge_probes_for_window,
-                    window,
-                    selection=selection,
-                    run_root=run_root,
-                    shard_id=shard_id,
-                    judge_mode=judge_mode,
-                    judge_execution_mode=judge_execution_mode,
-                    skip_existing=skip_existing,
-                    document_cache=document_cache,
-                    document_cache_lock=document_cache_lock,
-                ): window
-                for window in windows
-            }
-            for future in as_completed(future_to_window):
-                window = future_to_window[future]
-                try:
-                    results_by_probe_id.update(future.result())
-                except Exception as exc:
-                    unit_result = _build_window_result_from_existing_bundles(run_root=run_root, window=window)
-                    for probe in selection.probes_by_window.get(window.window_case_id, []):
-                        probe_targets = [target_name for target_name, ids in selection.target_probe_ids.items() if probe.probe_id in ids]
-                        failure = _probe_failure_result(
-                            probe,
-                            probe_targets=probe_targets,
-                            window=window,
-                            unit_result=unit_result,
-                            error=f"{type(exc).__name__}: {exc}",
-                        )
-                        results_by_probe_id[probe.probe_id] = failure
-                        _json_dump(_probe_payload_path(run_root, shard_id, probe.probe_id), failure)
-        summary["probe_count"] = len(results_by_probe_id)
-        summary["llm_usage"] = _write_shard_usage_summary(run_root, shard_id=shard_id)
-        return summary
-
-    per_worker_parallelism = len(_mechanism_keys_for_filter(mechanism_filter)) if mechanism_execution_mode == "parallel" else 1
-    worker_policy = resolve_worker_policy(
-        job_kind="accumulation_window_bundle",
-        profile_id=DEFAULT_RUNTIME_PROFILE_ID,
-        task_count=len(windows),
-        per_worker_parallelism=per_worker_parallelism,
-        explicit_max_workers=unit_workers if unit_workers and unit_workers > 0 else None,
-    )
-    window_runner = _run_window_subprocess if worker_policy.worker_count > 1 else _run_window_bundle
-    window_results: dict[str, dict[str, Any]] = {}
-
-    if stage == "bundle":
-        with ThreadPoolExecutor(max_workers=max(1, worker_policy.worker_count), thread_name_prefix="accumulation-window") as executor:
-            future_to_window: dict[Any, WindowCase] = {}
-            for index, window in enumerate(windows, start=1):
-                print(f"[submitted {index}/{len(windows)}] {window.window_case_id}", flush=True)
-                future = submit_inherited_context(
-                    executor,
-                    window_runner,
-                    window,
-                    source=selection.source_index[window.source_id],
-                    run_root=run_root,
-                    shard_id=shard_id,
-                    mechanism_execution_mode=mechanism_execution_mode,
-                    mechanism_filter=mechanism_filter,
-                    skip_existing=skip_existing,
-                )
-                future_to_window[future] = window
-            for future in as_completed(future_to_window):
-                window = future_to_window[future]
-                try:
-                    payload = future.result()
-                except Exception as exc:
-                    payload = _window_result_payload(
-                        window,
-                        mechanisms={
-                            mechanism_key: _mechanism_failure_payload(mechanism_key, error=str(exc))
-                            for mechanism_key in MECHANISM_KEYS
-                        },
-                    )
-                window_results[payload["window_case_id"]] = payload
-                _json_dump(_window_payload_path(run_root, shard_id, payload["window_case_id"]), payload)
-                print(f"[completed] {payload['window_case_id']}", flush=True)
-        summary["window_count"] = len(window_results)
-        summary["llm_usage"] = _write_shard_usage_summary(run_root, shard_id=shard_id)
-        return summary
-
-    judge_policy = resolve_worker_policy(
-        job_kind="accumulation_probe_judge",
-        profile_id=DEFAULT_EVAL_JUDGE_PROFILE_ID,
-        task_count=len(windows),
-        per_worker_parallelism=1,
-        explicit_max_workers=judge_workers if judge_workers and judge_workers > 0 else None,
-    )
-    results_by_probe_id: dict[str, dict[str, Any]] = {}
-    with ThreadPoolExecutor(max_workers=max(1, worker_policy.worker_count), thread_name_prefix="accumulation-window") as bundle_executor, ThreadPoolExecutor(
-        max_workers=max(1, judge_policy.worker_count),
-        thread_name_prefix="accumulation-judge-window",
-    ) as judge_executor:
-        future_to_window: dict[Any, WindowCase] = {}
-        judge_futures: dict[Any, WindowCase] = {}
-        for index, window in enumerate(windows, start=1):
-            print(f"[submitted {index}/{len(windows)}] {window.window_case_id}", flush=True)
-            future = submit_inherited_context(
-                bundle_executor,
-                window_runner,
-                window,
-                source=selection.source_index[window.source_id],
-                run_root=run_root,
-                shard_id=shard_id,
-                mechanism_execution_mode=mechanism_execution_mode,
-                mechanism_filter=mechanism_filter,
-                skip_existing=skip_existing,
-            )
-            future_to_window[future] = window
-        for future in as_completed(future_to_window):
-            window = future_to_window[future]
-            try:
-                payload = future.result()
-            except Exception as exc:
-                payload = _window_result_payload(
-                    window,
-                    mechanisms={
-                        mechanism_key: _mechanism_failure_payload(mechanism_key, error=str(exc))
-                        for mechanism_key in MECHANISM_KEYS
-                    },
-                )
-            window_results[payload["window_case_id"]] = payload
-            _json_dump(_window_payload_path(run_root, shard_id, payload["window_case_id"]), payload)
-            print(f"[completed] {payload['window_case_id']}", flush=True)
-            judge_future = submit_inherited_context(
-                judge_executor,
-                _judge_probes_for_window,
-                window,
-                selection=selection,
-                run_root=run_root,
-                shard_id=shard_id,
-                judge_mode=judge_mode,
-                judge_execution_mode=judge_execution_mode,
-                skip_existing=skip_existing,
-                document_cache=document_cache,
-                document_cache_lock=document_cache_lock,
-            )
-            judge_futures[judge_future] = window
-        for future in as_completed(judge_futures):
-            window = judge_futures[future]
-            try:
-                results_by_probe_id.update(future.result())
-            except Exception as exc:
-                unit_result = window_results.get(window.window_case_id) or _build_window_result_from_existing_bundles(run_root=run_root, window=window)
-                for probe in selection.probes_by_window.get(window.window_case_id, []):
-                    probe_targets = [target_name for target_name, ids in selection.target_probe_ids.items() if probe.probe_id in ids]
-                    failure = _probe_failure_result(
-                        probe,
-                        probe_targets=probe_targets,
-                        window=window,
-                        unit_result=unit_result,
-                        error=f"{type(exc).__name__}: {exc}",
-                    )
-                    results_by_probe_id[probe.probe_id] = failure
-                    _json_dump(_probe_payload_path(run_root, shard_id, probe.probe_id), failure)
-    summary["window_count"] = len(window_results)
-    summary["probe_count"] = len(results_by_probe_id)
-    summary["llm_usage"] = _write_shard_usage_summary(run_root, shard_id=shard_id)
-    probe_results = _merge_probe_results(
-        run_root=run_root,
-        selection=selection,
-        window_case_ids=[window.window_case_id for window in windows] if window_case_ids else None,
-    )
-    aggregate, report_path = _write_merge_outputs(
-        run_root=run_root,
-        run_name=run_name,
-        selection=selection,
-        probe_results=probe_results,
-    )
-    summary["aggregate"] = aggregate
-    summary["report_path"] = str(report_path)
-    return summary
 
 
 def _parse_args() -> argparse.Namespace:
@@ -2121,7 +1356,7 @@ def _parse_args() -> argparse.Namespace:
     parser.add_argument("--judge-mode", choices=["llm", "none"], default="llm")
     parser.add_argument("--mechanism-execution-mode", choices=["serial", "parallel"], default="parallel")
     parser.add_argument("--judge-execution-mode", choices=["serial", "parallel"], default="serial")
-    parser.add_argument("--mechanism-filter", choices=MECHANISM_FILTER_VALUES, default="both")
+    parser.add_argument("--mechanism-filter", choices=MECHANISM_FILTER_VALUES, default="attentional_v2")
     parser.add_argument("--skip-existing", action="store_true")
     parser.add_argument("--unit-workers", type=int, default=0)
     parser.add_argument("--judge-workers", type=int, default=0)
@@ -2135,39 +1370,8 @@ def _parse_args() -> argparse.Namespace:
 
 
 def main() -> int:
-    args = _parse_args()
-    if args.worker_payload:
-        if not args.worker_result:
-            raise ValueError("--worker-result is required when --worker-payload is set")
-        return _run_payload_worker(Path(args.worker_payload).resolve(), Path(args.worker_result).resolve())
-    window_case_ids = [item.strip() for item in args.window_case_id if item.strip()]
-    probe_ids = [item.strip() for item in args.probe_id if _clean_text(item)]
-    if args.probe_ids:
-        probe_ids.extend([item.strip() for item in str(args.probe_ids).split(",") if item.strip()])
-    summary = run_benchmark(
-        formal_manifest_path=Path(args.formal_manifest).resolve(),
-        runs_root=Path(args.runs_root).resolve(),
-        run_id=args.run_id or None,
-        stage=args.stage,
-        shard_id=args.shard_id,
-        target_slice=args.target_slice,
-        probe_ids=probe_ids or None,
-        judge_mode=args.judge_mode,
-        mechanism_execution_mode=args.mechanism_execution_mode,
-        judge_execution_mode=args.judge_execution_mode,
-        case_workers=args.case_workers or None,
-        window_case_ids=window_case_ids or None,
-        mechanism_filter=args.mechanism_filter,
-        skip_existing=bool(args.skip_existing),
-        unit_workers=args.unit_workers or None,
-        judge_workers=args.judge_workers or None,
-    )
-    print(json.dumps(summary.get("aggregate", summary), ensure_ascii=False, indent=2))
-    print(f"run_root={summary['run_root']}")
-    if summary.get("report_path"):
-        print(f"report_path={summary['report_path']}")
-    return 0
+    raise SystemExit("旧双机制评测执行器已退役；历史实现请查看 tag pre-cleanup-2026-11")
 
 
 if __name__ == "__main__":
-    raise SystemExit(main())
+    main()

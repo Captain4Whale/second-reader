@@ -4,14 +4,9 @@ from __future__ import annotations
 
 import argparse
 import json
-import shutil
-import subprocess
-import sys
-import tempfile
 from collections import Counter, defaultdict
-from concurrent.futures import ThreadPoolExecutor, as_completed
 from contextlib import contextmanager
-from dataclasses import asdict, dataclass
+from dataclasses import dataclass
 from datetime import datetime, timezone
 from pathlib import Path
 from statistics import mean
@@ -27,13 +22,8 @@ from eval.common.taxonomy import (
     normalize_scopes,
     validate_target_slug,
 )
-from eval.attentional_v2.runtime_progress import runtime_progress_heartbeat
-from src.iterator_reader.llm_utils import LLMTraceContext, ReaderLLMError, eval_trace_context, invoke_json, llm_invocation_scope
-from src.reading_core.runtime_contracts import ReadRequest
-from src.reading_mechanisms.attentional_v2 import AttentionalV2Mechanism
-from src.reading_mechanisms.iterator_v1 import IteratorV1Mechanism
-from src.reading_runtime.job_concurrency import resolve_worker_policy, submit_inherited_context
-from src.reading_runtime.llm_registry import DEFAULT_EVAL_JUDGE_PROFILE_ID, DEFAULT_RUNTIME_PROFILE_ID
+from src.iterator_reader.llm_utils import ReaderLLMError, eval_trace_context, invoke_json, llm_invocation_scope
+from src.reading_runtime.llm_registry import DEFAULT_EVAL_JUDGE_PROFILE_ID
 from src.reading_runtime.output_dir_overrides import override_output_dir
 
 
@@ -52,7 +42,7 @@ DEFAULT_USER_INTENT = (
     "Read as a thoughtful co-reader and notice meaningful turns, tensions, callbacks, definitions, and chapter-level development."
 )
 SELECTION_ROLES = ("expository", "argumentative", "narrative_reflective", "reference_heavy")
-MECHANISM_KEYS = ("attentional_v2", "iterator_v1")
+MECHANISM_KEYS = ("attentional_v2",)
 DEFAULT_JUDGE_EVIDENCE_MODE = "standard"
 SUBSTANTIVE_ONLY_ATTENTION_EVENT_KINDS = {
     "parse",
@@ -378,205 +368,22 @@ def _log_case_progress(case: ChapterCase, message: str) -> None:
     print(f"[case {case.chapter_case_id}] {message}", flush=True)
 
 
-def _run_mechanism_for_case(
-    case: ChapterCase,
-    source: dict[str, Any],
-    *,
-    mechanism_key: str,
-    run_root: Path,
-) -> dict[str, Any]:
-    if mechanism_key == "attentional_v2":
-        mechanism = AttentionalV2Mechanism()
-    elif mechanism_key == "iterator_v1":
-        mechanism = IteratorV1Mechanism()
-    else:
-        raise ValueError(f"unsupported mechanism: {mechanism_key}")
-
-    book_path = ROOT / str(source["relative_local_path"])
-    isolated_output_dir = run_root / "outputs" / case.chapter_case_id / mechanism_key
-    runtime_dir = isolated_output_dir / "_runtime"
-    _log_case_progress(case, f"[mechanism-start] {mechanism_key}")
-    shutil.rmtree(isolated_output_dir, ignore_errors=True)
-    isolated_output_dir.parent.mkdir(parents=True, exist_ok=True)
-    with runtime_progress_heartbeat(
-        runtime_dir=runtime_dir,
-        mechanism_key=mechanism_key,
-        emit=lambda message: _log_case_progress(case, message),
-    ):
-        with _isolated_output_dir(isolated_output_dir):
-            result = mechanism.read_book(
-                ReadRequest(
-                    book_path=book_path,
-                    chapter_number=int(case.chapter_id),
-                    continue_mode=False,
-                    user_intent=DEFAULT_USER_INTENT,
-                    language_mode=case.language_track,
-                    task_mode="sequential",
-                    mechanism_key=mechanism_key,
-                    mechanism_config={"persist_normalized_eval_bundle": True},
-                )
-            )
-    bundle = dict(result.normalized_eval_bundle or {})
-    _json_dump(run_root / "bundles" / mechanism_key / f"{case.chapter_case_id}.json", bundle)
-    _log_case_progress(case, f"[mechanism-completed] {mechanism_key}")
-    return {
-        "mechanism_key": mechanism_key,
-        "mechanism_label": result.mechanism.label,
-        "output_dir": str(result.output_dir),
-        "normalized_eval_bundle": bundle,
-        "bundle_summary": _summarize_bundle(bundle),
-    }
 
 
 def _write_json_payload(path: Path, payload: Any) -> None:
     path.write_text(json.dumps(payload, ensure_ascii=False), encoding="utf-8")
 
 
-def _run_mechanism_worker(payload_path: Path, result_path: Path) -> int:
-    payload = json.loads(payload_path.read_text(encoding="utf-8"))
-    case = ChapterCase(**dict(payload["case"]))
-    source = dict(payload["source"])
-    result = _run_mechanism_for_case(
-        case,
-        source,
-        mechanism_key=str(payload["mechanism_key"]),
-        run_root=Path(str(payload["run_root"])),
-    )
-    _write_json_payload(result_path, result)
-    return 0
 
 
-def _run_case_worker(payload_path: Path, result_path: Path) -> int:
-    payload = json.loads(payload_path.read_text(encoding="utf-8"))
-    case = ChapterCase(**dict(payload["case"]))
-    source = dict(payload["source"])
-    result = _evaluate_case(
-        case,
-        source=source,
-        run_root=Path(str(payload["run_root"])),
-        judge_mode=str(payload["judge_mode"]),
-        mechanism_execution_mode=str(payload["mechanism_execution_mode"]),
-        judge_execution_mode=str(payload["judge_execution_mode"]),
-        judge_evidence_mode=str(payload.get("judge_evidence_mode") or DEFAULT_JUDGE_EVIDENCE_MODE),
-    )
-    _write_json_payload(result_path, result)
-    return 0
 
 
-def _run_payload_worker(payload_path: Path, result_path: Path) -> int:
-    payload = json.loads(payload_path.read_text(encoding="utf-8"))
-    worker_kind = str(payload.get("worker_kind", "mechanism")).strip() or "mechanism"
-    if worker_kind == "mechanism":
-        return _run_mechanism_worker(payload_path, result_path)
-    if worker_kind == "case":
-        return _run_case_worker(payload_path, result_path)
-    raise ValueError(f"unsupported worker kind: {worker_kind}")
 
 
-def _run_mechanism_subprocess(
-    case: ChapterCase,
-    source: dict[str, Any],
-    *,
-    mechanism_key: str,
-    run_root: Path,
-) -> dict[str, Any]:
-    with tempfile.TemporaryDirectory(prefix="chapter-comparison-worker-") as temp_dir_str:
-        temp_dir = Path(temp_dir_str)
-        payload_path = temp_dir / "payload.json"
-        result_path = temp_dir / "result.json"
-        _write_json_payload(
-            payload_path,
-            {
-                "worker_kind": "mechanism",
-                "case": asdict(case),
-                "source": source,
-                "mechanism_key": mechanism_key,
-                "run_root": str(run_root),
-            },
-        )
-        command = [
-            sys.executable,
-            str(Path(__file__).resolve()),
-            "--worker-payload",
-            str(payload_path),
-            "--worker-result",
-            str(result_path),
-        ]
-        subprocess.run(command, cwd=str(ROOT), check=True)
-        return json.loads(result_path.read_text(encoding="utf-8"))
 
 
-def _run_case_subprocess(
-    case: ChapterCase,
-    *,
-    source: dict[str, Any],
-    run_root: Path,
-    judge_mode: str,
-    mechanism_execution_mode: str,
-    judge_execution_mode: str,
-    judge_evidence_mode: str,
-) -> dict[str, Any]:
-    with tempfile.TemporaryDirectory(prefix="chapter-comparison-case-worker-") as temp_dir_str:
-        temp_dir = Path(temp_dir_str)
-        payload_path = temp_dir / "payload.json"
-        result_path = temp_dir / "result.json"
-        _write_json_payload(
-            payload_path,
-            {
-                "worker_kind": "case",
-                "case": asdict(case),
-                "source": source,
-                "run_root": str(run_root),
-                "judge_mode": judge_mode,
-                "mechanism_execution_mode": mechanism_execution_mode,
-                "judge_execution_mode": judge_execution_mode,
-                "judge_evidence_mode": judge_evidence_mode,
-            },
-        )
-        command = [
-            sys.executable,
-            str(Path(__file__).resolve()),
-            "--worker-payload",
-            str(payload_path),
-            "--worker-result",
-            str(result_path),
-        ]
-        subprocess.run(command, cwd=str(ROOT), check=True)
-        return json.loads(result_path.read_text(encoding="utf-8"))
 
 
-def _run_mechanisms_for_case(
-    case: ChapterCase,
-    source: dict[str, Any],
-    *,
-    run_root: Path,
-    mechanism_execution_mode: str,
-) -> dict[str, dict[str, Any]]:
-    if mechanism_execution_mode == "serial":
-        return {
-            mechanism_key: _run_mechanism_for_case(case, source, mechanism_key=mechanism_key, run_root=run_root)
-            for mechanism_key in MECHANISM_KEYS
-        }
-
-    if mechanism_execution_mode != "parallel":
-        raise ValueError(f"unsupported mechanism execution mode: {mechanism_execution_mode}")
-
-    results: dict[str, dict[str, Any]] = {}
-    with ThreadPoolExecutor(max_workers=len(MECHANISM_KEYS), thread_name_prefix="mechanism-worker") as executor:
-        future_to_mechanism = {
-            executor.submit(
-                _run_mechanism_subprocess,
-                case,
-                source,
-                mechanism_key=mechanism_key,
-                run_root=run_root,
-            ): mechanism_key
-            for mechanism_key in MECHANISM_KEYS
-        }
-        for future in as_completed(future_to_mechanism):
-            mechanism_key = future_to_mechanism[future]
-            results[mechanism_key] = future.result()
-    return {mechanism_key: results[mechanism_key] for mechanism_key in MECHANISM_KEYS}
 
 
 def _judge_scope(
@@ -681,113 +488,8 @@ def _score_average(side_scores: dict[str, int]) -> float:
     return round(mean(values), 3) if values else 0.0
 
 
-def _judge_scopes_for_case(
-    *,
-    case: ChapterCase,
-    mechanism_results: dict[str, dict[str, Any]],
-    run_root: Path,
-    judge_mode: str,
-    judge_execution_mode: str,
-    judge_evidence_mode: str,
-) -> dict[str, dict[str, Any]]:
-    if judge_execution_mode == "serial" or judge_mode == "none" or len(DEFAULT_SCOPES) <= 1:
-        return {
-            scope: {
-                "judgment": _judge_scope(
-                    scope=scope,
-                    case=case,
-                    attentional=mechanism_results["attentional_v2"],
-                    iterator=mechanism_results["iterator_v1"],
-                    run_root=run_root,
-                    judge_mode=judge_mode,
-                    judge_evidence_mode=judge_evidence_mode,
-                )
-            }
-            for scope in DEFAULT_SCOPES
-        }
-
-    if judge_execution_mode != "parallel":
-        raise ValueError(f"unsupported judge execution mode: {judge_execution_mode}")
-
-    scope_results: dict[str, dict[str, Any]] = {}
-    with ThreadPoolExecutor(max_workers=len(DEFAULT_SCOPES), thread_name_prefix="judge-scope") as executor:
-        future_to_scope = {
-            executor.submit(
-                _judge_scope,
-                scope=scope,
-                case=case,
-                attentional=mechanism_results["attentional_v2"],
-                iterator=mechanism_results["iterator_v1"],
-                run_root=run_root,
-                judge_mode=judge_mode,
-                judge_evidence_mode=judge_evidence_mode,
-            ): scope
-            for scope in DEFAULT_SCOPES
-        }
-        for future in as_completed(future_to_scope):
-            scope = future_to_scope[future]
-            scope_results[scope] = {"judgment": future.result()}
-    return {scope: scope_results[scope] for scope in DEFAULT_SCOPES}
 
 
-def _evaluate_case(
-    case: ChapterCase,
-    *,
-    source: dict[str, Any],
-    run_root: Path,
-    judge_mode: str,
-    mechanism_execution_mode: str,
-    judge_execution_mode: str,
-    judge_evidence_mode: str,
-) -> dict[str, Any]:
-    _log_case_progress(
-        case,
-        (
-            "[case-start] "
-            f"judge_mode={judge_mode} "
-            f"mechanism_execution_mode={mechanism_execution_mode} "
-            f"judge_execution_mode={judge_execution_mode} "
-            f"judge_evidence_mode={judge_evidence_mode}"
-        ),
-    )
-    mechanism_results = _run_mechanisms_for_case(
-        case,
-        source,
-        run_root=run_root,
-        mechanism_execution_mode=mechanism_execution_mode,
-    )
-    if judge_mode == "none":
-        _log_case_progress(case, "[case-stage] mechanisms completed; judge disabled")
-    else:
-        _log_case_progress(case, "[case-stage] mechanisms completed; starting judgment scopes")
-    scope_results = _judge_scopes_for_case(
-        case=case,
-        mechanism_results=mechanism_results,
-        run_root=run_root,
-        judge_mode=judge_mode,
-        judge_execution_mode=judge_execution_mode,
-        judge_evidence_mode=judge_evidence_mode,
-    )
-    _log_case_progress(case, "[case-completed]")
-    return {
-        "chapter_case_id": case.chapter_case_id,
-        "language_track": case.language_track,
-        "selection_role": case.selection_role,
-        "book_title": case.book_title,
-        "author": case.author,
-        "source_id": case.source_id,
-        "chapter_id": case.chapter_id,
-        "chapter_title": case.chapter_title,
-        "mechanisms": {
-            key: {
-                "mechanism_label": value["mechanism_label"],
-                "output_dir": value["output_dir"],
-                "bundle_summary": value["bundle_summary"],
-            }
-            for key, value in mechanism_results.items()
-        },
-        "scope_results": scope_results,
-    }
 
 
 def _aggregate(case_results: list[dict[str, Any]], scopes: list[str]) -> dict[str, Any]:
@@ -878,104 +580,6 @@ def _build_markdown_report(*, run_id: str, selected_cases: list[ChapterCase], ag
     return "\n".join(lines).strip() + "\n"
 
 
-def run_benchmark(
-    *,
-    dataset_dirs: list[Path],
-    source_manifest_path: Path,
-    runs_root: Path,
-    run_id: str | None = None,
-    judge_mode: str = "llm",
-    case_ids: list[str] | None = None,
-    mechanism_execution_mode: str = "parallel",
-    judge_execution_mode: str = "parallel",
-    case_workers: int | None = None,
-    judge_evidence_mode: str = DEFAULT_JUDGE_EVIDENCE_MODE,
-) -> dict[str, Any]:
-    manifests: list[dict[str, Any]] = []
-    all_cases: list[ChapterCase] = []
-    for dataset_dir in dataset_dirs:
-        manifest, cases = _load_cases(dataset_dir)
-        manifests.append(manifest)
-        all_cases.extend(cases)
-    selected_cases = (
-        [case for case in all_cases if case.chapter_case_id in set(case_ids or [])]
-        if case_ids
-        else _select_core_cases(all_cases)
-    )
-    if not selected_cases:
-        raise ValueError("no chapter cases selected")
-
-    run_name = run_id or datetime.now(timezone.utc).strftime("attentional_v2_vs_iterator_v1_chapter_comparison_%Y%m%d-%H%M%S")
-    run_root = runs_root / run_name
-    run_root.mkdir(parents=True, exist_ok=True)
-    source_index = _load_source_index(source_manifest_path)
-
-    _json_dump(
-        run_root / "dataset_manifest.json",
-        {
-            "target": DEFAULT_TARGET,
-            "scopes": DEFAULT_SCOPES,
-            "methods": DEFAULT_METHODS,
-            "comparison_target": DEFAULT_COMPARISON_TARGET,
-            "dataset_ids": [manifest["dataset_id"] for manifest in manifests],
-            "selected_case_ids": [case.chapter_case_id for case in selected_cases],
-            "judge_mode": judge_mode,
-            "mechanism_execution_mode": mechanism_execution_mode,
-            "judge_execution_mode": judge_execution_mode,
-            "judge_evidence_mode": judge_evidence_mode,
-            "generated_at": _timestamp(),
-        },
-    )
-
-    per_case_parallelism = 2 if (mechanism_execution_mode == "parallel" or (judge_mode != "none" and judge_execution_mode == "parallel")) else 1
-    worker_policy = resolve_worker_policy(
-        job_kind="chapter_case_comparison",
-        profile_id=DEFAULT_RUNTIME_PROFILE_ID,
-        task_count=len(selected_cases),
-        per_worker_parallelism=per_case_parallelism,
-        explicit_max_workers=case_workers if case_workers and case_workers > 0 else None,
-    )
-    case_runner = _run_case_subprocess if worker_policy.worker_count > 1 else _evaluate_case
-    results_by_case_id: dict[str, dict[str, Any]] = {}
-    with ThreadPoolExecutor(max_workers=max(1, worker_policy.worker_count), thread_name_prefix="chapter-case") as executor:
-        future_to_case = {}
-        for index, case in enumerate(selected_cases, start=1):
-            print(f"[submitted {index}/{len(selected_cases)}] {case.chapter_case_id}", flush=True)
-            future_to_case[
-                submit_inherited_context(
-                    executor,
-                    case_runner,
-                    case,
-                    source=source_index[case.source_id],
-                    run_root=run_root,
-                    judge_mode=judge_mode,
-                    mechanism_execution_mode=mechanism_execution_mode,
-                    judge_execution_mode=judge_execution_mode,
-                    judge_evidence_mode=judge_evidence_mode,
-                )
-            ] = case
-        for future in as_completed(future_to_case):
-            case = future_to_case[future]
-            case_payload = future.result()
-            results_by_case_id[case.chapter_case_id] = case_payload
-            _json_dump(run_root / "cases" / f"{case.chapter_case_id}.json", case_payload)
-            print(f"[completed] {case.chapter_case_id}", flush=True)
-    case_results = [results_by_case_id[case.chapter_case_id] for case in selected_cases]
-
-    aggregate = _aggregate(case_results, DEFAULT_SCOPES)
-    _json_dump(run_root / "summary" / "aggregate.json", aggregate)
-    _jsonl_dump(run_root / "summary" / "case_results.jsonl", case_results)
-    report_path = run_root / "summary" / "report.md"
-    report_path.write_text(
-        _build_markdown_report(run_id=run_name, selected_cases=selected_cases, aggregate=aggregate, case_results=case_results),
-        encoding="utf-8",
-    )
-    return {
-        "run_id": run_name,
-        "run_root": str(run_root),
-        "report_path": str(report_path),
-        "aggregate": aggregate,
-    }
 
 
 def _parse_args() -> argparse.Namespace:
@@ -997,32 +601,8 @@ def _parse_args() -> argparse.Namespace:
 
 
 def main() -> int:
-    args = _parse_args()
-    if args.worker_payload:
-        if not args.worker_result:
-            raise ValueError("--worker-result is required when --worker-payload is set")
-        return _run_payload_worker(Path(args.worker_payload).resolve(), Path(args.worker_result).resolve())
-    dataset_dirs = [Path(item).resolve() for item in args.dataset_dir] if args.dataset_dir else list(DEFAULT_DATASET_DIRS)
-    case_ids = [item.strip() for item in args.case_id if str(item).strip()]
-    if args.case_ids:
-        case_ids.extend([item.strip() for item in str(args.case_ids).split(",") if item.strip()])
-    summary = run_benchmark(
-        dataset_dirs=dataset_dirs,
-        source_manifest_path=Path(args.source_manifest).resolve(),
-        runs_root=Path(args.runs_root).resolve(),
-        run_id=args.run_id or None,
-        judge_mode=args.judge_mode,
-        case_ids=case_ids or None,
-        mechanism_execution_mode=args.mechanism_execution_mode,
-        judge_execution_mode=args.judge_execution_mode,
-        case_workers=args.case_workers or None,
-        judge_evidence_mode=args.judge_evidence_mode,
-    )
-    print(json.dumps(summary["aggregate"], ensure_ascii=False, indent=2))
-    print(f"run_root={summary['run_root']}")
-    print(f"report_path={summary['report_path']}")
-    return 0
+    raise SystemExit("旧双机制评测执行器已退役；历史实现请查看 tag pre-cleanup-2026-11")
 
 
 if __name__ == "__main__":
-    raise SystemExit(main())
+    main()

@@ -20,7 +20,6 @@ from typing import Any
 from eval.common.taxonomy import DETERMINISTIC_METRICS, normalize_methods, validate_target_slug
 from src.reading_core.runtime_contracts import ReadRequest
 from src.reading_mechanisms.attentional_v2 import AttentionalV2Mechanism
-from src.reading_mechanisms.iterator_v1 import IteratorV1Mechanism
 from src.reading_runtime.job_concurrency import resolve_worker_policy, submit_inherited_context
 from src.reading_runtime.output_dir_overrides import override_output_dir
 
@@ -39,7 +38,7 @@ DEFAULT_USER_INTENT = (
     "Read as a thoughtful co-reader and notice meaningful turns, tensions, callbacks, definitions, and chapter-level development."
 )
 SELECTION_ROLES = ("expository", "argumentative", "narrative_reflective", "reference_heavy")
-MECHANISM_KEYS = ("attentional_v2", "iterator_v1")
+MECHANISM_KEYS = ("attentional_v2",)
 
 
 @dataclass(frozen=True)
@@ -188,7 +187,7 @@ def _run_mechanism_for_case(
     if mechanism_key == "attentional_v2":
         mechanism = AttentionalV2Mechanism()
     elif mechanism_key == "iterator_v1":
-        mechanism = IteratorV1Mechanism()
+        raise ValueError("iterator_v1 已退役；请查看 tag pre-cleanup-2026-11")
     else:
         raise ValueError(f"unsupported mechanism: {mechanism_key}")
 

@@ -38,65 +38,7 @@ SOURCE_NORMALIZATION_EXCLUSION_ROLES = {
     "caption_or_table_support",
 }
 
-SOURCE_NORMALIZATION_SYSTEM_PROMPT = """You are classifying original book blocks before reading begins.
 
-Your task is source-flow classification, not importance judgment, summary, or rewriting.
-
-Mainline text is what a reader should encounter in order while reading the book.
-Auxiliary text explains, cites, indexes, attributes, repairs, or decorates the source, but is not itself the next narrative or argument unit.
-
-Allowed normalized_role values:
-- mainline_body
-- heading
-- auxiliary_note
-- reference_like
-- front_back_matter
-- layout_noise
-- caption_or_table_support
-- uncertain_keep_mainline
-
-Be conservative:
-- If unsure, choose uncertain_keep_mainline.
-- Do not mark unusual literary form as auxiliary merely because it is short, numbered, poetic, quoted, foreign-language, or formatted oddly.
-- Do not mark letters, poems, dialogue, fictional documents, numbered main-body aphorisms, or author-intended note-like prose as auxiliary unless source-flow evidence clearly supports it.
-- Treat source markup as evidence: blockquote/poem/verse containers usually protect mainline literary text, while footnote/endnote/reference containers may identify auxiliary source apparatus.
-- Never mark blockquote, poem, verse, letter, dialogue, or fictional-document text as layout_noise merely because it is line-broken, repeated nearby, or stylistically unusual.
-- Footnote, endnote, translator-note, reference, and note clusters may be auxiliary even if each note is meaningful.
-- Layout artifacts, repeated running headers, duplicated titles, and isolated source-conversion symbols should not enter mainline reading.
-
-Return pure JSON only."""
-
-SOURCE_NORMALIZATION_USER_PROMPT_TEMPLATE = """Book:
-{book_title}
-
-Book language:
-{book_language}
-
-Output language:
-{output_language}
-
-Chunk {chunk_index} of {chunk_count}; classify these original numbered blocks.
-
-Each block includes deterministic evidence. Use it to classify source-flow role. Do not rewrite text.
-
-Input blocks:
-{blocks_json}
-
-Return JSON:
-{{
-  "classifications": [
-    {{
-      "chapter_id": 1,
-      "paragraph_index": 58,
-      "normalized_role": "auxiliary_note",
-      "text_role": "auxiliary",
-      "kind": "translator_note",
-      "confidence": 0.96,
-      "reason_code": "numbered_endnote_cluster",
-      "linked_markers": ["[1]"]
-    }}
-  ]
-}}"""
 
 SourceNormalizationClassifier = Callable[[list[dict[str, object]], Mapping[str, object]], object]
 
@@ -177,24 +119,6 @@ def normalize_book_document_source(
     return normalized, diagnostics
 
 
-def _invoke_source_normalization_classifier(
-    blocks: list[dict[str, object]],
-    context: Mapping[str, object],
-) -> object:
-    """Call the LLM classifier for one bounded source-normalization chunk."""
-
-    return invoke_json(
-        SOURCE_NORMALIZATION_SYSTEM_PROMPT,
-        SOURCE_NORMALIZATION_USER_PROMPT_TEMPLATE.format(
-            book_title=_clean(context.get("book_title")) or "(unknown)",
-            book_language=_clean(context.get("book_language")) or "(unknown)",
-            output_language=_clean(context.get("output_language")) or "(unknown)",
-            chunk_index=int(context.get("chunk_index", 1) or 1),
-            chunk_count=int(context.get("chunk_count", 1) or 1),
-            blocks_json=json.dumps(blocks, ensure_ascii=False, indent=2),
-        ),
-        default={"classifications": []},
-    )
 
 
 def _collect_source_blocks(document: Mapping[str, object]) -> list[dict[str, object]]:

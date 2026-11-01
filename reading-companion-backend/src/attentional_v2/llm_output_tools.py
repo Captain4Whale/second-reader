@@ -82,26 +82,6 @@ DIGEST_RESULT_TOOL = final_output_tool(
 )
 
 
-BRIDGE_RESOLUTION_RESULT_TOOL = final_output_tool(
-    "submit_bridge_resolution_result",
-    "Submit the final bridge-resolution result. Use this tool exactly once as the final answer.",
-    _object_schema(
-        {
-            "decision": {"type": "string", "enum": ["bridge", "decline"]},
-            "reason": {"type": "string"},
-            "primary_bridge": {"type": "object"},
-            "primary_attribution": {"type": "object"},
-            "supporting_bridges": {"type": "array", "items": {"type": "object"}},
-            "activation_updates": {"type": "array", "items": {"type": "object"}},
-            "state_operations": {"type": "array", "items": {"type": "object"}},
-            "knowledge_use_mode": {"type": "string"},
-            "search_policy_mode": {"type": "string"},
-            "search_trigger": {"type": "string"},
-            "search_query": {"type": "string"},
-        },
-        required=["decision", "reason"],
-    ),
-)
 
 
 REFLECTIVE_PROMOTION_RESULT_TOOL = final_output_tool(

@@ -266,4 +266,4 @@ def test_aggregate_reports_success_and_integrity_counts(tmp_path: Path) -> None:
     assert aggregate["case_count"] == 2
     assert aggregate["mechanism_summaries"]["attentional_v2"]["success_count"] == 2
     assert aggregate["mechanism_summaries"]["attentional_v2"]["integrity_failures"] == 0
-    assert aggregate["mechanism_summaries"]["iterator_v1"]["success_rate"] == 1.0
+    assert "iterator_v1" not in aggregate["mechanism_summaries"]

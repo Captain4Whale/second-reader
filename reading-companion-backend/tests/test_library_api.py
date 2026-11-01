@@ -117,6 +117,7 @@ def _bootstrap_book(root: Path, *, stage: str = "completed") -> str:
             }
         ],
     }
+    _write_json(runtime_shell_file(output_dir), {"mechanism_key": "attentional_v2"})
     _write_json(_structure_path(output_dir), structure_payload)
     _write_json(
         _manifest_path(output_dir),
@@ -1628,25 +1629,6 @@ def test_launch_existing_book_read_job_allows_iterator_v1_fallback(tmp_path, mon
     assert "iterator_v1" in launched[0]
 
 
-def test_launch_book_analysis_job_aliases_existing_book_read_job(tmp_path, monkeypatch):
-    """The old launcher name should remain as a compatibility alias only."""
-
-    jobs_module = importlib.import_module("src.library.jobs")
-    book_id = _bootstrap_book(tmp_path, stage="ready")
-    observed: dict[str, object] = {}
-
-    monkeypatch.setattr(
-        jobs_module,
-        "launch_existing_book_read_job",
-        lambda internal_book_id, **kwargs: observed.update({"book_id": internal_book_id, **kwargs}) or {"job_id": "job-legacy", "status": "queued"},
-    )
-
-    record = jobs_module.launch_book_analysis_job(book_id, root=tmp_path, mechanism_key="iterator_v1", intent="legacy")
-
-    assert record["job_id"] == "job-legacy"
-    assert observed["book_id"] == book_id
-    assert observed["mechanism_key"] == "iterator_v1"
-    assert observed["intent"] == "legacy"
 
 
 def test_refresh_job_pauses_running_job_when_runtime_updates_go_stale(tmp_path, monkeypatch):
@@ -2103,23 +2085,25 @@ def test_refresh_job_auto_resume_prefers_runtime_shell_mechanism_key(tmp_path, m
 
 
 def test_resume_mechanism_key_falls_back_to_legacy_iterator_artifacts(tmp_path):
-    """Legacy iterator runs without shell or job metadata should still resume on iterator_v1 after the default flips."""
+    """Legacy iterator artifacts remain identifiable for read-only display."""
 
     jobs_module = importlib.import_module("src.library.jobs")
     book_id = _bootstrap_book(tmp_path, stage="deep_reading")
 
+    runtime_shell_file(tmp_path / "output" / book_id).unlink(missing_ok=True)
     mechanism_key = jobs_module._resume_mechanism_key({"mechanism_key": None}, book_id=book_id, root=tmp_path)
 
     assert mechanism_key == "iterator_v1"
 
 
 def test_refresh_job_auto_resume_preserves_legacy_iterator_when_metadata_is_missing(tmp_path, monkeypatch):
-    """Auto-resume should keep old iterator runs on iterator_v1 even when old records predate mechanism metadata."""
+    """Legacy runs stay visible but cannot launch an auto-resume."""
 
     jobs_module = importlib.import_module("src.library.jobs")
     compat_version = get_reader_resume_compat_version()
     book_id = _bootstrap_book(tmp_path, stage="deep_reading")
     output_dir = tmp_path / "output" / book_id
+    runtime_shell_file(output_dir).unlink(missing_ok=True)
     run_state_path = _run_state_path(output_dir)
     run_state = json.loads(run_state_path.read_text(encoding="utf-8"))
     run_state["resume_compat_version"] = compat_version
@@ -2162,10 +2146,9 @@ def test_refresh_job_auto_resume_preserves_legacy_iterator_when_metadata_is_miss
 
     refreshed = refresh_job("job-prod-stalled-legacy-iterator", root=tmp_path)
 
-    assert launched and "--continue" in launched[0]
-    assert "--mechanism" in launched[0]
-    assert "iterator_v1" in launched[0]
-    assert refreshed["mechanism_key"] == "iterator_v1"
+    assert not launched
+    assert refreshed["status"] == "paused"
+    assert "已退役" in refreshed["error"]
 
 
 def test_api_reads_books_chapters_marks_and_docs(tmp_path):
@@ -2408,6 +2391,7 @@ def test_analysis_state_exposes_current_reading_activity_snapshot(tmp_path):
     book_id = _bootstrap_book(tmp_path, stage="deep_reading")
     public_book_id = to_api_book_id(book_id)
     output_dir = tmp_path / "output" / book_id
+    runtime_shell_file(output_dir).unlink(missing_ok=True)
     run_state_path = _run_state_path(output_dir)
     run_state = json.loads(run_state_path.read_text(encoding="utf-8"))
     run_state["current_reading_activity"] = {
@@ -2871,3 +2855,9 @@ def test_websocket_streams_snapshot_activity_and_heartbeat(tmp_path):
     assert first["payload"]["stage_label_key"] == "system.stage.deepReadingChapter"
     assert second["event_type"] in {"structure.ready", "activity.created"}
     assert third["event_type"] in {"activity.created", "heartbeat", "chapter.completed", "stage.changed"}
+
+
+def test_retired_book_analysis_job_rejected_before_launch(tmp_path):
+    from src.library.jobs import launch_book_analysis_job
+    with pytest.raises(ValueError, match="已退役.*pre-cleanup-2026-11"):
+        launch_book_analysis_job("missing", root=tmp_path)
