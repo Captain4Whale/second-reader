@@ -142,6 +142,8 @@ from .storage import (
 )
 from .chapter_planner import write_chapter_plan_artifacts
 from .unit_memory import (
+    MemoryRetrievalUnavailable,
+    normalize_memory_retrieval_mode,
     UnitMemoryIndex,
     build_unit_memory_entry,
     fallback_query_from_source_unit,
@@ -980,9 +982,7 @@ def _reconcile_unit_memory_from_reading_product(
 ) -> None:
     """Rebuild missing content-neutral Unit Memory rows without embeddings or model calls."""
 
-    retrieval_mode: MemoryRetrievalMode = (
-        "text_only" if _clean_text(memory_retrieval_config.get("mode")) == "text_only" else "hybrid"
-    )
+    retrieval_mode: MemoryRetrievalMode = normalize_memory_retrieval_mode(memory_retrieval_config.get("mode"))[0]
     index = UnitMemoryIndex(output_dir, config=memory_retrieval_config)
     for unit in store.load_units():
         chapter, _source_span, source_unit = _source_unit_for_product_unit(book_document, unit)
@@ -1008,7 +1008,11 @@ def _reconcile_unit_memory_from_reading_product(
                 memory_retrieval_mode=retrieval_mode,
             )
             index.write_entry(entry, index_vectors=False)
+        except MemoryRetrievalUnavailable:
+            raise
         except Exception as exc:  # pragma: no cover - derived memory never owns product truth.
+            if (memory_retrieval_config or {}).get("strict_retrieval"):
+                raise MemoryRetrievalUnavailable(f"Evaluation retrieval failed: {type(exc).__name__}") from exc
             record_unit_memory_retrieval_trace(
                 output_dir,
                 {
@@ -1799,7 +1803,11 @@ def _retrieve_unit_memory_for_prepared_source_unit(
                         accepted_source_span_id=_clean_text(selected_source_unit.get("source_span_id")),
                         accepted_unit_id=_clean_text(selected_source_unit.get("unit_id")),
                     )
+                except MemoryRetrievalUnavailable:
+                    raise
                 except Exception as exc:  # pragma: no cover - defensive non-blocking guard
+                    if (memory_retrieval_config or {}).get("strict_retrieval"):
+                        raise MemoryRetrievalUnavailable(f"Evaluation retrieval failed: {type(exc).__name__}") from exc
                     trace = {
                         "recorded_at": _timestamp(),
                         "event_type": "unit_memory_retrieval",
@@ -1852,7 +1860,11 @@ def _retrieve_unit_memory_for_prepared_source_unit(
             accepted_source_span_id=_clean_text(selected_source_unit.get("source_span_id")),
             accepted_unit_id=_clean_text(selected_source_unit.get("unit_id")),
         )
+    except MemoryRetrievalUnavailable:
+        raise
     except Exception as exc:  # pragma: no cover - defensive non-blocking guard
+        if (memory_retrieval_config or {}).get("strict_retrieval"):
+            raise MemoryRetrievalUnavailable(f"Evaluation retrieval failed: {type(exc).__name__}") from exc
         trace = {
             "recorded_at": _timestamp(),
             "event_type": "unit_memory_retrieval",
@@ -2205,7 +2217,11 @@ def prepare_next_source_unit_for_read(
                 tool_call_id=tool_call_id,
                 accepted_source_span_id=tool_source_span_id,
             )
+        except MemoryRetrievalUnavailable:
+            raise
         except Exception as exc:  # pragma: no cover - defensive tool guard
+            if (memory_retrieval_config or {}).get("strict_retrieval"):
+                raise MemoryRetrievalUnavailable(f"Evaluation retrieval failed: {type(exc).__name__}") from exc
             trace = {
                 "recorded_at": _timestamp(),
                 "event_type": "unit_memory_retrieval",
@@ -2852,9 +2868,7 @@ def _settle_next_unit(
             selected_source_unit.get("unit_id")
         ):
             raise RuntimeError("Derived Unit Span Ledger conflicts with Reading Product truth.")
-        retrieval_mode: MemoryRetrievalMode = (
-            "text_only" if _clean_text(memory_retrieval_config.get("mode")) == "text_only" else "hybrid"
-        )
+        retrieval_mode: MemoryRetrievalMode = normalize_memory_retrieval_mode(memory_retrieval_config.get("mode"))[0]
         try:
             unit_memory_entry = build_unit_memory_entry(
                 book_id=provisioned.output_dir.name,
@@ -2868,7 +2882,11 @@ def _settle_next_unit(
                 unit_memory_entry,
                 index_vectors=retrieval_mode == "hybrid",
             )
+        except MemoryRetrievalUnavailable:
+            raise
         except Exception as exc:  # pragma: no cover - Unit Memory must not block settlement.
+            if (memory_retrieval_config or {}).get("strict_retrieval"):
+                raise MemoryRetrievalUnavailable(f"Evaluation retrieval failed: {type(exc).__name__}") from exc
             record_unit_memory_retrieval_trace(
                 output_dir,
                 {

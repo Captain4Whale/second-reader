@@ -51,3 +51,9 @@ C 封网全量后端：1749 passed（改前 1747 passed / 2 failed），日志 `
 `chapter_plan.json` 带源文件 SHA-256、分类 prompt 版本、policy 版本/内容摘要及整份计划 fingerprint。parse/read 在身份一致时复用；缺失/变化时仅非 resume 允许显式生成，原因写入计划 generation 与既有 diagnostics/events.jsonl。resume 校验失败即报错，不改写计划；checkpoint 绑定原计划 fingerprint。
 
 离线 Tiny Reader（2 章）实际走 parse → read → Product 提交后故障 → resume：分类器总计 2 次，恢复前后计划文件逐字节相同。prompt / policy / source 逐项变更：resume 零新增调用且拒绝；非 resume 从 2 次增到 4 次并记录原因。缺失和内容篡改均拒绝恢复。专项 99 passed。
+
+## E. 显式检索条件
+
+内部配置 / CLI 支持 off、text-only（落盘规范名 text_only）、hybrid；HTTP enum 与前端保持原契约。评测必须在 mechanism_config 或 `READING_MEMORY_RETRIEVAL_MODE` 声明模式；复用 persist_normalized_eval_bundle 标记识别评测，并支持内部 evaluation_run 标记。hybrid 评测启动时校验 sqlite-vec、Ollama 模型及维度；查询或索引中途降级同样失败，不被产品的宽容异常处理吞掉。普通产品默认 hybrid，可降级；配置累计 actual_modes、query_count、query_degradation_count、index_degradation_count 和醒目 warning，逐查询 trace 保留 embedding model / 实际模式 / 降级次数。无 recall 或无 prior units 不算降级查询。resume 按 append-only trace 恢复计数。
+
+专项 123 passed：包含 off/text-only 零 embedding、hybrid 缺模型失败、就绪后故障的产品降级/评测拒绝及精确计数。已有向量不可用测试改为明确模拟 unavailable，取消对本机 Ollama 状态的依赖。

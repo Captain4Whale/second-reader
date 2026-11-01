@@ -561,3 +561,9 @@ Registry files live under `reading-companion-backend/state/job_registry/`:
 - Read `docs/source-of-truth-map.md` when deciding where durable information belongs.
 
 章节调度由 `attentional_v2/chapter_planner.py` 的 `build_chapter_plan` 负责；新产物为 `derived/chapter_plan.json`，不再生成 revisit/motif 索引。当前 runtime schema 为 3；旧格式显式拒绝，禁止转换旧 checkpoint。
+
+### Explicit retrieval conditions (Step 1 prerequisites)
+
+Internal `mechanism_config.memory_retrieval_mode` and CLI `--memory-retrieval-mode` accept `off`, `text-only` (canonical `text_only`), and `hybrid`. Product default remains hybrid. Off disables retrieval, not the recent Understanding window. Evaluation must explicitly select a mode; existing runners without a mode flag use `READING_MEMORY_RETRIEVAL_MODE=text_only` (or off/hybrid). `persist_normalized_eval_bundle=True` automatically requires strict evaluation behavior; internal diagnostics may also set `evaluation_run=True`. Hybrid evaluations fail on readiness or mid-run degradation. Product degradation emits a warning.
+
+`runtime/memory_retrieval_config.json` records requested mode, embedding model, actual modes, query count and query/index degradation counts. `unit_memory_retrieval_trace.jsonl` records per-query evidence. `not_requested` means no actual query has run; it is not proof of working hybrid retrieval. The public HTTP API keeps its existing hybrid/text_only contract; off is internal/CLI only in this task.

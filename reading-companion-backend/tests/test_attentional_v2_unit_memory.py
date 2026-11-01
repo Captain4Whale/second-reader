@@ -754,7 +754,8 @@ def test_text_only_retrieval_prefers_understanding_match_over_source_only_match(
     assert result["selected_units"][0]["best_docs"][0]["surface"] == "unit_understanding"
 
 
-def test_hybrid_mode_degrades_when_vector_adapter_is_unavailable(tmp_path):
+def test_hybrid_mode_degrades_when_vector_adapter_is_unavailable(tmp_path, monkeypatch):
+    monkeypatch.setattr(unit_memory_module.OllamaEmbedder, "embed", lambda *_args: None)
     config = {
         "mode": "hybrid",
         "min_retrievable_prior_units": 0,

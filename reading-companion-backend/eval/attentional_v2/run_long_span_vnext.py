@@ -2125,7 +2125,7 @@ def main(argv: list[str] | None = None) -> int:
     )
     parser.add_argument(
         "--memory-retrieval-mode",
-        choices=("hybrid", "text_only"),
+        choices=("off", "text-only", "text_only", "hybrid"),
         default=None,
         help="Override attentional_v2 Unit Memory retrieval mode for fresh reads.",
     )

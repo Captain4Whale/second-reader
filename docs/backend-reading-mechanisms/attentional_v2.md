@@ -821,3 +821,9 @@ The core Ingest/Digest prompts and accepted Product U/R/M / Pack passed exact of
   - even with the new LLM-based `chapter_zone` classifier, the chapter planner pass is still limited to bounded structural samples and scheduling output
   - it must not turn into chapter summarization, theme extraction, or durable understanding
 - Retrieval pressure and rare-search gating will likely need careful budget control during future Ingest / Digest work.
+
+### Explicit retrieval conditions (Step 1 prerequisites)
+
+Internal `mechanism_config.memory_retrieval_mode` and CLI `--memory-retrieval-mode` accept `off`, `text-only` (canonical `text_only`), and `hybrid`. Product default remains hybrid. Off disables retrieval, not the recent Understanding window. Evaluation must explicitly select a mode; existing runners without a mode flag use `READING_MEMORY_RETRIEVAL_MODE=text_only` (or off/hybrid). `persist_normalized_eval_bundle=True` automatically requires strict evaluation behavior; internal diagnostics may also set `evaluation_run=True`. Hybrid evaluations fail on readiness or mid-run degradation. Product degradation emits a warning.
+
+`runtime/memory_retrieval_config.json` records requested mode, embedding model, actual modes, query count and query/index degradation counts. `unit_memory_retrieval_trace.jsonl` records per-query evidence. `not_requested` means no actual query has run; it is not proof of working hybrid retrieval. The public HTTP API keeps its existing hybrid/text_only contract; off is internal/CLI only in this task.

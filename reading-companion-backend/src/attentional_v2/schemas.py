@@ -345,7 +345,7 @@ class IngestTraceEntry(TypedDict, total=False):
     error: str
 
 
-MemoryRetrievalMode = Literal["text_only", "hybrid"]
+MemoryRetrievalMode = Literal["off", "text_only", "hybrid"]
 
 
 class UnitMemoryQuery(TypedDict, total=False):

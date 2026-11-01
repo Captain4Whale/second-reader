@@ -5,6 +5,8 @@ from __future__ import annotations
 from collections.abc import Mapping
 import hashlib
 import json
+import logging
+import os
 import re
 import sqlite3
 import time
@@ -38,7 +40,11 @@ UNIT_MEMORY_RECALL_QUERY_VERSION = "unit_memory_recall_query.v1"
 UNIT_MEMORY_RETRIEVAL_CONFIG_SCHEMA_VERSION = "unit_memory_retrieval_config.v1"
 UNIT_MEMORY_QUERY_INSTRUCTION_VERSION = "unit_memory_query_instruction.v1"
 DEFAULT_MEMORY_RETRIEVAL_MODE: MemoryRetrievalMode = "hybrid"
-VALID_MEMORY_RETRIEVAL_MODES: set[str] = {"text_only", "hybrid"}
+VALID_MEMORY_RETRIEVAL_MODES: set[str] = {"off", "text_only", "hybrid"}
+
+
+class MemoryRetrievalUnavailable(RuntimeError):
+    """An evaluation cannot continue with a different retrieval condition."""
 
 DEFAULT_RETRIEVAL_CONFIG: dict[str, object] = {
     "schema_version": UNIT_MEMORY_RETRIEVAL_CONFIG_SCHEMA_VERSION,
@@ -106,7 +112,7 @@ def normalize_memory_retrieval_mode(value: object) -> tuple[MemoryRetrievalMode,
     if normalized in VALID_MEMORY_RETRIEVAL_MODES:
         return normalized, []  # type: ignore[return-value]
     if normalized:
-        return DEFAULT_MEMORY_RETRIEVAL_MODE, [f"invalid_memory_retrieval_mode:{normalized}"]
+        raise ValueError(f"Invalid memory_retrieval_mode: {normalized}; use off, text-only or hybrid.")
     return DEFAULT_MEMORY_RETRIEVAL_MODE, []
 
 
@@ -151,12 +157,36 @@ def resolve_memory_retrieval_config(
 
     path = memory_retrieval_config_file(output_dir)
     existing = load_json(path) if path.exists() else {}
-    raw_mode = dict(mechanism_config or {}).get("memory_retrieval_mode")
+    requested = dict(mechanism_config or {})
+    raw_mode = requested.get("memory_retrieval_mode")
+    evaluation = bool(requested.get("persist_normalized_eval_bundle") or requested.get("evaluation_run") or (continue_mode and existing.get("strict_retrieval")))
+    if raw_mode is None and not continue_mode:
+        raw_mode = os.environ.get("READING_MEMORY_RETRIEVAL_MODE") or None
+    if evaluation and raw_mode is None and not (continue_mode and existing):
+        raise ValueError("Evaluation requires explicit memory_retrieval_mode or READING_MEMORY_RETRIEVAL_MODE (off/text-only/hybrid).")
+    existing["strict_retrieval"] = evaluation
+    existing.setdefault("actual_modes", [])
+    existing.setdefault("effective_mode", "not_requested")
+    existing.setdefault("query_count", 0)
+    existing.setdefault("query_degradation_count", 0)
+    existing.setdefault("index_degradation_count", 0)
+    # A checkpoint can predate the last failed query. The append-only trace,
+    # rather than a restored checkpoint counter, owns attempts already made.
+    trace_path = unit_memory_retrieval_trace_file(output_dir)
+    if continue_mode and trace_path.exists():
+        rows = [json.loads(line) for line in trace_path.read_text().splitlines() if line.strip()]
+        existing["query_count"] = sum(int(row.get("query_count", 0)) for row in rows)
+        existing["query_degradation_count"] = sum(int(row.get("query_degradation_count", 0)) for row in rows)
+        existing["index_degradation_count"] = sum(row.get("event_type") == "unit_memory_write_failed" for row in rows)
+        modes = sorted({str(row["effective_mode"]) for row in rows if row.get("query_count") and row.get("effective_mode")})
+        existing["actual_modes"] = modes
+        existing["effective_mode"] = modes[0] if len(modes) == 1 else "mixed" if modes else "not_requested"
     selected_by = "mechanism_config" if raw_mode is not None else "default"
     if continue_mode and raw_mode is None and existing:
         mode, warnings = normalize_memory_retrieval_mode(existing.get("mode"))
         config = _config_with_mode(mode=mode, selected_by="resume_config", warnings=warnings, base=existing)
         save_json(path, config)
+        validate_retrieval_readiness(output_dir, config)
         return config
 
     if raw_mode is None and existing:
@@ -177,7 +207,30 @@ def resolve_memory_retrieval_config(
                 "recorded_at": _timestamp(),
             },
         )
+    validate_retrieval_readiness(output_dir, config)
     return config
+
+
+def validate_retrieval_readiness(output_dir: Path, config: dict[str, object]) -> None:
+    """Fail before reading when an evaluation's requested hybrid backend is unavailable."""
+    if not config.get("strict_retrieval") or config.get("mode") != "hybrid":
+        return
+    index = UnitMemoryIndex(output_dir, config=config)
+    reason = ""
+    with index._connect() as connection:
+        if not index._load_sqlite_vec(connection):
+            reason = index._vector_unavailable_reason or "sqlite_vec_unavailable"
+    if not reason:
+        embedding = OllamaEmbedder(model_id=str(config["ollama_model_id"]), timeout_ms=int(config["query_embedding_timeout_ms"])).embed("retrieval readiness")
+        if embedding is None:
+            reason = "embedding_unavailable"
+        elif len(embedding) != int(config["embedding_dimension"]):
+            reason = "embedding_dimension_mismatch"
+    config["readiness"] = {"status": "failed" if reason else "ready", "reason": reason, "checked_at": _timestamp()}
+    save_json(memory_retrieval_config_file(output_dir), config)
+    if reason:
+        record_unit_memory_retrieval_trace(output_dir, {"event_type": "retrieval_readiness_failed", "mode": "hybrid", "degradation_reason": reason})
+        raise MemoryRetrievalUnavailable("Evaluation hybrid retrieval unavailable: " + reason)
 
 
 def record_unit_memory_retrieval_trace(output_dir: Path | None, payload: Mapping[str, object]) -> None:
@@ -185,7 +238,36 @@ def record_unit_memory_retrieval_trace(output_dir: Path | None, payload: Mapping
 
     if output_dir is None:
         return
-    append_jsonl(unit_memory_retrieval_trace_file(output_dir), dict(payload))
+    row = dict(payload)
+    config_path = memory_retrieval_config_file(output_dir)
+    config = load_json(config_path) if config_path.exists() else {}
+    row["embedding_provider"] = config.get("embedding_provider", "ollama")
+    row["embedding_model"] = config.get("ollama_model_id", DEFAULT_RETRIEVAL_CONFIG["ollama_model_id"])
+    reason = str(row.get("degradation_reason") or "")
+    queries = list(row.get("per_recall") or [])
+    skipped = reason in {"no_prior_units", "no_recall", "empty_query", "retrieval_off", "invalid_recall_tool_args"} or str(row.get("query_source", "")).startswith("skip_")
+    queried = row.get("event_type") == "unit_memory_retrieval" and not skipped
+    query_count = (sum(q.get("degradation_reason") != "empty_query" for q in queries) if queries else 1) if queried else 0
+    row["query_count"] = query_count
+    degraded = queried and row.get("mode") == "hybrid" and row.get("effective_mode") in {"text_only", "off"}
+    row["query_degradation_count"] = sum(bool(q.get("degradation_reason")) and q.get("degradation_reason") != "empty_query" for q in queries) if degraded and queries else int(degraded)
+    if config:
+        config["query_count"] = int(config.get("query_count", 0)) + query_count
+        config["query_degradation_count"] = int(config.get("query_degradation_count", 0)) + row["query_degradation_count"]
+        if queried or row.get("effective_mode") == "off":
+            actual = str(row.get("effective_mode") or "unknown")
+            query_modes = {str(q["effective_mode"]) for q in queries if q.get("effective_mode") and q.get("degradation_reason") != "empty_query"}
+            config["actual_modes"] = sorted(set(config.get("actual_modes", [])) | (query_modes or {actual}))
+            config["effective_mode"] = actual if len(config["actual_modes"]) == 1 else "mixed"
+        if row.get("event_type") == "unit_memory_write_failed":
+            config["index_degradation_count"] = int(config.get("index_degradation_count", 0)) + 1
+        if degraded or row.get("event_type") in {"unit_memory_write_failed", "retrieval_readiness_failed"}:
+            config["degradation_warning"] = "RETRIEVAL DEGRADED: " + reason
+            logging.getLogger(__name__).warning(config["degradation_warning"])
+        save_json(config_path, config)
+    append_jsonl(unit_memory_retrieval_trace_file(output_dir), row)
+    if config.get("strict_retrieval") and degraded:
+        raise MemoryRetrievalUnavailable("Evaluation retrieval degraded: " + reason)
 
 
 def _memory_query_from_value(value: object) -> UnitMemoryQuery:
@@ -924,6 +1006,10 @@ class UnitMemoryIndex:
                 (_json_dumps(index_status), unit_id),
             )
             connection.commit()
+        if index_status.get("last_error"):
+            record_unit_memory_retrieval_trace(self.output_dir, {"event_type": "unit_memory_write_failed", "unit_id": unit_id, "mode": self.config.get("mode"), "degradation_reason": index_status["last_error"]})
+            if self.config.get("strict_retrieval"):
+                raise MemoryRetrievalUnavailable("Evaluation vector indexing failed: " + str(index_status["last_error"]))
         return {"status": "written", "unit_id": unit_id, "retrieval_doc_count": len(docs), "index_status": index_status}
 
     def _embedding_cache_key(self, text: str) -> tuple[str, str, int, str]:
@@ -1329,6 +1415,10 @@ class UnitMemoryIndex:
             "selected_units": [],
             "suppressed_units": [],
         }
+        if mode == "off":
+            trace["degradation_reason"] = "retrieval_off"
+            record_unit_memory_retrieval_trace(self.output_dir, trace)
+            return {"recalls": normalized_recalls, "mode": "off", "effective_mode": "off", "selected_units": [], "trace": trace}
         if not normalized_recalls:
             trace["degradation_reason"] = "no_recall"
             trace["latency_ms"] = int((time.monotonic() - started_at) * 1000)
@@ -1453,6 +1543,7 @@ class UnitMemoryIndex:
                         degradation_reasons.append(f"{recall_id}:{dense_degradation}")
                         per_recall["degradation_reason"] = dense_degradation
 
+                per_recall["effective_mode"] = "text_only" if dense_degradation else mode
                 per_recall["lexical_docs"] = len(lexical_candidates)
                 per_recall["dense_docs"] = len(dense_candidates)
                 per_recall["dense_docs_filtered_by_distance"] = dense_filtered_by_distance
@@ -1541,6 +1632,10 @@ class UnitMemoryIndex:
             "excluded_source_unit_span_count": len(excluded_source_unit_span_ids),
             "selected_units": [],
         }
+        if mode == "off":
+            trace["degradation_reason"] = "retrieval_off"
+            record_unit_memory_retrieval_trace(self.output_dir, trace)
+            return {"query": dict(query), "mode": "off", "effective_mode": "off", "selected_units": [], "trace": trace}
         if not query_text:
             trace["degradation_reason"] = "empty_query"
             trace["latency_ms"] = int((time.monotonic() - started_at) * 1000)
