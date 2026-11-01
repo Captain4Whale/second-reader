@@ -120,7 +120,7 @@ Update when: backend-local constraints, recurring pitfalls, or stable implementa
 
 ## Retired Execution Boundary
 - Historical iterator/slow-cycle code is available at tag `pre-cleanup-2026-11`.
-- Only post-cleanup runs may resume. Do not migrate old checkpoint state or auto-reset it into a fresh run.
+- Only current chapter-planner schema runs may resume. Do not migrate old checkpoint state or auto-reset it into a fresh run.
 - slow_cycle.py retains deterministic Product/UI projection functions; it no longer owns model calls or dedicated stores.
 - New evaluation inputs use Product-accepted Marginalia; historical results are read-only.
 
@@ -153,3 +153,6 @@ Update when: backend-local constraints, recurring pitfalls, or stable implementa
 - Raw activity/program-log text may remain backend-authored for compatibility and debugging.
 
 章节调度由 `attentional_v2/chapter_planner.py` 的 `build_chapter_plan` 负责；新产物为 `derived/chapter_plan.json`，不再生成 revisit/motif 索引。当前 runtime schema 为 3；旧格式显式拒绝，禁止转换旧 checkpoint。
+
+- Evaluation retrieval must declare off/text_only/hybrid. Hybrid readiness or query degradation is fatal for evaluation; product fallback must remain visible in configuration and per-query receipts.
+- Preserve code revision, effective sampling, prompt versions and frozen-plan fingerprint in the existing ledger and run-configuration companion. Never copy arbitrary provider options or credentials.

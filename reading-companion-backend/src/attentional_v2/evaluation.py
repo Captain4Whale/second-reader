@@ -372,10 +372,12 @@ def build_normalized_eval_bundle(
 
     document = _load_book_document(output_dir)
     reaction_sections = _reaction_section_index(output_dir, document)
+    from .observability import refresh_run_configuration
     return {
         "mechanism_key": ATTENTIONAL_V2_MECHANISM_KEY,
         "mechanism_label": "Default deep reading mechanism",
         "evaluation_input": "product-accepted-marginalia-v1",
+        "run_configuration": refresh_run_configuration(output_dir),
         "generated_at": _timestamp(),
         "output_dir": str(output_dir),
         "config_fingerprint": stable_config_fingerprint(

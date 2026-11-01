@@ -90,3 +90,60 @@ def test_empty_recall_is_not_a_degraded_query(tmp_path):
     persisted = json.loads(memory_retrieval_config_file(tmp_path).read_text())
     assert persisted["query_count"] == persisted["query_degradation_count"] == 0
     assert persisted["effective_mode"] == "not_requested"
+
+
+def test_resume_recovers_query_counts_and_mixed_modes_from_trace(tmp_path):
+    memory.resolve_memory_retrieval_config(tmp_path, {"memory_retrieval_mode": "hybrid"})
+    memory.record_unit_memory_retrieval_trace(tmp_path, {
+        "event_type": "unit_memory_retrieval", "mode": "hybrid", "effective_mode": "text_only",
+        "degradation_reason": "one failed query", "per_recall": [
+            {"effective_mode": "hybrid", "degradation_reason": ""},
+            {"effective_mode": "text_only", "degradation_reason": "embedding_unavailable"},
+        ],
+    })
+    # Simulate restoration of counters from an older checkpoint.
+    path = memory_retrieval_config_file(tmp_path)
+    config = json.loads(path.read_text())
+    config.update(query_count=0, query_degradation_count=0, actual_modes=[])
+    path.write_text(json.dumps(config))
+    resumed = memory.resolve_memory_retrieval_config(tmp_path, {}, continue_mode=True)
+    assert resumed["query_count"] == 2
+    assert resumed["query_degradation_count"] == 1
+    assert resumed["actual_modes"] == ["hybrid", "text_only"]
+    assert resumed["effective_mode"] == "mixed"
+
+
+def test_fresh_hybrid_evaluation_stops_before_chapter_classification(tmp_path, monkeypatch):
+    from src.attentional_v2 import runner
+    from src.reading_core.runtime_contracts import ReadRequest
+    from src.reading_mechanisms.attentional_v2 import AttentionalV2Mechanism
+    from tests.test_attentional_v2_scaffold import _provisioned_book, _fixture_epub
+
+    monkeypatch.chdir(tmp_path)
+    monkeypatch.setattr(runner, "ensure_canonical_parse", lambda *args, **kwargs: _provisioned_book())
+    def forbidden(*args, **kwargs):
+        pytest.fail("unready evaluation reached chapter classification")
+    monkeypatch.setattr(runner, "write_chapter_plan_artifacts", forbidden)
+    monkeypatch.setattr(memory.UnitMemoryIndex, "_load_sqlite_vec", lambda *_: True)
+    monkeypatch.setattr(memory.OllamaEmbedder, "embed", lambda *_: None)
+    with pytest.raises(memory.MemoryRetrievalUnavailable, match="embedding_unavailable"):
+        AttentionalV2Mechanism().read_book(ReadRequest(book_path=_fixture_epub(), mechanism_config={"evaluation_run": True, "memory_retrieval_mode": "hybrid"}))
+
+
+@pytest.mark.parametrize("evaluation", [False, True])
+def test_whole_query_failure_is_recorded_as_off_and_not_swallowed_for_eval(tmp_path, monkeypatch, evaluation):
+    from src.attentional_v2 import runner
+    config = memory.resolve_memory_retrieval_config(tmp_path, {"evaluation_run": evaluation, "memory_retrieval_mode": "text_only"})
+    def fail(*args, **kwargs):
+        raise OSError("fixture retrieval failure")
+    monkeypatch.setattr(memory.UnitMemoryIndex, "retrieve_for_recalls", fail)
+    kwargs = dict(output_dir=tmp_path, book_id="book-demo", prepared_source_unit={"chapter_id": 1, "memory_recalls": [{"recall_id": "r1", "recall_text": "prior meaning", "basis": "selected_source_unit"}]}, recent_reading_memory={"entries": []}, memory_retrieval_config=config)
+    if evaluation:
+        with pytest.raises(memory.MemoryRetrievalUnavailable):
+            runner._retrieve_unit_memory_for_prepared_source_unit(**kwargs)
+    else:
+        result = runner._retrieve_unit_memory_for_prepared_source_unit(**kwargs)
+        assert result["trace"]["effective_mode"] == "off"
+    receipt = json.loads(memory_retrieval_config_file(tmp_path).read_text())
+    assert receipt["query_count"] == receipt["query_degradation_count"] == 1
+    assert receipt["actual_modes"] == ["off"]

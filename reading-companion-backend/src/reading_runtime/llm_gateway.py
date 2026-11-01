@@ -11,6 +11,7 @@ import json
 import ast
 from json import JSONDecodeError
 import re
+import subprocess
 import threading
 import time
 import uuid
@@ -1845,6 +1846,29 @@ def current_llm_scope() -> LLMInvocationScopeState | None:
     return _CURRENT_SCOPE.get()
 
 
+def code_revision() -> dict[str, object]:
+    """Record source identity, never credentials or repository remote URLs."""
+    root = Path(__file__).resolve().parents[2]
+    try:
+        commit = subprocess.run(["git", "-C", str(root), "rev-parse", "HEAD"], capture_output=True, text=True, check=True, timeout=5).stdout.strip()
+        dirty = subprocess.run(["git", "-C", str(root), "status", "--porcelain"], capture_output=True, text=True, check=True, timeout=5).stdout.strip()
+        return {"code_commit": commit, "code_dirty": bool(dirty)}
+    except (OSError, subprocess.SubprocessError):
+        return {"code_commit": None, "code_dirty": None, "code_revision_status": "unavailable"}
+
+
+def _sampling_record(provider, profile, invocation_options) -> dict[str, object]:
+    """Allowlist actual sampling settings; do not serialize arbitrary provider options."""
+    options = _effective_invocation_options(provider, profile, invocation_options)
+    extra = options.get("extra_body", {})
+    effective = {**(extra if isinstance(extra, dict) else {}), **options}
+    result = {"temperature": profile.temperature, "max_output_tokens": profile.max_output_tokens}
+    for key in ("temperature", "top_p", "top_k", "seed", "frequency_penalty", "presence_penalty", "reasoning_effort", "max_tokens", "max_output_tokens"):
+        if key in effective and isinstance(effective[key], (str, int, float, bool, type(None))):
+            result[key] = effective[key]
+    return result
+
+
 def runtime_trace_context(
     output_dir: Path,
     *,
@@ -1863,7 +1887,7 @@ def runtime_trace_context(
         stage=stage,
         node=node,
         debug_enabled=debug_enabled,
-        extra=dict(extra or {}),
+        extra={**code_revision(), **dict(extra or {})},
     )
 
 
@@ -1886,7 +1910,7 @@ def eval_trace_context(
         stage=stage,
         node=node,
         debug_enabled=debug_enabled,
-        extra=dict(extra or {}),
+        extra={**code_revision(), **dict(extra or {})},
     )
 
 
@@ -2388,6 +2412,7 @@ def _invoke_response_inner(
     final_slot_id = ""
     final_problem_code = ""
     final_model = profile.model
+    attempt_profile = profile
     last_error: Exception | None = None
     response: Any | None = None
     quota_retry_attempt_count = 0
@@ -2722,6 +2747,7 @@ def _invoke_response_inner(
                         "selection_override_source": profile.selection_override_source or "",
                         "contract": provider.contract,
                         "model": attempt_profile.model,
+                        "sampling": _sampling_record(provider, attempt_profile, invocation_options),
                         "mechanism_key": trace_context.mechanism_key if trace_context else "",
                         "eval_target": trace_context.eval_target if trace_context else "",
                         "stage": trace_context.stage if trace_context else "",
@@ -2884,6 +2910,7 @@ def _invoke_response_inner(
         "selection_override_source": profile.selection_override_source or "",
         "contract": final_contract,
         "model": final_model,
+        "sampling": _sampling_record(provider, attempt_profile, invocation_options) if provider is not None else {},
         "mechanism_key": trace_context.mechanism_key if trace_context else "",
         "eval_target": trace_context.eval_target if trace_context else "",
         "stage": trace_context.stage if trace_context else "",

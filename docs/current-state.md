@@ -10,9 +10,9 @@ This file is authoritative for durable current status. Do not keep unique active
 Last verified: `2026-11-01` (Step 0 scope; prior experiment review states retained)
 
 ## Current Objective
-- `TASK-STEP1-PREREQS` is active on `codex/step1-prereqs`: chapter planner naming, frozen reading plan, explicit retrieval and reproducible configuration records. Offline substitutes only; no push or evaluation redesign. [Execution](tasks/step1-prereqs-2026-11-01.md).
+- `TASK-STEP1-PREREQS` is complete on `codex/step1-prereqs`: chapter planner naming, frozen reading plan, explicit retrieval and reproducible configuration records. Offline substitutes only; backend 1768 passed, frontend/contracts passed, 17 unchanged traceability warnings; no push or evaluation redesign. [Execution](tasks/step1-prereqs-2026-11-01.md).
 - `TASK-LIGHTWEIGHT-CLEANUP-STEP0` is complete under `DEC-160`: iterator execution/dual branches and slow-cycle model/state branches removed; current Product/UI projection, Pack, notes evaluation and cost telemetry retained. Only post-cleanup runs resume; old checkpoints explicitly point to tag `pre-cleanup-2026-11`. See [execution](tasks/lightweight-cleanup-step0-execution-2026-11-01.md) and [evolution](reading-mechanism-evolution-step0.md).
-- `TASK-RESUME-READING-PLAN-FREEZE` is now done in the Step 1 prerequisites branch: verified plan reuse, fail-closed resume, and offline interruption evidence. `TASK-STEP1-PREREQS` continues with explicit retrieval and run configuration records; evaluation redesign is not authorized in this task.
+- `TASK-RESUME-READING-PLAN-FREEZE` is now done in the Step 1 prerequisites branch: verified plan reuse, fail-closed resume, and offline interruption evidence. Explicit retrieval and run configuration records are also complete. Await the user's Step 1 evaluation-design instructions; do not start new evaluation by inertia.
 - Active note dataset is June 29: 158 unique cases / 5 segments. Historical recall 0.3498 / 0.1232 belongs to April 19 run on the April 16 203-case package, not June 14/29. Earlier milestones below retain their dates; they do not override this current pointer.
 - `TASK-XIDADUO-CONTEXT-SCOPE-DIGEST-20260913` is waiting for manual review of the combined A/B/C packet. Explicitly authorized C-only recovery `xidaduo_context_scope_c_retry_20260913` succeeded on the first additional request in `22.929` seconds (`15,482` input / `989` output tokens, including `65` reasoning); attempts 2/3 were not called. The actual request/settings matched the original C exactly, with one gateway physical attempt, `tool_calls` completion and zero structure errors. C produced `5` marks (`2` Highlights / `3` Notes), all exactly located in the target chapter. New run ledger is `review_pending`, job `bgjob_xidaduo_context_scope_c_retry_20260913` is `completed`. Original A/B outputs and the original HTTP-408 C failure remain untouched; the original batch stays `failed`. The new `40`-item anonymous packet and verification are under `reading-companion-backend/state/experiments/xidaduo_context_scope_c_retry_20260913`. Next: human review; no further generation or product change. Quote validity/counts do not establish semantic quality or a general context-length effect.
 - `TASK-XIDADUO-FULLBOOK-SINGLE-DIGEST-20260913` completed implementation and the authorized generation; the task is `waiting` for the user's manual review and the run ledger is `review_pending`. The September 3 accepted source was reconstructed as `552` paragraphs / `55,185` characters (SHA-256 `6d75c4bdd06668ccfc03c2a96ea4b484a31898fda05f8dfe793b852efcdb3be9`) without reparsing EPUB or rerunning preprocessing. Digest v24 fixed blocks matched the baseline; full-book SourceUnit/focus and empty ReadingMemory were the only context changes. `cpa_codex_local / gpt-5.6-luna`, medium reasoning, temperature `0.2`, output limit `65,536`, timeout `1,800` seconds returned once in `36.79` seconds: `64,158` input + `1,709` output tokens (`140` reasoning), `65,867` total. The response ended with `tool_calls`, no structure errors, and below the output limit. It produced `10` Marginalia (`5` Highlights / `5` Notes): `8` quotes locate exactly and `2` do not locate and remain preserved for review. These are mechanical findings, not a quality verdict; the historical `89` Units / `207` Marginalia are reference material, not gold or proof that splitting is necessary. All local source/raw/parsed/check/review artifacts remain under `reading-companion-backend/state/experiments/xidaduo_fullbook_single_digest_20260913/`; no judge, repair, retry, continuation, or new experiment was run.
@@ -3622,7 +3622,7 @@ Last verified: `2026-11-01` (Step 0 scope; prior experiment review states retain
 ## Machine-Readable Appendix
 ```json
 {
-  "updated_at": "2026-11-01T12:00:00+08:00",
+  "updated_at": "2026-11-01T20:16:54+08:00",
   "last_updated_by": "codex",
   "active_task_ids": [
     "TASK-ATTENTIONAL-V2-STRUCTURAL-REWORK",
@@ -3635,13 +3635,13 @@ Last verified: `2026-11-01` (Step 0 scope; prior experiment review states retain
     "TASK-ANNOTATION-HUB-V0-MINIMAL-PACK-MIGRATION"
   ],
   "queued_task_ids": [
-    "TASK-RESUME-READING-PLAN-FREEZE",
     "TASK-RUNTIME-OBSERVABILITY-COST-V1"
   ],
   "blocked_task_ids": [],
   "active_job_ids": [],
   "open_decision_ids": [],
   "detail_refs": [
+    "docs/tasks/step1-prereqs-2026-11-01.md",
     "docs/tasks/lightweight-cleanup-step0-execution-2026-11-01.md",
     "docs/implementation/reading-product/reading-product-output-v1-detailed-design-and-implementation-handoff.md",
     "contract/reading-product/v1/README.md",

@@ -1,11 +1,11 @@
 {
   "version": 1,
-  "updated_at": "2026-11-01T12:00:00+08:00",
+  "updated_at": "2026-11-01T20:16:54+08:00",
   "tasks": [
     {
       "id": "TASK-STEP1-PREREQS",
       "title": "Chapter planner / frozen plan / reproducible run prerequisites",
-      "status": "active",
+      "status": "done",
       "lane": "mechanism_runtime",
       "priority": "high",
       "detail_ref": "docs/tasks/step1-prereqs-2026-11-01.md",
@@ -16,11 +16,11 @@
       "decision_refs": [],
       "job_refs": [],
       "blocked_by": [],
-      "next_action": "Complete B–F with offline validation and separate commits; no push.",
+      "next_action": "Await explicit Step 1 evaluation-design instructions. Offline prerequisites verified; no push.",
       "evidence_refs": [
         "docs/tasks/step1-prereqs-2026-11-01.md"
       ],
-      "last_updated": "2026-11-01T12:00:00+08:00",
+      "last_updated": "2026-11-01T20:16:54+08:00",
       "last_updated_by": "codex"
     },
     {
@@ -2843,7 +2843,7 @@
         "reading-companion-backend/docs/archive/pre-cleanup-2026-11/research/attentional_v2_post_phase_d_eval_comparative_audit_20260414_longspan_appendix.md",
         "reading-companion-backend/docs/archive/pre-cleanup-2026-11/research/attentional_v2_post_phase_d_eval_comparative_audit_20260414_excerpt_appendix.md",
         "docs/backend-reading-mechanisms/attentional_v2.md",
-        "reading-companion-backend/src/attentional_v2/survey.py",
+        "reading-companion-backend/src/attentional_v2/chapter_planner.py",
         "reading-companion-backend/src/attentional_v2/schemas.py",
         "reading-companion-backend/src/attentional_v2/prompts.py",
         "reading-companion-backend/src/attentional_v2/llm_calls.py",
@@ -2860,7 +2860,7 @@
         "reading-companion-backend/tests/test_attentional_v2_scaffold.py",
         "reading-companion-backend/tests/test_attentional_v2_slow_cycle.py",
         "reading-companion-backend/tests/test_attentional_v2_evaluation.py",
-        "reading-companion-backend/tests/test_attentional_v2_survey.py",
+        "reading-companion-backend/tests/test_attentional_v2_chapter_planner.py",
         "reading-companion-backend/tests/test_attentional_v2_resume.py",
         "reading-companion-backend/eval/runs/attentional_v2/attentional_v2_post_phase_d_longspan_smoke_20260412/diagnostics/value_of_others_abnormal_call_snapshot_20260413.md",
         "reading-companion-backend/eval/runs/attentional_v2/attentional_v2_post_phase_d_longspan_smoke_20260412/diagnostics/value_of_others_progress_and_latency_check_20260413.md",

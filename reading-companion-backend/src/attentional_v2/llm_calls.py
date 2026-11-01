@@ -913,7 +913,7 @@ def ingest(
                 result["tool_result_summary"] = dict(first_result)
         return result
 
-    with llm_invocation_scope(trace_context=LLMTraceContext(stage="phase4", node="ingest")):
+    with llm_invocation_scope(trace_context=LLMTraceContext(stage="phase4", node="ingest", extra={"prompt_version": prompts.ingest_version})):
         return _invoke_with_tools(user_prompt)
 
 
@@ -1051,7 +1051,7 @@ def digest(
         promptset_version=prompts.promptset_version,
         prompt_assembly=prompt_assembly_metadata,
     )
-    with llm_invocation_scope(trace_context=LLMTraceContext(stage="phase4", node="digest")):
+    with llm_invocation_scope(trace_context=LLMTraceContext(stage="phase4", node="digest", extra={"prompt_version": prompts.digest_version})):
         structured_output = invoke_structured_output(
             system_prompt,
             user_prompt,

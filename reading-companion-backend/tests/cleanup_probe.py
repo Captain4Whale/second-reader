@@ -102,7 +102,7 @@ def matching_probe(root, patch):
     return {"rows": rows, "judge_prompts": judgments}
 
 
-def product_probe(root, patch):
+def product_probe(root, patch, *, evaluation=False):
     patch.chdir(root)
     _configure_priced_runtime_target(patch)
     patch.setenv("BACKEND_RUNTIME_ROOT", str(root))
@@ -136,7 +136,7 @@ def product_probe(root, patch):
     mechanism = AttentionalV2Mechanism()
     mechanism.parse_book(ParseRequest(book_path=TINY_READER_EPUB, mechanism_key="attentional_v2"))
     result = mechanism.read_book(ReadRequest(book_path=TINY_READER_EPUB, mechanism_key="attentional_v2",
-                                            mechanism_config={"memory_retrieval_mode": "text_only"}))
+                                            mechanism_config={"memory_retrieval_mode": "text_only", "persist_normalized_eval_bundle": evaluation}))
     output_dir = result.output_dir.resolve()
     product = _load_complete_product(output_dir)
     assert product.status == "complete" and any(u.marginalia for u in product.units)
@@ -160,7 +160,9 @@ def product_probe(root, patch):
     assert ledger and all(row["status"] == "ok" for row in ledger)
     from src.attentional_v2.storage import chapter_plan_file
     reading_plan = json.loads(chapter_plan_file(output_dir).read_text())["reading_plan"]
-    return {"reading_plan": reading_plan, "prompts": adapter.prompts, "product": document_to_wire(product),
+    return {"run_configuration": result.normalized_eval_bundle.get("run_configuration", {}),
+            "call_configurations": [{key: row.get(key) for key in ("node", "provider_id", "model", "sampling", "prompt_version", "code_commit", "code_dirty")} for row in ledger],
+            "reading_plan": reading_plan, "prompts": adapter.prompts, "product": document_to_wire(product),
             "pack": json.loads(pack.annotations_json.read_text()),
             "ledger_nodes": [row["node"] for row in ledger]}
 
@@ -170,13 +172,14 @@ def main():
     parser.add_argument("--output", type=Path, required=True)
     parser.add_argument("--baseline", type=Path)
     parser.add_argument("--without-slow-cycle", action="store_true")
+    parser.add_argument("--evaluation", action="store_true")
     args = parser.parse_args()
     output = args.output.resolve()
     baseline = json.loads(args.baseline.read_text()) if args.baseline else None
     with TemporaryDirectory(prefix="cleanup-probe-") as temp, pytest.MonkeyPatch.context() as patch:
         patch.setattr(socket.socket, "connect", forbid_connection)
         root = Path(temp)
-        evidence = {"matching": matching_probe(root, patch), "product": product_probe(root, patch)}
+        evidence = {"matching": matching_probe(root, patch), "product": product_probe(root, patch, evaluation=args.evaluation)}
     clear_llm_gateway_runtime_state()
     clear_llm_registry_cache()
     output.parent.mkdir(parents=True, exist_ok=True)

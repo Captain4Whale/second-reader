@@ -56,7 +56,7 @@ The core Ingest/Digest prompts and accepted Product U/R/M / Pack passed exact of
   - The landed implementation includes:
   - shared chapter / paragraph substrate, with parse-time sentence records retained as compatibility and historical evidence handles rather than the mainline reading lattice
   - shared canonical parse/provisioning and shared manifest/run-state shells
-  - chapter scheduling chapter planner artifacts
+  - chapter classification and reading-plan artifacts
   - deterministic intake/retrieval helpers
   - LLM calls with prompt-version manifests
       - Phase 5 knowledge and retained-evidence helper history, with the old Bridge path now paused from the live Runner
@@ -245,7 +245,7 @@ The core Ingest/Digest prompts and accepted Product U/R/M / Pack passed exact of
 ## Reading Progression Logic
 - The mechanism starts with a chapter planner pass.
   - It uses the shared `book document` to build a rough structural map of chapters, headings, likely pivots, and a narrow `chapter_zone` classification for scheduling.
-  - That chapter planner pass remains an chapter scheduling layer rather than hidden full-book reading:
+  - That chapter planner pass remains a chapter scheduling layer rather than hidden full-book reading:
     - it classifies structural role only
     - it does not produce user-visible Marginalia
     - it does not write durable reading memory
@@ -827,3 +827,9 @@ The core Ingest/Digest prompts and accepted Product U/R/M / Pack passed exact of
 Internal `mechanism_config.memory_retrieval_mode` and CLI `--memory-retrieval-mode` accept `off`, `text-only` (canonical `text_only`), and `hybrid`. Product default remains hybrid. Off disables retrieval, not the recent Understanding window. Evaluation must explicitly select a mode; existing runners without a mode flag use `READING_MEMORY_RETRIEVAL_MODE=text_only` (or off/hybrid). `persist_normalized_eval_bundle=True` automatically requires strict evaluation behavior; internal diagnostics may also set `evaluation_run=True`. Hybrid evaluations fail on readiness or mid-run degradation. Product degradation emits a warning.
 
 `runtime/memory_retrieval_config.json` records requested mode, embedding model, actual modes, query count and query/index degradation counts. `unit_memory_retrieval_trace.jsonl` records per-query evidence. `not_requested` means no actual query has run; it is not proof of working hybrid retrieval. The public HTTP API keeps its existing hybrid/text_only contract; off is internal/CLI only in this task.
+
+### Run configuration evidence
+
+The existing standard LLM ledger now records allowlisted effective sampling settings, prompt version and code commit/dirty state for each node. Arbitrary provider options, credentials and headers are never copied. A compact `runtime/run_configuration.json` companion joins those existing records with all prompt versions, the verified chapter-plan fingerprint and requested/actual retrieval metadata. `classification_calls` preserves the receipts of the reused plan; `model_calls` and ledger start/end delimit the current parse/read/resume invocation. Each invocation, including failures, appends its configuration receipt to the existing diagnostics event stream. Normalized eval bundles and internal ParseResult/ReadResult summaries expose the same snapshot; public HTTP/Product/Pack contracts do not change.
+
+The plan fingerprint excludes timestamps and invocation receipt IDs, so repeated identical planning outputs have the same identity. This records comparability conditions; it does not claim that real model outputs are deterministic. `code_dirty=true` explicitly marks validation of uncommitted code. An unavailable Git checkout is recorded as unknown, never as a fabricated revision. Configuration evidence and all generated offline probes remain ignored runtime artifacts.

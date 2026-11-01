@@ -212,6 +212,6 @@ then update this document in the same task.
 
 ## Step 0 recovery boundary
 
-Resume compatibility is `2`; attentional runtime schema is `2`, and full checkpoints require `checkpoint_format=lightweight-cleanup-2026-11`. Older runs explicitly report retirement and point to `pre-cleanup-2026-11`. Old books remain readable; startup backfill is unchanged. Chapter completion/checkpoint/Product finalization continue without slow-cycle model calls.
+Resume requires attentional runtime schema `3` and `checkpoint_format=chapter-planner-2026-11`. Older runs explicitly report retirement: Step 0 is inspectable at `4bc7ee0`, and pre-cleanup history at `pre-cleanup-2026-11`. Old books remain readable; startup backfill is unchanged. Chapter completion/checkpoint/Product finalization continue without slow-cycle model calls.
 
 The Step 1 prerequisite now freezes `chapter_plan.json`: parse/read reuse matching source digest, classification prompt version and policy version/content. Fresh generation records invalidation reasons; resume only validates and rejects mismatches, including changed plan contents. See [prerequisite evidence](tasks/step1-prereqs-2026-11-01.md).

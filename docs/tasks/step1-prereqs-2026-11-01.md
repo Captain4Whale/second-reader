@@ -36,7 +36,7 @@
 
 ## 验证与进度
 
-A 已完成；B 改名及死输出清理已完成。改前封网全量测试 1747 passed / 2 failed（原有 monkeypatch）；改名前后固定 transport 的阅读计划、核心 prompt、Product U/R/M、Pack、固定 judge 匹配完全一致。离线基线位于 ignored `reading-companion-backend/state/step1_prereqs/`。模型 transport 使用固定替身，socket 连接被封锁。B–F 待实施。
+A–F 已完成。改前封网全量测试 1747 passed / 2 failed（原有 monkeypatch）；最终 1768 passed。改名前后及最终固定 transport 的阅读计划、核心 prompt、Product U/R/M、Pack、固定 judge 匹配完全一致。离线基线位于 ignored `reading-companion-backend/state/step1_prereqs/`。模型 transport 使用固定替身，socket 连接被封锁。
 
 B 命名：`survey.py` → `chapter_planner.py`；`build_book_survey` → `build_chapter_plan`；`_classify_chapter_zone` → `classify_chapter_zones`；writer → `write_chapter_plan_artifacts`；`SurveyMap` → `ChapterPlan`；`survey_map.json` / `survey_map` → `chapter_plan.json` / `chapter_plan`；`survey_status` → `chapter_planner_status`；prompt `survey_chapter_zone` → `chapter_zone`，submit tool 同步。成本 ledger 的 node 不变。
 
@@ -57,3 +57,19 @@ C 封网全量后端：1749 passed（改前 1747 passed / 2 failed），日志 `
 内部配置 / CLI 支持 off、text-only（落盘规范名 text_only）、hybrid；HTTP enum 与前端保持原契约。评测必须在 mechanism_config 或 `READING_MEMORY_RETRIEVAL_MODE` 声明模式；复用 persist_normalized_eval_bundle 标记识别评测，并支持内部 evaluation_run 标记。hybrid 评测启动时校验 sqlite-vec、Ollama 模型及维度；查询或索引中途降级同样失败，不被产品的宽容异常处理吞掉。普通产品默认 hybrid，可降级；配置累计 actual_modes、query_count、query_degradation_count、index_degradation_count 和醒目 warning，逐查询 trace 保留 embedding model / 实际模式 / 降级次数。无 recall 或无 prior units 不算降级查询。resume 按 append-only trace 恢复计数。
 
 专项 123 passed：包含 off/text-only 零 embedding、hybrid 缺模型失败、就绪后故障的产品降级/评测拒绝及精确计数。已有向量不可用测试改为明确模拟 unavailable，取消对本机 Ollama 状态的依赖。
+
+## F. 配置记录补全
+
+标准调用账本补充 code_commit / code_dirty、各节点实际采样参数、prompt_version；参数采用 allowlist，不复制任意 provider options、header 或凭据。复用原 prompt manifest、计划和检索记录，以小型 `runtime/run_configuration.json` companion 汇总缺失的运行级视图，同时出现在内部结果和 normalized eval bundle 中；每次 parse/read/resume（包括失败）的配置快照追加到已有 diagnostics/events.jsonl。没有引入通用缓存或配置框架。
+
+分类调用 receipts 随计划保留，当前调用由 ledger start/end 定界；计划 fingerprint 排除时间、随机 call_id 和调用 receipts，防止观测元数据制造假差异。后验补测确认：恢复旧 checkpoint 的计数仍从 trace 正确重建；hybrid 新评测在章节分类前完成预检；整次检索失败实际记为 off 并留档，评测异常不会被吞掉。
+
+真实生成的**替身配置样例**见 `state/step1_prereqs/f-final-eval-example.json` 的 `product.run_configuration`。分类器 / Ingest / Digest 都记录配置名 `cpa_codex_local / gpt-5.6-luna`、temperature 0.2、reasoning_effort medium、4096 输出上限；实际调用为本地固定 transport，并非该真实模型。prompt 版本为 chapter_zone.v2 / ingest.v19 / digest.v24，计划有完整 SHA-256 fingerprint。该样本明确请求 text_only，没有 recall，因此实际模式为 not_requested，查询及降级计数均为 0；embedding 配置 qwen3-embedding:0.6b 没有被调用。修改中生成的样例如实带 code_dirty=true。
+
+## 最终验证和边界
+
+- `make test` 在 sitecustomize 封锁 socket connect/connect_ex 的环境下通过：后端 **1768 passed / 0 failed**，前端 typecheck/build、Product/Pack/schema/OpenAPI/API/前端静态契约通过。日志 `state/step1_prereqs/final-verified.log`。
+- Traceability **17 条既有告警**与 Step 0 最终日志逐条一致；修正了改名引起的两处任务索引路径。既有前端 bundle 大小提示与依赖弃用提示保留。
+- 设计文档检查另有 warning-only 提醒。没有改写 decision-log：这是已登记前置项的落实，没有改变 reader 框架、产品方向、评测指标或主机制；决策和验证可由本记录、稳定文档及代码重建。归档与历史评测结果完全未改。
+- A `928f702`；B `c9db816`；C `e52f6e2`；D `1828ec7`；E `b90157f`；F 为本记录所在提交。
+- 没有触发需要扩大范围的停止条件。off 只进入内部配置/CLI，未扩展 HTTP API；新的配置 companion 只汇总现有证据。所有生成物沿用已忽略的 state/output 目录，未新增需追踪的中间产物。没有 push、真实模型请求或真书运行。

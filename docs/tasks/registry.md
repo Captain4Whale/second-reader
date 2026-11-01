@@ -20,7 +20,7 @@ Last updated: `2026-11-01`
 
 ## 当前前置任务
 
-- `TASK-STEP1-PREREQS` — `active`，mechanism_runtime / high。[执行记录](step1-prereqs-2026-11-01.md)。仅离线替身验证，分部提交、不 push。
+- `TASK-STEP1-PREREQS` — `done`，mechanism_runtime / high。[执行记录](step1-prereqs-2026-11-01.md)。仅离线替身验证，分部提交、不 push。
 
 ## Step 0 完成与下一步
 

@@ -207,6 +207,7 @@ def artifact_map(output_dir: Path) -> dict[str, str]:
         "unit_span_ledger": str(unit_span_ledger_file(output_dir).relative_to(output_dir)),
         "unit_memory_sqlite": str(unit_memory_sqlite_file(output_dir).relative_to(output_dir)),
         "memory_retrieval_config": str(memory_retrieval_config_file(output_dir).relative_to(output_dir)),
+        "run_configuration": str((runtime_dir(output_dir) / "run_configuration.json").relative_to(output_dir)),
         "unit_memory_retrieval_trace": str(unit_memory_retrieval_trace_file(output_dir).relative_to(output_dir)),
         "reaction_records": str(reaction_records_file(output_dir).relative_to(output_dir)),
         "reader_policy": str(reader_policy_file(output_dir).relative_to(output_dir)),

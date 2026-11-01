@@ -80,6 +80,7 @@ class ChapterPlan(TypedDict, total=False):
     input_identity: dict[str, object]
     fingerprint: str
     generation: dict[str, object]
+    classification_calls: list[dict[str, object]]
 
 
 def _timestamp() -> str:
@@ -245,6 +246,7 @@ def classify_chapter_zones(
                 trace_context=LLMTraceContext(
                     stage="chapter_planner",
                     node="chapter_zone_classifier",
+                    extra={"prompt_version": prompts.chapter_zone_version},
                 )
             ),
         ):
@@ -459,12 +461,15 @@ def write_chapter_plan_artifacts(
         append_jsonl(event_stream_file(output_dir), {**event, "fingerprint": existing["fingerprint"]})
         return {"chapter_plan": existing}
 
+    from .observability import model_call_configurations
+    classifier_start = len(model_call_configurations(output_dir))
     chapter_planner = build_chapter_plan(
         document,
         output_dir=output_dir,
         policy_snapshot=policy_snapshot,
         mechanism_version=mechanism_version,
     )
+    chapter_planner["classification_calls"] = model_call_configurations(output_dir)[classifier_start:]
     chapter_planner["input_identity"] = identity
     chapter_planner["fingerprint"] = chapter_plan_fingerprint(chapter_planner)
     chapter_planner["generation"] = event
@@ -477,7 +482,7 @@ def write_chapter_plan_artifacts(
 
 def chapter_plan_fingerprint(plan: dict[str, object]) -> str:
     """Bind the validated input identity to the exact persisted planning output."""
-    payload = {key: value for key, value in plan.items() if key not in {"generated_at", "fingerprint", "generation"}}
+    payload = {key: value for key, value in plan.items() if key not in {"generated_at", "fingerprint", "generation", "classification_calls"}}
     # Policy timestamps describe a write, not a planning input.
     payload["policy_snapshot"] = {key: value for key, value in dict(payload.get("policy_snapshot", {})).items() if key != "updated_at"}
     return hashlib.sha256(json.dumps(payload, ensure_ascii=False, sort_keys=True, separators=(",", ":")).encode()).hexdigest()

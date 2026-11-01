@@ -49,6 +49,8 @@ from .llm_calls import (
 )
 from .llm_output_tools import validate_ingest_unit_memory_tool_args
 from .observability import (
+    run_configuration_scope,
+    refresh_run_configuration,
     maybe_capture_memory_quality_probe,
     memory_quality_probe_observability_settings,
     record_read,
@@ -521,6 +523,7 @@ def _artifact_summary(
         "chapters": chapters,
         "artifact_map": artifact_tree.get("artifact_map", {}),
         "chapter_planner_status": chapter_planner_summary.get("chapter_plan", {}).get("status", "ready"),
+        "run_configuration": refresh_run_configuration(provisioned.output_dir, status="completed"),
     }
 
 
@@ -1011,8 +1014,6 @@ def _reconcile_unit_memory_from_reading_product(
         except MemoryRetrievalUnavailable:
             raise
         except Exception as exc:  # pragma: no cover - derived memory never owns product truth.
-            if (memory_retrieval_config or {}).get("strict_retrieval"):
-                raise MemoryRetrievalUnavailable(f"Evaluation retrieval failed: {type(exc).__name__}") from exc
             record_unit_memory_retrieval_trace(
                 output_dir,
                 {
@@ -1806,8 +1807,6 @@ def _retrieve_unit_memory_for_prepared_source_unit(
                 except MemoryRetrievalUnavailable:
                     raise
                 except Exception as exc:  # pragma: no cover - defensive non-blocking guard
-                    if (memory_retrieval_config or {}).get("strict_retrieval"):
-                        raise MemoryRetrievalUnavailable(f"Evaluation retrieval failed: {type(exc).__name__}") from exc
                     trace = {
                         "recorded_at": _timestamp(),
                         "event_type": "unit_memory_retrieval",
@@ -1815,7 +1814,7 @@ def _retrieve_unit_memory_for_prepared_source_unit(
                         "recalls": fallback_recalls,
                         "query_source": "runtime_source_text_fallback",
                         "mode": _clean_text(memory_retrieval_config.get("mode")) or "hybrid",
-                        "effective_mode": "text_only",
+                        "effective_mode": "off",
                         "degradation_reason": f"fallback_retrieval_failed:{type(exc).__name__}",
                         "candidate_counts": {"recall_count": 1},
                         "selected_units": [],
@@ -1863,8 +1862,6 @@ def _retrieve_unit_memory_for_prepared_source_unit(
     except MemoryRetrievalUnavailable:
         raise
     except Exception as exc:  # pragma: no cover - defensive non-blocking guard
-        if (memory_retrieval_config or {}).get("strict_retrieval"):
-            raise MemoryRetrievalUnavailable(f"Evaluation retrieval failed: {type(exc).__name__}") from exc
         trace = {
             "recorded_at": _timestamp(),
             "event_type": "unit_memory_retrieval",
@@ -1872,7 +1869,7 @@ def _retrieve_unit_memory_for_prepared_source_unit(
             "recalls": [dict(item) for item in recalls],
             "query_source": "ingest_recalls",
             "mode": _clean_text(memory_retrieval_config.get("mode")) or "hybrid",
-            "effective_mode": "text_only",
+            "effective_mode": "off",
             "degradation_reason": f"retrieval_failed:{type(exc).__name__}",
             "candidate_counts": {},
             "selected_units": [],
@@ -2220,8 +2217,6 @@ def prepare_next_source_unit_for_read(
         except MemoryRetrievalUnavailable:
             raise
         except Exception as exc:  # pragma: no cover - defensive tool guard
-            if (memory_retrieval_config or {}).get("strict_retrieval"):
-                raise MemoryRetrievalUnavailable(f"Evaluation retrieval failed: {type(exc).__name__}") from exc
             trace = {
                 "recorded_at": _timestamp(),
                 "event_type": "unit_memory_retrieval",
@@ -2230,7 +2225,7 @@ def prepare_next_source_unit_for_read(
                 "query_source": "tool_retrieve_unit_memory",
                 "tool_call_id": tool_call_id,
                 "mode": _clean_text((memory_retrieval_config or {}).get("mode")) or "hybrid",
-                "effective_mode": "text_only",
+                "effective_mode": "off",
                 "degradation_reason": f"retrieval_failed:{type(exc).__name__}",
                 "boundary_resolution": dict(resolution_for_tool),
                 "candidate_counts": {},
@@ -2885,8 +2880,6 @@ def _settle_next_unit(
         except MemoryRetrievalUnavailable:
             raise
         except Exception as exc:  # pragma: no cover - Unit Memory must not block settlement.
-            if (memory_retrieval_config or {}).get("strict_retrieval"):
-                raise MemoryRetrievalUnavailable(f"Evaluation retrieval failed: {type(exc).__name__}") from exc
             record_unit_memory_retrieval_trace(
                 output_dir,
                 {
@@ -2988,6 +2981,7 @@ def parse_attentional_v2(request: ParseRequest, mechanism: MechanismInfo) -> Par
     save_book_document(book_document_file(provisioned.output_dir), provisioned.book_document)
     created = not runtime_artifacts.book_manifest_file(provisioned.output_dir).exists()
     with (
+        run_configuration_scope(provisioned.output_dir, stage="parse", continue_mode=bool(request.continue_mode)),
         product_run_observation_scope(
             provisioned.output_dir,
             mechanism_key=mechanism.key,
@@ -3081,6 +3075,7 @@ def run_reading_runner(request: ReadRequest, mechanism: MechanismInfo) -> ReadRe
         else product_run_observation_scope(output_dir, mechanism_key=mechanism.key, stage="read")
     )
     with (
+        run_configuration_scope(output_dir, stage="read", continue_mode=bool(request.continue_mode)),
         observation_manager,
         llm_invocation_scope(
             profile_id=DEFAULT_RUNTIME_PROFILE_ID,
@@ -3091,6 +3086,10 @@ def run_reading_runner(request: ReadRequest, mechanism: MechanismInfo) -> ReadRe
             ),
         ),
     ):
+        memory_retrieval_config = None
+        if not request.continue_mode:
+            _reset_live_runtime(output_dir)
+            memory_retrieval_config = resolve_memory_retrieval_config(output_dir, dict(request.mechanism_config or {}))
         chapter_planner_summary = write_chapter_plan_artifacts(
             output_dir,
             provisioned.book_document,
@@ -3103,8 +3102,6 @@ def run_reading_runner(request: ReadRequest, mechanism: MechanismInfo) -> ReadRe
             checkpoint = load_full_checkpoint(output_dir)
             if checkpoint and checkpoint.get("reading_id") and checkpoint.get("chapter_plan_fingerprint") != chapter_planner_summary["chapter_plan"]["fingerprint"]:
                 raise RuntimeError("Resume chapter plan fingerprint differs from the reading checkpoint.")
-        if not request.continue_mode:
-            _reset_live_runtime(output_dir)
         artifact_tree = initialize_artifact_tree(output_dir)
         if not request.continue_mode:
             _write_manifest(output_dir, provisioned.book_document)
@@ -3133,11 +3130,12 @@ def run_reading_runner(request: ReadRequest, mechanism: MechanismInfo) -> ReadRe
                 "local_continuity": dict(bundle.get("local_continuity", {})),
             }
 
-        memory_retrieval_config = resolve_memory_retrieval_config(
-            output_dir,
-            dict(request.mechanism_config or {}),
-            continue_mode=bool(request.continue_mode),
-        )
+        if memory_retrieval_config is None:
+            memory_retrieval_config = resolve_memory_retrieval_config(
+                output_dir,
+                dict(request.mechanism_config or {}),
+                continue_mode=bool(request.continue_mode),
+            )
         if request.continue_mode:
             _reconcile_unit_memory_from_reading_product(
                 output_dir=output_dir,
@@ -3519,6 +3517,7 @@ def run_reading_runner(request: ReadRequest, mechanism: MechanismInfo) -> ReadRe
             },
         )
 
+        refresh_run_configuration(output_dir, status="completed")
         normalized_eval_bundle = build_normalized_eval_bundle(
             output_dir,
             config_payload={

@@ -178,7 +178,14 @@ def resolve_memory_retrieval_config(
         existing["query_count"] = sum(int(row.get("query_count", 0)) for row in rows)
         existing["query_degradation_count"] = sum(int(row.get("query_degradation_count", 0)) for row in rows)
         existing["index_degradation_count"] = sum(row.get("event_type") == "unit_memory_write_failed" for row in rows)
-        modes = sorted({str(row["effective_mode"]) for row in rows if row.get("query_count") and row.get("effective_mode")})
+        modes = set()
+        for row in rows:
+            if row.get("effective_mode") == "off":
+                modes.add("off")
+            if row.get("query_count"):
+                query_modes = {str(q["effective_mode"]) for q in row.get("per_recall", []) if q.get("effective_mode") and q.get("degradation_reason") != "empty_query"}
+                modes.update(query_modes or {str(row.get("effective_mode", "unknown"))})
+        modes = sorted(modes)
         existing["actual_modes"] = modes
         existing["effective_mode"] = modes[0] if len(modes) == 1 else "mixed" if modes else "not_requested"
     selected_by = "mechanism_config" if raw_mode is not None else "default"
@@ -249,7 +256,7 @@ def record_unit_memory_retrieval_trace(output_dir: Path | None, payload: Mapping
     queried = row.get("event_type") == "unit_memory_retrieval" and not skipped
     query_count = (sum(q.get("degradation_reason") != "empty_query" for q in queries) if queries else 1) if queried else 0
     row["query_count"] = query_count
-    degraded = queried and row.get("mode") == "hybrid" and row.get("effective_mode") in {"text_only", "off"}
+    degraded = queried and row.get("mode") in {"hybrid", "text_only"} and row.get("effective_mode") in {"text_only", "off"} and row.get("effective_mode") != row.get("mode")
     row["query_degradation_count"] = sum(bool(q.get("degradation_reason")) and q.get("degradation_reason") != "empty_query" for q in queries) if degraded and queries else int(degraded)
     if config:
         config["query_count"] = int(config.get("query_count", 0)) + query_count
@@ -266,7 +273,7 @@ def record_unit_memory_retrieval_trace(output_dir: Path | None, payload: Mapping
             logging.getLogger(__name__).warning(config["degradation_warning"])
         save_json(config_path, config)
     append_jsonl(unit_memory_retrieval_trace_file(output_dir), row)
-    if config.get("strict_retrieval") and degraded:
+    if config.get("strict_retrieval") and (degraded or row.get("event_type") == "unit_memory_write_failed"):
         raise MemoryRetrievalUnavailable("Evaluation retrieval degraded: " + reason)
 
 

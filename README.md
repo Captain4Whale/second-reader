@@ -13,7 +13,7 @@ The project is maintained as one product with two sub-applications:
 
 ## Step 0 清理后的运行边界
 
-正常运行仅支持 `attentional_v2`。`iterator_v1` / `both` / `book_analysis` 选项显式报已退役；API enum 暂保留。只支持清理后新建 run 的 resume，旧 checkpoint 错误提示 tag `pre-cleanup-2026-11`。旧书只读显示、启动 backfill、前端与 Annotation Pack 保留。验证和备份见 [执行记录](docs/tasks/lightweight-cleanup-step0-execution-2026-11-01.md)。
+正常运行仅支持 `attentional_v2`。`iterator_v1` / `both` / `book_analysis` 选项显式报已退役；API enum 暂保留。只支持当前 chapter-planner schema 3 新建 run 的 resume，旧 checkpoint 错误提示 tag `pre-cleanup-2026-11`。旧书只读显示、启动 backfill、前端与 Annotation Pack 保留。验证和备份见 [执行记录](docs/tasks/lightweight-cleanup-step0-execution-2026-11-01.md)。
 
 ## Structure
 - `reading-companion-backend/`: backend code, runtime artifacts, tests, `.env`
@@ -567,3 +567,5 @@ Registry files live under `reading-companion-backend/state/job_registry/`:
 Internal `mechanism_config.memory_retrieval_mode` and CLI `--memory-retrieval-mode` accept `off`, `text-only` (canonical `text_only`), and `hybrid`. Product default remains hybrid. Off disables retrieval, not the recent Understanding window. Evaluation must explicitly select a mode; existing runners without a mode flag use `READING_MEMORY_RETRIEVAL_MODE=text_only` (or off/hybrid). `persist_normalized_eval_bundle=True` automatically requires strict evaluation behavior; internal diagnostics may also set `evaluation_run=True`. Hybrid evaluations fail on readiness or mid-run degradation. Product degradation emits a warning.
 
 `runtime/memory_retrieval_config.json` records requested mode, embedding model, actual modes, query count and query/index degradation counts. `unit_memory_retrieval_trace.jsonl` records per-query evidence. `not_requested` means no actual query has run; it is not proof of working hybrid retrieval. The public HTTP API keeps its existing hybrid/text_only contract; off is internal/CLI only in this task.
+
+Run configuration lookup: `_mechanisms/attentional_v2/runtime/run_configuration.json` joins code commit/dirty state, per-node model/sampling/prompt receipts, plan fingerprint and retrieval actual-mode/degradation counters. Normalized evaluation outputs include the same `run_configuration` snapshot. Historical invocation receipts remain in the existing mechanism diagnostics event stream.

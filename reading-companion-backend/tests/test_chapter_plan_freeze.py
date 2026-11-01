@@ -78,3 +78,12 @@ def test_missing_or_tampered_plan_is_never_a_resume_cache_hit(planning, tmp_path
     with pytest.raises(RuntimeError, match="plan_content_changed"):
         write(resume=True)
     assert len(calls) == 2
+
+
+def test_plan_fingerprint_does_not_change_with_call_receipt_ids(planning):
+    write, _calls, _source, _policy = planning
+    plan = write()
+    fingerprint = plan["fingerprint"]
+    plan["classification_calls"] = [{"call_id": "a-new-invocation", "code_dirty": True}]
+    plan["generated_at"] = "different-invocation-time"
+    assert planner.chapter_plan_fingerprint(plan) == fingerprint

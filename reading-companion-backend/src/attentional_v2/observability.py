@@ -5,6 +5,7 @@ from __future__ import annotations
 import json
 from collections import Counter
 from collections.abc import Mapping
+from contextlib import contextmanager
 from datetime import datetime, timezone
 from pathlib import Path
 
@@ -27,6 +28,72 @@ from .schemas import (
 )
 from .state_projection import context_ref_ids
 from .storage import append_jsonl, event_stream_file, read_audit_file, settlement_audit_file, unitization_audit_file
+
+
+def model_call_configurations(output_dir: Path) -> list[dict[str, object]]:
+    """Project the existing standard ledger into credential-free configuration receipts."""
+    path = runtime_artifacts.llm_standard_trace_file(output_dir)
+    if not path.exists():
+        return []
+    keys = ("call_id", "node", "stage", "provider_id", "contract", "model", "sampling", "prompt_version", "code_commit", "code_dirty", "status")
+    rows = []
+    for line in path.read_text().splitlines():
+        try:
+            row = json.loads(line)
+        except ValueError:
+            continue  # An interrupted trailing trace write is not a new model call.
+        if isinstance(row, dict):
+            rows.append({key: row[key] for key in keys if key in row})
+    return rows
+
+
+def refresh_run_configuration(output_dir: Path, *, status: str | None = None) -> dict[str, object]:
+    """Join existing plan, prompt and retrieval evidence for the current invocation."""
+    from .storage import chapter_plan_file, memory_retrieval_config_file, runtime_dir, load_json, save_json
+    path = runtime_dir(output_dir) / "run_configuration.json"
+    if not path.exists():
+        return {}
+    snapshot = load_json(path)
+    if status:
+        snapshot["status"] = status
+    plan = load_json(chapter_plan_file(output_dir)) if chapter_plan_file(output_dir).exists() else {}
+    snapshot["chapter_plan_fingerprint"] = plan.get("fingerprint")
+    snapshot["chapter_plan_input_identity"] = plan.get("input_identity", {})
+    snapshot["classification_calls"] = plan.get("classification_calls", [])
+    rows = model_call_configurations(output_dir)
+    snapshot["model_calls"] = rows[int(snapshot.get("llm_ledger_start", 0)):]
+    snapshot["llm_ledger_end"] = len(rows)
+    retrieval_path = memory_retrieval_config_file(output_dir)
+    snapshot["retrieval"] = load_json(retrieval_path) if retrieval_path.exists() and snapshot.get("stage") == "read" else {}
+    save_json(path, snapshot)
+    return snapshot
+
+
+@contextmanager
+def run_configuration_scope(output_dir: Path, *, stage: str, continue_mode: bool = False):
+    """Attach missing run-level metadata to the existing observability artifacts."""
+    from src.reading_runtime.llm_gateway import code_revision
+    from .prompts import ATTENTIONAL_V2_PROMPTS
+    from .storage import runtime_dir, save_json
+    snapshot = {
+        "schema_version": 1,
+        **code_revision(), "stage": stage, "continue_mode": continue_mode,
+        "started_at": _timestamp(), "status": "running",
+        "llm_ledger_start": len(model_call_configurations(output_dir)),
+        "prompt_versions": {
+            "chapter_zone_classifier": ATTENTIONAL_V2_PROMPTS.chapter_zone_version,
+            "ingest": ATTENTIONAL_V2_PROMPTS.ingest_version,
+            "digest": ATTENTIONAL_V2_PROMPTS.digest_version,
+        },
+    }
+    save_json(runtime_dir(output_dir) / "run_configuration.json", snapshot)
+    status = "failed"
+    try:
+        yield
+        status = "completed"
+    finally:
+        final = refresh_run_configuration(output_dir, status=status)
+        append_jsonl(event_stream_file(output_dir), {"event_type": "run_configuration", "recorded_at": _timestamp(), **final})
 
 _SETTLED_STORE_ID_KEYS = {
     "recent_reading_memory": "entry_id",
