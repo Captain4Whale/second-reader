@@ -258,47 +258,22 @@ def test_extract_epub_paragraph_records_skips_blockquote_container_and_preserves
     assert records[2]["ancestor_tags"] == ["blockquote"]
 
 
-def test_extract_epub_chapters_from_toc_handles_nested_children_and_non_string_href():
-    """Nested TOC entries with child lists should recurse instead of crashing on list href values."""
+def test_epub_spine_orders_nested_toc_and_keeps_unlisted_linear_chapters():
+    from ebooklib import epub
 
-    class _Link:
-        def __init__(self, title: str, href: str):
-            self.title = title
-            self.href = href
+    book = epub.EpubBook()
+    for name in ("other/intro", "intro", "unlisted"):
+        book.add_item(epub.EpubHtml(uid=name, file_name=name + ".xhtml", content="<p>Text</p>"))
+    book.spine = [("intro", "yes"), ("unlisted", "yes"), ("other/intro", "yes")]
+    book.toc = [(epub.Section("Later", "other/intro.xhtml"), [
+        epub.Link("intro.xhtml#subsection", "Subsection"),
+        epub.Link("intro.xhtml", "Earlier"),
+    ])]
 
-    class _Item:
-        def __init__(self, item_id: str, name: str, content: str):
-            self._id = item_id
-            self._name = name
-            self._content = content
-
-        def get_id(self):
-            return self._id
-
-        def get_name(self):
-            return self._name
-
-        def get_content(self):
-            return self._content.encode("utf-8")
-
-    chapters = ebook_parser_module._extract_epub_chapters_from_toc(
-        [
-            (
-                _Link("Part One", "part.xhtml"),
-                [_Link("Chapter 1", "chapter-1.xhtml"), _Link("Chapter 2", "chapter-2.xhtml")],
-            )
-        ],
-        items={
-            "part": _Item("part", "part.xhtml", "<p>Part intro</p>"),
-            "chapter-1": _Item("chapter-1", "chapter-1.xhtml", "<p>Chapter one</p>"),
-            "chapter-2": _Item("chapter-2", "chapter-2.xhtml", "<p>Chapter two</p>"),
-        },
-        spine_index_by_id={"part": 0, "chapter-1": 1, "chapter-2": 2},
-        level=1,
-    )
-
-    assert [chapter["title"] for chapter in chapters] == ["Part One", "Chapter 1", "Chapter 2"]
-    assert [chapter["level"] for chapter in chapters] == [1, 2, 2]
+    chapters = ebook_parser_module._chapters_from_epub_book(book)
+    assert [chapter["item_id"] for chapter in chapters] == ["intro", "unlisted", "other/intro"]
+    assert [chapter["title"] for chapter in chapters] == ["Earlier", "unlisted.xhtml", "Later"]
+    assert [chapter["level"] for chapter in chapters] == [2, 1, 1]
 
 
 def test_classify_paragraph_records_detects_heading_roles_generically():
@@ -1472,6 +1447,14 @@ def test_backfill_missing_epub_covers_updates_manifest_and_is_idempotent(tmp_pat
     assert second == [{"book_id": "demo-book", "status": "already_present", "cover_image_url": "_assets/cover.jpg"}]
     assert manifest["cover_image_url"] == "_assets/cover.jpg"
     assert cover_asset_file(output_dir).read_bytes() == b"backfill-cover"
+
+
+def test_legacy_locator_backfill_does_not_reuse_a_shifted_toc_id():
+    sources = [(1, {"title": "Preface", "href": "front.xhtml"}),
+               (2, {"title": "Chapter 1", "href": "body.xhtml"})]
+    match = parse_module._match_legacy_source_chapter
+    assert match({"id": 1, "title": "Chapter 1"}, sources, set()) == sources[1][1]
+    assert match({"id": 2, "title": "Former subsection"}, sources, set()) is None
 
 
 def test_hydrate_legacy_epub_locators_backfills_structure_and_result(tmp_path):

@@ -1757,21 +1757,31 @@ def _match_legacy_source_chapter(
     used_indexes: set[int],
 ) -> dict[str, object] | None:
     """Match one legacy structure chapter to its parsed EPUB chapter."""
-    chapter_id = int(chapter.get("id", 0) or 0)
-    preferred = next((candidate for index, candidate in source_chapters if index == chapter_id), None)
-    if preferred is not None:
-        used_indexes.add(chapter_id)
-        return preferred
-
+    # Before spine-order parsing, chapter ids referred to TOC entries. Verify
+    # the resource or title before reusing an ordinal from an old structure.
+    href = chapter.get("href")
     title_key = _normalized_title_key(chapter.get("title", ""))
+    matches = []
     for index, candidate in source_chapters:
-        if index in used_indexes:
-            continue
-        if _normalized_title_key(candidate.get("title", "")) != title_key:
-            continue
-        used_indexes.add(index)
-        return candidate
-    return None
+        candidate_href = str(candidate.get("href", ""))
+        if href:
+            same_chapter = candidate_href == href
+        else:
+            label = str(candidate.get("title", ""))
+            if _normalized_title_key(label) != title_key and label == Path(candidate_href).name:
+                # No TOC label. Older structures often carry a display title
+                # such as "Chapter 1" for the fallback label "chapter-1.xhtml".
+                label = re.sub(r"[-_]+", " ", Path(label).stem)
+            same_chapter = bool(title_key) and _normalized_title_key(label) == title_key
+        if same_chapter:
+            matches.append((index, candidate))
+    if len(matches) != 1:
+        return None
+    index, candidate = matches[0]
+    if index in used_indexes:
+        return None
+    used_indexes.add(index)
+    return candidate
 
 
 def hydrate_legacy_epub_locators(output_dir: Path, structure: BookStructure, book_path: Path) -> list[str]:
@@ -1785,6 +1795,7 @@ def hydrate_legacy_epub_locators(output_dir: Path, structure: BookStructure, boo
 
     structure_changed = False
     used_indexes: set[int] = set()
+    chapter_paragraphs = {}
     for chapter in structure.get("chapters", []):
         source = _match_legacy_source_chapter(chapter, source_chapters, used_indexes)
         if source is None:
@@ -1825,7 +1836,7 @@ def hydrate_legacy_epub_locators(output_dir: Path, structure: BookStructure, boo
             int(record.get("paragraph_index", 0) or 0): position
             for position, record in enumerate(search_records, start=1)
         }
-        chapter_wide_paragraph_payload = _legacy_locator_paragraphs(search_records)
+        chapter_paragraphs[chapter["id"]] = _legacy_locator_paragraphs(search_records)
         search_start = 0
         for segment in chapter.get("segments", []):
             target_text, removed_prefixes = _trim_structural_prefix_from_text(str(segment.get("text", "") or ""))
@@ -1887,6 +1898,8 @@ def hydrate_legacy_epub_locators(output_dir: Path, structure: BookStructure, boo
 
     result_changed = False
     for chapter in structure.get("chapters", []):
+        if chapter["id"] not in chapter_paragraphs:
+            continue
         result_path = existing_chapter_result_file(output_dir, chapter)
         if not result_path.exists():
             continue
@@ -1940,7 +1953,7 @@ def hydrate_legacy_epub_locators(output_dir: Path, structure: BookStructure, boo
             for reaction in section.get("reactions", []):
                 if not isinstance(reaction, dict):
                     continue
-                reaction_paragraph_locators = paragraph_locators or chapter_wide_paragraph_payload
+                reaction_paragraph_locators = paragraph_locators or chapter_paragraphs[chapter["id"]]
                 target_locator = _reaction_target_locator(
                     str(reaction.get("anchor_quote", "")),
                     section_locator,

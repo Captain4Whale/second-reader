@@ -502,7 +502,7 @@ def test_publication_identity_rejects_stale_document_and_has_no_local_path(
     )
 
 
-def test_publication_identity_rejects_broken_toc_full_content_fallback(
+def test_publication_identity_uses_verified_spine_resource_when_toc_link_is_broken(
     tmp_path: Path,
 ) -> None:
     chapter = DEFAULT_CHAPTERS[0]
@@ -543,15 +543,13 @@ def test_publication_identity_rejects_broken_toc_full_content_fallback(
     output_dir = tmp_path / "book"
     source = _write_source(output_dir, content)
     persisted = _persisted_document(source)
-    assert persisted["chapters"][0].get("href") is None
-
-    with pytest.raises(PublicationIdentityError) as raised:
-        PublicationIdentityBuilder().build(
-            output_dir=output_dir,
-            persisted_book_document=persisted,
-        )
-    assert raised.value.code == "book_document_resource_missing"
-    assert raised.value.json_pointer == "/chapters/0/href"
+    assert [c["href"] for c in persisted["chapters"]] == ["Text/chapter-01.xhtml"]
+    identity = PublicationIdentityBuilder().build(
+        output_dir=output_dir,
+        persisted_book_document=persisted,
+    )
+    assert identity.epub_index.paragraph_ranges
+    assert not identity.epub_index.unverifiable_hrefs
 
 
 def test_unsafe_ncx_chapter_title_fails_closed_without_echo(

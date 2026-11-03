@@ -54,6 +54,7 @@ Use `docs/backend-reading-mechanism.md` when the question is about shared mechan
 3. The job enters `queued`, then begins structure preparation under `parsing_structure`.
 4. Parse preparation now has two layers:
   - canonical parse writes `public/book_document.json` as the mechanism-neutral book substrate
+  - fresh EPUB imports follow spine order. Each reading resource contributes its XHTML once, including headings reached by multiple TOC fragments. Linear resources without TOC labels remain in order. Existing parsed outputs keep their stored chapter ids and coordinates.
   - the selected mechanism then derives its own parse-side artifacts from that substrate:
     - `attentional_v2` initializes chapter planner/runtime artifacts under `_mechanisms/attentional_v2/`
       - this now includes one narrow chapter planner-side `chapter_zone` classification pass plus a `reading_plan`

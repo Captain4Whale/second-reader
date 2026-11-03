@@ -4,7 +4,6 @@ from __future__ import annotations
 
 from src.iterator_reader import parse as iterator_parse
 from src.iterator_reader import storage as iterator_storage
-from src.parsers import ebook_parser
 from src.reading_core import epub_document
 
 
@@ -177,41 +176,3 @@ def test_spine_zero_legacy_behavior_is_observed_without_repair() -> None:
         paragraph["start_cfi"] is None and paragraph["end_cfi"] is None
         for paragraph in chapter["paragraphs"]
     )
-
-
-def test_fragment_toc_duplicate_behavior_is_observed_without_repair() -> None:
-    class TocLink:
-        def __init__(self, title: str, href: str) -> None:
-            self.title = title
-            self.href = href
-
-    class EpubItem:
-        def get_name(self) -> str:
-            return "Text/shared.xhtml"
-
-        def get_id(self) -> str:
-            return "shared"
-
-        def get_content(self) -> bytes:
-            return b"<html><body><p>Shared chapter body.</p></body></html>"
-
-    chapters = ebook_parser._extract_epub_chapters_from_toc(
-        [
-            TocLink("First Fragment", "Text/shared.xhtml#first"),
-            TocLink("Second Fragment", "Text/shared.xhtml#second"),
-        ],
-        {"shared": EpubItem()},
-        {"shared": 0},
-    )
-
-    # The existing parser creates two chapter rows over the same XHTML.  Slice 2
-    # observes this segmentation debt and fingerprints the canonical output; it
-    # does not silently merge chapters or change normal reading behavior.
-    assert [chapter["title"] for chapter in chapters] == [
-        "First Fragment",
-        "Second Fragment",
-    ]
-    assert [chapter["href"] for chapter in chapters] == [
-        "Text/shared.xhtml",
-        "Text/shared.xhtml",
-    ]

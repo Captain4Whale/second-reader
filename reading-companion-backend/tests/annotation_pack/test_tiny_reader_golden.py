@@ -539,7 +539,7 @@ def test_tiny_reader_committed_json_and_package_validate_and_inspect_offline() -
     assert str(FIXTURE).encode() not in safe_output
 
 
-def test_true_fragment_nav_epub_exposes_duplicate_spine_zero_projection(
+def test_fragment_nav_reads_both_sections_once_and_resolves_annotation(
     tmp_path: Path,
 ) -> None:
     output_dir = tmp_path.resolve() / "fragment-output"
@@ -550,10 +550,9 @@ def test_true_fragment_nav_epub_exposes_duplicate_spine_zero_projection(
         raw_chapters = list(parse_epub_stream(handle))
     assert [chapter["href"] for chapter in raw_chapters] == [
         "Text/shared.xhtml",
-        "Text/shared.xhtml",
     ]
-    assert [chapter["item_id"] for chapter in raw_chapters] == ["shared", "shared"]
-    assert [chapter["spine_index"] for chapter in raw_chapters] == [0, 0]
+    assert [chapter["item_id"] for chapter in raw_chapters] == ["shared"]
+    assert [chapter["spine_index"] for chapter in raw_chapters] == [0]
 
     document = build_book_document_from_chapters(
         raw_chapters,
@@ -569,7 +568,7 @@ def test_true_fragment_nav_epub_exposes_duplicate_spine_zero_projection(
         diagnostics_path=None,
         classifier=None,
     )
-    assert [chapter["spine_index"] for chapter in normalized["chapters"]] == [0, 0]
+    assert [chapter["spine_index"] for chapter in normalized["chapters"]] == [0]
     assert all(
         paragraph["spine_index"] == -1
         and paragraph["start_cfi"] is None
@@ -582,9 +581,12 @@ def test_true_fragment_nav_epub_exposes_duplicate_spine_zero_projection(
         output_dir=output_dir,
         persisted_book_document=normalized,
     )
-    assert publication.epub_index.paragraph_ranges[(1, 2)] == (
-        publication.epub_index.paragraph_ranges[(2, 2)]
-    )
+    paragraphs = normalized["chapters"][0]["paragraphs"]
+    assert [p["text"] for p in paragraphs] == [
+        "First fragment", "Shared fixture body returns.",
+        "Second fragment", "The same resource carries both entries.",
+    ]
+    assert len(publication.epub_index.paragraph_ranges) == 4
     quote = "fixture body"
     paragraph_text = normalized["chapters"][0]["paragraphs"][1]["text"]
     start = paragraph_text.index(quote)
@@ -603,9 +605,7 @@ def test_true_fragment_nav_epub_exposes_duplicate_spine_zero_projection(
         ),
         publication=publication,
     )
-    assert [finding.code for finding in resolved.target.findings] == [
-        "duplicate_resource_chapter_projection"
-    ]
+    assert not resolved.target.findings
     assert len(resolved.target.target["selector"]) == 2
 
 

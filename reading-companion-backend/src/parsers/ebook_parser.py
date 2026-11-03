@@ -3,8 +3,11 @@
 from __future__ import annotations
 
 import os
+import posixpath
+import re
 from pathlib import Path
 from typing import Any, BinaryIO, Optional, TypedDict
+from urllib.parse import unquote
 
 import ebooklib
 from ebooklib import epub
@@ -56,7 +59,7 @@ def parse_ebook(file_path: str) -> list[Chapter]:
 
 
 def _parse_epub(file_path: str) -> list[Chapter]:
-    """Parse EPUB file and extract chapters from TOC."""
+    """Parse EPUB reading-order resources and their navigation labels."""
     book = epub.read_epub(file_path)
     return _chapters_from_epub_book(book)
 
@@ -70,144 +73,72 @@ def parse_epub_stream(source: BinaryIO) -> list[Chapter]:
 
 
 def _chapters_from_epub_book(book: Any) -> list[Chapter]:
-    """Build the legacy chapter sequence from one loaded ebooklib EPUB."""
+    """Read each XHTML resource once, in the publication's spine order."""
+    # ebooklib resolves EPUB3 nav links, but leaves NCX links relative to the NCX.
+    base = ""
+    if not any(isinstance(item, epub.EpubNav) for item in book.get_items()):
+        ncx = next(book.get_items_of_type(ebooklib.ITEM_NAVIGATION), None)
+        if ncx is not None:
+            base = posixpath.dirname(ncx.get_name())
 
+    labels = {}
+    for href, title, level in _toc_labels(book.toc):
+        path, separator, _fragment = href.partition("#")
+        if path:
+            name = posixpath.normpath(posixpath.join(base, unquote(path)))
+            # Prefer a resource-level label over a link to a heading inside it.
+            if name not in labels or (labels[name][2] and not separator):
+                labels[name] = (title, level, bool(separator))
+
+    documents = {item.get_id(): item for item in book.get_items_of_type(ebooklib.ITEM_DOCUMENT)}
+    spine = list(book.spine)
+    if not book.toc or not spine:
+        # Preserve the manifest fallback for books without navigation, including
+        # old EPUBs whose incomplete spine omits otherwise readable documents.
+        listed = {item_id for item_id, _ in spine}
+        spine.extend((item_id, "yes") for item_id in documents if item_id not in listed)
     chapters = []
-    spine_index_by_id = {
-        idref: index
-        for index, (idref, _linear) in enumerate(book.spine)
-        if idref != "nav"
-    }
-
-    # Try to get TOC (Table of Contents)
-    _toc_id = None
-    try:
-        toc = book.get_metadata('NCX', 'toc')
-        if toc:
-            _toc_id = toc[0][0] if toc else None
-    except (KeyError, AttributeError):
-        pass  # NCX metadata not available in newer EPUB format
-
-    # Get all items in the book
-    items = {item.get_id(): item for item in book.get_items()}
-
-    # Extract chapters from TOC if available
-    if hasattr(book, 'toc') and book.toc:
-        chapters = _extract_epub_chapters_from_toc(
-            book.toc,
-            items,
-            spine_index_by_id,
-            level=1,
-        )
-    else:
-        # Fallback: parse all HTML items as chapters
-        for item in book.get_items():
-            if item.get_type() == ebooklib.ITEM_DOCUMENT:
-                title = item.get_name()
-                content = item.get_content().decode('utf-8', errors='ignore')
-                # Try to extract title from HTML
-                import re
-                title_match = re.search(r'<title>(.*?)</title>', content, re.IGNORECASE)
-                if title_match:
-                    title = title_match.group(1).strip()
-                elif item.get_name():
-                    title = os.path.basename(item.get_name())
-                else:
-                    title = f"Chapter {len(chapters) + 1}"
-
-                chapters.append({
-                    "title": title,
-                    "content": content,
-                    "level": 1,
-                    "start_page": None,
-                    "end_page": None,
-                    "item_id": item.get_id(),
-                    "href": item.get_name(),
-                    "spine_index": spine_index_by_id.get(item.get_id(), len(chapters)),
-                })
-
-    # If still no chapters, at least include the full content
-    if not chapters:
-        full_content = ""
-        for item in book.get_items():
-            if item.get_type() == ebooklib.ITEM_DOCUMENT:
-                full_content += item.get_content().decode('utf-8', errors='ignore') + "\n"
-
+    seen = set()
+    for index, (item_id, linear) in enumerate(spine):
+        item = documents.get(item_id)
+        if item is None or isinstance(item, epub.EpubNav):
+            continue
+        href = item.get_name()
+        name = posixpath.normpath(href)
+        if name in seen or (linear == "no" and name not in labels):
+            continue
+        seen.add(name)
+        content = item.get_content().decode("utf-8", errors="ignore")
+        title, level, _ = labels.get(name, ("", 1, False))
+        if not title:
+            match = re.search(r"<title>(.*?)</title>", content, re.IGNORECASE)
+            title = match.group(1).strip() if match else posixpath.basename(href)
         chapters.append({
-            "title": "Full Content",
-            "content": full_content,
-            "level": 1,
+            "title": title,
+            "content": content,
+            "level": level,
             "start_page": None,
             "end_page": None,
+            "item_id": item_id,
+            "href": href,
+            "spine_index": index,
         })
-
     return chapters
 
 
-def _extract_epub_chapters_from_toc(toc, items, spine_index_by_id, level=1) -> list[Chapter]:
-    """Recursively extract chapters from EPUB TOC."""
-    chapters = []
-
-    for item in toc:
-        child_items = None
-        title = None
-        href = None
-
-        if isinstance(item, list):
-            chapters.extend(_extract_epub_chapters_from_toc(item, items, spine_index_by_id, level=level + 1))
+def _toc_labels(toc, level=1):
+    """Yield labels from ebooklib's nested links and (section, children) pairs."""
+    for entry in toc:
+        if isinstance(entry, list):
+            yield from _toc_labels(entry, level + 1)
             continue
-
-        # Handle ebooklib Link objects
-        if hasattr(item, 'title') and hasattr(item, 'href'):
-            title = item.title
-            href = item.href
-        elif isinstance(item, tuple):
-            entry = item[0] if item else None
-            if len(item) > 1 and isinstance(item[1], (list, tuple)):
-                child_items = item[1]
-            if hasattr(entry, 'title') and hasattr(entry, 'href'):
-                title = entry.title
-                href = entry.href
-            elif len(item) >= 2 and isinstance(item[1], str):
-                title, href = item[0], item[1]
-            elif len(item) >= 2 and hasattr(item[1], 'href'):
-                title = item[0]
-                href = item[1].href
-        else:
-            continue
-
-        content = ""
-        matched_item = None
-
-        # Find the corresponding item
-        for item_id, item_obj in items.items():
-            if not isinstance(href, str):
-                continue
-            target_href = (href or "").split("#", 1)[0]
-            if target_href and target_href in (item_obj.get_name() or ""):
-                content = item_obj.get_content().decode('utf-8', errors='ignore')
-                matched_item = item_obj
-                break
-
-        if content.strip():
-            chapters.append({
-                "title": title,
-                "content": content,
-                "level": level,
-                "start_page": None,
-                "end_page": None,
-                "item_id": matched_item.get_id() if matched_item else "",
-                "href": matched_item.get_name() if matched_item else (href or ""),
-                "spine_index": spine_index_by_id.get(
-                    matched_item.get_id() if matched_item else "",
-                    len(chapters),
-                ),
-            })
-
-        if child_items:
-            chapters.extend(_extract_epub_chapters_from_toc(child_items, items, spine_index_by_id, level=level + 1))
-
-    return chapters
+        children = ()
+        if isinstance(entry, tuple):
+            entry, children = entry
+        href = getattr(entry, "href", None)
+        if isinstance(href, str):
+            yield href, entry.title, level
+        yield from _toc_labels(children, level + 1)
 
 
 def _parse_pdf(file_path: str) -> list[Chapter]:
