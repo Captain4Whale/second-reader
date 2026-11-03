@@ -536,6 +536,15 @@ From `reading-companion-backend/`, sample **one finished book output** with its 
 
 Use `sapiens` for the one-batch preset. For an already finished single-chapter pilot, add `--pilot-product "$PARTIAL_JSON" --pilot-original "$ORIGINAL_BOOK_OUTPUT" --pilot-all`. Each immutable `batch.json` is printed with its counts and stored under ignored `state/q1_annotation/<batch-id>/`. A repeat with identical inputs reuses the same batch. Never point pilot options at a running job.
 
+### 在本机标注
+
+1. 用 Chrome 打开 [q1-annotator.html](reading-companion-backend/tools/q1-annotator.html)，点「打开批次」选 `batch.json`，再点「连接结果文件」，选同目录脚本准备好的 `judgments.jsonl` 并允许编辑。
+2. 在原文点高亮或旁注，也可用右侧编号切换条目。按 **P** 通过并继续，按 **F** 后写自由理由，**Enter** 保存并继续，**Shift+Enter** 换行。星标和待核实可单独切换。用左右方向键切换单元。界面同时显示单元与条目进度。
+3. 选密度；有漏标时在单元正文中拖选，再点「记为漏标」写理由。每单元最多保留两处。已保存的漏标可编辑或撤回。上下文在本章内展开，两侧最多各四个段落或段落片段。
+4. 在同一 Chrome 配置中重开同一 HTML，自动恢复批次、位置和草稿。已确认的修改会追加到选定文件。看到「仅存浏览器」时可重新连接授权，或点「导出 JSONL」保存到批次目录。不支持直接写盘的浏览器可以使用导出。未确认的文本只在浏览器草稿中保存。
+
+JSONL 每行是一条带时间的修订，`record_type` 区分 `marginalia`、`density`、`omission`。按 `(batch_id, record_type, record_id)` 取最后一个 `revision` 可还原当前判断。单独切换标记可能产生 `judgment: null`；漏标的 `action: remove` 表示撤回。导出包括历次确认的修订。试跑同时保存产品与原书坐标，均使用段内 Unicode 码点和左闭右开区间。
+
 ## Long-Running Eval Jobs
 Use the backend background-job registry for evaluation, packet review, or dataset jobs that may run for `10-15` minutes or longer.
 

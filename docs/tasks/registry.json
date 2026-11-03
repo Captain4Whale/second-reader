@@ -1,7 +1,29 @@
 {
   "version": 1,
-  "updated_at": "2026-11-01T20:16:54+08:00",
+  "updated_at": "2026-11-03T21:38:26+08:00",
   "tasks": [
+    {
+      "id": "TASK-Q1-MANUAL-ANNOTATION",
+      "title": "Seeded Q1 unit batches and local human annotation journal",
+      "status": "done",
+      "lane": "mechanism_eval",
+      "priority": "high",
+      "detail_ref": "README.md#q1-manual-error-analysis",
+      "acceptance_ref": "docs/tasks/registry.md#done",
+      "truth_refs": [
+        "docs/backend-reader-evaluation.md"
+      ],
+      "decision_refs": [],
+      "job_refs": [],
+      "blocked_by": [],
+      "next_action": "Generate formal batches from the completed book outputs when available for human review.",
+      "evidence_refs": [
+        "reading-companion-backend/scripts/sample_q1_annotations.py",
+        "reading-companion-backend/tools/q1-annotator.html"
+      ],
+      "last_updated": "2026-11-03T21:38:26+08:00",
+      "last_updated_by": "codex"
+    },
     {
       "id": "TASK-STEP1-PREREQS",
       "title": "Chapter planner / frozen plan / reproducible run prerequisites",

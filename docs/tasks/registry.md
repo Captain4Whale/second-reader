@@ -7,7 +7,7 @@ Update when: task status, priority, blockers, decision refs, job refs, evidence 
 
 This document is the human-readable companion to `docs/tasks/registry.json`.
 
-Last updated: `2026-11-01`
+Last updated: `2026-11-03`
 
 ## Status Values
 - `active`
@@ -28,6 +28,8 @@ Last updated: `2026-11-01`
 - `TASK-RESUME-READING-PLAN-FREEZE` — `done`，mechanism_runtime / high。已实现计划身份校验、复用与拒绝不一致 resume。[离线证据](step1-prereqs-2026-11-01.md#d-计划冻结)。
 
 ## Done
+
+- `TASK-Q1-MANUAL-ANNOTATION` — completed offline sampling and human annotation tooling. Both pilot batches retain all 31 mark anchors; Chrome close/reopen and export round-trip were verified, including blank Units, cross-paragraph omissions and judgment history. [Usage](../../README.md#q1-manual-error-analysis).
 
 ### `TASK-READING-PRODUCT-XIDADUO-FULL-BOOK-LIVE-ACCEPTANCE` — Run production-scale Xidaduo Reading Product and Annotation Pack acceptance
 - Status: `done`
