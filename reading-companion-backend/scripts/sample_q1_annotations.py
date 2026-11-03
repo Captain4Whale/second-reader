@@ -66,6 +66,7 @@ def load_source(args):
             raise ValueError("Original EPUB differs from published product")
     meta = dict(
         book=original["metadata"]["book"],
+        author=original["metadata"].get("author"),
         run_id=args.run_id,
         reading_id=product.reading_id,
         product_sha256=digest,
@@ -133,6 +134,7 @@ def unit_data(unit, doc, pilot_packet):
     )
     return dict(
         unit_id=unit.unit_id,
+        chapter_title=resolved.chapter.get("title"),
         source_range=asdict(span),
         original_source_range=asdict(original_span),
         paragraphs=paragraphs,
@@ -212,6 +214,24 @@ def main():
         parser.error("A pilot requires both --pilot-product and --pilot-original")
     product, doc, packet, meta = load_source(args)
     units = [unit_data(u, doc, packet) for u in product.units]
+    # Measure against the original whole book, including for single-chapter pilots.
+    paragraph_starts = {}
+    total_chars = 0
+    for chapter in doc["chapters"]:
+        for para in chapter["paragraphs"]:
+            if para["text"] and para.get("text_role") != "auxiliary":
+                paragraph_starts[chapter["id"], para["paragraph_index"]] = total_chars
+                total_chars += len(para["text"])
+
+    for u in units:
+        span = u["original_source_range"]
+        endpoints = [
+            paragraph_starts[pos["chapter_id"], pos["paragraph_index"]]
+            + pos["char_offset"]
+            for pos in (span["start"], span["end"])
+        ]
+        u["book_position_percent"] = round(sum(endpoints) * 50 / total_chars)
+
     # Deferred chapters can settle after later chapters. Stratify by book position.
     chapter_order = {c["id"]: i for i, c in enumerate(doc["chapters"])}
 

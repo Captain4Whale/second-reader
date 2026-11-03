@@ -278,6 +278,7 @@
       <p>打开抽样生成的 batch.json，再连接同目录的 judgments.jsonl。理由和备注会按你的原话保存。</p>
     </section>
     <div id="work" hidden>
+      <div id="bookContext"></div>
       <div id="progress"></div>
       <div class="layout">
         <article>
@@ -301,16 +302,18 @@
             <label class="field" for="reason">理由 <small>不过时必填</small></label
             ><textarea id="reason" rows="2"></textarea>
             <div class="row">
-              <label><input id="star" type="checkbox" /> 星标</label
-              ><label><input id="verify" type="checkbox" /> 待核实</label>
+              <label><input id="star" type="checkbox" /> 星标 S</label
+              ><label><input id="verify" type="checkbox" /> 待核实 V</label>
             </div>
             <label class="field" for="memo">备注 <small>选填</small></label
             ><textarea id="memo" rows="1"></textarea> <button id="apply">保存并继续 ↵</button>
             <small id="draftState"></small>
           </div>
           <hr />
-          <h2>单元判断</h2>
+          <h2 id="unitHeading" tabindex="-1">单元判断</h2>
           <div class="row" id="density"><span>密度</span></div>
+          <label class="field" for="unitNote">单元备注 <small>选填，Enter 保存</small></label>
+          <textarea id="unitNote" rows="2"></textarea>
           <h3>漏标 <small id="missCount"></small></h3>
           <p class="hint">在本单元正文中划选，再点「记为漏标」。</p>
           <div id="misses"></div>
@@ -327,7 +330,7 @@
   </main>
   <script>
     "use strict";
-    const VERSION = "q1-annotator/1.0",
+    const VERSION = "q1-annotator/1.1",
       $ = (id) => document.getElementById(id);
     const say = (text) => {
       $("message").textContent = text;
@@ -398,6 +401,7 @@
         tx.objectStore("data").put(value, key);
         tx.oncomplete = ok;
         tx.onabort = () => no(tx.error);
+        tx.commit?.();
       });
     }
     function persist() {
@@ -460,6 +464,7 @@
         drafts: {},
         missDrafts: {},
       };
+      state.unitNoteDrafts ??= {};
       session = { batch, state, handle: await dbGet("file:" + id), writes: Promise.resolve() };
       await dbPut("batch:" + id, batch);
       await dbPut("last", id);
@@ -500,7 +505,7 @@
               (r, i) =>
                 r.batch_id !== s.batch.batch_id ||
                 r.revision !== i + 1 ||
-                r.annotator_version !== VERSION,
+                !["q1-annotator/1.0", VERSION].includes(r.annotator_version),
             )
           )
             throw Error("结果文件属于其他批次或版本。");
@@ -730,12 +735,25 @@
       $("selection").hidden = true;
       $("prev").disabled = session.state.ui === 0;
       $("next").disabled = session.state.ui === session.batch.units.length - 1;
+      const u = unit(),
+        b = session.batch;
+      const position = Number.isFinite(u.book_position_percent)
+        ? "全书约 " + u.book_position_percent + "%"
+        : "全书位置未知";
+      $("bookContext").textContent = [
+        b.book,
+        b.author || "作者未知",
+        u.chapter_title || "章节标题未知",
+        position,
+      ].join("　·　");
+      $("unitNote").value =
+        session.state.unitNoteDrafts[u.unit_id] ?? latest("unit_note", u.unit_id)?.remarks ?? "";
       source();
       editor();
       progress();
       renderMiss();
       for (const b of $("density").querySelectorAll("button"))
-        b.setAttribute("aria-pressed", b.textContent === latest("density", unit().unit_id)?.density);
+        b.setAttribute("aria-pressed", b.dataset.density === latest("density", unit().unit_id)?.density);
     }
     function chooseMark(i, scroll) {
       session.state.mi = i;
@@ -802,7 +820,7 @@
       if (next && session.state.mi + 1 < unit().marginalia.length) {
         chooseMark(session.state.mi + 1, true);
         $("pass").focus({ preventScroll: true });
-      } else if (next) $("density").querySelector("button").focus();
+      } else if (next) $("unitHeading").focus({ preventScroll: true });
       return true;
     }
     $("pass").onclick = () => {
@@ -844,8 +862,8 @@
     }
     $("star").onchange = () => toggleFlag("star", $("star").checked);
     $("verify").onchange = () => toggleFlag("needs_verification", $("verify").checked);
-    for (const name of ["多", "合适", "少"]) {
-      const b = button(name, () => {
+    for (const [i, name] of ["多", "合适", "少"].entries()) {
+      const b = button(name + " " + (i + 1), () => {
         const u = unit();
         if (latest("density", u.unit_id)?.density !== name)
           record("density", u.unit_id, { density: name }, u.source_range, u.original_source_range);
@@ -853,8 +871,25 @@
           other.setAttribute("aria-pressed", other === b);
         progress();
       });
+      b.dataset.density = name;
+      b.dataset.key = String(i + 1);
       $("density").append(b);
     }
+    $("unitNote").oninput = () => {
+      session.state.unitNoteDrafts[unit().unit_id] = $("unitNote").value;
+      persist();
+    };
+    function saveUnitNote() {
+      const u = unit(),
+        notes = session.state.unitNoteDrafts;
+      if (!Object.hasOwn(notes, u.unit_id)) return;
+      const remarks = notes[u.unit_id];
+      delete notes[u.unit_id];
+      if (remarks !== (latest("unit_note", u.unit_id)?.remarks ?? ""))
+        record("unit_note", u.unit_id, { remarks }, u.source_range, u.original_source_range);
+      else persist();
+    }
+    $("unitNote").onblur = saveUnitNote;
     $("prev").onclick = () => moveUnit(-1);
     $("next").onclick = () => moveUnit(1);
     function endpoint(node, offset) {
@@ -963,22 +998,31 @@
         e.altKey ||
         e.ctrlKey ||
         e.metaKey ||
-        e.shiftKey
+        (e.shiftKey && !["S", "V", "P", "F"].includes(e.key))
       )
         return;
       if (e.target.tagName === "TEXTAREA") {
         if (e.key === "Enter") {
           e.preventDefault();
           if (e.target === $("missReason")) $("saveMiss").click();
-          else saveMark(true);
+          else if (e.target === $("unitNote")) {
+            saveUnitNote();
+            $("unitHeading").focus({ preventScroll: true });
+          } else saveMark(true);
         }
         return;
       }
       if (e.target.tagName === "INPUT" && e.target.type !== "checkbox") return;
       const k = e.key.toLowerCase();
-      if (item() && (k === "p" || k === "f")) {
+      const markKey = { p: "pass", f: "fail", s: "star", v: "verify" }[k];
+      if (item() && markKey) {
         e.preventDefault();
-        $(k === "p" ? "pass" : "fail").click();
+        $(markKey).click();
+      } else if (["1", "2", "3"].includes(k)) {
+        e.preventDefault();
+        $("density")
+          .querySelector('[data-key="' + k + '"]')
+          .click();
       }
       if (e.key === "ArrowLeft" || e.key === "ArrowRight") {
         e.preventDefault();
