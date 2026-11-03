@@ -42,6 +42,8 @@ test-results/
 # Backend runtime artifacts
 reading-companion-backend/data/
 reading-companion-backend/output/
+# Private source samples, human judgments and local review sessions
+reading-companion-backend/state/q1_annotation/
 reading-companion-backend/state/
 
 # Keep analysis reports docs, but ignore generated logs

@@ -526,6 +526,16 @@ Artifacts stay in ignored `state/experiments/xidaduo_context_scope_digest_202609
 
 The subsequently authorized C-only recovery uses `.venv/bin/python -m eval.attentional_v2.retry_context_scope_digest --prepare`, then `--run` under registered job `bgjob_xidaduo_context_scope_c_retry_20260913`. It allows at most three additional identical C requests, stops at the first structurally complete response or a non-transport failure, and preserves the original run. Artifacts are in ignored `state/experiments/xidaduo_context_scope_c_retry_20260913/`; `retry-summary.md` records attempts and `comparison/review.md` contains a new anonymous packet if C succeeds. Do not relaunch the batch or select an output by annotation count.
 
+## Q1 manual error analysis
+
+From `reading-companion-backend/`, sample **one finished book output** with its evaluation-ledger run ID:
+
+```sh
+.venv/bin/python scripts/sample_q1_annotations.py "$BOOK_OUTPUT" --run-id "$RUN_ID" --preset bovary --seed 20261103
+```
+
+Use `sapiens` for the one-batch preset. For an already finished single-chapter pilot, add `--pilot-product "$PARTIAL_JSON" --pilot-original "$ORIGINAL_BOOK_OUTPUT" --pilot-all`. Each immutable `batch.json` is printed with its counts and stored under ignored `state/q1_annotation/<batch-id>/`. A repeat with identical inputs reuses the same batch. Never point pilot options at a running job.
+
 ## Long-Running Eval Jobs
 Use the backend background-job registry for evaluation, packet review, or dataset jobs that may run for `10-15` minutes or longer.
 

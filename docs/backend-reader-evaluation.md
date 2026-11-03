@@ -9,6 +9,10 @@ Use `docs/backend-reading-mechanism.md` for shared mechanism-platform boundaries
 
 The old Memory / Planning / Evaluation implementation guidance chain at `docs/archive/pre-cleanup-2026-11/implementation/new-reading-mechanism/second-reader-memory-planning/README.md` is historical/reference material after `DEC-103`, not the default authority for new mechanism work. In that workspace, `C设计9-Evaluation Calibration & Minimal Eval Suite v0.md` remains useful background for implementation-facing eval discipline; this file remains the stable evaluation constitution.
 
+## Q1 open-ended error discovery
+
+Use a seeded, book-position-stratified sample of whole accepted Product Units, including units without Marginalia. Shuffle units and preserve source order within units. Review each Highlight or Note in context, capture the human’s verbatim reason for a failure, and separately record density and up to two source-anchored omissions per unit. Preserve the original judgment and subsequent revisions. This exploratory sample informs later rubric construction. Sampling rules and source identities travel with the local batch; operator instructions are in the root README.
+
 ## Evaluation Constitution
 - The evaluation system is product-first.
   - The reader exists to preserve a living, curious, self-propelled co-reading mind, not to maximize one local benchmark proxy.
