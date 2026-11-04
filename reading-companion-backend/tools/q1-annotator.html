@@ -382,9 +382,46 @@
       white-space: pre-wrap;
     }
     #selection {
-      display: block;
-      margin: 8px auto;
-      box-shadow: 0 2px 10px #bbb;
+      position: fixed;
+      z-index: 30;
+      margin: 0;
+      max-width: calc(100vw - 24px);
+      box-shadow: 0 2px 10px #0003;
+    }
+    #selection[aria-disabled="true"] {
+      background: var(--paper);
+      color: var(--muted);
+      cursor: default;
+    }
+    .omission {
+      background: #eee1f7;
+      text-decoration: underline solid #8650a0 2px;
+      text-underline-offset: 4px;
+      box-decoration-break: clone;
+    }
+    mark.omission {
+      background: #f3e7ab;
+    }
+    mark.omission.active {
+      background: #f5d879;
+    }
+    .omission.pending {
+      text-decoration-style: dashed;
+    }
+    .source-legend {
+      font-size: 12px;
+      font-weight: normal;
+      margin-left: 12px;
+    }
+    .source-legend span {
+      padding: 1px 3px;
+    }
+    .product-swatch {
+      background: #f3e7ab;
+    }
+    .omission-swatch {
+      background: #eee1f7;
+      border-bottom: 2px solid #8650a0;
     }
     .hint {
       font-size: 13px;
@@ -459,14 +496,19 @@
     <div id="work" hidden>
       <div class="layout">
         <article>
-          <h2>单元原文</h2>
+          <h2>
+            单元原文
+            <small class="source-legend"
+              ><span class="product-swatch">产物批注</span> ·
+              <span class="omission-swatch">人工漏标</span></small
+            >
+          </h2>
           <div id="readerScroll" tabindex="0" aria-label="单元原文阅读区">
             <div id="before" class="context"></div>
             <hr />
             <div id="source"></div>
             <hr />
             <div id="after" class="context"></div>
-            <button id="selection" class="primary" hidden>记为漏标</button>
           </div>
         </article>
         <div class="judgments">
@@ -511,6 +553,7 @@
       </div>
     </div>
   </main>
+  <button id="selection" class="primary" hidden>记为漏标 O</button>
   <dialog id="help" aria-labelledby="helpTitle">
     <h2 id="helpTitle">快捷键</h2>
     <p>文本框外使用。文本框内 Enter 换行，Esc 保存并返回。</p>
@@ -540,7 +583,7 @@
   </dialog>
   <script>
     "use strict";
-    const VERSION = "q1-annotator/1.5",
+    const VERSION = "q1-annotator/1.6",
       $ = (id) => document.getElementById(id);
     const say = (text) => {
       $("message").textContent = text;
@@ -727,6 +770,7 @@
                   "q1-annotator/1.2",
                   "q1-annotator/1.3",
                   "q1-annotator/1.4",
+                  "q1-annotator/1.5",
                   VERSION,
                 ].includes(r.annotator_version),
             )
@@ -905,12 +949,22 @@
         else box.append(more);
       }
     }
-    function source() {
+    function visibleMisses() {
       const u = unit(),
-        host = $("source");
+        byId = new Map(activeMisses(u).map((r) => [r.record_id, r]));
+      const draft = session.state.missDrafts[u.unit_id];
+      if (draft) byId.set(draft.record_id, draft);
+      return [...byId.values()];
+    }
+    function source(updateContext = true) {
+      const u = unit(),
+        host = $("source"),
+        misses = visibleMisses();
       host.replaceChildren();
-      contextBox("before", u.before);
-      contextBox("after", u.after);
+      if (updateContext) {
+        contextBox("before", u.before);
+        contextBox("after", u.after);
+      }
       for (const p of u.paragraphs) {
         const n = el("p", "");
         n.dataset.index = p.index;
@@ -927,22 +981,38 @@
           boundaries.add(hi);
           spans.push({ lo, hi, i });
         });
+        const missSpans = [];
+        for (const m of misses) {
+          const { start: a, end: z } = m.original_source_range;
+          if (p.index < a.paragraph_index || p.index > z.paragraph_index) continue;
+          const lo = Math.max(p.offset, p.index === a.paragraph_index ? a.char_offset : p.offset),
+            hi = Math.min(end, p.index === z.paragraph_index ? z.char_offset : end);
+          if (hi <= lo) continue;
+          boundaries.add(lo);
+          boundaries.add(hi);
+          missSpans.push({ lo, hi, id: m.record_id });
+        }
         const points = [...boundaries].sort((a, b) => a - b);
         for (let k = 1; k < points.length; k++) {
           const left = points[k - 1],
             right = points[k],
             text = cut(p.text, left - p.offset, right - p.offset);
           const ids = spans.filter((s) => s.lo <= left && right <= s.hi).map((s) => s.i);
-          if (!ids.length) {
+          const missIds = missSpans.filter((s) => s.lo <= left && right <= s.hi).map((s) => s.id);
+          if (!ids.length && !missIds.length) {
             n.append(text);
             continue;
           }
-          const tag = el("mark", text);
-          tag.dataset.items = ids.join(",");
-          tag.onclick = () => {
-            if (!getSelection().isCollapsed) return;
-            chooseMark(ids[(ids.indexOf(session.state.mi) + 1) % ids.length], false);
-          };
+          const tag = el(ids.length ? "mark" : "span", text);
+          if (ids.length) {
+            tag.dataset.items = ids.join(",");
+            tag.classList.toggle("active", ids.includes(session.state.mi));
+            tag.onclick = () => {
+              if (!getSelection().isCollapsed) return;
+              chooseMark(ids[(ids.indexOf(session.state.mi) + 1) % ids.length], false);
+            };
+          }
+          if (missIds.length) tag.dataset.misses = JSON.stringify(missIds);
           n.append(tag);
         }
         host.append(n);
@@ -956,6 +1026,31 @@
           }
         });
       }
+    }
+    function updateMissAppearance() {
+      const misses = visibleMisses();
+      for (const tag of $("source").querySelectorAll("[data-misses]")) {
+        const ids = JSON.parse(tag.dataset.misses),
+          pending = misses.some((m) => ids.includes(m.record_id) && !m.reason.trim());
+        tag.classList.add("omission");
+        tag.classList.toggle("pending", pending);
+        tag.title = pending ? "人工漏标 · 待补理由" : "人工漏标";
+      }
+      const d = session.state.missDrafts[unit().unit_id];
+      $("missCount").textContent =
+        "· 已记 " +
+        activeMisses(unit()).length +
+        " 处（最多 2 处）" +
+        (d && !d.reason.trim() ? " · 1 处待补理由" : "");
+    }
+    function refreshMissHighlights() {
+      const top = $("readerScroll").scrollTop,
+        left = scrollX,
+        pageTop = scrollY;
+      source(false);
+      updateMissAppearance();
+      $("readerScroll").scrollTop = top;
+      window.scrollTo({ left, top: pageTop, behavior: "instant" });
     }
     function editor() {
       const m = item(),
@@ -989,7 +1084,7 @@
         list = activeMisses(u),
         d = session.state.missDrafts[u.unit_id];
       $("misses").replaceChildren();
-      $("missCount").textContent = list.length + " / 2";
+      refreshMissHighlights();
       for (const r of list) {
         const row = el("div", "");
         row.append(
@@ -1261,13 +1356,92 @@
         source_quote: quote,
       };
     }
+    let selecting = false,
+      selectionFrame;
+    function positionSelection() {
+      const button = $("selection"),
+        sel = getSelection();
+      button.hidden = true;
+      if (!session || selecting || !selectedRange || !sel.rangeCount || sel.isCollapsed) return;
+      const reader = $("readerScroll").getBoundingClientRect(),
+        area = {
+          left: Math.max(8, reader.left + 8),
+          right: Math.min(innerWidth - 8, reader.right - 8),
+          top: Math.max($("toolbar").getBoundingClientRect().bottom + 6, reader.top + 4),
+          bottom: Math.min(innerHeight - 8, reader.bottom - 4),
+        },
+        range = sel.getRangeAt(0),
+        rects = [...range.getClientRects()].filter(
+          (r) =>
+            r.width &&
+            r.height &&
+            r.bottom > area.top &&
+            r.top < area.bottom &&
+            r.right > area.left &&
+            r.left < area.right,
+        );
+      if (!rects.length || area.bottom <= area.top) return;
+      const draft = session.state.missDrafts[unit().unit_id],
+        full = activeMisses(unit()).length >= 2;
+      button.textContent = draft
+        ? "请先补全当前漏标或结束编辑"
+        : full
+          ? "本单元已达两处漏标上限"
+          : "记为漏标 O";
+      button.setAttribute("aria-disabled", !!draft || full);
+      button.style.maxWidth = Math.max(1, area.right - area.left) + "px";
+      button.hidden = false;
+      const { width, height } = button.getBoundingClientRect(),
+        backwards = sel.focusNode === range.startContainer && sel.focusOffset === range.startOffset,
+        anchor = backwards ? rects[0] : rects.at(-1),
+        x = Math.max(area.left, Math.min(anchor.right - width, area.right - width)),
+        ys = [
+          anchor.bottom + 6,
+          anchor.top - height - 6,
+          ...rects.flatMap((r) => [r.bottom + 6, r.top - height - 6]),
+        ],
+        y = ys.find(
+          (top) =>
+            top >= area.top &&
+            top + height <= area.bottom &&
+            !rects.some(
+              (r) => x < r.right && x + width > r.left && top < r.bottom && top + height > r.top,
+            ),
+        );
+      // A selection filling the viewport has no free text-area space: use the card heading.
+      const heading = $("readerScroll").previousElementSibling.getBoundingClientRect();
+      const fallback = Math.max($("toolbar").getBoundingClientRect().bottom + 2, heading.top);
+      if (y === undefined && fallback + height > area.top) {
+        button.hidden = true;
+        return;
+      }
+      button.style.left = x + "px";
+      button.style.top = (y ?? fallback) + "px";
+    }
+    function queueSelectionPosition() {
+      cancelAnimationFrame(selectionFrame);
+      selectionFrame = requestAnimationFrame(positionSelection);
+    }
     document.addEventListener("selectionchange", () => {
       if (!session) return;
       selectedRange = selection();
-      $("selection").hidden =
-        !selectedRange || !!session.state.missDrafts[unit().unit_id] || activeMisses(unit()).length >= 2;
+      queueSelectionPosition();
     });
-    $("selection").onmousedown = (e) => e.preventDefault();
+    $("readerScroll").addEventListener("pointerdown", () => {
+      selecting = true;
+      $("selection").hidden = true;
+    });
+    document.addEventListener("pointerup", () => {
+      selecting = false;
+      queueSelectionPosition();
+    });
+    document.addEventListener("pointercancel", () => {
+      selecting = false;
+      queueSelectionPosition();
+    });
+    document.addEventListener("scroll", queueSelectionPosition, true);
+    window.addEventListener("resize", queueSelectionPosition);
+    $("selection").onpointerdown = (e) => e.preventDefault();
     $("selection").onclick = () => {
       if (!selectedRange || activeMisses(unit()).length >= 2 || session.state.missDrafts[unit().unit_id])
         return;
@@ -1277,6 +1451,8 @@
         reason: "",
       };
       getSelection().removeAllRanges();
+      selectedRange = null;
+      $("selection").hidden = true;
       persist();
       renderMiss();
       progress();
@@ -1284,6 +1460,7 @@
     };
     $("missReason").oninput = () => {
       session.state.missDrafts[unit().unit_id].reason = $("missReason").value;
+      updateMissAppearance();
       persist();
       progress();
       queueEdits();
@@ -1300,6 +1477,7 @@
           d.source_range,
           d.original_source_range,
         );
+      updateMissAppearance();
       return true;
     }
     function resizeTextareas() {
