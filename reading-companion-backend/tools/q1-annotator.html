@@ -281,7 +281,8 @@
       <div id="bookContext"></div>
       <div id="progress" tabindex="-1"></div>
       <p class="hint">
-        方向键切换 · R/M/U 输入 · Esc 返回 · <button id="helpButton">? 查看快捷键</button>
+        方向键切换 · J/K 滚动整页 · Shift+J/K 滚动标注面板 · R/M/U 输入 · Esc 返回 ·
+        <button id="helpButton">? 查看快捷键</button>
       </p>
       <div class="layout">
         <article>
@@ -293,7 +294,8 @@
           <div id="after" class="context"></div>
           <button id="selection" class="primary" hidden>记为漏标</button>
         </article>
-        <aside class="panel">
+        <aside class="panel" aria-label="标注面板">
+          <p class="hint">Shift+J 向下滚动 · Shift+K 向上滚动</p>
           <div class="row">
             <button id="prev">上一单元 ←</button><button id="next">下一单元 →</button>
           </div>
@@ -341,6 +343,10 @@
       <dd>上一条 / 下一条批注</dd>
       <dt>← / →</dt>
       <dd>上一个 / 下一个单元</dd>
+      <dt>J / K</dt>
+      <dd>整页向下 / 向上滚动</dd>
+      <dt>Shift+J / Shift+K</dt>
+      <dd>标注面板向下 / 向上滚动</dd>
       <dt>P / F</dt>
       <dd>过 / 不过，判断后停留；F 进入理由框</dd>
       <dt>S / V</dt>
@@ -1095,7 +1101,6 @@
         e.isComposing ||
         composing ||
         e.keyCode === 229 ||
-        e.repeat ||
         e.altKey ||
         e.ctrlKey ||
         e.metaKey
@@ -1117,6 +1122,19 @@
       }
       if (e.target.matches("textarea, input:not([type=checkbox]), [contenteditable=true]")) return;
       const k = e.key.toLowerCase();
+      if (k === "j" || k === "k") {
+        e.preventDefault();
+        const panel = document.querySelector(".panel");
+        const inner = e.shiftKey && panel.scrollHeight > panel.clientHeight;
+        const target = inner ? panel : window;
+        const height = inner ? panel.clientHeight : window.innerHeight;
+        target.scrollBy({
+          top: (k === "j" ? 1 : -1) * Math.max(120, height * 0.6),
+          behavior: "instant",
+        });
+        return;
+      }
+      if (e.repeat) return;
       if (k === "?") {
         e.preventDefault();
         showHelp();
