@@ -49,6 +49,85 @@
       flex-wrap: wrap;
       padding-block: 8px;
     }
+    #batchProgress {
+      flex: 1 1 300px;
+      max-width: 600px;
+      min-width: 0;
+    }
+    #batchCounts {
+      font-size: 13px;
+      font-weight: 600;
+    }
+    #unitGrid {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 5px;
+      padding: 4px;
+      margin: 0 -4px;
+    }
+    .unit-cell,
+    .legend-cell {
+      background: var(--paper);
+      border: 1px solid var(--muted);
+      border-radius: 3px;
+    }
+    button.unit-cell {
+      width: 24px;
+      height: 24px;
+      padding: 0;
+      flex: 0 0 24px;
+      line-height: 22px;
+      font-size: 16px;
+      color: white;
+    }
+    .unit-cell[data-state="started"],
+    .legend-cell.started {
+      background: linear-gradient(to top, var(--green) 45%, var(--paper) 45%);
+    }
+    .unit-cell[data-state="done"],
+    .legend-cell.done {
+      background: var(--green);
+      color: white;
+    }
+    .unit-cell[aria-current="step"] {
+      outline: 2px solid #927027;
+      outline-offset: 2px;
+    }
+    .unit-cell:focus-visible {
+      outline: 3px solid #4586af;
+      outline-offset: 2px;
+      box-shadow: inset 0 0 0 2px #927027;
+    }
+    .progress-legend {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 4px 12px;
+      font-size: 12px;
+      color: var(--muted);
+    }
+    .legend-cell {
+      display: inline-block;
+      width: 12px;
+      height: 12px;
+      line-height: 10px;
+      font-size: 10px;
+      text-align: center;
+    }
+    .completion-status {
+      font-size: 14px;
+      margin: 0 0 10px;
+    }
+    .completion-status[data-state="done"] {
+      color: var(--green);
+      font-weight: 600;
+    }
+    @media (max-width: 1439px) {
+      #batchProgress {
+        order: 3;
+        flex-basis: 100%;
+        max-width: none;
+      }
+    }
     h1 {
       font:
         600 17px/1.3 Georgia,
@@ -343,6 +422,16 @@
   <div id="toolbar">
     <header>
       <h1>Second Reader · 批注细读</h1>
+      <section id="batchProgress" aria-label="批次完成情况" hidden>
+        <div id="batchCounts"></div>
+        <div id="unitGrid" role="group" aria-label="按批次顺序跳转单元"></div>
+        <div class="progress-legend" aria-hidden="true">
+          <span><i class="legend-cell"></i> 未开始</span>
+          <span><i class="legend-cell started"></i> 进行中</span>
+          <span><i class="legend-cell done">✓</i> 已完成</span>
+          <span>描边为当前单元 · 点击跳转</span>
+        </div>
+      </section>
       <div class="row">
         <label class="pick">打开批次<input id="open" type="file" accept=".json" /></label
         ><button id="link" hidden>连接结果文件</button><button id="export" hidden>导出 JSONL</button
@@ -383,6 +472,7 @@
         <div class="judgments">
           <aside class="panel review-panel" aria-label="批注判断">
             <h2>条目判断 <small>↑ 上一条 / ↓ 下一条</small></h2>
+            <p id="markProgress" class="completion-status" role="status"></p>
             <div class="row" id="tabs"></div>
             <div id="editor" hidden>
               <blockquote id="excerpt"></blockquote>
@@ -401,6 +491,7 @@
           </aside>
           <aside class="panel unit-panel" aria-label="单元判断">
             <h2 id="unitHeading" tabindex="-1">单元判断</h2>
+            <p id="unitProgress" class="completion-status" role="status"></p>
             <div class="row" id="density"><span>密度</span></div>
             <label class="field" for="unitNote">单元备注 U <small>选填，自动保存</small></label>
             <textarea id="unitNote" rows="2"></textarea><small id="unitNoteState"></small>
@@ -449,7 +540,7 @@
   </dialog>
   <script>
     "use strict";
-    const VERSION = "q1-annotator/1.4",
+    const VERSION = "q1-annotator/1.5",
       $ = (id) => document.getElementById(id);
     const say = (text) => {
       $("message").textContent = text;
@@ -592,6 +683,8 @@
       await dbPut("last", id);
       $("work").hidden = false;
       $("workbar").hidden = false;
+      $("batchProgress").hidden = false;
+      $("unitGrid").replaceChildren();
       $("landing").hidden = true;
       $("export").hidden = false;
       $("link").hidden = !window.showOpenFilePicker;
@@ -633,6 +726,7 @@
                   "q1-annotator/1.1",
                   "q1-annotator/1.2",
                   "q1-annotator/1.3",
+                  "q1-annotator/1.4",
                   VERSION,
                 ].includes(r.annotator_version),
             )
@@ -693,15 +787,38 @@
         if (r.unit_id === u.unit_id && r.record_type === "omission") byId.set(r.record_id, r);
       return [...byId.values()].filter((r) => r.action !== "remove");
     }
+    function markStatus(m) {
+      const v = markValue(m);
+      if (v.judgment === "pass" || (v.judgment === "fail" && v.reason?.trim())) return "已完成";
+      return v.judgment === "fail" ? "待补理由" : "未标注";
+    }
+    function unitStatus(u) {
+      const values = u.marginalia.map(markValue),
+        done = u.marginalia.filter((m) => markStatus(m) === "已完成").length,
+        density = latest("density", u.unit_id),
+        miss = session.state.missDrafts[u.unit_id],
+        note = session.state.unitNoteDrafts[u.unit_id] ?? latest("unit_note", u.unit_id)?.remarks,
+        missing = [];
+      if (done < u.marginalia.length) missing.push("剩 " + (u.marginalia.length - done) + " 条未完成");
+      if (!density) missing.push("待选密度");
+      if (miss && !miss.reason?.trim()) missing.push("漏标待补理由");
+      const started =
+        density ||
+        miss ||
+        note?.trim() ||
+        values.some(
+          (v) => v.judgment || v.star || v.needs_verification || v.reason?.trim() || v.remarks?.trim(),
+        ) ||
+        session.state.rows.some((r) => r.unit_id === u.unit_id && r.record_type === "omission");
+      return { done, missing, state: !missing.length ? "done" : started ? "started" : "empty" };
+    }
     function progress() {
-      const { batch: b, state } = session;
-      const judged = (m) =>
-        !!latest("marginalia", m.marginalia_id)?.judgment && !state.drafts[m.marginalia_id];
-      const done = b.units.filter(
-        (u) =>
-          latest("density", u.unit_id) && u.marginalia.every(judged) && !state.missDrafts[u.unit_id],
-      ).length;
-      const marks = b.units.flatMap((u) => u.marginalia);
+      const { batch: b, state } = session,
+        statuses = b.units.map(unitStatus),
+        names = { empty: "未开始", started: "进行中", done: "已完成" },
+        marks = b.units.flatMap((u) => u.marginalia),
+        current = statuses[state.ui],
+        grid = $("unitGrid");
       editStatus();
       $("progress").textContent =
         "批次 " +
@@ -711,14 +828,68 @@
         "　·　当前单元 " +
         (state.ui + 1) +
         " / " +
+        b.units.length;
+      $("batchCounts").textContent =
+        "单元 " +
+        statuses.filter((s) => s.state === "done").length +
+        "/" +
         b.units.length +
-        "　·　已完成 " +
-        done +
-        " 个单元　·　已判 " +
-        marks.filter(judged).length +
-        " / " +
+        " 完成 · 条目 " +
+        statuses.reduce((n, s) => n + s.done, 0) +
+        "/" +
         marks.length +
-        " 条";
+        " 完成";
+      // Keep buttons mounted so typing/autosave never loses keyboard focus on the map.
+      if (!grid.children.length)
+        b.units.forEach((u, i) => {
+          grid.append(button("", () => goUnit(i)));
+        });
+      statuses.forEach((s, i) => {
+        const cell = grid.children[i];
+        cell.className = "unit-cell";
+        cell.dataset.state = s.state;
+        cell.textContent = s.state === "done" ? "✓" : "";
+        cell.title =
+          "单元 " +
+          (i + 1) +
+          "/" +
+          b.units.length +
+          " · " +
+          names[s.state] +
+          " · 条目 " +
+          s.done +
+          "/" +
+          b.units[i].marginalia.length +
+          " 完成" +
+          (s.missing.length ? " · " + s.missing.join(" · ") : "");
+        cell.setAttribute("aria-label", cell.title);
+        if (i === state.ui) cell.setAttribute("aria-current", "step");
+        else cell.removeAttribute("aria-current");
+      });
+      $("unitProgress").dataset.state = current.state;
+      $("unitProgress").textContent =
+        "单元 " +
+        (state.ui + 1) +
+        "/" +
+        b.units.length +
+        " · " +
+        names[current.state] +
+        (current.missing.length ? " · " + current.missing.join(" · ") : "");
+      const m = item(),
+        status = m ? markStatus(m) : "本单元无批注";
+      $("markProgress").dataset.state = status === "已完成" ? "done" : "empty";
+      $("markProgress").textContent = m
+        ? "本单元第 " +
+          (state.mi + 1) +
+          "/" +
+          unit().marginalia.length +
+          " 条 · 批次第 " +
+          (b.units.slice(0, state.ui).reduce((n, u) => n + u.marginalia.length, 0) + state.mi + 1) +
+          "/" +
+          marks.length +
+          " 条 · " +
+          status
+        : status;
     }
     function contextBox(id, parts) {
       const box = $(id);
@@ -799,7 +970,6 @@
         n.classList.toggle("active", n.dataset.items.split(",").includes(String(session.state.mi)));
       $("editor").hidden = !m;
       if (!m) {
-        tabs.textContent = "本单元没有批注";
         return;
       }
       const v = markValue(m);
@@ -908,8 +1078,10 @@
         $("readerScroll").scrollTop += range.bottom - viewport.bottom + 8;
     }
     function moveUnit(delta) {
-      const i = session.state.ui + delta;
-      if (!session.batch.units[i]) return;
+      goUnit(session.state.ui + delta);
+    }
+    function goUnit(i) {
+      if (!session.batch.units[i] || i === session.state.ui) return;
       flushEdits();
       session.state.ui = i;
       session.state.mi = 0;
@@ -1026,6 +1198,7 @@
     $("unitNote").oninput = () => {
       session.state.unitNoteDrafts[unit().unit_id] = $("unitNote").value;
       persist();
+      progress();
       queueEdits();
     };
     function saveUnitNote() {
@@ -1112,6 +1285,7 @@
     $("missReason").oninput = () => {
       session.state.missDrafts[unit().unit_id].reason = $("missReason").value;
       persist();
+      progress();
       queueEdits();
     };
     function saveMiss() {
@@ -1189,7 +1363,7 @@
       saveMark();
       saveUnitNote();
       saveMiss();
-      editStatus();
+      progress();
     }
     function queueEdits() {
       clearTimeout(editTimer);
