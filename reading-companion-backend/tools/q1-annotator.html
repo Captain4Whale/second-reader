@@ -42,17 +42,97 @@
       border-bottom: 1px solid var(--line);
     }
     header {
-      display: flex;
+      display: grid;
+      grid-template-columns: auto minmax(0, 1fr) auto;
       align-items: center;
-      justify-content: space-between;
-      gap: 12px;
-      flex-wrap: wrap;
-      padding-block: 8px;
+      gap: 6px 16px;
+      padding-block: 6px;
+    }
+    #bookContext {
+      display: flex;
+      align-items: baseline;
+      gap: 8px;
+      min-width: 0;
+      font-size: 14px;
+    }
+    #bookTitle {
+      min-width: 0;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+    #bookDetails {
+      min-width: 0;
+      flex-shrink: 1;
+      overflow-wrap: anywhere;
+    }
+    #fileControls {
+      grid-column: 3;
+      justify-content: flex-end;
+      max-width: 520px;
+      min-width: 0;
+    }
+    #fileControls > button,
+    #fileControls > .pick {
+      flex-shrink: 0;
+    }
+    #saveState {
+      overflow-wrap: anywhere;
     }
     #batchProgress {
-      flex: 1 1 300px;
-      max-width: 600px;
       min-width: 0;
+      padding: 2px 24px 6px;
+    }
+    .batch-summary,
+    .toolbar-help {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      gap: 6px 12px;
+    }
+    .toolbar-help {
+      margin-left: auto;
+    }
+    #progress {
+      white-space: nowrap;
+    }
+    @media (max-width: 1199px) {
+      header {
+        grid-template-columns: auto minmax(0, 1fr);
+      }
+      #bookContext {
+        grid-column: 1 / -1;
+        grid-row: 2;
+      }
+      #fileControls {
+        grid-column: 2;
+        grid-row: 1;
+        justify-self: end;
+      }
+    }
+    @media (max-width: 599px) {
+      header {
+        display: flex;
+        flex-wrap: wrap;
+      }
+      #bookContext {
+        flex-basis: 100%;
+        flex-wrap: wrap;
+      }
+      #bookTitle {
+        white-space: normal;
+        overflow: visible;
+        overflow-wrap: anywhere;
+      }
+      #bookDetails {
+        flex-shrink: 1;
+      }
+      #fileControls {
+        justify-content: flex-start;
+      }
+      .toolbar-help {
+        margin-left: 0;
+      }
     }
     #batchCounts {
       font-size: 13px;
@@ -61,7 +141,7 @@
     #unitGrid {
       display: flex;
       flex-wrap: wrap;
-      gap: 5px;
+      gap: 4px;
       padding: 4px;
       margin: 0 -4px;
     }
@@ -120,13 +200,6 @@
     .completion-status[data-state="done"] {
       color: var(--green);
       font-weight: 600;
-    }
-    @media (max-width: 1439px) {
-      #batchProgress {
-        order: 3;
-        flex-basis: 100%;
-        max-width: none;
-      }
     }
     h1 {
       font:
@@ -303,9 +376,8 @@
       display: flex;
       flex-wrap: wrap;
       align-items: center;
-      justify-content: space-between;
-      gap: 8px 16px;
-      padding: 6px 24px 8px;
+      gap: 6px 16px;
+      padding: 0 24px;
       font-size: 14px;
     }
     .workbar p,
@@ -441,10 +513,18 @@
       display: none !important;
     }
     @media (max-width: 959px) {
-      header,
       main,
       #message {
         padding: 12px;
+      }
+      header {
+        padding: 6px 12px;
+      }
+      .workbar {
+        padding-inline: 12px;
+      }
+      #batchProgress {
+        padding-inline: 12px;
       }
       .layout {
         grid-template-columns: minmax(0, 1fr);
@@ -459,32 +539,33 @@
   <div id="toolbar">
     <header>
       <h1>Second Reader · 批注细读</h1>
-      <section id="batchProgress" aria-label="批次完成情况" hidden>
-        <div id="batchCounts"></div>
-        <div id="unitGrid" role="group" aria-label="按批次顺序跳转单元"></div>
+      <div id="bookContext" hidden><span id="bookTitle"></span><span id="bookDetails"></span></div>
+      <div class="row" id="fileControls">
+        <label class="pick">打开批次<input id="open" type="file" accept=".json" /></label>
+        <button id="link" hidden>连接结果文件</button><button id="export" hidden>导出 JSONL</button>
+        <span id="saveState" role="status"></span>
+      </div>
+    </header>
+    <div class="workbar" id="workbar" hidden>
+      <div class="row" aria-label="单元导航">
+        <button id="prev">上一单元 ←</button>
+        <div id="progress" tabindex="-1"></div>
+        <button id="next">下一单元 →</button>
+      </div>
+      <div class="batch-summary"><span id="batchPosition"></span><span id="batchCounts"></span></div>
+      <div class="toolbar-help">
         <div class="progress-legend" aria-hidden="true">
           <span><i class="legend-cell"></i> 未开始</span>
           <span><i class="legend-cell started"></i> 进行中</span>
           <span><i class="legend-cell done">✓</i> 已完成</span>
-          <span>描边为当前单元 · 点击跳转</span>
+          <span>描边为当前</span>
         </div>
-      </section>
-      <div class="row">
-        <label class="pick">打开批次<input id="open" type="file" accept=".json" /></label
-        ><button id="link" hidden>连接结果文件</button><button id="export" hidden>导出 JSONL</button
-        ><span id="saveState" role="status"></span>
+        <button id="helpButton">? 快捷键</button>
       </div>
-    </header>
-    <div class="workbar" id="workbar" hidden>
-      <div>
-        <div id="bookContext"></div>
-        <div id="progress" tabindex="-1"></div>
-      </div>
-      <div class="row"><button id="prev">上一单元 ←</button><button id="next">下一单元 →</button></div>
-      <p class="hint">
-        方向键切换 · J/K 原文 · Shift+J/K 整页 · Esc 返回 · <button id="helpButton">? 快捷键</button>
-      </p>
     </div>
+    <section id="batchProgress" aria-label="批次完成情况" hidden>
+      <div id="unitGrid" role="group" aria-label="按批次顺序跳转单元"></div>
+    </section>
 
     <div id="message" role="alert"></div>
   </div>
@@ -556,6 +637,7 @@
   <button id="selection" class="primary" hidden>记为漏标 O</button>
   <dialog id="help" aria-labelledby="helpTitle">
     <h2 id="helpTitle">快捷键</h2>
+    <p>顶部方格按批次顺序对应单元。点击跳转，或用 Tab 聚焦后按 Enter；描边表示当前单元。</p>
     <p>文本框外使用。文本框内 Enter 换行，Esc 保存并返回。</p>
     <dl>
       <dt>↑ / ↓</dt>
@@ -583,7 +665,7 @@
   </dialog>
   <script>
     "use strict";
-    const VERSION = "q1-annotator/1.6",
+    const VERSION = "q1-annotator/1.7",
       $ = (id) => document.getElementById(id);
     const say = (text) => {
       $("message").textContent = text;
@@ -726,6 +808,7 @@
       await dbPut("last", id);
       $("work").hidden = false;
       $("workbar").hidden = false;
+      $("bookContext").hidden = false;
       $("batchProgress").hidden = false;
       $("unitGrid").replaceChildren();
       $("landing").hidden = true;
@@ -771,6 +854,7 @@
                   "q1-annotator/1.3",
                   "q1-annotator/1.4",
                   "q1-annotator/1.5",
+                  "q1-annotator/1.6",
                   VERSION,
                 ].includes(r.annotator_version),
             )
@@ -864,15 +948,8 @@
         current = statuses[state.ui],
         grid = $("unitGrid");
       editStatus();
-      $("progress").textContent =
-        "批次 " +
-        b.batch_number +
-        " / " +
-        b.batch_count +
-        "　·　当前单元 " +
-        (state.ui + 1) +
-        " / " +
-        b.units.length;
+      $("progress").textContent = "单元 " + (state.ui + 1) + " / " + b.units.length;
+      $("batchPosition").textContent = "批次 " + b.batch_number + " / " + b.batch_count;
       $("batchCounts").textContent =
         "单元 " +
         statuses.filter((s) => s.state === "done").length +
@@ -1135,12 +1212,13 @@
       const position = Number.isFinite(u.book_position_percent)
         ? "全书约 " + u.book_position_percent + "%"
         : "全书位置未知";
-      $("bookContext").textContent = [
-        b.book,
+      $("bookTitle").textContent = b.book;
+      $("bookTitle").title = b.book;
+      $("bookDetails").textContent = [
         b.author || "作者未知",
         u.chapter_title || "章节标题未知",
         position,
-      ].join("　·　");
+      ].join(" · ");
       $("unitNote").value =
         session.state.unitNoteDrafts[u.unit_id] ?? latest("unit_note", u.unit_id)?.remarks ?? "";
       source();
