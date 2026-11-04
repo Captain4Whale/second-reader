@@ -31,17 +31,27 @@
       margin: auto;
       padding: 16px 24px;
     }
+    main {
+      padding-block: 12px;
+    }
+    #toolbar {
+      position: sticky;
+      top: 0;
+      z-index: 20;
+      background: #f4f5ef;
+      border-bottom: 1px solid var(--line);
+    }
     header {
       display: flex;
       align-items: center;
       justify-content: space-between;
       gap: 12px;
       flex-wrap: wrap;
-      border-bottom: 1px solid var(--line);
+      padding-block: 8px;
     }
     h1 {
       font:
-        600 21px/1.3 Georgia,
+        600 17px/1.3 Georgia,
         serif;
       margin: 0;
     }
@@ -160,6 +170,34 @@
       grid-area: source;
       min-width: 0;
     }
+    #readerScroll {
+      min-width: 0;
+    }
+    @media (min-width: 960px) {
+      article {
+        position: sticky;
+        top: var(--reader-top, 140px);
+        height: calc(100dvh - var(--reader-top, 140px) - 12px);
+        padding: 0;
+        display: flex;
+        flex-direction: column;
+      }
+      article > h2 {
+        padding: 16px 20px;
+        margin: 0;
+        flex-shrink: 0;
+      }
+      #readerScroll {
+        min-height: 0;
+        flex: 1;
+        overflow-y: auto;
+        overscroll-behavior: contain;
+        padding: 0 20px 20px;
+      }
+    }
+    textarea {
+      scroll-margin-top: calc(var(--reader-top, 140px) + 12px);
+    }
     .panel {
       min-width: 0;
       overflow-wrap: anywhere;
@@ -171,8 +209,8 @@
       gap: 16px;
       min-width: 0;
     }
-    article > #source,
-    article > .context {
+    #readerScroll > #source,
+    #readerScroll > .context {
       max-width: 44em;
       margin-inline: auto;
     }
@@ -188,7 +226,8 @@
       align-items: center;
       justify-content: space-between;
       gap: 8px 16px;
-      margin-bottom: 12px;
+      padding: 6px 24px 8px;
+      font-size: 14px;
     }
     .workbar p,
     #progress {
@@ -204,7 +243,7 @@
       }
     }
     #progress {
-      margin-bottom: 14px;
+      margin-bottom: 0;
     }
     #source,
     .context {
@@ -239,6 +278,9 @@
     mark.active {
       background: #f5d879;
       border-color: #927027;
+      outline: 2px solid #927027;
+      outline-offset: 1px;
+      box-decoration-break: clone;
     }
     .note {
       margin: 8px 0 20px 24px;
@@ -298,40 +340,45 @@
       }
     }
   </style>
-  <header>
-    <h1>Second Reader · 批注细读</h1>
-    <div class="row">
-      <label class="pick">打开批次<input id="open" type="file" accept=".json" /></label
-      ><button id="link" hidden>连接结果文件</button><button id="export" hidden>导出 JSONL</button
-      ><span id="saveState" role="status"></span>
+  <div id="toolbar">
+    <header>
+      <h1>Second Reader · 批注细读</h1>
+      <div class="row">
+        <label class="pick">打开批次<input id="open" type="file" accept=".json" /></label
+        ><button id="link" hidden>连接结果文件</button><button id="export" hidden>导出 JSONL</button
+        ><span id="saveState" role="status"></span>
+      </div>
+    </header>
+    <div class="workbar" id="workbar" hidden>
+      <div>
+        <div id="bookContext"></div>
+        <div id="progress" tabindex="-1"></div>
+      </div>
+      <div class="row"><button id="prev">上一单元 ←</button><button id="next">下一单元 →</button></div>
+      <p class="hint">
+        方向键切换 · J/K 原文 · Shift+J/K 整页 · Esc 返回 · <button id="helpButton">? 快捷键</button>
+      </p>
     </div>
-  </header>
-  <div id="message" role="alert"></div>
+
+    <div id="message" role="alert"></div>
+  </div>
   <main>
     <section id="landing">
       <h2>开始一个批次</h2>
       <p>打开抽样生成的 batch.json，再连接同目录的 judgments.jsonl。理由和备注会按你的原话保存。</p>
     </section>
     <div id="work" hidden>
-      <div class="workbar">
-        <div>
-          <div id="bookContext"></div>
-          <div id="progress" tabindex="-1"></div>
-        </div>
-        <div class="row"><button id="prev">上一单元 ←</button><button id="next">下一单元 →</button></div>
-        <p class="hint">
-          方向键切换 · J/K 滚动 · R/M/U 输入 · Esc 返回 · <button id="helpButton">? 快捷键</button>
-        </p>
-      </div>
       <div class="layout">
         <article>
           <h2>单元原文</h2>
-          <div id="before" class="context"></div>
-          <hr />
-          <div id="source"></div>
-          <hr />
-          <div id="after" class="context"></div>
-          <button id="selection" class="primary" hidden>记为漏标</button>
+          <div id="readerScroll" tabindex="0" aria-label="单元原文阅读区">
+            <div id="before" class="context"></div>
+            <hr />
+            <div id="source"></div>
+            <hr />
+            <div id="after" class="context"></div>
+            <button id="selection" class="primary" hidden>记为漏标</button>
+          </div>
         </article>
         <div class="judgments">
           <aside class="panel review-panel" aria-label="批注判断">
@@ -382,9 +429,9 @@
       <dt>← / →</dt>
       <dd>上一个 / 下一个单元</dd>
       <dt>J / K</dt>
-      <dd>整页向下 / 向上滚动</dd>
+      <dd>原文向下 / 向上滚动；窄屏时滚动整页</dd>
       <dt>Shift+J / Shift+K</dt>
-      <dd>整页向下 / 向上滚动（兼容按键）</dd>
+      <dd>整页向下 / 向上滚动（超长侧栏）</dd>
       <dt>P / F</dt>
       <dd>过 / 不过，判断后停留；F 进入理由框</dd>
       <dt>S / V</dt>
@@ -402,7 +449,7 @@
   </dialog>
   <script>
     "use strict";
-    const VERSION = "q1-annotator/1.3",
+    const VERSION = "q1-annotator/1.4",
       $ = (id) => document.getElementById(id);
     const say = (text) => {
       $("message").textContent = text;
@@ -544,6 +591,7 @@
       await dbPut("batch:" + id, batch);
       await dbPut("last", id);
       $("work").hidden = false;
+      $("workbar").hidden = false;
       $("landing").hidden = true;
       $("export").hidden = false;
       $("link").hidden = !window.showOpenFilePicker;
@@ -580,9 +628,13 @@
               (r, i) =>
                 r.batch_id !== s.batch.batch_id ||
                 r.revision !== i + 1 ||
-                !["q1-annotator/1.0", "q1-annotator/1.1", "q1-annotator/1.2", VERSION].includes(
-                  r.annotator_version,
-                ),
+                ![
+                  "q1-annotator/1.0",
+                  "q1-annotator/1.1",
+                  "q1-annotator/1.2",
+                  "q1-annotator/1.3",
+                  VERSION,
+                ].includes(r.annotator_version),
             )
           )
             throw Error("结果文件属于其他批次或版本。");
@@ -781,7 +833,7 @@
             session.state.missDrafts[u.unit_id] = { ...r };
             persist();
             renderMiss();
-            $("missReason").focus();
+            focusField($("missReason"));
           }),
           button("撤回", () => {
             if (d) {
@@ -840,7 +892,20 @@
       persist();
       editor();
       progress();
-      if (scroll) $("source").querySelector("mark.active")?.scrollIntoView({ block: "nearest" });
+      if (scroll) revealMark();
+    }
+    function revealMark() {
+      const mark = $("source").querySelector("mark.active");
+      if (!mark) return;
+      if (!matchMedia("(min-width: 960px)").matches) {
+        mark.scrollIntoView({ block: "nearest" });
+        return;
+      }
+      const viewport = $("readerScroll").getBoundingClientRect(),
+        range = mark.getBoundingClientRect();
+      if (range.top < viewport.top) $("readerScroll").scrollTop += range.top - viewport.top - 8;
+      else if (range.bottom > viewport.bottom)
+        $("readerScroll").scrollTop += range.bottom - viewport.bottom + 8;
     }
     function moveUnit(delta) {
       const i = session.state.ui + delta;
@@ -851,6 +916,7 @@
       persist();
       say("");
       render();
+      $("readerScroll").scrollTop = 0;
       window.scrollTo(0, 0);
     }
     function draft(fields) {
@@ -906,7 +972,7 @@
       draft({ judgment: "fail" });
       saveMark();
       editor();
-      $("reason").focus();
+      focusField($("reason"));
     };
     $("reason").oninput = () => {
       draft({ reason: $("reason").value });
@@ -1041,7 +1107,7 @@
       persist();
       renderMiss();
       progress();
-      $("missReason").focus();
+      focusField($("missReason"));
     };
     $("missReason").oninput = () => {
       session.state.missDrafts[unit().unit_id].reason = $("missReason").value;
@@ -1070,12 +1136,32 @@
         field.style.height = field.scrollHeight + border + "px";
       }
     }
-    window.addEventListener("resize", resizeTextareas);
+    function updateReaderTop() {
+      document.documentElement.style.setProperty(
+        "--reader-top",
+        $("toolbar").getBoundingClientRect().height + 12 + "px",
+      );
+    }
+    new ResizeObserver(updateReaderTop).observe($("toolbar"));
+    window.addEventListener("resize", () => {
+      resizeTextareas();
+      updateReaderTop();
+    });
+    updateReaderTop();
     document.addEventListener("input", (e) => {
       if (e.target.matches("textarea")) resizeTextareas();
     });
     let editTimer,
       composing = false;
+    function focusField(field) {
+      field.focus({ preventScroll: true });
+      const rect = field.getBoundingClientRect();
+      const top = $("toolbar").getBoundingClientRect().bottom + 12;
+      if (rect.top < top || rect.top > window.innerHeight - 60)
+        window.scrollBy({ top: rect.top - top, behavior: "instant" });
+      else if (rect.bottom > window.innerHeight && rect.height < window.innerHeight - top)
+        window.scrollBy({ top: rect.bottom - window.innerHeight + 12, behavior: "instant" });
+    }
     function neutralFocus() {
       $("progress").focus({ preventScroll: true });
     }
@@ -1084,14 +1170,18 @@
         d = m && session.state.drafts[m.marginalia_id];
       $("draftState").textContent = d
         ? d.judgment === "fail" && !d.reason.trim()
-          ? "待补理由 · 草稿已保存"
-          : "草稿已保存"
-        : "已保存";
+          ? "待补理由 · 草稿已存浏览器"
+          : "草稿已存浏览器"
+        : "修改已存浏览器";
       $("unitNoteState").textContent = Object.hasOwn(session.state.unitNoteDrafts, unit().unit_id)
-        ? "草稿已保存"
-        : "已保存";
+        ? "草稿已存浏览器"
+        : "修改已存浏览器";
       const miss = session.state.missDrafts[unit().unit_id];
-      $("missState").textContent = miss ? (miss.reason.trim() ? "已保存" : "待补理由 · 草稿已保存") : "";
+      $("missState").textContent = miss
+        ? miss.reason.trim()
+          ? "修改已存浏览器"
+          : "待补理由 · 草稿已存浏览器"
+        : "";
     }
     function flushEdits() {
       clearTimeout(editTimer);
@@ -1179,8 +1269,12 @@
       const k = e.key.toLowerCase();
       if (k === "j" || k === "k") {
         e.preventDefault();
-        window.scrollBy({
-          top: (k === "j" ? 1 : -1) * Math.max(120, window.innerHeight * 0.6),
+        const reader = !e.shiftKey && matchMedia("(min-width: 960px)").matches;
+        const target = reader ? $("readerScroll") : window;
+        target.scrollBy({
+          top:
+            (k === "j" ? 1 : -1) *
+            Math.max(120, (reader ? $("readerScroll").clientHeight : window.innerHeight) * 0.6),
           behavior: "instant",
         });
         return;
@@ -1208,12 +1302,12 @@
       const fields = { r: "reason", m: "memo", u: "unitNote" };
       if (fields[k] && (k === "u" || item())) {
         e.preventDefault();
-        $(fields[k]).focus();
+        focusField($(fields[k]));
         return;
       }
       if (k === "o") {
         e.preventDefault();
-        if (session.state.missDrafts[unit().unit_id]) $("missReason").focus();
+        if (session.state.missDrafts[unit().unit_id]) focusField($("missReason"));
         else if (selectedRange && activeMisses(unit()).length < 2) $("selection").click();
         else say(activeMisses(unit()).length >= 2 ? "本单元已达两处漏标上限。" : "请先划选本单元正文。");
         return;
