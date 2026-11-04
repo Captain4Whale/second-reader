@@ -279,7 +279,10 @@
     </section>
     <div id="work" hidden>
       <div id="bookContext"></div>
-      <div id="progress"></div>
+      <div id="progress" tabindex="-1"></div>
+      <p class="hint">
+        方向键切换 · R/M/U 输入 · Esc 返回 · <button id="helpButton">? 查看快捷键</button>
+      </p>
       <div class="layout">
         <article>
           <h2>单元原文</h2>
@@ -291,46 +294,71 @@
           <button id="selection" class="primary" hidden>记为漏标</button>
         </article>
         <aside class="panel">
-          <div class="row"><button id="prev">上一单元</button><button id="next">下一单元</button></div>
+          <div class="row">
+            <button id="prev">上一单元 ←</button><button id="next">下一单元 →</button>
+          </div>
           <hr />
-          <h2>条目判断</h2>
+          <h2>条目判断 <small>↑ 上一条 / ↓ 下一条</small></h2>
           <div class="row" id="tabs"></div>
           <div id="editor" hidden>
             <blockquote id="excerpt"></blockquote>
             <p id="activeNote" class="note" hidden></p>
             <div class="row"><button id="pass">过 P</button><button id="fail">不过 F</button></div>
-            <label class="field" for="reason">理由 <small>不过时必填</small></label
+            <label class="field" for="reason">理由 R <small>不过时必填</small></label
             ><textarea id="reason" rows="2"></textarea>
             <div class="row">
               <label><input id="star" type="checkbox" /> 星标 S</label
               ><label><input id="verify" type="checkbox" /> 待核实 V</label>
             </div>
-            <label class="field" for="memo">备注 <small>选填</small></label
-            ><textarea id="memo" rows="1"></textarea> <button id="apply">保存并继续 ↵</button>
+            <label class="field" for="memo">备注 M <small>选填</small></label
+            ><textarea id="memo" rows="1"></textarea>
             <small id="draftState"></small>
           </div>
           <hr />
           <h2 id="unitHeading" tabindex="-1">单元判断</h2>
           <div class="row" id="density"><span>密度</span></div>
-          <label class="field" for="unitNote">单元备注 <small>选填，Enter 保存</small></label>
-          <textarea id="unitNote" rows="2"></textarea>
+          <label class="field" for="unitNote">单元备注 U <small>选填，自动保存</small></label>
+          <textarea id="unitNote" rows="2"></textarea><small id="unitNoteState"></small>
           <h3>漏标 <small id="missCount"></small></h3>
-          <p class="hint">在本单元正文中划选，再点「记为漏标」。</p>
+          <p class="hint">在本单元正文中划选，再按 O 或点「记为漏标」。</p>
           <div id="misses"></div>
           <div id="missEditor" hidden>
             <blockquote id="missQuote"></blockquote>
-            <label class="field" for="missReason">漏标理由</label><textarea id="missReason"></textarea>
+            <label class="field" for="missReason">漏标理由 O</label><textarea id="missReason"></textarea>
             <div class="row">
-              <button id="saveMiss">保存漏标</button><button id="cancelMiss">取消编辑</button>
+              <small id="missState"></small><button id="cancelMiss">结束编辑</button>
             </div>
           </div>
         </aside>
       </div>
     </div>
   </main>
+  <dialog id="help" aria-labelledby="helpTitle">
+    <h2 id="helpTitle">快捷键</h2>
+    <p>文本框外使用。文本框内 Enter 换行，Esc 保存并返回。</p>
+    <dl>
+      <dt>↑ / ↓</dt>
+      <dd>上一条 / 下一条批注</dd>
+      <dt>← / →</dt>
+      <dd>上一个 / 下一个单元</dd>
+      <dt>P / F</dt>
+      <dd>过 / 不过，判断后停留；F 进入理由框</dd>
+      <dt>S / V</dt>
+      <dd>星标 / 待核实</dd>
+      <dt>1 / 2 / 3</dt>
+      <dd>密度多 / 合适 / 少</dd>
+      <dt>R / M / U</dt>
+      <dd>理由 / 条目备注 / 单元备注</dd>
+      <dt>O</dt>
+      <dd>进入漏标理由，或将正文划选记为漏标</dd>
+      <dt>? / Esc</dt>
+      <dd>查看说明 / 返回阅读</dd>
+    </dl>
+    <button id="closeHelp">关闭 Esc</button>
+  </dialog>
   <script>
     "use strict";
-    const VERSION = "q1-annotator/1.1",
+    const VERSION = "q1-annotator/1.2",
       $ = (id) => document.getElementById(id);
     const say = (text) => {
       $("message").textContent = text;
@@ -454,7 +482,10 @@
       return s.writes;
     }
     async function activate(batch) {
-      if (session) await session.writes;
+      if (session) {
+        flushEdits();
+        await session.writes;
+      }
       await checkBatch(batch);
       const id = batch.batch_id;
       const state = (await dbGet("state:" + id)) || {
@@ -505,7 +536,7 @@
               (r, i) =>
                 r.batch_id !== s.batch.batch_id ||
                 r.revision !== i + 1 ||
-                !["q1-annotator/1.0", VERSION].includes(r.annotator_version),
+                !["q1-annotator/1.0", "q1-annotator/1.1", VERSION].includes(r.annotator_version),
             )
           )
             throw Error("结果文件属于其他批次或版本。");
@@ -573,8 +604,7 @@
           latest("density", u.unit_id) && u.marginalia.every(judged) && !state.missDrafts[u.unit_id],
       ).length;
       const marks = b.units.flatMap((u) => u.marginalia);
-      const current = item();
-      $("draftState").textContent = current && state.drafts[current.marginalia_id] ? "未确认草稿" : "";
+      editStatus();
       $("progress").textContent =
         "批次 " +
         b.batch_number +
@@ -756,6 +786,7 @@
         b.setAttribute("aria-pressed", b.dataset.density === latest("density", unit().unit_id)?.density);
     }
     function chooseMark(i, scroll) {
+      flushEdits();
       session.state.mi = i;
       persist();
       editor();
@@ -765,6 +796,7 @@
     function moveUnit(delta) {
       const i = session.state.ui + delta;
       if (!session.batch.units[i]) return;
+      flushEdits();
       session.state.ui = i;
       session.state.mi = 0;
       persist();
@@ -786,16 +818,12 @@
       persist();
       progress();
     }
-    function saveMark(next) {
+    function saveMark() {
+      if (!item() || !session.state.drafts[item().marginalia_id]) return true;
       const m = item(),
         v = markValue(m);
       if (v.judgment === "fail" && !v.reason.trim()) {
-        say("请写一句不过的理由。");
-        $("reason").focus();
-        return false;
-      }
-      if (next && !v.judgment) {
-        say("请先选择过或不过。");
+        progress();
         return false;
       }
       const fields = {
@@ -816,25 +844,29 @@
       else persist();
       say("");
       progress();
-      editor();
-      if (next && session.state.mi + 1 < unit().marginalia.length) {
-        chooseMark(session.state.mi + 1, true);
-        $("pass").focus({ preventScroll: true });
-      } else if (next) $("unitHeading").focus({ preventScroll: true });
+
       return true;
     }
     $("pass").onclick = () => {
       draft({ judgment: "pass" });
-      saveMark(true);
+      saveMark();
+      editor();
+      neutralFocus();
     };
     $("fail").onclick = () => {
       draft({ judgment: "fail" });
+      saveMark();
       editor();
       $("reason").focus();
     };
-    $("apply").onclick = () => saveMark(true);
-    $("reason").oninput = () => draft({ reason: $("reason").value });
-    $("memo").oninput = () => draft({ remarks: $("memo").value });
+    $("reason").oninput = () => {
+      draft({ reason: $("reason").value });
+      queueEdits();
+    };
+    $("memo").oninput = () => {
+      draft({ remarks: $("memo").value });
+      queueEdits();
+    };
     function toggleFlag(key, value) {
       const m = item(),
         id = m.marginalia_id,
@@ -859,6 +891,7 @@
         m.original_source_range,
       );
       progress();
+      editor();
     }
     $("star").onchange = () => toggleFlag("star", $("star").checked);
     $("verify").onchange = () => toggleFlag("needs_verification", $("verify").checked);
@@ -878,6 +911,7 @@
     $("unitNote").oninput = () => {
       session.state.unitNoteDrafts[unit().unit_id] = $("unitNote").value;
       persist();
+      queueEdits();
     };
     function saveUnitNote() {
       const u = unit(),
@@ -889,7 +923,7 @@
         record("unit_note", u.unit_id, { remarks }, u.source_range, u.original_source_range);
       else persist();
     }
-    $("unitNote").onblur = saveUnitNote;
+
     $("prev").onclick = () => moveUnit(-1);
     $("next").onclick = () => moveUnit(1);
     function endpoint(node, offset) {
@@ -963,70 +997,166 @@
     $("missReason").oninput = () => {
       session.state.missDrafts[unit().unit_id].reason = $("missReason").value;
       persist();
+      queueEdits();
     };
-    $("saveMiss").onclick = () => {
+    function saveMiss() {
       const d = session.state.missDrafts[unit().unit_id];
-      if (!d.reason.trim()) {
-        say("请写一句漏标理由。");
-        $("missReason").focus();
-        return;
+      if (!d || !d.reason.trim()) return false;
+      const prior = latest("omission", d.record_id);
+      if (!prior || prior.action !== "save" || prior.reason !== d.reason)
+        record(
+          "omission",
+          d.record_id,
+          { action: "save", reason: d.reason, source_quote: d.source_quote },
+          d.source_range,
+          d.original_source_range,
+        );
+      return true;
+    }
+    let editTimer,
+      composing = false;
+    function neutralFocus() {
+      $("progress").focus({ preventScroll: true });
+    }
+    function editStatus() {
+      const m = item(),
+        d = m && session.state.drafts[m.marginalia_id];
+      $("draftState").textContent = d
+        ? d.judgment === "fail" && !d.reason.trim()
+          ? "待补理由 · 草稿已保存"
+          : "草稿已保存"
+        : "已保存";
+      $("unitNoteState").textContent = Object.hasOwn(session.state.unitNoteDrafts, unit().unit_id)
+        ? "草稿已保存"
+        : "已保存";
+      const miss = session.state.missDrafts[unit().unit_id];
+      $("missState").textContent = miss ? (miss.reason.trim() ? "已保存" : "待补理由 · 草稿已保存") : "";
+    }
+    function flushEdits() {
+      clearTimeout(editTimer);
+      if (!session || composing) return;
+      saveMark();
+      saveUnitNote();
+      saveMiss();
+      editStatus();
+    }
+    function queueEdits() {
+      clearTimeout(editTimer);
+      if (!composing) editTimer = setTimeout(flushEdits, 500);
+      editStatus();
+    }
+    function finishMiss() {
+      flushEdits();
+      if (session.state.missDrafts[unit().unit_id]?.reason.trim()) {
+        delete session.state.missDrafts[unit().unit_id];
+        persist();
+        renderMiss();
+        progress();
       }
-      delete session.state.missDrafts[unit().unit_id];
-      record(
-        "omission",
-        d.record_id,
-        { action: "save", reason: d.reason, source_quote: d.source_quote },
-        d.source_range,
-        d.original_source_range,
-      );
-      say("");
-      renderMiss();
-      progress();
-    };
+    }
     $("cancelMiss").onclick = () => {
-      delete session.state.missDrafts[unit().unit_id];
-      persist();
-      renderMiss();
-      progress();
+      finishMiss();
+      neutralFocus();
     };
+    for (const id of ["reason", "memo", "unitNote", "missReason"]) {
+      $(id).addEventListener("blur", () => {
+        if (id === "missReason") finishMiss();
+        else flushEdits();
+      });
+      $(id).addEventListener("compositionstart", () => {
+        composing = true;
+        clearTimeout(editTimer);
+      });
+      $(id).addEventListener("compositionend", () => {
+        composing = false;
+        queueEdits();
+      });
+    }
+    function showHelp() {
+      if ($("help").open) {
+        $("help").close();
+        neutralFocus();
+      } else {
+        flushEdits();
+        $("help").showModal();
+      }
+    }
+    $("helpButton").onclick = showHelp;
+    $("closeHelp").onclick = () => {
+      $("help").close();
+      neutralFocus();
+    };
+    $("help").addEventListener("cancel", () => {
+      setTimeout(neutralFocus, 0);
+    });
     document.addEventListener("keydown", (e) => {
       if (
         !session ||
         e.isComposing ||
+        composing ||
         e.keyCode === 229 ||
         e.repeat ||
         e.altKey ||
         e.ctrlKey ||
-        e.metaKey ||
-        (e.shiftKey && !["S", "V", "P", "F"].includes(e.key))
+        e.metaKey
       )
         return;
-      if (e.target.tagName === "TEXTAREA") {
-        if (e.key === "Enter") {
+      if (e.key === "Escape") {
+        e.preventDefault();
+        if ($("help").open) $("help").close();
+        finishMiss();
+        neutralFocus();
+        return;
+      }
+      if ($("help").open) {
+        if (e.key === "?") {
           e.preventDefault();
-          if (e.target === $("missReason")) $("saveMiss").click();
-          else if (e.target === $("unitNote")) {
-            saveUnitNote();
-            $("unitHeading").focus({ preventScroll: true });
-          } else saveMark(true);
+          showHelp();
         }
         return;
       }
-      if (e.target.tagName === "INPUT" && e.target.type !== "checkbox") return;
+      if (e.target.matches("textarea, input:not([type=checkbox]), [contenteditable=true]")) return;
       const k = e.key.toLowerCase();
-      const markKey = { p: "pass", f: "fail", s: "star", v: "verify" }[k];
-      if (item() && markKey) {
+      if (k === "?") {
         e.preventDefault();
-        $(markKey).click();
-      } else if (["1", "2", "3"].includes(k)) {
+        showHelp();
+        return;
+      }
+      if (e.shiftKey && !["p", "f", "s", "v", "r", "m", "u", "o"].includes(k)) return;
+      const actions = { p: "pass", f: "fail", s: "star", v: "verify" };
+      if (item() && actions[k]) {
+        e.preventDefault();
+        $(actions[k]).click();
+        return;
+      }
+      if (["1", "2", "3"].includes(k)) {
         e.preventDefault();
         $("density")
           .querySelector('[data-key="' + k + '"]')
           .click();
+        return;
       }
-      if (e.key === "ArrowLeft" || e.key === "ArrowRight") {
+      const fields = { r: "reason", m: "memo", u: "unitNote" };
+      if (fields[k] && (k === "u" || item())) {
         e.preventDefault();
-        moveUnit(e.key === "ArrowLeft" ? -1 : 1);
+        $(fields[k]).focus();
+        return;
+      }
+      if (k === "o") {
+        e.preventDefault();
+        if (session.state.missDrafts[unit().unit_id]) $("missReason").focus();
+        else if (selectedRange && activeMisses(unit()).length < 2) $("selection").click();
+        else say(activeMisses(unit()).length >= 2 ? "本单元已达两处漏标上限。" : "请先划选本单元正文。");
+        return;
+      }
+      if (["ArrowLeft", "ArrowRight", "ArrowUp", "ArrowDown"].includes(e.key)) {
+        e.preventDefault();
+        if (e.key === "ArrowLeft" || e.key === "ArrowRight") moveUnit(e.key === "ArrowLeft" ? -1 : 1);
+        else {
+          const i = session.state.mi + (e.key === "ArrowUp" ? -1 : 1);
+          if (unit().marginalia[i]) chooseMark(i, true);
+        }
+        neutralFocus();
       }
     });
     $("open").onchange = async (e) => {
@@ -1044,6 +1174,7 @@
     };
     $("link").onclick = connect;
     $("export").onclick = () => {
+      flushEdits();
       const rows = session.state.rows,
         url = URL.createObjectURL(
           new Blob(
