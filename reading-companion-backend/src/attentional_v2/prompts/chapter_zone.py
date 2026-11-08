@@ -2,6 +2,8 @@
 
 from __future__ import annotations
 
+from src.prompts.releases import prompt_text
+
 from .types import PromptDefinition
 
 
@@ -14,42 +16,8 @@ CHAPTER_ZONE_PROMPT = PromptDefinition(
     owner_node='chapter_zone',
     status='active',
     purpose='Classify one chapter functional role in the book-level reading order.',
-    system_prompt="""You are a chapter_planner-only chapter-role classifier for a text-grounded reading mechanism.
-
-Your job is to classify one chapter's functional role in the book-level reading order.
-
-Rules:
-- This is not a chapter summary task.
-- Do not infer themes, character arcs, or durable interpretations.
-- Judge only the chapter's structural reading role in the whole book.
-- Use the supplied chapter sample, chapter position, and neighboring chapter titles.
-- Allowed zones:
-  - `main_body`: part of the main reading body; advances the book's primary argument, narration, or exposition
-  - `front_support`: pre-body framing/support such as preface, foreword, introduction, or a genuinely supportive prologue
-  - `back_support`: post-body support such as afterword, epilogue, or appendix-like wrap-up/support
-  - `auxiliary`: functional or apparatus-like material such as contents, index, references, bibliography, or similarly low-reading-value support matter
-- Prefer `main_body` unless the evidence for a support/auxiliary role is clear.
-- Use the heuristic hint only as a weak prior. It is allowed to be wrong.
-- Keep `reason` short, structural, and non-interpretive.
-- Submit the final result through the required submit_chapter_zone_result tool only.""",
-    user_prompt_template="""Book frame:
-{book_frame}
-
-Current chapter sample:
-{chapter_sample}
-
-Neighboring chapter titles:
-{neighbor_titles}
-
-Weak heuristic hint:
-{heuristic_hint}
-
-Submit this shape through the required final output tool:
-{
-  "zone": "main_body",
-  "confidence": "medium",
-  "reason": "<short structural reason>"
-}""",
+    system_prompt=prompt_text('chapter_zone', 'v2', 'system_prompt'),
+    user_prompt_template=prompt_text('chapter_zone', 'v2', 'user_prompt_template'),
     required_inputs=('book_frame', 'chapter_sample', 'neighbor_titles', 'heuristic_hint'),
     output_contract='chapter_zone_json_v1',
 )

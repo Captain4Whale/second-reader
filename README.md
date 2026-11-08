@@ -599,3 +599,5 @@ Internal `mechanism_config.memory_retrieval_mode` and CLI `--memory-retrieval-mo
 `runtime/memory_retrieval_config.json` records requested mode, embedding model, actual modes, query count and query/index degradation counts. `unit_memory_retrieval_trace.jsonl` records per-query evidence. `not_requested` means no actual query has run; it is not proof of working hybrid retrieval. The public HTTP API keeps its existing hybrid/text_only contract; off is internal/CLI only in this task.
 
 Run configuration lookup: `_mechanisms/attentional_v2/runtime/run_configuration.json` joins code commit/dirty state, per-node model/sampling/prompt receipts, plan fingerprint and retrieval actual-mode/degradation counters. Normalized evaluation outputs include the same `run_configuration` snapshot. Historical invocation receipts remain in the existing mechanism diagnostics event stream.
+
+Q1 prompt releases load exact version files and require private few-shot assets before API startup or reader tests. Provisioning, offline recovery and immutable-version checks: [iteration provenance](reading-companion-backend/experiments/README.md).

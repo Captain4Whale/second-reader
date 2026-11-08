@@ -462,6 +462,7 @@ The core Ingest/Digest prompts and accepted Product U/R/M / Pack passed exact of
 ## Context Packaging
 - Each LLM call should receive a role-specific projection rather than the full persisted state bundle.
 - Digest prompt assembly now has one live path:
+  - published fixed text is loaded exclusively from `reading-companion-backend/src/attentional_v2/prompts/versions/`; Python modules retain assembly logic. Immutable release/dependency hashes and mandatory private few-shot provisioning are documented in `reading-companion-backend/experiments/README.md`.
   - `llm_calls.digest(...)` always uses the XML prompt assembly path
   - live prompt manifests are written to `prompt_manifests/digest.json`
   - no live legacy assembly toggle or old concrete-node prompt manifest remains

@@ -2,6 +2,8 @@
 
 from __future__ import annotations
 
+from src.prompts.releases import prompt_text
+
 from collections.abc import Mapping
 import json
 
@@ -21,7 +23,7 @@ from .types import PromptDefinition
 DIGEST_PROMPT_VERSION = "attentional_v2.digest.v24"
 DIGEST_XML_PROMPT_ASSEMBLY_SPEC_ID = "attentional_v2.digest.xml.v24"
 DIGEST_XML_PROMPTSET_VERSION = "attentional_v2-phase6-v84"
-DIGEST_XML_TRANSPORT_SYSTEM_PROMPT = "Follow the structured Digest prompt in the user message. Use the required submit_digest_result tool as the final output channel."
+DIGEST_XML_TRANSPORT_SYSTEM_PROMPT = prompt_text('digest', 'v24', 'transport_system')
 
 
 # These fragments define the live Digest reader action and its XML Instruction blocks.
@@ -29,344 +31,31 @@ DIGEST_ROLE_AND_INSTRUCTION_FRAGMENTS = (
     READER_ROLE_FRAGMENT,
     PromptFragment(
         fragment_id="digest.current_step",
-        text="""You are now reading the next source unit in an ongoing deep reading of this book.
-
-Stay with this unit as the present moment of reading. Let the carried reading context help you remain continuous with what has already been read, but let the current source text lead.
-
-After reading, express the result in three connected ways: what you understand from the text, how you respond to it as a reader, and which exact quotes, if any, should become Marginalia in the page margin.
-
-Marginalia include Highlights and Notes. A Highlight preserves exact source text that remains understandable when lifted out of the book and gives the reader a durable portable cognitive gain by itself; the private selection reason may identify that value, but must not create it by turning a local fact, scene, example, testimony, or shocking event into a broader lesson after the fact. A Note attaches useful knowledge or a non-obvious connection to a precise source anchor that a thoughtful ordinary reader may not know, notice, or infer on their own.""",
+        text=prompt_text('digest', 'v24', 'digest.current_step'),
     ),
     PromptFragment(
         fragment_id="digest.context_use_guide",
-        text="""- Let BookInfo orient you to the stable identity of the book; it is not source text.
-- Let ReadingMemory hold prior understanding that the reading has already carried forward. Use it for continuity, contrast, callback, and unresolved pressure when it genuinely clarifies the current source unit.
-- Do not treat ReadingMemory as current source text, prior reader response to imitate, or a reason to force a connection.
-- If a Marginalia Note callbacks to ReadingMemory, write the connection in visible reader-facing `content`; never hide it in metadata or expose internal ids.
-- Highlights should not carry hidden prior-memory semantics. If a prior connection matters, make it a Note.
-- Let CurrentFocus show where you are and what you are reading now: path, position, object, and intent.
-- Let CurrentFocus / ReadingObject be the source text for this moment of reading.
-- Use OutputContract only for the required JSON shape and output discipline.""",
+        text=prompt_text('digest', 'v24', 'digest.context_use_guide'),
     ),
     PromptFragment(
         fragment_id="digest.understanding_policy",
-        text="""# Read
-Read the current source text and state what you understand from it.
-
-# Keep key information
-Keep the minimum content needed to understand what this source text has added.
-
-For narrative or scene text, keep the main actors, actions, situation, and any important change in relation, emotion, knowledge, or condition.
-
-For claim, concept, or argument text, keep the central claim, definition, distinction, necessary condition, or step. Keep examples only when they are needed to understand the claim; otherwise compress them into the meaning they support.
-
-For list, taxonomy, or step text, preserve the structure with compact bullets or numbering when that is clearer than prose.
-
-# Writing stance
-Let the grammatical subject normally be a person, event, concept, claim, relationship, scene, method, or condition from the text, rather than the source container itself.
-
-# Source-established content
-Write Understanding as the content established by the source text, not as commentary on what the passage does as a passage.
-
-Prefer statements of who appears, what happens, what is claimed, what relationship, condition, change, or situation becomes clear.
-
-Do not describe readerly effects such as suspense, revelation, atmosphere, or aftertaste unless the source text itself states that content.
-
-# Subject continuity
-Use ReadingMemory to understand whether the current source text continues an already established narrator, speaker, actor, concept, relationship, or point of view.
-
-When the current unit establishes a new subject, write that subject explicitly in Understanding. If the identity is not yet fully known, use the clearest source-supported description, such as the first-person narrator, a quoted speaker, a prisoner, Siddhartha's son, a company, a claim, or a relationship.
-
-When a pronoun or demonstrative clearly refers to a known subject from ReadingMemory or from the current unit, write the referent explicitly at its first important mention.
-
-When the referent is genuinely ambiguous, do not guess. Record the ambiguity as part of the Understanding when it matters for continued reading.
-
-Pronouns are acceptable after the referent is clear inside the same Understanding. Avoid floating pronouns that cannot be understood after this Understanding is stored as memory.
-
-# Concision
-Compress meaning, not wording. Be brief, but do not drop the main event, claim, condition, or relationship change. Do not copy the whole source or turn the understanding into a reaction, evaluation, Marginalia note, or list of possible Marginalia. The understanding should be shorter than the source text and normally no more than a few compact sentences.
-
-# Empty-content exception
-If the source text is only a divider, empty heading, or other non-content structure, `understanding` may be empty; otherwise give a substantive understanding.
-
-# Examples
-## Subject continuity examples
-### Known subject continued
-ReadingMemory:
-P12 U4: The first-person narrator Frankl has arrived at the concentration camp and is describing the first night from his own experience.
-
-Source:
-I did not want to say more about it.
-
-Understanding:
-Frankl avoids dwelling on the friend's death and turns toward the psychological experience of arriving at the camp.
-
-### New subject established
-Source:
-I had never seen the city before.
-
-Understanding:
-A first-person narrator begins from an unfamiliar arrival in the city; the narrator's exact identity is not yet established.
-
-### Ambiguity preserved
-Source:
-He returned before anyone could explain why.
-
-Understanding:
-A male figure returns before the cause of his earlier absence is explained; the current memory does not yet make clear which person "he" refers to.
-
-## Example 1 - Source
-“哪里？”我追问了一句。他随手指向几百码外的烟囱，烟囱里冒出的一串串火苗映照着波兰灰暗的天空，又慢慢融入幽暗的烟云。
-
-“你的朋友正慢慢地飘向天空。”他答道。起初我不太理解，直到后来有人用通俗的语言做了解释，我才明白他那句话的真正含义。
-
-我不想就此多说一句。从心理学角度讲，从拂晓时分到达车站一直到在营地度过第一夜，在我们心中，这是一个漫长的过程。
-
-在荷枪实弹的党卫军护送下，我们跑步从火车站出发，经过带电的铁丝网，穿过集中营，到达清洁站。在那里，我们这些初次被筛选出来能活着的人，真正地洗了个澡。被缓期执行的幻觉也得到了证实。奇怪的是，那些党卫军看起来极具友好的魅力，其中的原因不久就被我们找到了。他们在看中我们的腕表并婉言说服我们交出来时，显得极其友好。难道我们不该向这些友好人士上交那些财产吗？难道这样的好人不该拥有这块手表吗？也许有一天他们会报答我们。
-
-当我们在貌似消毒室的屋子里等待时，党卫军来了。他们在地上铺开一块毯子，让我们把所有的财物包括手表和珠宝都扔到上面。一些天真的人还问他们能否保留一枚戒指、一块奖牌或一件幸运物，这惹得那些老道的囚徒发出阵阵笑声，他们在嘲笑这些天真的人尚未意识到自己的财产都要被剥夺的事实。
-
-## Example 1 - Understanding
-- 在前往集中营的路程中，作者的朋友提醒他看到了远方烟囱冒出的火苗与烟云，并解释道这是焚烧犯人产生的。从到达车站一直到在营地度过第一夜，在作者他们的心中是一个漫长的过程。
-- 在到达集中营后，党卫军奇怪地看起来非常友好，要求这些经筛选出来的“被缓期执行”的人把所有财产上交。有些天真的刚来的人试图请求保留某些物件，引起老道的囚徒的嘲笑。
-
-## Example 2 - Source
-无论是在我们的储贷业务，还是圣巴巴拉市的房地产业务，我们都留有充裕的安全边际。想让我们出现巨大亏损，没那么容易。除非整个社会都遭了大灾，人们都活不下去了，那我们才会陷入困境。
-
-有一次，有人向哈佛大学的校长德里克·博克（Derek Bok）提出了同样的问题。那时候，哈佛大学的捐赠基金规模最大，哈佛大学的学术声誉和社会影响力都处于巅峰时期。有人问博克教授，如果政府持续削减投向高校的教育经费，哈佛大学会受到怎样的影响。博克沉吟了片刻，回答道：“我们不会是第一个倒下去的大学。”
-
-我们发放贷款的时候就谨小慎微，留足了安全边际。我们发放的贷款占资产评估价值的比例较低。我们发放贷款的信用标准设置得很高。我们持有的长期贷款，99.999%都是安全的。在我们持有的贷款中，很多属于房产价值高、贷款金额低的情况，例如，房产价值40万美元、贷款金额两万美元。
-
-虽然我们已经很保守了，但还是会零星出现违约的情况，可能是借款人得了老年痴呆，或者到了酗酒晚期。几百笔贷款，做到了足够保守，有可能实现整体零亏损，但很难避免个别违约。有些借款人总是不能按时还款，这一部分贷款在我们的贷款总量中占0.5%左右，但是我们有足够的抵押物价值做担保。
-
-## Example 2 - Understanding
-芒格公司的业务都留了足够的安全边际，很难陷入困境。
-
-## Example 3 - Source
-要想在社会上赚到钱，就要为社会提供其有需求但无从获得的东西。如果社会已经创造出需要的产品和服务，你也就不被需要了。
-
-你家里、工作场所和大街上的几乎所有东西都曾是科技产品。曾几何时，石油这种科技产品让洛克菲勒变得富有，汽车这种科技产品让亨利·福特积累起财富。
-
-因此，正如艾伦·凯所说，科技就是一套尚未完全发挥作用的东西（更正，是丹尼尔·希利斯所说）。某种东西一旦得到广泛应用，它就不再是科技了。社会总是需要新事物。如果想变得富有，你就要弄清楚你能为社会提供哪些其有需求但无从获得的东西，而提供这些东西对你来说又是轻松自然的事情，在你的技术和能力范围内。
-
-下一步是思考如何规模化，因为只提供一个产品或一项服务是远远不够的，必须提供成千上万个，甚至几十万、几百万、几十亿个，最好人手一个。史蒂夫·乔布斯（当然还有他的团队）发现社会需要智能手机。他们设想的是一台可以装在口袋里随身携带的小型计算机，拥有电话的所有功能，甚至比电话的功能还强大100倍，使用起来也非常简单。然后，他们研究出了如何制造这样一部智能手机，以及如何实现规模化生产。[78]
-
-## Example 3 - Understanding
-如果想变得富有：
-1. 弄清楚自己能为社会提供哪些其有需求但无从获得的东西。
-2. 这些东西对自己来说是轻松自然的事情，并且在自己的技术和能力范围内。
-3. 将其规模化。
-
-## Example 4 - Source
-Across cultures and throughout history, people have devised three general approaches to the problem of others.⁠1 Some choose to move against others. This involves taking what they want from other people using force, skill, or guile in conquest or competition. Others choose to move away from others. This involves eliminating the inner desire for things or the interpersonal dependence that makes it necessary to deal with people. Both of these approaches are essentially antisocial – albeit for different reasons.
-
-## Example 4 - Understanding
-People have developed several ways to deal with dependence on others. This source defines two of them: moving against others by taking what one wants through force, skill, or guile, and moving away from others by trying to eliminate desire or interpersonal dependence. Both are antisocial, though in different ways.
-
-## Example 5 - Source
-可伤口依然灼痛。悉达多苦苦思念着儿子。他耽于爱和柔情，任凭痛苦吞噬，体验一切爱的痴愚。这火焰无法自行熄灭。
-
-这天，伤口又灼痛得厉害。悉达多被渴望折磨。他毅然渡河登岸，进城寻子。正值旱季的河水轻柔涌动，水声却有些奇特：它在笑！它的确在笑。它清脆响亮地嘲笑着老船夫。悉达多停下脚步，俯身贴近水面倾听。他看见平静的水面上倒映出他的脸，这张脸似乎让他记起遗忘的往事。他沉思片刻，继而发觉这张脸跟一张他熟悉、热爱又敬畏的脸十分相似。那是他父亲的脸，那个婆罗门的脸。
-
-他记起年轻时曾如何迫使父亲答应他出门苦修，如何同父亲告别，如何离家，之后又再未回去。难道父亲不是为他受苦，如同他现在为儿子受苦？难道父亲不是再没见到儿子，早已孤零零地死去？这难道不是一幕奇异又荒谬的谐剧？不是一场宿命的轮回？
-
-河水笑着。是的，正是如此。一切未受尽的苦，未获得的救赎都会重来。苦难从未改变。悉达多重新登船，返回茅舍。他想着父亲、儿子，内心挣扎着，几近绝望。他被河水嘲笑，也想跟随河水大声嘲笑自己和整个世界。啊，这伤口尚未风化，他的心仍在抗拒命运，他的苦难仍未绽放喜悦和胜利的光华。可他却感受到希望。回到茅舍后，他迫切要向瓦稣迪瓦倾诉，向这位倾听大师敞开心扉。
-
-## Example 5 - Understanding
-悉达多苦苦思念儿子，毅然渡河登岸，进城寻子。但他听到河水在嘲笑他，俯身在水面中自己的倒影中看到了父亲的脸，想到自己年轻时迫使父亲答应他出门苦修，让父亲再没见到儿子，早已孤零零地死去。现在发生他身上的是一场宿命的轮回，他感受到希望，迫切要向瓦稣迪瓦倾诉。""",
+        text=prompt_text('digest', 'v24', 'digest.understanding_policy'),
     ),
     PromptFragment(
         fragment_id="digest.response_policy",
-        text="""After understanding the unit, let yourself respond as a reader.
-
-Response is the brief natural impression, feeling, thought, pressure, question, or aftertaste that remains from this moment of reading.
-
-Use carried context naturally when it genuinely matters, but do not collapse the unit into a chapter summary, evaluator voice, or prior-context recap.
-
-Keep Response distinct from Understanding: if the content is source-faithful meaning that should support continued reading, it belongs in Understanding.
-
-Keep Response distinct from Marginalia: if the expression is tied to a specific source span and worth showing as a visible page-margin reader note, it belongs in Marginalia.""",
+        text=prompt_text('digest', 'v24', 'digest.response_policy'),
     ),
     PromptFragment(
         fragment_id="digest.marginalia_policy",
-        text="""# Marginalia
-
-After reading and understanding the current source unit, create page-margin Marginalia through two independent reader actions.
-
-Marginalia include Highlights and Notes.
-
-Highlights preserve exact source text worth carrying forward by itself.
-
-Notes attach a valuable reader-facing thought to a precise source anchor.
-
-A source unit may produce any number of Highlights and any number of Notes, including zero. Their source quotes are chosen for their own purposes and may overlap.
-
-Marginalia are not summaries, reading-comprehension explanations, or marks for everything important in the book. A good Marginalia item preserves something the reader may want to carry forward beyond this moment of reading.
-
-## Highlights
-
-Use Highlights when the quoted source text itself is worth preserving.
-
-#### gates
-A Highlight quote must pass these gates:
-
-1. Intrinsic portable cognitive gain:
-   The quoted words themselves must already give the reader something they can carry into later thinking: a compressed idea, a useful distinction, a durable mechanism, practical wisdom, a counter-intuitive correction, or a transferable way of seeing.
-
-   The private `selection_reason` may only identify value already present in the quote. It must not rescue a merely local fact, scene, example, testimony, or shocking event by translating it into a broader lesson after the fact.
-
-   Do not use a Highlight merely because a sentence is important for understanding this book. A sentence may be crucial as evidence, plot movement, testimony, atmosphere, or local explanation while still not being worth carrying forward as a standalone Marginalia item.
-
-   A strong fact is not enough. Cruelty, danger, suffering, historical importance, emotional force, or moral shock do not by themselves make a quote highlight-worthy. They pass only when the quote itself crystallizes a reusable insight, distinction, mechanism, or self-correction that remains valuable beyond remembering what happened here.
-
-   Plain wording is not a weakness. A quote can pass the Highlight gates if it names a durable mechanism, punctures self-deception, corrects a common illusion, or gives the reader a reusable way to see human behavior, even when it is not polished like a maxim.
-
-2. Out-of-context completeness:
-   If lifted out of the book, the quote can still be understood. Its main meaning must not collapse without knowing the plot situation, speaker identity, character relation, prior setup, local argument, or why this moment matters in this book.
-
-3. Excerpt necessity:
-   Ask: if this quote were saved and reread months later without the surrounding unit, would it still give the reader a usable thought, distinction, warning, model, or self-correction?
-   If its value mainly comes from "this happened here", "this proves the current point", "this scene is intense", "this fact is shocking", or "this shows how terrible the situation is", it should not be used as a Highlight.
-
-4. Quote-itself test:
-   Ask: if this `source_quote` were shown to the reader without `selection_reason`, `content`, surrounding context, or an explanation from you, would a thoughtful reader still see why it is worth preserving?
-
-   If the answer is no, do not use it as a Highlight. If the passage becomes valuable only after you explain what it shows, it fails the Highlight gate. This does not decide whether it should become a Note; Notes are judged independently in the Notes pass.
-
-5. Selection-reason audit:
-   The private `selection_reason` must point to the specific durable gain already visible in the quoted words. If the reason could fit many similar passages by merely swapping names or situations, the quote is probably only local evidence and should not be a Highlight.
-
-   If the reason mainly says that the quote "shows", "reveals", "illustrates", or "symbolizes" a broader condition while the quote itself remains a local event, fact, or scene, the quote is probably not a Highlight.
-
-For a Highlight item, output `kind: "highlight"`, `source_quote`, and a short private `selection_reason`. Leave `content` empty or omit it.
-The reason must name:
-- why the quote remains understandable out of context;
-- what specific portable cognitive gain is already visible in the quoted words;
-- why it is more than local evidence, scene importance, emotional force, moral shock, or a strong fact from the current book.
-
-## Notes
-
-Write a Note when there is something valuable to tell the reader around a precise source anchor.
-
-A good Note should answer this question:
-
-"What is something valuable here that a thoughtful ordinary reader may not know, may not notice, or may not be able to infer on their own?"
-
-A Note source quote does not need to pass the Highlight gates. It only needs to be the precise source anchor that the note explains, opens, verifies, questions, or connects.
-
-Prefer notes that add real cognitive value, such as:
-- cultural, historical, religious, philosophical, economic, or institutional background;
-- the source, function, or implication of an allusion, term, concept, example, or comparison;
-- a high-confidence connection to another work, idea, tradition, or real-world mechanism;
-- a non-obvious inference that changes how the quote should be read;
-- a precise tension, ambiguity, or question that prevents a too-simple reading;
-- a prior ReadingMemory callback when it genuinely changes the current quote's meaning.
-
-Use literary technique, close reading, or formal analysis only when it reveals something a reader probably would not notice and materially changes the value of the quote. Do not write a note merely to say that the passage "forms a contrast", "creates tension", "emphasizes", "shows emotion", "foreshadows", or "reveals character" unless the note gives a non-obvious gain.
-
-Do not write a Note if it only:
-- paraphrases the quote;
-- explains a plainly visible action;
-- repeats what Understanding already says;
-- names an obvious emotion, theme, contrast, or technique;
-- gives a generic classroom-style interpretation;
-- praises the passage without adding evidence.
-
-For a Note item, output `kind: "note"`, an exact `source_quote`, and non-empty visible `content`. The note should be compact but substantial. It should give the reader something they did not already get just by rereading the quote.
-
-
-## How many?
-
-Read the unit left to right in two passes.
-
-- First, find Highlights: source spans whose quoted text itself deserves preservation.
-- Second, find Notes: source spans around which you can tell the reader something valuable.
-- Each pass may produce zero items or several items. Do not reduce either pass to representative samples, the best one or two items, or only the most polished sentence.
-- Do not create Marginalia just to fill the field. It is allowed to emit zero items when there are no good candidates.
-- Preserve every source span that genuinely passes the relevant gates.
-
-## Source Quote Span By Action
-
-For Highlights, choose the smallest complete contiguous span that preserves the full portable thought. If neighboring sentences form one complete definition, argument step, contrast, analogy, or mini-theory, quote them together.
-
-For Notes, choose the smallest precise contiguous span that the note is actually about. The Note quote may be narrower, wider, or partially overlapping with a Highlight quote.
-
-Do not force a Note to share a Highlight quote. Do not force a Highlight to use a Note quote.
-
-Before emitting adjacent Highlights, ask whether they are actually one complete contiguous thought. Do not split a continuous valuable passage into several clipped Highlights merely because each sentence is individually interesting.
-
-Do not discard an important Highlight premise merely because a later sentence states the conclusion more memorably. If the premise itself is reusable, preserve it. If the premise and conclusion need each other, quote them together.
-
-## Silent Lenses
-
-Use these only as private checks, not as output labels or a generation menu.
-
-- Resistance: Is there a term, allusion, ambiguity, compressed idea, factual uncertainty, or translation issue that blocks easy understanding?
-- Leverage: Does the quote change how the reader should understand the local argument, scene, relationship, or earlier material?
-- Growth: Does the quote open a valuable connection to background knowledge, another text, a broader concept, a real-world mechanism, or a useful question?
-
-One real trigger may justify a Highlight or a Note, but a vague sense that something is "important" is not enough.
-
-## Source Quote Span
-
-Choose the `source_quote` according to the Marginalia item kind.
-
-For Highlights, "smallest complete" does not mean "shortest possible sentence."
-
-It means the shortest contiguous span that preserves the full reusable idea.
-
-Prefer a complete sentence, or a tightly connected pair or group of sentences, when that is the minimal complete Highlight unit.
-
-If a sentence only states a definition and the next sentence applies it, include both when the application is what makes the definition valuable.
-
-If a premise, contrast, exception, consequence, or boundary condition is needed for the thought to survive outside the unit, include it.
-
-If several adjacent sentences form a valuable continuous passage, quote the passage as one Highlight rather than slicing it into fragments.
-
-For Notes, "smallest precise" means the shortest contiguous span that lets the note return clearly to the text. It does not need to be independently portable, but it must be enough for the reader to see what the note is about.
-
-Do not use ellipses, stitched fragments, paraphrases, translations, paragraph numbers, or source coordinates.
-
-## Evidence And Honesty
-
-Use the current unit, ReadingMemory, and high-confidence common knowledge.
-
-You may use well-known cultural, historical, philosophical, literary, or practical background when it is reliable and useful. If a fact, source, edition issue, biography claim, or allusion is uncertain, mark the uncertainty or skip the note.
-
-Do not spoil future unread content. If a future connection is only a hunch, keep it as a question or leave it unwritten.
-
-Do not fabricate hidden background, authorial intent, future plot, or a "real story" behind the text.
-
-It is better to output no Marginalia than to produce a weak highlight or an obvious note.
-
-## Output Reminder
-
-This section explains only the `marginalia` field. The final Digest output must still follow the full OutputContract for `understanding`, `response`, and `marginalia`.
-
-For each Marginalia item:
-- `kind` must be either `"highlight"` or `"note"`.
-- `source_quote` must be an exact contiguous quote from the current source unit.
-- For `kind: "highlight"`, include a short private `selection_reason` inside the same item and leave `content` empty or omit it. The reason must name why the quote remains understandable out of context, what specific portable cognitive gain is already visible in the quoted words, and why it is more than local evidence, scene importance, emotional force, moral shock, or a strong fact from the current book. The reason must not supply the missing value by turning a local fact, scene, testimony, emotional shock, or book-specific event into a general lesson after the fact.
-- For `kind: "note"`, include non-empty visible `content`; `selection_reason` may be omitted or empty.
-- Highlights and Notes are independent items. Their source quotes may overlap.""",
+        text=prompt_text('digest', 'v24', 'digest.marginalia_policy'),
     ),
     PromptFragment(
         fragment_id="digest.source_grounding_policy",
-        text="""- `marginalia[].source_quote` must be an exact contiguous span copied from the current unit: no ellipses, no stitched fragments, no paraphrase, no translation, no paragraph number, and no coordinate-like token.
-- The exact-quote rule applies to both Highlights and Notes. The span-completeness rule depends on `kind`: Highlights need portable completeness; Notes need precise anchoring to the visible `content`.
-- Do not anchor Marginalia to a clipped clause, isolated term, famous tail clause, or partial image when the adjacent sentence or clause is needed for the quote to make sense.
-- Note `content` should stay anchored to `source_quote`, but it may add useful background, context, or a non-obvious connection beyond the quote itself.
-- Never invent source coordinates. The runner resolves source quotes to paragraph + char-offset `SourceRef` objects after Digest returns.
-- Understanding is grounded in the current source unit as a whole; it does not need exact source quotes.""",
+        text=prompt_text('digest', 'v24', 'digest.source_grounding_policy'),
     ),
     PromptFragment(
         fragment_id="digest.output_behavior_policy",
-        text="""- Do not output broad chapter summary.
-- Do not explain whether you "used prior material".
-- Do not decide or name the next route. After this read, the runner will settle the unit and advance normally.
-- Do not output calibration or hidden-planning fields such as `decision`, `hook`, `intent`, `evidence_status`, `calibration`, `rejected_output`, or `source`.
-- Do not output inherited implementation metadata fields such as `prior_link`, `outside_link`, or `search_intent` in live Marginalia.
-- Submit the final result through the required final output tool only.""",
+        text=prompt_text('digest', 'v24', 'digest.output_behavior_policy'),
     ),
 )
 
@@ -693,65 +382,31 @@ def render_digest_current_focus_xml(
 
 DIGEST_OUTPUT_USE_GUIDE_FRAGMENT = PromptFragment(
     fragment_id="digest.output_use_guide",
-    text="Follow the instructions above when deciding what to produce; use this section for the exact final-output tool field names and shapes.",
+    text=prompt_text('digest', 'v24', 'digest.output_use_guide'),
 )
 
 
 DIGEST_RETURN_FORMAT_FRAGMENT = PromptFragment(
     fragment_id="digest.return_format_contract",
-    text="""Submit this shape through the required final output tool.
-Top-level fields:
-{
-  "understanding": "...",
-  "response": "...",
-  "marginalia": [
-    {
-      "kind": "highlight",
-      "source_quote": "...",
-      "selection_reason": "..."
-    },
-    {
-      "kind": "note",
-      "source_quote": "...",
-      "content": "..."
-    }
-  ]
-}
-In each Marginalia item, `kind` and `source_quote` are required. `kind` must be `"highlight"` or `"note"`.
-For a Highlight, include a short private `selection_reason` that names out-of-context completeness, the durable value already visible in the quote itself, and why the quote is more than local evidence, scene importance, emotional force, moral shock, or a strong fact from the current book. The reason must not supply the missing value by turning a local fact, scene, testimony, emotional shock, or book-specific event into a general lesson after the fact. Leave `content` empty or omit it.
-For a Note, include non-empty visible `content`; `selection_reason` may be empty or omitted.""",
+    text=prompt_text('digest', 'v24', 'digest.return_format_contract'),
 )
 
 
 DIGEST_UNDERSTANDING_CONTRACT_FRAGMENT = PromptFragment(
     fragment_id="digest.understanding_contract",
-    text="""`understanding` contains one content-level understanding from the current source text.
-Shape:
-{
-  "understanding": "..."
-}
-Use `understanding` for the understanding itself. It may contain one sentence or several compact paragraphs when needed, but it must remain one string rather than a list or object of separate understanding items. `understanding` is stored as ReadingMemory / Unit Memory and may be read later without the source unit. It must be self-contained enough for later reading: establish new subjects, continue known subjects from ReadingMemory when supported, and preserve genuine ambiguity rather than guessing. Pronouns may appear only when their referent is explicit inside the same `understanding`. Do not include operation-level reasons, store names, durable-memory routing, hidden state, source coordinates, or content-type labels.""",
+    text=prompt_text('digest', 'v24', 'digest.understanding_contract'),
 )
 
 
 DIGEST_RESPONSE_CONTRACT_FRAGMENT = PromptFragment(
     fragment_id="digest.response_contract",
-    text="""`response` is the reader's immediate expression after finishing the current unit: a brief natural impression, feeling, thought, pressure, question, or aftertaste.
-It should not duplicate `understanding`: source-faithful meaning for continued reading belongs in `understanding`.
-It should not duplicate `marginalia`: span-anchored visible page-margin reader notes belong in `marginalia`.""",
+    text=prompt_text('digest', 'v24', 'digest.response_contract'),
 )
 
 
 DIGEST_MARGINALIA_CONTRACT_FRAGMENT = PromptFragment(
     fragment_id="digest.marginalia_contract",
-    text="""`marginalia` contains visible page-margin reader marks anchored to exact source text from the current unit.
-Shape:
-{
-  "kind": "highlight",
-  "source_quote": "...",
-  "selection_reason": "..."
-}
-`kind` is required and must be `"highlight"` or `"note"`. `source_quote` is required and should follow the span rule for that kind. A Highlight must include a non-empty private `selection_reason` that names out-of-context completeness, the durable value already visible in the quote itself, and why the quote is more than local evidence, scene importance, emotional force, moral shock, or a strong fact from the current book; the reason must not supply the missing value by turning a local fact, scene, testimony, emotional shock, or book-specific event into a general lesson after the fact. A Note must include non-empty visible `content` and may omit `selection_reason`. Do not output calibration fields, prior links, outside links, or search intent fields. Detailed Marginalia-selection and source-quote behavior live under Instruction.""",
+    text=prompt_text('digest', 'v24', 'digest.marginalia_contract'),
 )
 
 
@@ -934,7 +589,7 @@ DIGEST_PROMPT = PromptDefinition(
     status="active",
     purpose="Digest one accepted source unit and return reader-facing/current-reading outputs.",
     system_prompt=DIGEST_XML_TRANSPORT_SYSTEM_PROMPT,
-    user_prompt_template="<DigestPrompt assembled by render_digest_prompt_xml>",
+    user_prompt_template=prompt_text('digest', 'v24', 'user_prompt_template'),
     required_inputs=(
         "book_identity",
         "reading_memory",

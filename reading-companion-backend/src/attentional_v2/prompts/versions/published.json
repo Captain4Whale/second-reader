@@ -1,0 +1,34 @@
+{
+  "schema_version": 1,
+  "published_at": "2026-11-08",
+  "private_assets": [
+    "003d8b6c799f45088cda374f51e814483a8ddb6e05932146d03a208edf77318a"
+  ],
+  "releases": {
+    "attentional_v2.digest.v24": {
+      "version": "attentional_v2.digest.v24",
+      "files": [
+        "src/attentional_v2/prompts/versions/digest/v24.md",
+        "src/attentional_v2/prompts/versions/reader_role/v1.md",
+        "src/prompts/versions/shared/v1.md"
+      ],
+      "release_sha256": "b20654a196efd6d83e6e8411f580c9bb119054878e6de74b8575ccfc3a33571e"
+    },
+    "attentional_v2.ingest.v19": {
+      "version": "attentional_v2.ingest.v19",
+      "files": [
+        "src/attentional_v2/prompts/versions/ingest/v19.md",
+        "src/attentional_v2/prompts/versions/reader_role/v1.md",
+        "src/prompts/versions/shared/v1.md"
+      ],
+      "release_sha256": "c44b671f55ee34e24c849418d9bc720921108999d4a9a40e3b0d45223355fa16"
+    },
+    "attentional_v2.chapter_zone.v2": {
+      "version": "attentional_v2.chapter_zone.v2",
+      "files": [
+        "src/attentional_v2/prompts/versions/chapter_zone/v2.md"
+      ],
+      "release_sha256": "ee0879bdd8025d4b4b969179dd0c14b751e5cdc67d9f880debd8f6212df67a51"
+    }
+  }
+}
