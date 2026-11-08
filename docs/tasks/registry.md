@@ -20,6 +20,8 @@ Last updated: `2026-11-03`
 
 ## 当前前置任务
 
+- `TASK-Q1-MIXED-COMPARISON` — `active`, mechanism_eval / high. Data layer, mixed blind annotation and statistics only; side-by-side/reveal deferred. [Execution](q1-mixed-comparison-2026-11-08.md), [contract](../../reading-companion-backend/experiments/comparison.md).
+
 - `TASK-STEP1-PREREQS` — `done`，mechanism_runtime / high。[执行记录](step1-prereqs-2026-11-01.md)。仅离线替身验证，分部提交、不 push。
 
 ## Step 0 完成与下一步

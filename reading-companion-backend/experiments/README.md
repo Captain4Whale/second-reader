@@ -1,5 +1,8 @@
 # Q1 iteration provenance
 
+For comparison batches, mixed blind annotation and the fixed-history Digest rerun
+output contract, see [comparison.md](comparison.md). Side-by-side and reveal are deferred.
+
 ## Published prompts
 
 Runtime prompt text is loaded from `src/attentional_v2/prompts/versions/<family>/<version>.md`.
