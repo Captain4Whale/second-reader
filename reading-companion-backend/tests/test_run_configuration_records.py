@@ -38,6 +38,9 @@ def test_offline_eval_configuration_links_real_gateway_plan_and_retrieval(tmp_pa
     assert config["retrieval"]["strict_retrieval"] is True
     assert config["retrieval"]["query_degradation_count"] == 0
     assert config["retrieval"]["ollama_model_id"] == "qwen3-embedding:0.6b"
+    assert len(config["prompt_releases"]["attentional_v2.digest.v24"]["release_sha256"]) == 64
+    assert config["provenance"]["samples"]
+    assert all(len(row["request_sha256"]) == 64 for row in config["model_calls"])
 
 
 def test_failed_invocation_keeps_configuration_receipt(tmp_path):
@@ -50,6 +53,7 @@ def test_failed_invocation_keeps_configuration_receipt(tmp_path):
     events = [json.loads(line) for line in event_stream_file(tmp_path).read_text().splitlines()]
     assert events[-1]["event_type"] == "run_configuration"
     assert events[-1]["status"] == "failed"
+    assert (tmp_path / "_runtime/provenance" / config["provenance"]["invocation_id"] / "invocation.json").is_file()
 
 
 def test_sampling_receipt_records_overrides_without_arbitrary_options():

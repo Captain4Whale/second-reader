@@ -35,7 +35,7 @@ def model_call_configurations(output_dir: Path) -> list[dict[str, object]]:
     path = runtime_artifacts.llm_standard_trace_file(output_dir)
     if not path.exists():
         return []
-    keys = ("call_id", "node", "stage", "provider_id", "contract", "model", "sampling", "prompt_version", "code_commit", "code_dirty", "status")
+    keys = ("call_id", "node", "stage", "provider_id", "contract", "model", "sampling", "prompt_version", "code_commit", "code_dirty", "status", "request_sha256", "system_prompt_hash", "user_prompt_hash", "provenance_invocation_id")
     rows = []
     for line in path.read_text().splitlines():
         try:
@@ -47,13 +47,20 @@ def model_call_configurations(output_dir: Path) -> list[dict[str, object]]:
     return rows
 
 
-def refresh_run_configuration(output_dir: Path, *, status: str | None = None) -> dict[str, object]:
+def refresh_run_configuration(output_dir: Path, *, status: str | None = None, provenance: dict | None = None) -> dict[str, object]:
     """Join existing plan, prompt and retrieval evidence for the current invocation."""
     from .storage import chapter_plan_file, memory_retrieval_config_file, runtime_dir, load_json, save_json
     path = runtime_dir(output_dir) / "run_configuration.json"
     if not path.exists():
         return {}
     snapshot = load_json(path)
+    if provenance is None:
+        from src.reading_runtime.run_provenance import current_provenance
+        current = current_provenance()
+        if current and current["invocation_id"] == snapshot.get("provenance", {}).get("invocation_id"):
+            provenance = current
+    if provenance is not None:
+        snapshot["provenance"] = provenance
     if status:
         snapshot["status"] = status
     plan = load_json(chapter_plan_file(output_dir)) if chapter_plan_file(output_dir).exists() else {}
@@ -75,25 +82,30 @@ def run_configuration_scope(output_dir: Path, *, stage: str, continue_mode: bool
     from src.reading_runtime.llm_gateway import code_revision
     from .prompts import ATTENTIONAL_V2_PROMPTS
     from .storage import runtime_dir, save_json
-    snapshot = {
-        "schema_version": 1,
-        **code_revision(), "stage": stage, "continue_mode": continue_mode,
-        "started_at": _timestamp(), "status": "running",
-        "llm_ledger_start": len(model_call_configurations(output_dir)),
-        "prompt_versions": {
-            "chapter_zone_classifier": ATTENTIONAL_V2_PROMPTS.chapter_zone_version,
-            "ingest": ATTENTIONAL_V2_PROMPTS.ingest_version,
-            "digest": ATTENTIONAL_V2_PROMPTS.digest_version,
-        },
-    }
-    save_json(runtime_dir(output_dir) / "run_configuration.json", snapshot)
-    status = "failed"
-    try:
-        yield
-        status = "completed"
-    finally:
-        final = refresh_run_configuration(output_dir, status=status)
-        append_jsonl(event_stream_file(output_dir), {"event_type": "run_configuration", "recorded_at": _timestamp(), **final})
+    from src.prompts.integrity import active_releases
+    from src.reading_runtime.run_provenance import provenance_scope
+    with provenance_scope(output_dir, stage=stage) as provenance:
+        snapshot = {
+            "schema_version": 2,
+            "prompt_releases": active_releases(),
+            "provenance": provenance,
+            **code_revision(), "stage": stage, "continue_mode": continue_mode,
+            "started_at": _timestamp(), "status": "running",
+            "llm_ledger_start": len(model_call_configurations(output_dir)),
+            "prompt_versions": {
+                "chapter_zone_classifier": ATTENTIONAL_V2_PROMPTS.chapter_zone_version,
+                "ingest": ATTENTIONAL_V2_PROMPTS.ingest_version,
+                "digest": ATTENTIONAL_V2_PROMPTS.digest_version,
+            },
+        }
+        save_json(runtime_dir(output_dir) / "run_configuration.json", snapshot)
+        status = "failed"
+        try:
+            yield
+            status = "completed"
+        finally:
+            final = refresh_run_configuration(output_dir, status=status, provenance=provenance)
+            append_jsonl(event_stream_file(output_dir), {"event_type": "run_configuration", "recorded_at": _timestamp(), **final})
 
 _SETTLED_STORE_ID_KEYS = {
     "recent_reading_memory": "entry_id",

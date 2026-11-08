@@ -2388,6 +2388,9 @@ def _invoke_response_inner(
         HumanMessage(content=user_prompt),
     ]
     call_id = uuid.uuid4().hex
+    from .run_provenance import record_request
+    request_receipt = record_request(call_id=call_id, messages=messages, tools=tools,
+        tool_choice=tool_choice, expect_json=expect_json, trace_context=trace_context)
     started_at = _utc_now()
     started_perf = time.perf_counter()
     observation_context = current_observation_context()
@@ -2782,6 +2785,7 @@ def _invoke_response_inner(
                             call_span=call_span,
                         ),
                     }
+                    standard_payload.update(request_receipt)
                     _write_standard_trace(trace_context, standard_payload)
                     _write_debug_trace(
                         trace_context,
@@ -2948,6 +2952,7 @@ def _invoke_response_inner(
             call_span=call_span,
         ),
     }
+    standard_payload.update(request_receipt)
     _write_standard_trace(trace_context, standard_payload)
     _write_debug_trace(
         trace_context,

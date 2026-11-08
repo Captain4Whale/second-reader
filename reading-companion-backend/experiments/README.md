@@ -45,3 +45,28 @@ few-shot file must be backed up privately alongside runtime artifacts.
 
 Raw migration captures are ignored under `state/prompt_migration/`; tracked fixtures and
 release records contain hashes only. Never commit rendered prompts or example bodies.
+
+## Runtime receipts and dirty workspaces
+
+Each parse/read invocation (including resumes) keeps an immutable directory at
+`<output>/_runtime/provenance/<invocation_id>/`. It contains `invocation.json`, an
+append-only `requests.jsonl` and the first complete logical request for each node.
+Full messages, fixed examples, template values, tool schemas/choice, tool history and
+repair instructions enter `request_sha256` before the provider call; this identifies
+the provider-neutral input, not provider-specific HTTP encoding. Generation settings
+remain in the existing allowlisted model/sampling receipt. No provider configuration,
+headers, API keys or environment variables are included in the sample.
+
+Standard success/error traces and run configuration link request hashes and invocation
+IDs, without requiring debug mode. `prompt_releases` records the separate stable
+`release_sha256` (version files, resolved fixed text including few-shot, dependencies).
+Actual request hashes vary with book/source/context; a release hash does not.
+
+At every invocation start, a dirty workspace saves `git diff --binary HEAD` as
+`workspace.patch`, including staged and unstaged tracked changes across the repository.
+The receipt binds the patch hash and base commit. Untracked nonignored files are listed
+with hashes, not copied; `reproduction_complete=false` explicitly marks that limitation.
+Ignored private assets are covered separately by release hashes. Patches and raw model
+inputs are always ignored and must be retained privately with the run. The event stream
+and invocation directories preserve earlier resume receipts after the current
+`run_configuration.json` advances. No historical patch is fabricated for Q1.
