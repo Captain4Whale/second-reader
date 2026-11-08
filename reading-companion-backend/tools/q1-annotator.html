@@ -535,15 +535,48 @@
         padding: 14px;
       }
     }
+    .save-warning {
+      color: #9b341c;
+      font-weight: 600;
+    }
+    #saveDetail {
+      flex-basis: 100%;
+      overflow-wrap: anywhere;
+      font-size: 13px;
+    }
+    #fileControls {
+      position: relative;
+    }
+    .file-options {
+      position: absolute;
+      z-index: 10;
+      right: 0;
+      top: 100%;
+      width: 220px;
+      padding: 12px;
+      background: #fff;
+      border: 1px solid #b5bfb5;
+      border-radius: 8px;
+      box-shadow: 0 4px 12px #0002;
+    }
   </style>
   <div id="toolbar">
     <header>
       <h1>Second Reader · 批注细读</h1>
       <div id="bookContext" hidden><span id="bookTitle"></span><span id="bookDetails"></span></div>
       <div class="row" id="fileControls">
-        <label class="pick">打开批次<input id="open" type="file" accept=".json" /></label>
+        <button id="openFolder" disabled>打开批次文件夹</button>
+        <details id="fileOptions">
+          <summary>更多</summary>
+          <div class="file-options">
+            <label class="pick">单独打开 JSON<input id="open" type="file" accept=".json" /></label>
+            <p class="hint">需另行连接结果文件</p>
+            <button id="chooseFile">另选结果文件</button>
+          </div>
+        </details>
         <button id="link" hidden>连接结果文件</button><button id="export" hidden>导出 JSONL</button>
-        <span id="saveState" role="status"></span>
+        <span id="saveState" role="status"></span><button id="retryBrowser" hidden>重试浏览器保存</button
+        ><span id="saveDetail" class="save-warning" role="alert" hidden></span>
       </div>
     </header>
     <div class="workbar" id="workbar" hidden>
@@ -572,7 +605,10 @@
   <main>
     <section id="landing">
       <h2>开始一个批次</h2>
-      <p>打开抽样生成的 batch.json，再连接同目录的 judgments.jsonl。理由和备注会按你的原话保存。</p>
+      <p>
+        选择含 batch.json 的批次文件夹并授权，即可自动连接同目录的
+        judgments.jsonl。理由和备注会按你的原话保存。
+      </p>
     </section>
     <div id="work" hidden>
       <div class="layout">
@@ -665,7 +701,7 @@
   </dialog>
   <script>
     "use strict";
-    const VERSION = "q1-annotator/1.7",
+    const VERSION = "q1-annotator/1.8",
       $ = (id) => document.getElementById(id);
     const say = (text) => {
       $("message").textContent = text;
@@ -739,60 +775,211 @@
         tx.commit?.();
       });
     }
-    function persist() {
-      const s = session;
-      return dbPut("state:" + s.batch.batch_id, s.state).catch((err) => {
-        say("浏览器草稿保存失败，请立即导出。" + err.message);
-      });
+    // Receipts belong to a session and a specific browser snapshot / journal prefix.
+    // Never let an older asynchronous completion acknowledge a newer edit.
+    function makeSession(batch, state, handle, directory) {
+      return {
+        batch,
+        state,
+        handle,
+        directory,
+        writes: Promise.resolve(),
+        browserWrites: Promise.resolve(true),
+        browserSeq: 0,
+        browserAck: 0,
+        diskAck: -1,
+        pendingWrites: 0,
+        browserError: null,
+        diskError: null,
+        permissionNeeded: false,
+        blocked: false,
+      };
     }
-    function fileStatus(s, text) {
-      if (s === session) $("saveState").textContent = text;
+    function persist(s = session) {
+      const seq = ++s.browserSeq;
+      const pending = dbPut("state:" + s.batch.batch_id, s.state);
+      updateSaveStatus(s);
+      s.browserWrites = pending.then(
+        () => {
+          if (seq === s.browserSeq) {
+            s.browserAck = seq;
+            s.browserError = null;
+          }
+          updateSaveStatus(s);
+          return true;
+        },
+        (err) => {
+          if (seq === s.browserSeq) s.browserError = err.message || "浏览器存储不可用";
+          updateSaveStatus(s);
+          return false;
+        },
+      );
+      return s.browserWrites;
+    }
+    function hasPendingValidDraft(s) {
+      return (
+        Object.values(s.state.drafts).some((d) => d.judgment !== "fail" || d.reason.trim()) ||
+        Object.keys(s.state.unitNoteDrafts).length > 0 ||
+        Object.values(s.state.missDrafts).some((d) => {
+          const r = s.state.rows.findLast(
+            (r) => r.record_type === "omission" && r.record_id === d.record_id,
+          );
+          return d.reason.trim() && (!r || r.action !== "save" || r.reason !== d.reason);
+        })
+      );
+    }
+    function updateSaveStatus(s = session) {
+      if (!s || s !== session) return;
+      const saved = s.browserAck === s.browserSeq && !s.browserError;
+      const pending = s.diskAck !== s.state.rows.length || hasPendingValidDraft(s);
+      let text;
+      if (s.browserError) text = "浏览器保存失败 · 请保持页面打开并重试";
+      else if (!saved) text = "浏览器保存中";
+      else if (!s.handle) text = "仅存浏览器 · 尚未连接结果文件";
+      else if (s.diskError || s.permissionNeeded || s.blocked) text = "浏览器已保存 · 文件待同步";
+      else if (s.pendingWrites || pending) text = "浏览器已保存 · 文件同步中";
+      else text = "浏览器与文件均已保存";
+      $("saveState").textContent = text;
+      $("saveState").classList.toggle(
+        "save-warning",
+        !!(s.browserError || s.diskError || s.permissionNeeded || s.blocked),
+      );
+      $("saveDetail").textContent =
+        s.browserError || s.diskError || (s.permissionNeeded ? "需要重新授权，点击恢复文件连接。" : "");
+      $("saveDetail").hidden = !$("saveDetail").textContent;
+      $("link").hidden =
+        !window.showOpenFilePicker || (!!s.handle && !s.diskError && !s.permissionNeeded && !s.blocked);
+      $("link").textContent = !s.handle
+        ? "连接结果文件"
+        : s.permissionNeeded
+          ? "恢复文件连接"
+          : "重试文件同步";
+      $("retryBrowser").hidden = !s.browserError;
+      editStatus();
+    }
+    function parseJournal(text, batch) {
+      if (text && !text.endsWith("\n"))
+        throw Error("结果文件不完整（末行缺少换行），已停止同步，未改动文件。");
+      let rows;
+      try {
+        rows = text ? text.slice(0, -1).split("\n").map(JSON.parse) : [];
+      } catch {
+        throw Error("结果文件 JSONL 损坏，已停止同步，未改动文件。");
+      }
+      for (const [i, r] of rows.entries()) {
+        const u = batch.units.find((u) => u.unit_id === r?.unit_id);
+        if (
+          !r ||
+          r.batch_id !== batch.batch_id ||
+          r.revision !== i + 1 ||
+          !/^q1-annotator\/1\.[0-8]$/.test(r.annotator_version) ||
+          !u ||
+          !["marginalia", "density", "unit_note", "omission"].includes(r.record_type) ||
+          typeof r.record_id !== "string" ||
+          !r.source_range ||
+          !r.original_source_range ||
+          (r.record_type === "marginalia" && !u.marginalia.some((m) => m.marginalia_id === r.record_id))
+        )
+          throw Error("结果文件批次、记录或版本不匹配，已停止同步，未改动文件。");
+        const validRange = (range) =>
+          [range?.start, range?.end].every(
+            (p) =>
+              p &&
+              Number.isInteger(p.chapter_id) &&
+              Number.isInteger(p.paragraph_index) &&
+              p.paragraph_index >= 1 &&
+              Number.isInteger(p.char_offset) &&
+              p.char_offset >= 0,
+          );
+        const validFields =
+          r.record_type === "marginalia"
+            ? [null, "pass", "fail"].includes(r.judgment) &&
+              typeof r.reason === "string" &&
+              typeof r.remarks === "string" &&
+              typeof r.star === "boolean" &&
+              typeof r.needs_verification === "boolean" &&
+              (r.judgment !== "fail" || !!r.reason.trim())
+            : r.record_type === "density"
+              ? r.record_id === r.unit_id && ["多", "合适", "少"].includes(r.density)
+              : r.record_type === "unit_note"
+                ? r.record_id === r.unit_id && typeof r.remarks === "string"
+                : ["save", "remove"].includes(r.action) &&
+                  typeof r.reason === "string" &&
+                  !!r.reason.trim() &&
+                  typeof r.source_quote === "string";
+        if (!validRange(r.source_range) || !validRange(r.original_source_range) || !validFields)
+          throw Error("结果文件含无效字段或坐标，已停止同步，未改动文件。");
+      }
+      return rows;
+    }
+    function compareHistories(local, remote) {
+      const n = Math.min(local.length, remote.length);
+      for (let i = 0; i < n; i++)
+        if (JSON.stringify(sorted(local[i])) !== JSON.stringify(sorted(remote[i])))
+          throw Error("浏览器与文件历史发生分叉，已停止同步并保留双方内容；请导出浏览器记录后核对。");
+      return remote.length - local.length;
+    }
+    async function reconcile(s) {
+      const remote = parseJournal(await (await s.handle.getFile()).text(), s.batch);
+      if (compareHistories(s.state.rows, remote) > 0) s.state.rows = remote;
+      s.diskAck = remote.length;
+      s.blocked = false;
+      s.diskError = null;
+      s.permissionNeeded = false;
     }
     function scheduleDisk(s = session) {
-      if (s.handle) fileStatus(s, "正在同步文件…");
+      if (!s.handle || s.blocked) {
+        updateSaveStatus(s);
+        return s.writes;
+      }
+      s.pendingWrites++;
+      updateSaveStatus(s);
       s.writes = s.writes
         .then(async () => {
-          if (!s.handle) {
-            fileStatus(s, "仅存浏览器");
-            return;
-          }
+          if (s.blocked) return;
           if ((await s.handle.queryPermission({ mode: "readwrite" })) !== "granted") {
-            fileStatus(s, "仅存浏览器 · 请重新连接文件授权");
+            s.permissionNeeded = true;
+            s.blocked = true;
             return;
           }
           const rows = s.state.rows.slice();
           const journal = await (await s.handle.getFile()).text();
-          const data = rows.map((r) => JSON.stringify(r) + "\n").join("");
-          if (!data.startsWith(journal) || (journal && !journal.endsWith("\n")))
-            throw Error("已有文件和本批历史不同，请连接对应文件。");
-          if (journal.length < data.length) {
+          const remote = parseJournal(journal, s.batch);
+          if (compareHistories(rows, remote) > 0)
+            throw Error("文件有较新记录，已暂停写入；请点击重试文件同步核对并恢复。");
+          const suffix = rows
+            .slice(remote.length)
+            .map((r) => JSON.stringify(r) + "\n")
+            .join("");
+          if (suffix) {
             const stream = await s.handle.createWritable({ keepExistingData: true, mode: "exclusive" });
             try {
-              // Recheck after taking the writer lock, including writes by another reviewer.
               const current = await s.handle.getFile();
-              if ((await current.text()) !== journal) throw Error("结果文件已被其他窗口修改。");
+              if ((await current.text()) !== journal)
+                throw Error("结果文件已被其他窗口修改，请重试同步。");
               await stream.seek(current.size);
-              await stream.write(data.slice(journal.length));
+              await stream.write(suffix);
               await stream.close();
             } catch (err) {
               await stream.abort().catch(() => {});
               throw err;
             }
           }
-          if (rows.length === s.state.rows.length)
-            fileStatus(s, "已写入文件 · " + rows.length + " 条记录");
+          s.diskAck = rows.length;
+          s.diskError = null;
+          s.permissionNeeded = false;
         })
         .catch((err) => {
-          fileStatus(s, "仅存浏览器 · 文件未同步");
-          if (s === session) say(err.message);
+          s.diskError = err.message;
+          s.blocked = true;
+        })
+        .finally(() => {
+          s.pendingWrites--;
+          updateSaveStatus(s);
         });
       return s.writes;
     }
-    async function activate(batch) {
-      if (session) {
-        flushEdits();
-        await session.writes;
-      }
+    async function loadSession(batch, handles = {}) {
       await checkBatch(batch);
       const id = batch.batch_id;
       const state = (await dbGet("state:" + id)) || {
@@ -801,79 +988,159 @@
         rows: [],
         drafts: {},
         missDrafts: {},
+        unitNoteDrafts: {},
       };
       state.unitNoteDrafts ??= {};
-      session = { batch, state, handle: await dbGet("file:" + id), writes: Promise.resolve() };
-      await dbPut("batch:" + id, batch);
-      await dbPut("last", id);
-      $("work").hidden = false;
-      $("workbar").hidden = false;
-      $("bookContext").hidden = false;
-      $("batchProgress").hidden = false;
+      return makeSession(
+        batch,
+        state,
+        handles.handle ?? (await dbGet("file:" + id)),
+        handles.directory ?? (await dbGet("directory:" + id)),
+      );
+    }
+    function dbSaveSession(s) {
+      return new Promise((ok, no) => {
+        const tx = db.transaction("data", "readwrite"),
+          store = tx.objectStore("data"),
+          id = s.batch.batch_id;
+        for (const [k, v] of [
+          ["batch:" + id, s.batch],
+          ["state:" + id, s.state],
+          ["last", id],
+          ["file:" + id, s.handle],
+          ["directory:" + id, s.directory],
+        ])
+          store.put(v ?? null, k);
+        tx.oncomplete = ok;
+        tx.onabort = () => no(tx.error);
+        tx.commit?.();
+      });
+    }
+    async function settleCurrent() {
+      if (!session) return;
+      flushEdits();
+      await session.writes;
+      if (!(await persist())) throw Error("当前批次浏览器保存失败；请保持页面打开，重试成功后再切换。");
+    }
+    // Recover edits from any unit, not just the one visible when the page was closed.
+    function recoverDrafts() {
+      const { ui, mi } = session.state;
+      try {
+        session.batch.units.forEach((u, i) => {
+          session.state.ui = i;
+          u.marginalia.forEach((m, j) => {
+            session.state.mi = j;
+            saveMark();
+          });
+          saveUnitNote();
+          saveMiss();
+        });
+      } finally {
+        session.state.ui = ui;
+        session.state.mi = mi;
+        persist();
+      }
+    }
+    async function installSession(s) {
+      await dbSaveSession(s); // Commit selection + reconciled history atomically before replacing the UI.
+      session = s;
+      for (const id of ["work", "workbar", "bookContext", "batchProgress", "export"])
+        $(id).hidden = false;
       $("unitGrid").replaceChildren();
       $("landing").hidden = true;
-      $("export").hidden = false;
-      $("link").hidden = !window.showOpenFilePicker;
       say("");
+      recoverDrafts();
       render();
-      scheduleDisk();
+      updateSaveStatus();
+      await scheduleDisk();
     }
-    async function connect() {
+    async function activate(batch, restoring = false) {
+      await checkBatch(batch);
+      await settleCurrent();
+      const s = await loadSession(batch);
+      if (s.handle) {
+        try {
+          if ((await s.handle.queryPermission({ mode: "readwrite" })) !== "granted") {
+            s.permissionNeeded = true;
+            s.blocked = true;
+          } else await reconcile(s);
+        } catch (err) {
+          s.diskError = err.message;
+          s.blocked = true;
+        }
+      }
+      await installSession(s);
+      if (!restoring && !s.handle) say("单独打开 JSON 仅保存到浏览器；请连接本批次的结果文件。");
+    }
+    function setBusy(value) {
+      busy = value;
+      $("work").inert = value;
+      $("workbar").inert = value;
+      $("batchProgress").inert = value;
+      for (const id of ["open", "openFolder", "link", "chooseFile", "export", "retryBrowser"])
+        $(id).disabled = value;
+      $("openFolder").disabled = value || !window.showDirectoryPicker;
+    }
+    async function openFolder() {
       if (busy) return;
-      busy = true;
-      $("open").disabled = true;
-      $("link").disabled = true;
+      setBusy(true);
+      clearTimeout(editTimer);
+      try {
+        const directory = await showDirectoryPicker({ id: "q1-batch", mode: "readwrite" });
+        if ((await directory.requestPermission({ mode: "readwrite" })) !== "granted")
+          throw Error("未获得文件夹读写权限，当前批次保持不变。");
+        const batch = JSON.parse(
+          await (await (await directory.getFileHandle("batch.json")).getFile()).text(),
+        );
+        await checkBatch(batch);
+        await settleCurrent();
+        const handle = await directory.getFileHandle("judgments.jsonl", { create: true });
+        const s = await loadSession(batch, { handle, directory });
+        await reconcile(s);
+        await installSession(s);
+      } catch (err) {
+        if (err.name !== "AbortError") say(err.message);
+      } finally {
+        setBusy(false);
+        if (session) queueEdits();
+      }
+    }
+    async function connect(choose = false) {
+      if (busy || !session) return;
+      setBusy(true);
+      clearTimeout(editTimer);
       const s = session;
       try {
-        let h = s.handle;
-        if (!h || (await h.queryPermission({ mode: "readwrite" })) !== "prompt") {
+        let h = choose ? null : s.handle;
+        if (!h)
           [h] = await showOpenFilePicker({
             id: "q1-journal",
             types: [{ description: "标注记录 JSONL", accept: { "text/plain": [".jsonl"] } }],
           });
-        }
         if (!h.name.toLowerCase().endsWith(".jsonl")) throw Error("请选择本批次的 JSONL 结果文件。");
         if ((await h.requestPermission({ mode: "readwrite" })) !== "granted")
-          throw Error("未获得写入权限。");
+          throw Error("未获得写入权限，请点击恢复文件连接重试。");
         await s.writes;
-        const data = await (await h.getFile()).text();
-        const local = s.state.rows.map((r) => JSON.stringify(r) + "\n").join("");
-        if (data && (!data.endsWith("\n") || (!local.startsWith(data) && !data.startsWith(local))))
-          throw Error("此文件与当前标注历史不一致。");
-        if (data.length > local.length) {
-          const rows = data.trimEnd().split("\n").map(JSON.parse);
-          if (
-            rows.some(
-              (r, i) =>
-                r.batch_id !== s.batch.batch_id ||
-                r.revision !== i + 1 ||
-                ![
-                  "q1-annotator/1.0",
-                  "q1-annotator/1.1",
-                  "q1-annotator/1.2",
-                  "q1-annotator/1.3",
-                  "q1-annotator/1.4",
-                  "q1-annotator/1.5",
-                  "q1-annotator/1.6",
-                  VERSION,
-                ].includes(r.annotator_version),
-            )
-          )
-            throw Error("结果文件属于其他批次或版本。");
-          s.state.rows = rows;
-          await persist();
-        }
-        await dbPut("file:" + s.batch.batch_id, h);
-        s.handle = h;
-        say("");
-        render();
-        await scheduleDisk(s);
+        // Reconcile before turning pending edits into new revisions.
+        const candidate = makeSession(
+          s.batch,
+          structuredClone(s.state),
+          h,
+          choose ? undefined : s.directory,
+        );
+        await reconcile(candidate);
+        await installSession(candidate);
       } catch (err) {
-        if (err.name !== "AbortError") say(err.message);
+        if (err.name !== "AbortError") {
+          s.diskError = err.message;
+          s.blocked = true;
+          if (err.name === "NotAllowedError") s.permissionNeeded = true;
+          say(err.message);
+          updateSaveStatus(s);
+        }
       } finally {
-        busy = false;
-        $("open").disabled = false;
-        $("link").disabled = false;
+        setBusy(false);
+        queueEdits();
       }
     }
     function record(type, id, fields, span, original) {
@@ -1596,22 +1863,20 @@
       $("progress").focus({ preventScroll: true });
     }
     function editStatus() {
+      if (!session) return;
+      const saved = session.browserAck === session.browserSeq && !session.browserError;
+      const stored = saved ? "修改已存浏览器" : session.browserError ? "浏览器保存失败" : "浏览器保存中";
+      const draft = saved ? "草稿仅存浏览器" : stored;
       const m = item(),
         d = m && session.state.drafts[m.marginalia_id];
       $("draftState").textContent = d
-        ? d.judgment === "fail" && !d.reason.trim()
-          ? "待补理由 · 草稿已存浏览器"
-          : "草稿已存浏览器"
-        : "修改已存浏览器";
+        ? (d.judgment === "fail" && !d.reason.trim() ? "待补理由 · " : "") + draft
+        : stored;
       $("unitNoteState").textContent = Object.hasOwn(session.state.unitNoteDrafts, unit().unit_id)
-        ? "草稿已存浏览器"
-        : "修改已存浏览器";
+        ? draft
+        : stored;
       const miss = session.state.missDrafts[unit().unit_id];
-      $("missState").textContent = miss
-        ? miss.reason.trim()
-          ? "修改已存浏览器"
-          : "待补理由 · 草稿已存浏览器"
-        : "";
+      $("missState").textContent = miss ? (miss.reason.trim() ? stored : "待补理由 · " + draft) : "";
     }
     function flushEdits() {
       clearTimeout(editTimer);
@@ -1641,6 +1906,7 @@
     };
     for (const id of ["reason", "memo", "unitNote", "missReason"]) {
       $(id).addEventListener("blur", () => {
+        if (busy) return; // Reconcile the file before committing edits during a connection change.
         if (id === "missReason") finishMiss();
         else flushEdits();
       });
@@ -1673,6 +1939,7 @@
     document.addEventListener("keydown", (e) => {
       if (
         !session ||
+        busy ||
         e.isComposing ||
         composing ||
         e.keyCode === 229 ||
@@ -1755,17 +2022,26 @@
     $("open").onchange = async (e) => {
       const file = e.target.files[0];
       if (!file || busy) return;
-      busy = true;
+      setBusy(true);
       try {
         await activate(JSON.parse(await file.text()));
       } catch (err) {
         say(err.message);
       } finally {
         e.target.value = "";
-        busy = false;
+        $("fileOptions").open = false;
+        setBusy(false);
       }
     };
-    $("link").onclick = connect;
+    $("openFolder").onclick = openFolder;
+    $("link").onclick = () => connect();
+    $("chooseFile").onclick = () => {
+      $("fileOptions").open = false;
+      connect(true);
+    };
+    $("retryBrowser").onclick = () => persist();
+    for (const id of ["openFolder", "link", "chooseFile"])
+      $(id).addEventListener("pointerdown", (e) => e.preventDefault());
     $("export").onclick = () => {
       flushEdits();
       const rows = session.state.rows,
@@ -1789,8 +2065,11 @@
         r.onerror = () => no(r.error);
       });
       const last = await dbGet("last");
-      if (last) await activate(await dbGet("batch:" + last));
+      if (last) await activate(await dbGet("batch:" + last), true);
       $("open").disabled = false;
+      $("openFolder").disabled = !window.showDirectoryPicker;
+      if (!window.showDirectoryPicker)
+        say("此浏览器不支持文件夹连接，请用 Chrome / Edge，或在更多中单独打开 JSON。");
     }
     $("open").disabled = true;
     async function init() {
