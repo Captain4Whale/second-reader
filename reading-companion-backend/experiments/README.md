@@ -124,6 +124,14 @@ baseline registration, not a model experiment. The initial `Q1-BASELINE-001` has
 Results may be filled in that row; unit manifests, rubric files and annotation
 journals do not change. New experiment IDs are added with the checked append command.
 
+For a byte-preserving protocol addendum, append a complete validated row with a
+unique log-row ID and `amends_experiment_id` naming the original experiment. Keep
+its `record_type`, actual `registered_at`, scope and pre-annotation evidence explicit;
+the addendum is not a new generation experiment. Read the target and linked addenda
+together. Existing rows are never overwritten or duplicated under the same ID.
+This convention does not automatically alter annotator behavior or publish a rubric.
+
+
 ```sh
 .venv/bin/python scripts/check_iteration_provenance.py
 # Verify the two historical dev journal prefixes in their actual current worktree:

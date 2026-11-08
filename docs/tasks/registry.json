@@ -20,7 +20,7 @@
         "bgjob_q1_digest_fixed_history_20261108_A2_B"
       ],
       "blocked_by": [],
-      "next_action": "Owner annotates the retained A1/B mixed.json with no reveal. A2 stays outside the batch; no further generation. B content/statistics remain private.",
+      "next_action": "Owner annotates retained A1/B mixed.json under open_coding criteria and Note-rate thresholds in Q1-DIGEST-DIAG-001-PREREG-001, linked to DIAG-001. No reveal or further generation; only consider A2 blind annotation if the owner-specified intermediate condition is met.",
       "evidence_refs": [
         "reading-companion-backend/eval/attentional_v2/fixed_history_digest.py",
         "reading-companion-backend/tests/test_fixed_history_digest.py",
@@ -29,7 +29,8 @@
         "reading-companion-backend/state/experiments/q1_digest_fixed_history_20261108/A1-full/validation-summary.json",
         "reading-companion-backend/state/experiments/q1_digest_fixed_history_20261108/continuation/report.md",
         "reading-companion-backend/experiments/unit-sets/diag-001.json",
-        "reading-companion-backend/state/experiments/q1_digest_fixed_history_20261108/continuation/blind-batch-validation.json"
+        "reading-companion-backend/state/experiments/q1_digest_fixed_history_20261108/continuation/blind-batch-validation.json",
+        "reading-companion-backend/state/experiments/q1_digest_fixed_history_20261108/continuation/preregistration-001/request-hash-audit.json"
       ],
       "last_updated": "2026-11-08",
       "last_updated_by": "codex"

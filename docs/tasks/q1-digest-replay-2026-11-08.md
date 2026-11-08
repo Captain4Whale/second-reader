@@ -362,3 +362,34 @@ annotation-hub branch still points to `e323902`.
 因此不能将本轮标注称为未接触过材料的完全盲评。此局限已同时记入追加的
 `Q1-DIGEST-DIAG-001-CONTINUATION` 实验行，既有实验行和历史标注不改写。
 这仅限定后续盲标的解释范围，不评价模型或 Note 好坏，不给假设下结论。
+
+## Pre-annotation protocol and actual request-hash audit
+
+At **2026-11-08 14:55:18 +08:00**, appended
+`Q1-DIGEST-DIAG-001-PREREG-001` to `experiments/log.jsonl`, explicitly amending
+`Q1-DIGEST-DIAG-001`. Existing bytes remain unchanged. The row preserves the owner's
+Note/Highlight pass criteria and B-versus-A1 Note pass-rate thresholds verbatim,
+uses `open_coding` with the first-batch criteria, and does not publish a rubric or
+launch further generation/A2 annotation. Criteria authority is the appended log row.
+The mixed batch's canonical `judgments.jsonl` was empty immediately before and after
+append. The actual timestamp is retained without backdating; browser-local unsaved
+work was not inspected, and no annotation-start timestamp is fabricated.
+
+All **48 unit outputs (A1/A2/B: 16 each)** contain non-null `request_sha256` values.
+Each was recomputed from the retained adapter request capture and matched against
+gateway calls, provenance request indexes and the invocation sample; the accepted
+provider response's Marginalia also match the saved result. These are actual new
+provider-neutral logical request hashes over messages/tools/tool choice/expect_json,
+not reconstructed historical input hashes, prompt release hashes or HTTP transport
+byte hashes. Model and sampling remain separate recorded metadata.
+
+All A1/B per-mark comparison export hashes and the private blind-key references
+match their producing unit's request. Raw nested Marginalia inherit the parent
+`result.json` request hash; A2 has no comparison export, so it has no separate per-mark
+export field to inspect. No actual unit request hash is missing or synthesized.
+All generation artifacts remain byte-identical. `mixed.json` intentionally omits
+request hashes as part of its anonymous projection and is not a provenance receipt.
+
+Private checks: `state/experiments/q1_digest_fixed_history_20261108/continuation/preregistration-001/`
+contains `request-hash-audit.json` and `registration-receipt.json`. No quality judgment
+or threshold decision was computed; the prior-exposure limitation remains in effect.
