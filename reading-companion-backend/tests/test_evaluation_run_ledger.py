@@ -55,6 +55,19 @@ def test_upsert_and_render_run_ledger(tmp_path: Path) -> None:
     assert "Pending human review." in text
 
 
+def test_markdown_retains_local_symlink_alias_without_relaxing_validation(tmp_path: Path):
+    from scripts.update_evaluation_run_ledger import _md_link
+
+    original = tmp_path / "original" / "artifact"
+    original.mkdir(parents=True)
+    checkout = tmp_path / "checkout"
+    checkout.mkdir()
+    alias = checkout / "evidence"
+    alias.symlink_to(original, target_is_directory=True)
+    assert _md_link(checkout / "ledger.md", str(alias), "run") == "[run](evidence)"
+    assert alias.exists()
+
+
 def test_check_rejects_missing_artifact_unless_allowed(tmp_path: Path) -> None:
     ledger_json = tmp_path / "run_ledger.json"
     catalog_json = tmp_path / "evidence_catalog.json"

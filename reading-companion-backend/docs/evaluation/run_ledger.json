@@ -1,6 +1,6 @@
 {
   "schema_version": 1,
-  "updated_at": "2026-11-08T03:20:16.163994Z",
+  "updated_at": "2026-11-08T04:17:55.523108Z",
   "entries": [
     {
       "run_id": "attentional_v2_excerpt_surface_v1_1_judged_20260406",
@@ -4000,6 +4000,34 @@
       ],
       "catalog_status": "not_cataloged",
       "notes": "Owner-required preflight fail-stop on Bovary u000006 strict chapter_ref comparison; canonical coordinates identical. Both final-unit manifests match byte for byte. No model calls, jobs, quality results or blind batch; 0 generation tokens/cost. Planned A1/A2/B are registered in Q1-DIGEST-DIAG-001."
+    },
+    {
+      "run_id": "q1_digest_fixed_history_20261108_A1",
+      "date": "2026-11-08",
+      "surface": "fixed_history_digest_pilot",
+      "lane": "mechanism_eval",
+      "status": "review_pending",
+      "mechanisms": [
+        "attentional_v2"
+      ],
+      "dataset_or_manifest": [
+        "reading-companion-backend/experiments/unit-sets/dev-v1.json"
+      ],
+      "run_dir": "/Users/baiweijiang/.codex/worktrees/q1-digest-replay/reading-companion/reading-companion-backend/state/experiments/q1_digest_fixed_history_20261108",
+      "summary_paths": {
+        "pilot_preflight": "/Users/baiweijiang/.codex/worktrees/q1-digest-replay/reading-companion/reading-companion-backend/state/experiments/q1_digest_fixed_history_20261108/pilot-preflight/summary.json",
+        "manifest_checks": "/Users/baiweijiang/.codex/worktrees/q1-digest-replay/reading-companion/reading-companion-backend/state/experiments/q1_digest_fixed_history_20261108/pilot-preflight/manifest-checks.json",
+        "pilot_summary": "/Users/baiweijiang/.codex/worktrees/q1-digest-replay/reading-companion/reading-companion-backend/state/experiments/q1_digest_fixed_history_20261108/pilot-summary.json",
+        "pilot_result": "/Users/baiweijiang/.codex/worktrees/q1-digest-replay/reading-companion/reading-companion-backend/state/experiments/q1_digest_fixed_history_20261108/A1/bovary/u000006/result.json"
+      },
+      "job_ids": [
+        "bgjob_q1_digest_fixed_history_20261108_A1_pilot"
+      ],
+      "report_paths": [
+        "docs/tasks/q1-digest-replay-2026-11-08.md"
+      ],
+      "catalog_status": "not_cataloged",
+      "notes": "Single authorized Bovary u000006 A1 completed: 1 Note, 0 Highlights, one physical request, 9224 input/324 output tokens. Exact quote/range verified; source output 279 files byte-identical. No quality judgment. Other units, A2 and B require owner confirmation. Both last-unit manifest checks pass; full ledger/agent-check passes with 17 source-identical warnings."
     }
   ]
 }

@@ -14,12 +14,15 @@
         "docs/backend-reader-evaluation.md"
       ],
       "decision_refs": [],
-      "job_refs": [],
+      "job_refs": [
+        "bgjob_q1_digest_fixed_history_20261108_A1_pilot"
+      ],
       "blocked_by": [],
-      "next_action": "Owner-required stop: first selected unit failed strict chapter_ref equality. Canonical coordinates match; report before generation resumes.",
+      "next_action": "Wait for owner review of single Bovary u000006 A1 pilot (0 H / 1 N); do not start remaining units, A2 or B without confirmation.",
       "evidence_refs": [
         "reading-companion-backend/eval/attentional_v2/fixed_history_digest.py",
-        "reading-companion-backend/tests/test_fixed_history_digest.py"
+        "reading-companion-backend/tests/test_fixed_history_digest.py",
+        "reading-companion-backend/state/experiments/q1_digest_fixed_history_20261108/pilot-summary.json"
       ],
       "last_updated": "2026-11-08",
       "last_updated_by": "codex"

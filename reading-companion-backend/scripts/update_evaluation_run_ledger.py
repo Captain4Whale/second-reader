@@ -355,9 +355,17 @@ def validate_ledger(
 def _md_link(ledger_md_path: Path, value: str, label: str) -> str:
     if not value:
         return ""
-    target = _resolve_path(value)
+    # Artifact validation follows links. Display links retain the checkout-local
+    # alias so mounting historical evidence does not rewrite every ledger row.
+    raw = Path(value).expanduser()
+    if raw.is_absolute():
+        target = raw
+    elif value == BACKEND_ROOT.name or value.startswith(f"{BACKEND_ROOT.name}/") or value == "docs" or value.startswith("docs/"):
+        target = WORKSPACE_ROOT / raw
+    else:
+        target = BACKEND_ROOT / raw
     try:
-        href = os.path.relpath(target.resolve(), start=ledger_md_path.parent.resolve())
+        href = os.path.relpath(os.path.abspath(target), start=os.path.abspath(ledger_md_path.parent))
     except (OSError, ValueError):
         href = str(target)
     return f"[{label}]({href.replace(os.sep, '/')})"

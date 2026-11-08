@@ -84,9 +84,15 @@ class HistoricalRun:
         span = spans[0]
         entry = self.units[unit_id]
         source = deepcopy(entry["accepted_source_unit"])
-        if source["source_span_id"] != span["source_span_id"] or source["source_span"] != {
-            "start_cursor": span["start_cursor"], "end_cursor": span["end_cursor"]
-        }:
+        source_coordinates = wire_span(source["source_span"])
+        ledger_coordinates = wire_span(span)
+        start, end = source_coordinates["start"], source_coordinates["end"]
+        expected_span_id = (f"src:c{start['chapter_id']}:p{start['paragraph_index']}@{start['char_offset']}"
+                            f"-p{end['paragraph_index']}@{end['char_offset']}")
+        if (source["source_span_id"] != span["source_span_id"]
+                or source["source_span_id"] != expected_span_id
+                or source_coordinates != ledger_coordinates
+                or start["chapter_id"] != end["chapter_id"]):
             raise ValueError(f"Unit source mismatch: {unit_id}")
         validate_book_document_source_range(self.document, source_range_from_wire(wire_span(source["source_span"])),
                                            expected_quote=source["source_text"], require_single_resource=False)
@@ -130,6 +136,17 @@ class HistoricalRun:
             "source_span_id": span["source_span_id"], "current_unit_source": source,
             "book_title": self.identity["book_title"], "author": self.identity["author"],
             "chapter_title": chapter["title"], "output_language": "zh",
+            "label_provenance": {
+                "unit_memory_chapter_ref": entry.get("chapter_ref"),
+                "unit_memory_cursor_refs": {k: source["source_span"][k].get("chapter_ref")
+                                            for k in ("start_cursor", "end_cursor")},
+                "ledger_chapter_ref": span.get("chapter_ref"),
+                "ledger_cursor_refs": {k: span[k].get("chapter_ref") for k in ("start_cursor", "end_cursor")},
+                "prompt_chapter_title": chapter["title"],
+                "chapter_ref_is_prompt_input": False,
+                "prompt_title_basis": "Historical runner passes chapter.title; Digest renderer never reads cursor.chapter_ref.",
+                "historical_code_commit": call["code_commit"],
+            },
             "reading_memory_lines": lines, "memory_evidence": evidence,
             "selection_recorded_at": selection["recorded_at"],
             "accepted_call": {k: call[k] for k in ("call_id", "started_at", "completed_at", "model", "sampling", "prompt_version", "code_commit", "code_dirty")},
@@ -162,6 +179,8 @@ def configure_model(operator_backend, model, effort, sampling, target_id="cpa_co
     """Isolated in-process config; credentials remain environment references."""
     from dotenv import load_dotenv
     load_dotenv(Path(operator_backend) / ".env")
+    # Provider quota/dispatch state belongs to this checkout, never to linked inputs.
+    os.environ["BACKEND_RUNTIME_ROOT"] = str(BACKEND)
     targets = read(Path(operator_backend) / "config/llm_targets.local.json")
     bindings = read(Path(operator_backend) / "config/llm_profile_bindings.local.json")
     target = next(x for x in targets["targets"] if x["target_id"] == target_id)
@@ -183,7 +202,7 @@ def configure_model(operator_backend, model, effort, sampling, target_id="cpa_co
 class CaptureAdapter:
     def __init__(self, delegate, directory):
         self.delegate, self.directory = delegate, directory
-        self.hashes, self.payloads = [], []
+        self.hashes, self.payloads, self.response_usages = [], [], []
 
     def invoke(self, messages, **kwargs):
         # The diagnostic preserves the historical forced-tool transport.
@@ -205,6 +224,9 @@ class CaptureAdapter:
         number = len(self.hashes)
         write(self.directory / f"request-{number:03d}.json", request)
         response = self.delegate.invoke(messages, **kwargs)
+        from src.reading_runtime.llm_usage import normalize_provider_usage
+
+        self.response_usages.append(normalize_provider_usage(response).to_dict())
         write(self.directory / f"response-{number:03d}.json", {
             "content": response.content, "tool_calls": response.tool_calls,
             "invalid_tool_calls": response.invalid_tool_calls, "usage_metadata": response.usage_metadata,
@@ -220,6 +242,8 @@ def run_digest(packet, directory, *, model, effort, prompt_version, operator_bac
     from src.attentional_v2.llm_calls import digest
     from src.reading_runtime.llm_gateway import CONTRACT_ADAPTERS, llm_invocation_scope, runtime_trace_context
     from src.reading_runtime.run_provenance import provenance_scope
+    from src.reading_runtime.observation_context import run_observation_scope
+    from src.prompts.integrity import LOCK, release_receipt
     directory = Path(directory).resolve()
     if not directory.is_relative_to((BACKEND / "state").resolve()):
         raise ValueError("Replay outputs must be inside this worktree's ignored backend/state")
@@ -232,7 +256,11 @@ def run_digest(packet, directory, *, model, effort, prompt_version, operator_bac
     captures = {k: CaptureAdapter(v, directory / "actual") for k, v in originals.items()}
     CONTRACT_ADAPTERS.update(captures)
     try:
-        with provenance_scope(directory, stage="fixed_history_digest") as provenance:
+        with run_observation_scope(
+            directory, f"fixed-history-digest-{packet['unit_id']}",
+            run_id=f"fixed-history-{directory.parent.name}-{packet['unit_id']}",
+            mechanism_key="attentional_v2", job_kind="offline_digest_replay",
+        ), provenance_scope(directory, stage="fixed_history_digest") as provenance:
             context = runtime_trace_context(directory, mechanism_key="attentional_v2", node="digest", extra={
                 "original_run_id": packet["original_run_id"], "unit_id": packet["unit_id"], "reconstructed": True})
             with llm_invocation_scope(profile_id="runtime_reader_default", trace_context=context):
@@ -242,7 +270,8 @@ def run_digest(packet, directory, *, model, effort, prompt_version, operator_bac
                     prompt_version=prompt_version, output_dir=directory)
             trace = rows(directory / "_runtime/llm_standard.jsonl")
             capture = next(x for x in captures.values() if x.hashes)
-            if [x["request_sha256"] for x in trace] != capture.hashes:
+            logical_hashes = [x["request_sha256"] for x in trace]
+            if set(logical_hashes) != set(capture.hashes) or logical_hashes[-1] != capture.hashes[-1]:
                 raise ValueError("Captured requests differ from gateway request receipts")
             raw_marks = capture.payloads[-1].get("marginalia", [])
             if len(raw_marks) != len(result["marginalia"]):
@@ -255,9 +284,12 @@ def run_digest(packet, directory, *, model, effort, prompt_version, operator_bac
             output = {"schema": "fixed-history-digest-result/1", "reconstructed": True,
                       "original_run_id": packet["original_run_id"], "unit_id": packet["unit_id"],
                       "model": model, "reasoning_effort": effort, "prompt_version": prompt_version,
+                      "prompt": release_receipt(read(LOCK)["releases"][prompt_version]),
                       "input_sha256": sha(canonical(packet)), "request_sha256": trace[-1]["request_sha256"],
                       "sampling": trace[-1]["sampling"], "code_commit": trace[-1]["code_commit"],
                       "code_dirty": trace[-1]["code_dirty"], "calls": trace, "result": result,
+                      "response_usages": capture.response_usages,
+                      "physical_request_count": len(capture.hashes),
                       "discarded_memory_operation_count": discarded,
                       "provenance_invocation_id": provenance["invocation_id"]}
             write(directory / "result.json", output)

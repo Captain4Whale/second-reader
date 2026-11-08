@@ -10,7 +10,7 @@ This file is authoritative for durable current status. Do not keep unique active
 Last verified: `2026-11-08` (Q1 provenance scope; earlier review states retain their original evidence boundaries)
 
 ## Current Objective
-- `TASK-Q1-DIGEST-REPLAY` is waiting after the owner-required fail-stop: first selected Bovary `u000006` rejected a `Chapter 1` / `第1章` display-label mismatch despite identical canonical source coordinates. Both last-unit system/user manifest checks pass; no model calls or batch were produced. Isolated first tool slice on `codex/q1-digest-replay`; do not resume generation before reporting the stop to the owner. [Record](tasks/q1-digest-replay-2026-11-08.md).
+- `TASK-Q1-DIGEST-REPLAY` is waiting for owner confirmation after the authorized Bovary `u000006` A1 pilot: canonical coordinates verified, historical prompt title `第1章` retained, four hot memories, one Note / zero Highlights, one request (9,224 input / 324 output tokens). Both last-unit manifest checks pass; full ledger/agent checks run with 17 source-identical traceability warnings. Original output's 279 files are byte-identical. Remaining units, A2 and B are not authorized until confirmation. [Record](tasks/q1-digest-replay-2026-11-08.md).
 - `TASK-Q1-MIXED-COMPARISON` is active: window-aligned comparison data, mixed blind UI and independent statistics. Start-owner assignment only in mixed; side-by-side/reveal deferred. No model calls or push. [Execution](tasks/q1-mixed-comparison-2026-11-08.md), [output contract](../reading-companion-backend/experiments/comparison.md).
 - `TASK-Q1-VERSIONING-SKELETON` is complete on `codex/q1-versioning-skeleton`: runtime-loaded immutable prompt versions, private few-shot assets, request hashes/samples and dirty patches; frozen dev (67 units) / holdout (75 units); baseline registered with pass rate null; 605 historical revisions attributed to `weijiang / open_coding` without edits. `q1-v0` is draft; no model or push. [Execution](tasks/q1-versioning-skeleton-2026-11-08.md), [authority](../reading-companion-backend/experiments/README.md).
 - `TASK-Q1-MANUAL-ANNOTATION` tooling is complete; the two full-book first batches now contain judgments for all 110 sampled marks. The journals remain private in the annotation worktree. Use this branch's annotator 1.9 for new attributed rows, keep holdout untouched, and do not resample. [Operator steps](../README.md#q1-manual-error-analysis).
@@ -3631,7 +3631,8 @@ Last verified: `2026-11-08` (Q1 provenance scope; earlier review states retain t
   "active_task_ids": [
     "TASK-ATTENTIONAL-V2-STRUCTURAL-REWORK",
     "TASK-V2-NATIVE-READING-PRESENTATION",
-    "TASK-USER-LEVEL-SELECTIVE-V1"
+    "TASK-USER-LEVEL-SELECTIVE-V1",
+    "TASK-Q1-DIGEST-REPLAY"
   ],
   "waiting_task_ids": [
     "TASK-XIDADUO-CONTEXT-SCOPE-DIGEST-20260913",
@@ -3738,9 +3739,9 @@ Last verified: `2026-11-08` (Q1 provenance scope; earlier review states retain t
     "reading-companion-backend/state/job_registry/jobs/bgjob_closed_loop_bilingual_broader_adjudicationv4_20260331.json",
     "reading-companion-backend/state/job_registry/logs/bgjob_closed_loop_bilingual_broader_adjudicationv4_20260331.log",
     "reading-companion-backend/state/dataset_build/build_runs/closed_loop_full_smoke_bilingual_broader_adjudicationv4_20260331/closed_loop_benchmark_curation_summary.json",
-    "reading-companion-backend/eval/attentional_v2/compare_case_audit_runs.py",
     "reading-companion-backend/eval/review_packets/archive/attentional_v2_private_library_excerpt_en_question_aligned_v1__scratch__closed_loop_full_smoke_en_broader_compactadjudication_repeat_20260330__initial_review__closed_loop_full_smoke_en_broader_compactadjudication_repeat_20260330/llm_review_runs/llm_review__20260330-174858__ae50caff2084/summary.json",
-    "reading-companion-backend/eval/review_packets/archive/attentional_v2_private_library_excerpt_en_question_aligned_v1__scratch__closed_loop_full_smoke_en_broader_compactadjudication_repeat_20260330__initial_review__closed_loop_full_smoke_en_broader_compactadjudication_repeat_20260330/llm_review_runs/llm_review__20260330-175048__ae50caff2084/summary.json"
+    "reading-companion-backend/eval/review_packets/archive/attentional_v2_private_library_excerpt_en_question_aligned_v1__scratch__closed_loop_full_smoke_en_broader_compactadjudication_repeat_20260330__initial_review__closed_loop_full_smoke_en_broader_compactadjudication_repeat_20260330/llm_review_runs/llm_review__20260330-175048__ae50caff2084/summary.json",
+    "docs/tasks/q1-digest-replay-2026-11-08.md"
   ],
   "truth_refs": [
     "contract/annotation-pack/v0/schema/annotation-pack.schema.json",

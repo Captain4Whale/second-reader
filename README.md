@@ -1,11 +1,11 @@
 # Reading Companion Workspace
 
-Fixed-history Digest replay is currently a prototype stopped at the owner's first-unit
-preflight gate; see [status and evidence](docs/tasks/q1-digest-replay-2026-11-08.md).
+Fixed-history Digest replay has completed the authorized Bovary `u000006` A1 pilot;
+remaining units/A2/B await owner confirmation. See [status and evidence](docs/tasks/q1-digest-replay-2026-11-08.md).
 From the backend, reconstruct without calling a model with
 `.venv/bin/python scripts/rerun_fixed_history_digest.py --source-backend /absolute/original/backend --run-id RUN --unit-id UNIT --output state/experiments/NEW-DIR --prepare-only`.
-The CLI also accepts `--model`, `--reasoning-effort` and `--prompt-version` for a later
-authorized live invocation. Do not interpret this entry as completed live acceptance.
+The CLI also accepts `--model`, `--reasoning-effort` and `--prompt-version` for an
+authorized live invocation. One pilot does not establish all-unit acceptance.
 
 Purpose: provide setup, run, environment, local URL, and verification information for the workspace.
 Use when: installing dependencies, starting local services, checking env vars, or running validation commands.

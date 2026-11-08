@@ -1171,13 +1171,22 @@ Internal `mechanism_config.memory_retrieval_mode` and CLI `--memory-retrieval-mo
 
 ### Run configuration evidence
 
-The offline fixed-history Digest prototype and its current acceptance boundary are
+The offline fixed-history Digest tool and its single-pilot acceptance boundary are
 recorded in [the Q1 replay task](tasks/q1-digest-replay-2026-11-08.md). Reconstructed
 historical prompts are not observed original request receipts. A Digest rerun must
 freeze selected memory text, bypass retrieval/settlement, retain actual new requests
 and usage, and keep generated evidence under ignored backend `state/`. A repeated
 same-configuration sample measures output variability; changing both model and
 reasoning effort does not establish a model-only causal effect.
+
+Historical source identity uses the span ID and chapter/paragraph/code-point
+coordinates, with an exact BookDocument quote round-trip. Retain differing display
+labels as provenance; never substitute a reconstructed `chapter_ref` for the
+historical prompt's actual `chapter.title`. Verify the owning renderer's consumed
+fields and stop if the original prompt-facing title cannot be determined. Linked
+historical artifacts are read-only inputs; invocation outputs, provider runtime
+state, job records and logs must remain local writable artifacts. Full ledger and
+traceability checks must inspect the mounted inputs, not waive missing evidence.
 
 The existing standard LLM ledger now records allowlisted effective sampling settings, prompt version and code commit/dirty state for each node. Arbitrary provider options, credentials and headers are never copied. A compact `runtime/run_configuration.json` companion joins those existing records with all prompt versions, the verified chapter-plan fingerprint and requested/actual retrieval metadata. `classification_calls` preserves the receipts of the reused plan; `model_calls` and ledger start/end delimit the current parse/read/resume invocation. Each invocation, including failures, appends its configuration receipt to the existing diagnostics event stream. Normalized eval bundles and internal ParseResult/ReadResult summaries expose the same snapshot; public HTTP/Product/Pack contracts do not change.
 

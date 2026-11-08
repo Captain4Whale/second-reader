@@ -30,6 +30,8 @@ coverage/
 node_modules/
 # A dependency link in an isolated worktree is a symlink, not a directory.
 reading-companion-frontend/node_modules
+# Read-only historical review-archive links in isolated worktrees.
+reading-companion-backend/eval/review_packets/archive/*
 dist/
 build/
 .vite/
