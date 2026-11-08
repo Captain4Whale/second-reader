@@ -75,6 +75,27 @@ function harness() {
   });
   return { c, run, row, get };
 }
+test("new judgments carry rubric and human identity without rewriting legacy rows", async () => {
+  const h = harness();
+  const recordCode = script.slice(script.indexOf("    function record("), script.indexOf("    function activeMisses("));
+  h.run(recordCode);
+  h.c.old = h.row(1);
+  h.run("state.rows.push(old)");
+  h.c.span = h.row(1).source_range;
+  h.run('record("marginalia", "m", {judgment:"pass", reason:"", remarks:"", star:false, needs_verification:false}, span, span)');
+  await h.run("session.writes");
+  assert.equal(h.run("state.rows[1].rubric_version"), "open_coding");
+  assert.equal(h.run("state.rows[1].annotator_id"), "weijiang");
+  assert.equal(h.run("state.rows[0].rubric_version"), undefined);
+  assert.equal(h.run('parseJournal(state.rows.map(r=>JSON.stringify(r)+"\\n").join(""),batch).length'), 2);
+});
+test("published rubric context requires a content hash; draft context is rejected", () => {
+  const h = harness();
+  assert.throws(() => h.run('annotationContext({batch_id:"b",annotator_id:"weijiang",rubric_version:"q1-v0",rubric_status:"draft"},"b")'));
+  assert.equal(h.run('annotationContext({batch_id:"b",annotator_id:"weijiang",rubric_version:"q1-v1",rubric_status:"published",rubric_sha256:"a".repeat(64)},"b").rubric_version'), "q1-v1");
+  h.c.bad = { ...h.row(1), annotator_version:"q1-annotator/1.9" };
+  assert.throws(() => h.run('parseJournal(JSON.stringify(bad)+"\\n",batch)'));
+});
 test("prefix reconcile: newer file imported, newer browser appended, duplicate sync is a no-op", async () => {
   const h = harness();
   h.c.row1 = h.row(1);

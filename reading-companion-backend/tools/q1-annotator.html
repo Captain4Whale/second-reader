@@ -701,7 +701,7 @@
   </dialog>
   <script>
     "use strict";
-    const VERSION = "q1-annotator/1.8",
+    const VERSION = "q1-annotator/1.9",
       $ = (id) => document.getElementById(id);
     const say = (text) => {
       $("message").textContent = text;
@@ -719,6 +719,19 @@
       return b;
     }
     const cp = (s) => Array.from(s);
+    const DEFAULT_ANNOTATION_CONTEXT = Object.freeze({
+      annotator_id: "weijiang", rubric_version: "open_coding", rubric_sha256: null,
+    });
+    function annotationContext(value, batchId) {
+      if (!value) return { ...DEFAULT_ANNOTATION_CONTEXT };
+      if (value.batch_id !== batchId || !value.annotator_id?.trim() ||
+          !value.rubric_version ||
+          (value.rubric_version !== "open_coding" &&
+            (value.rubric_status !== "published" || !/^[a-f0-9]{64}$/.test(value.rubric_sha256))))
+        throw Error("标注上下文无效；正式标注必须引用已发布 rubric 及其指纹。");
+      return { annotator_id: value.annotator_id, rubric_version: value.rubric_version,
+        rubric_sha256: value.rubric_sha256 ?? null };
+    }
     const cut = (s, lo, hi) => cp(s).slice(lo, hi).join("");
     function sorted(value) {
       if (Array.isArray(value)) return value.map(sorted);
@@ -872,7 +885,10 @@
           !r ||
           r.batch_id !== batch.batch_id ||
           r.revision !== i + 1 ||
-          !/^q1-annotator\/1\.[0-8]$/.test(r.annotator_version) ||
+          !/^q1-annotator\/1\.[0-9]$/.test(r.annotator_version) ||
+          (r.annotator_version === "q1-annotator/1.9" &&
+            (!r.annotator_id?.trim() || !r.rubric_version ||
+              (r.rubric_version !== "open_coding" && !/^[a-f0-9]{64}$/.test(r.rubric_sha256)))) ||
           !u ||
           !["marginalia", "density", "unit_note", "omission"].includes(r.record_type) ||
           typeof r.record_id !== "string" ||
@@ -1096,6 +1112,19 @@
         await settleCurrent();
         const handle = await directory.getFileHandle("judgments.jsonl", { create: true });
         const s = await loadSession(batch, { handle, directory });
+        let context;
+        try {
+          const file = await directory.getFileHandle("annotation-context.json");
+          context = JSON.parse(await (await file.getFile()).text());
+        } catch (err) {
+          if (err.name !== "NotFoundError") throw err;
+        }
+        const nextContext = annotationContext(context, batch.batch_id);
+        const priorContext = s.state.annotationContext ?? DEFAULT_ANNOTATION_CONTEXT;
+        if (JSON.stringify(sorted(nextContext)) !== JSON.stringify(sorted(priorContext)) &&
+            [s.state.drafts, s.state.missDrafts, s.state.unitNoteDrafts].some((d) => Object.keys(d ?? {}).length))
+          throw Error("切换标注身份或 rubric 前，请先保存所有单元的草稿。");
+        s.state.annotationContext = nextContext;
         await reconcile(s);
         await installSession(s);
       } catch (err) {
@@ -1149,6 +1178,7 @@
         u = unit();
       s.state.rows.push({
         annotator_version: VERSION,
+        ...(s.state.annotationContext ?? DEFAULT_ANNOTATION_CONTEXT),
         batch_id: b.batch_id,
         book: b.book,
         run_id: b.run_id,

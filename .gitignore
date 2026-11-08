@@ -48,6 +48,7 @@ reading-companion-backend/state/
 # Private prompt examples, byte-comparison captures, rendered samples and dirty patches.
 reading-companion-backend/state/prompt_assets/
 reading-companion-backend/state/prompt_migration/
+reading-companion-backend/state/rubric_examples/
 **/_runtime/provenance/
 
 # Keep analysis reports docs, but ignore generated logs

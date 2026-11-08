@@ -70,3 +70,28 @@ Ignored private assets are covered separately by release hashes. Patches and raw
 inputs are always ignored and must be retained privately with the run. The event stream
 and invocation directories preserve earlier resume receipts after the current
 `run_configuration.json` advances. No historical patch is fabricated for Q1.
+
+## Rubrics and human judgments
+
+`rubric/<version>.md` is immutable once registered in `rubric/releases.json`, including
+the initial `q1-v0` draft. Publish a new version for later rule changes, with version,
+date, change and rationale at the top. Drafts cannot be selected for scoring. Only IDs
+belong in example references; bodies go in ignored `state/rubric_examples/<version>/`.
+`open_coding` is the explicit no-rubric sentinel, not an alias for q1-v0.
+
+Annotator 1.9 adds `annotator_id`, `rubric_version` and `rubric_sha256` to every new
+record type. Defaults are `weijiang` and `open_coding`. Existing 1.0–1.8 records remain
+byte-identical and are attributed by `experiments/annotations/legacy-context.jsonl`:
+batch ID + revision range + SHA-256 of that exact journal prefix. The original record
+timestamp is the judgment time; the overlay date is attribution time. Later appends
+cannot change the old prefix. Rejudging with a rubric appends a new revision; it never
+changes old records. Do not confuse tool `annotator_version` with human `annotator_id`.
+
+Opening a batch folder optionally reads `annotation-context.json` from that ignored
+folder. It supplies batch ID, annotator ID, rubric version, rubric file SHA-256 and
+`rubric_status: published`. The context is saved with that browser batch. The tool
+rejects draft contexts and context switches with pending drafts; finish saving all
+units first. Plain JSON opening uses the stored context or the open-coding default.
+No rubric is inferred from the content of an old judgment. Existing file-prefix,
+revision and conflicting-history checks still apply. New metadata does not rewrite
+`batch.json`, its identity or any prior `judgments.jsonl` row.
