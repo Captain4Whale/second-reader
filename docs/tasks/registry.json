@@ -101,7 +101,7 @@
       "decision_refs": [],
       "job_refs": [],
       "blocked_by": [],
-      "next_action": "Preserve completed first-batch open coding and use annotator 2.0 for new attributed append-only judgments; do not resample or inspect holdout.",
+      "next_action": "Preserve completed first-batch open coding and use annotator 2.1 for new attributed append-only judgments; do not resample or inspect holdout.",
       "evidence_refs": [
         "reading-companion-backend/scripts/sample_q1_annotations.py",
         "reading-companion-backend/tools/q1-annotator.html"

@@ -702,8 +702,9 @@
   </dialog>
   <script>
     "use strict";
-    const VERSION = "q1-annotator/2.0",
+    const VERSION = "q1-annotator/2.1",
       $ = (id) => document.getElementById(id);
+    const MIXED_VERSIONS = ["q1-annotator/2.0", VERSION];
     const say = (text) => {
       $("message").textContent = text;
     };
@@ -817,7 +818,7 @@
     function validateMixedRow(r, b, w) {
       const base = "schema annotator_version annotator_id rubric_version rubric_sha256 batch_id comparison_batch_id view window_id record_type record_id revision timestamp marginalia_id type judgment reason star needs_verification remarks original_source_range";
       const extra = r.record_type === "marginalia" ? " source_quote body_text" : r.record_type === "omission" ? " action source_quote" : "";
-      if (!exactKeys(r, base + extra) || r.schema !== "q1-mixed-judgment/1" || r.annotator_version !== VERSION ||
+      if (!exactKeys(r, base + extra) || r.schema !== "q1-mixed-judgment/1" || !MIXED_VERSIONS.includes(r.annotator_version) ||
           r.comparison_batch_id !== b.batch_id || r.view !== "mixed" ||
           !["marginalia", "omission", "unit_note"].includes(r.record_type) ||
           !strictRange(r.original_source_range) || !Number.isFinite(Date.parse(r.timestamp)))
@@ -978,8 +979,8 @@
           !r ||
           r.batch_id !== batch.batch_id ||
           r.revision !== i + 1 ||
-          !/^(q1-annotator\/1\.[0-9]|q1-annotator\/2\.0)$/.test(r.annotator_version) ||
-          (["q1-annotator/1.9", VERSION].includes(r.annotator_version) &&
+          !(/^q1-annotator\/1\.[0-9]$/.test(r.annotator_version) || MIXED_VERSIONS.includes(r.annotator_version)) ||
+          (["q1-annotator/1.9", ...MIXED_VERSIONS].includes(r.annotator_version) &&
             (!r.annotator_id?.trim() || !r.rubric_version ||
               (r.rubric_version !== "open_coding" && !/^[a-f0-9]{64}$/.test(r.rubric_sha256)))) ||
           !u ||
@@ -1545,7 +1546,7 @@
         tabs = $("tabs");
       tabs.replaceChildren();
       unit().marginalia.forEach((v, i) => {
-        const b = button(mixed() ? String(i + 1) : i + 1 + " · " + (v.type === "H" ? "高亮" : "旁注"), () => chooseMark(i, true));
+        const b = button(i + 1 + " · " + (v.type === "H" ? "高亮" : "旁注"), () => chooseMark(i, true));
         b.setAttribute("aria-pressed", i === session.state.mi);
         tabs.append(b);
       });

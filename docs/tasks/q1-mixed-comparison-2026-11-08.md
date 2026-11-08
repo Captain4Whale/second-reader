@@ -53,6 +53,12 @@ mechanism or product-direction decision; no new decision-log entry is needed.
 
 ## Next
 
+Follow-up: annotator 2.1 restores H/N type labels in mixed navigation. Blinding applies
+to group/model/prompt provenance, not to Highlight/Note type. Existing 2.0 journals are
+accepted unchanged by the UI and statistics; only new appends carry version 2.1.
+Validated with 14 annotator storage tests and 12 statistics tests, including old 2.0
+records followed by 2.1 revisions. No diagnostic content or group mappings were opened.
+
 The separately assigned Digest rerun tool should implement the documented output contract.
 Finish real A/B mixed annotation before resuming side-by-side, preferences and reveal.
 No real quality scores were computed and no baseline pass-rate field was filled.

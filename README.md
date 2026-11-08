@@ -545,7 +545,7 @@ The subsequently authorized C-only recovery uses `.venv/bin/python -m eval.atten
 
 ## Q1 manual error analysis
 
-Annotator 2.0 also supports window-aligned mixed blind comparisons. Use
+Annotator 2.1 also supports window-aligned mixed blind comparisons. Use
 `build_q1_comparison.py` and open its output folder; the annotator reads only `mixed.json`.
 Data preparation, the fixed-history Digest output contract, synthetic acceptance and
 statistics instructions are in [comparison workflow](reading-companion-backend/experiments/comparison.md).
@@ -625,4 +625,4 @@ Run configuration lookup: `_mechanisms/attentional_v2/runtime/run_configuration.
 
 Q1 prompt releases load exact version files and require private few-shot assets before API startup or reader tests. Provisioning, offline recovery and immutable-version checks: [iteration provenance](reading-companion-backend/experiments/README.md).
 
-Q1 iteration checks (offline): `cd reading-companion-backend && .venv/bin/python scripts/check_prompt_releases.py && .venv/bin/python scripts/check_iteration_provenance.py`. The experiment baseline is `experiments/log.jsonl`; fill its `results.pass_rate` manually. Use this branch's annotator 2.0 for new `weijiang` / rubric-attributed append-only judgments. Existing first-batch journals remain in the Q1 annotation worktree and are bound by prefix hashes. Runtime standard traces now include complete logical request hashes; each invocation retains private samples and a base-commit-bound dirty patch under `_runtime/provenance/`.
+Q1 iteration checks (offline): `cd reading-companion-backend && .venv/bin/python scripts/check_prompt_releases.py && .venv/bin/python scripts/check_iteration_provenance.py`. The experiment baseline is `experiments/log.jsonl`; fill its `results.pass_rate` manually. Use this branch's annotator 2.1 for new `weijiang` / rubric-attributed append-only judgments. Existing first-batch journals remain in the Q1 annotation worktree and are bound by prefix hashes. Runtime standard traces now include complete logical request hashes; each invocation retains private samples and a base-commit-bound dirty patch under `_runtime/provenance/`.

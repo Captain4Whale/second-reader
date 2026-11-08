@@ -278,6 +278,9 @@ test("mixed records append no group identity and reject reveal/density/provenanc
   h.run('var mark=blind.windows[0].marginalia[0];record("marginalia",mark.marginalia_id,{marginalia_id:mark.marginalia_id,type:mark.type,source_quote:mark.source_quote,body_text:mark.body_text,judgment:"pass",reason:"",remarks:"",star:false,needs_verification:false},mark.original_source_range,mark.original_source_range)');
   await h.run("session.writes");
   const r=JSON.parse(h.run("JSON.stringify(state.rows[0])"));
+  assert.equal(r.annotator_version,"q1-annotator/2.1");
+  h.c.older={...r,annotator_version:"q1-annotator/2.0"};
+  assert.equal(h.run('parseJournal(JSON.stringify(older)+"\\n",batch).length'),1);
   assert.equal(r.view,"mixed"); assert.equal(r.comparison_batch_id,h.c.blind.batch_id);
   for(const k of ["run_id","reading_id","unit_id","group","model","source_range"]) assert.equal(r[k],undefined);
   assert.equal(h.run('parseJournal(disk,batch).length'),1);

@@ -145,7 +145,12 @@ batch, mixed projection, key, input outputs and journals privately. The mapping 
 encryption; an operator who reads private files can reveal sources outside the tool.
 There is no reveal UI or preference support in this delivery.
 
-## Annotator 2.0
+## Annotator 2.1
+
+Mixed navigation retains the visible mark types (`1 · 高亮`, `2 · 旁注`). H/N is
+annotation content, not group provenance; hiding it is not part of blinding. Version
+2.1 restores these labels without changing the persisted order, IDs, batches or old
+judgments. Both annotator and statistics accept existing 2.0 records and new 2.1 appends.
 
 Open `tools/q1-annotator.html`, then the comparison folder. The tool prefers `mixed.json`;
 only when that file is absent does it try legacy `batch.json`. A malformed mixed file
@@ -161,7 +166,7 @@ windows therefore need no mark judgments). Completion is not proof of exhaustive
 review. Mixed omissions are window-owned, can be edited/removed by appending revisions,
 and do not inherit the old two-omission cap. Legacy mode retains its original behavior.
 
-New mixed rows use `schema: q1-mixed-judgment/1`, `annotator_version: q1-annotator/2.0`,
+New mixed rows use `schema: q1-mixed-judgment/1`, `annotator_version: q1-annotator/2.1`,
 `batch_id` and `comparison_batch_id` bound to the mixed fingerprint, `window_id`,
 `view: mixed`, human/rubric identity, monotonic `revision` and UTC `timestamp`.
 `record_type` is `marginalia`, `omission` or the compatible name `unit_note` for a window
