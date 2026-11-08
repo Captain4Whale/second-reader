@@ -147,7 +147,7 @@ def validate_rows(rows, mixed):
         )
         require(
             r["schema"] == "q1-mixed-judgment/1"
-            and r["annotator_version"] in ("q1-annotator/2.0", "q1-annotator/2.1")
+            and r["annotator_version"] in ("q1-annotator/2.0", "q1-annotator/2.1", "q1-annotator/2.2")
             and r["view"] == "mixed"
             and r["batch_id"] == r["comparison_batch_id"] == mixed["batch_id"]
             and type(r["revision"]) is int

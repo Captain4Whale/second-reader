@@ -65,3 +65,20 @@ No real quality scores were computed and no baseline pass-rate field was filled.
 Private acceptance index: `reading-companion-backend/state/q1_comparison/acceptance.json`.
 It identifies the synthetic and converted-dev bundles, browser screenshots and synthetic
 statistics snapshot without putting copyrighted source or annotation content in Git.
+
+
+Follow-up: annotator 2.2 fixes toolbar flicker during text entry. Save-status strings
+changed the flex layout on each save receipt, moving buttons by approximately 76 px
+at a 1280 px viewport; progress rendering also rewrote unchanged navigation nodes.
+The save-feedback area now has a stable width, and unchanged text/attributes are
+left intact. Autosave timing, IME composition handling and journal semantics are unchanged.
+The UI and statistics accept 2.0/2.1/2.2 mixed records.
+
+Validation: 15 annotator storage tests and 13 statistics tests passed, including a
+regression for unchanged progress during typing and revisions across all three versions.
+An isolated browser with synthetic data and an OPFS test journal verified English typing,
+Chinese IME composition/commit, retained focus, and successful file persistence. Across
+English and IME checks at 1280 px and a narrow 390 px layout, toolbar button geometry
+remained constant and navigation nodes were not rewritten. Screenshots are private under
+`reading-companion-backend/state/q1_comparison/typing-fixed-{desktop,mobile}.png`.
+No real judgments, diagnostic content or group mappings were opened or modified.

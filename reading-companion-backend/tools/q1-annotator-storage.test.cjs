@@ -278,7 +278,7 @@ test("mixed records append no group identity and reject reveal/density/provenanc
   h.run('var mark=blind.windows[0].marginalia[0];record("marginalia",mark.marginalia_id,{marginalia_id:mark.marginalia_id,type:mark.type,source_quote:mark.source_quote,body_text:mark.body_text,judgment:"pass",reason:"",remarks:"",star:false,needs_verification:false},mark.original_source_range,mark.original_source_range)');
   await h.run("session.writes");
   const r=JSON.parse(h.run("JSON.stringify(state.rows[0])"));
-  assert.equal(r.annotator_version,"q1-annotator/2.1");
+  assert.equal(r.annotator_version,"q1-annotator/2.2");
   h.c.older={...r,annotator_version:"q1-annotator/2.0"};
   assert.equal(h.run('parseJournal(JSON.stringify(older)+"\\n",batch).length'),1);
   assert.equal(r.view,"mixed"); assert.equal(r.comparison_batch_id,h.c.blind.batch_id);
@@ -296,6 +296,32 @@ test("mixed completion needs judgments, not density; browser restores windows an
   assert.deepEqual(Array.from(h.run('unitStatus(unit()).missing')),["剩 1 条未完成"]);
   h.run('state.drafts[unit().marginalia[0].marginalia_id]={judgment:"pass",reason:""}');
   assert.equal(h.run('unitStatus(unit()).state'),"done");
+});
+
+test("typing without a progress change does not rewrite navigation; real state changes still render", () => {
+  const h = harness();
+  let writes = 0;
+  for (const id of ["progress", "batchPosition", "batchCounts", "unitProgress", "markProgress", "gridCell"]) {
+    const n = h.get(id), attrs = new Map();
+    let text = "", cls = "";
+    Object.defineProperty(n, "textContent", {get:()=>text,set:v=>{text=v;writes++}});
+    Object.defineProperty(n, "className", {get:()=>cls,set:v=>{cls=v;writes++}});
+    Object.defineProperty(n, "title", {get:()=>attrs.get("title"),set:v=>{attrs.set("title",v);writes++}});
+    n.getAttribute = k => attrs.get(k) ?? null;
+    n.hasAttribute = k => attrs.has(k);
+    n.setAttribute = (k,v) => {attrs.set(k,v);writes++};
+    n.removeAttribute = k => {attrs.delete(k);writes++};
+    n.dataset = new Proxy({}, {set:(_,k,v)=>{attrs.set("data-"+k,v);writes++;return true}});
+  }
+  h.get("unitGrid").children = [h.get("gridCell")];
+  h.run(script.slice(script.indexOf("    function activeMisses("),script.indexOf("    function contextBox(")));
+  h.run('state.drafts.m={judgment:"pass",reason:"",remarks:"",star:false,needs_verification:false}; progress()');
+  writes = 0;
+  h.run('state.drafts.m.remarks="English typing"; progress(); state.drafts.m.reason="中文输入"; progress()');
+  assert.equal(writes, 0);
+  h.run('state.drafts.m.judgment="fail";state.drafts.m.reason="";progress()');
+  assert.ok(writes > 0);
+  assert.match(h.get("markProgress").textContent, /待补理由/);
 });
 
 test("folder import reads mixed projection without opening private batch or mapping", async () => {

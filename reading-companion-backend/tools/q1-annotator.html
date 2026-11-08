@@ -78,6 +78,12 @@
     }
     #saveState {
       overflow-wrap: anywhere;
+      /* Save receipts change on every keystroke; never resize the action buttons. */
+      flex: 0 0 20em;
+      inline-size: 20em;
+      max-inline-size: 100%;
+      min-block-size: 1.55em;
+      text-align: right;
     }
     #batchProgress {
       min-width: 0;
@@ -129,6 +135,9 @@
       }
       #fileControls {
         justify-content: flex-start;
+      }
+      #saveState {
+        text-align: left;
       }
       .toolbar-help {
         margin-left: 0;
@@ -702,11 +711,22 @@
   </dialog>
   <script>
     "use strict";
-    const VERSION = "q1-annotator/2.1",
+    const VERSION = "q1-annotator/2.2",
       $ = (id) => document.getElementById(id);
-    const MIXED_VERSIONS = ["q1-annotator/2.0", VERSION];
+    const MIXED_VERSIONS = ["q1-annotator/2.0", "q1-annotator/2.1", VERSION];
+    function setText(node, text) {
+      if (node.textContent !== text) node.textContent = text;
+    }
+    function setAttr(node, name, value) {
+      if (value === null) {
+        if (node.hasAttribute(name)) node.removeAttribute(name);
+      } else if (node.getAttribute(name) !== String(value)) node.setAttribute(name, String(value));
+    }
+    function setHidden(node, hidden) {
+      if (node.hidden !== hidden) node.hidden = hidden;
+    }
     const say = (text) => {
-      $("message").textContent = text;
+      setText($("message"), text);
     };
     function el(tag, text, cls) {
       const n = document.createElement(tag);
@@ -946,22 +966,22 @@
       else if (s.diskError || s.permissionNeeded || s.blocked) text = "浏览器已保存 · 文件待同步";
       else if (s.pendingWrites || pending) text = "浏览器已保存 · 文件同步中";
       else text = "浏览器与文件均已保存";
-      $("saveState").textContent = text;
+      setText($("saveState"), text);
       $("saveState").classList.toggle(
         "save-warning",
         !!(s.browserError || s.diskError || s.permissionNeeded || s.blocked),
       );
-      $("saveDetail").textContent =
-        s.browserError || s.diskError || (s.permissionNeeded ? "需要重新授权，点击恢复文件连接。" : "");
-      $("saveDetail").hidden = !$("saveDetail").textContent;
-      $("link").hidden =
-        !window.showOpenFilePicker || (!!s.handle && !s.diskError && !s.permissionNeeded && !s.blocked);
-      $("link").textContent = !s.handle
+      setText($("saveDetail"),
+        s.browserError || s.diskError || (s.permissionNeeded ? "需要重新授权，点击恢复文件连接。" : ""));
+      setHidden($("saveDetail"), !$("saveDetail").textContent);
+      setHidden($("link"),
+        !window.showOpenFilePicker || (!!s.handle && !s.diskError && !s.permissionNeeded && !s.blocked));
+      setText($("link"), !s.handle
         ? "连接结果文件"
         : s.permissionNeeded
           ? "恢复文件连接"
-          : "重试文件同步";
-      $("retryBrowser").hidden = !s.browserError;
+          : "重试文件同步");
+      setHidden($("retryBrowser"), !s.browserError);
       editStatus();
     }
     function parseJournal(text, batch) {
@@ -1358,10 +1378,9 @@
         current = statuses[state.ui],
         grid = $("unitGrid");
       editStatus();
-      $("progress").textContent = unitLabel() + " " + (state.ui + 1) + " / " + units(b).length;
-      $("batchPosition").textContent = mixed() ? (b.synthetic ? "合成数据 · 混合盲标" : "混合盲标") : "批次 " + b.batch_number + " / " + b.batch_count;
-      $("batchCounts").textContent =
-        unitLabel() + " " +
+      setText($("progress"), unitLabel() + " " + (state.ui + 1) + " / " + units(b).length);
+      setText($("batchPosition"), mixed() ? (b.synthetic ? "合成数据 · 混合盲标" : "混合盲标") : "批次 " + b.batch_number + " / " + b.batch_count);
+      setText($("batchCounts"), unitLabel() + " " +
         statuses.filter((s) => s.state === "done").length +
         "/" +
         units(b).length +
@@ -1369,7 +1388,7 @@
         statuses.reduce((n, s) => n + s.done, 0) +
         "/" +
         marks.length +
-        " 完成";
+        " 完成");
       // Keep buttons mounted so typing/autosave never loses keyboard focus on the map.
       if (!grid.children.length)
         units(b).forEach((u, i) => {
@@ -1377,10 +1396,10 @@
         });
       statuses.forEach((s, i) => {
         const cell = grid.children[i];
-        cell.className = "unit-cell";
-        cell.dataset.state = s.state;
-        cell.textContent = s.state === "done" ? "✓" : "";
-        cell.title =
+        if (cell.className !== "unit-cell") cell.className = "unit-cell";
+        setAttr(cell, "data-state", s.state);
+        setText(cell, s.state === "done" ? "✓" : "");
+        const title =
           unitLabel() + " " +
           (i + 1) +
           "/" +
@@ -1393,23 +1412,22 @@
           units(b)[i].marginalia.length +
           " 完成" +
           (s.missing.length ? " · " + s.missing.join(" · ") : "");
-        cell.setAttribute("aria-label", cell.title);
-        if (i === state.ui) cell.setAttribute("aria-current", "step");
-        else cell.removeAttribute("aria-current");
+        setAttr(cell, "title", title);
+        setAttr(cell, "aria-label", title);
+        setAttr(cell, "aria-current", i === state.ui ? "step" : null);
       });
-      $("unitProgress").dataset.state = current.state;
-      $("unitProgress").textContent =
-        unitLabel() + " " +
+      setAttr($("unitProgress"), "data-state", current.state);
+      setText($("unitProgress"), unitLabel() + " " +
         (state.ui + 1) +
         "/" +
         units(b).length +
         " · " +
         names[current.state] +
-        (current.missing.length ? " · " + current.missing.join(" · ") : "");
+        (current.missing.length ? " · " + current.missing.join(" · ") : ""));
       const m = item(),
         status = m ? markStatus(m) : "本" + unitLabel() + "无批注";
-      $("markProgress").dataset.state = status === "已完成" ? "done" : "empty";
-      $("markProgress").textContent = m
+      setAttr($("markProgress"), "data-state", status === "已完成" ? "done" : "empty");
+      setText($("markProgress"), m
         ? "本" + unitLabel() + "第 " +
           (state.mi + 1) +
           "/" +
@@ -1420,7 +1438,7 @@
           marks.length +
           " 条 · " +
           status
-        : status;
+        : status);
     }
     function contextBox(id, parts) {
       const box = $(id);
@@ -2026,14 +2044,14 @@
       const draft = saved ? "草稿仅存浏览器" : stored;
       const m = item(),
         d = m && session.state.drafts[m.marginalia_id];
-      $("draftState").textContent = d
+      setText($("draftState"), d
         ? (d.judgment === "fail" && !d.reason.trim() ? "待补理由 · " : "") + draft
-        : stored;
-      $("unitNoteState").textContent = Object.hasOwn(session.state.unitNoteDrafts, uid(unit()))
+        : stored);
+      setText($("unitNoteState"), Object.hasOwn(session.state.unitNoteDrafts, uid(unit()))
         ? draft
-        : stored;
+        : stored);
       const miss = session.state.missDrafts[uid(unit())];
-      $("missState").textContent = miss ? (miss.reason.trim() ? stored : "待补理由 · " + draft) : "";
+      setText($("missState"), miss ? (miss.reason.trim() ? stored : "待补理由 · " + draft) : "");
     }
     function flushEdits() {
       clearTimeout(editTimer);

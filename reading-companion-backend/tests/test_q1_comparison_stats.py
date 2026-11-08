@@ -62,7 +62,7 @@ def write_rows(folder, rows):
     return raw
 
 
-@pytest.mark.parametrize("version", ["q1-annotator/2.0", "q1-annotator/2.1"])
+@pytest.mark.parametrize("version", ["q1-annotator/2.0", "q1-annotator/2.1", "q1-annotator/2.2"])
 def test_counts_revision_snapshot_and_cross_window_omission_hit(packet, version):
     folder, b, mixed, key = packet
     rows = [record(mixed, w, m) for w in mixed["windows"] for m in w["marginalia"]]
