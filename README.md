@@ -528,6 +528,12 @@ The subsequently authorized C-only recovery uses `.venv/bin/python -m eval.atten
 
 ## Q1 manual error analysis
 
+Annotator 2.0 also supports window-aligned mixed blind comparisons. Use
+`build_q1_comparison.py` and open its output folder; the annotator reads only `mixed.json`.
+Data preparation, the fixed-history Digest output contract, synthetic acceptance and
+statistics instructions are in [comparison workflow](reading-companion-backend/experiments/comparison.md).
+Side-by-side and reveal are deferred. Original single-group batches/journals remain supported.
+
 From `reading-companion-backend/`, sample **one finished book output** with its evaluation-ledger run ID:
 
 ```sh

@@ -304,6 +304,7 @@ def legacy_output(batches, trial):
                 marks.append(
                     {
                         **deepcopy(m),
+                        "body_text": m.get("body_text") or "",
                         "source_id": sid,
                         "run_id": b["run_id"],
                         "unit_id": u["unit_id"],

@@ -141,3 +141,31 @@ Output paths are restricted to backend `state/`, already ignored by Git. Back up
 batch, mixed projection, key, input outputs and journals privately. The mapping is not
 encryption; an operator who reads private files can reveal sources outside the tool.
 There is no reveal UI or preference support in this delivery.
+
+## Annotator 2.0
+
+Open `tools/q1-annotator.html`, then the comparison folder. The tool prefers `mixed.json`;
+only when that file is absent does it try legacy `batch.json`. A malformed mixed file
+does not fall back to canonical data. Single-file import accepts `mixed.json` or a legacy
+batch, never a full comparison manifest. JSON import saves to the browser until a journal
+is connected. Folder import connects the same folder's `judgments.jsonl`.
+
+Existing P/F, reason, star, verification, remarks, arrows, window navigation, source
+selection and append-only autosave remain. Mixed shows only the current mark's anchor,
+with the full quote in the judgment panel; cross-window marks have an explicit notice.
+Density and its shortcuts are disabled, and completion counts judged marks only (empty
+windows therefore need no mark judgments). Completion is not proof of exhaustive omission
+review. Mixed omissions are window-owned, can be edited/removed by appending revisions,
+and do not inherit the old two-omission cap. Legacy mode retains its original behavior.
+
+New mixed rows use `schema: q1-mixed-judgment/1`, `annotator_version: q1-annotator/2.0`,
+`batch_id` and `comparison_batch_id` bound to the mixed fingerprint, `window_id`,
+`view: mixed`, human/rubric identity, monotonic `revision` and UTC `timestamp`.
+`record_type` is `marginalia`, `omission` or the compatible name `unit_note` for a window
+note. Marginalia rows use the anonymous ID as both `record_id` and `marginalia_id`; no
+group/run/model/original ID enters the journal. Other records have null mark judgment
+fields. Omission rows carry `action: save/remove`, exact source quote/range and reason.
+The parser rejects unexpected fields, wrong ownership, changed anchors and conflicting
+journal prefixes. Existing 1.0–1.9 rows are still readable in legacy mode and remain
+byte-identical. Default attribution is `weijiang / open_coding`; published rubric
+selection still uses `annotation-context.json`.

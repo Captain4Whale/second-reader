@@ -243,3 +243,68 @@ test("valid JSON with damaged fields or coordinates is rejected without modifyin
     assert.equal(h.run("session.blocked"), true);
   }
 });
+
+function mixedFixture() {
+  const range = (lo, hi) => ({start:{chapter_id:1,paragraph_index:1,char_offset:lo},end:{chapter_id:1,paragraph_index:1,char_offset:hi}});
+  const batch = {schema:"q1-mixed/1",synthetic:true,windows:[{
+    window_id:"11111111-1111-4111-8111-111111111111",book:"合成",author:null,chapter_title:null,
+    original_source_range:range(0,4),paragraphs:[{index:1,offset:0,text:"甲乙丙丁",href:"s.xhtml"}],before:[],after:["戊己"],
+    marginalia:[{marginalia_id:"22222222-2222-4222-8222-222222222222",type:"N",body_text:"合成旁注",source_quote:"丙丁戊",original_source_range:range(2,5),crosses_boundary:true}],
+  }]};
+  const sort = v => Array.isArray(v) ? v.map(sort) : v && typeof v === "object" ? Object.fromEntries(Object.keys(v).sort().map(k=>[k,sort(v[k])])) : v;
+  batch.batch_id = require("node:crypto").createHash("sha256").update(JSON.stringify(sort(batch))).digest("hex");
+  return batch;
+}
+
+test("blind projection rejects hidden provenance, duplicate IDs and wrong start-owner assignments", async () => {
+  const h = harness();
+  h.c.blind = mixedFixture();
+  await h.run("checkBatch(blind)");
+  for (const mutate of [
+    b=>b.model="secret", b=>b.windows[0].marginalia[0].group="secret",
+    b=>b.windows[0].marginalia.push({...b.windows[0].marginalia[0]}),
+    b=>b.windows[0].marginalia[0].original_source_range.start.char_offset=4,
+    b=>b.windows[0].marginalia[0].crosses_boundary=false,
+  ]) {
+    const b=mixedFixture(); mutate(b); h.c.blind=b;
+    await assert.rejects(h.run("checkBatch(blind)"));
+  }
+});
+
+test("mixed records append no group identity and reject reveal/density/provenance rows", async () => {
+  const h=harness(); h.c.blind=mixedFixture();
+  h.run("session=makeSession(blind,state,handle);batch=blind;");
+  h.run(script.slice(script.indexOf("    function record("),script.indexOf("    function activeMisses(")));
+  h.run('var mark=blind.windows[0].marginalia[0];record("marginalia",mark.marginalia_id,{marginalia_id:mark.marginalia_id,type:mark.type,source_quote:mark.source_quote,body_text:mark.body_text,judgment:"pass",reason:"",remarks:"",star:false,needs_verification:false},mark.original_source_range,mark.original_source_range)');
+  await h.run("session.writes");
+  const r=JSON.parse(h.run("JSON.stringify(state.rows[0])"));
+  assert.equal(r.view,"mixed"); assert.equal(r.comparison_batch_id,h.c.blind.batch_id);
+  for(const k of ["run_id","reading_id","unit_id","group","model","source_range"]) assert.equal(r[k],undefined);
+  assert.equal(h.run('parseJournal(disk,batch).length'),1);
+  for(const changes of [{run_id:"leak"},{record_type:"reveal"},{record_type:"density"},{window_id:"wrong"}]) {
+    h.c.bad={...r,...changes};
+    assert.throws(()=>h.run('parseJournal(JSON.stringify(bad)+"\\n",batch)'));
+  }
+});
+
+test("mixed completion needs judgments, not density; browser restores windows and order", async () => {
+  const h=harness();h.c.blind=mixedFixture();h.run('session=makeSession(blind,state,handle)');
+  h.run(script.slice(script.indexOf("    function activeMisses("),script.indexOf("    function progress(")));
+  assert.deepEqual(Array.from(h.run('unitStatus(unit()).missing')),["剩 1 条未完成"]);
+  h.run('state.drafts[unit().marginalia[0].marginalia_id]={judgment:"pass",reason:""}');
+  assert.equal(h.run('unitStatus(unit()).state'),"done");
+});
+
+test("folder import reads mixed projection without opening private batch or mapping", async () => {
+  const h=harness();h.c.blind=mixedFixture();h.run('var reads=[];dbGet=async()=>undefined;settleCurrent=async()=>{};dbSaveSession=async()=>{};installSession=async s=>{session=s}');
+  h.c.showDirectoryPicker=async()=>({requestPermission:async()=>"granted",getFileHandle:async name=>{
+    h.c.reads.push(name);
+    if(name==="mixed.json") return {getFile:async()=>({text:async()=>JSON.stringify(h.c.blind)})};
+    if(name==="judgments.jsonl") return h.c.handle;
+    if(name==="annotation-context.json") throw Object.assign(Error("missing"),{name:"NotFoundError"});
+    throw Error("private file was accessed");
+  }});
+  await h.run("openFolder()");
+  assert.equal(h.run('session.batch.schema'),"q1-mixed/1");
+  assert.deepEqual(Array.from(h.c.reads),["mixed.json","judgments.jsonl","annotation-context.json"]);
+});
