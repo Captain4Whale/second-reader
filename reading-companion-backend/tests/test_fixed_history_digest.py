@@ -115,3 +115,36 @@ def test_capture_saves_usage_and_messages_without_provider_credentials(tmp_path)
     assert capture.response_usages[0]["input_tokens"] == 12
     assert capture.response_usages[0]["output_tokens"] == 3
     assert all("synthetic-secret" not in p.read_text() for p in tmp_path.iterdir())
+
+
+def test_memory_id_and_order_check_rejects_tampered_serialized_packet(history):
+    packet = history.reconstruct("u000002")
+    assert packet["memory_selection_check"]["id_and_order_equal"]
+    packet["memory_evidence"][0]["unit_id"] = "different-id"
+    with pytest.raises(ValueError, match="IDs/order mismatch"):
+        history.verify_memory_selection(packet)
+
+
+def test_memory_body_chapter_labels_preserved_verbatim(history):
+    text = "Chapter 1 与第2章形成对照；本章的论点不同。"
+    history.by_span["src:c1:p0@0-p0@1"]["digest"]["understanding"]["content"] = text
+    history.audit["src:c1:p0@0-p0@1"]["understanding"] = text
+    packet = history.reconstruct("u000002")
+    assert packet["memory_selection_check"]["body_labels"][0]["labels"] == ["Chapter 1", "第2章"]
+    packet["reading_memory_lines"][0] = packet["reading_memory_lines"][0].replace("Chapter 1", "第1章")
+    with pytest.raises(ValueError, match="body/label text mismatch"):
+        history.verify_memory_selection(packet)
+
+
+def test_memory_order_check_rejects_reversed_input(history):
+    packet = history.reconstruct("u000002")
+    older = {**history.selections[0]["rendered_hot_units"][0], "unit_id": "older-id", "unit_index": 0}
+    history.selections[0]["rendered_hot_units"].append(older)
+    history.selections[0]["line_count"] = 2
+    packet["memory_evidence"].append(older)
+    packet["reading_memory_lines"].append("P0 U0: 历史记忆")
+    assert history.verify_memory_selection(packet)["ordered_ids"] == ["old-recent-id", "older-id"]
+    packet["memory_evidence"].reverse()
+    packet["reading_memory_lines"].reverse()
+    with pytest.raises(ValueError, match="IDs/order mismatch"):
+        history.verify_memory_selection(packet)

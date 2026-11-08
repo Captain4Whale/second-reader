@@ -15,14 +15,17 @@
       ],
       "decision_refs": [],
       "job_refs": [
-        "bgjob_q1_digest_fixed_history_20261108_A1_pilot"
+        "bgjob_q1_digest_fixed_history_20261108_A1_pilot",
+        "bgjob_q1_digest_fixed_history_20261108_A1_full"
       ],
       "blocked_by": [],
-      "next_action": "Wait for owner review of single Bovary u000006 A1 pilot (0 H / 1 N); do not start remaining units, A2 or B without confirmation.",
+      "next_action": "Owner reviews the completed 16-unit A1 report and fixed two-book side-by-side examples. A2/B must not start before confirmation.",
       "evidence_refs": [
         "reading-companion-backend/eval/attentional_v2/fixed_history_digest.py",
         "reading-companion-backend/tests/test_fixed_history_digest.py",
-        "reading-companion-backend/state/experiments/q1_digest_fixed_history_20261108/pilot-summary.json"
+        "reading-companion-backend/state/experiments/q1_digest_fixed_history_20261108/pilot-summary.json",
+        "reading-companion-backend/state/experiments/q1_digest_fixed_history_20261108/A1-full/report.md",
+        "reading-companion-backend/state/experiments/q1_digest_fixed_history_20261108/A1-full/validation-summary.json"
       ],
       "last_updated": "2026-11-08",
       "last_updated_by": "codex"

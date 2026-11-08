@@ -130,7 +130,7 @@ class HistoricalRun:
         if len(lines) != selection["line_count"]:
             raise ValueError("Historical ReadingMemory line count mismatch")
         chapter = next(x for x in self.document["chapters"] if x["id"] == span["chapter_id"])
-        return {
+        packet = {
             "schema": "fixed-history-digest-input/1", "reconstructed": True,
             "original_run_id": self.run_id, "unit_id": unit_id,
             "source_span_id": span["source_span_id"], "current_unit_source": source,
@@ -156,6 +156,59 @@ class HistoricalRun:
             "limitations": ["No observed historical request hash or complete retry/repair body.",
                             "Memory text reconstructed from retained historical Understanding by selected span."],
         }
+        packet["memory_selection_check"] = self.verify_memory_selection(packet)
+        return packet
+
+    def verify_memory_selection(self, packet):
+        """Check a serialized packet independently against the historical trace/audit.
+
+        Trace arrays retain their per-origin order. The historical runner merges
+        hot + retrieved records by descending unit_index (stable sort), without
+        adding chapter labels. Check actual line text as well as every ID/order.
+        """
+        selections = [x for x in self.selections
+                      if x["source_span_id"] == packet["source_span_id"]
+                      and stamp(x["recorded_at"]) <= stamp(packet["accepted_call"]["started_at"])]
+        if not selections:
+            raise ValueError("Memory selection verification: missing original trace")
+        trace = max(selections, key=lambda x: stamp(x["recorded_at"]))
+        actual = packet["memory_evidence"]
+        identities = lambda records: [(x["origin"], x["unit_id"], x["source_span_id"], int(x["unit_index"])) for x in records]
+        original = []
+        for origin, field in (("hot", "rendered_hot_units"), ("retrieved", "rendered_retrieved_units")):
+            expected = trace[field]
+            if any(x["origin"] != origin for x in expected):
+                raise ValueError("Memory selection verification: trace origin mismatch")
+            if identities([x for x in actual if x["origin"] == origin]) != identities(expected):
+                raise ValueError(f"Memory selection verification: {origin} IDs/order mismatch")
+            original.extend(expected)
+        original.sort(key=lambda x: int(x["unit_index"]), reverse=True)
+        if identities(actual) != identities(original) or len(actual) != trace["line_count"]:
+            raise ValueError("Memory selection verification: merged IDs/order mismatch")
+        if packet["selection_recorded_at"] != trace["recorded_at"]:
+            raise ValueError("Memory selection verification: attempt/trace mismatch")
+        expected_lines, label_findings = [], []
+        label_pattern = re.compile(r"\bChapter\s+(?:\d+|[IVXLCDM]+)\b|第[零〇一二三四五六七八九十百千万两0-9]+[章节卷部篇]", re.I)
+        for record in original:
+            # Audit is the original settled model Understanding, not a freshly
+            # rendered or renamed value from the later reconciled memory DB.
+            body = self.audit[record["source_span_id"]]["understanding"].strip()
+            paragraph = int(re.search(r":p(\d+)@", record["source_span_id"])[1])
+            expected_lines.append(f"P{paragraph} U{record['unit_index']}: {body}")
+            labels = label_pattern.findall(body)
+            if labels:
+                label_findings.append({"unit_id": record["unit_id"], "labels": labels,
+                                       "body_sha256": sha(body.encode()), "matches_original_audit": True})
+        if packet["reading_memory_lines"] != expected_lines:
+            raise ValueError("Memory selection verification: body/label text mismatch")
+        return {"status": "matched", "trace_recorded_at": trace["recorded_at"],
+                "ordered_ids": [x["unit_id"] for x in original],
+                "hot_ids": [x["unit_id"] for x in trace["rendered_hot_units"]],
+                "retrieved_ids": [x["unit_id"] for x in trace["rendered_retrieved_units"]],
+                "id_and_order_equal": True, "complete_line_text_equal": True,
+                "body_labels": label_findings,
+                "label_scan": "Chapter N/Roman or 第…章/节/卷/部/篇; all body text is checked verbatim regardless of matches",
+                "render_order_basis": "historical runner hot+retrieved stable descending unit_index"}
 
     def check_manifest(self):
         packet = self.reconstruct(self.spans[-1]["unit_id"])

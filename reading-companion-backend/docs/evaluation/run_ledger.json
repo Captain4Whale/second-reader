@@ -1,6 +1,6 @@
 {
   "schema_version": 1,
-  "updated_at": "2026-11-08T04:17:55.523108Z",
+  "updated_at": "2026-11-08T04:47:32.500690Z",
   "entries": [
     {
       "run_id": "attentional_v2_excerpt_surface_v1_1_judged_20260406",
@@ -4013,21 +4013,27 @@
       "dataset_or_manifest": [
         "reading-companion-backend/experiments/unit-sets/dev-v1.json"
       ],
-      "run_dir": "/Users/baiweijiang/.codex/worktrees/q1-digest-replay/reading-companion/reading-companion-backend/state/experiments/q1_digest_fixed_history_20261108",
+      "run_dir": "/Users/baiweijiang/.codex/worktrees/q1-digest-replay/reading-companion/reading-companion-backend/state/experiments/q1_digest_fixed_history_20261108/A1-full",
       "summary_paths": {
         "pilot_preflight": "/Users/baiweijiang/.codex/worktrees/q1-digest-replay/reading-companion/reading-companion-backend/state/experiments/q1_digest_fixed_history_20261108/pilot-preflight/summary.json",
         "manifest_checks": "/Users/baiweijiang/.codex/worktrees/q1-digest-replay/reading-companion/reading-companion-backend/state/experiments/q1_digest_fixed_history_20261108/pilot-preflight/manifest-checks.json",
         "pilot_summary": "/Users/baiweijiang/.codex/worktrees/q1-digest-replay/reading-companion/reading-companion-backend/state/experiments/q1_digest_fixed_history_20261108/pilot-summary.json",
-        "pilot_result": "/Users/baiweijiang/.codex/worktrees/q1-digest-replay/reading-companion/reading-companion-backend/state/experiments/q1_digest_fixed_history_20261108/A1/bovary/u000006/result.json"
+        "pilot_result": "/Users/baiweijiang/.codex/worktrees/q1-digest-replay/reading-companion/reading-companion-backend/state/experiments/q1_digest_fixed_history_20261108/A1/bovary/u000006/result.json",
+        "full_A1_preflight": "/Users/baiweijiang/.codex/worktrees/q1-digest-replay/reading-companion/reading-companion-backend/state/experiments/q1_digest_fixed_history_20261108/A1-full/preflight.json",
+        "A1_summary": "/Users/baiweijiang/.codex/worktrees/q1-digest-replay/reading-companion/reading-companion-backend/state/experiments/q1_digest_fixed_history_20261108/A1-full/summary.json",
+        "A1_validation": "/Users/baiweijiang/.codex/worktrees/q1-digest-replay/reading-companion/reading-companion-backend/state/experiments/q1_digest_fixed_history_20261108/A1-full/validation-summary.json",
+        "baseline_product_checks": "/Users/baiweijiang/.codex/worktrees/q1-digest-replay/reading-companion/reading-companion-backend/state/experiments/q1_digest_fixed_history_20261108/A1-full/baseline-product-checks.json"
       },
       "job_ids": [
-        "bgjob_q1_digest_fixed_history_20261108_A1_pilot"
+        "bgjob_q1_digest_fixed_history_20261108_A1_pilot",
+        "bgjob_q1_digest_fixed_history_20261108_A1_full"
       ],
       "report_paths": [
-        "docs/tasks/q1-digest-replay-2026-11-08.md"
+        "docs/tasks/q1-digest-replay-2026-11-08.md",
+        "/Users/baiweijiang/.codex/worktrees/q1-digest-replay/reading-companion/reading-companion-backend/state/experiments/q1_digest_fixed_history_20261108/A1-full/report.md"
       ],
       "catalog_status": "not_cataloged",
-      "notes": "Single authorized Bovary u000006 A1 completed: 1 Note, 0 Highlights, one physical request, 9224 input/324 output tokens. Exact quote/range verified; source output 279 files byte-identical. No quality judgment. Other units, A2 and B require owner confirmation. Both last-unit manifest checks pass; full ledger/agent-check passes with 17 source-identical warnings."
+      "notes": "A1 only completed all 16 registered units: approved pilot reused, 15 new requests; original 34 marks (9 H/25 N), A1 31 (10 H/21 N). 105 memory-line occurrences match original trace IDs/order and audit text. All 473 original output files unchanged; all anchors exact. A1 156855 input/7647 output tokens including pilot; actual billed cost unknown. Descriptive comparison only; A2/B not started and require owner confirmation."
     }
   ]
 }

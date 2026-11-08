@@ -1,6 +1,6 @@
 # Fixed-history Digest rerun diagnostic
 
-Status: waiting for owner review of the completed single A1 pilot, 2026-11-08.
+Status: waiting for owner review of the completed 16-unit A1 diagnostic, 2026-11-08.
 Branch: `codex/q1-digest-replay`, base `b5fa38c` (comparison import contract present).
 
 ## Authorized scope
@@ -30,8 +30,9 @@ configuration bundle. It does not alone isolate a prompt effect or model-only ef
 - Tests: accepted-attempt/time ordering, historical memory conflict/future rejection,
   source drift rejection, default selected prompt byte equivalence and unknown version.
 
-The invocation helper completed one live A1 pilot after the follow-up authorization
-below. The full diagnostic, comparative report and blind batch have not been created.
+The invocation helper completed the A1 pilot and the subsequent authorized 16-unit
+A1 continuation below. A1's comparison report is complete. A2, B and the mixed blind
+batch have not been run/created; A2/B require another owner confirmation.
 
 ## Fail-stop evidence
 
@@ -156,5 +157,86 @@ Private outputs: `state/experiments/q1_digest_fixed_history_20261108/pilot-summa
 response, result and invocation provenance). The experiment log retains the requested
 hypothesis and baseline linkage, with status `pilot_review_pending` and no pass rate.
 
-**Next gate: wait for owner confirmation before any other unit, A2 or B.** The pilot
-should be reused as this unit's A1 sample, not regenerated to seek a different output.
+The owner accepted the pilot and subsequently authorized **A1 only** over the full
+registered 16-unit selection. The pilot is reused as this unit's A1 sample, never
+regenerated to seek a different output. A2 and B remain confirmation-gated.
+
+## A1-only continuation
+
+State: all 16 A1 units completed; owner review pending. One approved pilot was
+reused and 15 new requests were made. No A2/B calls were made.
+
+`HistoricalRun.verify_memory_selection` now independently checks serialized input
+against the chosen original trace's hot and retrieved IDs/order, the historical
+stable descending `unit_index` merge, and each complete memory line derived from
+the original audit Understanding. The per-unit check is saved with the result's
+verification receipt. A mismatch stops before the affected call. The approved
+pilot's original input and rendered prompt are checked under the same rule.
+
+All 16 units passed preflight. No memory body matched the explicit chapter-label
+scan (`Chapter N`/Roman numeral or `第…章/节/卷/部/篇`); regardless of scan results,
+the full bodies are compared verbatim, including every possible label. Both books'
+last-unit manifest checks pass. All 16 baseline audit mark lists and Unit source
+ranges also match the hash-verified immutable Reading Products exactly.
+
+The A1-only runner is `scripts/run_fixed_history_a1.py`; it freezes all inputs
+before generation, runs serially, reuses existing matching outputs, validates exact
+anchors and writes reports under ignored `state/experiments/q1_digest_fixed_history_20261108/A1-full/`.
+Job `bgjob_q1_digest_fixed_history_20261108_A1_full` owns this continuation. The
+pre-generation example selection is Bovary `u000006` and Sapiens `u000015`, the first
+specified unit from each book. Side-by-side ordering does not assert semantic pairs.
+No annotator/comparison implementation or original annotation journal is modified.
+
+Per-unit comparisons use all Product-accepted historical marks and all generated
+A1 marks, not just the first batch's sampled annotated marks. Note average length
+uses stripped visible-body Unicode code points, including punctuation, excluding
+quotes/private selection reasons. No Notes => null / `—`. Aggregate averages use
+total body length divided by total Note count. Sentence-end and question-mark counts
+are descriptive surface features, not a quality judgment or causal explanation.
+
+### Completed A1 evidence
+
+- Every unit's serialized input passes the original trace ID/order check before its
+  model call, including the reused pilot. **105 memory-line occurrences** across
+  the 16 inputs pass the complete-text audit check. No explicit chapter labels were
+  detected by the documented scan; no text or label was rewritten.
+- Both final-unit system/user manifest checks still pass. Every generated source
+  quote has a unique exact anchor. All source output files retain their before-run
+  SHA-256 values: **Bovary 279 + Sapiens 194 = 473 files**.
+- Actual serialized system/user prompts, request hashes, effective sampling and
+  provider-reported model are independently verified for all 16 A1 requests against
+  the frozen preflight/original sampling receipts.
+- Original: **34 marks, 9 H / 25 N**, total Note body length 2,323 characters,
+  average **92.92**. A1: **31 marks, 10 H / 21 N**, total Note body length 1,868,
+  average **88.95238095**. Counts and lengths were independently recomputed from
+  immutable Product (original) and the actual provider tool-call payloads (A1).
+- A1 total usage, including pilot: **156,855 input + 7,647 output = 164,502 tokens**.
+  Continuation alone: **147,631 input + 7,323 output = 154,954 tokens**. There are
+  16 logical/physical requests in total, one per unit, with no structural repair or
+  failed attempt. Cache-read and reasoning-token usage were both reported as zero.
+  Actual billed cost is unknown; no zero-cost or API-price estimate is asserted.
+- Fixed side-by-side examples: Bovary `u000006`, Sapiens `u000015`, complete quote
+  and Note body from both versions. The per-unit 16-row table also includes H/N
+  and Note average length; the appendix counts sentence-end punctuation/questions.
+  No human quality score, causal conclusion or hypothesis verdict is produced.
+- Job `bgjob_q1_digest_fixed_history_20261108_A1_full` completed; run
+  `q1_digest_fixed_history_20261108_A1` is `review_pending`. The experiment keeps
+  the requested hypothesis and original-run/first-batch baseline, with A2/B
+  explicitly `not_started`.
+
+Private evidence under `state/experiments/q1_digest_fixed_history_20261108/A1-full/`:
+`report.md`, `summary.json`, `validation-summary.json`, `baseline-product-checks.json`,
+`request-fidelity-checks.json`, `preflight.json`, per-unit `preflight/` and `verification/`, and the before/after source
+fingerprint inventories. Per-unit actual requests/responses remain under `../A1/`.
+The generation ran at code `88bd98a` plus fully captured staged/unstaged invocation
+patches. The report renderer was subsequently formatted without further model calls.
+
+Final verification: 55 focused tests passed, three immutable prompt releases and
+iteration provenance validated, full run-ledger check passed, and full agent-check
+(including 55 contract tests and frontend/OpenAPI checks) passed. Its 17 traceability
+warnings match the original workspace exactly; none were suppressed.
+
+Next action: owner reviews A1. **Do not run A2 or B without confirmation.** No
+annotator/comparison implementation changes or push. No decision-log update is
+needed for a bounded mechanical check and descriptive comparison with no mechanism
+or product direction change.

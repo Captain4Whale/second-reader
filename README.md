@@ -1,11 +1,19 @@
 # Reading Companion Workspace
 
-Fixed-history Digest replay has completed the authorized Bovary `u000006` A1 pilot;
-remaining units/A2/B await owner confirmation. See [status and evidence](docs/tasks/q1-digest-replay-2026-11-08.md).
+Fixed-history Digest replay completed the authorized 16-unit A1 diagnostic,
+reusing the accepted `u000006` pilot. A2/B await owner confirmation.
+See [status and evidence](docs/tasks/q1-digest-replay-2026-11-08.md).
 From the backend, reconstruct without calling a model with
 `.venv/bin/python scripts/rerun_fixed_history_digest.py --source-backend /absolute/original/backend --run-id RUN --unit-id UNIT --output state/experiments/NEW-DIR --prepare-only`.
 The CLI also accepts `--model`, `--reasoning-effort` and `--prompt-version` for an
 authorized live invocation. One pilot does not establish all-unit acceptance.
+
+For the registered A1-only selection, run `scripts/run_fixed_history_a1.py` with
+`--source-backend SOURCE --output-root state/experiments/q1_digest_fixed_history_20261108`
+to freeze and verify inputs, then add `--execute` to consume that preflight. Existing
+results are reused only after matching their model/config and full rendered input.
+ID/order/body mismatches stop before the affected model call; reports stay under
+the ignored `A1-full/` output directory. No A2/B generation is part of this command.
 
 Purpose: provide setup, run, environment, local URL, and verification information for the workspace.
 Use when: installing dependencies, starting local services, checking env vars, or running validation commands.

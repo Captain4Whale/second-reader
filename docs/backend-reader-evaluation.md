@@ -1188,6 +1188,18 @@ historical artifacts are read-only inputs; invocation outputs, provider runtime
 state, job records and logs must remain local writable artifacts. Full ledger and
 traceability checks must inspect the mounted inputs, not waive missing evidence.
 
+For every fixed-history unit, compare reconstructed hot/retrieved IDs and their
+per-origin order to the original selection trace for the accepted attempt. Also
+check the merged prompt order using the historical renderer's ordering rule and
+compare complete rendered memory lines to the original settled Understanding
+text. Preserve chapter labels inside memory bodies verbatim; display-label
+normalization must not rewrite body text. Any ID/order/body mismatch stops that
+unit before a model call. A reused diagnostic result must pass the same checks.
+For descriptive mark comparisons, Note length is the Unicode code-point count
+of the stripped visible body, including punctuation, excluding source quote,
+Highlight and private selection reason. No Notes means an unavailable mean,
+not zero. Fix visual-example units before generation and retain their full marks.
+
 The existing standard LLM ledger now records allowlisted effective sampling settings, prompt version and code commit/dirty state for each node. Arbitrary provider options, credentials and headers are never copied. A compact `runtime/run_configuration.json` companion joins those existing records with all prompt versions, the verified chapter-plan fingerprint and requested/actual retrieval metadata. `classification_calls` preserves the receipts of the reused plan; `model_calls` and ledger start/end delimit the current parse/read/resume invocation. Each invocation, including failures, appends its configuration receipt to the existing diagnostics event stream. Normalized eval bundles and internal ParseResult/ReadResult summaries expose the same snapshot; public HTTP/Product/Pack contracts do not change.
 
 The plan fingerprint excludes timestamps and invocation receipt IDs, so repeated identical planning outputs have the same identity. This records comparability conditions; it does not claim that real model outputs are deterministic. `code_dirty=true` explicitly marks validation of uncommitted code. An unavailable Git checkout is recorded as unknown, never as a fabricated revision. Configuration evidence and all generated offline probes remain ignored runtime artifacts.
