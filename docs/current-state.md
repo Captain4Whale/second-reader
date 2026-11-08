@@ -7,10 +7,11 @@ Update when: the current objective, active tasks, blockers, active jobs, open de
 
 This file is authoritative for durable current status. Do not keep unique active-state information only in `docs/agent-handoff.md`.
 
-Last verified: `2026-11-01` (Step 0 scope; prior experiment review states retained)
+Last verified: `2026-11-08` (Q1 provenance scope; earlier review states retain their original evidence boundaries)
 
 ## Current Objective
-- `TASK-Q1-MANUAL-ANNOTATION` is complete on `codex/q1-error-annotation`. The sampler and local HTML are ready for human review after the separate book runs finish. Both finished pilots were checked (18 Units, 31 anchors); test judgments were isolated from the empty reviewer journals. [Operator steps](../README.md#q1-manual-error-analysis).
+- `TASK-Q1-VERSIONING-SKELETON` is complete on `codex/q1-versioning-skeleton`: runtime-loaded immutable prompt versions, private few-shot assets, request hashes/samples and dirty patches; frozen dev (67 units) / holdout (75 units); baseline registered with pass rate null; 605 historical revisions attributed to `weijiang / open_coding` without edits. `q1-v0` is draft; no model or push. [Execution](tasks/q1-versioning-skeleton-2026-11-08.md), [authority](../reading-companion-backend/experiments/README.md).
+- `TASK-Q1-MANUAL-ANNOTATION` tooling is complete; the two full-book first batches now contain judgments for all 110 sampled marks. The journals remain private in the annotation worktree. Use this branch's annotator 1.9 for new attributed rows, keep holdout untouched, and do not resample. [Operator steps](../README.md#q1-manual-error-analysis).
 - `TASK-STEP1-PREREQS` is complete on `codex/step1-prereqs`: chapter planner naming, frozen reading plan, explicit retrieval and reproducible configuration records. Offline substitutes only; backend 1768 passed, frontend/contracts passed, 17 unchanged traceability warnings; no push or evaluation redesign. [Execution](tasks/step1-prereqs-2026-11-01.md).
 - `TASK-LIGHTWEIGHT-CLEANUP-STEP0` is complete under `DEC-160`: iterator execution/dual branches and slow-cycle model/state branches removed; current Product/UI projection, Pack, notes evaluation and cost telemetry retained. Only post-cleanup runs resume; old checkpoints explicitly point to tag `pre-cleanup-2026-11`. See [execution](tasks/lightweight-cleanup-step0-execution-2026-11-01.md) and [evolution](reading-mechanism-evolution-step0.md).
 - `TASK-RESUME-READING-PLAN-FREEZE` is now done in the Step 1 prerequisites branch: verified plan reuse, fail-closed resume, and offline interruption evidence. Explicit retrieval and run configuration records are also complete. Await the user's Step 1 evaluation-design instructions; do not start new evaluation by inertia.
@@ -3623,7 +3624,7 @@ Last verified: `2026-11-01` (Step 0 scope; prior experiment review states retain
 ## Machine-Readable Appendix
 ```json
 {
-  "updated_at": "2026-11-01T20:16:54+08:00",
+  "updated_at": "2026-11-08T09:56:19+08:00",
   "last_updated_by": "codex",
   "active_task_ids": [
     "TASK-ATTENTIONAL-V2-STRUCTURAL-REWORK",
@@ -3642,6 +3643,7 @@ Last verified: `2026-11-01` (Step 0 scope; prior experiment review states retain
   "active_job_ids": [],
   "open_decision_ids": [],
   "detail_refs": [
+    "docs/tasks/q1-versioning-skeleton-2026-11-08.md",
     "docs/tasks/step1-prereqs-2026-11-01.md",
     "docs/tasks/lightweight-cleanup-step0-execution-2026-11-01.md",
     "docs/implementation/reading-product/reading-product-output-v1-detailed-design-and-implementation-handoff.md",

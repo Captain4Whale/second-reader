@@ -74,6 +74,7 @@ Update when: backend-local constraints, recurring pitfalls, or stable implementa
 - Keep each major LangGraph or workflow node as an independent function when possible.
 - Keep shared prompt fragments and cross-mechanism capability prompt families under `src/prompts/`.
 - Keep mechanism-private prompt bundles with the mechanism implementation that owns them.
+- Published prompt text loads only from version files, with immutable registered dependencies. Q1 rubric/trial/judgment provenance and private-asset provisioning follow `experiments/README.md`; never restore an inline second copy or omit missing few-shot assets silently.
 - Keep tool definitions under `src/tools/`.
 - Keep canonical book substrate, shared runtime contracts, and cross-mechanism normalized output types in `src/reading_core/`.
 - Keep the deterministic EPUB-to-`BookDocument` builder in `src/reading_core/epub_document.py`; normal parsing and publication-identity reparse must reuse it. The builder stays free of filesystem writes, LLM calls, source normalization, and existing-artifact reuse.

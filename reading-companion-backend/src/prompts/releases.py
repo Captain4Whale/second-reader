@@ -19,7 +19,9 @@ def read_texts(path: Path, *, private_assets: Path | None = None) -> dict[str, s
         digest = match[1]
         asset = (private_assets or PRIVATE_ASSETS) / f"{digest}.txt"
         if not asset.is_file():
-            raise FileNotFoundError(f"Required private prompt asset missing: {asset}. See experiments/README.md; no example-free fallback is permitted.")
+            raise FileNotFoundError(
+                f"Required private prompt asset missing: {asset}. See experiments/README.md; no example-free fallback is permitted."
+            )
         raw = asset.read_bytes()
         if sha256(raw).hexdigest() != digest:
             raise ValueError(f"Private prompt asset SHA-256 mismatch: {asset}")

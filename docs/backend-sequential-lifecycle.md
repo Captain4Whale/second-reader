@@ -1,5 +1,12 @@
 # Backend Sequential Lifecycle
 
+Run provenance is additive to this lifecycle: parse/read and resume invocations retain
+their own ignored `_runtime/provenance/<invocation_id>/` receipts, complete logical
+prompt samples and dirty-workspace patch. Current mechanism `run_configuration.json`
+links the invocation, versioned fixed-text hashes and standard request hashes; earlier
+receipts survive later resumes. See `reading-companion-backend/experiments/README.md`.
+This changes neither cursor/settlement ordering nor resume acceptance rules.
+
 Purpose: explain the system-level lifecycle for the current sequential deep-reading workflow.
 Use when: changing upload/start/resume behavior, job status semantics, runtime recovery, or live progress surfaces.
 Not for: function-level implementation details, public schema authority, or the older `book_analysis` capability.

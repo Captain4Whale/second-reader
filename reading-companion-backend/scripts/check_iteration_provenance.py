@@ -62,7 +62,10 @@ def validate_trial(row, root=BACKEND):
     }
     if not required <= row.keys() or not row["run_ids"]:
         raise ValueError("Trial lacks required fields/run IDs")
-    if len(row["changed_variables"]) > 1:
+    if (
+        not isinstance(row["changed_variables"], list)
+        or len(row["changed_variables"]) > 1
+    ):
         raise ValueError("A trial may change only one variable")
     if row["phase"] not in {"baseline", "iteration", "final_validation"}:
         raise ValueError("Unknown trial phase")
@@ -71,7 +74,9 @@ def validate_trial(row, root=BACKEND):
         raise ValueError("Unit manifest hash mismatch")
     if load(manifest)["purpose"] == "holdout" and row["phase"] != "final_validation":
         raise ValueError("Holdout is reserved for final validation")
-    rubric_identity(row["rubric_version"], root)
+    rubric = rubric_identity(row["rubric_version"], root)
+    if row.get("rubric_sha256") != rubric["rubric_sha256"]:
+        raise ValueError("Trial rubric fingerprint mismatch")
     if row.get("annotations"):
         annotation = row["annotations"]
         lines = (root / annotation["path"]).read_bytes().splitlines(keepends=True)

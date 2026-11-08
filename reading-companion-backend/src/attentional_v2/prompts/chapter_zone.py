@@ -16,8 +16,8 @@ CHAPTER_ZONE_PROMPT = PromptDefinition(
     owner_node='chapter_zone',
     status='active',
     purpose='Classify one chapter functional role in the book-level reading order.',
-    system_prompt=prompt_text('chapter_zone', 'v2', 'system_prompt'),
-    user_prompt_template=prompt_text('chapter_zone', 'v2', 'user_prompt_template'),
+    system_prompt=prompt_text('chapter_zone', CHAPTER_ZONE_PROMPT_VERSION.rsplit('.', 1)[1], 'system_prompt'),
+    user_prompt_template=prompt_text('chapter_zone', CHAPTER_ZONE_PROMPT_VERSION.rsplit('.', 1)[1], 'user_prompt_template'),
     required_inputs=('book_frame', 'chapter_sample', 'neighbor_titles', 'heuristic_hint'),
     output_contract='chapter_zone_json_v1',
 )

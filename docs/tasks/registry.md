@@ -29,6 +29,7 @@ Last updated: `2026-11-03`
 
 ## Done
 
+- `TASK-Q1-VERSIONING-SKELETON` — completed prompt/rubric/trial/judgment provenance under `DEC-161`; dev 67 / holdout 75 units, first-batch attribution preserved, baseline pass rate blank. [Execution](q1-versioning-skeleton-2026-11-08.md), [operator authority](../../reading-companion-backend/experiments/README.md).
 - `TASK-Q1-MANUAL-ANNOTATION` — completed offline sampling and human annotation tooling. Both pilot batches retain all 31 mark anchors; Chrome close/reopen and export round-trip were verified, including blank Units, cross-paragraph omissions and judgment history. [Usage](../../README.md#q1-manual-error-analysis).
 
 ### `TASK-READING-PRODUCT-XIDADUO-FULL-BOOK-LIVE-ACCEPTANCE` — Run production-scale Xidaduo Reading Product and Annotation Pack acceptance

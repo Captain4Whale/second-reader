@@ -1,7 +1,34 @@
 {
   "version": 1,
-  "updated_at": "2026-11-03T21:38:26+08:00",
+  "updated_at": "2026-11-08T09:56:19+08:00",
   "tasks": [
+    {
+      "id": "TASK-Q1-VERSIONING-SKELETON",
+      "title": "Version Q1 prompts, rubrics, trials and human judgments",
+      "status": "done",
+      "lane": "mechanism_eval",
+      "priority": "high",
+      "detail_ref": "docs/tasks/q1-versioning-skeleton-2026-11-08.md",
+      "acceptance_ref": "docs/tasks/q1-versioning-skeleton-2026-11-08.md#boundaries-and-verification",
+      "truth_refs": [
+        "docs/backend-reader-evaluation.md",
+        "reading-companion-backend/experiments/README.md"
+      ],
+      "decision_refs": [
+        "DEC-161"
+      ],
+      "job_refs": [],
+      "blocked_by": [],
+      "next_action": "Owner fills baseline pass_rate and defines a new published rubric before scoring; keep holdout reserved for final validation. No further model work or push authorized.",
+      "evidence_refs": [
+        "reading-companion-backend/experiments/log.jsonl",
+        "reading-companion-backend/experiments/frozen.json",
+        "reading-companion-backend/experiments/annotations/legacy-context.jsonl",
+        "docs/tasks/q1-versioning-skeleton-2026-11-08.md"
+      ],
+      "last_updated": "2026-11-08T09:56:19+08:00",
+      "last_updated_by": "codex"
+    },
     {
       "id": "TASK-Q1-MANUAL-ANNOTATION",
       "title": "Seeded Q1 unit batches and local human annotation journal",
@@ -16,7 +43,7 @@
       "decision_refs": [],
       "job_refs": [],
       "blocked_by": [],
-      "next_action": "Generate formal batches from the completed book outputs when available for human review.",
+      "next_action": "Preserve completed first-batch open coding and use annotator 1.9 for new attributed append-only judgments; do not resample or inspect holdout.",
       "evidence_refs": [
         "reading-companion-backend/scripts/sample_q1_annotations.py",
         "reading-companion-backend/tools/q1-annotator.html"

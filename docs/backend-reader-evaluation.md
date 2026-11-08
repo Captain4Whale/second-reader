@@ -1,5 +1,23 @@
 # Backend Reader Evaluation
 
+## Q1 iteration provenance
+
+The operational authority is `reading-companion-backend/experiments/README.md`.
+Each trial names a frozen unit manifest, prompt versions and release/request hashes,
+run IDs, rubric version, results and conclusion; iterations change at most one variable.
+Dev is the 67 units from Bovary batch 1 plus Sapiens batch 1. Holdout is the 75 units
+from Bovary batches 2/3 and is reserved for final validation; do not inspect or label it
+during iteration. Existing first-batch judgments are attributed to `weijiang` using
+append-only prefix-bound overlays and remain `open_coding` (no rubric). The initial
+`q1-v0` is a frozen draft, not an approved scoring rule; baseline pass rate stays blank.
+
+Every reader invocation and direct eval trace scope records actual logical request
+hashes in standard mode, retains complete prompt samples privately, and snapshots dirty
+tracked changes as a base-commit-bound patch. Untracked file hashes and an explicit
+incomplete-reproduction flag prevent treating that patch as a complete source snapshot.
+Do not infer historical observed request hashes from reconstructed release hashes:
+the Q1 baseline records that distinction and the limits of recovered dirty-state evidence.
+
 Purpose: define the stable constitution for evaluating reader quality across current and future mechanisms.
 Use when: aligning eval work to product purpose, choosing between reader mechanisms, deciding what belongs in stable methodology versus benchmark reports, or designing offline reader evals.
 Not for: public API contract authority, runtime lifecycle semantics, prompt-text authority, or one-off benchmark conclusions.

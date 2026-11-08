@@ -20,48 +20,48 @@ from .types import PromptDefinition
 INGEST_PROMPT_VERSION = "attentional_v2.ingest.v19"
 INGEST_XML_PROMPT_ASSEMBLY_SPEC_ID = "attentional_v2.ingest.xml.v19"
 INGEST_XML_PROMPTSET_VERSION = "attentional_v2-phase6-v76"
-INGEST_TRANSPORT_SYSTEM_PROMPT = prompt_text('ingest', 'v19', 'transport_system')
+INGEST_TRANSPORT_SYSTEM_PROMPT = prompt_text('ingest', INGEST_PROMPT_VERSION.rsplit('.', 1)[1], 'transport_system')
 
 
 INGEST_CURRENT_STEP_FRAGMENT = PromptFragment(
     fragment_id="ingest.current_step",
-    text=prompt_text('ingest', 'v19', 'ingest.current_step'),
+    text=prompt_text('ingest', INGEST_PROMPT_VERSION.rsplit('.', 1)[1], 'ingest.current_step'),
 )
 
 
 INGEST_CONTEXT_USE_GUIDE_FRAGMENT = PromptFragment(
     fragment_id="ingest.context_use_guide",
-    text=prompt_text('ingest', 'v19', 'ingest.context_use_guide'),
+    text=prompt_text('ingest', INGEST_PROMPT_VERSION.rsplit('.', 1)[1], 'ingest.context_use_guide'),
 )
 
 
 INGEST_SELECT_NEXT_UNIT_FRAGMENT = PromptFragment(
     fragment_id="ingest.select_next_unit",
-    text=prompt_text('ingest', 'v19', 'ingest.select_next_unit'),
+    text=prompt_text('ingest', INGEST_PROMPT_VERSION.rsplit('.', 1)[1], 'ingest.select_next_unit'),
 )
 
 
 INGEST_RECALL_PRIOR_READING_FRAGMENT = PromptFragment(
     fragment_id="ingest.recall_prior_reading",
-    text=prompt_text('ingest', 'v19', 'ingest.recall_prior_reading'),
+    text=prompt_text('ingest', INGEST_PROMPT_VERSION.rsplit('.', 1)[1], 'ingest.recall_prior_reading'),
 )
 
 
 INGEST_EXECUTION_LIMITS_FRAGMENT = PromptFragment(
     fragment_id="ingest.execution_limits",
-    text=prompt_text('ingest', 'v19', 'ingest.execution_limits'),
+    text=prompt_text('ingest', INGEST_PROMPT_VERSION.rsplit('.', 1)[1], 'ingest.execution_limits'),
 )
 
 
 INGEST_OUTPUT_FIELDS_FRAGMENT = PromptFragment(
     fragment_id="ingest.output_fields",
-    text=prompt_text('ingest', 'v19', 'ingest.output_fields'),
+    text=prompt_text('ingest', INGEST_PROMPT_VERSION.rsplit('.', 1)[1], 'ingest.output_fields'),
 )
 
 
 INGEST_RETURN_FORMAT_FRAGMENT = PromptFragment(
     fragment_id="ingest.return_format",
-    text=prompt_text('ingest', 'v19', 'ingest.return_format'),
+    text=prompt_text('ingest', INGEST_PROMPT_VERSION.rsplit('.', 1)[1], 'ingest.return_format'),
 )
 
 
@@ -273,7 +273,7 @@ INGEST_PROMPT = PromptDefinition(
     status="active",
     purpose="Select the next forward source unit and express prior-reading recalls for Unit Memory retrieval.",
     system_prompt=INGEST_TRANSPORT_SYSTEM_PROMPT,
-    user_prompt_template=prompt_text('ingest', 'v19', 'user_prompt_template'),
+    user_prompt_template=prompt_text('ingest', INGEST_PROMPT_VERSION.rsplit('.', 1)[1], 'user_prompt_template'),
     required_inputs=("book_identity", "current_view_position", "current_view_content"),
     output_contract="ingest_unit_boundary_preview_partition_json_v4",
 )

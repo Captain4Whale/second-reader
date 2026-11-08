@@ -30,5 +30,9 @@
       ],
       "release_sha256": "ee0879bdd8025d4b4b969179dd0c14b751e5cdc67d9f880debd8f6212df67a51"
     }
+  },
+  "migration_acceptance": {
+    "path": "tests/fixtures/prompt_migration_v1.json",
+    "sha256": "52ffcef7f6c71fd5120a5cf22d9cc171522e5c8b0b9667b0eca87ddc88654295"
   }
 }

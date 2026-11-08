@@ -5,22 +5,48 @@ from types import SimpleNamespace
 
 from langchain_core.messages import AIMessage, HumanMessage, SystemMessage, ToolMessage
 
-from src.reading_runtime.run_provenance import capture_workspace, provenance_scope, record_request
+from src.reading_runtime.run_provenance import (
+    capture_workspace,
+    provenance_scope,
+    record_request,
+)
 
 
 def test_actual_tool_history_and_contract_change_request_hash(tmp_path):
     trace = SimpleNamespace(node="ingest", extra={"prompt_version": "test.v1"})
+
     def record(messages, tools=None):
-        return record_request(call_id="c", messages=messages, tools=tools, tool_choice=None,
-                              expect_json=False, trace_context=trace)
-    original = [SystemMessage(content="system"), HumanMessage(content="invented source")]
+        return record_request(
+            call_id="c",
+            messages=messages,
+            tools=tools,
+            tool_choice=None,
+            expect_json=False,
+            trace_context=trace,
+        )
+
+    original = [
+        SystemMessage(content="system"),
+        HumanMessage(content="invented source"),
+    ]
     with provenance_scope(tmp_path, stage="read") as receipt:
         a = record(original)
-        b = record(original + [AIMessage(content="", tool_calls=[{"id":"t","name":"recall","args":{"query":"x"}}]), ToolMessage(content="result", tool_call_id="t")])
-        c = record(original, [{"name":"submit","parameters":{"type":"object"}}])
+        b = record(
+            original
+            + [
+                AIMessage(
+                    content="",
+                    tool_calls=[{"id": "t", "name": "recall", "args": {"query": "x"}}],
+                ),
+                ToolMessage(content="result", tool_call_id="t"),
+            ]
+        )
+        c = record(original, [{"name": "submit", "parameters": {"type": "object"}}])
         assert len({a["request_sha256"], b["request_sha256"], c["request_sha256"]}) == 3
         assert len(receipt["samples"]) == 1
-        sample = json.loads(__import__("pathlib").Path(receipt["samples"]["ingest"]["path"]).read_text())
+        sample = json.loads(
+            __import__("pathlib").Path(receipt["samples"]["ingest"]["path"]).read_text()
+        )
         assert sample["messages"][1]["content"] == "invented source"
     with provenance_scope(tmp_path, stage="read") as second:
         record(original)
@@ -31,15 +57,23 @@ def test_actual_tool_history_and_contract_change_request_hash(tmp_path):
 def test_dirty_patch_covers_staged_unstaged_and_inventory(tmp_path):
     repo = tmp_path / "repo"
     repo.mkdir()
+
     def git(*args):
-        return subprocess.run(["git", "-C", str(repo), *args], check=True, capture_output=True).stdout
-    git("init"); git("config", "user.name", "test"); git("config", "user.email", "test@example.invalid")
+        return subprocess.run(
+            ["git", "-C", str(repo), *args], check=True, capture_output=True
+        ).stdout
+
+    git("init")
+    git("config", "user.name", "test")
+    git("config", "user.email", "test@example.invalid")
     for name in ("staged", "unstaged"):
         (repo / name).write_text("before\n")
-    git("add", "."); git("commit", "-m", "initial")
+    git("add", ".")
+    git("commit", "-m", "initial")
     clean = capture_workspace(tmp_path / "clean", repo=repo)
     assert clean["code_dirty"] is False and clean["patch"] is None
-    (repo / "staged").write_text("staged after\n");git("add", "staged")
+    (repo / "staged").write_text("staged after\n")
+    git("add", "staged")
     (repo / "unstaged").write_text("unstaged after\n")
     (repo / "untracked").write_text("untracked body\n")
     receipt = capture_workspace(tmp_path / "receipt", repo=repo)
@@ -49,3 +83,34 @@ def test_dirty_patch_covers_staged_unstaged_and_inventory(tmp_path):
     assert receipt["patch"]["sha256"] == hashlib.sha256(patch).hexdigest()
     assert receipt["untracked_files"][0]["path"] == "untracked"
     assert receipt["reproduction_complete"] is False
+
+
+def test_direct_eval_scope_also_captures_patch_and_sample(tmp_path):
+    from src.reading_runtime.llm_gateway import eval_trace_context, llm_invocation_scope
+
+    trace = eval_trace_context(
+        tmp_path,
+        eval_target="offline-test",
+        node="digest",
+        extra={"prompt_version": "test.v1"},
+    )
+    with llm_invocation_scope(trace_context=trace):
+        record_request(
+            call_id="direct",
+            messages=[HumanMessage(content="invented")],
+            tools=None,
+            tool_choice=None,
+            expect_json=False,
+            trace_context=trace,
+        )
+    receipts = list((tmp_path / "_runtime/provenance").glob("*/invocation.json"))
+    assert len(receipts) == 1
+    receipt = json.loads(receipts[0].read_text())
+    assert receipt["samples"]["digest"]["call_id"] == "direct"
+
+
+def test_gitless_install_marks_source_unavailable_without_breaking_reading(tmp_path):
+    receipt = capture_workspace(tmp_path / "receipt", repo=tmp_path)
+    assert receipt["code_revision_status"] == "unavailable"
+    assert receipt["reproduction_complete"] is False
+    assert receipt["code_commit"] is None and receipt["patch"] is None

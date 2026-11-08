@@ -61,6 +61,8 @@ Standard success/error traces and run configuration link request hashes and invo
 IDs, without requiring debug mode. `prompt_releases` records the separate stable
 `release_sha256` (version files, resolved fixed text including few-shot, dependencies).
 Actual request hashes vary with book/source/context; a release hash does not.
+`request_sha256` hashes canonical UTF-8 JSON without the sample file's final newline;
+system/user text hashes retain the gateway's plain UTF-8 text convention.
 
 At every invocation start, a dirty workspace saves `git diff --binary HEAD` as
 `workspace.patch`, including staged and unstaged tracked changes across the repository.
@@ -70,6 +72,8 @@ Ignored private assets are covered separately by release hashes. Patches and raw
 inputs are always ignored and must be retained privately with the run. The event stream
 and invocation directories preserve earlier resume receipts after the current
 `run_configuration.json` advances. No historical patch is fabricated for Q1.
+Outside a Git checkout, source identity is explicitly `unavailable` and reproduction
+is incomplete; existing product reading is not broken by inventing a Git identity.
 
 ## Rubrics and human judgments
 

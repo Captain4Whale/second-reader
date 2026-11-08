@@ -13,6 +13,7 @@ This workspace is repo-first. Chat, Notion, and other tools may incubate work, b
 | --- | --- | --- | --- | --- |
 | Workspace rules and reading order | `AGENTS.md` | none | `make agent-check` | document layering, load order, routing, or cross-project collaboration rules change |
 | Setup, run commands, env, local URLs | `README.md` | none | `make doctor`, `make agent-check` | install/run commands, env vars, validation commands, or default URLs change |
+| Q1 prompt/rubric/trial/human provenance | `reading-companion-backend/experiments/README.md` | prompt `versions/published.json`, rubric `releases.json`, `experiments/log.jsonl`, frozen unit manifests and legacy-context overlays; ignored `<output>/_runtime/provenance/` | backend `scripts/check_prompt_releases.py`, `scripts/check_iteration_provenance.py` (optional `--annotation-root`), focused offline tests | version identities, dev/holdout membership, trial fields, attribution or private asset/patch handling change |
 | Workspace structure and ownership boundaries | `docs/workspace-overview.md` | none | `make agent-check` | shared entrypoints, file placement, or ownership boundaries change |
 | Product truths and guardrails | `docs/product-overview.md` | none | `make agent-check` | product essence, value channels, or canonical-vs-emerging territory changes |
 | Product interaction model | `docs/product-interaction-model.md` | none | `make agent-check` | user journey, route responsibilities, or core UX conventions change |

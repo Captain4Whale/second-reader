@@ -4479,4 +4479,27 @@ Annotation Pack consumes only complete-product Marginalia and keeps its W3C/DC w
 - [执行记录](../tasks/lightweight-cleanup-step0-execution-2026-11-01.md)
 - [演进说明](../reading-mechanism-evolution-step0.md)
 - [历史数字只读核查](../tasks/lightweight-cleanup-step0-historical-evidence-2026-11-01.md)
+
+## Entry 159
+**ID**: DEC-161
+**Status**: active
+
+**Decision / Inflection**: Establish Q1 iteration provenance authority without changing prompt words, reading mechanism or model execution.
+
+**Period**: 2026-11-08, following two whole-book runs and first-batch human open coding.
+
+**Problem**: Python-owned live prompt text had version labels but no immutable released files; standard traces lacked full request hashes. Human journals preserved revisions/timestamps but had no rubric or human identity. Repeated tuning needed a fixed dev/holdout boundary and an experiment index.
+
+**Decision**: Runtime loads versioned prompt files as the only fixed-text source, with immutable dependency fingerprints and mandatory content-addressed private few-shot assets. Distinguish stable release hashes from actual logical request hashes. Persist per-invocation samples and dirty tracked patches privately; record untracked-file incompleteness. Freeze source-coordinate unit manifests (dev 67, holdout 75), keep holdout for final validation, and use one JSONL row per trial. Preserve original human rows and attribute their exact prefixes to `open_coding / weijiang`; future rows carry rubric/human identity directly. The initial rubric is draft rather than an invented grading standard.
+
+**Alternatives considered**: Retaining a second inline prompt copy risks drift; counting Git commit alone loses dirty changes; retroactively applying a new rubric falsifies old judgments; reconstructing a historical request hash from today's renderer overstates evidence. Historical status snapshots identify only the two ledger files at observed times; no original patch or continuous audit exists.
+
+**Why this path won**: It makes iteration inspectable while retaining exact rendered behavior and the original annotation history. It keeps book text and raw prompt inputs out of new tracked artifacts and preserves uncertainty about historical runs.
+
+**Primary evidence**:
+- `5153a57`, `70d47e3`, `5d2d8ce`
+- `reading-companion-backend/experiments/README.md`
+- `reading-companion-backend/experiments/log.jsonl`
+- `reading-companion-backend/tests/fixtures/prompt_migration_v1.json`
+- `docs/tasks/q1-versioning-skeleton-2026-11-08.md`
 - [归档移动映射](../archive/pre-cleanup-2026-11/move-map.json)

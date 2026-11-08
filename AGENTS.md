@@ -101,6 +101,7 @@ Update when: document layering, reading order, task routing, or cross-project co
 - `docs/tasks/registry.md`
 
 ### Task-Gated Stable Docs
+- Q1 prompt/rubric/trial/judgment provenance, private assets and frozen dev/holdout sets: `reading-companion-backend/experiments/README.md`
 - canonical storage/update location for durable information: `docs/source-of-truth-map.md`
 - workspace ownership, file placement, shared entrypoints: `docs/workspace-overview.md`
 - product essence, value channels, and canonical-vs-emerging territory: `docs/product-overview.md`

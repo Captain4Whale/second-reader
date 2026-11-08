@@ -23,7 +23,7 @@ from .types import PromptDefinition
 DIGEST_PROMPT_VERSION = "attentional_v2.digest.v24"
 DIGEST_XML_PROMPT_ASSEMBLY_SPEC_ID = "attentional_v2.digest.xml.v24"
 DIGEST_XML_PROMPTSET_VERSION = "attentional_v2-phase6-v84"
-DIGEST_XML_TRANSPORT_SYSTEM_PROMPT = prompt_text('digest', 'v24', 'transport_system')
+DIGEST_XML_TRANSPORT_SYSTEM_PROMPT = prompt_text('digest', DIGEST_PROMPT_VERSION.rsplit('.', 1)[1], 'transport_system')
 
 
 # These fragments define the live Digest reader action and its XML Instruction blocks.
@@ -31,31 +31,31 @@ DIGEST_ROLE_AND_INSTRUCTION_FRAGMENTS = (
     READER_ROLE_FRAGMENT,
     PromptFragment(
         fragment_id="digest.current_step",
-        text=prompt_text('digest', 'v24', 'digest.current_step'),
+        text=prompt_text('digest', DIGEST_PROMPT_VERSION.rsplit('.', 1)[1], 'digest.current_step'),
     ),
     PromptFragment(
         fragment_id="digest.context_use_guide",
-        text=prompt_text('digest', 'v24', 'digest.context_use_guide'),
+        text=prompt_text('digest', DIGEST_PROMPT_VERSION.rsplit('.', 1)[1], 'digest.context_use_guide'),
     ),
     PromptFragment(
         fragment_id="digest.understanding_policy",
-        text=prompt_text('digest', 'v24', 'digest.understanding_policy'),
+        text=prompt_text('digest', DIGEST_PROMPT_VERSION.rsplit('.', 1)[1], 'digest.understanding_policy'),
     ),
     PromptFragment(
         fragment_id="digest.response_policy",
-        text=prompt_text('digest', 'v24', 'digest.response_policy'),
+        text=prompt_text('digest', DIGEST_PROMPT_VERSION.rsplit('.', 1)[1], 'digest.response_policy'),
     ),
     PromptFragment(
         fragment_id="digest.marginalia_policy",
-        text=prompt_text('digest', 'v24', 'digest.marginalia_policy'),
+        text=prompt_text('digest', DIGEST_PROMPT_VERSION.rsplit('.', 1)[1], 'digest.marginalia_policy'),
     ),
     PromptFragment(
         fragment_id="digest.source_grounding_policy",
-        text=prompt_text('digest', 'v24', 'digest.source_grounding_policy'),
+        text=prompt_text('digest', DIGEST_PROMPT_VERSION.rsplit('.', 1)[1], 'digest.source_grounding_policy'),
     ),
     PromptFragment(
         fragment_id="digest.output_behavior_policy",
-        text=prompt_text('digest', 'v24', 'digest.output_behavior_policy'),
+        text=prompt_text('digest', DIGEST_PROMPT_VERSION.rsplit('.', 1)[1], 'digest.output_behavior_policy'),
     ),
 )
 
@@ -382,31 +382,31 @@ def render_digest_current_focus_xml(
 
 DIGEST_OUTPUT_USE_GUIDE_FRAGMENT = PromptFragment(
     fragment_id="digest.output_use_guide",
-    text=prompt_text('digest', 'v24', 'digest.output_use_guide'),
+    text=prompt_text('digest', DIGEST_PROMPT_VERSION.rsplit('.', 1)[1], 'digest.output_use_guide'),
 )
 
 
 DIGEST_RETURN_FORMAT_FRAGMENT = PromptFragment(
     fragment_id="digest.return_format_contract",
-    text=prompt_text('digest', 'v24', 'digest.return_format_contract'),
+    text=prompt_text('digest', DIGEST_PROMPT_VERSION.rsplit('.', 1)[1], 'digest.return_format_contract'),
 )
 
 
 DIGEST_UNDERSTANDING_CONTRACT_FRAGMENT = PromptFragment(
     fragment_id="digest.understanding_contract",
-    text=prompt_text('digest', 'v24', 'digest.understanding_contract'),
+    text=prompt_text('digest', DIGEST_PROMPT_VERSION.rsplit('.', 1)[1], 'digest.understanding_contract'),
 )
 
 
 DIGEST_RESPONSE_CONTRACT_FRAGMENT = PromptFragment(
     fragment_id="digest.response_contract",
-    text=prompt_text('digest', 'v24', 'digest.response_contract'),
+    text=prompt_text('digest', DIGEST_PROMPT_VERSION.rsplit('.', 1)[1], 'digest.response_contract'),
 )
 
 
 DIGEST_MARGINALIA_CONTRACT_FRAGMENT = PromptFragment(
     fragment_id="digest.marginalia_contract",
-    text=prompt_text('digest', 'v24', 'digest.marginalia_contract'),
+    text=prompt_text('digest', DIGEST_PROMPT_VERSION.rsplit('.', 1)[1], 'digest.marginalia_contract'),
 )
 
 
@@ -589,7 +589,7 @@ DIGEST_PROMPT = PromptDefinition(
     status="active",
     purpose="Digest one accepted source unit and return reader-facing/current-reading outputs.",
     system_prompt=DIGEST_XML_TRANSPORT_SYSTEM_PROMPT,
-    user_prompt_template=prompt_text('digest', 'v24', 'user_prompt_template'),
+    user_prompt_template=prompt_text('digest', DIGEST_PROMPT_VERSION.rsplit('.', 1)[1], 'user_prompt_template'),
     required_inputs=(
         "book_identity",
         "reading_memory",

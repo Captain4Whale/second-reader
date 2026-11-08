@@ -1830,7 +1830,12 @@ def llm_invocation_scope(
         )
     token = _CURRENT_SCOPE.set(next_scope)
     try:
-        yield next_scope
+        from .run_provenance import current_provenance, provenance_scope
+        with contextlib.ExitStack() as stack:
+            trace = next_scope.trace_context
+            if current_provenance() is None and trace and trace.standard_sink and (trace.eval_target or trace.mechanism_key):
+                stack.enter_context(provenance_scope(trace.standard_sink.path.parent.parent, stage=trace.stage or "eval"))
+            yield next_scope
     finally:
         _CURRENT_SCOPE.reset(token)
         reservation = next_scope.dispatch_reservation
@@ -2390,7 +2395,8 @@ def _invoke_response_inner(
     call_id = uuid.uuid4().hex
     from .run_provenance import record_request
     request_receipt = record_request(call_id=call_id, messages=messages, tools=tools,
-        tool_choice=tool_choice, expect_json=expect_json, trace_context=trace_context)
+        tool_choice=tool_choice, expect_json=expect_json, trace_context=trace_context,
+        system_prompt=system_prompt, user_prompt=user_prompt)
     started_at = _utc_now()
     started_perf = time.perf_counter()
     observation_context = current_observation_context()
