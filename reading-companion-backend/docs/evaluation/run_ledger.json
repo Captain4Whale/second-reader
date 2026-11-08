@@ -3989,10 +3989,10 @@
       "dataset_or_manifest": [
         "reading-companion-backend/experiments/unit-sets/dev-v1.json"
       ],
-      "run_dir": "/Users/baiweijiang/.codex/worktrees/q1-digest-replay/reading-companion/reading-companion-backend/state/experiments/q1_digest_fixed_history_20261108",
+      "run_dir": "reading-companion-backend/state/experiments/q1_digest_fixed_history_20261108",
       "summary_paths": {
-        "preflight_failure": "/Users/baiweijiang/.codex/worktrees/q1-digest-replay/reading-companion/reading-companion-backend/state/experiments/q1_digest_fixed_history_20261108/reconstruction-failed.json",
-        "manifest_checks": "/Users/baiweijiang/.codex/worktrees/q1-digest-replay/reading-companion/reading-companion-backend/state/experiments/q1_digest_fixed_history_20261108/manifest-checks.json"
+        "preflight_failure": "reading-companion-backend/state/experiments/q1_digest_fixed_history_20261108/reconstruction-failed.json",
+        "manifest_checks": "reading-companion-backend/state/experiments/q1_digest_fixed_history_20261108/manifest-checks.json"
       },
       "job_ids": [],
       "report_paths": [
@@ -4013,16 +4013,16 @@
       "dataset_or_manifest": [
         "reading-companion-backend/experiments/unit-sets/dev-v1.json"
       ],
-      "run_dir": "/Users/baiweijiang/.codex/worktrees/q1-digest-replay/reading-companion/reading-companion-backend/state/experiments/q1_digest_fixed_history_20261108/A1-full",
+      "run_dir": "reading-companion-backend/state/experiments/q1_digest_fixed_history_20261108/A1-full",
       "summary_paths": {
-        "pilot_preflight": "/Users/baiweijiang/.codex/worktrees/q1-digest-replay/reading-companion/reading-companion-backend/state/experiments/q1_digest_fixed_history_20261108/pilot-preflight/summary.json",
-        "manifest_checks": "/Users/baiweijiang/.codex/worktrees/q1-digest-replay/reading-companion/reading-companion-backend/state/experiments/q1_digest_fixed_history_20261108/pilot-preflight/manifest-checks.json",
-        "pilot_summary": "/Users/baiweijiang/.codex/worktrees/q1-digest-replay/reading-companion/reading-companion-backend/state/experiments/q1_digest_fixed_history_20261108/pilot-summary.json",
-        "pilot_result": "/Users/baiweijiang/.codex/worktrees/q1-digest-replay/reading-companion/reading-companion-backend/state/experiments/q1_digest_fixed_history_20261108/A1/bovary/u000006/result.json",
-        "full_A1_preflight": "/Users/baiweijiang/.codex/worktrees/q1-digest-replay/reading-companion/reading-companion-backend/state/experiments/q1_digest_fixed_history_20261108/A1-full/preflight.json",
-        "A1_summary": "/Users/baiweijiang/.codex/worktrees/q1-digest-replay/reading-companion/reading-companion-backend/state/experiments/q1_digest_fixed_history_20261108/A1-full/summary.json",
-        "A1_validation": "/Users/baiweijiang/.codex/worktrees/q1-digest-replay/reading-companion/reading-companion-backend/state/experiments/q1_digest_fixed_history_20261108/A1-full/validation-summary.json",
-        "baseline_product_checks": "/Users/baiweijiang/.codex/worktrees/q1-digest-replay/reading-companion/reading-companion-backend/state/experiments/q1_digest_fixed_history_20261108/A1-full/baseline-product-checks.json"
+        "pilot_preflight": "reading-companion-backend/state/experiments/q1_digest_fixed_history_20261108/pilot-preflight/summary.json",
+        "manifest_checks": "reading-companion-backend/state/experiments/q1_digest_fixed_history_20261108/pilot-preflight/manifest-checks.json",
+        "pilot_summary": "reading-companion-backend/state/experiments/q1_digest_fixed_history_20261108/pilot-summary.json",
+        "pilot_result": "reading-companion-backend/state/experiments/q1_digest_fixed_history_20261108/A1/bovary/u000006/result.json",
+        "full_A1_preflight": "reading-companion-backend/state/experiments/q1_digest_fixed_history_20261108/A1-full/preflight.json",
+        "A1_summary": "reading-companion-backend/state/experiments/q1_digest_fixed_history_20261108/A1-full/summary.json",
+        "A1_validation": "reading-companion-backend/state/experiments/q1_digest_fixed_history_20261108/A1-full/validation-summary.json",
+        "baseline_product_checks": "reading-companion-backend/state/experiments/q1_digest_fixed_history_20261108/A1-full/baseline-product-checks.json"
       },
       "job_ids": [
         "bgjob_q1_digest_fixed_history_20261108_A1_pilot",
@@ -4030,7 +4030,7 @@
       ],
       "report_paths": [
         "docs/tasks/q1-digest-replay-2026-11-08.md",
-        "/Users/baiweijiang/.codex/worktrees/q1-digest-replay/reading-companion/reading-companion-backend/state/experiments/q1_digest_fixed_history_20261108/A1-full/report.md"
+        "reading-companion-backend/state/experiments/q1_digest_fixed_history_20261108/A1-full/report.md"
       ],
       "catalog_status": "not_cataloged",
       "notes": "A1 only completed all 16 registered units: approved pilot reused, 15 new requests; original 34 marks (9 H/25 N), A1 31 (10 H/21 N). 105 memory-line occurrences match original trace IDs/order and audit text. All 473 original output files unchanged; all anchors exact. A1 156855 input/7647 output tokens including pilot; actual billed cost unknown. Descriptive comparison only; A2/B not started and require owner confirmation."
@@ -4047,16 +4047,16 @@
       "dataset_or_manifest": [
         "reading-companion-backend/experiments/unit-sets/dev-v1.json"
       ],
-      "run_dir": "/Users/baiweijiang/.codex/worktrees/q1-digest-replay/reading-companion/reading-companion-backend/state/experiments/q1_digest_fixed_history_20261108/A2-full",
+      "run_dir": "reading-companion-backend/state/experiments/q1_digest_fixed_history_20261108/A2-full",
       "summary_paths": {
-        "completion": "/Users/baiweijiang/.codex/worktrees/q1-digest-replay/reading-companion/reading-companion-backend/state/experiments/q1_digest_fixed_history_20261108/A2-full/summary.json",
-        "manifest_checks": "/Users/baiweijiang/.codex/worktrees/q1-digest-replay/reading-companion/reading-companion-backend/state/experiments/q1_digest_fixed_history_20261108/continuation/manifest-checks.json"
+        "completion": "reading-companion-backend/state/experiments/q1_digest_fixed_history_20261108/A2-full/summary.json",
+        "manifest_checks": "reading-companion-backend/state/experiments/q1_digest_fixed_history_20261108/continuation/manifest-checks.json"
       },
       "job_ids": [
         "bgjob_q1_digest_fixed_history_20261108_A2_B"
       ],
       "report_paths": [
-        "/Users/baiweijiang/.codex/worktrees/q1-digest-replay/reading-companion/reading-companion-backend/state/experiments/q1_digest_fixed_history_20261108/continuation/report.md",
+        "reading-companion-backend/state/experiments/q1_digest_fixed_history_20261108/continuation/report.md",
         "docs/tasks/q1-digest-replay-2026-11-08.md"
       ],
       "catalog_status": "not_cataloged",
@@ -4074,16 +4074,16 @@
       "dataset_or_manifest": [
         "reading-companion-backend/experiments/unit-sets/dev-v1.json"
       ],
-      "run_dir": "/Users/baiweijiang/.codex/worktrees/q1-digest-replay/reading-companion/reading-companion-backend/state/experiments/q1_digest_fixed_history_20261108/B-full",
+      "run_dir": "reading-companion-backend/state/experiments/q1_digest_fixed_history_20261108/B-full",
       "summary_paths": {
-        "completion": "/Users/baiweijiang/.codex/worktrees/q1-digest-replay/reading-companion/reading-companion-backend/state/experiments/q1_digest_fixed_history_20261108/B-full/summary.json",
-        "manifest_checks": "/Users/baiweijiang/.codex/worktrees/q1-digest-replay/reading-companion/reading-companion-backend/state/experiments/q1_digest_fixed_history_20261108/continuation/manifest-checks.json"
+        "completion": "reading-companion-backend/state/experiments/q1_digest_fixed_history_20261108/B-full/summary.json",
+        "manifest_checks": "reading-companion-backend/state/experiments/q1_digest_fixed_history_20261108/continuation/manifest-checks.json"
       },
       "job_ids": [
         "bgjob_q1_digest_fixed_history_20261108_A2_B"
       ],
       "report_paths": [
-        "/Users/baiweijiang/.codex/worktrees/q1-digest-replay/reading-companion/reading-companion-backend/state/experiments/q1_digest_fixed_history_20261108/continuation/report.md",
+        "reading-companion-backend/state/experiments/q1_digest_fixed_history_20261108/continuation/report.md",
         "docs/tasks/q1-digest-replay-2026-11-08.md"
       ],
       "catalog_status": "not_cataloged",

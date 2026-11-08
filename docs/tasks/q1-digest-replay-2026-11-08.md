@@ -301,3 +301,9 @@ on recheck and on the subsequent full suite. Test generation left tracked fixtur
 unchanged. Main receives read-only-use links to replay artifacts and its three
 job records so post-fast-forward traceability can inspect actual evidence.
 No annotation-hub work, rebase, deletion or push is part of integration.
+
+Post-fast-forward check exposed checkout-dependent relative links for the four
+replay ledger rows, whose index paths were absolute. Those ledger index paths now
+use the same workspace-relative artifact alias available in both worktrees;
+immutable generation receipts and existing experiment log bytes stay unchanged.
+This keeps Markdown regeneration byte-stable in both checkouts.
