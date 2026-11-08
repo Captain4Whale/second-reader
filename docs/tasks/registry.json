@@ -20,7 +20,7 @@
         "bgjob_q1_digest_fixed_history_20261108_A2_B"
       ],
       "blocked_by": [],
-      "next_action": "Merge main preserving recorded SHAs; freeze diag-001 as the exact 16-row dev subset and package A1/B. Keep B content/statistics private pending blind annotation.",
+      "next_action": "Integration checks passed. Freeze diag-001 as the exact 16-row dev subset and package A1/B; keep B content/statistics private pending blind annotation.",
       "evidence_refs": [
         "reading-companion-backend/eval/attentional_v2/fixed_history_digest.py",
         "reading-companion-backend/tests/test_fixed_history_digest.py",
@@ -35,7 +35,7 @@
     {
       "id": "TASK-Q1-MIXED-COMPARISON",
       "title": "Window-aligned Q1 mixed blind annotation and statistics",
-      "status": "active",
+      "status": "done",
       "lane": "mechanism_eval",
       "priority": "high",
       "detail_ref": "docs/tasks/q1-mixed-comparison-2026-11-08.md",
@@ -47,10 +47,12 @@
       "decision_refs": [],
       "job_refs": [],
       "blocked_by": [],
-      "next_action": "Implement mixed UI and independent statistics; verify with synthetic two-group data and legacy dev; defer side-by-side/reveal. No models or push.",
+      "next_action": "Separate Digest rerun task implements the output contract; annotate real A/B in mixed mode before resuming side-by-side/preferences/reveal. No model calls or push in this task.",
       "evidence_refs": [
         "reading-companion-backend/scripts/q1_comparison.py",
-        "reading-companion-backend/tests/test_q1_comparison.py"
+        "reading-companion-backend/tests/test_q1_comparison.py",
+        "reading-companion-backend/scripts/q1_comparison_stats.py",
+        "reading-companion-backend/tools/q1-annotator-storage.test.cjs"
       ],
       "last_updated": "2026-11-08",
       "last_updated_by": "codex"
@@ -96,7 +98,7 @@
       "decision_refs": [],
       "job_refs": [],
       "blocked_by": [],
-      "next_action": "Preserve completed first-batch open coding and use annotator 1.9 for new attributed append-only judgments; do not resample or inspect holdout.",
+      "next_action": "Preserve completed first-batch open coding and use annotator 2.0 for new attributed append-only judgments; do not resample or inspect holdout.",
       "evidence_refs": [
         "reading-companion-backend/scripts/sample_q1_annotations.py",
         "reading-companion-backend/tools/q1-annotator.html"

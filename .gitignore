@@ -48,6 +48,9 @@ reading-companion-backend/data/
 reading-companion-backend/output/
 # Private source samples, human judgments and local review sessions
 reading-companion-backend/state/q1_annotation/
+# Private comparison source windows, model outputs, blind keys, journals and QA captures.
+reading-companion-backend/state/q1_comparison/
+reading-companion-backend/state/q1_comparison_browser/
 reading-companion-backend/state/
 # Private prompt examples, byte-comparison captures, rendered samples and dirty patches.
 reading-companion-backend/state/prompt_assets/

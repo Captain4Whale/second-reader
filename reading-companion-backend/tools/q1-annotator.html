@@ -614,7 +614,7 @@
       <div class="layout">
         <article>
           <h2>
-            单元原文
+            <span id="sourceHeading">单元原文</span>
             <small class="source-legend"
               ><span class="product-swatch">产物批注</span> ·
               <span class="omission-swatch">人工漏标</span></small
@@ -634,6 +634,7 @@
             <p id="markProgress" class="completion-status" role="status"></p>
             <div class="row" id="tabs"></div>
             <div id="editor" hidden>
+              <p id="crossing" class="hint" hidden>跨窗口批注：在起点窗口判断一次。下方保留完整引文，原文仅高亮本窗口内的部分。</p>
               <blockquote id="excerpt"></blockquote>
               <p id="activeNote" class="note" hidden></p>
               <div class="row"><button id="pass">过 P</button><button id="fail">不过 F</button></div>
@@ -652,10 +653,10 @@
             <h2 id="unitHeading" tabindex="-1">单元判断</h2>
             <p id="unitProgress" class="completion-status" role="status"></p>
             <div class="row" id="density"><span>密度</span></div>
-            <label class="field" for="unitNote">单元备注 U <small>选填，自动保存</small></label>
+            <label class="field" for="unitNote"><span id="noteHeading">单元备注 U</span> <small>选填，自动保存</small></label>
             <textarea id="unitNote" rows="2"></textarea><small id="unitNoteState"></small>
             <h3>漏标 <small id="missCount"></small></h3>
-            <p class="hint">在本单元正文中划选，再按 O 或点「记为漏标」。</p>
+            <p class="hint" id="omissionHint">在本单元正文中划选，再按 O 或点「记为漏标」。</p>
             <div id="misses"></div>
             <div id="missEditor" hidden>
               <blockquote id="missQuote"></blockquote>
@@ -688,7 +689,7 @@
       <dd>过 / 不过，判断后停留；F 进入理由框</dd>
       <dt>S / V</dt>
       <dd>星标 / 待核实</dd>
-      <dt>1 / 2 / 3</dt>
+      <dt id="densityHelp">1 / 2 / 3</dt>
       <dd>密度多 / 合适 / 少</dd>
       <dt>R / M / U</dt>
       <dd>理由 / 条目备注 / 单元备注</dd>
@@ -701,7 +702,7 @@
   </dialog>
   <script>
     "use strict";
-    const VERSION = "q1-annotator/1.9",
+    const VERSION = "q1-annotator/2.0",
       $ = (id) => document.getElementById(id);
     const say = (text) => {
       $("message").textContent = text;
@@ -743,9 +744,101 @@
         );
       return value;
     }
+    const mixed = (b = session?.batch) => b?.schema === "q1-mixed/1";
+    const units = (b) => b.windows ?? b.units;
+    const uid = (u) => u.window_id ?? u.unit_id;
+    const rowUnit = (r) => r.window_id ?? r.unit_id;
+    const rangeOf = (v) => v.source_range ?? v.original_source_range;
+    const unitLabel = () => mixed() ? "窗口" : "单元";
+    const exactKeys = (v, keys) => v && typeof v === "object" && !Array.isArray(v) &&
+      Object.keys(v).sort().join("|") === keys.split(" ").sort().join("|");
+    const position = (p) => [p.chapter_id, p.paragraph_index, p.char_offset];
+    const comparePoint = (a, b) => {
+      const x = position(a), y = position(b);
+      return x[0] - y[0] || x[1] - y[1] || x[2] - y[2];
+    };
+    function strictRange(r) {
+      return exactKeys(r, "start end") && [r.start, r.end].every((p) =>
+        exactKeys(p, "chapter_id paragraph_index char_offset") &&
+        Object.values(p).every(Number.isSafeInteger) && p.chapter_id > 0 &&
+        p.paragraph_index > 0 && p.char_offset >= 0) &&
+        r.start.chapter_id === r.end.chapter_id && comparePoint(r.start, r.end) < 0;
+    }
+    function rangeInside(outer, inner) {
+      return strictRange(inner) && comparePoint(outer.start, inner.start) <= 0 &&
+        comparePoint(inner.end, outer.end) <= 0 && outer.start.chapter_id === inner.start.chapter_id;
+    }
+    function windowQuote(w, r) {
+      if (!rangeInside(w.original_source_range, r)) return null;
+      const parts = w.paragraphs.filter(p => p.index >= r.start.paragraph_index && p.index <= r.end.paragraph_index);
+      for (const endpoint of [r.start, r.end]) {
+        const p = parts.find(p => p.index === endpoint.paragraph_index);
+        if (!p || endpoint.char_offset < p.offset || endpoint.char_offset > p.offset + cp(p.text).length) return null;
+      }
+      return parts.map(p => cut(p.text,
+        p.index === r.start.paragraph_index ? r.start.char_offset - p.offset : 0,
+        p.index === r.end.paragraph_index ? r.end.char_offset - p.offset : undefined)).filter(Boolean).join("\n\n");
+    }
+    function validateMixed(b) {
+      const fail = () => { throw Error("混合批次格式或盲化字段无效；请重新生成投影。"); };
+      if (!exactKeys(b, "schema synthetic windows batch_id") || typeof b.synthetic !== "boolean" ||
+          !Array.isArray(b.windows) || !b.windows.length) fail();
+      const ids = new Set(), uuid = /^[a-f0-9]{8}-[a-f0-9]{4}-4[a-f0-9]{3}-[89ab][a-f0-9]{3}-[a-f0-9]{12}$/;
+      const identity = id => { if (!uuid.test(id) || ids.has(id)) fail(); ids.add(id); };
+      for (const w of b.windows) {
+        if (!exactKeys(w, "window_id original_source_range book author chapter_title paragraphs before after marginalia") ||
+            !strictRange(w.original_source_range) || typeof w.book !== "string" ||
+            ![w.author, w.chapter_title].every(v => v === null || typeof v === "string") ||
+            ![w.before, w.after].every(a => Array.isArray(a) && a.every(v => typeof v === "string")) ||
+            !Array.isArray(w.paragraphs) || !w.paragraphs.length || !Array.isArray(w.marginalia)) fail();
+        identity(w.window_id);
+        let last = 0;
+        for (const p of w.paragraphs) {
+          if (!exactKeys(p, "index offset text href") || !Number.isSafeInteger(p.index) || p.index <= last ||
+              !Number.isSafeInteger(p.offset) || p.offset < 0 || typeof p.text !== "string" ||
+              !p.text.length || typeof p.href !== "string") fail();
+          last = p.index;
+        }
+        if (!windowQuote(w, w.original_source_range)) fail();
+        for (const m of w.marginalia) {
+          if (!exactKeys(m, "marginalia_id type body_text source_quote original_source_range crosses_boundary") ||
+              !strictRange(m.original_source_range) || !["H", "N"].includes(m.type) ||
+              typeof m.body_text !== "string" || typeof m.source_quote !== "string" || !m.source_quote ||
+              (m.type === "H" ? m.body_text !== "" : !m.body_text.trim()) ||
+              typeof m.crosses_boundary !== "boolean") fail();
+          identity(m.marginalia_id);
+          const a = m.original_source_range.start, wr = w.original_source_range;
+          if (a.chapter_id !== wr.start.chapter_id || comparePoint(wr.start, a) > 0 || comparePoint(a, wr.end) >= 0 ||
+              m.crosses_boundary !== !rangeInside(wr, m.original_source_range)) fail();
+          if (!m.crosses_boundary && windowQuote(w, m.original_source_range) !== m.source_quote) fail();
+        }
+      }
+    }
+    function validateMixedRow(r, b, w) {
+      const base = "schema annotator_version annotator_id rubric_version rubric_sha256 batch_id comparison_batch_id view window_id record_type record_id revision timestamp marginalia_id type judgment reason star needs_verification remarks original_source_range";
+      const extra = r.record_type === "marginalia" ? " source_quote body_text" : r.record_type === "omission" ? " action source_quote" : "";
+      if (!exactKeys(r, base + extra) || r.schema !== "q1-mixed-judgment/1" || r.annotator_version !== VERSION ||
+          r.comparison_batch_id !== b.batch_id || r.view !== "mixed" ||
+          !["marginalia", "omission", "unit_note"].includes(r.record_type) ||
+          !strictRange(r.original_source_range) || !Number.isFinite(Date.parse(r.timestamp)))
+        throw Error("混合判断包含无效字段或来源信息，已停止同步。");
+      if (r.record_type === "marginalia") {
+        const m = w.marginalia.find(m => m.marginalia_id === r.marginalia_id);
+        if (!m || r.record_id !== m.marginalia_id || r.type !== m.type ||
+            r.body_text !== m.body_text || r.source_quote !== m.source_quote ||
+            JSON.stringify(sorted(r.original_source_range)) !== JSON.stringify(sorted(m.original_source_range)))
+          throw Error("判断与匿名批注不匹配。");
+      } else if (r.record_type === "omission") {
+        if (windowQuote(w, r.original_source_range) !== r.source_quote)
+          throw Error("漏标坐标或原文不匹配。");
+      } else if (JSON.stringify(sorted(r.original_source_range)) !== JSON.stringify(sorted(w.original_source_range)))
+        throw Error("窗口备注坐标不匹配。");
+    }
     async function checkBatch(b) {
       const { batch_id, ...payload } = b;
-      if (b.schema !== "q1-batch/1" || !b.units?.length) throw Error("批次格式不支持");
+      if (!["q1-batch/1", "q1-mixed/1"].includes(b.schema) || !units(b)?.length)
+        throw Error("批次格式不支持；对比批次请打开 mixed.json。");
+      if (mixed(b)) validateMixed(b);
       const bytes = new TextEncoder().encode(JSON.stringify(sorted(payload)));
       const hash = Array.from(new Uint8Array(await crypto.subtle.digest("SHA-256", bytes)), (x) =>
         x.toString(16).padStart(2, "0"),
@@ -763,7 +856,7 @@
       needs_verification: false,
       remarks: "",
     });
-    const unit = () => session.batch.units[session.state.ui];
+    const unit = () => units(session.batch)[session.state.ui];
     const item = () => unit().marginalia[session.state.mi];
     const latest = (type, id) =>
       session.state.rows.findLast((r) => r.record_type === type && r.record_id === id);
@@ -880,19 +973,19 @@
         throw Error("结果文件 JSONL 损坏，已停止同步，未改动文件。");
       }
       for (const [i, r] of rows.entries()) {
-        const u = batch.units.find((u) => u.unit_id === r?.unit_id);
+        const u = units(batch).find((u) => uid(u) === (r?.window_id ?? r?.unit_id));
         if (
           !r ||
           r.batch_id !== batch.batch_id ||
           r.revision !== i + 1 ||
-          !/^q1-annotator\/1\.[0-9]$/.test(r.annotator_version) ||
-          (r.annotator_version === "q1-annotator/1.9" &&
+          !/^(q1-annotator\/1\.[0-9]|q1-annotator\/2\.0)$/.test(r.annotator_version) ||
+          (["q1-annotator/1.9", VERSION].includes(r.annotator_version) &&
             (!r.annotator_id?.trim() || !r.rubric_version ||
               (r.rubric_version !== "open_coding" && !/^[a-f0-9]{64}$/.test(r.rubric_sha256)))) ||
           !u ||
           !["marginalia", "density", "unit_note", "omission"].includes(r.record_type) ||
           typeof r.record_id !== "string" ||
-          !r.source_range ||
+          (!mixed(batch) && !r.source_range) ||
           !r.original_source_range ||
           (r.record_type === "marginalia" && !u.marginalia.some((m) => m.marginalia_id === r.record_id))
         )
@@ -916,15 +1009,23 @@
               typeof r.needs_verification === "boolean" &&
               (r.judgment !== "fail" || !!r.reason.trim())
             : r.record_type === "density"
-              ? r.record_id === r.unit_id && ["多", "合适", "少"].includes(r.density)
+              ? r.record_id === rowUnit(r) && ["多", "合适", "少"].includes(r.density)
               : r.record_type === "unit_note"
-                ? r.record_id === r.unit_id && typeof r.remarks === "string"
+                ? r.record_id === rowUnit(r) && typeof r.remarks === "string"
                 : ["save", "remove"].includes(r.action) &&
                   typeof r.reason === "string" &&
                   !!r.reason.trim() &&
                   typeof r.source_quote === "string";
-        if (!validRange(r.source_range) || !validRange(r.original_source_range) || !validFields)
+        if (!validRange(rangeOf(r)) || !validRange(r.original_source_range) || !validFields)
           throw Error("结果文件含无效字段或坐标，已停止同步，未改动文件。");
+        if (mixed(batch)) validateMixedRow(r, batch, u);
+      }
+      const bindings = new Map();
+      if (mixed(batch)) for (const r of rows) {
+        const key = r.record_type + ":" + r.record_id;
+        if (bindings.has(key) && bindings.get(key) !== r.window_id)
+          throw Error("同一判断不能跨窗口重复归属。");
+        bindings.set(key, r.window_id);
       }
       return rows;
     }
@@ -1007,6 +1108,7 @@
         unitNoteDrafts: {},
       };
       state.unitNoteDrafts ??= {};
+      parseJournal(state.rows.map(r => JSON.stringify(r) + "\n").join(""), batch);
       return makeSession(
         batch,
         state,
@@ -1042,7 +1144,7 @@
     function recoverDrafts() {
       const { ui, mi } = session.state;
       try {
-        session.batch.units.forEach((u, i) => {
+        units(session.batch).forEach((u, i) => {
           session.state.ui = i;
           u.marginalia.forEach((m, j) => {
             session.state.mi = j;
@@ -1105,9 +1207,14 @@
         const directory = await showDirectoryPicker({ id: "q1-batch", mode: "readwrite" });
         if ((await directory.requestPermission({ mode: "readwrite" })) !== "granted")
           throw Error("未获得文件夹读写权限，当前批次保持不变。");
-        const batch = JSON.parse(
-          await (await (await directory.getFileHandle("batch.json")).getFile()).text(),
-        );
+        // Never read canonical provenance or the key when a blind projection is present.
+        let batchFile;
+        try { batchFile = await directory.getFileHandle("mixed.json"); }
+        catch (err) {
+          if (err.name !== "NotFoundError") throw err;
+          batchFile = await directory.getFileHandle("batch.json");
+        }
+        const batch = JSON.parse(await (await batchFile.getFile()).text());
         await checkBatch(batch);
         await settleCurrent();
         const handle = await directory.getFileHandle("judgments.jsonl", { create: true });
@@ -1180,6 +1287,10 @@
         annotator_version: VERSION,
         ...(s.state.annotationContext ?? DEFAULT_ANNOTATION_CONTEXT),
         batch_id: b.batch_id,
+        ...(mixed(b) ? {
+          schema: "q1-mixed-judgment/1", comparison_batch_id: b.batch_id,
+          view: "mixed", window_id: uid(u),
+        } : {
         book: b.book,
         run_id: b.run_id,
         reading_id: b.reading_id,
@@ -1187,7 +1298,8 @@
         product_source: b.product_source,
         original_epub_sha256: b.original_epub_sha256,
         original_substrate_sha256: b.original_substrate_sha256,
-        unit_id: u.unit_id,
+        unit_id: uid(u),
+        }),
         record_type: type,
         record_id: id,
         revision: s.state.rows.length + 1,
@@ -1199,7 +1311,7 @@
         star: null,
         needs_verification: null,
         remarks: null,
-        source_range: span,
+        ...(!mixed(b) ? { source_range: span } : {}),
         original_source_range: original,
         ...fields,
       });
@@ -1209,7 +1321,7 @@
     function activeMisses(u) {
       const byId = new Map();
       for (const r of session.state.rows)
-        if (r.unit_id === u.unit_id && r.record_type === "omission") byId.set(r.record_id, r);
+        if (rowUnit(r) === uid(u) && r.record_type === "omission") byId.set(r.record_id, r);
       return [...byId.values()].filter((r) => r.action !== "remove");
     }
     function markStatus(m) {
@@ -1220,12 +1332,12 @@
     function unitStatus(u) {
       const values = u.marginalia.map(markValue),
         done = u.marginalia.filter((m) => markStatus(m) === "已完成").length,
-        density = latest("density", u.unit_id),
-        miss = session.state.missDrafts[u.unit_id],
-        note = session.state.unitNoteDrafts[u.unit_id] ?? latest("unit_note", u.unit_id)?.remarks,
+        density = latest("density", uid(u)),
+        miss = session.state.missDrafts[uid(u)],
+        note = session.state.unitNoteDrafts[uid(u)] ?? latest("unit_note", uid(u))?.remarks,
         missing = [];
       if (done < u.marginalia.length) missing.push("剩 " + (u.marginalia.length - done) + " 条未完成");
-      if (!density) missing.push("待选密度");
+      if (!mixed() && !density) missing.push("待选密度");
       if (miss && !miss.reason?.trim()) missing.push("漏标待补理由");
       const started =
         density ||
@@ -1234,24 +1346,24 @@
         values.some(
           (v) => v.judgment || v.star || v.needs_verification || v.reason?.trim() || v.remarks?.trim(),
         ) ||
-        session.state.rows.some((r) => r.unit_id === u.unit_id && r.record_type === "omission");
+        session.state.rows.some((r) => rowUnit(r) === uid(u) && r.record_type === "omission");
       return { done, missing, state: !missing.length ? "done" : started ? "started" : "empty" };
     }
     function progress() {
       const { batch: b, state } = session,
-        statuses = b.units.map(unitStatus),
+        statuses = units(b).map(unitStatus),
         names = { empty: "未开始", started: "进行中", done: "已完成" },
-        marks = b.units.flatMap((u) => u.marginalia),
+        marks = units(b).flatMap((u) => u.marginalia),
         current = statuses[state.ui],
         grid = $("unitGrid");
       editStatus();
-      $("progress").textContent = "单元 " + (state.ui + 1) + " / " + b.units.length;
-      $("batchPosition").textContent = "批次 " + b.batch_number + " / " + b.batch_count;
+      $("progress").textContent = unitLabel() + " " + (state.ui + 1) + " / " + units(b).length;
+      $("batchPosition").textContent = mixed() ? (b.synthetic ? "合成数据 · 混合盲标" : "混合盲标") : "批次 " + b.batch_number + " / " + b.batch_count;
       $("batchCounts").textContent =
-        "单元 " +
+        unitLabel() + " " +
         statuses.filter((s) => s.state === "done").length +
         "/" +
-        b.units.length +
+        units(b).length +
         " 完成 · 条目 " +
         statuses.reduce((n, s) => n + s.done, 0) +
         "/" +
@@ -1259,7 +1371,7 @@
         " 完成";
       // Keep buttons mounted so typing/autosave never loses keyboard focus on the map.
       if (!grid.children.length)
-        b.units.forEach((u, i) => {
+        units(b).forEach((u, i) => {
           grid.append(button("", () => goUnit(i)));
         });
       statuses.forEach((s, i) => {
@@ -1268,16 +1380,16 @@
         cell.dataset.state = s.state;
         cell.textContent = s.state === "done" ? "✓" : "";
         cell.title =
-          "单元 " +
+          unitLabel() + " " +
           (i + 1) +
           "/" +
-          b.units.length +
+          units(b).length +
           " · " +
           names[s.state] +
           " · 条目 " +
           s.done +
           "/" +
-          b.units[i].marginalia.length +
+          units(b)[i].marginalia.length +
           " 完成" +
           (s.missing.length ? " · " + s.missing.join(" · ") : "");
         cell.setAttribute("aria-label", cell.title);
@@ -1286,23 +1398,23 @@
       });
       $("unitProgress").dataset.state = current.state;
       $("unitProgress").textContent =
-        "单元 " +
+        unitLabel() + " " +
         (state.ui + 1) +
         "/" +
-        b.units.length +
+        units(b).length +
         " · " +
         names[current.state] +
         (current.missing.length ? " · " + current.missing.join(" · ") : "");
       const m = item(),
-        status = m ? markStatus(m) : "本单元无批注";
+        status = m ? markStatus(m) : "本" + unitLabel() + "无批注";
       $("markProgress").dataset.state = status === "已完成" ? "done" : "empty";
       $("markProgress").textContent = m
-        ? "本单元第 " +
+        ? "本" + unitLabel() + "第 " +
           (state.mi + 1) +
           "/" +
           unit().marginalia.length +
           " 条 · 批次第 " +
-          (b.units.slice(0, state.ui).reduce((n, u) => n + u.marginalia.length, 0) + state.mi + 1) +
+          (units(b).slice(0, state.ui).reduce((n, u) => n + u.marginalia.length, 0) + state.mi + 1) +
           "/" +
           marks.length +
           " 条 · " +
@@ -1326,7 +1438,7 @@
     function visibleMisses() {
       const u = unit(),
         byId = new Map(activeMisses(u).map((r) => [r.record_id, r]));
-      const draft = session.state.missDrafts[u.unit_id];
+      const draft = session.state.missDrafts[uid(u)];
       if (draft) byId.set(draft.record_id, draft);
       return [...byId.values()];
     }
@@ -1347,10 +1459,12 @@
           boundaries = new Set([p.offset, end]),
           spans = [];
         u.marginalia.forEach((m, i) => {
+          if (mixed() && i !== session.state.mi) return;
           const { start: a, end: z } = m.original_source_range;
           if (p.index < a.paragraph_index || p.index > z.paragraph_index) return;
-          const lo = p.index === a.paragraph_index ? a.char_offset : p.offset,
-            hi = p.index === z.paragraph_index ? z.char_offset : end;
+          const lo = Math.max(p.offset, p.index === a.paragraph_index ? a.char_offset : p.offset),
+            hi = Math.min(end, p.index === z.paragraph_index ? z.char_offset : end);
+          if (hi <= lo) return;
           boundaries.add(lo);
           boundaries.add(hi);
           spans.push({ lo, hi, i });
@@ -1391,7 +1505,7 @@
         }
         host.append(n);
         u.marginalia.forEach((m, i) => {
-          if (m.type === "N" && m.original_source_range.end.paragraph_index === p.index) {
+          if (!mixed() && m.type === "N" && m.original_source_range.end.paragraph_index === p.index) {
             const note = el("div", "旁注 " + (i + 1) + "　" + m.body_text, "note");
             note.onclick = () => {
               if (getSelection().isCollapsed) chooseMark(i, false);
@@ -1410,11 +1524,11 @@
         tag.classList.toggle("pending", pending);
         tag.title = pending ? "人工漏标 · 待补理由" : "人工漏标";
       }
-      const d = session.state.missDrafts[unit().unit_id];
+      const d = session.state.missDrafts[uid(unit())];
       $("missCount").textContent =
         "· 已记 " +
         activeMisses(unit()).length +
-        " 处（最多 2 处）" +
+        (mixed() ? " 处" : " 处（最多 2 处）") +
         (d && !d.reason.trim() ? " · 1 处待补理由" : "");
     }
     function refreshMissHighlights() {
@@ -1431,7 +1545,7 @@
         tabs = $("tabs");
       tabs.replaceChildren();
       unit().marginalia.forEach((v, i) => {
-        const b = button(i + 1 + " · " + (v.type === "H" ? "高亮" : "旁注"), () => chooseMark(i, true));
+        const b = button(mixed() ? String(i + 1) : i + 1 + " · " + (v.type === "H" ? "高亮" : "旁注"), () => chooseMark(i, true));
         b.setAttribute("aria-pressed", i === session.state.mi);
         tabs.append(b);
       });
@@ -1442,6 +1556,7 @@
         return;
       }
       const v = markValue(m);
+      $("crossing").hidden = !mixed() || !m.crosses_boundary;
       $("excerpt").textContent = m.source_quote;
       $("activeNote").hidden = m.type !== "N";
       $("activeNote").textContent = m.body_text || "";
@@ -1456,7 +1571,7 @@
     function renderMiss() {
       const u = unit(),
         list = activeMisses(u),
-        d = session.state.missDrafts[u.unit_id];
+        d = session.state.missDrafts[uid(u)];
       $("misses").replaceChildren();
       refreshMissHighlights();
       for (const r of list) {
@@ -1469,7 +1584,7 @@
               say("请先保存或取消正在编辑的漏标。");
               return;
             }
-            session.state.missDrafts[u.unit_id] = { ...r };
+            session.state.missDrafts[uid(u)] = { ...r };
             persist();
             renderMiss();
             focusField($("missReason"));
@@ -1483,7 +1598,7 @@
               "omission",
               r.record_id,
               { action: "remove", reason: r.reason, source_quote: r.source_quote },
-              r.source_range,
+              rangeOf(r),
               r.original_source_range,
             );
             renderMiss();
@@ -1503,33 +1618,43 @@
       selectedRange = null;
       $("selection").hidden = true;
       $("prev").disabled = session.state.ui === 0;
-      $("next").disabled = session.state.ui === session.batch.units.length - 1;
+      $("next").disabled = session.state.ui === units(session.batch).length - 1;
       const u = unit(),
         b = session.batch;
       const position = Number.isFinite(u.book_position_percent)
         ? "全书约 " + u.book_position_percent + "%"
         : "全书位置未知";
-      $("bookTitle").textContent = b.book;
-      $("bookTitle").title = b.book;
+      $("bookTitle").textContent = mixed() ? u.book : b.book;
+      $("bookTitle").title = mixed() ? u.book : b.book;
       $("bookDetails").textContent = [
-        b.author || "作者未知",
+        (mixed() ? u.author : b.author) || "作者未知",
         u.chapter_title || "章节标题未知",
-        position,
+        mixed() ? "固定原文窗口" : position,
       ].join(" · ");
+      $("density").hidden = mixed();
+      $("densityHelp").hidden = mixed();
+      $("densityHelp").nextElementSibling.hidden = mixed();
+      $("unitHeading").textContent = unitLabel() + "判断";
+      $("sourceHeading").textContent = unitLabel() + "原文";
+      $("noteHeading").textContent = unitLabel() + "备注 U";
+      $("omissionHint").textContent = "在本" + unitLabel() + "正文中划选，再按 O 或点「记为漏标」。";
+      $("prev").textContent = "上一" + unitLabel() + " ←";
+      $("next").textContent = "下一" + unitLabel() + " →";
       $("unitNote").value =
-        session.state.unitNoteDrafts[u.unit_id] ?? latest("unit_note", u.unit_id)?.remarks ?? "";
+        session.state.unitNoteDrafts[uid(u)] ?? latest("unit_note", uid(u))?.remarks ?? "";
       source();
       editor();
       progress();
       renderMiss();
       resizeTextareas();
       for (const b of $("density").querySelectorAll("button"))
-        b.setAttribute("aria-pressed", b.dataset.density === latest("density", unit().unit_id)?.density);
+        b.setAttribute("aria-pressed", b.dataset.density === latest("density", uid(unit()))?.density);
     }
     function chooseMark(i, scroll) {
       flushEdits();
       session.state.mi = i;
       persist();
+      if (mixed()) refreshMissHighlights();
       editor();
       progress();
       if (scroll) revealMark();
@@ -1551,7 +1676,7 @@
       goUnit(session.state.ui + delta);
     }
     function goUnit(i) {
-      if (!session.batch.units[i] || i === session.state.ui) return;
+      if (!units(session.batch)[i] || i === session.state.ui) return;
       flushEdits();
       session.state.ui = i;
       session.state.mi = 0;
@@ -1597,7 +1722,7 @@
       const prior = latest("marginalia", m.marginalia_id);
       delete session.state.drafts[m.marginalia_id];
       if (!prior || Object.keys(fields).some((k) => fields[k] !== prior[k]))
-        record("marginalia", m.marginalia_id, fields, m.source_range, m.original_source_range);
+        record("marginalia", m.marginalia_id, fields, rangeOf(m), m.original_source_range);
       else persist();
       say("");
       progress();
@@ -1644,7 +1769,7 @@
           remarks: prior.remarks,
           ...flags,
         },
-        m.source_range,
+        rangeOf(m),
         m.original_source_range,
       );
       progress();
@@ -1654,9 +1779,10 @@
     $("verify").onchange = () => toggleFlag("needs_verification", $("verify").checked);
     for (const [i, name] of ["多", "合适", "少"].entries()) {
       const b = button(name + " " + (i + 1), () => {
+        if (mixed()) return;
         const u = unit();
-        if (latest("density", u.unit_id)?.density !== name)
-          record("density", u.unit_id, { density: name }, u.source_range, u.original_source_range);
+        if (latest("density", uid(u))?.density !== name)
+          record("density", uid(u), { density: name }, rangeOf(u), u.original_source_range);
         for (const other of $("density").querySelectorAll("button"))
           other.setAttribute("aria-pressed", other === b);
         progress();
@@ -1666,7 +1792,7 @@
       $("density").append(b);
     }
     $("unitNote").oninput = () => {
-      session.state.unitNoteDrafts[unit().unit_id] = $("unitNote").value;
+      session.state.unitNoteDrafts[uid(unit())] = $("unitNote").value;
       persist();
       progress();
       queueEdits();
@@ -1674,11 +1800,11 @@
     function saveUnitNote() {
       const u = unit(),
         notes = session.state.unitNoteDrafts;
-      if (!Object.hasOwn(notes, u.unit_id)) return;
-      const remarks = notes[u.unit_id];
-      delete notes[u.unit_id];
-      if (remarks !== (latest("unit_note", u.unit_id)?.remarks ?? ""))
-        record("unit_note", u.unit_id, { remarks }, u.source_range, u.original_source_range);
+      if (!Object.hasOwn(notes, uid(u))) return;
+      const remarks = notes[uid(u)];
+      delete notes[uid(u)];
+      if (remarks !== (latest("unit_note", uid(u))?.remarks ?? ""))
+        record("unit_note", uid(u), { remarks }, rangeOf(u), u.original_source_range);
       else persist();
     }
 
@@ -1724,7 +1850,7 @@
         .filter(Boolean)
         .join("\n\n");
       if (!quote.trim() || new Set(pieces.map((p) => p.href)).size !== 1) return null;
-      const ch = unit().source_range.start.chapter_id;
+      const ch = rangeOf(unit()).start.chapter_id;
       return {
         original_source_range: { start, end },
         source_range: { start: { ...start, chapter_id: ch }, end: { ...end, chapter_id: ch } },
@@ -1756,8 +1882,8 @@
             r.left < area.right,
         );
       if (!rects.length || area.bottom <= area.top) return;
-      const draft = session.state.missDrafts[unit().unit_id],
-        full = activeMisses(unit()).length >= 2;
+      const draft = session.state.missDrafts[uid(unit())],
+        full = (!mixed() && activeMisses(unit()).length >= 2);
       button.textContent = draft
         ? "请先补全当前漏标或结束编辑"
         : full
@@ -1818,9 +1944,9 @@
     window.addEventListener("resize", queueSelectionPosition);
     $("selection").onpointerdown = (e) => e.preventDefault();
     $("selection").onclick = () => {
-      if (!selectedRange || activeMisses(unit()).length >= 2 || session.state.missDrafts[unit().unit_id])
+      if (!selectedRange || (!mixed() && activeMisses(unit()).length >= 2) || session.state.missDrafts[uid(unit())])
         return;
-      session.state.missDrafts[unit().unit_id] = {
+      session.state.missDrafts[uid(unit())] = {
         ...selectedRange,
         record_id: crypto.randomUUID(),
         reason: "",
@@ -1834,14 +1960,14 @@
       focusField($("missReason"));
     };
     $("missReason").oninput = () => {
-      session.state.missDrafts[unit().unit_id].reason = $("missReason").value;
+      session.state.missDrafts[uid(unit())].reason = $("missReason").value;
       updateMissAppearance();
       persist();
       progress();
       queueEdits();
     };
     function saveMiss() {
-      const d = session.state.missDrafts[unit().unit_id];
+      const d = session.state.missDrafts[uid(unit())];
       if (!d || !d.reason.trim()) return false;
       const prior = latest("omission", d.record_id);
       if (!prior || prior.action !== "save" || prior.reason !== d.reason)
@@ -1902,10 +2028,10 @@
       $("draftState").textContent = d
         ? (d.judgment === "fail" && !d.reason.trim() ? "待补理由 · " : "") + draft
         : stored;
-      $("unitNoteState").textContent = Object.hasOwn(session.state.unitNoteDrafts, unit().unit_id)
+      $("unitNoteState").textContent = Object.hasOwn(session.state.unitNoteDrafts, uid(unit()))
         ? draft
         : stored;
-      const miss = session.state.missDrafts[unit().unit_id];
+      const miss = session.state.missDrafts[uid(unit())];
       $("missState").textContent = miss ? (miss.reason.trim() ? stored : "待补理由 · " + draft) : "";
     }
     function flushEdits() {
@@ -1923,8 +2049,8 @@
     }
     function finishMiss() {
       flushEdits();
-      if (session.state.missDrafts[unit().unit_id]?.reason.trim()) {
-        delete session.state.missDrafts[unit().unit_id];
+      if (session.state.missDrafts[uid(unit())]?.reason.trim()) {
+        delete session.state.missDrafts[uid(unit())];
         persist();
         renderMiss();
         progress();
@@ -2019,7 +2145,7 @@
         $(actions[k]).click();
         return;
       }
-      if (["1", "2", "3"].includes(k)) {
+      if (!mixed() && ["1", "2", "3"].includes(k)) {
         e.preventDefault();
         $("density")
           .querySelector('[data-key="' + k + '"]')
@@ -2034,9 +2160,9 @@
       }
       if (k === "o") {
         e.preventDefault();
-        if (session.state.missDrafts[unit().unit_id]) focusField($("missReason"));
-        else if (selectedRange && activeMisses(unit()).length < 2) $("selection").click();
-        else say(activeMisses(unit()).length >= 2 ? "本单元已达两处漏标上限。" : "请先划选本单元正文。");
+        if (session.state.missDrafts[uid(unit())]) focusField($("missReason"));
+        else if (selectedRange && (mixed() || activeMisses(unit()).length < 2)) $("selection").click();
+        else say((!mixed() && activeMisses(unit()).length >= 2) ? "本单元已达两处漏标上限。" : "请先划选本" + unitLabel() + "正文。");
         return;
       }
       if (["ArrowLeft", "ArrowRight", "ArrowUp", "ArrowDown"].includes(e.key)) {

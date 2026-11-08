@@ -4088,6 +4088,140 @@
       ],
       "catalog_status": "not_cataloged",
       "notes": "B completed 16 fixed units at clean ca4e28c; exact original memory IDs/order/text and A1 prompt equality verified; per-unit physical requests and quota retries retained. No memory updates/settlement or original artifacts changed. B content and mark statistics withheld pending blind annotation."
+    },
+    {
+      "run_id": "q1_full_bovary_d414030_20261103",
+      "date": "2026-11-03",
+      "surface": "whole_book",
+      "lane": "mechanism_eval",
+      "status": "review_pending",
+      "mechanisms": [
+        "attentional_v2"
+      ],
+      "dataset_or_manifest": [],
+      "run_dir": "reading-companion-backend/state/eval_local_datasets/q1_fullbooks_d414030_20261103/bovary",
+      "summary_paths": {
+        "metadata": "reading-companion-backend/state/eval_local_datasets/q1_fullbooks_d414030_20261103/bovary/run.json",
+        "review_json": "reading-companion-backend/state/eval_local_datasets/q1_fullbooks_d414030_20261103/bovary/review.json"
+      },
+      "job_ids": [
+        "q1_full_d414030_bovary",
+        "q1_full_d414030_bovary_resume1",
+        "q1_full_d414030_bovary_resume10",
+        "q1_full_d414030_bovary_resume11",
+        "q1_full_d414030_bovary_resume12",
+        "q1_full_d414030_bovary_resume13",
+        "q1_full_d414030_bovary_resume14",
+        "q1_full_d414030_bovary_resume15",
+        "q1_full_d414030_bovary_resume16",
+        "q1_full_d414030_bovary_resume17",
+        "q1_full_d414030_bovary_resume18",
+        "q1_full_d414030_bovary_resume19",
+        "q1_full_d414030_bovary_resume2",
+        "q1_full_d414030_bovary_resume20",
+        "q1_full_d414030_bovary_resume21",
+        "q1_full_d414030_bovary_resume22",
+        "q1_full_d414030_bovary_resume23",
+        "q1_full_d414030_bovary_resume24",
+        "q1_full_d414030_bovary_resume25",
+        "q1_full_d414030_bovary_resume26",
+        "q1_full_d414030_bovary_resume27",
+        "q1_full_d414030_bovary_resume28",
+        "q1_full_d414030_bovary_resume3",
+        "q1_full_d414030_bovary_resume4",
+        "q1_full_d414030_bovary_resume5",
+        "q1_full_d414030_bovary_resume6",
+        "q1_full_d414030_bovary_resume7",
+        "q1_full_d414030_bovary_resume8",
+        "q1_full_d414030_bovary_resume9"
+      ],
+      "report_paths": [
+        "reading-companion-backend/state/eval_local_datasets/q1_fullbooks_d414030_20261103/bovary/summary.json"
+      ],
+      "catalog_status": "not_cataloged",
+      "notes": "Whole-book completed and deterministic coordinate/coverage checks passed. Q1 human labels pending. Missing failed-call usage and retrieval index degradation documented in summaries.",
+      "parent_run_id": "",
+      "child_run_ids": [],
+      "synthetic": false,
+      "local_missing_allowed": [],
+      "metadata": {},
+      "updated_at": "2026-11-03T22:58:56.957073Z"
+    },
+    {
+      "run_id": "q1_full_sapiens_d414030_20261103",
+      "date": "2026-11-03",
+      "surface": "whole_book",
+      "lane": "mechanism_eval",
+      "status": "review_pending",
+      "mechanisms": [
+        "attentional_v2"
+      ],
+      "dataset_or_manifest": [],
+      "run_dir": "reading-companion-backend/state/eval_local_datasets/q1_fullbooks_d414030_20261103/sapiens",
+      "summary_paths": {
+        "metadata": "reading-companion-backend/state/eval_local_datasets/q1_fullbooks_d414030_20261103/sapiens/run.json",
+        "review_json": "reading-companion-backend/state/eval_local_datasets/q1_fullbooks_d414030_20261103/sapiens/review.json"
+      },
+      "job_ids": [
+        "q1_full_d414030_sapiens",
+        "q1_full_d414030_sapiens_resume1",
+        "q1_full_d414030_sapiens_resume10",
+        "q1_full_d414030_sapiens_resume11",
+        "q1_full_d414030_sapiens_resume12",
+        "q1_full_d414030_sapiens_resume13",
+        "q1_full_d414030_sapiens_resume14",
+        "q1_full_d414030_sapiens_resume15",
+        "q1_full_d414030_sapiens_resume16",
+        "q1_full_d414030_sapiens_resume17",
+        "q1_full_d414030_sapiens_resume2",
+        "q1_full_d414030_sapiens_resume3",
+        "q1_full_d414030_sapiens_resume4",
+        "q1_full_d414030_sapiens_resume5",
+        "q1_full_d414030_sapiens_resume6",
+        "q1_full_d414030_sapiens_resume7",
+        "q1_full_d414030_sapiens_resume8",
+        "q1_full_d414030_sapiens_resume9"
+      ],
+      "report_paths": [
+        "reading-companion-backend/state/eval_local_datasets/q1_fullbooks_d414030_20261103/sapiens/summary.json"
+      ],
+      "catalog_status": "not_cataloged",
+      "notes": "Whole-book completed and deterministic coordinate/coverage checks passed. Q1 human labels pending. Missing failed-call usage and retrieval index degradation documented in summaries.",
+      "parent_run_id": "",
+      "child_run_ids": [],
+      "synthetic": false,
+      "local_missing_allowed": [],
+      "metadata": {},
+      "updated_at": "2026-11-03T22:58:57.012522Z"
+    },
+    {
+      "run_id": "q1_pilots_2d0e847_luna6_20261103",
+      "date": "2026-11-03",
+      "surface": "chapter",
+      "lane": "mechanism_eval",
+      "status": "review_pending",
+      "mechanisms": [
+        "attentional_v2"
+      ],
+      "dataset_or_manifest": [],
+      "run_dir": "reading-companion-backend/state/eval_local_datasets/q1_pilots_2d0e847_luna6",
+      "summary_paths": {},
+      "job_ids": [
+        "q1_luna6_2d0e847_bovary",
+        "q1_luna6_2d0e847_sapiens"
+      ],
+      "report_paths": [
+        "reading-companion-backend/state/eval_local_datasets/q1_pilots_2d0e847_luna6/bovary/summary.json",
+        "reading-companion-backend/state/eval_local_datasets/q1_pilots_2d0e847_luna6/sapiens/summary.json"
+      ],
+      "catalog_status": "not_cataloged",
+      "notes": "First body chapters only, 18 units and 31 marginalia checked against original EPUB coordinates. Human Q1 labels pending.",
+      "parent_run_id": "",
+      "child_run_ids": [],
+      "synthetic": false,
+      "local_missing_allowed": [],
+      "metadata": {},
+      "updated_at": "2026-11-03T12:22:01.427676Z"
     }
   ]
 }

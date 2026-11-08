@@ -278,3 +278,26 @@ tests' obsolete single-JSON assumption was corrected to select the baseline by I
 a regression check verifies append operations preserve the complete prior log prefix.
 This is an evaluation workflow continuation, not a mechanism/product direction change;
 no decision-log update is needed.
+
+## SHA-preserving integration
+
+A2/B completion was committed as `28069a9`. Main's three previously uncommitted
+original pilot/full-book ledger rows were separately preserved as `9dbe361`.
+The replay branch merges main without rewriting any historical SHA. Conflict
+resolution keeps main's completed mixed-comparison status/annotator 2.0 and the
+replay continuation. Ledgers are unioned by `run_id`; Markdown is regenerated.
+The experiment log retains both main's and pre-continuation replay's exact byte
+prefixes. Comparison/annotator implementation files are byte-identical to main.
+
+Full verification: 1,811 backend tests passed, 14 annotator-storage tests passed,
+three published prompt releases and the full iteration/journal provenance checks
+passed, full ledger check passed, and `make agent-check` passed (55 contract tests).
+Its 17 traceability warnings exactly match main. Initial backend failures exposed
+missing local-only config and historical test inputs; read-only-use links were
+added for the two Q1 run directories, chapter corpora, missing excerpt input files,
+and local target/profile configuration. Test-only credential placeholders stayed
+in process environment; no actual credentials were written. All failures passed
+on recheck and on the subsequent full suite. Test generation left tracked fixtures
+unchanged. Main receives read-only-use links to replay artifacts and its three
+job records so post-fast-forward traceability can inspect actual evidence.
+No annotation-hub work, rebase, deletion or push is part of integration.

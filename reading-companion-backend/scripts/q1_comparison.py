@@ -230,6 +230,10 @@ def load_output(path, experiment_log):
         sources[s["source_id"]] = s
         docs[s["source_id"]] = doc
     require(bool(sources), "Sources are required")
+    require(
+        len({source_identity(s) for s in sources.values()}) == len(sources),
+        "Duplicate source identity under different aliases",
+    )
 
     def validate_range(sid, value, quote=None):
         require(sid in sources, "Unknown source ID")
@@ -304,6 +308,7 @@ def legacy_output(batches, trial):
                 marks.append(
                     {
                         **deepcopy(m),
+                        "body_text": m.get("body_text") or "",
                         "source_id": sid,
                         "run_id": b["run_id"],
                         "unit_id": u["unit_id"],
@@ -320,8 +325,8 @@ def legacy_output(batches, trial):
         run_id=None,
         run_ids=sorted({b["run_id"] for b in batches.values()}),
         model=models.pop(),
-        prompt={k: prompt[k] for k in ("version", "release_sha256")},
-        reconstructed=True,
+        prompt={k: prompt[k] for k in ("version", "release_sha256", "hash_evidence")},
+        reconstructed=False,
         synthetic=False,
         sources=list(sources.values()),
         coverage=coverage,
