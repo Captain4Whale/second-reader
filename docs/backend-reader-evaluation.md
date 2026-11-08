@@ -1176,7 +1176,7 @@ Internal `mechanism_config.memory_retrieval_mode` and CLI `--memory-retrieval-mo
 
 ### Run configuration evidence
 
-The offline fixed-history Digest tool and its single-pilot acceptance boundary are
+The offline fixed-history Digest tool and its per-unit input-fidelity checks are
 recorded in [the Q1 replay task](tasks/q1-digest-replay-2026-11-08.md). Reconstructed
 historical prompts are not observed original request receipts. A Digest rerun must
 freeze selected memory text, bypass retrieval/settlement, retain actual new requests
@@ -1204,6 +1204,9 @@ For descriptive mark comparisons, Note length is the Unicode code-point count
 of the stripped visible body, including punctuation, excluding source quote,
 Highlight and private selection reason. No Notes means an unavailable mean,
 not zero. Fix visual-example units before generation and retain their full marks.
+When selected dev outputs have already been reviewed, record that prior exposure
+as a blind-review limitation. Anonymous provenance does not remove familiarity
+with similar outputs; do not describe that review as fully unseen material.
 
 The existing standard LLM ledger now records allowlisted effective sampling settings, prompt version and code commit/dirty state for each node. Arbitrary provider options, credentials and headers are never copied. A compact `runtime/run_configuration.json` companion joins those existing records with all prompt versions, the verified chapter-plan fingerprint and requested/actual retrieval metadata. `classification_calls` preserves the receipts of the reused plan; `model_calls` and ledger start/end delimit the current parse/read/resume invocation. Each invocation, including failures, appends its configuration receipt to the existing diagnostics event stream. Normalized eval bundles and internal ParseResult/ReadResult summaries expose the same snapshot; public HTTP/Product/Pack contracts do not change.
 

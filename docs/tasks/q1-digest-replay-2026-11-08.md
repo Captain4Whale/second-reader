@@ -354,3 +354,11 @@ full `make agent-check`, immutable release/manifest/journal checks and ledger ch
 passed. The 16 raw JSON object slices were independently rechecked against dev-v1;
 all prior frozen entries and experiment-log bytes remain unchanged. The historical
 annotation-hub branch still points to `e323902`.
+
+## Blind-review limitation: prior exposure
+
+这 16 个单元的原运行输出已在第一批标注中看过，A1 与之相似，盲标可能被
+“见过”感削弱。混合批次隐藏组别和来源元数据，但不能消除既有阅读记忆；
+因此不能将本轮标注称为未接触过材料的完全盲评。此局限已同时记入追加的
+`Q1-DIGEST-DIAG-001-CONTINUATION` 实验行，既有实验行和历史标注不改写。
+这仅限定后续盲标的解释范围，不评价模型或 Note 好坏，不给假设下结论。
