@@ -136,6 +136,9 @@ Run from the backend (all commands offline):
 It copies outputs only, not old judgments. The legacy loader remains available for
 reading and appending to original single-group journals; those labels are historical,
 not retroactively treated as mixed blind judgments. Holdout is not an iteration input.
+The baseline is original historical output (`reconstructed: false`), not a replay of
+reconstructed inputs. Its prompt `hash_evidence: reconstructed_after_run` separately
+records that the release hash was reconstructed later; request hashes remain null.
 
 Output paths are restricted to backend `state/`, already ignored by Git. Back up full
 batch, mixed projection, key, input outputs and journals privately. The mapping is not
@@ -169,3 +172,50 @@ The parser rejects unexpected fields, wrong ownership, changed anchors and confl
 journal prefixes. Existing 1.0–1.9 rows are still readable in legacy mode and remain
 byte-identical. Default attribution is `weijiang / open_coding`; published rubric
 selection still uses `annotation-context.json`.
+
+## Independent statistics and snapshots
+
+```sh
+.venv/bin/python scripts/q1_comparison_stats.py state/q1_comparison/BATCH_ID \
+  --annotator weijiang --rubric open_coding \
+  --output state/q1_comparison/report.json
+# Optional historical journal prefix, ending at an exact revision:
+.venv/bin/python scripts/q1_comparison_stats.py state/q1_comparison/BATCH_ID --revision 25
+```
+
+The script never loads the annotator. It verifies manifest/projection/key fingerprints,
+single ownership, append order, mark identities, exact anchors and published rubric
+identity. Missing journals, partial lines, unknown records, mismatched mappings and
+reveal/preference rows fail explicitly. `--journal` can select an exported JSONL. A report
+file is created exclusively under ignored backend state and is never overwritten.
+
+It reads one byte snapshot, then optionally selects a prefix. The report records prefix
+SHA-256 and revision, whole-file SHA-256 and row count, manifest/projection/key hashes,
+unit-set hash, synthetic status and experiment IDs. Keep the bundle and exact journal
+prefix alongside the report. A later append does not invalidate the earlier snapshot.
+
+Latest revisions are resolved independently within `(annotator_id, rubric_version,
+rubric_sha256)` scopes. Defaults select `weijiang`; omitting `--rubric` reports separate
+rubric scopes. Earlier rubric judgments are retained in their own scope, not silently
+replaced by judgments made under another rubric. Empty snapshots have null rates.
+
+For each group, report separate Note/Highlight totals, pass/fail/judged/unjudged counts,
+`pass_rate = passed / (passed + failed)`, stars and needs-verification counts. Flag counts
+include flagged items that have not yet received pass/fail judgments. Only marks assigned
+to mixed windows enter this denominator; excluded/unassigned counts and reasons are
+reported explicitly. No extra deduplication is applied beyond resolving append revisions.
+
+For each active (latest `save`) omission in that scope, check each group's **full** anchors
+against its source identity and range, even if a crossing mark is judged in another window
+or has its start outside the selected windows. Count one hit per omission/group. Report
+`hit_count / active_omission_count`, or null when no active omissions exist. Removed
+omissions are excluded. This is anchor-overlap coverage, not a semantic recall estimate.
+Preference wins/ties/losses and post-reveal reporting will be implemented with the deferred
+views; this version rejects those records instead of producing misleading zero counts.
+
+Validation commands (no model):
+
+```sh
+.venv/bin/python -m pytest -q tests/test_q1_comparison.py tests/test_q1_comparison_stats.py
+node --test tools/q1-annotator-storage.test.cjs
+```

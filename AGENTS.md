@@ -102,6 +102,7 @@ Update when: document layering, reading order, task routing, or cross-project co
 
 ### Task-Gated Stable Docs
 - Q1 prompt/rubric/trial/judgment provenance, private assets and frozen dev/holdout sets: `reading-companion-backend/experiments/README.md`
+- Q1 mixed comparison batches, fixed-history Digest output contract and annotation statistics: `reading-companion-backend/experiments/comparison.md`
 - canonical storage/update location for durable information: `docs/source-of-truth-map.md`
 - workspace ownership, file placement, shared entrypoints: `docs/workspace-overview.md`
 - product essence, value channels, and canonical-vs-emerging territory: `docs/product-overview.md`

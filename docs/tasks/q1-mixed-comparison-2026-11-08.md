@@ -20,11 +20,19 @@ No prompt/mechanism edits, model calls or push. Branch `codex/q1-mixed-compariso
 - Real converted dev (67/110) and original Bovary batch (36/40) both load in the browser.
   Actual historical journals validate with 303 + 302 rows. Highlight null bodies are
   normalized to empty strings only in the new projection; original data stays unchanged.
-- Statistics are in progress. No real A/B generation artifacts existed at audit time;
-  synthetic fixtures are explicitly labelled.
+- Independent statistics implemented. 20 focused Python tests passed (data/contract,
+  statistics and existing provenance); actual browser export validates at 16 revisions.
+  Per-rubric/person latest revisions, null denominators, exact prefix snapshots, flag-only
+  judgments, omission deletion and cross-window full-anchor hits are covered. No real A/B
+  generation artifacts existed at audit time; synthetic fixtures are explicitly labelled.
 - Browser verification used local persistent Node/Playwright with cached headless Chromium;
   the skill's provided JS tool denied local connections, and headed screenshots timed out.
   No packages or global settings changed. Screenshots remain in ignored comparison state.
+- `make agent-check` passed, including 55 Annotation Pack tests and product/API/frontend
+  contract checks. Its 17 historical traceability warnings remain; the additional history
+  reminder is due to the new AGENTS doc-routing pointer (reason below). Provenance checker
+  validates both original dev journal prefixes. The two pre-existing run-ledger file
+  hashes still match the pre-task state and are excluded from commits.
 
 ## Validation boundary
 
@@ -42,3 +50,12 @@ ignored backend state. Public tests use authored synthetic text only.
 
 This is an offline workflow extension under existing Q1 provenance authority, not a
 mechanism or product-direction decision; no new decision-log entry is needed.
+
+## Next
+
+The separately assigned Digest rerun tool should implement the documented output contract.
+Finish real A/B mixed annotation before resuming side-by-side, preferences and reveal.
+No real quality scores were computed and no baseline pass-rate field was filled.
+Private acceptance index: `reading-companion-backend/state/q1_comparison/acceptance.json`.
+It identifies the synthetic and converted-dev bundles, browser screenshots and synthetic
+statistics snapshot without putting copyrighted source or annotation content in Git.

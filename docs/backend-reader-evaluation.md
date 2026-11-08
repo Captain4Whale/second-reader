@@ -1,5 +1,10 @@
 # Backend Reader Evaluation
 
+For Q1 fixed-window mixed blind comparisons and their separate offline statistics, use
+[the comparison workflow and Digest producer contract](../reading-companion-backend/experiments/comparison.md).
+Mixed assigns each mark once by anchor start; omission coverage checks full anchors.
+Side-by-side/preferences/reveal are deferred; synthetic acceptance is not quality evidence.
+
 ## Q1 iteration provenance
 
 The operational authority is `reading-companion-backend/experiments/README.md`.
