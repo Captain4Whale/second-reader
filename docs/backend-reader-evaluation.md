@@ -1171,6 +1171,14 @@ Internal `mechanism_config.memory_retrieval_mode` and CLI `--memory-retrieval-mo
 
 ### Run configuration evidence
 
+The offline fixed-history Digest prototype and its current acceptance boundary are
+recorded in [the Q1 replay task](tasks/q1-digest-replay-2026-11-08.md). Reconstructed
+historical prompts are not observed original request receipts. A Digest rerun must
+freeze selected memory text, bypass retrieval/settlement, retain actual new requests
+and usage, and keep generated evidence under ignored backend `state/`. A repeated
+same-configuration sample measures output variability; changing both model and
+reasoning effort does not establish a model-only causal effect.
+
 The existing standard LLM ledger now records allowlisted effective sampling settings, prompt version and code commit/dirty state for each node. Arbitrary provider options, credentials and headers are never copied. A compact `runtime/run_configuration.json` companion joins those existing records with all prompt versions, the verified chapter-plan fingerprint and requested/actual retrieval metadata. `classification_calls` preserves the receipts of the reused plan; `model_calls` and ledger start/end delimit the current parse/read/resume invocation. Each invocation, including failures, appends its configuration receipt to the existing diagnostics event stream. Normalized eval bundles and internal ParseResult/ReadResult summaries expose the same snapshot; public HTTP/Product/Pack contracts do not change.
 
 The plan fingerprint excludes timestamps and invocation receipt IDs, so repeated identical planning outputs have the same identity. This records comparability conditions; it does not claim that real model outputs are deterministic. `code_dirty=true` explicitly marks validation of uncommitted code. An unavailable Git checkout is recorded as unknown, never as a fabricated revision. Configuration evidence and all generated offline probes remain ignored runtime artifacts.

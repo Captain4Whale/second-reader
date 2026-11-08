@@ -20,6 +20,8 @@ Last updated: `2026-11-03`
 
 ## 当前前置任务
 
+- `TASK-Q1-DIGEST-REPLAY` — `waiting`, mechanism_eval / high. Owner-required stop after the first target's strict source check rejected a decorative chapter-label mismatch; no LLM calls. [Record](q1-digest-replay-2026-11-08.md).
+
 - `TASK-Q1-MIXED-COMPARISON` — `active`, mechanism_eval / high. Data layer, mixed blind annotation and statistics only; side-by-side/reveal deferred. [Execution](q1-mixed-comparison-2026-11-08.md), [contract](../../reading-companion-backend/experiments/comparison.md).
 
 - `TASK-STEP1-PREREQS` — `done`，mechanism_runtime / high。[执行记录](step1-prereqs-2026-11-01.md)。仅离线替身验证，分部提交、不 push。

@@ -1,6 +1,6 @@
 {
   "schema_version": 1,
-  "updated_at": "2026-09-13T05:30:49.199824Z",
+  "updated_at": "2026-11-08T03:20:16.163994Z",
   "entries": [
     {
       "run_id": "attentional_v2_excerpt_surface_v1_1_judged_20260406",
@@ -3976,6 +3976,30 @@
         "existing_traceability_warnings": true
       },
       "updated_at": "2026-09-13T01:27:02.398135Z"
+    },
+    {
+      "run_id": "q1_digest_fixed_history_20261108",
+      "date": "2026-11-08",
+      "surface": "fixed_history_digest_diagnostic",
+      "lane": "mechanism_eval",
+      "status": "failed",
+      "mechanisms": [
+        "attentional_v2"
+      ],
+      "dataset_or_manifest": [
+        "reading-companion-backend/experiments/unit-sets/dev-v1.json"
+      ],
+      "run_dir": "/Users/baiweijiang/.codex/worktrees/q1-digest-replay/reading-companion/reading-companion-backend/state/experiments/q1_digest_fixed_history_20261108",
+      "summary_paths": {
+        "preflight_failure": "/Users/baiweijiang/.codex/worktrees/q1-digest-replay/reading-companion/reading-companion-backend/state/experiments/q1_digest_fixed_history_20261108/reconstruction-failed.json",
+        "manifest_checks": "/Users/baiweijiang/.codex/worktrees/q1-digest-replay/reading-companion/reading-companion-backend/state/experiments/q1_digest_fixed_history_20261108/manifest-checks.json"
+      },
+      "job_ids": [],
+      "report_paths": [
+        "docs/tasks/q1-digest-replay-2026-11-08.md"
+      ],
+      "catalog_status": "not_cataloged",
+      "notes": "Owner-required preflight fail-stop on Bovary u000006 strict chapter_ref comparison; canonical coordinates identical. Both final-unit manifests match byte for byte. No model calls, jobs, quality results or blind batch; 0 generation tokens/cost. Planned A1/A2/B are registered in Q1-DIGEST-DIAG-001."
     }
   ]
 }

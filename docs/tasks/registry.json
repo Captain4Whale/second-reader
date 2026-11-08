@@ -3,6 +3,28 @@
   "updated_at": "2026-11-08T09:56:19+08:00",
   "tasks": [
     {
+      "id": "TASK-Q1-DIGEST-REPLAY",
+      "title": "Fixed-history Digest replay and model diagnostic",
+      "status": "waiting",
+      "lane": "mechanism_eval",
+      "priority": "high",
+      "detail_ref": "docs/tasks/q1-digest-replay-2026-11-08.md",
+      "acceptance_ref": "docs/tasks/q1-digest-replay-2026-11-08.md#fail-stop-evidence",
+      "truth_refs": [
+        "docs/backend-reader-evaluation.md"
+      ],
+      "decision_refs": [],
+      "job_refs": [],
+      "blocked_by": [],
+      "next_action": "Owner-required stop: first selected unit failed strict chapter_ref equality. Canonical coordinates match; report before generation resumes.",
+      "evidence_refs": [
+        "reading-companion-backend/eval/attentional_v2/fixed_history_digest.py",
+        "reading-companion-backend/tests/test_fixed_history_digest.py"
+      ],
+      "last_updated": "2026-11-08",
+      "last_updated_by": "codex"
+    },
+    {
       "id": "TASK-Q1-MIXED-COMPARISON",
       "title": "Window-aligned Q1 mixed blind annotation and statistics",
       "status": "active",
