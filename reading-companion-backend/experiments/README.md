@@ -95,3 +95,52 @@ units first. Plain JSON opening uses the stored context or the open-coding defau
 No rubric is inferred from the content of an old judgment. Existing file-prefix,
 revision and conflicting-history checks still apply. New metadata does not rewrite
 `batch.json`, its identity or any prior `judgments.jsonl` row.
+
+## Fixed units and trials
+
+`experiments/unit-sets/dev-v1.json` freezes Bovary batch 1 and Sapiens batch 1
+(67 units, 110 generated marks). `holdout-v1.json` freezes Bovary batches 2/3
+(75 units, 80 marks). Manifests contain original source coordinates, product/source
+hashes, batch/run/reading/unit IDs and mark IDs; no source or judgment bodies.
+Do not redraw samples. `experiments/frozen.json` locks these identities; the checker
+also rejects edits to existing lock entries against the trusted pre-change commit.
+Holdout is excluded from iteration and can only be referenced by a trial whose phase
+is `final_validation`. The checker never opens holdout judgment files.
+
+The experiment table is `experiments/log.jsonl`: one experiment per JSON object/line.
+JSONL preserves lists of runs and prompt identities plus structured metrics without
+embedding JSON in CSV cells. Required fields cover experiment/date/hypothesis/change,
+at most one changed variable, version + release hash, fixed unit-set path + hash, run
+IDs, rubric, results, conclusion and notes. Reusing historical outputs is explicitly a
+baseline registration, not a model experiment. The initial `Q1-BASELINE-001` has
+`results.pass_rate: null` for the owner to fill; this task calculates no pass rate.
+Results may be filled in that row; unit manifests, rubric files and annotation
+journals do not change. New experiment IDs are added with the checked append command.
+
+```sh
+.venv/bin/python scripts/check_iteration_provenance.py
+# Verify the two historical dev journal prefixes in their actual current worktree:
+.venv/bin/python scripts/check_iteration_provenance.py --annotation-root /Users/baiweijiang/Documents/Projects/reading-companion-q1-annotation/reading-companion-backend/state/q1_annotation
+# Prepare a new JSON trial with one changed variable, then append it:
+.venv/bin/python scripts/check_iteration_provenance.py --append-trial /private/tmp/new-trial.json
+# Generate context for a new review (refuses to overwrite an existing file):
+.venv/bin/python scripts/check_iteration_provenance.py --write-context /path/to/batch/annotation-context.json --batch-id FULL_BATCH_ID --rubric-version open_coding --annotator-id weijiang
+```
+
+For rubric scoring, register a new published rubric and use its version instead of
+`open_coding`; draft `q1-v0` is rejected. To change an existing context, prepare the new
+file separately and deliberately replace it after saving drafts; this helper never
+overwrites one. Retain earlier contexts with their experiment. Opening this branch's
+`tools/q1-annotator.html` against the existing batch folder is sufficient; the separate
+older worktree's HTML has not been changed. Avoid running both versions against the
+same live journal. Validation of old metadata uses the two immutable journal-prefix
+overlays; new 1.9 rows carry identity directly. Legacy judgment timestamps remain UTC.
+
+`experiments/baselines/q1-workspace-evidence.json` records contemporaneous status
+snapshots before/after the original launches and after completion. They name only
+the two run-ledger files as dirty. No original patch exists, so exact historical diff
+contents and inter-snapshot changes remain unknown. Historical release hashes are
+marked `reconstructed_after_run`, and actual request hashes remain null. Do not
+substitute today's patch or a saved pre-gateway manifest for an observed old request.
+The one-time `register_q1_baseline.py` preserves the construction procedure and refuses
+to overwrite existing registration; it is not a command to resample or regenerate.

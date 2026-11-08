@@ -1,0 +1,6 @@
+{
+  "experiments/unit-sets/dev-v1.json": "c25a0396c99dc9db4bb25f9e7958b975142cfd11d79834f13cbe92e1afb7a680",
+  "experiments/unit-sets/holdout-v1.json": "661d28ee351db4b93ba8af1b7b360fe814a8ecdbbe56818dd70e7168b38f22c5",
+  "experiments/baselines/q1-workspace-evidence.json": "2947043d9f05fcb0aa9a74215b450f7912045ad4e3a9ba480b8f7ed4ce5468b6",
+  "rubric/q1-v0.md": "80f1a50fa505ce45f13fc0754cb791dcca7b7094ae48b2d6831506c4e6a0d3bd"
+}

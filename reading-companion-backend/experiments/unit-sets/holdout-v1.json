@@ -1,0 +1,2765 @@
+{
+  "schema": "fixed-unit-set/1",
+  "unit_set_id": "q1-holdout-v1",
+  "purpose": "holdout",
+  "created_at": "2026-11-08",
+  "units": [
+    {
+      "batch_id": "be2aec4e93a8ca860ef4a3937a9bbe30e8421bb0dbca051714c7eb386367c6bd",
+      "run_id": "q1_full_bovary_d414030_20261103",
+      "reading_id": "urn:uuid:c9d2d9e3-f6d2-4626-a824-62870c84a188",
+      "product_sha256": "5e80fafa3ad30afa88fbf4c883b75cf34732324c90e954803c590411d58c9b17",
+      "original_epub_sha256": "6c3ba694599f11be94c122b51c2714f746805d73d52191e0c4494ec0871b9b15",
+      "original_substrate_sha256": "e57694d8800cecfef18dc3113cfa54c8162397f78ebb243f923e035b20a93c53",
+      "batch_number": 2,
+      "unit_id": "u000131",
+      "source_range": {
+        "end": {
+          "chapter_id": 24,
+          "char_offset": 100,
+          "paragraph_index": 90
+        },
+        "start": {
+          "chapter_id": 24,
+          "char_offset": 0,
+          "paragraph_index": 79
+        }
+      },
+      "original_source_range": {
+        "end": {
+          "chapter_id": 24,
+          "char_offset": 100,
+          "paragraph_index": 90
+        },
+        "start": {
+          "chapter_id": 24,
+          "char_offset": 0,
+          "paragraph_index": 79
+        }
+      },
+      "marginalia_ids": [
+        "u000131-m001",
+        "u000131-m002"
+      ]
+    },
+    {
+      "batch_id": "be2aec4e93a8ca860ef4a3937a9bbe30e8421bb0dbca051714c7eb386367c6bd",
+      "run_id": "q1_full_bovary_d414030_20261103",
+      "reading_id": "urn:uuid:c9d2d9e3-f6d2-4626-a824-62870c84a188",
+      "product_sha256": "5e80fafa3ad30afa88fbf4c883b75cf34732324c90e954803c590411d58c9b17",
+      "original_epub_sha256": "6c3ba694599f11be94c122b51c2714f746805d73d52191e0c4494ec0871b9b15",
+      "original_substrate_sha256": "e57694d8800cecfef18dc3113cfa54c8162397f78ebb243f923e035b20a93c53",
+      "batch_number": 2,
+      "unit_id": "u000017",
+      "source_range": {
+        "end": {
+          "chapter_id": 9,
+          "char_offset": 330,
+          "paragraph_index": 10
+        },
+        "start": {
+          "chapter_id": 9,
+          "char_offset": 0,
+          "paragraph_index": 7
+        }
+      },
+      "original_source_range": {
+        "end": {
+          "chapter_id": 9,
+          "char_offset": 330,
+          "paragraph_index": 10
+        },
+        "start": {
+          "chapter_id": 9,
+          "char_offset": 0,
+          "paragraph_index": 7
+        }
+      },
+      "marginalia_ids": [
+        "u000017-m001",
+        "u000017-m002"
+      ]
+    },
+    {
+      "batch_id": "be2aec4e93a8ca860ef4a3937a9bbe30e8421bb0dbca051714c7eb386367c6bd",
+      "run_id": "q1_full_bovary_d414030_20261103",
+      "reading_id": "urn:uuid:c9d2d9e3-f6d2-4626-a824-62870c84a188",
+      "product_sha256": "5e80fafa3ad30afa88fbf4c883b75cf34732324c90e954803c590411d58c9b17",
+      "original_epub_sha256": "6c3ba694599f11be94c122b51c2714f746805d73d52191e0c4494ec0871b9b15",
+      "original_substrate_sha256": "e57694d8800cecfef18dc3113cfa54c8162397f78ebb243f923e035b20a93c53",
+      "batch_number": 2,
+      "unit_id": "u000150",
+      "source_range": {
+        "end": {
+          "chapter_id": 25,
+          "char_offset": 32,
+          "paragraph_index": 129
+        },
+        "start": {
+          "chapter_id": 25,
+          "char_offset": 0,
+          "paragraph_index": 128
+        }
+      },
+      "original_source_range": {
+        "end": {
+          "chapter_id": 25,
+          "char_offset": 32,
+          "paragraph_index": 129
+        },
+        "start": {
+          "chapter_id": 25,
+          "char_offset": 0,
+          "paragraph_index": 128
+        }
+      },
+      "marginalia_ids": []
+    },
+    {
+      "batch_id": "be2aec4e93a8ca860ef4a3937a9bbe30e8421bb0dbca051714c7eb386367c6bd",
+      "run_id": "q1_full_bovary_d414030_20261103",
+      "reading_id": "urn:uuid:c9d2d9e3-f6d2-4626-a824-62870c84a188",
+      "product_sha256": "5e80fafa3ad30afa88fbf4c883b75cf34732324c90e954803c590411d58c9b17",
+      "original_epub_sha256": "6c3ba694599f11be94c122b51c2714f746805d73d52191e0c4494ec0871b9b15",
+      "original_substrate_sha256": "e57694d8800cecfef18dc3113cfa54c8162397f78ebb243f923e035b20a93c53",
+      "batch_number": 2,
+      "unit_id": "u000329",
+      "source_range": {
+        "end": {
+          "chapter_id": 42,
+          "char_offset": 57,
+          "paragraph_index": 38
+        },
+        "start": {
+          "chapter_id": 42,
+          "char_offset": 0,
+          "paragraph_index": 21
+        }
+      },
+      "original_source_range": {
+        "end": {
+          "chapter_id": 42,
+          "char_offset": 57,
+          "paragraph_index": 38
+        },
+        "start": {
+          "chapter_id": 42,
+          "char_offset": 0,
+          "paragraph_index": 21
+        }
+      },
+      "marginalia_ids": [
+        "u000329-m001",
+        "u000329-m002",
+        "u000329-m003"
+      ]
+    },
+    {
+      "batch_id": "be2aec4e93a8ca860ef4a3937a9bbe30e8421bb0dbca051714c7eb386367c6bd",
+      "run_id": "q1_full_bovary_d414030_20261103",
+      "reading_id": "urn:uuid:c9d2d9e3-f6d2-4626-a824-62870c84a188",
+      "product_sha256": "5e80fafa3ad30afa88fbf4c883b75cf34732324c90e954803c590411d58c9b17",
+      "original_epub_sha256": "6c3ba694599f11be94c122b51c2714f746805d73d52191e0c4494ec0871b9b15",
+      "original_substrate_sha256": "e57694d8800cecfef18dc3113cfa54c8162397f78ebb243f923e035b20a93c53",
+      "batch_number": 2,
+      "unit_id": "u000161",
+      "source_range": {
+        "end": {
+          "chapter_id": 27,
+          "char_offset": 144,
+          "paragraph_index": 20
+        },
+        "start": {
+          "chapter_id": 27,
+          "char_offset": 0,
+          "paragraph_index": 6
+        }
+      },
+      "original_source_range": {
+        "end": {
+          "chapter_id": 27,
+          "char_offset": 144,
+          "paragraph_index": 20
+        },
+        "start": {
+          "chapter_id": 27,
+          "char_offset": 0,
+          "paragraph_index": 6
+        }
+      },
+      "marginalia_ids": [
+        "u000161-m001"
+      ]
+    },
+    {
+      "batch_id": "be2aec4e93a8ca860ef4a3937a9bbe30e8421bb0dbca051714c7eb386367c6bd",
+      "run_id": "q1_full_bovary_d414030_20261103",
+      "reading_id": "urn:uuid:c9d2d9e3-f6d2-4626-a824-62870c84a188",
+      "product_sha256": "5e80fafa3ad30afa88fbf4c883b75cf34732324c90e954803c590411d58c9b17",
+      "original_epub_sha256": "6c3ba694599f11be94c122b51c2714f746805d73d52191e0c4494ec0871b9b15",
+      "original_substrate_sha256": "e57694d8800cecfef18dc3113cfa54c8162397f78ebb243f923e035b20a93c53",
+      "batch_number": 2,
+      "unit_id": "u000177",
+      "source_range": {
+        "end": {
+          "chapter_id": 28,
+          "char_offset": 21,
+          "paragraph_index": 85
+        },
+        "start": {
+          "chapter_id": 28,
+          "char_offset": 0,
+          "paragraph_index": 69
+        }
+      },
+      "original_source_range": {
+        "end": {
+          "chapter_id": 28,
+          "char_offset": 21,
+          "paragraph_index": 85
+        },
+        "start": {
+          "chapter_id": 28,
+          "char_offset": 0,
+          "paragraph_index": 69
+        }
+      },
+      "marginalia_ids": [
+        "u000177-m001"
+      ]
+    },
+    {
+      "batch_id": "be2aec4e93a8ca860ef4a3937a9bbe30e8421bb0dbca051714c7eb386367c6bd",
+      "run_id": "q1_full_bovary_d414030_20261103",
+      "reading_id": "urn:uuid:c9d2d9e3-f6d2-4626-a824-62870c84a188",
+      "product_sha256": "5e80fafa3ad30afa88fbf4c883b75cf34732324c90e954803c590411d58c9b17",
+      "original_epub_sha256": "6c3ba694599f11be94c122b51c2714f746805d73d52191e0c4494ec0871b9b15",
+      "original_substrate_sha256": "e57694d8800cecfef18dc3113cfa54c8162397f78ebb243f923e035b20a93c53",
+      "batch_number": 2,
+      "unit_id": "u000197",
+      "source_range": {
+        "end": {
+          "chapter_id": 30,
+          "char_offset": 347,
+          "paragraph_index": 11
+        },
+        "start": {
+          "chapter_id": 30,
+          "char_offset": 0,
+          "paragraph_index": 9
+        }
+      },
+      "original_source_range": {
+        "end": {
+          "chapter_id": 30,
+          "char_offset": 347,
+          "paragraph_index": 11
+        },
+        "start": {
+          "chapter_id": 30,
+          "char_offset": 0,
+          "paragraph_index": 9
+        }
+      },
+      "marginalia_ids": [
+        "u000197-m002",
+        "u000197-m001"
+      ]
+    },
+    {
+      "batch_id": "be2aec4e93a8ca860ef4a3937a9bbe30e8421bb0dbca051714c7eb386367c6bd",
+      "run_id": "q1_full_bovary_d414030_20261103",
+      "reading_id": "urn:uuid:c9d2d9e3-f6d2-4626-a824-62870c84a188",
+      "product_sha256": "5e80fafa3ad30afa88fbf4c883b75cf34732324c90e954803c590411d58c9b17",
+      "original_epub_sha256": "6c3ba694599f11be94c122b51c2714f746805d73d52191e0c4494ec0871b9b15",
+      "original_substrate_sha256": "e57694d8800cecfef18dc3113cfa54c8162397f78ebb243f923e035b20a93c53",
+      "batch_number": 2,
+      "unit_id": "u000245",
+      "source_range": {
+        "end": {
+          "chapter_id": 35,
+          "char_offset": 47,
+          "paragraph_index": 25
+        },
+        "start": {
+          "chapter_id": 35,
+          "char_offset": 0,
+          "paragraph_index": 14
+        }
+      },
+      "original_source_range": {
+        "end": {
+          "chapter_id": 35,
+          "char_offset": 47,
+          "paragraph_index": 25
+        },
+        "start": {
+          "chapter_id": 35,
+          "char_offset": 0,
+          "paragraph_index": 14
+        }
+      },
+      "marginalia_ids": []
+    },
+    {
+      "batch_id": "be2aec4e93a8ca860ef4a3937a9bbe30e8421bb0dbca051714c7eb386367c6bd",
+      "run_id": "q1_full_bovary_d414030_20261103",
+      "reading_id": "urn:uuid:c9d2d9e3-f6d2-4626-a824-62870c84a188",
+      "product_sha256": "5e80fafa3ad30afa88fbf4c883b75cf34732324c90e954803c590411d58c9b17",
+      "original_epub_sha256": "6c3ba694599f11be94c122b51c2714f746805d73d52191e0c4494ec0871b9b15",
+      "original_substrate_sha256": "e57694d8800cecfef18dc3113cfa54c8162397f78ebb243f923e035b20a93c53",
+      "batch_number": 2,
+      "unit_id": "u000297",
+      "source_range": {
+        "end": {
+          "chapter_id": 39,
+          "char_offset": 72,
+          "paragraph_index": 158
+        },
+        "start": {
+          "chapter_id": 39,
+          "char_offset": 0,
+          "paragraph_index": 140
+        }
+      },
+      "original_source_range": {
+        "end": {
+          "chapter_id": 39,
+          "char_offset": 72,
+          "paragraph_index": 158
+        },
+        "start": {
+          "chapter_id": 39,
+          "char_offset": 0,
+          "paragraph_index": 140
+        }
+      },
+      "marginalia_ids": [
+        "u000297-m001",
+        "u000297-m002"
+      ]
+    },
+    {
+      "batch_id": "be2aec4e93a8ca860ef4a3937a9bbe30e8421bb0dbca051714c7eb386367c6bd",
+      "run_id": "q1_full_bovary_d414030_20261103",
+      "reading_id": "urn:uuid:c9d2d9e3-f6d2-4626-a824-62870c84a188",
+      "product_sha256": "5e80fafa3ad30afa88fbf4c883b75cf34732324c90e954803c590411d58c9b17",
+      "original_epub_sha256": "6c3ba694599f11be94c122b51c2714f746805d73d52191e0c4494ec0871b9b15",
+      "original_substrate_sha256": "e57694d8800cecfef18dc3113cfa54c8162397f78ebb243f923e035b20a93c53",
+      "batch_number": 2,
+      "unit_id": "u000309",
+      "source_range": {
+        "end": {
+          "chapter_id": 40,
+          "char_offset": 22,
+          "paragraph_index": 149
+        },
+        "start": {
+          "chapter_id": 40,
+          "char_offset": 0,
+          "paragraph_index": 135
+        }
+      },
+      "original_source_range": {
+        "end": {
+          "chapter_id": 40,
+          "char_offset": 22,
+          "paragraph_index": 149
+        },
+        "start": {
+          "chapter_id": 40,
+          "char_offset": 0,
+          "paragraph_index": 135
+        }
+      },
+      "marginalia_ids": []
+    },
+    {
+      "batch_id": "be2aec4e93a8ca860ef4a3937a9bbe30e8421bb0dbca051714c7eb386367c6bd",
+      "run_id": "q1_full_bovary_d414030_20261103",
+      "reading_id": "urn:uuid:c9d2d9e3-f6d2-4626-a824-62870c84a188",
+      "product_sha256": "5e80fafa3ad30afa88fbf4c883b75cf34732324c90e954803c590411d58c9b17",
+      "original_epub_sha256": "6c3ba694599f11be94c122b51c2714f746805d73d52191e0c4494ec0871b9b15",
+      "original_substrate_sha256": "e57694d8800cecfef18dc3113cfa54c8162397f78ebb243f923e035b20a93c53",
+      "batch_number": 2,
+      "unit_id": "u000239",
+      "source_range": {
+        "end": {
+          "chapter_id": 34,
+          "char_offset": 110,
+          "paragraph_index": 82
+        },
+        "start": {
+          "chapter_id": 34,
+          "char_offset": 0,
+          "paragraph_index": 78
+        }
+      },
+      "original_source_range": {
+        "end": {
+          "chapter_id": 34,
+          "char_offset": 110,
+          "paragraph_index": 82
+        },
+        "start": {
+          "chapter_id": 34,
+          "char_offset": 0,
+          "paragraph_index": 78
+        }
+      },
+      "marginalia_ids": [
+        "u000239-m001",
+        "u000239-m002"
+      ]
+    },
+    {
+      "batch_id": "be2aec4e93a8ca860ef4a3937a9bbe30e8421bb0dbca051714c7eb386367c6bd",
+      "run_id": "q1_full_bovary_d414030_20261103",
+      "reading_id": "urn:uuid:c9d2d9e3-f6d2-4626-a824-62870c84a188",
+      "product_sha256": "5e80fafa3ad30afa88fbf4c883b75cf34732324c90e954803c590411d58c9b17",
+      "original_epub_sha256": "6c3ba694599f11be94c122b51c2714f746805d73d52191e0c4494ec0871b9b15",
+      "original_substrate_sha256": "e57694d8800cecfef18dc3113cfa54c8162397f78ebb243f923e035b20a93c53",
+      "batch_number": 2,
+      "unit_id": "u000273",
+      "source_range": {
+        "end": {
+          "chapter_id": 38,
+          "char_offset": 21,
+          "paragraph_index": 110
+        },
+        "start": {
+          "chapter_id": 38,
+          "char_offset": 0,
+          "paragraph_index": 95
+        }
+      },
+      "original_source_range": {
+        "end": {
+          "chapter_id": 38,
+          "char_offset": 21,
+          "paragraph_index": 110
+        },
+        "start": {
+          "chapter_id": 38,
+          "char_offset": 0,
+          "paragraph_index": 95
+        }
+      },
+      "marginalia_ids": [
+        "u000273-m001",
+        "u000273-m002"
+      ]
+    },
+    {
+      "batch_id": "be2aec4e93a8ca860ef4a3937a9bbe30e8421bb0dbca051714c7eb386367c6bd",
+      "run_id": "q1_full_bovary_d414030_20261103",
+      "reading_id": "urn:uuid:c9d2d9e3-f6d2-4626-a824-62870c84a188",
+      "product_sha256": "5e80fafa3ad30afa88fbf4c883b75cf34732324c90e954803c590411d58c9b17",
+      "original_epub_sha256": "6c3ba694599f11be94c122b51c2714f746805d73d52191e0c4494ec0871b9b15",
+      "original_substrate_sha256": "e57694d8800cecfef18dc3113cfa54c8162397f78ebb243f923e035b20a93c53",
+      "batch_number": 2,
+      "unit_id": "u000347",
+      "source_range": {
+        "end": {
+          "chapter_id": 43,
+          "char_offset": 16,
+          "paragraph_index": 78
+        },
+        "start": {
+          "chapter_id": 43,
+          "char_offset": 0,
+          "paragraph_index": 70
+        }
+      },
+      "original_source_range": {
+        "end": {
+          "chapter_id": 43,
+          "char_offset": 16,
+          "paragraph_index": 78
+        },
+        "start": {
+          "chapter_id": 43,
+          "char_offset": 0,
+          "paragraph_index": 70
+        }
+      },
+      "marginalia_ids": [
+        "u000347-m001",
+        "u000347-m002"
+      ]
+    },
+    {
+      "batch_id": "be2aec4e93a8ca860ef4a3937a9bbe30e8421bb0dbca051714c7eb386367c6bd",
+      "run_id": "q1_full_bovary_d414030_20261103",
+      "reading_id": "urn:uuid:c9d2d9e3-f6d2-4626-a824-62870c84a188",
+      "product_sha256": "5e80fafa3ad30afa88fbf4c883b75cf34732324c90e954803c590411d58c9b17",
+      "original_epub_sha256": "6c3ba694599f11be94c122b51c2714f746805d73d52191e0c4494ec0871b9b15",
+      "original_substrate_sha256": "e57694d8800cecfef18dc3113cfa54c8162397f78ebb243f923e035b20a93c53",
+      "batch_number": 2,
+      "unit_id": "u000281",
+      "source_range": {
+        "end": {
+          "chapter_id": 38,
+          "char_offset": 79,
+          "paragraph_index": 151
+        },
+        "start": {
+          "chapter_id": 38,
+          "char_offset": 0,
+          "paragraph_index": 144
+        }
+      },
+      "original_source_range": {
+        "end": {
+          "chapter_id": 38,
+          "char_offset": 79,
+          "paragraph_index": 151
+        },
+        "start": {
+          "chapter_id": 38,
+          "char_offset": 0,
+          "paragraph_index": 144
+        }
+      },
+      "marginalia_ids": [
+        "u000281-m001"
+      ]
+    },
+    {
+      "batch_id": "be2aec4e93a8ca860ef4a3937a9bbe30e8421bb0dbca051714c7eb386367c6bd",
+      "run_id": "q1_full_bovary_d414030_20261103",
+      "reading_id": "urn:uuid:c9d2d9e3-f6d2-4626-a824-62870c84a188",
+      "product_sha256": "5e80fafa3ad30afa88fbf4c883b75cf34732324c90e954803c590411d58c9b17",
+      "original_epub_sha256": "6c3ba694599f11be94c122b51c2714f746805d73d52191e0c4494ec0871b9b15",
+      "original_substrate_sha256": "e57694d8800cecfef18dc3113cfa54c8162397f78ebb243f923e035b20a93c53",
+      "batch_number": 2,
+      "unit_id": "u000151",
+      "source_range": {
+        "end": {
+          "chapter_id": 25,
+          "char_offset": 69,
+          "paragraph_index": 131
+        },
+        "start": {
+          "chapter_id": 25,
+          "char_offset": 0,
+          "paragraph_index": 130
+        }
+      },
+      "original_source_range": {
+        "end": {
+          "chapter_id": 25,
+          "char_offset": 69,
+          "paragraph_index": 131
+        },
+        "start": {
+          "chapter_id": 25,
+          "char_offset": 0,
+          "paragraph_index": 130
+        }
+      },
+      "marginalia_ids": [
+        "u000151-m001"
+      ]
+    },
+    {
+      "batch_id": "be2aec4e93a8ca860ef4a3937a9bbe30e8421bb0dbca051714c7eb386367c6bd",
+      "run_id": "q1_full_bovary_d414030_20261103",
+      "reading_id": "urn:uuid:c9d2d9e3-f6d2-4626-a824-62870c84a188",
+      "product_sha256": "5e80fafa3ad30afa88fbf4c883b75cf34732324c90e954803c590411d58c9b17",
+      "original_epub_sha256": "6c3ba694599f11be94c122b51c2714f746805d73d52191e0c4494ec0871b9b15",
+      "original_substrate_sha256": "e57694d8800cecfef18dc3113cfa54c8162397f78ebb243f923e035b20a93c53",
+      "batch_number": 2,
+      "unit_id": "u000064",
+      "source_range": {
+        "end": {
+          "chapter_id": 16,
+          "char_offset": 3,
+          "paragraph_index": 1
+        },
+        "start": {
+          "chapter_id": 16,
+          "char_offset": 0,
+          "paragraph_index": 1
+        }
+      },
+      "original_source_range": {
+        "end": {
+          "chapter_id": 16,
+          "char_offset": 3,
+          "paragraph_index": 1
+        },
+        "start": {
+          "chapter_id": 16,
+          "char_offset": 0,
+          "paragraph_index": 1
+        }
+      },
+      "marginalia_ids": []
+    },
+    {
+      "batch_id": "be2aec4e93a8ca860ef4a3937a9bbe30e8421bb0dbca051714c7eb386367c6bd",
+      "run_id": "q1_full_bovary_d414030_20261103",
+      "reading_id": "urn:uuid:c9d2d9e3-f6d2-4626-a824-62870c84a188",
+      "product_sha256": "5e80fafa3ad30afa88fbf4c883b75cf34732324c90e954803c590411d58c9b17",
+      "original_epub_sha256": "6c3ba694599f11be94c122b51c2714f746805d73d52191e0c4494ec0871b9b15",
+      "original_substrate_sha256": "e57694d8800cecfef18dc3113cfa54c8162397f78ebb243f923e035b20a93c53",
+      "batch_number": 2,
+      "unit_id": "u000043",
+      "source_range": {
+        "end": {
+          "chapter_id": 13,
+          "char_offset": 30,
+          "paragraph_index": 30
+        },
+        "start": {
+          "chapter_id": 13,
+          "char_offset": 0,
+          "paragraph_index": 27
+        }
+      },
+      "original_source_range": {
+        "end": {
+          "chapter_id": 13,
+          "char_offset": 30,
+          "paragraph_index": 30
+        },
+        "start": {
+          "chapter_id": 13,
+          "char_offset": 0,
+          "paragraph_index": 27
+        }
+      },
+      "marginalia_ids": [
+        "u000043-m001"
+      ]
+    },
+    {
+      "batch_id": "be2aec4e93a8ca860ef4a3937a9bbe30e8421bb0dbca051714c7eb386367c6bd",
+      "run_id": "q1_full_bovary_d414030_20261103",
+      "reading_id": "urn:uuid:c9d2d9e3-f6d2-4626-a824-62870c84a188",
+      "product_sha256": "5e80fafa3ad30afa88fbf4c883b75cf34732324c90e954803c590411d58c9b17",
+      "original_epub_sha256": "6c3ba694599f11be94c122b51c2714f746805d73d52191e0c4494ec0871b9b15",
+      "original_substrate_sha256": "e57694d8800cecfef18dc3113cfa54c8162397f78ebb243f923e035b20a93c53",
+      "batch_number": 2,
+      "unit_id": "u000175",
+      "source_range": {
+        "end": {
+          "chapter_id": 28,
+          "char_offset": 211,
+          "paragraph_index": 54
+        },
+        "start": {
+          "chapter_id": 28,
+          "char_offset": 0,
+          "paragraph_index": 41
+        }
+      },
+      "original_source_range": {
+        "end": {
+          "chapter_id": 28,
+          "char_offset": 211,
+          "paragraph_index": 54
+        },
+        "start": {
+          "chapter_id": 28,
+          "char_offset": 0,
+          "paragraph_index": 41
+        }
+      },
+      "marginalia_ids": [
+        "u000175-m001",
+        "u000175-m002"
+      ]
+    },
+    {
+      "batch_id": "be2aec4e93a8ca860ef4a3937a9bbe30e8421bb0dbca051714c7eb386367c6bd",
+      "run_id": "q1_full_bovary_d414030_20261103",
+      "reading_id": "urn:uuid:c9d2d9e3-f6d2-4626-a824-62870c84a188",
+      "product_sha256": "5e80fafa3ad30afa88fbf4c883b75cf34732324c90e954803c590411d58c9b17",
+      "original_epub_sha256": "6c3ba694599f11be94c122b51c2714f746805d73d52191e0c4494ec0871b9b15",
+      "original_substrate_sha256": "e57694d8800cecfef18dc3113cfa54c8162397f78ebb243f923e035b20a93c53",
+      "batch_number": 2,
+      "unit_id": "u000195",
+      "source_range": {
+        "end": {
+          "chapter_id": 30,
+          "char_offset": 166,
+          "paragraph_index": 4
+        },
+        "start": {
+          "chapter_id": 30,
+          "char_offset": 0,
+          "paragraph_index": 1
+        }
+      },
+      "original_source_range": {
+        "end": {
+          "chapter_id": 30,
+          "char_offset": 166,
+          "paragraph_index": 4
+        },
+        "start": {
+          "chapter_id": 30,
+          "char_offset": 0,
+          "paragraph_index": 1
+        }
+      },
+      "marginalia_ids": [
+        "u000195-m001",
+        "u000195-m002"
+      ]
+    },
+    {
+      "batch_id": "be2aec4e93a8ca860ef4a3937a9bbe30e8421bb0dbca051714c7eb386367c6bd",
+      "run_id": "q1_full_bovary_d414030_20261103",
+      "reading_id": "urn:uuid:c9d2d9e3-f6d2-4626-a824-62870c84a188",
+      "product_sha256": "5e80fafa3ad30afa88fbf4c883b75cf34732324c90e954803c590411d58c9b17",
+      "original_epub_sha256": "6c3ba694599f11be94c122b51c2714f746805d73d52191e0c4494ec0871b9b15",
+      "original_substrate_sha256": "e57694d8800cecfef18dc3113cfa54c8162397f78ebb243f923e035b20a93c53",
+      "batch_number": 2,
+      "unit_id": "u000003",
+      "source_range": {
+        "end": {
+          "chapter_id": 7,
+          "char_offset": 84,
+          "paragraph_index": 27
+        },
+        "start": {
+          "chapter_id": 7,
+          "char_offset": 0,
+          "paragraph_index": 9
+        }
+      },
+      "original_source_range": {
+        "end": {
+          "chapter_id": 7,
+          "char_offset": 84,
+          "paragraph_index": 27
+        },
+        "start": {
+          "chapter_id": 7,
+          "char_offset": 0,
+          "paragraph_index": 9
+        }
+      },
+      "marginalia_ids": [
+        "u000003-m001",
+        "u000003-m002"
+      ]
+    },
+    {
+      "batch_id": "be2aec4e93a8ca860ef4a3937a9bbe30e8421bb0dbca051714c7eb386367c6bd",
+      "run_id": "q1_full_bovary_d414030_20261103",
+      "reading_id": "urn:uuid:c9d2d9e3-f6d2-4626-a824-62870c84a188",
+      "product_sha256": "5e80fafa3ad30afa88fbf4c883b75cf34732324c90e954803c590411d58c9b17",
+      "original_epub_sha256": "6c3ba694599f11be94c122b51c2714f746805d73d52191e0c4494ec0871b9b15",
+      "original_substrate_sha256": "e57694d8800cecfef18dc3113cfa54c8162397f78ebb243f923e035b20a93c53",
+      "batch_number": 2,
+      "unit_id": "u000145",
+      "source_range": {
+        "end": {
+          "chapter_id": 25,
+          "char_offset": 186,
+          "paragraph_index": 64
+        },
+        "start": {
+          "chapter_id": 25,
+          "char_offset": 0,
+          "paragraph_index": 54
+        }
+      },
+      "original_source_range": {
+        "end": {
+          "chapter_id": 25,
+          "char_offset": 186,
+          "paragraph_index": 64
+        },
+        "start": {
+          "chapter_id": 25,
+          "char_offset": 0,
+          "paragraph_index": 54
+        }
+      },
+      "marginalia_ids": [
+        "u000145-m001",
+        "u000145-m002"
+      ]
+    },
+    {
+      "batch_id": "be2aec4e93a8ca860ef4a3937a9bbe30e8421bb0dbca051714c7eb386367c6bd",
+      "run_id": "q1_full_bovary_d414030_20261103",
+      "reading_id": "urn:uuid:c9d2d9e3-f6d2-4626-a824-62870c84a188",
+      "product_sha256": "5e80fafa3ad30afa88fbf4c883b75cf34732324c90e954803c590411d58c9b17",
+      "original_epub_sha256": "6c3ba694599f11be94c122b51c2714f746805d73d52191e0c4494ec0871b9b15",
+      "original_substrate_sha256": "e57694d8800cecfef18dc3113cfa54c8162397f78ebb243f923e035b20a93c53",
+      "batch_number": 2,
+      "unit_id": "u000280",
+      "source_range": {
+        "end": {
+          "chapter_id": 38,
+          "char_offset": 171,
+          "paragraph_index": 143
+        },
+        "start": {
+          "chapter_id": 38,
+          "char_offset": 0,
+          "paragraph_index": 135
+        }
+      },
+      "original_source_range": {
+        "end": {
+          "chapter_id": 38,
+          "char_offset": 171,
+          "paragraph_index": 143
+        },
+        "start": {
+          "chapter_id": 38,
+          "char_offset": 0,
+          "paragraph_index": 135
+        }
+      },
+      "marginalia_ids": []
+    },
+    {
+      "batch_id": "be2aec4e93a8ca860ef4a3937a9bbe30e8421bb0dbca051714c7eb386367c6bd",
+      "run_id": "q1_full_bovary_d414030_20261103",
+      "reading_id": "urn:uuid:c9d2d9e3-f6d2-4626-a824-62870c84a188",
+      "product_sha256": "5e80fafa3ad30afa88fbf4c883b75cf34732324c90e954803c590411d58c9b17",
+      "original_epub_sha256": "6c3ba694599f11be94c122b51c2714f746805d73d52191e0c4494ec0871b9b15",
+      "original_substrate_sha256": "e57694d8800cecfef18dc3113cfa54c8162397f78ebb243f923e035b20a93c53",
+      "batch_number": 2,
+      "unit_id": "u000041",
+      "source_range": {
+        "end": {
+          "chapter_id": 13,
+          "char_offset": 155,
+          "paragraph_index": 16
+        },
+        "start": {
+          "chapter_id": 13,
+          "char_offset": 0,
+          "paragraph_index": 7
+        }
+      },
+      "original_source_range": {
+        "end": {
+          "chapter_id": 13,
+          "char_offset": 155,
+          "paragraph_index": 16
+        },
+        "start": {
+          "chapter_id": 13,
+          "char_offset": 0,
+          "paragraph_index": 7
+        }
+      },
+      "marginalia_ids": [
+        "u000041-m001"
+      ]
+    },
+    {
+      "batch_id": "be2aec4e93a8ca860ef4a3937a9bbe30e8421bb0dbca051714c7eb386367c6bd",
+      "run_id": "q1_full_bovary_d414030_20261103",
+      "reading_id": "urn:uuid:c9d2d9e3-f6d2-4626-a824-62870c84a188",
+      "product_sha256": "5e80fafa3ad30afa88fbf4c883b75cf34732324c90e954803c590411d58c9b17",
+      "original_epub_sha256": "6c3ba694599f11be94c122b51c2714f746805d73d52191e0c4494ec0871b9b15",
+      "original_substrate_sha256": "e57694d8800cecfef18dc3113cfa54c8162397f78ebb243f923e035b20a93c53",
+      "batch_number": 2,
+      "unit_id": "u000241",
+      "source_range": {
+        "end": {
+          "chapter_id": 34,
+          "char_offset": 29,
+          "paragraph_index": 116
+        },
+        "start": {
+          "chapter_id": 34,
+          "char_offset": 0,
+          "paragraph_index": 106
+        }
+      },
+      "original_source_range": {
+        "end": {
+          "chapter_id": 34,
+          "char_offset": 29,
+          "paragraph_index": 116
+        },
+        "start": {
+          "chapter_id": 34,
+          "char_offset": 0,
+          "paragraph_index": 106
+        }
+      },
+      "marginalia_ids": []
+    },
+    {
+      "batch_id": "be2aec4e93a8ca860ef4a3937a9bbe30e8421bb0dbca051714c7eb386367c6bd",
+      "run_id": "q1_full_bovary_d414030_20261103",
+      "reading_id": "urn:uuid:c9d2d9e3-f6d2-4626-a824-62870c84a188",
+      "product_sha256": "5e80fafa3ad30afa88fbf4c883b75cf34732324c90e954803c590411d58c9b17",
+      "original_epub_sha256": "6c3ba694599f11be94c122b51c2714f746805d73d52191e0c4494ec0871b9b15",
+      "original_substrate_sha256": "e57694d8800cecfef18dc3113cfa54c8162397f78ebb243f923e035b20a93c53",
+      "batch_number": 2,
+      "unit_id": "u000214",
+      "source_range": {
+        "end": {
+          "chapter_id": 31,
+          "char_offset": 18,
+          "paragraph_index": 72
+        },
+        "start": {
+          "chapter_id": 31,
+          "char_offset": 0,
+          "paragraph_index": 72
+        }
+      },
+      "original_source_range": {
+        "end": {
+          "chapter_id": 31,
+          "char_offset": 18,
+          "paragraph_index": 72
+        },
+        "start": {
+          "chapter_id": 31,
+          "char_offset": 0,
+          "paragraph_index": 72
+        }
+      },
+      "marginalia_ids": []
+    },
+    {
+      "batch_id": "be2aec4e93a8ca860ef4a3937a9bbe30e8421bb0dbca051714c7eb386367c6bd",
+      "run_id": "q1_full_bovary_d414030_20261103",
+      "reading_id": "urn:uuid:c9d2d9e3-f6d2-4626-a824-62870c84a188",
+      "product_sha256": "5e80fafa3ad30afa88fbf4c883b75cf34732324c90e954803c590411d58c9b17",
+      "original_epub_sha256": "6c3ba694599f11be94c122b51c2714f746805d73d52191e0c4494ec0871b9b15",
+      "original_substrate_sha256": "e57694d8800cecfef18dc3113cfa54c8162397f78ebb243f923e035b20a93c53",
+      "batch_number": 2,
+      "unit_id": "u000262",
+      "source_range": {
+        "end": {
+          "chapter_id": 37,
+          "char_offset": 134,
+          "paragraph_index": 177
+        },
+        "start": {
+          "chapter_id": 37,
+          "char_offset": 0,
+          "paragraph_index": 171
+        }
+      },
+      "original_source_range": {
+        "end": {
+          "chapter_id": 37,
+          "char_offset": 134,
+          "paragraph_index": 177
+        },
+        "start": {
+          "chapter_id": 37,
+          "char_offset": 0,
+          "paragraph_index": 171
+        }
+      },
+      "marginalia_ids": []
+    },
+    {
+      "batch_id": "be2aec4e93a8ca860ef4a3937a9bbe30e8421bb0dbca051714c7eb386367c6bd",
+      "run_id": "q1_full_bovary_d414030_20261103",
+      "reading_id": "urn:uuid:c9d2d9e3-f6d2-4626-a824-62870c84a188",
+      "product_sha256": "5e80fafa3ad30afa88fbf4c883b75cf34732324c90e954803c590411d58c9b17",
+      "original_epub_sha256": "6c3ba694599f11be94c122b51c2714f746805d73d52191e0c4494ec0871b9b15",
+      "original_substrate_sha256": "e57694d8800cecfef18dc3113cfa54c8162397f78ebb243f923e035b20a93c53",
+      "batch_number": 2,
+      "unit_id": "u000215",
+      "source_range": {
+        "end": {
+          "chapter_id": 31,
+          "char_offset": 32,
+          "paragraph_index": 74
+        },
+        "start": {
+          "chapter_id": 31,
+          "char_offset": 0,
+          "paragraph_index": 73
+        }
+      },
+      "original_source_range": {
+        "end": {
+          "chapter_id": 31,
+          "char_offset": 32,
+          "paragraph_index": 74
+        },
+        "start": {
+          "chapter_id": 31,
+          "char_offset": 0,
+          "paragraph_index": 73
+        }
+      },
+      "marginalia_ids": []
+    },
+    {
+      "batch_id": "be2aec4e93a8ca860ef4a3937a9bbe30e8421bb0dbca051714c7eb386367c6bd",
+      "run_id": "q1_full_bovary_d414030_20261103",
+      "reading_id": "urn:uuid:c9d2d9e3-f6d2-4626-a824-62870c84a188",
+      "product_sha256": "5e80fafa3ad30afa88fbf4c883b75cf34732324c90e954803c590411d58c9b17",
+      "original_epub_sha256": "6c3ba694599f11be94c122b51c2714f746805d73d52191e0c4494ec0871b9b15",
+      "original_substrate_sha256": "e57694d8800cecfef18dc3113cfa54c8162397f78ebb243f923e035b20a93c53",
+      "batch_number": 2,
+      "unit_id": "u000089",
+      "source_range": {
+        "end": {
+          "chapter_id": 19,
+          "char_offset": 214,
+          "paragraph_index": 60
+        },
+        "start": {
+          "chapter_id": 19,
+          "char_offset": 0,
+          "paragraph_index": 54
+        }
+      },
+      "original_source_range": {
+        "end": {
+          "chapter_id": 19,
+          "char_offset": 214,
+          "paragraph_index": 60
+        },
+        "start": {
+          "chapter_id": 19,
+          "char_offset": 0,
+          "paragraph_index": 54
+        }
+      },
+      "marginalia_ids": [
+        "u000089-m001"
+      ]
+    },
+    {
+      "batch_id": "be2aec4e93a8ca860ef4a3937a9bbe30e8421bb0dbca051714c7eb386367c6bd",
+      "run_id": "q1_full_bovary_d414030_20261103",
+      "reading_id": "urn:uuid:c9d2d9e3-f6d2-4626-a824-62870c84a188",
+      "product_sha256": "5e80fafa3ad30afa88fbf4c883b75cf34732324c90e954803c590411d58c9b17",
+      "original_epub_sha256": "6c3ba694599f11be94c122b51c2714f746805d73d52191e0c4494ec0871b9b15",
+      "original_substrate_sha256": "e57694d8800cecfef18dc3113cfa54c8162397f78ebb243f923e035b20a93c53",
+      "batch_number": 2,
+      "unit_id": "u000301",
+      "source_range": {
+        "end": {
+          "chapter_id": 40,
+          "char_offset": 112,
+          "paragraph_index": 25
+        },
+        "start": {
+          "chapter_id": 40,
+          "char_offset": 0,
+          "paragraph_index": 19
+        }
+      },
+      "original_source_range": {
+        "end": {
+          "chapter_id": 40,
+          "char_offset": 112,
+          "paragraph_index": 25
+        },
+        "start": {
+          "chapter_id": 40,
+          "char_offset": 0,
+          "paragraph_index": 19
+        }
+      },
+      "marginalia_ids": [
+        "u000301-m001"
+      ]
+    },
+    {
+      "batch_id": "be2aec4e93a8ca860ef4a3937a9bbe30e8421bb0dbca051714c7eb386367c6bd",
+      "run_id": "q1_full_bovary_d414030_20261103",
+      "reading_id": "urn:uuid:c9d2d9e3-f6d2-4626-a824-62870c84a188",
+      "product_sha256": "5e80fafa3ad30afa88fbf4c883b75cf34732324c90e954803c590411d58c9b17",
+      "original_epub_sha256": "6c3ba694599f11be94c122b51c2714f746805d73d52191e0c4494ec0871b9b15",
+      "original_substrate_sha256": "e57694d8800cecfef18dc3113cfa54c8162397f78ebb243f923e035b20a93c53",
+      "batch_number": 2,
+      "unit_id": "u000058",
+      "source_range": {
+        "end": {
+          "chapter_id": 15,
+          "char_offset": 205,
+          "paragraph_index": 38
+        },
+        "start": {
+          "chapter_id": 15,
+          "char_offset": 0,
+          "paragraph_index": 34
+        }
+      },
+      "original_source_range": {
+        "end": {
+          "chapter_id": 15,
+          "char_offset": 205,
+          "paragraph_index": 38
+        },
+        "start": {
+          "chapter_id": 15,
+          "char_offset": 0,
+          "paragraph_index": 34
+        }
+      },
+      "marginalia_ids": [
+        "u000058-m001",
+        "u000058-m002"
+      ]
+    },
+    {
+      "batch_id": "be2aec4e93a8ca860ef4a3937a9bbe30e8421bb0dbca051714c7eb386367c6bd",
+      "run_id": "q1_full_bovary_d414030_20261103",
+      "reading_id": "urn:uuid:c9d2d9e3-f6d2-4626-a824-62870c84a188",
+      "product_sha256": "5e80fafa3ad30afa88fbf4c883b75cf34732324c90e954803c590411d58c9b17",
+      "original_epub_sha256": "6c3ba694599f11be94c122b51c2714f746805d73d52191e0c4494ec0871b9b15",
+      "original_substrate_sha256": "e57694d8800cecfef18dc3113cfa54c8162397f78ebb243f923e035b20a93c53",
+      "batch_number": 2,
+      "unit_id": "u000109",
+      "source_range": {
+        "end": {
+          "chapter_id": 22,
+          "char_offset": 18,
+          "paragraph_index": 78
+        },
+        "start": {
+          "chapter_id": 22,
+          "char_offset": 0,
+          "paragraph_index": 74
+        }
+      },
+      "original_source_range": {
+        "end": {
+          "chapter_id": 22,
+          "char_offset": 18,
+          "paragraph_index": 78
+        },
+        "start": {
+          "chapter_id": 22,
+          "char_offset": 0,
+          "paragraph_index": 74
+        }
+      },
+      "marginalia_ids": []
+    },
+    {
+      "batch_id": "be2aec4e93a8ca860ef4a3937a9bbe30e8421bb0dbca051714c7eb386367c6bd",
+      "run_id": "q1_full_bovary_d414030_20261103",
+      "reading_id": "urn:uuid:c9d2d9e3-f6d2-4626-a824-62870c84a188",
+      "product_sha256": "5e80fafa3ad30afa88fbf4c883b75cf34732324c90e954803c590411d58c9b17",
+      "original_epub_sha256": "6c3ba694599f11be94c122b51c2714f746805d73d52191e0c4494ec0871b9b15",
+      "original_substrate_sha256": "e57694d8800cecfef18dc3113cfa54c8162397f78ebb243f923e035b20a93c53",
+      "batch_number": 2,
+      "unit_id": "u000014",
+      "source_range": {
+        "end": {
+          "chapter_id": 8,
+          "char_offset": 81,
+          "paragraph_index": 34
+        },
+        "start": {
+          "chapter_id": 8,
+          "char_offset": 0,
+          "paragraph_index": 31
+        }
+      },
+      "original_source_range": {
+        "end": {
+          "chapter_id": 8,
+          "char_offset": 81,
+          "paragraph_index": 34
+        },
+        "start": {
+          "chapter_id": 8,
+          "char_offset": 0,
+          "paragraph_index": 31
+        }
+      },
+      "marginalia_ids": [
+        "u000014-m001"
+      ]
+    },
+    {
+      "batch_id": "be2aec4e93a8ca860ef4a3937a9bbe30e8421bb0dbca051714c7eb386367c6bd",
+      "run_id": "q1_full_bovary_d414030_20261103",
+      "reading_id": "urn:uuid:c9d2d9e3-f6d2-4626-a824-62870c84a188",
+      "product_sha256": "5e80fafa3ad30afa88fbf4c883b75cf34732324c90e954803c590411d58c9b17",
+      "original_epub_sha256": "6c3ba694599f11be94c122b51c2714f746805d73d52191e0c4494ec0871b9b15",
+      "original_substrate_sha256": "e57694d8800cecfef18dc3113cfa54c8162397f78ebb243f923e035b20a93c53",
+      "batch_number": 2,
+      "unit_id": "u000032",
+      "source_range": {
+        "end": {
+          "chapter_id": 12,
+          "char_offset": 350,
+          "paragraph_index": 12
+        },
+        "start": {
+          "chapter_id": 12,
+          "char_offset": 0,
+          "paragraph_index": 7
+        }
+      },
+      "original_source_range": {
+        "end": {
+          "chapter_id": 12,
+          "char_offset": 350,
+          "paragraph_index": 12
+        },
+        "start": {
+          "chapter_id": 12,
+          "char_offset": 0,
+          "paragraph_index": 7
+        }
+      },
+      "marginalia_ids": [
+        "u000032-m002",
+        "u000032-m001"
+      ]
+    },
+    {
+      "batch_id": "be2aec4e93a8ca860ef4a3937a9bbe30e8421bb0dbca051714c7eb386367c6bd",
+      "run_id": "q1_full_bovary_d414030_20261103",
+      "reading_id": "urn:uuid:c9d2d9e3-f6d2-4626-a824-62870c84a188",
+      "product_sha256": "5e80fafa3ad30afa88fbf4c883b75cf34732324c90e954803c590411d58c9b17",
+      "original_epub_sha256": "6c3ba694599f11be94c122b51c2714f746805d73d52191e0c4494ec0871b9b15",
+      "original_substrate_sha256": "e57694d8800cecfef18dc3113cfa54c8162397f78ebb243f923e035b20a93c53",
+      "batch_number": 2,
+      "unit_id": "u000015",
+      "source_range": {
+        "end": {
+          "chapter_id": 8,
+          "char_offset": 40,
+          "paragraph_index": 41
+        },
+        "start": {
+          "chapter_id": 8,
+          "char_offset": 0,
+          "paragraph_index": 35
+        }
+      },
+      "original_source_range": {
+        "end": {
+          "chapter_id": 8,
+          "char_offset": 40,
+          "paragraph_index": 41
+        },
+        "start": {
+          "chapter_id": 8,
+          "char_offset": 0,
+          "paragraph_index": 35
+        }
+      },
+      "marginalia_ids": []
+    },
+    {
+      "batch_id": "be2aec4e93a8ca860ef4a3937a9bbe30e8421bb0dbca051714c7eb386367c6bd",
+      "run_id": "q1_full_bovary_d414030_20261103",
+      "reading_id": "urn:uuid:c9d2d9e3-f6d2-4626-a824-62870c84a188",
+      "product_sha256": "5e80fafa3ad30afa88fbf4c883b75cf34732324c90e954803c590411d58c9b17",
+      "original_epub_sha256": "6c3ba694599f11be94c122b51c2714f746805d73d52191e0c4494ec0871b9b15",
+      "original_substrate_sha256": "e57694d8800cecfef18dc3113cfa54c8162397f78ebb243f923e035b20a93c53",
+      "batch_number": 2,
+      "unit_id": "u000018",
+      "source_range": {
+        "end": {
+          "chapter_id": 9,
+          "char_offset": 107,
+          "paragraph_index": 16
+        },
+        "start": {
+          "chapter_id": 9,
+          "char_offset": 0,
+          "paragraph_index": 11
+        }
+      },
+      "original_source_range": {
+        "end": {
+          "chapter_id": 9,
+          "char_offset": 107,
+          "paragraph_index": 16
+        },
+        "start": {
+          "chapter_id": 9,
+          "char_offset": 0,
+          "paragraph_index": 11
+        }
+      },
+      "marginalia_ids": [
+        "u000018-m001",
+        "u000018-m002"
+      ]
+    },
+    {
+      "batch_id": "be2aec4e93a8ca860ef4a3937a9bbe30e8421bb0dbca051714c7eb386367c6bd",
+      "run_id": "q1_full_bovary_d414030_20261103",
+      "reading_id": "urn:uuid:c9d2d9e3-f6d2-4626-a824-62870c84a188",
+      "product_sha256": "5e80fafa3ad30afa88fbf4c883b75cf34732324c90e954803c590411d58c9b17",
+      "original_epub_sha256": "6c3ba694599f11be94c122b51c2714f746805d73d52191e0c4494ec0871b9b15",
+      "original_substrate_sha256": "e57694d8800cecfef18dc3113cfa54c8162397f78ebb243f923e035b20a93c53",
+      "batch_number": 2,
+      "unit_id": "u000024",
+      "source_range": {
+        "end": {
+          "chapter_id": 10,
+          "char_offset": 193,
+          "paragraph_index": 12
+        },
+        "start": {
+          "chapter_id": 10,
+          "char_offset": 0,
+          "paragraph_index": 8
+        }
+      },
+      "original_source_range": {
+        "end": {
+          "chapter_id": 10,
+          "char_offset": 193,
+          "paragraph_index": 12
+        },
+        "start": {
+          "chapter_id": 10,
+          "char_offset": 0,
+          "paragraph_index": 8
+        }
+      },
+      "marginalia_ids": []
+    },
+    {
+      "batch_id": "5e5015710488ab8cc8d3a40853b5fbd7e09860104afbbaeff4e94796d1bb098c",
+      "run_id": "q1_full_bovary_d414030_20261103",
+      "reading_id": "urn:uuid:c9d2d9e3-f6d2-4626-a824-62870c84a188",
+      "product_sha256": "5e80fafa3ad30afa88fbf4c883b75cf34732324c90e954803c590411d58c9b17",
+      "original_epub_sha256": "6c3ba694599f11be94c122b51c2714f746805d73d52191e0c4494ec0871b9b15",
+      "original_substrate_sha256": "e57694d8800cecfef18dc3113cfa54c8162397f78ebb243f923e035b20a93c53",
+      "batch_number": 3,
+      "unit_id": "u000322",
+      "source_range": {
+        "end": {
+          "chapter_id": 41,
+          "char_offset": 99,
+          "paragraph_index": 58
+        },
+        "start": {
+          "chapter_id": 41,
+          "char_offset": 0,
+          "paragraph_index": 49
+        }
+      },
+      "original_source_range": {
+        "end": {
+          "chapter_id": 41,
+          "char_offset": 99,
+          "paragraph_index": 58
+        },
+        "start": {
+          "chapter_id": 41,
+          "char_offset": 0,
+          "paragraph_index": 49
+        }
+      },
+      "marginalia_ids": [
+        "u000322-m001"
+      ]
+    },
+    {
+      "batch_id": "5e5015710488ab8cc8d3a40853b5fbd7e09860104afbbaeff4e94796d1bb098c",
+      "run_id": "q1_full_bovary_d414030_20261103",
+      "reading_id": "urn:uuid:c9d2d9e3-f6d2-4626-a824-62870c84a188",
+      "product_sha256": "5e80fafa3ad30afa88fbf4c883b75cf34732324c90e954803c590411d58c9b17",
+      "original_epub_sha256": "6c3ba694599f11be94c122b51c2714f746805d73d52191e0c4494ec0871b9b15",
+      "original_substrate_sha256": "e57694d8800cecfef18dc3113cfa54c8162397f78ebb243f923e035b20a93c53",
+      "batch_number": 3,
+      "unit_id": "u000188",
+      "source_range": {
+        "end": {
+          "chapter_id": 29,
+          "char_offset": 51,
+          "paragraph_index": 49
+        },
+        "start": {
+          "chapter_id": 29,
+          "char_offset": 0,
+          "paragraph_index": 37
+        }
+      },
+      "original_source_range": {
+        "end": {
+          "chapter_id": 29,
+          "char_offset": 51,
+          "paragraph_index": 49
+        },
+        "start": {
+          "chapter_id": 29,
+          "char_offset": 0,
+          "paragraph_index": 37
+        }
+      },
+      "marginalia_ids": [
+        "u000188-m002",
+        "u000188-m001"
+      ]
+    },
+    {
+      "batch_id": "5e5015710488ab8cc8d3a40853b5fbd7e09860104afbbaeff4e94796d1bb098c",
+      "run_id": "q1_full_bovary_d414030_20261103",
+      "reading_id": "urn:uuid:c9d2d9e3-f6d2-4626-a824-62870c84a188",
+      "product_sha256": "5e80fafa3ad30afa88fbf4c883b75cf34732324c90e954803c590411d58c9b17",
+      "original_epub_sha256": "6c3ba694599f11be94c122b51c2714f746805d73d52191e0c4494ec0871b9b15",
+      "original_substrate_sha256": "e57694d8800cecfef18dc3113cfa54c8162397f78ebb243f923e035b20a93c53",
+      "batch_number": 3,
+      "unit_id": "u000009",
+      "source_range": {
+        "end": {
+          "chapter_id": 7,
+          "char_offset": 44,
+          "paragraph_index": 67
+        },
+        "start": {
+          "chapter_id": 7,
+          "char_offset": 0,
+          "paragraph_index": 56
+        }
+      },
+      "original_source_range": {
+        "end": {
+          "chapter_id": 7,
+          "char_offset": 44,
+          "paragraph_index": 67
+        },
+        "start": {
+          "chapter_id": 7,
+          "char_offset": 0,
+          "paragraph_index": 56
+        }
+      },
+      "marginalia_ids": []
+    },
+    {
+      "batch_id": "5e5015710488ab8cc8d3a40853b5fbd7e09860104afbbaeff4e94796d1bb098c",
+      "run_id": "q1_full_bovary_d414030_20261103",
+      "reading_id": "urn:uuid:c9d2d9e3-f6d2-4626-a824-62870c84a188",
+      "product_sha256": "5e80fafa3ad30afa88fbf4c883b75cf34732324c90e954803c590411d58c9b17",
+      "original_epub_sha256": "6c3ba694599f11be94c122b51c2714f746805d73d52191e0c4494ec0871b9b15",
+      "original_substrate_sha256": "e57694d8800cecfef18dc3113cfa54c8162397f78ebb243f923e035b20a93c53",
+      "batch_number": 3,
+      "unit_id": "u000274",
+      "source_range": {
+        "end": {
+          "chapter_id": 38,
+          "char_offset": 72,
+          "paragraph_index": 114
+        },
+        "start": {
+          "chapter_id": 38,
+          "char_offset": 0,
+          "paragraph_index": 111
+        }
+      },
+      "original_source_range": {
+        "end": {
+          "chapter_id": 38,
+          "char_offset": 72,
+          "paragraph_index": 114
+        },
+        "start": {
+          "chapter_id": 38,
+          "char_offset": 0,
+          "paragraph_index": 111
+        }
+      },
+      "marginalia_ids": [
+        "u000274-m001"
+      ]
+    },
+    {
+      "batch_id": "5e5015710488ab8cc8d3a40853b5fbd7e09860104afbbaeff4e94796d1bb098c",
+      "run_id": "q1_full_bovary_d414030_20261103",
+      "reading_id": "urn:uuid:c9d2d9e3-f6d2-4626-a824-62870c84a188",
+      "product_sha256": "5e80fafa3ad30afa88fbf4c883b75cf34732324c90e954803c590411d58c9b17",
+      "original_epub_sha256": "6c3ba694599f11be94c122b51c2714f746805d73d52191e0c4494ec0871b9b15",
+      "original_substrate_sha256": "e57694d8800cecfef18dc3113cfa54c8162397f78ebb243f923e035b20a93c53",
+      "batch_number": 3,
+      "unit_id": "u000307",
+      "source_range": {
+        "end": {
+          "chapter_id": 40,
+          "char_offset": 136,
+          "paragraph_index": 109
+        },
+        "start": {
+          "chapter_id": 40,
+          "char_offset": 0,
+          "paragraph_index": 89
+        }
+      },
+      "original_source_range": {
+        "end": {
+          "chapter_id": 40,
+          "char_offset": 136,
+          "paragraph_index": 109
+        },
+        "start": {
+          "chapter_id": 40,
+          "char_offset": 0,
+          "paragraph_index": 89
+        }
+      },
+      "marginalia_ids": [
+        "u000307-m001"
+      ]
+    },
+    {
+      "batch_id": "5e5015710488ab8cc8d3a40853b5fbd7e09860104afbbaeff4e94796d1bb098c",
+      "run_id": "q1_full_bovary_d414030_20261103",
+      "reading_id": "urn:uuid:c9d2d9e3-f6d2-4626-a824-62870c84a188",
+      "product_sha256": "5e80fafa3ad30afa88fbf4c883b75cf34732324c90e954803c590411d58c9b17",
+      "original_epub_sha256": "6c3ba694599f11be94c122b51c2714f746805d73d52191e0c4494ec0871b9b15",
+      "original_substrate_sha256": "e57694d8800cecfef18dc3113cfa54c8162397f78ebb243f923e035b20a93c53",
+      "batch_number": 3,
+      "unit_id": "u000097",
+      "source_range": {
+        "end": {
+          "chapter_id": 21,
+          "char_offset": 25,
+          "paragraph_index": 18
+        },
+        "start": {
+          "chapter_id": 21,
+          "char_offset": 0,
+          "paragraph_index": 1
+        }
+      },
+      "original_source_range": {
+        "end": {
+          "chapter_id": 21,
+          "char_offset": 25,
+          "paragraph_index": 18
+        },
+        "start": {
+          "chapter_id": 21,
+          "char_offset": 0,
+          "paragraph_index": 1
+        }
+      },
+      "marginalia_ids": [
+        "u000097-m001",
+        "u000097-m002"
+      ]
+    },
+    {
+      "batch_id": "5e5015710488ab8cc8d3a40853b5fbd7e09860104afbbaeff4e94796d1bb098c",
+      "run_id": "q1_full_bovary_d414030_20261103",
+      "reading_id": "urn:uuid:c9d2d9e3-f6d2-4626-a824-62870c84a188",
+      "product_sha256": "5e80fafa3ad30afa88fbf4c883b75cf34732324c90e954803c590411d58c9b17",
+      "original_epub_sha256": "6c3ba694599f11be94c122b51c2714f746805d73d52191e0c4494ec0871b9b15",
+      "original_substrate_sha256": "e57694d8800cecfef18dc3113cfa54c8162397f78ebb243f923e035b20a93c53",
+      "batch_number": 3,
+      "unit_id": "u000187",
+      "source_range": {
+        "end": {
+          "chapter_id": 29,
+          "char_offset": 165,
+          "paragraph_index": 36
+        },
+        "start": {
+          "chapter_id": 29,
+          "char_offset": 0,
+          "paragraph_index": 31
+        }
+      },
+      "original_source_range": {
+        "end": {
+          "chapter_id": 29,
+          "char_offset": 165,
+          "paragraph_index": 36
+        },
+        "start": {
+          "chapter_id": 29,
+          "char_offset": 0,
+          "paragraph_index": 31
+        }
+      },
+      "marginalia_ids": [
+        "u000187-m001"
+      ]
+    },
+    {
+      "batch_id": "5e5015710488ab8cc8d3a40853b5fbd7e09860104afbbaeff4e94796d1bb098c",
+      "run_id": "q1_full_bovary_d414030_20261103",
+      "reading_id": "urn:uuid:c9d2d9e3-f6d2-4626-a824-62870c84a188",
+      "product_sha256": "5e80fafa3ad30afa88fbf4c883b75cf34732324c90e954803c590411d58c9b17",
+      "original_epub_sha256": "6c3ba694599f11be94c122b51c2714f746805d73d52191e0c4494ec0871b9b15",
+      "original_substrate_sha256": "e57694d8800cecfef18dc3113cfa54c8162397f78ebb243f923e035b20a93c53",
+      "batch_number": 3,
+      "unit_id": "u000067",
+      "source_range": {
+        "end": {
+          "chapter_id": 17,
+          "char_offset": 62,
+          "paragraph_index": 15
+        },
+        "start": {
+          "chapter_id": 17,
+          "char_offset": 0,
+          "paragraph_index": 8
+        }
+      },
+      "original_source_range": {
+        "end": {
+          "chapter_id": 17,
+          "char_offset": 62,
+          "paragraph_index": 15
+        },
+        "start": {
+          "chapter_id": 17,
+          "char_offset": 0,
+          "paragraph_index": 8
+        }
+      },
+      "marginalia_ids": [
+        "u000067-m001",
+        "u000067-m002"
+      ]
+    },
+    {
+      "batch_id": "5e5015710488ab8cc8d3a40853b5fbd7e09860104afbbaeff4e94796d1bb098c",
+      "run_id": "q1_full_bovary_d414030_20261103",
+      "reading_id": "urn:uuid:c9d2d9e3-f6d2-4626-a824-62870c84a188",
+      "product_sha256": "5e80fafa3ad30afa88fbf4c883b75cf34732324c90e954803c590411d58c9b17",
+      "original_epub_sha256": "6c3ba694599f11be94c122b51c2714f746805d73d52191e0c4494ec0871b9b15",
+      "original_substrate_sha256": "e57694d8800cecfef18dc3113cfa54c8162397f78ebb243f923e035b20a93c53",
+      "batch_number": 3,
+      "unit_id": "u000263",
+      "source_range": {
+        "end": {
+          "chapter_id": 37,
+          "char_offset": 43,
+          "paragraph_index": 181
+        },
+        "start": {
+          "chapter_id": 37,
+          "char_offset": 0,
+          "paragraph_index": 178
+        }
+      },
+      "original_source_range": {
+        "end": {
+          "chapter_id": 37,
+          "char_offset": 43,
+          "paragraph_index": 181
+        },
+        "start": {
+          "chapter_id": 37,
+          "char_offset": 0,
+          "paragraph_index": 178
+        }
+      },
+      "marginalia_ids": [
+        "u000263-m001",
+        "u000263-m002"
+      ]
+    },
+    {
+      "batch_id": "5e5015710488ab8cc8d3a40853b5fbd7e09860104afbbaeff4e94796d1bb098c",
+      "run_id": "q1_full_bovary_d414030_20261103",
+      "reading_id": "urn:uuid:c9d2d9e3-f6d2-4626-a824-62870c84a188",
+      "product_sha256": "5e80fafa3ad30afa88fbf4c883b75cf34732324c90e954803c590411d58c9b17",
+      "original_epub_sha256": "6c3ba694599f11be94c122b51c2714f746805d73d52191e0c4494ec0871b9b15",
+      "original_substrate_sha256": "e57694d8800cecfef18dc3113cfa54c8162397f78ebb243f923e035b20a93c53",
+      "batch_number": 3,
+      "unit_id": "u000236",
+      "source_range": {
+        "end": {
+          "chapter_id": 34,
+          "char_offset": 100,
+          "paragraph_index": 49
+        },
+        "start": {
+          "chapter_id": 34,
+          "char_offset": 0,
+          "paragraph_index": 48
+        }
+      },
+      "original_source_range": {
+        "end": {
+          "chapter_id": 34,
+          "char_offset": 100,
+          "paragraph_index": 49
+        },
+        "start": {
+          "chapter_id": 34,
+          "char_offset": 0,
+          "paragraph_index": 48
+        }
+      },
+      "marginalia_ids": [
+        "u000236-m001"
+      ]
+    },
+    {
+      "batch_id": "5e5015710488ab8cc8d3a40853b5fbd7e09860104afbbaeff4e94796d1bb098c",
+      "run_id": "q1_full_bovary_d414030_20261103",
+      "reading_id": "urn:uuid:c9d2d9e3-f6d2-4626-a824-62870c84a188",
+      "product_sha256": "5e80fafa3ad30afa88fbf4c883b75cf34732324c90e954803c590411d58c9b17",
+      "original_epub_sha256": "6c3ba694599f11be94c122b51c2714f746805d73d52191e0c4494ec0871b9b15",
+      "original_substrate_sha256": "e57694d8800cecfef18dc3113cfa54c8162397f78ebb243f923e035b20a93c53",
+      "batch_number": 3,
+      "unit_id": "u000313",
+      "source_range": {
+        "end": {
+          "chapter_id": 40,
+          "char_offset": 129,
+          "paragraph_index": 198
+        },
+        "start": {
+          "chapter_id": 40,
+          "char_offset": 0,
+          "paragraph_index": 189
+        }
+      },
+      "original_source_range": {
+        "end": {
+          "chapter_id": 40,
+          "char_offset": 129,
+          "paragraph_index": 198
+        },
+        "start": {
+          "chapter_id": 40,
+          "char_offset": 0,
+          "paragraph_index": 189
+        }
+      },
+      "marginalia_ids": [
+        "u000313-m001"
+      ]
+    },
+    {
+      "batch_id": "5e5015710488ab8cc8d3a40853b5fbd7e09860104afbbaeff4e94796d1bb098c",
+      "run_id": "q1_full_bovary_d414030_20261103",
+      "reading_id": "urn:uuid:c9d2d9e3-f6d2-4626-a824-62870c84a188",
+      "product_sha256": "5e80fafa3ad30afa88fbf4c883b75cf34732324c90e954803c590411d58c9b17",
+      "original_epub_sha256": "6c3ba694599f11be94c122b51c2714f746805d73d52191e0c4494ec0871b9b15",
+      "original_substrate_sha256": "e57694d8800cecfef18dc3113cfa54c8162397f78ebb243f923e035b20a93c53",
+      "batch_number": 3,
+      "unit_id": "u000293",
+      "source_range": {
+        "end": {
+          "chapter_id": 39,
+          "char_offset": 117,
+          "paragraph_index": 101
+        },
+        "start": {
+          "chapter_id": 39,
+          "char_offset": 0,
+          "paragraph_index": 90
+        }
+      },
+      "original_source_range": {
+        "end": {
+          "chapter_id": 39,
+          "char_offset": 117,
+          "paragraph_index": 101
+        },
+        "start": {
+          "chapter_id": 39,
+          "char_offset": 0,
+          "paragraph_index": 90
+        }
+      },
+      "marginalia_ids": [
+        "u000293-m001",
+        "u000293-m002"
+      ]
+    },
+    {
+      "batch_id": "5e5015710488ab8cc8d3a40853b5fbd7e09860104afbbaeff4e94796d1bb098c",
+      "run_id": "q1_full_bovary_d414030_20261103",
+      "reading_id": "urn:uuid:c9d2d9e3-f6d2-4626-a824-62870c84a188",
+      "product_sha256": "5e80fafa3ad30afa88fbf4c883b75cf34732324c90e954803c590411d58c9b17",
+      "original_epub_sha256": "6c3ba694599f11be94c122b51c2714f746805d73d52191e0c4494ec0871b9b15",
+      "original_substrate_sha256": "e57694d8800cecfef18dc3113cfa54c8162397f78ebb243f923e035b20a93c53",
+      "batch_number": 3,
+      "unit_id": "u000201",
+      "source_range": {
+        "end": {
+          "chapter_id": 30,
+          "char_offset": 255,
+          "paragraph_index": 54
+        },
+        "start": {
+          "chapter_id": 30,
+          "char_offset": 0,
+          "paragraph_index": 29
+        }
+      },
+      "original_source_range": {
+        "end": {
+          "chapter_id": 30,
+          "char_offset": 255,
+          "paragraph_index": 54
+        },
+        "start": {
+          "chapter_id": 30,
+          "char_offset": 0,
+          "paragraph_index": 29
+        }
+      },
+      "marginalia_ids": [
+        "u000201-m001"
+      ]
+    },
+    {
+      "batch_id": "5e5015710488ab8cc8d3a40853b5fbd7e09860104afbbaeff4e94796d1bb098c",
+      "run_id": "q1_full_bovary_d414030_20261103",
+      "reading_id": "urn:uuid:c9d2d9e3-f6d2-4626-a824-62870c84a188",
+      "product_sha256": "5e80fafa3ad30afa88fbf4c883b75cf34732324c90e954803c590411d58c9b17",
+      "original_epub_sha256": "6c3ba694599f11be94c122b51c2714f746805d73d52191e0c4494ec0871b9b15",
+      "original_substrate_sha256": "e57694d8800cecfef18dc3113cfa54c8162397f78ebb243f923e035b20a93c53",
+      "batch_number": 3,
+      "unit_id": "u000220",
+      "source_range": {
+        "end": {
+          "chapter_id": 33,
+          "char_offset": 182,
+          "paragraph_index": 36
+        },
+        "start": {
+          "chapter_id": 33,
+          "char_offset": 0,
+          "paragraph_index": 30
+        }
+      },
+      "original_source_range": {
+        "end": {
+          "chapter_id": 33,
+          "char_offset": 182,
+          "paragraph_index": 36
+        },
+        "start": {
+          "chapter_id": 33,
+          "char_offset": 0,
+          "paragraph_index": 30
+        }
+      },
+      "marginalia_ids": [
+        "u000220-m001"
+      ]
+    },
+    {
+      "batch_id": "5e5015710488ab8cc8d3a40853b5fbd7e09860104afbbaeff4e94796d1bb098c",
+      "run_id": "q1_full_bovary_d414030_20261103",
+      "reading_id": "urn:uuid:c9d2d9e3-f6d2-4626-a824-62870c84a188",
+      "product_sha256": "5e80fafa3ad30afa88fbf4c883b75cf34732324c90e954803c590411d58c9b17",
+      "original_epub_sha256": "6c3ba694599f11be94c122b51c2714f746805d73d52191e0c4494ec0871b9b15",
+      "original_substrate_sha256": "e57694d8800cecfef18dc3113cfa54c8162397f78ebb243f923e035b20a93c53",
+      "batch_number": 3,
+      "unit_id": "u000159",
+      "source_range": {
+        "end": {
+          "chapter_id": 26,
+          "char_offset": 22,
+          "paragraph_index": 89
+        },
+        "start": {
+          "chapter_id": 26,
+          "char_offset": 0,
+          "paragraph_index": 88
+        }
+      },
+      "original_source_range": {
+        "end": {
+          "chapter_id": 26,
+          "char_offset": 22,
+          "paragraph_index": 89
+        },
+        "start": {
+          "chapter_id": 26,
+          "char_offset": 0,
+          "paragraph_index": 88
+        }
+      },
+      "marginalia_ids": []
+    },
+    {
+      "batch_id": "5e5015710488ab8cc8d3a40853b5fbd7e09860104afbbaeff4e94796d1bb098c",
+      "run_id": "q1_full_bovary_d414030_20261103",
+      "reading_id": "urn:uuid:c9d2d9e3-f6d2-4626-a824-62870c84a188",
+      "product_sha256": "5e80fafa3ad30afa88fbf4c883b75cf34732324c90e954803c590411d58c9b17",
+      "original_epub_sha256": "6c3ba694599f11be94c122b51c2714f746805d73d52191e0c4494ec0871b9b15",
+      "original_substrate_sha256": "e57694d8800cecfef18dc3113cfa54c8162397f78ebb243f923e035b20a93c53",
+      "batch_number": 3,
+      "unit_id": "u000156",
+      "source_range": {
+        "end": {
+          "chapter_id": 26,
+          "char_offset": 396,
+          "paragraph_index": 75
+        },
+        "start": {
+          "chapter_id": 26,
+          "char_offset": 0,
+          "paragraph_index": 64
+        }
+      },
+      "original_source_range": {
+        "end": {
+          "chapter_id": 26,
+          "char_offset": 396,
+          "paragraph_index": 75
+        },
+        "start": {
+          "chapter_id": 26,
+          "char_offset": 0,
+          "paragraph_index": 64
+        }
+      },
+      "marginalia_ids": [
+        "u000156-m002",
+        "u000156-m001"
+      ]
+    },
+    {
+      "batch_id": "5e5015710488ab8cc8d3a40853b5fbd7e09860104afbbaeff4e94796d1bb098c",
+      "run_id": "q1_full_bovary_d414030_20261103",
+      "reading_id": "urn:uuid:c9d2d9e3-f6d2-4626-a824-62870c84a188",
+      "product_sha256": "5e80fafa3ad30afa88fbf4c883b75cf34732324c90e954803c590411d58c9b17",
+      "original_epub_sha256": "6c3ba694599f11be94c122b51c2714f746805d73d52191e0c4494ec0871b9b15",
+      "original_substrate_sha256": "e57694d8800cecfef18dc3113cfa54c8162397f78ebb243f923e035b20a93c53",
+      "batch_number": 3,
+      "unit_id": "u000291",
+      "source_range": {
+        "end": {
+          "chapter_id": 39,
+          "char_offset": 36,
+          "paragraph_index": 79
+        },
+        "start": {
+          "chapter_id": 39,
+          "char_offset": 0,
+          "paragraph_index": 75
+        }
+      },
+      "original_source_range": {
+        "end": {
+          "chapter_id": 39,
+          "char_offset": 36,
+          "paragraph_index": 79
+        },
+        "start": {
+          "chapter_id": 39,
+          "char_offset": 0,
+          "paragraph_index": 75
+        }
+      },
+      "marginalia_ids": []
+    },
+    {
+      "batch_id": "5e5015710488ab8cc8d3a40853b5fbd7e09860104afbbaeff4e94796d1bb098c",
+      "run_id": "q1_full_bovary_d414030_20261103",
+      "reading_id": "urn:uuid:c9d2d9e3-f6d2-4626-a824-62870c84a188",
+      "product_sha256": "5e80fafa3ad30afa88fbf4c883b75cf34732324c90e954803c590411d58c9b17",
+      "original_epub_sha256": "6c3ba694599f11be94c122b51c2714f746805d73d52191e0c4494ec0871b9b15",
+      "original_substrate_sha256": "e57694d8800cecfef18dc3113cfa54c8162397f78ebb243f923e035b20a93c53",
+      "batch_number": 3,
+      "unit_id": "u000279",
+      "source_range": {
+        "end": {
+          "chapter_id": 38,
+          "char_offset": 233,
+          "paragraph_index": 134
+        },
+        "start": {
+          "chapter_id": 38,
+          "char_offset": 0,
+          "paragraph_index": 133
+        }
+      },
+      "original_source_range": {
+        "end": {
+          "chapter_id": 38,
+          "char_offset": 233,
+          "paragraph_index": 134
+        },
+        "start": {
+          "chapter_id": 38,
+          "char_offset": 0,
+          "paragraph_index": 133
+        }
+      },
+      "marginalia_ids": [
+        "u000279-m001"
+      ]
+    },
+    {
+      "batch_id": "5e5015710488ab8cc8d3a40853b5fbd7e09860104afbbaeff4e94796d1bb098c",
+      "run_id": "q1_full_bovary_d414030_20261103",
+      "reading_id": "urn:uuid:c9d2d9e3-f6d2-4626-a824-62870c84a188",
+      "product_sha256": "5e80fafa3ad30afa88fbf4c883b75cf34732324c90e954803c590411d58c9b17",
+      "original_epub_sha256": "6c3ba694599f11be94c122b51c2714f746805d73d52191e0c4494ec0871b9b15",
+      "original_substrate_sha256": "e57694d8800cecfef18dc3113cfa54c8162397f78ebb243f923e035b20a93c53",
+      "batch_number": 3,
+      "unit_id": "u000026",
+      "source_range": {
+        "end": {
+          "chapter_id": 10,
+          "char_offset": 36,
+          "paragraph_index": 15
+        },
+        "start": {
+          "chapter_id": 10,
+          "char_offset": 0,
+          "paragraph_index": 14
+        }
+      },
+      "original_source_range": {
+        "end": {
+          "chapter_id": 10,
+          "char_offset": 36,
+          "paragraph_index": 15
+        },
+        "start": {
+          "chapter_id": 10,
+          "char_offset": 0,
+          "paragraph_index": 14
+        }
+      },
+      "marginalia_ids": []
+    },
+    {
+      "batch_id": "5e5015710488ab8cc8d3a40853b5fbd7e09860104afbbaeff4e94796d1bb098c",
+      "run_id": "q1_full_bovary_d414030_20261103",
+      "reading_id": "urn:uuid:c9d2d9e3-f6d2-4626-a824-62870c84a188",
+      "product_sha256": "5e80fafa3ad30afa88fbf4c883b75cf34732324c90e954803c590411d58c9b17",
+      "original_epub_sha256": "6c3ba694599f11be94c122b51c2714f746805d73d52191e0c4494ec0871b9b15",
+      "original_substrate_sha256": "e57694d8800cecfef18dc3113cfa54c8162397f78ebb243f923e035b20a93c53",
+      "batch_number": 3,
+      "unit_id": "u000106",
+      "source_range": {
+        "end": {
+          "chapter_id": 22,
+          "char_offset": 61,
+          "paragraph_index": 46
+        },
+        "start": {
+          "chapter_id": 22,
+          "char_offset": 0,
+          "paragraph_index": 18
+        }
+      },
+      "original_source_range": {
+        "end": {
+          "chapter_id": 22,
+          "char_offset": 61,
+          "paragraph_index": 46
+        },
+        "start": {
+          "chapter_id": 22,
+          "char_offset": 0,
+          "paragraph_index": 18
+        }
+      },
+      "marginalia_ids": [
+        "u000106-m001"
+      ]
+    },
+    {
+      "batch_id": "5e5015710488ab8cc8d3a40853b5fbd7e09860104afbbaeff4e94796d1bb098c",
+      "run_id": "q1_full_bovary_d414030_20261103",
+      "reading_id": "urn:uuid:c9d2d9e3-f6d2-4626-a824-62870c84a188",
+      "product_sha256": "5e80fafa3ad30afa88fbf4c883b75cf34732324c90e954803c590411d58c9b17",
+      "original_epub_sha256": "6c3ba694599f11be94c122b51c2714f746805d73d52191e0c4494ec0871b9b15",
+      "original_substrate_sha256": "e57694d8800cecfef18dc3113cfa54c8162397f78ebb243f923e035b20a93c53",
+      "batch_number": 3,
+      "unit_id": "u000027",
+      "source_range": {
+        "end": {
+          "chapter_id": 10,
+          "char_offset": 31,
+          "paragraph_index": 17
+        },
+        "start": {
+          "chapter_id": 10,
+          "char_offset": 0,
+          "paragraph_index": 16
+        }
+      },
+      "original_source_range": {
+        "end": {
+          "chapter_id": 10,
+          "char_offset": 31,
+          "paragraph_index": 17
+        },
+        "start": {
+          "chapter_id": 10,
+          "char_offset": 0,
+          "paragraph_index": 16
+        }
+      },
+      "marginalia_ids": []
+    },
+    {
+      "batch_id": "5e5015710488ab8cc8d3a40853b5fbd7e09860104afbbaeff4e94796d1bb098c",
+      "run_id": "q1_full_bovary_d414030_20261103",
+      "reading_id": "urn:uuid:c9d2d9e3-f6d2-4626-a824-62870c84a188",
+      "product_sha256": "5e80fafa3ad30afa88fbf4c883b75cf34732324c90e954803c590411d58c9b17",
+      "original_epub_sha256": "6c3ba694599f11be94c122b51c2714f746805d73d52191e0c4494ec0871b9b15",
+      "original_substrate_sha256": "e57694d8800cecfef18dc3113cfa54c8162397f78ebb243f923e035b20a93c53",
+      "batch_number": 3,
+      "unit_id": "u000094",
+      "source_range": {
+        "end": {
+          "chapter_id": 20,
+          "char_offset": 209,
+          "paragraph_index": 18
+        },
+        "start": {
+          "chapter_id": 20,
+          "char_offset": 0,
+          "paragraph_index": 12
+        }
+      },
+      "original_source_range": {
+        "end": {
+          "chapter_id": 20,
+          "char_offset": 209,
+          "paragraph_index": 18
+        },
+        "start": {
+          "chapter_id": 20,
+          "char_offset": 0,
+          "paragraph_index": 12
+        }
+      },
+      "marginalia_ids": []
+    },
+    {
+      "batch_id": "5e5015710488ab8cc8d3a40853b5fbd7e09860104afbbaeff4e94796d1bb098c",
+      "run_id": "q1_full_bovary_d414030_20261103",
+      "reading_id": "urn:uuid:c9d2d9e3-f6d2-4626-a824-62870c84a188",
+      "product_sha256": "5e80fafa3ad30afa88fbf4c883b75cf34732324c90e954803c590411d58c9b17",
+      "original_epub_sha256": "6c3ba694599f11be94c122b51c2714f746805d73d52191e0c4494ec0871b9b15",
+      "original_substrate_sha256": "e57694d8800cecfef18dc3113cfa54c8162397f78ebb243f923e035b20a93c53",
+      "batch_number": 3,
+      "unit_id": "u000116",
+      "source_range": {
+        "end": {
+          "chapter_id": 22,
+          "char_offset": 26,
+          "paragraph_index": 163
+        },
+        "start": {
+          "chapter_id": 22,
+          "char_offset": 0,
+          "paragraph_index": 156
+        }
+      },
+      "original_source_range": {
+        "end": {
+          "chapter_id": 22,
+          "char_offset": 26,
+          "paragraph_index": 163
+        },
+        "start": {
+          "chapter_id": 22,
+          "char_offset": 0,
+          "paragraph_index": 156
+        }
+      },
+      "marginalia_ids": [
+        "u000116-m001"
+      ]
+    },
+    {
+      "batch_id": "5e5015710488ab8cc8d3a40853b5fbd7e09860104afbbaeff4e94796d1bb098c",
+      "run_id": "q1_full_bovary_d414030_20261103",
+      "reading_id": "urn:uuid:c9d2d9e3-f6d2-4626-a824-62870c84a188",
+      "product_sha256": "5e80fafa3ad30afa88fbf4c883b75cf34732324c90e954803c590411d58c9b17",
+      "original_epub_sha256": "6c3ba694599f11be94c122b51c2714f746805d73d52191e0c4494ec0871b9b15",
+      "original_substrate_sha256": "e57694d8800cecfef18dc3113cfa54c8162397f78ebb243f923e035b20a93c53",
+      "batch_number": 3,
+      "unit_id": "u000082",
+      "source_range": {
+        "end": {
+          "chapter_id": 19,
+          "char_offset": 159,
+          "paragraph_index": 9
+        },
+        "start": {
+          "chapter_id": 19,
+          "char_offset": 0,
+          "paragraph_index": 1
+        }
+      },
+      "original_source_range": {
+        "end": {
+          "chapter_id": 19,
+          "char_offset": 159,
+          "paragraph_index": 9
+        },
+        "start": {
+          "chapter_id": 19,
+          "char_offset": 0,
+          "paragraph_index": 1
+        }
+      },
+      "marginalia_ids": [
+        "u000082-m001"
+      ]
+    },
+    {
+      "batch_id": "5e5015710488ab8cc8d3a40853b5fbd7e09860104afbbaeff4e94796d1bb098c",
+      "run_id": "q1_full_bovary_d414030_20261103",
+      "reading_id": "urn:uuid:c9d2d9e3-f6d2-4626-a824-62870c84a188",
+      "product_sha256": "5e80fafa3ad30afa88fbf4c883b75cf34732324c90e954803c590411d58c9b17",
+      "original_epub_sha256": "6c3ba694599f11be94c122b51c2714f746805d73d52191e0c4494ec0871b9b15",
+      "original_substrate_sha256": "e57694d8800cecfef18dc3113cfa54c8162397f78ebb243f923e035b20a93c53",
+      "batch_number": 3,
+      "unit_id": "u000139",
+      "source_range": {
+        "end": {
+          "chapter_id": 24,
+          "char_offset": 208,
+          "paragraph_index": 201
+        },
+        "start": {
+          "chapter_id": 24,
+          "char_offset": 0,
+          "paragraph_index": 194
+        }
+      },
+      "original_source_range": {
+        "end": {
+          "chapter_id": 24,
+          "char_offset": 208,
+          "paragraph_index": 201
+        },
+        "start": {
+          "chapter_id": 24,
+          "char_offset": 0,
+          "paragraph_index": 194
+        }
+      },
+      "marginalia_ids": [
+        "u000139-m001",
+        "u000139-m002"
+      ]
+    },
+    {
+      "batch_id": "5e5015710488ab8cc8d3a40853b5fbd7e09860104afbbaeff4e94796d1bb098c",
+      "run_id": "q1_full_bovary_d414030_20261103",
+      "reading_id": "urn:uuid:c9d2d9e3-f6d2-4626-a824-62870c84a188",
+      "product_sha256": "5e80fafa3ad30afa88fbf4c883b75cf34732324c90e954803c590411d58c9b17",
+      "original_epub_sha256": "6c3ba694599f11be94c122b51c2714f746805d73d52191e0c4494ec0871b9b15",
+      "original_substrate_sha256": "e57694d8800cecfef18dc3113cfa54c8162397f78ebb243f923e035b20a93c53",
+      "batch_number": 3,
+      "unit_id": "u000124",
+      "source_range": {
+        "end": {
+          "chapter_id": 23,
+          "char_offset": 139,
+          "paragraph_index": 77
+        },
+        "start": {
+          "chapter_id": 23,
+          "char_offset": 0,
+          "paragraph_index": 57
+        }
+      },
+      "original_source_range": {
+        "end": {
+          "chapter_id": 23,
+          "char_offset": 139,
+          "paragraph_index": 77
+        },
+        "start": {
+          "chapter_id": 23,
+          "char_offset": 0,
+          "paragraph_index": 57
+        }
+      },
+      "marginalia_ids": [
+        "u000124-m001",
+        "u000124-m002"
+      ]
+    },
+    {
+      "batch_id": "5e5015710488ab8cc8d3a40853b5fbd7e09860104afbbaeff4e94796d1bb098c",
+      "run_id": "q1_full_bovary_d414030_20261103",
+      "reading_id": "urn:uuid:c9d2d9e3-f6d2-4626-a824-62870c84a188",
+      "product_sha256": "5e80fafa3ad30afa88fbf4c883b75cf34732324c90e954803c590411d58c9b17",
+      "original_epub_sha256": "6c3ba694599f11be94c122b51c2714f746805d73d52191e0c4494ec0871b9b15",
+      "original_substrate_sha256": "e57694d8800cecfef18dc3113cfa54c8162397f78ebb243f923e035b20a93c53",
+      "batch_number": 3,
+      "unit_id": "u000057",
+      "source_range": {
+        "end": {
+          "chapter_id": 15,
+          "char_offset": 68,
+          "paragraph_index": 33
+        },
+        "start": {
+          "chapter_id": 15,
+          "char_offset": 0,
+          "paragraph_index": 29
+        }
+      },
+      "original_source_range": {
+        "end": {
+          "chapter_id": 15,
+          "char_offset": 68,
+          "paragraph_index": 33
+        },
+        "start": {
+          "chapter_id": 15,
+          "char_offset": 0,
+          "paragraph_index": 29
+        }
+      },
+      "marginalia_ids": [
+        "u000057-m001"
+      ]
+    },
+    {
+      "batch_id": "5e5015710488ab8cc8d3a40853b5fbd7e09860104afbbaeff4e94796d1bb098c",
+      "run_id": "q1_full_bovary_d414030_20261103",
+      "reading_id": "urn:uuid:c9d2d9e3-f6d2-4626-a824-62870c84a188",
+      "product_sha256": "5e80fafa3ad30afa88fbf4c883b75cf34732324c90e954803c590411d58c9b17",
+      "original_epub_sha256": "6c3ba694599f11be94c122b51c2714f746805d73d52191e0c4494ec0871b9b15",
+      "original_substrate_sha256": "e57694d8800cecfef18dc3113cfa54c8162397f78ebb243f923e035b20a93c53",
+      "batch_number": 3,
+      "unit_id": "u000205",
+      "source_range": {
+        "end": {
+          "chapter_id": 30,
+          "char_offset": 52,
+          "paragraph_index": 65
+        },
+        "start": {
+          "chapter_id": 30,
+          "char_offset": 0,
+          "paragraph_index": 63
+        }
+      },
+      "original_source_range": {
+        "end": {
+          "chapter_id": 30,
+          "char_offset": 52,
+          "paragraph_index": 65
+        },
+        "start": {
+          "chapter_id": 30,
+          "char_offset": 0,
+          "paragraph_index": 63
+        }
+      },
+      "marginalia_ids": [
+        "u000205-m001"
+      ]
+    },
+    {
+      "batch_id": "5e5015710488ab8cc8d3a40853b5fbd7e09860104afbbaeff4e94796d1bb098c",
+      "run_id": "q1_full_bovary_d414030_20261103",
+      "reading_id": "urn:uuid:c9d2d9e3-f6d2-4626-a824-62870c84a188",
+      "product_sha256": "5e80fafa3ad30afa88fbf4c883b75cf34732324c90e954803c590411d58c9b17",
+      "original_epub_sha256": "6c3ba694599f11be94c122b51c2714f746805d73d52191e0c4494ec0871b9b15",
+      "original_substrate_sha256": "e57694d8800cecfef18dc3113cfa54c8162397f78ebb243f923e035b20a93c53",
+      "batch_number": 3,
+      "unit_id": "u000020",
+      "source_range": {
+        "end": {
+          "chapter_id": 9,
+          "char_offset": 85,
+          "paragraph_index": 26
+        },
+        "start": {
+          "chapter_id": 9,
+          "char_offset": 0,
+          "paragraph_index": 24
+        }
+      },
+      "original_source_range": {
+        "end": {
+          "chapter_id": 9,
+          "char_offset": 85,
+          "paragraph_index": 26
+        },
+        "start": {
+          "chapter_id": 9,
+          "char_offset": 0,
+          "paragraph_index": 24
+        }
+      },
+      "marginalia_ids": []
+    },
+    {
+      "batch_id": "5e5015710488ab8cc8d3a40853b5fbd7e09860104afbbaeff4e94796d1bb098c",
+      "run_id": "q1_full_bovary_d414030_20261103",
+      "reading_id": "urn:uuid:c9d2d9e3-f6d2-4626-a824-62870c84a188",
+      "product_sha256": "5e80fafa3ad30afa88fbf4c883b75cf34732324c90e954803c590411d58c9b17",
+      "original_epub_sha256": "6c3ba694599f11be94c122b51c2714f746805d73d52191e0c4494ec0871b9b15",
+      "original_substrate_sha256": "e57694d8800cecfef18dc3113cfa54c8162397f78ebb243f923e035b20a93c53",
+      "batch_number": 3,
+      "unit_id": "u000040",
+      "source_range": {
+        "end": {
+          "chapter_id": 13,
+          "char_offset": 144,
+          "paragraph_index": 6
+        },
+        "start": {
+          "chapter_id": 13,
+          "char_offset": 0,
+          "paragraph_index": 1
+        }
+      },
+      "original_source_range": {
+        "end": {
+          "chapter_id": 13,
+          "char_offset": 144,
+          "paragraph_index": 6
+        },
+        "start": {
+          "chapter_id": 13,
+          "char_offset": 0,
+          "paragraph_index": 1
+        }
+      },
+      "marginalia_ids": [
+        "u000040-m001",
+        "u000040-m002"
+      ]
+    },
+    {
+      "batch_id": "5e5015710488ab8cc8d3a40853b5fbd7e09860104afbbaeff4e94796d1bb098c",
+      "run_id": "q1_full_bovary_d414030_20261103",
+      "reading_id": "urn:uuid:c9d2d9e3-f6d2-4626-a824-62870c84a188",
+      "product_sha256": "5e80fafa3ad30afa88fbf4c883b75cf34732324c90e954803c590411d58c9b17",
+      "original_epub_sha256": "6c3ba694599f11be94c122b51c2714f746805d73d52191e0c4494ec0871b9b15",
+      "original_substrate_sha256": "e57694d8800cecfef18dc3113cfa54c8162397f78ebb243f923e035b20a93c53",
+      "batch_number": 3,
+      "unit_id": "u000134",
+      "source_range": {
+        "end": {
+          "chapter_id": 24,
+          "char_offset": 526,
+          "paragraph_index": 127
+        },
+        "start": {
+          "chapter_id": 24,
+          "char_offset": 0,
+          "paragraph_index": 121
+        }
+      },
+      "original_source_range": {
+        "end": {
+          "chapter_id": 24,
+          "char_offset": 526,
+          "paragraph_index": 127
+        },
+        "start": {
+          "chapter_id": 24,
+          "char_offset": 0,
+          "paragraph_index": 121
+        }
+      },
+      "marginalia_ids": []
+    },
+    {
+      "batch_id": "5e5015710488ab8cc8d3a40853b5fbd7e09860104afbbaeff4e94796d1bb098c",
+      "run_id": "q1_full_bovary_d414030_20261103",
+      "reading_id": "urn:uuid:c9d2d9e3-f6d2-4626-a824-62870c84a188",
+      "product_sha256": "5e80fafa3ad30afa88fbf4c883b75cf34732324c90e954803c590411d58c9b17",
+      "original_epub_sha256": "6c3ba694599f11be94c122b51c2714f746805d73d52191e0c4494ec0871b9b15",
+      "original_substrate_sha256": "e57694d8800cecfef18dc3113cfa54c8162397f78ebb243f923e035b20a93c53",
+      "batch_number": 3,
+      "unit_id": "u000238",
+      "source_range": {
+        "end": {
+          "chapter_id": 34,
+          "char_offset": 56,
+          "paragraph_index": 77
+        },
+        "start": {
+          "chapter_id": 34,
+          "char_offset": 0,
+          "paragraph_index": 70
+        }
+      },
+      "original_source_range": {
+        "end": {
+          "chapter_id": 34,
+          "char_offset": 56,
+          "paragraph_index": 77
+        },
+        "start": {
+          "chapter_id": 34,
+          "char_offset": 0,
+          "paragraph_index": 70
+        }
+      },
+      "marginalia_ids": []
+    },
+    {
+      "batch_id": "5e5015710488ab8cc8d3a40853b5fbd7e09860104afbbaeff4e94796d1bb098c",
+      "run_id": "q1_full_bovary_d414030_20261103",
+      "reading_id": "urn:uuid:c9d2d9e3-f6d2-4626-a824-62870c84a188",
+      "product_sha256": "5e80fafa3ad30afa88fbf4c883b75cf34732324c90e954803c590411d58c9b17",
+      "original_epub_sha256": "6c3ba694599f11be94c122b51c2714f746805d73d52191e0c4494ec0871b9b15",
+      "original_substrate_sha256": "e57694d8800cecfef18dc3113cfa54c8162397f78ebb243f923e035b20a93c53",
+      "batch_number": 3,
+      "unit_id": "u000065",
+      "source_range": {
+        "end": {
+          "chapter_id": 17,
+          "char_offset": 194,
+          "paragraph_index": 3
+        },
+        "start": {
+          "chapter_id": 17,
+          "char_offset": 0,
+          "paragraph_index": 1
+        }
+      },
+      "original_source_range": {
+        "end": {
+          "chapter_id": 17,
+          "char_offset": 194,
+          "paragraph_index": 3
+        },
+        "start": {
+          "chapter_id": 17,
+          "char_offset": 0,
+          "paragraph_index": 1
+        }
+      },
+      "marginalia_ids": [
+        "u000065-m001"
+      ]
+    },
+    {
+      "batch_id": "5e5015710488ab8cc8d3a40853b5fbd7e09860104afbbaeff4e94796d1bb098c",
+      "run_id": "q1_full_bovary_d414030_20261103",
+      "reading_id": "urn:uuid:c9d2d9e3-f6d2-4626-a824-62870c84a188",
+      "product_sha256": "5e80fafa3ad30afa88fbf4c883b75cf34732324c90e954803c590411d58c9b17",
+      "original_epub_sha256": "6c3ba694599f11be94c122b51c2714f746805d73d52191e0c4494ec0871b9b15",
+      "original_substrate_sha256": "e57694d8800cecfef18dc3113cfa54c8162397f78ebb243f923e035b20a93c53",
+      "batch_number": 3,
+      "unit_id": "u000153",
+      "source_range": {
+        "end": {
+          "chapter_id": 26,
+          "char_offset": 60,
+          "paragraph_index": 38
+        },
+        "start": {
+          "chapter_id": 26,
+          "char_offset": 0,
+          "paragraph_index": 16
+        }
+      },
+      "original_source_range": {
+        "end": {
+          "chapter_id": 26,
+          "char_offset": 60,
+          "paragraph_index": 38
+        },
+        "start": {
+          "chapter_id": 26,
+          "char_offset": 0,
+          "paragraph_index": 16
+        }
+      },
+      "marginalia_ids": [
+        "u000153-m001"
+      ]
+    },
+    {
+      "batch_id": "5e5015710488ab8cc8d3a40853b5fbd7e09860104afbbaeff4e94796d1bb098c",
+      "run_id": "q1_full_bovary_d414030_20261103",
+      "reading_id": "urn:uuid:c9d2d9e3-f6d2-4626-a824-62870c84a188",
+      "product_sha256": "5e80fafa3ad30afa88fbf4c883b75cf34732324c90e954803c590411d58c9b17",
+      "original_epub_sha256": "6c3ba694599f11be94c122b51c2714f746805d73d52191e0c4494ec0871b9b15",
+      "original_substrate_sha256": "e57694d8800cecfef18dc3113cfa54c8162397f78ebb243f923e035b20a93c53",
+      "batch_number": 3,
+      "unit_id": "u000284",
+      "source_range": {
+        "end": {
+          "chapter_id": 38,
+          "char_offset": 34,
+          "paragraph_index": 206
+        },
+        "start": {
+          "chapter_id": 38,
+          "char_offset": 0,
+          "paragraph_index": 199
+        }
+      },
+      "original_source_range": {
+        "end": {
+          "chapter_id": 38,
+          "char_offset": 34,
+          "paragraph_index": 206
+        },
+        "start": {
+          "chapter_id": 38,
+          "char_offset": 0,
+          "paragraph_index": 199
+        }
+      },
+      "marginalia_ids": []
+    },
+    {
+      "batch_id": "5e5015710488ab8cc8d3a40853b5fbd7e09860104afbbaeff4e94796d1bb098c",
+      "run_id": "q1_full_bovary_d414030_20261103",
+      "reading_id": "urn:uuid:c9d2d9e3-f6d2-4626-a824-62870c84a188",
+      "product_sha256": "5e80fafa3ad30afa88fbf4c883b75cf34732324c90e954803c590411d58c9b17",
+      "original_epub_sha256": "6c3ba694599f11be94c122b51c2714f746805d73d52191e0c4494ec0871b9b15",
+      "original_substrate_sha256": "e57694d8800cecfef18dc3113cfa54c8162397f78ebb243f923e035b20a93c53",
+      "batch_number": 3,
+      "unit_id": "u000228",
+      "source_range": {
+        "end": {
+          "chapter_id": 33,
+          "char_offset": 2,
+          "paragraph_index": 177
+        },
+        "start": {
+          "chapter_id": 33,
+          "char_offset": 0,
+          "paragraph_index": 177
+        }
+      },
+      "original_source_range": {
+        "end": {
+          "chapter_id": 33,
+          "char_offset": 2,
+          "paragraph_index": 177
+        },
+        "start": {
+          "chapter_id": 33,
+          "char_offset": 0,
+          "paragraph_index": 177
+        }
+      },
+      "marginalia_ids": []
+    },
+    {
+      "batch_id": "5e5015710488ab8cc8d3a40853b5fbd7e09860104afbbaeff4e94796d1bb098c",
+      "run_id": "q1_full_bovary_d414030_20261103",
+      "reading_id": "urn:uuid:c9d2d9e3-f6d2-4626-a824-62870c84a188",
+      "product_sha256": "5e80fafa3ad30afa88fbf4c883b75cf34732324c90e954803c590411d58c9b17",
+      "original_epub_sha256": "6c3ba694599f11be94c122b51c2714f746805d73d52191e0c4494ec0871b9b15",
+      "original_substrate_sha256": "e57694d8800cecfef18dc3113cfa54c8162397f78ebb243f923e035b20a93c53",
+      "batch_number": 3,
+      "unit_id": "u000113",
+      "source_range": {
+        "end": {
+          "chapter_id": 22,
+          "char_offset": 19,
+          "paragraph_index": 143
+        },
+        "start": {
+          "chapter_id": 22,
+          "char_offset": 0,
+          "paragraph_index": 134
+        }
+      },
+      "original_source_range": {
+        "end": {
+          "chapter_id": 22,
+          "char_offset": 19,
+          "paragraph_index": 143
+        },
+        "start": {
+          "chapter_id": 22,
+          "char_offset": 0,
+          "paragraph_index": 134
+        }
+      },
+      "marginalia_ids": [
+        "u000113-m001",
+        "u000113-m002"
+      ]
+    },
+    {
+      "batch_id": "5e5015710488ab8cc8d3a40853b5fbd7e09860104afbbaeff4e94796d1bb098c",
+      "run_id": "q1_full_bovary_d414030_20261103",
+      "reading_id": "urn:uuid:c9d2d9e3-f6d2-4626-a824-62870c84a188",
+      "product_sha256": "5e80fafa3ad30afa88fbf4c883b75cf34732324c90e954803c590411d58c9b17",
+      "original_epub_sha256": "6c3ba694599f11be94c122b51c2714f746805d73d52191e0c4494ec0871b9b15",
+      "original_substrate_sha256": "e57694d8800cecfef18dc3113cfa54c8162397f78ebb243f923e035b20a93c53",
+      "batch_number": 3,
+      "unit_id": "u000078",
+      "source_range": {
+        "end": {
+          "chapter_id": 18,
+          "char_offset": 90,
+          "paragraph_index": 39
+        },
+        "start": {
+          "chapter_id": 18,
+          "char_offset": 0,
+          "paragraph_index": 21
+        }
+      },
+      "original_source_range": {
+        "end": {
+          "chapter_id": 18,
+          "char_offset": 90,
+          "paragraph_index": 39
+        },
+        "start": {
+          "chapter_id": 18,
+          "char_offset": 0,
+          "paragraph_index": 21
+        }
+      },
+      "marginalia_ids": [
+        "u000078-m001",
+        "u000078-m002"
+      ]
+    },
+    {
+      "batch_id": "5e5015710488ab8cc8d3a40853b5fbd7e09860104afbbaeff4e94796d1bb098c",
+      "run_id": "q1_full_bovary_d414030_20261103",
+      "reading_id": "urn:uuid:c9d2d9e3-f6d2-4626-a824-62870c84a188",
+      "product_sha256": "5e80fafa3ad30afa88fbf4c883b75cf34732324c90e954803c590411d58c9b17",
+      "original_epub_sha256": "6c3ba694599f11be94c122b51c2714f746805d73d52191e0c4494ec0871b9b15",
+      "original_substrate_sha256": "e57694d8800cecfef18dc3113cfa54c8162397f78ebb243f923e035b20a93c53",
+      "batch_number": 3,
+      "unit_id": "u000152",
+      "source_range": {
+        "end": {
+          "chapter_id": 26,
+          "char_offset": 168,
+          "paragraph_index": 15
+        },
+        "start": {
+          "chapter_id": 26,
+          "char_offset": 0,
+          "paragraph_index": 1
+        }
+      },
+      "original_source_range": {
+        "end": {
+          "chapter_id": 26,
+          "char_offset": 168,
+          "paragraph_index": 15
+        },
+        "start": {
+          "chapter_id": 26,
+          "char_offset": 0,
+          "paragraph_index": 1
+        }
+      },
+      "marginalia_ids": [
+        "u000152-m001",
+        "u000152-m002"
+      ]
+    }
+  ]
+}

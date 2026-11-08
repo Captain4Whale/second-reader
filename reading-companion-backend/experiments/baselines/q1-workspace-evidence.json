@@ -1,0 +1,38 @@
+{
+  "schema": "historical-workspace-evidence/1",
+  "code_commit": "d414030c149bc56590bed890421eb59aad22aa05",
+  "run_ids": [
+    "q1_full_bovary_d414030_20261103",
+    "q1_full_sapiens_d414030_20261103"
+  ],
+  "code_dirty_recorded": true,
+  "observed_modified_files": [
+    "reading-companion-backend/docs/evaluation/run_ledger.json",
+    "reading-companion-backend/docs/evaluation/run_ledger.md"
+  ],
+  "evidence_source": "Original local Codex session 01a1a13b-3c33-7c80-b435-8e51b48a9200, completed git status command outputs; verified against both run metadata and standard traces",
+  "observations": [
+    {
+      "at": "2026-11-03T12:28:33.409Z",
+      "session_line": 365,
+      "phase": "before both launches"
+    },
+    {
+      "at": "2026-11-03T12:29:03.009Z",
+      "session_line": 388,
+      "phase": "immediately after both launches"
+    },
+    {
+      "at": "2026-11-03T22:38:55.022Z",
+      "session_line": 571,
+      "phase": "after Sapiens completion, before Bovary completion"
+    },
+    {
+      "at": "2026-11-03T22:58:36.581Z",
+      "session_line": 847,
+      "phase": "after both completions"
+    }
+  ],
+  "original_patch": null,
+  "limitations": "Snapshots list only the two ledger files. No contemporaneous git diff patch or continuous workspace audit exists; exact diff contents and changes between snapshots are unrecoverable. Current diff is not substituted for historical evidence."
+}
