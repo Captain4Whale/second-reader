@@ -1003,6 +1003,7 @@ def digest(
     book_title: str = "",
     author: str = "",
     chapter_title: str = "",
+    prompt_version: str | None = None,
 ) -> DigestResult:
     """Run the Digest LLM call for one accepted source unit."""
 
@@ -1020,7 +1021,7 @@ def digest(
     prompt_packet = build_digest_prompt_packet(
         carry_forward_context=carry_forward_context,
     )
-    assembly_result = render_digest_prompt_xml(
+    prompt_inputs = dict(
         book_title=book_title,
         author=author,
         chapter_title=chapter_title,
@@ -1032,7 +1033,14 @@ def digest(
         current_unit_source=source_unit,
         current_unit_sentences=sentence_unit,
     )
-    system_prompt = DIGEST_XML_TRANSPORT_SYSTEM_PROMPT
+    if prompt_version is None:
+        assembly_result = render_digest_prompt_xml(**prompt_inputs)
+        system_prompt = DIGEST_XML_TRANSPORT_SYSTEM_PROMPT
+    else:
+        from .prompts.selection import render_selected_digest_prompt
+
+        system_prompt, assembly_result = render_selected_digest_prompt(prompt_version, **prompt_inputs)
+    selected_version = prompt_version or prompts.digest_version
     user_prompt = assembly_result.rendered_text
     prompt_assembly_metadata: dict[str, object] = {
         "spec_id": assembly_result.spec_id,
@@ -1045,13 +1053,13 @@ def digest(
     _write_prompt_manifest(
         output_dir,
         node_name="digest",
-        prompt_version=prompts.digest_version,
+        prompt_version=selected_version,
         system_prompt=system_prompt,
         user_prompt=user_prompt,
         promptset_version=prompts.promptset_version,
         prompt_assembly=prompt_assembly_metadata,
     )
-    with llm_invocation_scope(trace_context=LLMTraceContext(stage="phase4", node="digest", extra={"prompt_version": prompts.digest_version})):
+    with llm_invocation_scope(trace_context=LLMTraceContext(stage="phase4", node="digest", extra={"prompt_version": selected_version})):
         structured_output = invoke_structured_output(
             system_prompt,
             user_prompt,
