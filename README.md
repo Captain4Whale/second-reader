@@ -1,7 +1,8 @@
 # Reading Companion Workspace
 
 Fixed-history Digest replay completed A1, A2 and B over the authorized 16 units.
-A2/B ran at clean `ca4e28c`; blind A1/B packaging follows integration.
+A2/B ran at clean `ca4e28c`; A1/B are packaged for blind review with the frozen
+16-unit `experiments/unit-sets/diag-001.json` subset.
 See [status and evidence](docs/tasks/q1-digest-replay-2026-11-08.md).
 From the backend, reconstruct without calling a model with
 `.venv/bin/python scripts/rerun_fixed_history_digest.py --source-backend /absolute/original/backend --run-id RUN --unit-id UNIT --output state/experiments/NEW-DIR --prepare-only`.
@@ -14,6 +15,7 @@ to freeze and verify inputs, then add `--execute` to consume that preflight. Exi
 results are reused only after matching their model/config and full rendered input.
 ID/order/body mismatches stop before the affected model call; reports stay under
 the ignored `A1-full/` output directory. No A2/B generation is part of this command.
+For offline importer export, use `scripts/export_fixed_history_digest.py --group-root GROUP_DIR --unit-set experiments/unit-sets/diag-001.json --source-backend SOURCE --experiment-id REGISTERED_ID --run-id REGISTERED_RUN --output state/experiments/NEW-DIR/group.json`. Then pass that same `--unit-set` and both group exports to `scripts/build_q1_comparison.py`; see the replay task record for the retained blind batch.
 
 Purpose: provide setup, run, environment, local URL, and verification information for the workspace.
 Use when: installing dependencies, starting local services, checking env vars, or running validation commands.

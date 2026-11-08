@@ -307,3 +307,50 @@ replay ledger rows, whose index paths were absolute. Those ledger index paths no
 use the same workspace-relative artifact alias available in both worktrees;
 immutable generation receipts and existing experiment log bytes stay unchanged.
 This keeps Markdown regeneration byte-stable in both checkouts.
+
+## Frozen diagnostic subset and blind batch
+
+`experiments/unit-sets/diag-001.json` is `fixed-unit-set/1`, purpose `dev`, containing
+16 original JSON object text slices copied verbatim from `dev-v1`, in original
+manifest order. Only the manifest header differs; existing dev/holdout rows and
+frozen entries are untouched. `experiments/frozen.json` adds its file SHA-256.
+The original experiment rows still name the parent dev set with their explicit
+16-unit selection; the bundle records the exact diagnostic subset hash.
+
+The offline producer `scripts/export_fixed_history_digest.py` converts existing
+Digest results to `q1-digest-comparison-output/1`, verifies input/accepted request
+identity, original coverage, canonical substrate and exact anchors, and preserves
+complete group coverage including units with zero marks. It does not call a model
+or import Ingest/retrieval/settlement. Group exports and exact source-document copies
+are retained under `state/experiments/q1_digest_fixed_history_20261108/imports/`.
+A1 links to the original diagnostic row; B links to its append-only continuation.
+
+The existing importer was invoked with `--unit-set experiments/unit-sets/diag-001.json`,
+the existing first-batch annotation root, both group exports, and output root
+`state/experiments/q1_digest_fixed_history_20261108/blind-batch/`.
+Bundle ID: `e03310c157a7b5df0561eb90bf1d579393b59f10cbc1d883636ef5c8327d5246`.
+The bundle has **16 windows / 2 opaque groups / 81 mixed items / 0 unassigned**,
+`synthetic=false`. A2 is excluded. Only `mixed.json` is intended for annotation;
+`blind-key.json` and the separate `group-map.json` retain private mappings. A new
+empty `judgments.jsonl` and `weijiang / open_coding` annotation context are present.
+No historical judgment journal was edited.
+
+Import validation checks both complete source documents, every exact anchor and
+coverage range. Independent `load_bundle` checks manifest/projection/key hashes,
+unique mixed ownership and exact projection fidelity. Explicit field allowlists
+and a scan against private mappings confirm that mixed.json has no group/model,
+experiment/run/unit/original mark/source IDs, request hashes or prompt version.
+Do not run group-quality statistics or reveal before the owner completes blind review.
+This task did not modify annotator, comparison importer, statistics or contract files.
+
+Private packaging receipt: `reading-companion-backend/state/experiments/q1_digest_fixed_history_20261108/continuation/blind-batch-validation.json`.
+Per-unit noise report: `reading-companion-backend/state/experiments/q1_digest_fixed_history_20261108/continuation/report.md`.
+The hypothesis remains unadjudicated; descriptive counts/lengths/overlaps are not
+quality or causal evidence. No further generation or push is authorized by packaging.
+
+Packaging checks: 43 focused replay/provenance/comparison tests passed; complete
+real A1/B exports passed the existing importer and independent bundle validator;
+full `make agent-check`, immutable release/manifest/journal checks and ledger check
+passed. The 16 raw JSON object slices were independently rechecked against dev-v1;
+all prior frozen entries and experiment-log bytes remain unchanged. The historical
+annotation-hub branch still points to `e323902`.

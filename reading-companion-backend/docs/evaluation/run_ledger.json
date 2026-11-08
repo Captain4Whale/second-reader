@@ -4011,7 +4011,8 @@
         "attentional_v2"
       ],
       "dataset_or_manifest": [
-        "reading-companion-backend/experiments/unit-sets/dev-v1.json"
+        "reading-companion-backend/experiments/unit-sets/dev-v1.json",
+        "reading-companion-backend/experiments/unit-sets/diag-001.json"
       ],
       "run_dir": "reading-companion-backend/state/experiments/q1_digest_fixed_history_20261108/A1-full",
       "summary_paths": {
@@ -4022,7 +4023,8 @@
         "full_A1_preflight": "reading-companion-backend/state/experiments/q1_digest_fixed_history_20261108/A1-full/preflight.json",
         "A1_summary": "reading-companion-backend/state/experiments/q1_digest_fixed_history_20261108/A1-full/summary.json",
         "A1_validation": "reading-companion-backend/state/experiments/q1_digest_fixed_history_20261108/A1-full/validation-summary.json",
-        "baseline_product_checks": "reading-companion-backend/state/experiments/q1_digest_fixed_history_20261108/A1-full/baseline-product-checks.json"
+        "baseline_product_checks": "reading-companion-backend/state/experiments/q1_digest_fixed_history_20261108/A1-full/baseline-product-checks.json",
+        "blind_batch_validation": "reading-companion-backend/state/experiments/q1_digest_fixed_history_20261108/continuation/blind-batch-validation.json"
       },
       "job_ids": [
         "bgjob_q1_digest_fixed_history_20261108_A1_pilot",
@@ -4033,7 +4035,7 @@
         "reading-companion-backend/state/experiments/q1_digest_fixed_history_20261108/A1-full/report.md"
       ],
       "catalog_status": "not_cataloged",
-      "notes": "A1 only completed all 16 registered units: approved pilot reused, 15 new requests; original 34 marks (9 H/25 N), A1 31 (10 H/21 N). 105 memory-line occurrences match original trace IDs/order and audit text. All 473 original output files unchanged; all anchors exact. A1 156855 input/7647 output tokens including pilot; actual billed cost unknown. Descriptive comparison only; A2/B not started and require owner confirmation."
+      "notes": "A1 only completed all 16 registered units: approved pilot reused, 15 new requests; original 34 marks (9 H/25 N), A1 31 (10 H/21 N). 105 memory-line occurrences match original trace IDs/order and audit text. All 473 original output files unchanged; all anchors exact. A1 156855 input/7647 output tokens including pilot; actual billed cost unknown. Descriptive comparison only; A2/B not started and require owner confirmation. A1/B mixed batch now packaged under diag-001; the earlier A1-only checkpoint wording describes its initial acceptance gate."
     },
     {
       "run_id": "q1_digest_fixed_history_20261108_A2",
@@ -4072,12 +4074,14 @@
         "attentional_v2"
       ],
       "dataset_or_manifest": [
-        "reading-companion-backend/experiments/unit-sets/dev-v1.json"
+        "reading-companion-backend/experiments/unit-sets/dev-v1.json",
+        "reading-companion-backend/experiments/unit-sets/diag-001.json"
       ],
       "run_dir": "reading-companion-backend/state/experiments/q1_digest_fixed_history_20261108/B-full",
       "summary_paths": {
         "completion": "reading-companion-backend/state/experiments/q1_digest_fixed_history_20261108/B-full/summary.json",
-        "manifest_checks": "reading-companion-backend/state/experiments/q1_digest_fixed_history_20261108/continuation/manifest-checks.json"
+        "manifest_checks": "reading-companion-backend/state/experiments/q1_digest_fixed_history_20261108/continuation/manifest-checks.json",
+        "blind_batch_validation": "reading-companion-backend/state/experiments/q1_digest_fixed_history_20261108/continuation/blind-batch-validation.json"
       },
       "job_ids": [
         "bgjob_q1_digest_fixed_history_20261108_A2_B"
@@ -4087,7 +4091,7 @@
         "docs/tasks/q1-digest-replay-2026-11-08.md"
       ],
       "catalog_status": "not_cataloged",
-      "notes": "B completed 16 fixed units at clean ca4e28c; exact original memory IDs/order/text and A1 prompt equality verified; per-unit physical requests and quota retries retained. No memory updates/settlement or original artifacts changed. B content and mark statistics withheld pending blind annotation."
+      "notes": "B completed 16 fixed units at clean ca4e28c; exact original memory IDs/order/text and A1 prompt equality verified; per-unit physical requests and quota retries retained. No memory updates/settlement or original artifacts changed. B content and mark statistics withheld pending blind annotation. A1/B mixed batch now packaged under diag-001; the earlier A1-only checkpoint wording describes its initial acceptance gate."
     },
     {
       "run_id": "q1_full_bovary_d414030_20261103",

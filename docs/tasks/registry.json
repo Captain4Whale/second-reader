@@ -5,7 +5,7 @@
     {
       "id": "TASK-Q1-DIGEST-REPLAY",
       "title": "Fixed-history Digest replay and model diagnostic",
-      "status": "active",
+      "status": "waiting",
       "lane": "mechanism_eval",
       "priority": "high",
       "detail_ref": "docs/tasks/q1-digest-replay-2026-11-08.md",
@@ -20,14 +20,16 @@
         "bgjob_q1_digest_fixed_history_20261108_A2_B"
       ],
       "blocked_by": [],
-      "next_action": "Integration checks passed. Freeze diag-001 as the exact 16-row dev subset and package A1/B; keep B content/statistics private pending blind annotation.",
+      "next_action": "Owner annotates the retained A1/B mixed.json with no reveal. A2 stays outside the batch; no further generation. B content/statistics remain private.",
       "evidence_refs": [
         "reading-companion-backend/eval/attentional_v2/fixed_history_digest.py",
         "reading-companion-backend/tests/test_fixed_history_digest.py",
         "reading-companion-backend/state/experiments/q1_digest_fixed_history_20261108/pilot-summary.json",
         "reading-companion-backend/state/experiments/q1_digest_fixed_history_20261108/A1-full/report.md",
         "reading-companion-backend/state/experiments/q1_digest_fixed_history_20261108/A1-full/validation-summary.json",
-        "reading-companion-backend/state/experiments/q1_digest_fixed_history_20261108/continuation/report.md"
+        "reading-companion-backend/state/experiments/q1_digest_fixed_history_20261108/continuation/report.md",
+        "reading-companion-backend/experiments/unit-sets/diag-001.json",
+        "reading-companion-backend/state/experiments/q1_digest_fixed_history_20261108/continuation/blind-batch-validation.json"
       ],
       "last_updated": "2026-11-08",
       "last_updated_by": "codex"
