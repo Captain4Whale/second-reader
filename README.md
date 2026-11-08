@@ -1,7 +1,7 @@
 # Reading Companion Workspace
 
-Fixed-history Digest replay completed the authorized 16-unit A1 diagnostic,
-reusing the accepted `u000006` pilot. A2/B await owner confirmation.
+Fixed-history Digest replay completed A1, A2 and B over the authorized 16 units.
+A2/B ran at clean `ca4e28c`; blind A1/B packaging follows integration.
 See [status and evidence](docs/tasks/q1-digest-replay-2026-11-08.md).
 From the backend, reconstruct without calling a model with
 `.venv/bin/python scripts/rerun_fixed_history_digest.py --source-backend /absolute/original/backend --run-id RUN --unit-id UNIT --output state/experiments/NEW-DIR --prepare-only`.

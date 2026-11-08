@@ -20,7 +20,7 @@ Last updated: `2026-11-03`
 
 ## 当前前置任务
 
-- `TASK-Q1-DIGEST-REPLAY` — `waiting`, mechanism_eval / high. A1 all 16 units complete, 31 marks (10 H/21 N); compare with 34 original (9 H/25 N). Wait for confirmation before A2/B. [Record](q1-digest-replay-2026-11-08.md).
+- `TASK-Q1-DIGEST-REPLAY` — `active`, mechanism_eval / high. A2/B generation and per-unit verification complete; integrate main preserving SHAs, then prepare A1/B blind batch. B content/statistics withheld. [Record](q1-digest-replay-2026-11-08.md).
 
 - `TASK-Q1-MIXED-COMPARISON` — `active`, mechanism_eval / high. Data layer, mixed blind annotation and statistics only; side-by-side/reveal deferred. [Execution](q1-mixed-comparison-2026-11-08.md), [contract](../../reading-companion-backend/experiments/comparison.md).
 

@@ -240,3 +240,41 @@ Next action: owner reviews A1. **Do not run A2 or B without confirmation.** No
 annotator/comparison implementation changes or push. No decision-log update is
 needed for a bounded mechanical check and descriptive comparison with no mechanism
 or product direction change.
+
+## Authorized A2/B continuation (2026-11-08)
+
+This section supersedes the earlier confirmation gate: the owner authorized A2 and B,
+then SHA-preserving integration and mixed A1/B packaging. Both groups completed all
+16 units at clean `ca4e28c7964d3e28eaa77408fb0850d31a8ec867`, before any merge or tracked
+edit. A2 uses gpt-6-luna/medium; B uses gpt-6-sol/high. Both retain v24, temperature
+0.2 and max output 4096. The ignored `continuation/run_groups.py` orchestrated the
+existing Digest entrypoint serially with fail-stop, without changing generation code;
+its SHA-256 is recorded in `continuation/driver-receipt.json`. Job:
+`bgjob_q1_digest_fixed_history_20261108_A2_B` (completed).
+
+Each unit rechecked original trace memory IDs, each selection order, complete memory
+body/labels, canonical source range and exact A1 system/user prompt. Both original
+final-unit manifests still match. Actual requests, effective sampling, provider model
+and clean code receipts were checked. All 473 original output files retain their
+hashes. No Ingest, retrieval, settlement, memory application or Product write occurred.
+Per-unit physical request counts and gateway `quota_retry_attempt_count` are retained
+in each group's `*-full/summary.json` and detailed request traces; no outer retry hides
+failed generations. Shared log/ledger writes happened only after both groups completed.
+
+A2 versus A1 per-unit counts, H:N, Note mean lengths and anchor overlap are in
+`reading-companion-backend/state/experiments/q1_digest_fixed_history_20261108/continuation/report.md`.
+Anchor overlap is the intersection/union of unique canonical character positions
+covered by either group's H/N anchors, without paragraph separators or type/body
+comparison; both empty gives null. Synthetic checks cover duplicate anchors, partial
+overlap, cross-paragraph ranges and empty input. No Note gives a null mean length.
+B completed successfully: input 156,855, output 26,589, total 183,444 tokens (reasoning
+usage is included in output, not added again). Its contents and mark statistics are
+withheld. Actual billed cost remains unknown; no quality/causal conclusion is drawn.
+
+`Q1-DIGEST-DIAG-001-CONTINUATION` is an append-only completion record linked to the
+original diagnostic, not a rewritten A1 checkpoint. It supersedes that checkpoint's
+pending A2/B statuses. Existing baseline and A1 lines retain every byte. The provenance
+tests' obsolete single-JSON assumption was corrected to select the baseline by ID;
+a regression check verifies append operations preserve the complete prior log prefix.
+This is an evaluation workflow continuation, not a mechanism/product direction change;
+no decision-log update is needed.

@@ -8,6 +8,7 @@ from scripts.check_iteration_provenance import (
     append_trial,
     check,
     rubric_identity,
+    rows,
     sha,
     validate_trial,
 )
@@ -21,13 +22,17 @@ def snapshot(tmp_path):
 
 
 def baseline(root):
-    return json.loads((root / "experiments/log.jsonl").read_text())
+    return next(
+        row
+        for row in rows(root / "experiments/log.jsonl")
+        if row["experiment_id"] == "Q1-BASELINE-001"
+    )
 
 
 def test_baseline_has_frozen_units_open_coding_and_honest_missing_history(snapshot):
     result = check(snapshot, base_ref=None)
     assert result == {
-        "experiments": 1,
+        "experiments": len(rows(snapshot / "experiments/log.jsonl")),
         "dev_units": 67,
         "holdout_units": 75,
         "legacy_contexts": 2,
@@ -80,6 +85,18 @@ def test_duplicate_trial_and_manifest_edits_are_rejected(snapshot):
     path.write_bytes(path.read_bytes() + b" ")
     with pytest.raises(ValueError, match="Frozen"):
         check(snapshot, base_ref=None)
+
+
+def test_new_trial_preserves_every_existing_log_byte(snapshot):
+    path = snapshot / "experiments/log.jsonl"
+    before = path.read_bytes()
+    row = baseline(snapshot)
+    row["experiment_id"] = "TEST-APPEND-ONLY"
+    append_trial(row, snapshot)
+    assert path.read_bytes().startswith(before)
+    assert rows(path)[-1] == row
+    assert len(rows(path)) == len(before.splitlines()) + 1
+    check(snapshot, base_ref=None)
 
 
 def test_legacy_prefix_digest_detects_rewrite_even_with_valid_json(snapshot, tmp_path):
