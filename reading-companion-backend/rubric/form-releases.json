@@ -1,0 +1,8 @@
+{
+  "q1-v0.form.v1": {
+    "path": "rubric/q1-v0.form.json",
+    "sha256": "40a97086fd03f48fc2df997c6ce7bbdb58e2333fc3a741ad082434ac196b1586",
+    "rubric_version": "q1-v0",
+    "rubric_sha256": "3ed0c44ab82b1a95802eb669717570a282169200b45faec1a090706ab1bd12fa"
+  }
+}

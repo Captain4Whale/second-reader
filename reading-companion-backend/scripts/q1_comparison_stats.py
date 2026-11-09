@@ -23,6 +23,7 @@ from scripts.q1_comparison import (  # noqa: E402
     span,
 )
 from scripts.check_iteration_provenance import rubric_identity  # noqa: E402
+from scripts.q1_rubric_form import REVIEW_FIELDS, load_form, validate_assessment  # noqa: E402
 
 
 def load_bundle(folder):
@@ -127,13 +128,15 @@ def quote_in_window(w, r):
 
 def validate_rows(rows, mixed):
     windows = {w["window_id"]: w for w in mixed["windows"]}
-    bindings, rubrics = {}, {}
+    bindings, rubrics, forms, seen = {}, {}, {}, {}
+    review_scopes = set()
     base = set(
         "schema annotator_version annotator_id rubric_version rubric_sha256 batch_id comparison_batch_id view window_id record_type record_id revision timestamp marginalia_id type judgment reason star needs_verification remarks original_source_range".split()
     )
     for i, r in enumerate(rows, 1):
         require(isinstance(r, dict), "Journal rows must be objects")
         rt = r.get("record_type")
+        review = r.get("schema") == "q1-mixed-judgment/2"
         extra = (
             {"source_quote", "body_text"}
             if rt == "marginalia"
@@ -142,12 +145,12 @@ def validate_rows(rows, mixed):
             else set()
         )
         require(
-            rt in ("marginalia", "omission", "unit_note") and set(r) == base | extra,
+            rt in ("marginalia", "omission", "unit_note") and set(r) == base | extra | (REVIEW_FIELDS if review else set()),
             "Unsupported/extra record fields (reveal, preference and legacy records are not mixed judgments)",
         )
         require(
-            r["schema"] == "q1-mixed-judgment/1"
-            and r["annotator_version"] in ("q1-annotator/2.0", "q1-annotator/2.1", "q1-annotator/2.2")
+            r["schema"] in ("q1-mixed-judgment/1", "q1-mixed-judgment/2")
+            and r["annotator_version"] in (("q1-annotator/2.3",) if review else ("q1-annotator/2.0", "q1-annotator/2.1", "q1-annotator/2.2", "q1-annotator/2.3"))
             and r["view"] == "mixed"
             and r["batch_id"] == r["comparison_batch_id"] == mixed["batch_id"]
             and type(r["revision"]) is int
@@ -172,6 +175,19 @@ def validate_rows(rows, mixed):
             r["rubric_sha256"] == rubrics[version]["rubric_sha256"],
             "Unknown/draft/changed rubric",
         )
+        if review:
+            fv = r['rubric_form_version']
+            if fv not in forms:
+                forms[fv] = load_form(fv)
+            form, form_hash = forms[fv]
+            require(r['rubric_form_sha256'] == form_hash and version == form['rubric_version'], 'Form identity mismatch')
+            validate_assessment(r, form)
+            review_scopes.add((r['annotator_id'], version, fv, form_hash, r['review_session_id']))
+            if rt == 'marginalia':
+                prior = seen.get(r['record_id'])
+                require(not r['prior_judgment_seen'] or prior is not None, 'Old judgment viewed before first completion')
+                require(not prior or not prior['prior_judgment_seen'] or r['prior_judgment_seen'], 'Prior exposure cannot be undone')
+                seen[r['record_id']] = r
         require(r["window_id"] in windows, "Unknown window")
         w = windows[r["window_id"]]
         identity = rt, r["record_id"]
@@ -208,7 +224,7 @@ def validate_rows(rows, mixed):
                 and isinstance(r["remarks"], str)
                 and type(r["star"]) is bool
                 and type(r["needs_verification"]) is bool
-                and (r["judgment"] != "fail" or nonempty(r["reason"])),
+                and (review or r["judgment"] != "fail" or nonempty(r["reason"])),
                 "Invalid judgment fields",
             )
         else:
@@ -243,6 +259,11 @@ def validate_rows(rows, mixed):
                     and r["reason"] is None,
                     "Invalid window note",
                 )
+
+
+    if review_scopes:
+        require(len(review_scopes) == 1 and all(r['schema'] == 'q1-mixed-judgment/2' for r in rows),
+                'Review journal must contain one isolated session/form scope')
 
 
 def summarize(

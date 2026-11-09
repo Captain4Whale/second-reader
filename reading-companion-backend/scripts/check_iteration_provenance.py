@@ -7,8 +7,10 @@ import hashlib
 import json
 from pathlib import Path
 import subprocess
+import sys
 
 BACKEND = Path(__file__).resolve().parents[1]
+sys.path.insert(0, str(BACKEND))
 
 
 def sha(path):
@@ -118,6 +120,8 @@ def append_trial(row, root=BACKEND):
 
 
 def check(root=BACKEND, base_ref="HEAD", annotation_root=None):
+    from scripts.q1_rubric_form import check_forms
+    check_forms(root)
     lock = load(root / "experiments/frozen.json")
     for name, digest in lock.items():
         if sha(root / name) != digest:
@@ -193,6 +197,12 @@ def check(root=BACKEND, base_ref="HEAD", annotation_root=None):
             for version, release in json.loads(old).items():
                 if rubrics.get(version) != release:
                     raise ValueError(f"Rubric publication entry changed: {version}")
+        old = before("rubric/form-releases.json")
+        if old:
+            forms = load(root / "rubric/form-releases.json")
+            for version, release in json.loads(old).items():
+                if forms.get(version) != release:
+                    raise ValueError(f"Form publication entry changed: {version}")
         name = "experiments/annotations/legacy-context.jsonl"
         old = before(name)
         if old and not (root / name).read_bytes().startswith(old):

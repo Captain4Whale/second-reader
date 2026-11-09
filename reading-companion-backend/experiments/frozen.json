@@ -6,5 +6,6 @@
   "experiments/unit-sets/diag-001.json": "a991dbcfeb9bf9fe09282d04de86b14ab86da97fa86ba6d04bb7e1875c357db4",
   "rubric/q1-v0-draft.md": "80f1a50fa505ce45f13fc0754cb791dcca7b7094ae48b2d6831506c4e6a0d3bd",
   "rubric/q1-v0.examples.json": "4a73c8fb06c9a5af5d725797bf72969f360a9448d7af7de65238e68023efb664",
-  "rubric/q1-v0.migration.json": "e893e423ea29f107814354c546678d1ce254f87370e1c7ddd160fab7ac1ba590"
+  "rubric/q1-v0.migration.json": "e893e423ea29f107814354c546678d1ce254f87370e1c7ddd160fab7ac1ba590",
+  "rubric/q1-v0.form.json": "40a97086fd03f48fc2df997c6ce7bbdb58e2333fc3a741ad082434ac196b1586"
 }
