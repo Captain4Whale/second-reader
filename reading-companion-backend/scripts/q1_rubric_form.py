@@ -1,7 +1,6 @@
 """Offline form identity and completed rubric-assessment validation."""
 import json
 import re
-from pathlib import Path
 
 from scripts.check_iteration_provenance import BACKEND, rubric_identity, sha
 

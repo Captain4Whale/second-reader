@@ -568,6 +568,14 @@
       border-radius: 8px;
       box-shadow: 0 4px 12px #0002;
     }
+    .rubric-choice { display: flex; gap: 8px; align-items: flex-start; margin: 8px 0; }
+    .rubric-choice input { margin-top: 4px; flex: none; }
+    .criterion { padding: 8px 0; border-bottom: 1px solid #dce2d9; }
+    .criterion details { margin-left: 24px; font-size: 13px; color: #526052; }
+    .criterion pre { white-space: pre-wrap; font: inherit; }
+    #priorReview { margin-top: 16px; border-top: 1px solid #dce2d9; padding-top: 12px; }
+    #priorContent { white-space: pre-wrap; overflow-wrap: anywhere; margin-top: 8px; }
+    #reviewOutcome { font-weight: 600; }
   </style>
   <div id="toolbar">
     <header>
@@ -625,8 +633,8 @@
           <h2>
             <span id="sourceHeading">单元原文</span>
             <small class="source-legend"
-              ><span class="product-swatch">产物批注</span> ·
-              <span class="omission-swatch">人工漏标</span></small
+              ><span class="product-swatch">产物批注</span><span id="omissionLegend"> ·
+              <span class="omission-swatch">人工漏标</span></span></small
             >
           </h2>
           <div id="readerScroll" tabindex="0" aria-label="单元原文阅读区">
@@ -646,16 +654,28 @@
               <p id="crossing" class="hint" hidden>跨窗口批注：在起点窗口判断一次。下方保留完整引文，原文仅高亮本窗口内的部分。</p>
               <blockquote id="excerpt"></blockquote>
               <p id="activeNote" class="note" hidden></p>
-              <div class="row"><button id="pass">过 P</button><button id="fail">不过 F</button></div>
-              <label class="field" for="reason">理由 R <small>不过时必填</small></label
+              <div class="row" id="legacyJudgment"><button id="pass">过 P</button><button id="fail">不过 F</button></div>
+              <section id="rubricEditor" hidden>
+                <p id="rubricTitle" class="hint"></p>
+                <p class="hint">勾选不满足的条目；标签不影响通过。检查完后点“完成本条”。</p>
+                <div id="criteria"></div>
+                <div id="rubricTags" class="row"></div>
+                <label class="rubric-choice"><input id="uncovered" type="checkbox" /> rubric 未覆盖（应当不过，但无对应条目）</label>
+                <div class="row"><button id="completeReview">完成本条</button><span id="reviewOutcome" role="status"></span></div>
+              </section>
+              <label class="field" for="reason">理由 R <small id="reasonPolicy">不过时必填</small></label
               ><textarea id="reason" rows="2"></textarea>
               <div class="row">
                 <label><input id="star" type="checkbox" /> 星标 S</label
-                ><label><input id="verify" type="checkbox" /> 待核实 V</label>
+                ><label id="legacyVerify"><input id="verify" type="checkbox" /> 待核实 V</label>
               </div>
               <label class="field" for="memo">备注 M <small>选填</small></label
               ><textarea id="memo" rows="1"></textarea>
               <small id="draftState"></small>
+              <div id="priorReview" hidden>
+                <button id="showPrior" disabled>完成本条并保存后可查看旧判断</button>
+                <div id="priorContent" hidden></div>
+              </div>
             </div>
           </aside>
           <aside class="panel unit-panel" aria-label="单元判断">
@@ -664,6 +684,7 @@
             <div class="row" id="density"><span>密度</span></div>
             <label class="field" for="unitNote"><span id="noteHeading">单元备注 U</span> <small>选填，自动保存</small></label>
             <textarea id="unitNote" rows="2"></textarea><small id="unitNoteState"></small>
+            <div id="omissionControls">
             <h3>漏标 <small id="missCount"></small></h3>
             <p class="hint" id="omissionHint">在本单元正文中划选，再按 O 或点「记为漏标」。</p>
             <div id="misses"></div>
@@ -674,6 +695,7 @@
               <div class="row">
                 <small id="missState"></small><button id="cancelMiss">结束编辑</button>
               </div>
+            </div>
             </div>
           </aside>
         </div>
@@ -694,26 +716,27 @@
       <dd>原文向下 / 向上滚动；窄屏时滚动整页</dd>
       <dt>Shift+J / Shift+K</dt>
       <dd>整页向下 / 向上滚动（超长侧栏）</dd>
-      <dt>P / F</dt>
-      <dd>过 / 不过，判断后停留；F 进入理由框</dd>
+      <dt id="judgmentHelp">P / F</dt>
+      <dd id="judgmentHelpText">过 / 不过，判断后停留；F 进入理由框</dd>
       <dt>S / V</dt>
       <dd>星标 / 待核实</dd>
       <dt id="densityHelp">1 / 2 / 3</dt>
       <dd>密度多 / 合适 / 少</dd>
       <dt>R / M / U</dt>
       <dd>理由 / 条目备注 / 单元备注</dd>
-      <dt>O</dt>
+      <dt id="omissionHelp">O</dt>
       <dd>进入漏标理由，或将正文划选记为漏标</dd>
       <dt>? / Esc</dt>
       <dd>查看说明 / 返回阅读</dd>
     </dl>
     <button id="closeHelp">关闭 Esc</button>
   </dialog>
+  <script src="q1-rubric-form.js"></script>
   <script>
     "use strict";
-    const VERSION = "q1-annotator/2.2",
+    const VERSION = "q1-annotator/2.3",
       $ = (id) => document.getElementById(id);
-    const MIXED_VERSIONS = ["q1-annotator/2.0", "q1-annotator/2.1", VERSION];
+    const MIXED_VERSIONS = ["q1-annotator/2.0", "q1-annotator/2.1", "q1-annotator/2.2", VERSION];
     function setText(node, text) {
       if (node.textContent !== text) node.textContent = text;
     }
@@ -744,6 +767,12 @@
     const DEFAULT_ANNOTATION_CONTEXT = Object.freeze({
       annotator_id: "weijiang", rubric_version: "open_coding", rubric_sha256: null,
     });
+    const reviewMode = (s = session) => !!s?.form;
+    const journalScope = s => reviewMode(s) ? { context: s.state.annotationContext, form: s.form } : null;
+    const scopeId = s => Q1Rubric.scopeKey(s.batch.batch_id, s.state.annotationContext);
+    async function textHash(value) {
+      return Array.from(new Uint8Array(await crypto.subtle.digest("SHA-256", new TextEncoder().encode(value))), x => x.toString(16).padStart(2,"0")).join("");
+    }
     function annotationContext(value, batchId) {
       if (!value) return { ...DEFAULT_ANNOTATION_CONTEXT };
       if (value.batch_id !== batchId || !value.annotator_id?.trim() ||
@@ -751,8 +780,26 @@
           (value.rubric_version !== "open_coding" &&
             (value.rubric_status !== "published" || !/^[a-f0-9]{64}$/.test(value.rubric_sha256))))
         throw Error("标注上下文无效；正式标注必须引用已发布 rubric 及其指纹。");
-      return { annotator_id: value.annotator_id, rubric_version: value.rubric_version,
+      const result = { annotator_id: value.annotator_id, rubric_version: value.rubric_version,
         rubric_sha256: value.rubric_sha256 ?? null };
+      if (value.review_session_id) {
+        if (!/^[a-zA-Z0-9_-]{1,100}$/.test(value.review_session_id) || !value.rubric_form_version ||
+            !/^[a-f0-9]{64}$/.test(value.rubric_form_sha256) || !/^[a-f0-9]{64}$/.test(value.baseline_sha256) ||
+            value.rubric_version === "open_coding") throw Error("重判上下文无效。");
+        Object.assign(result, Object.fromEntries([...Q1Rubric.identityFields, "baseline_sha256"].map(k=>[k,value[k]])));
+      }
+      return result;
+    }
+    async function validateReviewResources(resources, context, batch) {
+      if (!mixed(batch) || !resources || await textHash(resources.formText) !== context.rubric_form_sha256 ||
+          await textHash(resources.baselineText) !== context.baseline_sha256) throw Error("重判表单或旧判断快照指纹不一致。");
+      const form = Q1Rubric.validateForm(JSON.parse(resources.formText));
+      if (form.rubric_version !== context.rubric_version || form.rubric_sha256 !== context.rubric_sha256 ||
+          form.form_version !== context.rubric_form_version) throw Error("表单与 rubric 身份不一致。");
+      const baseline = parseJournal(resources.baselineText, batch);
+      if (baseline.some(r=>r.schema !== "q1-mixed-judgment/1" || r.rubric_version !== "open_coding" ||
+          r.rubric_sha256 !== null || r.annotator_id !== context.annotator_id)) throw Error("旧判断必须来自同一标注人的 open_coding 快照。");
+      return { ...resources, form, baseline };
     }
     const cut = (s, lo, hi) => cp(s).slice(lo, hi).join("");
     function sorted(value) {
@@ -835,14 +882,20 @@
         }
       }
     }
-    function validateMixedRow(r, b, w) {
+    function validateMixedRow(r, b, w, scope = null) {
       const base = "schema annotator_version annotator_id rubric_version rubric_sha256 batch_id comparison_batch_id view window_id record_type record_id revision timestamp marginalia_id type judgment reason star needs_verification remarks original_source_range";
       const extra = r.record_type === "marginalia" ? " source_quote body_text" : r.record_type === "omission" ? " action source_quote" : "";
-      if (!exactKeys(r, base + extra) || r.schema !== "q1-mixed-judgment/1" || !MIXED_VERSIONS.includes(r.annotator_version) ||
+      const review = r.schema === "q1-mixed-judgment/2";
+      const reviewExtra = review ? " " + Q1Rubric.reviewFields.join(" ") : "";
+      if (!exactKeys(r, base + extra + reviewExtra) || !["q1-mixed-judgment/1", "q1-mixed-judgment/2"].includes(r.schema) || !MIXED_VERSIONS.includes(r.annotator_version) ||
           r.comparison_batch_id !== b.batch_id || r.view !== "mixed" ||
           !["marginalia", "omission", "unit_note"].includes(r.record_type) ||
           !strictRange(r.original_source_range) || !Number.isFinite(Date.parse(r.timestamp)))
         throw Error("混合判断包含无效字段或来源信息，已停止同步。");
+      if (review) {
+        if (!scope || r.annotator_version !== VERSION || [...Q1Rubric.identityFields,"annotator_id","rubric_version","rubric_sha256"].some(k=>r[k] !== scope.context[k])) throw Error("重判日志身份不匹配，禁止混入其他会话或旧判断。");
+        Q1Rubric.validateAssessment(r, scope.form);
+      } else if (scope) throw Error("重判日志不能混入旧判断。");
       if (r.record_type === "marginalia") {
         const m = w.marginalia.find(m => m.marginalia_id === r.marginalia_id);
         if (!m || r.record_id !== m.marginalia_id || r.type !== m.type ||
@@ -883,7 +936,8 @@
       session.state.rows.findLast((r) => r.record_type === type && r.record_id === id);
     function markValue(m) {
       return (
-        session.state.drafts[m.marginalia_id] || latest("marginalia", m.marginalia_id) || baseMark()
+        session.state.drafts[m.marginalia_id] || latest("marginalia", m.marginalia_id) ||
+        { ...baseMark(), ...(reviewMode() ? Q1Rubric.empty() : {}) }
       );
     }
     function dbGet(key) {
@@ -910,6 +964,8 @@
         state,
         handle,
         directory,
+        form: state.reviewResources?.form,
+        baseline: state.reviewResources?.baseline,
         writes: Promise.resolve(),
         browserWrites: Promise.resolve(true),
         browserSeq: 0,
@@ -924,7 +980,7 @@
     }
     function persist(s = session) {
       const seq = ++s.browserSeq;
-      const pending = dbPut("state:" + s.batch.batch_id, s.state);
+      const pending = dbPut("state:" + scopeId(s), s.state);
       updateSaveStatus(s);
       s.browserWrites = pending.then(
         () => {
@@ -945,7 +1001,7 @@
     }
     function hasPendingValidDraft(s) {
       return (
-        Object.values(s.state.drafts).some((d) => d.judgment !== "fail" || d.reason.trim()) ||
+        (!reviewMode(s) && Object.values(s.state.drafts).some((d) => d.judgment !== "fail" || d.reason.trim())) ||
         Object.keys(s.state.unitNoteDrafts).length > 0 ||
         Object.values(s.state.missDrafts).some((d) => {
           const r = s.state.rows.findLast(
@@ -983,8 +1039,9 @@
           : "重试文件同步");
       setHidden($("retryBrowser"), !s.browserError);
       editStatus();
+      if (reviewMode(s)) updatePriorAvailability();
     }
-    function parseJournal(text, batch) {
+    function parseJournal(text, batch, scope = null) {
       if (text && !text.endsWith("\n"))
         throw Error("结果文件不完整（末行缺少换行），已停止同步，未改动文件。");
       let rows;
@@ -1028,7 +1085,7 @@
               typeof r.remarks === "string" &&
               typeof r.star === "boolean" &&
               typeof r.needs_verification === "boolean" &&
-              (r.judgment !== "fail" || !!r.reason.trim())
+              (r.schema === "q1-mixed-judgment/2" || r.judgment !== "fail" || !!r.reason.trim())
             : r.record_type === "density"
               ? r.record_id === rowUnit(r) && ["多", "合适", "少"].includes(r.density)
               : r.record_type === "unit_note"
@@ -1039,7 +1096,13 @@
                   typeof r.source_quote === "string";
         if (!validRange(rangeOf(r)) || !validRange(r.original_source_range) || !validFields)
           throw Error("结果文件含无效字段或坐标，已停止同步，未改动文件。");
-        if (mixed(batch)) validateMixedRow(r, batch, u);
+        if (mixed(batch)) validateMixedRow(r, batch, u, scope);
+      }
+      const exposure = new Map();
+      if (scope) for (const r of rows.filter(r=>r.record_type === "marginalia")) {
+        const prior = exposure.get(r.record_id);
+        if ((r.prior_judgment_seen && !prior) || (prior?.prior_judgment_seen && !r.prior_judgment_seen)) throw Error("旧判断查看顺序或标记无效。");
+        exposure.set(r.record_id, r);
       }
       const bindings = new Map();
       if (mixed(batch)) for (const r of rows) {
@@ -1058,7 +1121,7 @@
       return remote.length - local.length;
     }
     async function reconcile(s) {
-      const remote = parseJournal(await (await s.handle.getFile()).text(), s.batch);
+      const remote = parseJournal(await (await s.handle.getFile()).text(), s.batch, journalScope(s));
       if (compareHistories(s.state.rows, remote) > 0) s.state.rows = remote;
       s.diskAck = remote.length;
       s.blocked = false;
@@ -1082,7 +1145,7 @@
           }
           const rows = s.state.rows.slice();
           const journal = await (await s.handle.getFile()).text();
-          const remote = parseJournal(journal, s.batch);
+          const remote = parseJournal(journal, s.batch, journalScope(s));
           if (compareHistories(rows, remote) > 0)
             throw Error("文件有较新记录，已暂停写入；请点击重试文件同步核对并恢复。");
           const suffix = rows
@@ -1119,7 +1182,8 @@
     }
     async function loadSession(batch, handles = {}) {
       await checkBatch(batch);
-      const id = batch.batch_id;
+      const context = handles.context;
+      const id = Q1Rubric.scopeKey(batch.batch_id, context);
       const state = (await dbGet("state:" + id)) || {
         ui: 0,
         mi: 0,
@@ -1129,7 +1193,13 @@
         unitNoteDrafts: {},
       };
       state.unitNoteDrafts ??= {};
-      parseJournal(state.rows.map(r => JSON.stringify(r) + "\n").join(""), batch);
+      if (context?.review_session_id) {
+        if (state.annotationContext && JSON.stringify(sorted(state.annotationContext)) !== JSON.stringify(sorted(context))) throw Error("缓存的重判身份不一致。");
+        state.annotationContext = context;
+        state.reviewResources = await validateReviewResources(handles.resources ?? state.reviewResources, context, batch);
+      }
+      parseJournal(state.rows.map(r => JSON.stringify(r) + "\n").join(""), batch,
+        state.reviewResources ? {context:state.annotationContext,form:state.reviewResources.form} : null);
       return makeSession(
         batch,
         state,
@@ -1141,11 +1211,11 @@
       return new Promise((ok, no) => {
         const tx = db.transaction("data", "readwrite"),
           store = tx.objectStore("data"),
-          id = s.batch.batch_id;
+          id = scopeId(s);
         for (const [k, v] of [
           ["batch:" + id, s.batch],
           ["state:" + id, s.state],
-          ["last", id],
+          ["last", reviewMode(s) ? {id,context:s.state.annotationContext} : id],
           ["file:" + id, s.handle],
           ["directory:" + id, s.directory],
         ])
@@ -1193,10 +1263,10 @@
       updateSaveStatus();
       await scheduleDisk();
     }
-    async function activate(batch, restoring = false) {
+    async function activate(batch, restoring = false, context = undefined) {
       await checkBatch(batch);
       await settleCurrent();
-      const s = await loadSession(batch);
+      const s = await loadSession(batch, {context});
       if (s.handle) {
         try {
           if ((await s.handle.queryPermission({ mode: "readwrite" })) !== "granted") {
@@ -1219,6 +1289,7 @@
       for (const id of ["open", "openFolder", "link", "chooseFile", "export", "retryBrowser"])
         $(id).disabled = value;
       $("openFolder").disabled = value || !window.showDirectoryPicker;
+      if (session && reviewMode()) syncReviewControls();
     }
     async function openFolder() {
       if (busy) return;
@@ -1238,8 +1309,6 @@
         const batch = JSON.parse(await (await batchFile.getFile()).text());
         await checkBatch(batch);
         await settleCurrent();
-        const handle = await directory.getFileHandle("judgments.jsonl", { create: true });
-        const s = await loadSession(batch, { handle, directory });
         let context;
         try {
           const file = await directory.getFileHandle("annotation-context.json");
@@ -1248,6 +1317,14 @@
           if (err.name !== "NotFoundError") throw err;
         }
         const nextContext = annotationContext(context, batch.batch_id);
+        let resources;
+        if (nextContext.review_session_id) {
+          const readText = async name => (await (await directory.getFileHandle(name)).getFile()).text();
+          resources = await validateReviewResources({formText:await readText("rubric-form.json"),baselineText:await readText("open_coding.snapshot.jsonl")}, nextContext, batch);
+        }
+        // Validate the form and baseline before acquiring a writable result handle.
+        const handle = await directory.getFileHandle("judgments.jsonl", { create: !nextContext.review_session_id });
+        const s = await loadSession(batch, { handle, directory, context:nextContext, resources });
         const priorContext = s.state.annotationContext ?? DEFAULT_ANNOTATION_CONTEXT;
         if (JSON.stringify(sorted(nextContext)) !== JSON.stringify(sorted(priorContext)) &&
             [s.state.drafts, s.state.missDrafts, s.state.unitNoteDrafts].some((d) => Object.keys(d ?? {}).length))
@@ -1264,6 +1341,10 @@
     }
     async function connect(choose = false) {
       if (busy || !session) return;
+      if (reviewMode() && (choose || !session.handle)) {
+        say("重判结果固定保存在本次文件夹；请重新打开该重判文件夹。");
+        return;
+      }
       setBusy(true);
       clearTimeout(editTimer);
       const s = session;
@@ -1304,12 +1385,15 @@
       const s = session,
         b = s.batch,
         u = unit();
-      s.state.rows.push({
+      if (reviewMode(s) && type === "omission") throw Error("本次重判不记录漏标。");
+      const context = s.state.annotationContext ?? DEFAULT_ANNOTATION_CONTEXT;
+      const {baseline_sha256, ...rowContext} = context;
+      const row = {
         annotator_version: VERSION,
-        ...(s.state.annotationContext ?? DEFAULT_ANNOTATION_CONTEXT),
+        ...rowContext,
         batch_id: b.batch_id,
         ...(mixed(b) ? {
-          schema: "q1-mixed-judgment/1", comparison_batch_id: b.batch_id,
+          schema: reviewMode(s) ? "q1-mixed-judgment/2" : "q1-mixed-judgment/1", comparison_batch_id: b.batch_id,
           view: "mixed", window_id: uid(u),
         } : {
         book: b.book,
@@ -1334,8 +1418,11 @@
         remarks: null,
         ...(!mixed(b) ? { source_range: span } : {}),
         original_source_range: original,
+        ...(reviewMode(s) ? Object.fromEntries(Q1Rubric.assessmentFields.map(k=>[k,null])) : {}),
         ...fields,
-      });
+      };
+      if (reviewMode(s)) Q1Rubric.validateAssessment(row, s.form);
+      s.state.rows.push(row);
       persist();
       scheduleDisk();
     }
@@ -1347,6 +1434,7 @@
     }
     function markStatus(m) {
       const v = markValue(m);
+      if (reviewMode()) return session.state.drafts[m.marginalia_id] ? "待确认" : v.review_completed ? "已完成" : "未标注";
       if (v.judgment === "pass" || (v.judgment === "fail" && v.reason?.trim())) return "已完成";
       return v.judgment === "fail" ? "待补理由" : "未标注";
     }
@@ -1365,7 +1453,7 @@
         miss ||
         note?.trim() ||
         values.some(
-          (v) => v.judgment || v.star || v.needs_verification || v.reason?.trim() || v.remarks?.trim(),
+          (v) => v.judgment || v.star || v.needs_verification || v.reason?.trim() || v.remarks?.trim() || v.failed_criteria?.length || v.tags?.length || v.rubric_uncovered,
         ) ||
         session.state.rows.some((r) => rowUnit(r) === uid(u) && r.record_type === "omission");
       return { done, missing, state: !missing.length ? "done" : started ? "started" : "empty" };
@@ -1585,9 +1673,122 @@
       $("verify").checked = v.needs_verification;
       $("pass").setAttribute("aria-pressed", v.judgment === "pass");
       $("fail").setAttribute("aria-pressed", v.judgment === "fail");
+      setHidden($("legacyJudgment"), reviewMode());
+      setHidden($("legacyVerify"), reviewMode());
+      setHidden($("rubricEditor"), !reviewMode());
+      setHidden($("priorReview"), !reviewMode());
+      setText($("reasonPolicy"), reviewMode() && !session.form.policy.reason_required_on_fail ? "选填" : "不过时必填");
+      if (reviewMode()) renderRubricEditor();
       resizeTextareas();
     }
+    function renderRubricEditor() {
+      const spec = session.form.mark_types[item().type];
+      setText($("rubricTitle"), session.form.title + " · " + spec.label + " · 本轮不记录漏标");
+      $("criteria").replaceChildren();
+      $("rubricTags").replaceChildren();
+      function choice(parent, label, change) {
+        const line = el("label", "", "rubric-choice"), input = document.createElement("input");
+        input.type = "checkbox";
+        line.append(input, el("span", label)); parent.append(line);
+        input.onchange = () => change(input.checked);
+        return input;
+      }
+      for (const c of spec.criteria) {
+        const box = el("div", "", "criterion");
+        const input = choice(box, c.id + " " + c.label, checked => changeReviewList("failed_criteria",c.id,checked));
+        input.dataset.criterion = c.id;
+        const details = document.createElement("details");
+        details.append(el("summary", "判定说明"), el("pre", c.help.replace(/\*\*/g,"")));
+        box.append(details);
+        for (const f of c.flags) {
+          const flag = choice(box, f.label + "（不单独导致不过）", checked => {
+            const flags = structuredClone(markValue(item()).criterion_flags);
+            flags[c.id] = {...flags[c.id], [f.id]:checked};
+            draftReview({criterion_flags:flags});
+          });
+          flag.dataset.criterionFlag = c.id; flag.dataset.flag = f.id;
+        }
+        $("criteria").append(box);
+      }
+      for (const tag of spec.tags) {
+        const input = choice($("rubricTags"),tag.label,checked=>changeReviewList("tags",tag.id,checked));
+        input.dataset.rubricTag = tag.id;
+      }
+      $("priorContent").replaceChildren(); $("priorContent").hidden = true;
+      syncReviewControls();
+    }
+    function changeReviewList(field, id, checked) {
+      const values = markValue(item())[field];
+      draftReview({[field]:checked ? [...values.filter(v=>v!==id),id] : values.filter(v=>v!==id)});
+    }
+    function draftReview(fields) {
+      const v = {...markValue(item()), ...fields};
+      if (session.form.policy.star_requires_pass && Q1Rubric.outcome(v) === "fail") v.star = false;
+      draft({...v, judgment:Q1Rubric.outcome(v), needs_verification:Q1Rubric.verification(v), review_completed:false});
+      syncReviewControls();
+    }
+    function syncReviewControls() {
+      if (!reviewMode() || !item()) return;
+      const v = markValue(item());
+      for (const input of $("criteria").querySelectorAll("[data-criterion]")) input.checked = v.failed_criteria.includes(input.dataset.criterion);
+      for (const input of $("criteria").querySelectorAll("[data-criterion-flag]")) input.checked = !!v.criterion_flags[input.dataset.criterionFlag]?.[input.dataset.flag];
+      for (const input of $("rubricTags").querySelectorAll("input")) input.checked = v.tags.includes(input.dataset.rubricTag);
+      $("uncovered").checked = v.rubric_uncovered;
+      $("star").checked = v.star;
+      $("star").disabled = session.form.policy.star_requires_pass && Q1Rubric.outcome(v) === "fail";
+      const done = markStatus(item()) === "已完成";
+      const touched = !!session.state.drafts[item().marginalia_id] || done;
+      setText($("reviewOutcome"), touched ? (done ? "已完成 · " : "待确认 · ") + (Q1Rubric.outcome(v) === "pass" ? "过" : "不过") : "未标注");
+      setText($("completeReview"), done ? "已完成（修改后再确认）" : "完成本条");
+      $("completeReview").disabled = done || busy;
+      updatePriorAvailability();
+    }
+    function canRevealPrior() {
+      if (!reviewMode() || !item()) return false;
+      const row = latest("marginalia", item().marginalia_id);
+      return !!(row?.review_completed && !session.state.drafts[item().marginalia_id] && session.handle &&
+        session.browserAck === session.browserSeq && !session.browserError && !session.blocked &&
+        session.diskAck >= row.revision && !session.diskError);
+    }
+    function updatePriorAvailability() {
+      if (!reviewMode() || !item()) return;
+      const allowed = canRevealPrior();
+      $("showPrior").disabled = !allowed;
+      setText($("showPrior"), allowed ? ($("priorContent").hidden ? "查看旧判断" : "收起旧判断") : "完成本条并保存后可查看旧判断");
+      if (!allowed) { $("priorContent").replaceChildren(); $("priorContent").hidden = true; }
+    }
+    $("uncovered").onchange = () => draftReview({rubric_uncovered:$("uncovered").checked});
+    $("completeReview").onclick = async () => {
+      if (busy || composing || !reviewMode() || !item()) return;
+      try {
+        draftReview({});
+        saveMark(true);
+        await session.writes;
+        await session.browserWrites;
+        syncReviewControls();
+        neutralFocus();
+      } catch (err) { say(err.message); }
+    };
+    $("showPrior").onclick = async () => {
+      if (!canRevealPrior()) return;
+      if (!$("priorContent").hidden) {
+        $("priorContent").replaceChildren(); $("priorContent").hidden = true; updatePriorAvailability(); return;
+      }
+      const s = session, id = item().marginalia_id;
+      const prior = latest("marginalia", id);
+      if (!prior.prior_judgment_seen) {
+        const fields = Object.fromEntries([...Q1Rubric.assessmentFields,"marginalia_id","type","source_quote","body_text","judgment","reason","remarks","star","needs_verification"].map(k=>[k,prior[k]]));
+        fields.prior_judgment_seen = true;
+        record("marginalia",id,fields,rangeOf(item()),item().original_source_range);
+        await s.writes; await s.browserWrites;
+      }
+      if (s !== session || item()?.marginalia_id !== id || !canRevealPrior()) return;
+      const old = s.baseline.findLast(r=>r.record_type === "marginalia" && r.record_id === id);
+      $("priorContent").textContent = old ? "open_coding：" + ({pass:"过",fail:"不过"}[old.judgment] ?? "未判") + "\n理由：" + old.reason + (old.remarks ? "\n备注：" + old.remarks : "") : "旧快照中没有本条判断。";
+      $("priorContent").hidden = false; updatePriorAvailability();
+    };
     function renderMiss() {
+      if (reviewMode()) { $("misses").replaceChildren(); $("missEditor").hidden = true; return; }
       const u = unit(),
         list = activeMisses(u),
         d = session.state.missDrafts[uid(u)];
@@ -1651,6 +1852,14 @@
         mixed() ? "固定原文窗口" : position,
       ].join(" · ");
       $("density").hidden = mixed();
+      $("omissionControls").hidden = reviewMode();
+      $("omissionLegend").hidden = reviewMode();
+      $("omissionHelp").hidden = reviewMode();
+      $("omissionHelp").nextElementSibling.hidden = reviewMode();
+      $("chooseFile").hidden = reviewMode();
+      $("judgmentHelp").textContent = reviewMode() ? "完成本条" : "P / F";
+      $("judgmentHelpText").textContent = reviewMode() ? "勾选后点击完成；P/F 在重判模式禁用。理由选填，本轮不记录漏标。" : "过 / 不过，判断后停留；F 进入理由框";
+      $("star").disabled = false;
       $("densityHelp").hidden = mixed();
       $("densityHelp").nextElementSibling.hidden = mixed();
       $("unitHeading").textContent = unitLabel() + "判断";
@@ -1709,25 +1918,30 @@
       const m = item(),
         v = markValue(m);
       session.state.drafts[m.marginalia_id] = {
+        ...(reviewMode() ? Object.fromEntries(Q1Rubric.assessmentFields.map(k=>[k,v[k]])) : {}),
         judgment: v.judgment,
         reason: v.reason,
         star: v.star,
         needs_verification: v.needs_verification,
         remarks: v.remarks,
         ...fields,
+        ...(reviewMode() ? {review_completed:false} : {}),
       };
       persist();
       progress();
+      if (reviewMode()) syncReviewControls();
     }
-    function saveMark() {
+    function saveMark(confirm = false) {
       if (!item() || !session.state.drafts[item().marginalia_id]) return true;
+      if (reviewMode() && !confirm) return false;
       const m = item(),
         v = markValue(m);
-      if (v.judgment === "fail" && !v.reason.trim()) {
+      if (v.judgment === "fail" && !v.reason.trim() && (!reviewMode() || session.form.policy.reason_required_on_fail)) {
         progress();
         return false;
       }
       const fields = {
+        ...(reviewMode() ? {...Object.fromEntries(Q1Rubric.assessmentFields.map(k=>[k,v[k]])),review_completed:true} : {}),
         marginalia_id: m.marginalia_id,
         type: m.type,
         source_quote: m.source_quote,
@@ -1739,8 +1953,9 @@
         remarks: v.remarks,
       };
       const prior = latest("marginalia", m.marginalia_id);
+      if (reviewMode()) Q1Rubric.validateAssessment({...session.state.annotationContext, record_type:"marginalia", ...fields}, session.form);
       delete session.state.drafts[m.marginalia_id];
-      if (!prior || Object.keys(fields).some((k) => fields[k] !== prior[k]))
+      if (!prior || Object.keys(fields).some((k) => JSON.stringify(sorted(fields[k])) !== JSON.stringify(sorted(prior[k]))))
         record("marginalia", m.marginalia_id, fields, rangeOf(m), m.original_source_range);
       else persist();
       say("");
@@ -1749,12 +1964,14 @@
       return true;
     }
     $("pass").onclick = () => {
+      if (reviewMode()) return;
       draft({ judgment: "pass" });
       saveMark();
       editor();
       neutralFocus();
     };
     $("fail").onclick = () => {
+      if (reviewMode()) return;
       draft({ judgment: "fail" });
       saveMark();
       editor();
@@ -1769,6 +1986,7 @@
       queueEdits();
     };
     function toggleFlag(key, value) {
+      if (reviewMode()) { if (key === "star") draftReview({star:value}); return; }
       const m = item(),
         id = m.marginalia_id,
         prior = latest("marginalia", id) || baseMark();
@@ -1882,6 +2100,7 @@
       const button = $("selection"),
         sel = getSelection();
       button.hidden = true;
+      if (reviewMode()) return;
       if (!session || selecting || !selectedRange || !sel.rangeCount || sel.isCollapsed) return;
       const reader = $("readerScroll").getBoundingClientRect(),
         area = {
@@ -1963,6 +2182,7 @@
     window.addEventListener("resize", queueSelectionPosition);
     $("selection").onpointerdown = (e) => e.preventDefault();
     $("selection").onclick = () => {
+      if (reviewMode()) return;
       if (!selectedRange || (!mixed() && activeMisses(unit()).length >= 2) || session.state.missDrafts[uid(unit())])
         return;
       session.state.missDrafts[uid(unit())] = {
@@ -1986,6 +2206,7 @@
       queueEdits();
     };
     function saveMiss() {
+      if (reviewMode()) return false;
       const d = session.state.missDrafts[uid(unit())];
       if (!d || !d.reason.trim()) return false;
       const prior = latest("omission", d.record_id);
@@ -2045,7 +2266,7 @@
       const m = item(),
         d = m && session.state.drafts[m.marginalia_id];
       setText($("draftState"), d
-        ? (d.judgment === "fail" && !d.reason.trim() ? "待补理由 · " : "") + draft
+        ? (reviewMode() ? "待确认 · " : d.judgment === "fail" && !d.reason.trim() ? "待补理由 · " : "") + draft
         : stored);
       setText($("unitNoteState"), Object.hasOwn(session.state.unitNoteDrafts, uid(unit()))
         ? draft
@@ -2139,6 +2360,10 @@
       }
       if (e.target.matches("textarea, input:not([type=checkbox]), [contenteditable=true]")) return;
       const k = e.key.toLowerCase();
+      if (reviewMode() && ["p","f","o"].includes(k)) { e.preventDefault(); return; }
+      if (reviewMode() && k === "v") {
+        e.preventDefault(); $("criteria").querySelector("[data-criterion-flag]")?.click(); return;
+      }
       if (k === "j" || k === "k") {
         e.preventDefault();
         const reader = !e.shiftKey && matchMedia("(min-width: 960px)").matches;
@@ -2228,7 +2453,8 @@
         );
       const a = el("a", "");
       a.href = url;
-      a.download = "q1-" + session.batch.batch_id.slice(0, 12) + ".jsonl";
+      const suffix = reviewMode() ? "-" + session.form.form_version + "-" + session.state.annotationContext.review_session_id.slice(0,8) : "";
+      a.download = "q1-" + session.batch.batch_id.slice(0, 12) + suffix + ".jsonl";
       a.click();
       setTimeout(() => URL.revokeObjectURL(url), 30000);
     };
@@ -2240,7 +2466,7 @@
         r.onerror = () => no(r.error);
       });
       const last = await dbGet("last");
-      if (last) await activate(await dbGet("batch:" + last), true);
+      if (last) await activate(await dbGet("batch:" + (last.id ?? last)), true, last.context);
       $("open").disabled = false;
       $("openFolder").disabled = !window.showDirectoryPicker;
       if (!window.showDirectoryPicker)

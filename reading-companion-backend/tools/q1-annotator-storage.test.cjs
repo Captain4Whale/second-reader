@@ -19,6 +19,7 @@ function harness() {
     return nodes.get(id);
   };
   const c = vm.createContext({
+    Q1Rubric: require('./q1-rubric-form.js'),
     document: { getElementById: get },
     window: { showOpenFilePicker() {} },
     structuredClone,
@@ -31,7 +32,7 @@ function harness() {
   });
   vm.runInContext(
     storage +
-      "\nfunction editStatus() {}\nfunction render() {}\nfunction flushEdits() {}\nfunction recoverDrafts() {}\nlet editTimer; function queueEdits() {}",
+      "\nfunction editStatus() {}\nfunction render() {}\nfunction flushEdits() {}\nfunction recoverDrafts() {}\nfunction updatePriorAvailability() {}\nfunction syncReviewControls() {}\nlet editTimer; function queueEdits() {}",
     c,
   );
   vm.runInContext(
@@ -278,7 +279,7 @@ test("mixed records append no group identity and reject reveal/density/provenanc
   h.run('var mark=blind.windows[0].marginalia[0];record("marginalia",mark.marginalia_id,{marginalia_id:mark.marginalia_id,type:mark.type,source_quote:mark.source_quote,body_text:mark.body_text,judgment:"pass",reason:"",remarks:"",star:false,needs_verification:false},mark.original_source_range,mark.original_source_range)');
   await h.run("session.writes");
   const r=JSON.parse(h.run("JSON.stringify(state.rows[0])"));
-  assert.equal(r.annotator_version,"q1-annotator/2.2");
+  assert.equal(r.annotator_version,"q1-annotator/2.3");
   h.c.older={...r,annotator_version:"q1-annotator/2.0"};
   assert.equal(h.run('parseJournal(JSON.stringify(older)+"\\n",batch).length'),1);
   assert.equal(r.view,"mixed"); assert.equal(r.comparison_batch_id,h.c.blind.batch_id);
@@ -335,5 +336,77 @@ test("folder import reads mixed projection without opening private batch or mapp
   }});
   await h.run("openFolder()");
   assert.equal(h.run('session.batch.schema'),"q1-mixed/1");
-  assert.deepEqual(Array.from(h.c.reads),["mixed.json","judgments.jsonl","annotation-context.json"]);
+  assert.deepEqual(Array.from(h.c.reads),["mixed.json","annotation-context.json","judgments.jsonl"]);
+});
+
+function reviewHarness() {
+  const h = harness();
+  h.c.blind = mixedFixture();
+  h.c.form = JSON.parse(readFileSync(__dirname + '/../rubric/q1-v0.form.json', 'utf8'));
+  h.c.formHash = require('node:crypto').createHash('sha256').update(readFileSync(__dirname + '/../rubric/q1-v0.form.json')).digest('hex');
+  h.run(`state.annotationContext={annotator_id:'weijiang',rubric_version:form.rubric_version,rubric_sha256:form.rubric_sha256,
+    rubric_form_version:form.form_version,rubric_form_sha256:formHash,review_session_id:'test-review',baseline_sha256:'a'.repeat(64)};
+    state.reviewResources={form,baseline:[]};session=makeSession(blind,state,handle);batch=blind;`);
+  h.run(script.slice(script.indexOf('    function record('),script.indexOf('    function activeMisses(')));
+  h.run(script.slice(script.indexOf('    function canRevealPrior('),script.indexOf('    function updatePriorAvailability(')));
+  h.run(`var m=unit().marginalia[0];var fields={...Q1Rubric.empty(),review_completed:true,
+    marginalia_id:m.marginalia_id,type:m.type,source_quote:m.source_quote,body_text:m.body_text,
+    judgment:'pass',reason:'',remarks:'',star:false,needs_verification:false};`);
+  return h;
+}
+
+test('review records are scoped, append-only, and old judgments remain locked until disk receipt', async () => {
+  const h = reviewHarness();
+  h.run('var release;gate=new Promise(r=>release=r); record("marginalia",m.marginalia_id,fields,null,m.original_source_range)');
+  await new Promise(r=>setImmediate(r));
+  assert.equal(h.run('canRevealPrior()'),false);
+  h.run('release()'); await h.run('session.writes'); await h.run('session.browserWrites');
+  assert.equal(h.run('canRevealPrior()'),true);
+  assert.equal(h.run('parseJournal(disk,batch,journalScope(session)).length'),1);
+  assert.throws(()=>h.run('parseJournal(disk,batch)'));
+  h.run('var wrong={...journalScope(session),context:{...state.annotationContext,review_session_id:"other"}}');
+  assert.throws(()=>h.run('parseJournal(disk,batch,wrong)'));
+  h.run('state.drafts[m.marginalia_id]={...fields,review_completed:false}');
+  assert.equal(h.run('canRevealPrior()'),false);
+  assert.equal(h.run('disk.split("\\n").filter(Boolean).length'),1);
+});
+
+test('failed review write cannot unlock prior judgments; retry preserves completed assessment',async()=>{
+  const h=reviewHarness();
+  h.run('failWrite=true;record("marginalia",m.marginalia_id,fields,null,m.original_source_range)');
+  await h.run('session.writes');
+  assert.equal(h.run('canRevealPrior()'),false);
+  assert.equal(h.run('state.rows.length'),1); assert.equal(h.run('disk'),'');
+  h.run('failWrite=false');await h.run('reconcile(session)');await h.run('scheduleDisk()');
+  assert.equal(h.run('canRevealPrior()'),true);
+  assert.throws(()=>h.run('record("omission","oops",{},null,m.original_source_range)'));
+  assert.equal(h.run('state.rows.length'),1);
+});
+
+test('review exposure cannot start true or revert; legacy rows cannot enter review journal',async()=>{
+  const h=reviewHarness();
+  h.run('record("marginalia",m.marginalia_id,fields,null,m.original_source_range)');await h.run('session.writes');
+  h.run('var row=state.rows[0]');
+  assert.throws(()=>h.run('parseJournal(JSON.stringify({...row,prior_judgment_seen:true})+"\\n",batch,journalScope(session))'));
+  h.run('var seen={...row,revision:2,prior_judgment_seen:true}');
+  assert.equal(h.run('parseJournal(disk+JSON.stringify(seen)+"\\n",batch,journalScope(session)).length'),2);
+  assert.throws(()=>h.run('parseJournal(disk+JSON.stringify(seen)+"\\n"+JSON.stringify({...row,revision:3})+"\\n",batch,journalScope(session))'));
+  h.run('var old={...row,schema:"q1-mixed-judgment/1"};for(const k of Q1Rubric.reviewFields)delete old[k]');
+  assert.throws(()=>h.run('parseJournal(JSON.stringify(old)+"\\n",batch,journalScope(session))'));
+});
+
+test('invalid review snapshot fails before acquiring a result handle or changing selection',async()=>{
+  const h=reviewHarness();
+  h.run('var before=session,reads=[];settleCurrent=async()=>{}');
+  const ctx={...JSON.parse(h.run('JSON.stringify(state.annotationContext)')),batch_id:h.c.blind.batch_id,rubric_status:'published'};
+  h.c.showDirectoryPicker=async()=>({requestPermission:async()=> 'granted',getFileHandle:async n=>{
+    h.c.reads.push(n);
+    const content={'mixed.json':JSON.stringify(h.c.blind),'annotation-context.json':JSON.stringify(ctx),'rubric-form.json':'{}','open_coding.snapshot.jsonl':''}[n];
+    if(content===undefined)throw Error('Should not acquire writable handle');
+    return {getFile:async()=>({text:async()=>content})};
+  }});
+  await h.run('openFolder()');
+  assert.equal(h.run('session===before'),true);
+  assert.equal(Array.from(h.c.reads).includes('judgments.jsonl'),false);
+  assert.match(h.get('message').textContent,/指纹不一致/);
 });
