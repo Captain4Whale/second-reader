@@ -5,6 +5,17 @@ This task implements data preparation, mixed annotation and statistics only. Sid
 columns, preference records, per-window group aliases and reveal operations are deferred
 until the A/B diagnostic has been annotated. No model, prompt or mechanism changes.
 
+## Rubric rejudgment
+
+Annotator 2.3 adds isolated form-driven q1-v0 review, documented in
+[the rejudgment protocol](rubric-review.md). This mode writes `q1-mixed-judgment/2`
+to a fresh journal; it never migrates or overwrites open_coding judgments. Original
+group-blinding constraints remain unchanged. Revealing a completed mark's historical
+human judgment is distinct from revealing its group identity.
+For this pass, omission controls and recording are disabled and omissions are excluded
+from the comparison report; historical omissions remain in their original journal.
+The mixed-mode unlimited vs rubric maximum-two omission conflict is explicitly deferred.
+
 ## Fixed-history Digest rerun output contract (v1)
 
 The separate rerun task MUST emit `q1-digest-comparison-output/1` JSON. One file is one

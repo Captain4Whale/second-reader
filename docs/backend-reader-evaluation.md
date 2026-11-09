@@ -21,6 +21,15 @@ evaluation must exclude every rubric example (including ID-only references) in
 upstream-unit exclusions follow the comparison workflow. Pin both file hashes; these
 examples cannot serve as unseen agreement evidence.
 
+For human q1-v0 rejudgment, use the separate immutable form and isolated journal described
+in [the review protocol](../reading-companion-backend/experiments/rubric-review.md).
+Require explicit completion, derive pass/fail from failed criteria or rubric-uncovered,
+and hide historical judgments until the new assessment is saved. Preserve first
+pre-exposure completion and later revisions. This owner-authorized pass permits optional
+failure reasons and reuses historical omission records without rejudging omissions.
+Human-vs-human comparison includes rubric examples; it is not a held-out judge agreement
+measurement. Reports with mark text and anchors belong only under ignored backend state.
+
 Every reader invocation and direct eval trace scope records actual logical request
 hashes in standard mode, retains complete prompt samples privately, and snapshots dirty
 tracked changes as a base-commit-bound patch. Untracked file hashes and an explicit

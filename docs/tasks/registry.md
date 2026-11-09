@@ -32,6 +32,8 @@ Last updated: `2026-11-09`
 
 ## Done
 
+- `TASK-Q1-RUBRIC-ANNOTATOR` — `done`, mechanism_eval / high. Annotator 2.3, immutable form, isolated append-only rejudgment, gated prior judgment and private comparison reports. Real DIAG-001 opened read-only; owner rejudgment pending. Reasons optional; no omission rejudgment; omission-limit conflict deferred. [Execution](q1-rubric-annotator-2026-11-09.md).
+
 - `TASK-Q1-RUBRIC-V0-RELEASE` — `done`, mechanism_eval / high. Exact rubric publication, preserved frozen draft, 38 verified example exclusions and append-only release registration. [Execution](q1-rubric-v0-release-2026-11-09.md).
 
 - `TASK-Q1-VERSIONING-SKELETON` — completed prompt/rubric/trial/judgment provenance under `DEC-161`; dev 67 / holdout 75 units, first-batch attribution preserved, baseline pass rate blank. [Execution](q1-versioning-skeleton-2026-11-08.md), [operator authority](../../reading-companion-backend/experiments/README.md).

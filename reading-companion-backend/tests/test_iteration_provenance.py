@@ -122,7 +122,7 @@ def test_legacy_prefix_digest_detects_rewrite_even_with_valid_json(snapshot, tmp
         check(snapshot, base_ref=None, annotation_root=journal_root)
 
 
-@pytest.mark.parametrize("target", ["rubric", "examples", "registry", "removal"])
+@pytest.mark.parametrize("target", ["rubric", "examples", "registry", "removal", "form", "form_registry"])
 def test_published_rubric_cannot_be_rewritten_by_refreshing_hashes(snapshot, tmp_path, target):
     """A trusted Git base must catch changes even when current hashes agree."""
     repo = tmp_path / "repo"
@@ -163,11 +163,24 @@ def test_published_rubric_cannot_be_rewritten_by_refreshing_hashes(snapshot, tmp
         if target == "rubric":
             releases["test-published"]["sha256"] = sha(path)
             registry.write_text(json.dumps(releases))
+    elif target in {"form", "form_registry"}:
+        registry = root / "rubric/form-releases.json"
+        forms = json.loads(registry.read_text())
+        release = forms["q1-v0.form.v1"]
+        if target == "form":
+            path = root / release["path"]
+            path.write_bytes(path.read_bytes() + b" ")
+            release["sha256"] = sha(path)
+            locks[release["path"]] = sha(path)
+            frozen.write_text(json.dumps(locks))
+        else:
+            release["changed_metadata"] = "synthetic mutation"
+        registry.write_text(json.dumps(forms))
     elif target == "registry":
         releases["test-published"]["status"] = "draft"
         registry.write_text(json.dumps(releases))
     else:
         releases.pop("test-published")
         registry.write_text(json.dumps(releases))
-    with pytest.raises(ValueError, match="Frozen lock entry changed|Rubric publication entry changed"):
+    with pytest.raises(ValueError, match="Frozen lock entry changed|Rubric publication entry changed|Form publication entry changed"):
         check(root, base_ref="HEAD")
