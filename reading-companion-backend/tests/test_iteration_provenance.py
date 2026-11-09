@@ -1,5 +1,6 @@
 import json
 import shutil
+import subprocess
 
 import pytest
 
@@ -72,7 +73,14 @@ def test_trial_rejects_holdout_multiple_variables_and_draft_rubric(snapshot):
     with pytest.raises(ValueError, match="one variable"):
         validate_trial(row, snapshot)
     with pytest.raises(ValueError, match="draft"):
-        rubric_identity("q1-v0", snapshot)
+        draft = next(
+            version
+            for version, release in json.loads(
+                (snapshot / "rubric/releases.json").read_text()
+            ).items()
+            if release["status"] == "draft"
+        )
+        rubric_identity(draft, snapshot)
 
 
 def test_duplicate_trial_and_manifest_edits_are_rejected(snapshot):
@@ -112,3 +120,54 @@ def test_legacy_prefix_digest_detects_rewrite_even_with_valid_json(snapshot, tmp
         path.write_text("{}\n")
     with pytest.raises(ValueError, match="prefix changed"):
         check(snapshot, base_ref=None, annotation_root=journal_root)
+
+
+@pytest.mark.parametrize("target", ["rubric", "examples", "registry", "removal"])
+def test_published_rubric_cannot_be_rewritten_by_refreshing_hashes(snapshot, tmp_path, target):
+    """A trusted Git base must catch changes even when current hashes agree."""
+    repo = tmp_path / "repo"
+    root = repo / "backend"
+    root.mkdir(parents=True)
+    for name in ("experiments", "rubric", "src"):
+        shutil.copytree(snapshot / name, root / name)
+    rubric = root / "rubric/test-published.md"
+    examples = root / "rubric/test-published.examples.json"
+    rubric.write_text("Published synthetic criterion\n")
+    examples.write_text('{"entries": []}\n')
+    registry = root / "rubric/releases.json"
+    releases = json.loads(registry.read_text())
+    releases["test-published"] = {
+        "status": "published", "path": "rubric/test-published.md",
+        "sha256": sha(rubric), "date": "2026-11-09",
+    }
+    registry.write_text(json.dumps(releases))
+    frozen = root / "experiments/frozen.json"
+    locks = json.loads(frozen.read_text())
+    for p in (rubric, examples):
+        locks[str(p.relative_to(root))] = sha(p)
+    frozen.write_text(json.dumps(locks))
+    def git(*args):
+        return subprocess.run(
+            ["git", "-C", str(repo), *args], check=True, capture_output=True,
+        )
+    git("init")
+    git("add", "backend")
+    git("-c", "user.name=Test", "-c", "user.email=test@example.invalid",
+        "-c", "core.hooksPath=/dev/null", "commit", "-m", "Trusted publication")
+    check(root, base_ref="HEAD")
+    if target in {"rubric", "examples"}:
+        path = rubric if target == "rubric" else examples
+        path.write_bytes(path.read_bytes() + b" ")
+        locks[str(path.relative_to(root))] = sha(path)
+        frozen.write_text(json.dumps(locks))
+        if target == "rubric":
+            releases["test-published"]["sha256"] = sha(path)
+            registry.write_text(json.dumps(releases))
+    elif target == "registry":
+        releases["test-published"]["status"] = "draft"
+        registry.write_text(json.dumps(releases))
+    else:
+        releases.pop("test-published")
+        registry.write_text(json.dumps(releases))
+    with pytest.raises(ValueError, match="Frozen lock entry changed|Rubric publication entry changed"):
+        check(root, base_ref="HEAD")
