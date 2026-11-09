@@ -1,0 +1,76 @@
+{
+  "schema": "q1-rubric-draft-migration/1",
+  "migrated_at": "2026-11-09T13:12:57.862320+00:00",
+  "reason": "Owner authorized preserving the unreferenced frozen draft as q1-v0-draft and publishing the supplied final q1-v0. Draft freezing policy is unchanged.",
+  "authorization": "Current task owner reply on 2026-11-09; conditional on no old-version/hash references in logs, judgments, or run metadata.",
+  "previous_registration": {
+    "version": "q1-v0",
+    "release": {
+      "status": "draft",
+      "path": "rubric/q1-v0.md",
+      "sha256": "80f1a50fa505ce45f13fc0754cb791dcca7b7094ae48b2d6831506c4e6a0d3bd",
+      "date": "2026-11-08"
+    }
+  },
+  "previous_frozen_entries": {
+    "rubric/q1-v0.md": "80f1a50fa505ce45f13fc0754cb791dcca7b7094ae48b2d6831506c4e6a0d3bd"
+  },
+  "archived_as": {
+    "version": "q1-v0-draft",
+    "path": "rubric/q1-v0-draft.md",
+    "sha256": "80f1a50fa505ce45f13fc0754cb791dcca7b7094ae48b2d6831506c4e6a0d3bd"
+  },
+  "published_as": {
+    "version": "q1-v0",
+    "path": "rubric/q1-v0.md",
+    "sha256": "3ed0c44ab82b1a95802eb669717570a282169200b45faec1a090706ab1bd12fa"
+  },
+  "reference_scan": [
+    {
+      "worktree": "/Users/baiweijiang/Documents/Projects/reading-companion",
+      "searched_directories": [
+        "/Users/baiweijiang/Documents/Projects/reading-companion/reading-companion-backend/state",
+        "/Users/baiweijiang/Documents/Projects/reading-companion/reading-companion-backend/output",
+        "/Users/baiweijiang/Documents/Projects/reading-companion/reading-companion-backend/experiments",
+        "/Users/baiweijiang/Documents/Projects/reading-companion/reading-companion-backend/docs/evaluation"
+      ],
+      "matches": [
+        "/Users/baiweijiang/Documents/Projects/reading-companion/reading-companion-backend/experiments/frozen.json"
+      ],
+      "operational_references": []
+    },
+    {
+      "worktree": "/Users/baiweijiang/.codex/worktrees/2096/reading-companion",
+      "searched_directories": [
+        "/Users/baiweijiang/.codex/worktrees/2096/reading-companion/reading-companion-backend/state",
+        "/Users/baiweijiang/.codex/worktrees/2096/reading-companion/reading-companion-backend/docs/evaluation"
+      ],
+      "matches": [],
+      "operational_references": []
+    },
+    {
+      "worktree": "/Users/baiweijiang/.codex/worktrees/q1-digest-replay/reading-companion",
+      "searched_directories": [
+        "/Users/baiweijiang/.codex/worktrees/q1-digest-replay/reading-companion/reading-companion-backend/state",
+        "/Users/baiweijiang/.codex/worktrees/q1-digest-replay/reading-companion/reading-companion-backend/output",
+        "/Users/baiweijiang/.codex/worktrees/q1-digest-replay/reading-companion/reading-companion-backend/experiments",
+        "/Users/baiweijiang/.codex/worktrees/q1-digest-replay/reading-companion/reading-companion-backend/docs/evaluation"
+      ],
+      "matches": [
+        "/Users/baiweijiang/.codex/worktrees/q1-digest-replay/reading-companion/reading-companion-backend/experiments/frozen.json"
+      ],
+      "operational_references": []
+    },
+    {
+      "worktree": "/Users/baiweijiang/Documents/Projects/reading-companion-q1-annotation",
+      "searched_directories": [
+        "/Users/baiweijiang/Documents/Projects/reading-companion-q1-annotation/reading-companion-backend/state",
+        "/Users/baiweijiang/Documents/Projects/reading-companion-q1-annotation/reading-companion-backend/docs/evaluation"
+      ],
+      "matches": [],
+      "operational_references": []
+    }
+  ],
+  "pre_migration_commit": "5f6db0e4666e063f830b9d251f4de919110b412d",
+  "validation_exception": "The unchanged trusted-base guard rejects this explicitly authorized migration. Validate current identities before commit; after commit use the migration commit as the trusted base. This is not permission for future in-place edits."
+}

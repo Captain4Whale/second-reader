@@ -1,7 +1,35 @@
 {
   "version": 1,
-  "updated_at": "2026-11-08T09:56:19+08:00",
+  "updated_at": "2026-11-09T13:12:57.862320+00:00",
   "tasks": [
+    {
+      "id": "TASK-Q1-RUBRIC-V0-RELEASE",
+      "title": "Publish Q1 rubric v0 and freeze example exclusions",
+      "status": "done",
+      "lane": "mechanism_eval",
+      "priority": "high",
+      "detail_ref": "docs/tasks/q1-rubric-v0-release-2026-11-09.md",
+      "acceptance_ref": "docs/tasks/q1-rubric-v0-release-2026-11-09.md#validation",
+      "truth_refs": [
+        "reading-companion-backend/experiments/README.md",
+        "reading-companion-backend/experiments/comparison.md",
+        "docs/backend-reader-evaluation.md"
+      ],
+      "decision_refs": [],
+      "job_refs": [],
+      "blocked_by": [],
+      "next_action": "Exclude all rubric examples before any future judge-human agreement measurement; preserve historical open_coding labels. Later rule changes require a new version. No model work or push authorized.",
+      "evidence_refs": [
+        "reading-companion-backend/rubric/q1-v0.md",
+        "reading-companion-backend/rubric/q1-v0.examples.json",
+        "reading-companion-backend/rubric/q1-v0.verification.md",
+        "reading-companion-backend/rubric/q1-v0.migration.json",
+        "reading-companion-backend/experiments/log.jsonl",
+        "reading-companion-backend/tests/test_iteration_provenance.py"
+      ],
+      "last_updated": "2026-11-09",
+      "last_updated_by": "codex"
+    },
     {
       "id": "TASK-Q1-DIGEST-REPLAY",
       "title": "Fixed-history Digest replay and model diagnostic",

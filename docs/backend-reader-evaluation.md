@@ -14,7 +14,12 @@ Dev is the 67 units from Bovary batch 1 plus Sapiens batch 1. Holdout is the 75 
 from Bovary batches 2/3 and is reserved for final validation; do not inspect or label it
 during iteration. Existing first-batch judgments are attributed to `weijiang` using
 append-only prefix-bound overlays and remain `open_coding` (no rubric). The initial
-`q1-v0` is a frozen draft, not an approved scoring rule; baseline pass rate stays blank.
+draft is preserved as `q1-v0-draft`; the owner-supplied `q1-v0` is published without
+changing historical labels or the blank baseline pass rate. Judge-human agreement
+evaluation must exclude every rubric example (including ID-only references) in
+`reading-companion-backend/rubric/q1-v0.examples.json`. Identity matching and separate
+upstream-unit exclusions follow the comparison workflow. Pin both file hashes; these
+examples cannot serve as unseen agreement evidence.
 
 Every reader invocation and direct eval trace scope records actual logical request
 hashes in standard mode, retains complete prompt samples privately, and snapshots dirty

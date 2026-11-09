@@ -81,9 +81,22 @@ is incomplete; existing product reading is not broken by inventing a Git identit
 ## Rubrics and human judgments
 
 `rubric/<version>.md` is immutable once registered in `rubric/releases.json`, including
-the initial `q1-v0` draft. Publish a new version for later rule changes, with version,
-date, change and rationale at the top. Drafts cannot be selected for scoring. Only IDs
-belong in example references; bodies go in ignored `state/rubric_examples/<version>/`.
+drafts. Publish a new version for later rule changes, with version, date, change and
+rationale at the top. Drafts cannot be selected for scoring. The owner-approved
+`q1-v0` is now published; the original unreferenced draft is preserved byte-for-byte
+as `q1-v0-draft`, with its original registration and the explicit migration receipt
+retained in `rubric/releases.json` and bound by `experiments/frozen.json`.
+This one-time authorized migration does not relax the existing draft-freezing rule.
+
+Model-generated Note bodies and human reasons without separately copied book passages
+may be tracked in a rubric, as explicitly authorized for q1-v0. Book passages, anchors,
+rendered prompt examples and raw source-bearing data remain in ignored state directories.
+`rubric/q1-v0.examples.json` freezes all 38 referenced annotations (including ID-only
+references); [the verification report](../rubric/q1-v0.verification.md) lists body and
+reason differences without editing the supplied rubric. Judge-human agreement must
+exclude those examples; see [comparison.md](comparison.md#rubric-example-exclusion).
+The existing immutable check covers rubric text, registered entries and frozen example
+lists, including simultaneous file/hash edits. Use a trusted pre-change `--base-ref`.
 `open_coding` is the explicit no-rubric sentinel, not an alias for q1-v0.
 
 Annotator 1.9 adds `annotator_id`, `rubric_version` and `rubric_sha256` to every new
@@ -142,8 +155,9 @@ This convention does not automatically alter annotator behavior or publish a rub
 .venv/bin/python scripts/check_iteration_provenance.py --write-context /path/to/batch/annotation-context.json --batch-id FULL_BATCH_ID --rubric-version open_coding --annotator-id weijiang
 ```
 
-For rubric scoring, register a new published rubric and use its version instead of
-`open_coding`; draft `q1-v0` is rejected. To change an existing context, prepare the new
+For rubric scoring, use a published version such as `q1-v0` instead of
+`open_coding`; `q1-v0-draft` is rejected. No existing batch context was changed by
+publication. To change an existing context, prepare the new
 file separately and deliberately replace it after saving drafts; this helper never
 overwrites one. Retain earlier contexts with their experiment. Opening this branch's
 `tools/q1-annotator.html` against the existing batch folder is sufficient; the separate

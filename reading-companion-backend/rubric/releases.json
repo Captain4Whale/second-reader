@@ -1,8 +1,36 @@
 {
-  "q1-v0": {
+  "q1-v0-draft": {
     "status": "draft",
-    "path": "rubric/q1-v0.md",
+    "path": "rubric/q1-v0-draft.md",
     "sha256": "80f1a50fa505ce45f13fc0754cb791dcca7b7094ae48b2d6831506c4e6a0d3bd",
-    "date": "2026-11-08"
+    "date": "2026-11-08",
+    "original_registration": {
+      "version": "q1-v0",
+      "release": {
+        "status": "draft",
+        "path": "rubric/q1-v0.md",
+        "sha256": "80f1a50fa505ce45f13fc0754cb791dcca7b7094ae48b2d6831506c4e6a0d3bd",
+        "date": "2026-11-08"
+      }
+    },
+    "migration": {
+      "path": "rubric/q1-v0.migration.json",
+      "sha256": "e893e423ea29f107814354c546678d1ce254f87370e1c7ddd160fab7ac1ba590"
+    }
+  },
+  "q1-v0": {
+    "status": "published",
+    "path": "rubric/q1-v0.md",
+    "sha256": "3ed0c44ab82b1a95802eb669717570a282169200b45faec1a090706ab1bd12fa",
+    "date": "2026-11-09",
+    "published_at": "2026-11-09T13:12:57.862320+00:00",
+    "examples": {
+      "path": "rubric/q1-v0.examples.json",
+      "sha256": "4a73c8fb06c9a5af5d725797bf72969f360a9448d7af7de65238e68023efb664"
+    },
+    "migration": {
+      "path": "rubric/q1-v0.migration.json",
+      "sha256": "e893e423ea29f107814354c546678d1ce254f87370e1c7ddd160fab7ac1ba590"
+    }
   }
 }

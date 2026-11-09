@@ -2,6 +2,9 @@
   "experiments/unit-sets/dev-v1.json": "c25a0396c99dc9db4bb25f9e7958b975142cfd11d79834f13cbe92e1afb7a680",
   "experiments/unit-sets/holdout-v1.json": "661d28ee351db4b93ba8af1b7b360fe814a8ecdbbe56818dd70e7168b38f22c5",
   "experiments/baselines/q1-workspace-evidence.json": "2947043d9f05fcb0aa9a74215b450f7912045ad4e3a9ba480b8f7ed4ce5468b6",
-  "rubric/q1-v0.md": "80f1a50fa505ce45f13fc0754cb791dcca7b7094ae48b2d6831506c4e6a0d3bd",
-  "experiments/unit-sets/diag-001.json": "a991dbcfeb9bf9fe09282d04de86b14ab86da97fa86ba6d04bb7e1875c357db4"
+  "rubric/q1-v0.md": "3ed0c44ab82b1a95802eb669717570a282169200b45faec1a090706ab1bd12fa",
+  "experiments/unit-sets/diag-001.json": "a991dbcfeb9bf9fe09282d04de86b14ab86da97fa86ba6d04bb7e1875c357db4",
+  "rubric/q1-v0-draft.md": "80f1a50fa505ce45f13fc0754cb791dcca7b7094ae48b2d6831506c4e6a0d3bd",
+  "rubric/q1-v0.examples.json": "4a73c8fb06c9a5af5d725797bf72969f360a9448d7af7de65238e68023efb664",
+  "rubric/q1-v0.migration.json": "e893e423ea29f107814354c546678d1ce254f87370e1c7ddd160fab7ac1ba590"
 }

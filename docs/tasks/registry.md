@@ -7,7 +7,7 @@ Update when: task status, priority, blockers, decision refs, job refs, evidence 
 
 This document is the human-readable companion to `docs/tasks/registry.json`.
 
-Last updated: `2026-11-08`
+Last updated: `2026-11-09`
 
 ## Status Values
 - `active`
@@ -31,6 +31,8 @@ Last updated: `2026-11-08`
 - `TASK-RESUME-READING-PLAN-FREEZE` — `done`，mechanism_runtime / high。已实现计划身份校验、复用与拒绝不一致 resume。[离线证据](step1-prereqs-2026-11-01.md#d-计划冻结)。
 
 ## Done
+
+- `TASK-Q1-RUBRIC-V0-RELEASE` — `done`, mechanism_eval / high. Exact rubric publication, preserved frozen draft, 38 verified example exclusions and append-only release registration. [Execution](q1-rubric-v0-release-2026-11-09.md).
 
 - `TASK-Q1-VERSIONING-SKELETON` — completed prompt/rubric/trial/judgment provenance under `DEC-161`; dev 67 / holdout 75 units, first-batch attribution preserved, baseline pass rate blank. [Execution](q1-versioning-skeleton-2026-11-08.md), [operator authority](../../reading-companion-backend/experiments/README.md).
 - `TASK-Q1-MANUAL-ANNOTATION` — completed offline sampling and human annotation tooling. Both pilot batches retain all 31 mark anchors; Chrome close/reopen and export round-trip were verified, including blank Units, cross-paragraph omissions and judgment history. [Usage](../../README.md#q1-manual-error-analysis).

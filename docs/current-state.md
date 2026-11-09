@@ -7,12 +7,13 @@ Update when: the current objective, active tasks, blockers, active jobs, open de
 
 This file is authoritative for durable current status. Do not keep unique active-state information only in `docs/agent-handoff.md`.
 
-Last verified: `2026-11-08` (Q1 provenance scope; earlier review states retain their original evidence boundaries)
+Last verified: `2026-11-09` (Q1 rubric publication scope; earlier review states retain their original evidence boundaries)
 
 ## Current Objective
+- `TASK-Q1-RUBRIC-V0-RELEASE` is complete: exact owner q1-v0 published, old draft and registration preserved by authorized migration, 38 uniquely resolved examples excluded from judge-human agreement. All pass/fail judgments match; body/reason differences are listed without editing the rubric. No model, prompt, mechanism, annotator or old-judgment changes. [Record](tasks/q1-rubric-v0-release-2026-11-09.md).
 - `TASK-Q1-DIGEST-REPLAY` completed A2/B over the 16 fixed units at clean `ca4e28c`; every original memory ID/order/body and request check passed, with 473 original files unchanged. A2 descriptive comparison is ready; B content/statistics remain withheld. SHA-preserving integration is complete; A1/B mixed batch is ready (16 windows, 2 opaque groups, 81 mixed items, 0 unassigned). Owner pass criteria and Note-rate thresholds are registered before persisted annotation (linked PREREG-001 addendum). Next: owner blind annotation; no more generation. [Record](tasks/q1-digest-replay-2026-11-08.md).
 - `TASK-Q1-MIXED-COMPARISON` is complete: window-aligned comparison data, mixed blind UI and independent statistics. Start-owner assignment only in mixed; side-by-side/reveal deferred. No model calls or push. [Execution](tasks/q1-mixed-comparison-2026-11-08.md), [output contract](../reading-companion-backend/experiments/comparison.md).
-- `TASK-Q1-VERSIONING-SKELETON` is complete on `codex/q1-versioning-skeleton`: runtime-loaded immutable prompt versions, private few-shot assets, request hashes/samples and dirty patches; frozen dev (67 units) / holdout (75 units); baseline registered with pass rate null; 605 historical revisions attributed to `weijiang / open_coding` without edits. `q1-v0` is draft; no model or push. [Execution](tasks/q1-versioning-skeleton-2026-11-08.md), [authority](../reading-companion-backend/experiments/README.md).
+- `TASK-Q1-VERSIONING-SKELETON` is complete on `codex/q1-versioning-skeleton`: runtime-loaded immutable prompt versions, private few-shot assets, request hashes/samples and dirty patches; frozen dev (67 units) / holdout (75 units); baseline registered with pass rate null; 605 historical revisions attributed to `weijiang / open_coding` without edits. The original draft is now preserved as `q1-v0-draft`; q1-v0 publication is recorded above. No model or push. [Execution](tasks/q1-versioning-skeleton-2026-11-08.md), [authority](../reading-companion-backend/experiments/README.md).
 - `TASK-Q1-MANUAL-ANNOTATION` tooling is complete; the two full-book first batches now contain judgments for all 110 sampled marks. The journals remain private in the annotation worktree. Use this branch's annotator 2.2 for new attributed rows, keep holdout untouched, and do not resample. [Operator steps](../README.md#q1-manual-error-analysis).
 - `TASK-STEP1-PREREQS` is complete on `codex/step1-prereqs`: chapter planner naming, frozen reading plan, explicit retrieval and reproducible configuration records. Offline substitutes only; backend 1768 passed, frontend/contracts passed, 17 unchanged traceability warnings; no push or evaluation redesign. [Execution](tasks/step1-prereqs-2026-11-01.md).
 - `TASK-LIGHTWEIGHT-CLEANUP-STEP0` is complete under `DEC-160`: iterator execution/dual branches and slow-cycle model/state branches removed; current Product/UI projection, Pack, notes evaluation and cost telemetry retained. Only post-cleanup runs resume; old checkpoints explicitly point to tag `pre-cleanup-2026-11`. See [execution](tasks/lightweight-cleanup-step0-execution-2026-11-01.md) and [evolution](reading-mechanism-evolution-step0.md).
@@ -3626,7 +3627,7 @@ Last verified: `2026-11-08` (Q1 provenance scope; earlier review states retain t
 ## Machine-Readable Appendix
 ```json
 {
-  "updated_at": "2026-11-08T09:56:19+08:00",
+  "updated_at": "2026-11-09T13:12:57.862320+00:00",
   "last_updated_by": "codex",
   "active_task_ids": [
     "TASK-ATTENTIONAL-V2-STRUCTURAL-REWORK",
@@ -3646,6 +3647,7 @@ Last verified: `2026-11-08` (Q1 provenance scope; earlier review states retain t
   "active_job_ids": [],
   "open_decision_ids": [],
   "detail_refs": [
+    "docs/tasks/q1-rubric-v0-release-2026-11-09.md",
     "docs/tasks/q1-versioning-skeleton-2026-11-08.md",
     "docs/tasks/step1-prereqs-2026-11-01.md",
     "docs/tasks/lightweight-cleanup-step0-execution-2026-11-01.md",

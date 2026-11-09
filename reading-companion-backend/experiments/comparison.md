@@ -182,6 +182,29 @@ journal prefixes. Existing 1.0–1.9 rows are still readable in legacy mode and 
 byte-identical. Default attribution is `weijiang / open_coding`; published rubric
 selection still uses `annotation-context.json`.
 
+## Rubric example exclusion
+
+When measuring LLM-judge agreement with human judgments under `q1-v0`, exclude every
+annotation in [`rubric/q1-v0.examples.json`](../rubric/q1-v0.examples.json) from the
+agreement evaluation set and denominator. All 38 entries count, including positive,
+negative, tag and ID-only examples. These are rubric construction/examples, not unseen
+validation data. Preserve the exact rubric and exclusion-list hashes in the evaluation
+receipt, and report candidate, excluded and retained counts by group and H/N.
+
+For this mixed batch, match `(batch_id, marginalia_id)` (the latter is the mixed UUID).
+For original R data, match `(batch_id, marginalia_id)` using the original ID. When using
+a different projection of the same outputs, resolve via the original
+`(run_id, source_id, unit_id, annotation_id)` identity; never match a replay ID alone:
+A1 and B may share it. `also_referenced_by` records additional rubric uses without
+duplicating the excluded item. Unresolved identities stop agreement measurement.
+
+The four upstream-problem unit references in `non_example_unit_references` are separate
+whole-unit exclusions required by the rubric; exclude all their annotations and report
+that reason separately. They are not counted among the 38 examples. Historical
+open_coding labels retain their original attribution; publication does not rejudge or
+rewrite them. Ordinary historical comparison statistics remain unchanged; no judge run,
+annotator behavior or automatic filtering is added by this documentation change.
+
 ## Independent statistics and snapshots
 
 ```sh
