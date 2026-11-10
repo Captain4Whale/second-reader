@@ -150,7 +150,7 @@ def validate_rows(rows, mixed):
         )
         require(
             r["schema"] in ("q1-mixed-judgment/1", *REVIEW_SCHEMAS)
-            and r["annotator_version"] in (("q1-annotator/2.3", "q1-annotator/2.4", "q1-annotator/2.5", "q1-annotator/2.6", "q1-annotator/3.0") if review else ("q1-annotator/2.0", "q1-annotator/2.1", "q1-annotator/2.2", "q1-annotator/2.3", "q1-annotator/2.4", "q1-annotator/2.5", "q1-annotator/2.6", "q1-annotator/3.0"))
+            and r["annotator_version"] in (("q1-annotator/2.3", "q1-annotator/2.4", "q1-annotator/2.5", "q1-annotator/2.6", "q1-annotator/3.0", "q1-annotator/3.1") if review else ("q1-annotator/2.0", "q1-annotator/2.1", "q1-annotator/2.2", "q1-annotator/2.3", "q1-annotator/2.4", "q1-annotator/2.5", "q1-annotator/2.6", "q1-annotator/3.0", "q1-annotator/3.1"))
             and r["view"] == "mixed"
             and r["batch_id"] == r["comparison_batch_id"] == mixed["batch_id"]
             and type(r["revision"]) is int
@@ -176,7 +176,7 @@ def validate_rows(rows, mixed):
             "Unknown/draft/changed rubric",
         )
         if r['schema'] == 'q1-mixed-judgment/3':
-            require(r['annotator_version'] == 'q1-annotator/3.0', 'Stepwise journal/version mismatch')
+            require(r['annotator_version'] in ('q1-annotator/3.0', 'q1-annotator/3.1'), 'Stepwise journal/version mismatch')
         if review:
             fv = r['rubric_form_version']
             if fv not in forms:

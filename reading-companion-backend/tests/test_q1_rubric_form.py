@@ -21,7 +21,7 @@ def review_row(kind='N'):
     return mixed, row, form
 
 
-@pytest.mark.parametrize('version', ['q1-annotator/2.3', 'q1-annotator/2.4', 'q1-annotator/2.5', 'q1-annotator/2.6', 'q1-annotator/3.0'])
+@pytest.mark.parametrize('version', ['q1-annotator/2.3', 'q1-annotator/2.4', 'q1-annotator/2.5', 'q1-annotator/2.6', 'q1-annotator/3.0', 'q1-annotator/3.1'])
 def test_failure_reason_optional_tags_and_verification_do_not_fail(version):
     mixed, row, form = review_row()
     row['annotator_version'] = version
@@ -76,8 +76,10 @@ def step_row(kind='N'):
 
 
 @pytest.mark.parametrize('kind', ['N', 'H'])
-def test_explicit_complete_assessments_and_legacy_prefix(kind):
+@pytest.mark.parametrize('version', ['q1-annotator/3.0', 'q1-annotator/3.1'])
+def test_explicit_complete_assessments_and_legacy_prefix(kind, version):
     mixed, row, form = step_row(kind)
+    row['annotator_version'] = version
     validate_rows([row], mixed)
     first = next(iter(row['criterion_assessments']))
     row['criterion_assessments'][first] = {'judgment': 'fail', 'reason': '  本项\n理由  '}

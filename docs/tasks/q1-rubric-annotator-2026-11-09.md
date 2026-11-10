@@ -245,3 +245,54 @@ implementation worktree remains available; no real journal or snapshot was chang
 Main verification: 42 Node tests, 74 focused Python tests, affected Ruff,
 `git diff --check`, frozen prompt/iteration checks against `73f4d38`, and
 `make agent-check` pass. The same 17 historical traceability warnings remain.
+
+## 2026-11-10 layout 3.1
+
+Implemented the approved layout directly in default workspace `main`, from `65d0992`.
+One independent local commit; no push. The 3.0 rubric, form/hash, `/3` schema, cache
+identity, all-criteria completion and prior-view/save gates remain unchanged.
+
+- ≥1440px: source / current annotation / decision at 44% / 26% / 30%, using the
+  viewport below the measured toolbar. Each content area scrolls locally; actions
+  remain at the decision panel's bottom. Source/body typography is unchanged.
+- 960–1439px: source left, annotation over decision right; short viewports reserve
+  usable decision height. <960px: natural source → annotation → decision page flow.
+- Window progress moved below the annotation; window remarks are collapsed by default,
+  show “已填写” when present, and U opens/focuses the existing field. R/M reveal their
+  own scrollers. Desktop Shift+J/K scrolls decisions, or the explanation when the form
+  already fits. J/K continues to scroll source. Narrow/Open Coding page keys stay intact.
+- One DOM control per field; reparent only on review/Open Coding mode transitions.
+  No cloned fields or extra event registrations. Browser and Python accept 3.1 plus
+  previous versions; a regression verifies appending 3.1 after an unchanged 3.0 prefix.
+
+Validation:
+
+- 45 Node storage/form/keyboard tests and 78 focused Python tests passed; affected Ruff
+  checks passed. Frozen prompt/rubric/form checks and `make agent-check` passed; the
+  latter retains the same 17 historical traceability warnings, with no new issues.
+- `playwright-interactive`, isolated Chromium/OPFS synthetic batches: 1920×1080,
+  1600×900, 1440×900, 1280×800 and 390×844. Wide normal cases show current annotation,
+  criterion, P/F, reason and actions without page scrolling; long text uses local scroll.
+- Note/Highlight, cross-window full quote, all four Note conditions, longest help,
+  long reason/Note, summary, long expanded prior judgment, empty window and single-group
+  density/mixed Open Coding were exercised. Mode switches and resizing preserve drafts
+  and unique field IDs. R/M/U, J/K and Shift+J/K were checked in their relevant layouts.
+- English typing and CDP-simulated Chinese composition persist through refresh without
+  moving the toolbar button. This checks browser composition, not the OS IME candidate
+  chooser. Directory selection uses genuine isolated OPFS handles; native picker
+  permission UI was not automated.
+- Injected disk and browser failures retain data and expose retry feedback; retry saves
+  successfully and prior viewing unlocks only after receipts. Test judgments exist only
+  in isolated synthetic storage and ignored QA evidence.
+- A native-window pass and 125% / 150% effective desktop viewport checks (1280×720 /
+  1067×600 for a 1600×900 viewport) covered display enlargement and short-height focus.
+  Zoom was simulated with viewport/DPI settings, not the browser's native zoom menu.
+- Real DIAG-001 was opened only from an exact isolated copy; zero completed rows remain.
+  All five original UI input/journal files retained their SHA-256 values. No original
+  annotation, rubric, form, prompt or experiment/scoring row was modified.
+- Screenshots, measurements, synthetic journal and integrity receipts remain ignored in
+  `reading-companion-backend/state/q1_rubric_reviews/qa/layout-3.1/`.
+
+Operator behavior is documented in the root README and `experiments/rubric-review.md`.
+No API/frontend integration, mechanism or evaluation policy changed; their stable docs
+and decision log need no update for this bounded annotator presentation change.

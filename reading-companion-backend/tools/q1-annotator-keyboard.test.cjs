@@ -10,7 +10,7 @@ function harness() {
   const nodes = new Map(), clicks = [], moves = [];
   function node(id) {
     if (!nodes.has(id)) nodes.set(id, {
-      id, open:false, disabled:false, hidden:false, clientHeight:500,
+      id, open:false, disabled:false, hidden:false, clientHeight:500, scrollHeight:500,
       click(){if (!this.disabled) clicks.push(id);},
       closest(){return null;}, querySelector(){return null;}, scrollBy(v){moves.push([id,v.top]);},
     });
@@ -90,7 +90,7 @@ test('composition, modifiers, editable ancestors, repeat and native controls are
   h.key(' ',{target:h.node('checkbox')});
   assert.equal(h.clicks.length,0);assert.equal(h.run('saves'),0);
   h.key('j',{repeat:true});h.key('k',{repeat:true,shiftKey:true});
-  assert.deepEqual(h.moves.map(v=>v[0]),['readerScroll','window']);
+  assert.deepEqual(h.moves.map(v=>v[0]),['readerScroll','decisionScroll']);
   h.run('step=0');h.key('r');assert.equal(h.c.document.activeElement.id,'criterionReason');
   h.key('Escape',{target:editable});assert.equal(h.c.document.activeElement.id,'progress');
 });
@@ -105,6 +105,29 @@ test('Open Coding retains P/F/S/V, density, arrows and text fields',()=>{
   h.key('ArrowRight');assert.equal(h.run('lastAdvance'),1);
   h.key('m');assert.equal(h.c.document.activeElement.id,'memo');
   h.key('u');assert.equal(h.c.document.activeElement.id,'unitNote');
+});
+test('scroll keys follow the visible review surface and preserve narrow/Open Coding page scrolling',()=>{
+  const h=harness();h.run('step=0');h.node('criterionHelp').open=true;
+  h.key('j',{shiftKey:true});h.key('k');
+  h.node('criterionHelp').open=false;h.key('j',{shiftKey:true});
+  h.c.matchMedia=()=>({matches:false});h.key('j',{shiftKey:true});
+  h.c.matchMedia=()=>({matches:true});h.run('review=false');h.key('k',{shiftKey:true});
+  assert.deepEqual(h.moves.map(v=>v[0]),['criterionHelpText','readerScroll','decisionScroll','window','window']);
+  h.run('review=true');h.node('criterionHelp').open=true;
+  h.node('decisionScroll').scrollHeight=700;h.key('j',{shiftKey:true});
+  h.run('hasItem=false');h.key('j',{shiftKey:true});
+  assert.deepEqual(h.moves.slice(-2).map(v=>v[0]),['decisionScroll','decisionScroll']);
+});
+test('U opens window notes and focus reveals the field in its nearest desktop scroller',()=>{
+  const h=harness(), seen=[];
+  const field=h.node('unitNote');
+  field.focus=options=>seen.push(['focus',options.preventScroll]);
+  field.scrollIntoView=options=>seen.push(['scroll',options.block]);
+  const focusField=vm.runInContext('('+extract('    function focusField(', '    function neutralFocus(')+')',h.c);
+  focusField(field);
+  assert.equal(h.node('windowNotes').open,true);
+  assert.deepEqual(seen,[['focus',true],['scroll','nearest']]);
+  assert.equal(h.moves.length,0);
 });
 test('completion stays or advances within window, without duplicate revisions',async()=>{
   const h=harness();await h.c.completeReview();

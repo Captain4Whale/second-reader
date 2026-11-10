@@ -58,8 +58,8 @@ criterion restores unjudged while retaining its reason.
 
 A journal may contain `/2` and `/3` revisions from the same person, rubric, form and
 review session. Existing raw prefixes, snapshots, cache keys and session identities are
-unchanged. JS/Python accept `/2` rows from annotators 2.3–2.6 and 3.0 (for a legacy
-exposure-only revision); `/3` requires 3.0. `/1` and single-group Open Coding retain
+unchanged. JS/Python accept `/2` rows from annotators 2.3–2.6, 3.0 and 3.1 (for a legacy
+exposure-only revision); `/3` accepts 3.0 and 3.1. `/1` and single-group Open Coding retain
 their previous validation, including nonempty failure reasons, and remain separate.
 First completion must precede prior-judgment exposure; exposure cannot revert. Both
 first completion and later amendments remain inspectable.
@@ -81,7 +81,7 @@ then copies exact `mixed.json`, exact registered `rubric-form.json`, and an exac
 canonical batch provenance are not copied. A prepared baseline stays fixed even if the
 original journal later gains revisions; prepare another session to choose a newer baseline.
 
-Open the prepared directory using annotator 3.0's “打开批次文件夹”. The HTML requires
+Open the prepared directory using annotator 3.1's “打开批次文件夹”. The HTML requires
 the adjacent `q1-rubric-form.js`; keep both files together. The UI reads only the mixed
 projection, context, form, baseline and new result journal. Browser drafts and remembered
 handles are keyed by batch, annotator, rubric, form and review session. Old cache keys
@@ -92,13 +92,35 @@ HTML code. Failed folder loads keep the prior batch visible and name the selecte
 and missing required file; they do not silently create missing review resources or import
 old labels. Selecting only the JSON file does not load the companion review context/form.
 The case's rubric squares show unjudged (·), pass (✓) or fail (×), with an outline
-for the current step. One criterion is visible at a time. Help opens by default and
-scrolls within at most 240px (20vh on shorter viewports); optional reasons start at
-two lines. N2 verification is inside N2. The summary contains tags, star, uncovered
+for the current step. One criterion is visible at a time. Help opens by default and uses the remaining desktop decision space with its own
+scrollbar; narrow screens retain the 240px / 20vh limit. Optional reasons start at
+two lines and long reasons scroll inside the field. N2 verification is inside N2. The summary contains tags, star, uncovered
 and its optional reason, case remarks and historical judgment. Even after one failure,
 judge every remaining criterion before confirmation. Window notes remain separate.
 
-## Keyboard interaction (annotator 3.0)
+## Layout (annotator 3.1)
+
+- At ≥1440 CSS pixels, source / current annotation / decision use 44% / 26% / 30%
+  of the available width (excluding gaps). Each panel uses the actual viewport space
+  below the measured toolbar. Source text, complete quotes/Notes and long explanations
+  remain available through local scrolling. Source typography is unchanged.
+- At 960–1439px, source stays left; annotation and decision stack on the right with
+  local scrolling. Previous/next criterion and completion remain in the decision's
+  fixed bottom action area. Short desktop viewports omit the duplicate decision heading.
+- Below 960px, source → annotation → decision use natural page scrolling.
+- Window progress is at the annotation panel's bottom; window remarks start collapsed.
+  “已填写” identifies an existing note. **U** opens and focuses the same note field.
+  **R/M** reveal the appropriate decision field in its own scroller. Each field has one
+  DOM control; changing mode/size retains drafts and does not bind another handler.
+- Summary-only tags, star, remarks and gated prior viewing retain the 3.0 workflow.
+  Expanded prior text scrolls locally; the completion action stays visible on desktop.
+  Open Coding retains its previous layout, density/omission behavior and page scrolling.
+
+This is a presentation/version change only: `q1-mixed-judgment/3`, registered form/hash,
+cache identities, explicit criterion outcomes and completion/save gates are unchanged.
+Existing 3.0 journals can be read and receive new 3.1 revisions without prefix edits.
+
+## Keyboard interaction (annotator 3.1)
 
 | Key | Action outside text inputs |
 |---|---|
@@ -112,9 +134,10 @@ judge every remaining criterion before confirmation. Window notes remain separat
 | V | Current criterion's first configured verification flag, if present |
 | 5/6/7 | Summary: Note tags (teacher tone, redundancy, too terse) |
 | 0 / S / B | Summary: uncovered / permitted star / saved prior judgment |
-| M / U | Summary case remarks / window remarks |
+| M / U | Summary case remarks / expand and focus window remarks |
 | ↑ / ↓, ← / → | Previous/next case, previous/next window; existing boundaries |
-| J / K, Shift+J / K | Source scrolling / page scrolling |
+| J / K | Source scrolling; narrow screens scroll the page |
+| Shift+J / K | Desktop review: decision scrolling (explanation when the whole form already fits); narrow screens and Open Coding: page scrolling |
 | ? / Esc | Shortcut help / exit input or help, keeping the current step |
 
 Enter on an unjudged criterion prompts P/F and does not assume pass. New cases start
