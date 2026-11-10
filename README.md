@@ -568,9 +568,11 @@ New confirmations append `q1-mixed-judgment/3` with independent criterion reason
 Old completed rows remain “旧版整条确认”; explicitly restart to make a new stepwise
 assessment. Old drafts retain checked failures; unchecked criteria remain unjudged.
 Historical overall reasons are retained separately. No journal or cache identity is
-rewritten. Use this branch's 3.0 HTML (refresh if already open); opening a folder does
-not update the code. The implementation is isolated in the `codex/q1-rubric-stepwise`
-worktree while the original workspace's pending 2.6 edits are preserved.
+rewritten. Annotator 3.0 is now integrated into `main`: open
+`reading-companion-backend/tools/q1-annotator.html` from the main workspace and refresh
+any already-open page. Opening a batch folder does not update the HTML code. The original
+2.6 compatibility edits are backed up in a local stash; compatible behavior and tests
+are retained in 3.0.
 
 The legacy open_coding instructions below retain their original behavior.
 

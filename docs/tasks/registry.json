@@ -44,7 +44,7 @@
       "decision_refs": [],
       "job_refs": [],
       "blocked_by": [],
-      "next_action": "Owner opens the 3.0 HTML from /Users/baiweijiang/.codex/worktrees/q1-rubric-stepwise/reading-companion and selects the existing isolated review folder; pending 2.6 edits in the original workspace are preserved. Continue q1-v0 review and run the private per-criterion comparison report. No models or push; omission-limit conflict deferred.",
+      "next_action": "Owner opens/refreshes the main workspace 3.0 HTML and selects the existing isolated review folder, then continues q1-v0 review and runs the private per-criterion comparison report. Main integration and push authorized; prior 2.6 edits backed up in stash fd6de499, compatible behavior/tests retained. No model work; omission-limit conflict deferred.",
       "evidence_refs": [
         "reading-companion-backend/rubric/q1-v0.form.json",
         "reading-companion-backend/tools/q1-annotator.html",

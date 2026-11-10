@@ -227,3 +227,21 @@ Validation:
 This is a scoped annotation interaction/protocol extension, fully recorded here and
 in the rejudgment protocol. It does not change mechanism/product direction and needs
 no new mechanism decision-log entry.
+
+## 2026-11-10 main integration
+
+The owner explicitly authorized merging and pushing. After fetching, `main` and
+`origin/main` were both `73f4d38`. The original four uncommitted 2.6 compatibility
+edits were preserved intact in local stash `fd6de499ea9d01f716aa5924068e6dc1b21aea9b`
+(`preserve pre-3.0 main 2.6 compatibility edits before stepwise merge`); the stash
+was not dropped. Main fast-forwarded to implementation commit `acd1503`.
+
+3.0 already includes the 2.6 parser/form acceptance. The remaining mixed-statistics
+version test now covers both 2.6 and 3.0; the storage output-version assertion stays
+at 3.0 rather than restoring the obsolete 2.6 expectation. The README, current state
+and task router now direct the owner to the main workspace HTML. The separate
+implementation worktree remains available; no real journal or snapshot was changed.
+
+Main verification: 42 Node tests, 74 focused Python tests, affected Ruff,
+`git diff --check`, frozen prompt/iteration checks against `73f4d38`, and
+`make agent-check` pass. The same 17 historical traceability warnings remain.

@@ -34,7 +34,7 @@ Last updated: `2026-11-10`
 
 - `TASK-Q1-SCORING-LEDGER` — `done`: three scoring scopes, merged DIAG closure, latest-only Chinese index, independent artifact copy and verified local backup/restore. [Index](../../reading-companion-backend/experiments/INDEX.md), [receipt](q1-scoring-ledger-2026-11-10.md).
 
-- `TASK-Q1-RUBRIC-ANNOTATOR` — `done`, mechanism_eval / high. Annotator 3.0 stepwise P/F and independent reasons; all criteria required before summary; `/3` append-only records with `/2` compatibility and gated prior viewing. Delivered in `codex/q1-rubric-stepwise`, preserving pending 2.6 workspace edits. Real DIAG-001 read-only, 0/81; owner rejudgment pending. No omission rejudgment; omission-limit conflict deferred. [Execution](q1-rubric-annotator-2026-11-09.md).
+- `TASK-Q1-RUBRIC-ANNOTATOR` — `done`, mechanism_eval / high. Annotator 3.0 stepwise P/F and independent reasons; all criteria required before summary; `/3` append-only records with `/2` compatibility and gated prior viewing. Integrated from `codex/q1-rubric-stepwise` into `main` by owner request; prior 2.6 edits backed up in stash `fd6de499`, compatible behavior/tests retained. Real DIAG-001 read-only, 0/81; owner rejudgment pending. No omission rejudgment; omission-limit conflict deferred. [Execution](q1-rubric-annotator-2026-11-09.md).
 
 - `TASK-Q1-RUBRIC-V0-RELEASE` — `done`, mechanism_eval / high. Exact rubric publication, preserved frozen draft, 38 verified example exclusions and append-only release registration. [Execution](q1-rubric-v0-release-2026-11-09.md).
 
