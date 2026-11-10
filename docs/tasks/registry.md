@@ -7,7 +7,7 @@ Update when: task status, priority, blockers, decision refs, job refs, evidence 
 
 This document is the human-readable companion to `docs/tasks/registry.json`.
 
-Last updated: `2026-11-09`
+Last updated: `2026-11-10`
 
 ## Status Values
 - `active`
@@ -32,7 +32,7 @@ Last updated: `2026-11-09`
 
 ## Done
 
-- `TASK-Q1-RUBRIC-ANNOTATOR` — `done`, mechanism_eval / high. Annotator 2.3, immutable form, isolated append-only rejudgment, gated prior judgment and private comparison reports. Real DIAG-001 opened read-only; owner rejudgment pending. Reasons optional; no omission rejudgment; omission-limit conflict deferred. [Execution](q1-rubric-annotator-2026-11-09.md).
+- `TASK-Q1-RUBRIC-ANNOTATOR` — `done`, mechanism_eval / high. Annotator 2.4, immutable form, isolated append-only rejudgment, gated prior judgment and private comparison reports. Real DIAG-001 opened read-only; owner rejudgment pending. Reasons optional; no omission rejudgment; omission-limit conflict deferred. [Execution](q1-rubric-annotator-2026-11-09.md).
 
 - `TASK-Q1-RUBRIC-V0-RELEASE` — `done`, mechanism_eval / high. Exact rubric publication, preserved frozen draft, 38 verified example exclusions and append-only release registration. [Execution](q1-rubric-v0-release-2026-11-09.md).
 

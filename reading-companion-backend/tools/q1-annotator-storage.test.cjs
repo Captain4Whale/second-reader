@@ -279,7 +279,7 @@ test("mixed records append no group identity and reject reveal/density/provenanc
   h.run('var mark=blind.windows[0].marginalia[0];record("marginalia",mark.marginalia_id,{marginalia_id:mark.marginalia_id,type:mark.type,source_quote:mark.source_quote,body_text:mark.body_text,judgment:"pass",reason:"",remarks:"",star:false,needs_verification:false},mark.original_source_range,mark.original_source_range)');
   await h.run("session.writes");
   const r=JSON.parse(h.run("JSON.stringify(state.rows[0])"));
-  assert.equal(r.annotator_version,"q1-annotator/2.3");
+  assert.equal(r.annotator_version,"q1-annotator/2.4");
   h.c.older={...r,annotator_version:"q1-annotator/2.0"};
   assert.equal(h.run('parseJournal(JSON.stringify(older)+"\\n",batch).length'),1);
   assert.equal(r.view,"mixed"); assert.equal(r.comparison_batch_id,h.c.blind.batch_id);
@@ -409,4 +409,44 @@ test('invalid review snapshot fails before acquiring a result handle or changing
   assert.equal(h.run('session===before'),true);
   assert.equal(Array.from(h.c.reads).includes('judgments.jsonl'),false);
   assert.match(h.get('message').textContent,/指纹不一致/);
+});
+
+test('folder errors name missing inputs and preserve the current session without writing',async()=>{
+  for(const missing of ['batch','rubric-form.json','open_coding.snapshot.jsonl','judgments.jsonl']) {
+    const h=reviewHarness();
+    const context={...JSON.parse(h.run('JSON.stringify(state.annotationContext)')),batch_id:h.c.blind.batch_id,rubric_status:'published',
+      baseline_sha256:require('node:crypto').createHash('sha256').update('').digest('hex')};
+    const formText=readFileSync(__dirname+'/../rubric/q1-v0.form.json','utf8');
+    h.run('var before=session,committed=false;settleCurrent=async()=>{};dbSaveSession=async()=>{committed=true};dbGet=async()=>undefined');
+    h.c.showDirectoryPicker=async()=>({name:'chosen-folder',requestPermission:async()=> 'granted',getFileHandle:async n=>{
+      if(missing==='batch'||n===missing)throw Object.assign(Error('native not found'),{name:'NotFoundError'});
+      const content={'mixed.json':JSON.stringify(h.c.blind),'annotation-context.json':JSON.stringify(context),
+        'rubric-form.json':formText,'open_coding.snapshot.jsonl':''}[n];
+      if(n==='judgments.jsonl')return h.c.handle;
+      return {getFile:async()=>({text:async()=>content})};
+    }});
+    await h.run('openFolder()');
+    const msg=h.get('message').textContent;
+    assert.match(msg,/打开失败；当前批次未切换/);
+    assert.ok(msg.includes('chosen-folder') && msg.includes(missing==='batch'?'mixed.json 或 batch.json':missing));
+    assert.equal(h.run('session===before'),true);
+    assert.equal(h.run('committed'),false);assert.equal(h.run('writes'),0);
+  }
+});
+
+test('opening a review for the same batch does not import completed open_coding cache',async()=>{
+  const h=reviewHarness();
+  const context={...JSON.parse(h.run('JSON.stringify(state.annotationContext)')),batch_id:h.c.blind.batch_id,rubric_status:'published',
+    baseline_sha256:require('node:crypto').createHash('sha256').update('').digest('hex')};
+  h.run('record("marginalia",m.marginalia_id,fields,null,m.original_source_range)');await h.run('session.writes');
+  h.run('var older={...state.rows[0],annotator_version:"q1-annotator/2.3"};');
+  assert.equal(h.run('parseJournal(JSON.stringify(older)+"\\n",batch,journalScope(session)).length'),1);
+  h.run('var oldState=structuredClone(state);delete oldState.reviewResources;oldState.annotationContext={...DEFAULT_ANNOTATION_CONTEXT};for(const r of oldState.rows){r.schema="q1-mixed-judgment/1";r.rubric_version="open_coding";r.rubric_sha256=null;for(const k of Q1Rubric.reviewFields)delete r[k]};disk="";settleCurrent=async()=>{};dbGet=async k=>k==="state:"+blind.batch_id?oldState:undefined;dbSaveSession=async()=>{};installSession=async s=>{session=s}');
+  const contents={'mixed.json':JSON.stringify(h.c.blind),'annotation-context.json':JSON.stringify(context),
+    'rubric-form.json':readFileSync(__dirname+'/../rubric/q1-v0.form.json','utf8'),'open_coding.snapshot.jsonl':''};
+  h.c.showDirectoryPicker=async()=>({name:'review-folder',requestPermission:async()=> 'granted',getFileHandle:async n=>
+    n==='judgments.jsonl'?h.c.handle:{getFile:async()=>({text:async()=>contents[n]})}});
+  await h.run('openFolder()');
+  assert.equal(h.run('reviewMode()'),true);assert.equal(h.run('session.state.rows.length'),0);
+  assert.equal(h.run('oldState.rows.length'),1);assert.equal(h.run('disk'),'');
 });

@@ -579,7 +579,7 @@
   </style>
   <div id="toolbar">
     <header>
-      <h1>Second Reader · 批注细读</h1>
+      <h1>Second Reader · 批注细读 <small id="annotatorVersion"></small></h1>
       <div id="bookContext" hidden><span id="bookTitle"></span><span id="bookDetails"></span></div>
       <div class="row" id="fileControls">
         <button id="openFolder" disabled>打开批次文件夹</button>
@@ -734,9 +734,11 @@
   <script src="q1-rubric-form.js"></script>
   <script>
     "use strict";
-    const VERSION = "q1-annotator/2.3",
+    const VERSION = "q1-annotator/2.4",
       $ = (id) => document.getElementById(id);
-    const MIXED_VERSIONS = ["q1-annotator/2.0", "q1-annotator/2.1", "q1-annotator/2.2", VERSION];
+    const REVIEW_VERSIONS = ["q1-annotator/2.3", VERSION];
+    const MIXED_VERSIONS = ["q1-annotator/2.0", "q1-annotator/2.1", "q1-annotator/2.2", ...REVIEW_VERSIONS];
+    $("annotatorVersion").textContent = VERSION.split("/")[1];
     function setText(node, text) {
       if (node.textContent !== text) node.textContent = text;
     }
@@ -893,7 +895,7 @@
           !strictRange(r.original_source_range) || !Number.isFinite(Date.parse(r.timestamp)))
         throw Error("混合判断包含无效字段或来源信息，已停止同步。");
       if (review) {
-        if (!scope || r.annotator_version !== VERSION || [...Q1Rubric.identityFields,"annotator_id","rubric_version","rubric_sha256"].some(k=>r[k] !== scope.context[k])) throw Error("重判日志身份不匹配，禁止混入其他会话或旧判断。");
+        if (!scope || !REVIEW_VERSIONS.includes(r.annotator_version) || [...Q1Rubric.identityFields,"annotator_id","rubric_version","rubric_sha256"].some(k=>r[k] !== scope.context[k])) throw Error("重判日志身份不匹配，禁止混入其他会话或旧判断。");
         Q1Rubric.validateAssessment(r, scope.form);
       } else if (scope) throw Error("重判日志不能混入旧判断。");
       if (r.record_type === "marginalia") {
@@ -1295,21 +1297,30 @@
       if (busy) return;
       setBusy(true);
       clearTimeout(editTimer);
+      let directoryName = "所选文件夹", opening = "文件夹";
       try {
         const directory = await showDirectoryPicker({ id: "q1-batch", mode: "readwrite" });
+        directoryName = directory.name || directoryName;
         if ((await directory.requestPermission({ mode: "readwrite" })) !== "granted")
           throw Error("未获得文件夹读写权限，当前批次保持不变。");
         // Never read canonical provenance or the key when a blind projection is present.
         let batchFile;
+        opening = "mixed.json";
         try { batchFile = await directory.getFileHandle("mixed.json"); }
         catch (err) {
           if (err.name !== "NotFoundError") throw err;
-          batchFile = await directory.getFileHandle("batch.json");
+          opening = "batch.json";
+          try { batchFile = await directory.getFileHandle("batch.json"); }
+          catch (fallbackError) {
+            if (fallbackError.name !== "NotFoundError") throw fallbackError;
+            throw Error("文件夹「" + directoryName + "」中没有 mixed.json 或 batch.json。请选包含这些文件的批次文件夹；重判应选择准备好的完整重判目录，而不是 rubric 配置目录或批次的上级目录。");
+          }
         }
         const batch = JSON.parse(await (await batchFile.getFile()).text());
         await checkBatch(batch);
         await settleCurrent();
         let context;
+        opening = "annotation-context.json";
         try {
           const file = await directory.getFileHandle("annotation-context.json");
           context = JSON.parse(await (await file.getFile()).text());
@@ -1319,10 +1330,14 @@
         const nextContext = annotationContext(context, batch.batch_id);
         let resources;
         if (nextContext.review_session_id) {
-          const readText = async name => (await (await directory.getFileHandle(name)).getFile()).text();
+          const readText = async name => {
+            opening = name;
+            return (await (await directory.getFileHandle(name)).getFile()).text();
+          };
           resources = await validateReviewResources({formText:await readText("rubric-form.json"),baselineText:await readText("open_coding.snapshot.jsonl")}, nextContext, batch);
         }
         // Validate the form and baseline before acquiring a writable result handle.
+        opening = "judgments.jsonl";
         const handle = await directory.getFileHandle("judgments.jsonl", { create: !nextContext.review_session_id });
         const s = await loadSession(batch, { handle, directory, context:nextContext, resources });
         const priorContext = s.state.annotationContext ?? DEFAULT_ANNOTATION_CONTEXT;
@@ -1333,7 +1348,12 @@
         await reconcile(s);
         await installSession(s);
       } catch (err) {
-        if (err.name !== "AbortError") say(err.message);
+        if (err.name !== "AbortError") {
+          const detail = err.name === "NotFoundError"
+            ? "无法读取文件夹「" + directoryName + "」中的 " + opening + "：文件不存在或已被移动。重判需要完整的批次文件夹，请勿用旧标注日志替代缺失文件。"
+            : err.message;
+          say("打开失败；当前批次未切换。" + detail);
+        }
       } finally {
         setBusy(false);
         if (session) queueEdits();
@@ -1467,7 +1487,8 @@
         grid = $("unitGrid");
       editStatus();
       setText($("progress"), unitLabel() + " " + (state.ui + 1) + " / " + units(b).length);
-      setText($("batchPosition"), mixed() ? (b.synthetic ? "合成数据 · 混合盲标" : "混合盲标") : "批次 " + b.batch_number + " / " + b.batch_count);
+      setText($("batchPosition"), (mixed() ? (b.synthetic ? "合成数据 · 混合盲标" : "混合盲标") : "批次 " + b.batch_number + " / " + b.batch_count) +
+        " · " + (reviewMode() ? session.form.rubric_version + " 重判" : session.state.annotationContext?.rubric_version ?? "open_coding"));
       setText($("batchCounts"), unitLabel() + " " +
         statuses.filter((s) => s.state === "done").length +
         "/" +

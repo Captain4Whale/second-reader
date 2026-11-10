@@ -21,8 +21,10 @@ def review_row(kind='N'):
     return mixed, row, form
 
 
-def test_failure_reason_optional_tags_and_verification_do_not_fail():
+@pytest.mark.parametrize('version', ['q1-annotator/2.3', 'q1-annotator/2.4'])
+def test_failure_reason_optional_tags_and_verification_do_not_fail(version):
     mixed, row, form = review_row()
+    row['annotator_version'] = version
     row.update(tags=['redundancy'], criterion_flags={'N2':{'needs_verification':True}}, needs_verification=True)
     validate_rows([row], mixed)
     row.update(failed_criteria=['N1','N4'], judgment='fail', reason='')

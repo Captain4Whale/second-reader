@@ -65,11 +65,16 @@ then copies exact `mixed.json`, exact registered `rubric-form.json`, and an exac
 canonical batch provenance are not copied. A prepared baseline stays fixed even if the
 original journal later gains revisions; prepare another session to choose a newer baseline.
 
-Open the prepared directory using annotator 2.3's “打开批次文件夹”. The HTML requires
+Open the prepared directory using annotator 2.4's “打开批次文件夹”. The HTML requires
 the adjacent `q1-rubric-form.js`; keep both files together. The UI reads only the mixed
 projection, context, form, baseline and new result journal. Browser drafts and remembered
 handles are keyed by batch, annotator, rubric, form and review session. Old cache keys
 remain intact. Restoring or navigating preserves unfinished drafts without confirming them.
+If the HTML was already open before an update, refresh it first. The header displays
+the loaded annotator version and current rubric/mode. Opening a folder does not load new
+HTML code. Failed folder loads keep the prior batch visible and name the selected folder
+and missing required file; they do not silently create missing review resources or import
+old labels. Selecting only the JSON file does not load the companion review context/form.
 Checkboxes preview pass/fail; “完成本条” confirms it. Reasons and remarks are optional.
 Stars require pass. N2 “待核实” and tags do not fail a mark by themselves. P/F/O and
 source-selection omission actions are disabled in review; S and configured verification

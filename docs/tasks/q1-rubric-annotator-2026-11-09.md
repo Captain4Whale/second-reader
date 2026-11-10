@@ -66,3 +66,23 @@
 
 This is a bounded tool extension, not a mechanism or product-direction decision. The
 protocol and this task record preserve its choices; no decision-log entry is needed.
+
+## 2026-11-10 folder-open diagnosis and recovery
+
+Owner reported a generic browser NotFoundError and the completed old 81-item view staying
+visible. Both the supplied file URL and review-folder path were correct; all six files
+were present. The original error lacked file/stage details, so its precise failing handle
+cannot be reconstructed. Refreshing the owner's actual Edge tab and selecting the same
+directory through the native macOS dialog succeeded: q1-v0 review, 0/81, N1–N4 and tags,
+no omission controls, old-judgment toggle locked. No judgments were entered.
+
+Annotator 2.4 now displays version and rubric mode and names missing batch/form/snapshot/
+journal files instead of forwarding only the generic English exception. Failed loads
+retain the current batch. Both 2.3 and 2.4 review records remain readable with no schema
+change or record rewrite. Regression coverage includes missing files, failed-load session
+preservation and switching from the same batch's completed open_coding cache to blank review.
+Isolated Chromium screenshots cover 1600×900 and 960×800; the real Edge/native picker flow
+now supplements the earlier OPFS-only acceptance. No form, rubric or historical data edits.
+Validation: 51 focused Python tests, 24 Node tests, affected Python lint and frozen-provenance
+checks pass. The 17 historical traceability warnings remain unchanged. The original
+313-row journal still has the same `28fff5eb…` hash after native-folder recovery.
