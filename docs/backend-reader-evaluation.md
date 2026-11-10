@@ -1225,3 +1225,20 @@ with similar outputs; do not describe that review as fully unseen material.
 The existing standard LLM ledger now records allowlisted effective sampling settings, prompt version and code commit/dirty state for each node. Arbitrary provider options, credentials and headers are never copied. A compact `runtime/run_configuration.json` companion joins those existing records with all prompt versions, the verified chapter-plan fingerprint and requested/actual retrieval metadata. `classification_calls` preserves the receipts of the reused plan; `model_calls` and ledger start/end delimit the current parse/read/resume invocation. Each invocation, including failures, appends its configuration receipt to the existing diagnostics event stream. Normalized eval bundles and internal ParseResult/ReadResult summaries expose the same snapshot; public HTTP/Product/Pack contracts do not change.
 
 The plan fingerprint excludes timestamps and invocation receipt IDs, so repeated identical planning outputs have the same identity. This records comparability conditions; it does not claim that real model outputs are deterministic. `code_dirty=true` explicitly marks validation of uncommitted code. An unavailable Git checkout is recorded as unknown, never as a fabricated revision. Configuration evidence and all generated offline probes remain ignored runtime artifacts.
+
+
+## Frozen scoring receipts and Q1 diagnostic disposition
+
+Every reported Q1 rate must reference `experiments/scorings.jsonl`: fixed output identity,
+unit set, rubric/form, scorer, immutable journal prefix and separate H/N denominators.
+An append changes neither past scores nor historical judgments. See
+[receipt protocol](../reading-companion-backend/experiments/README.md#scoring-receipts-q1-scoring1).
+
+DIAG-001 CLOSE-001 applies the PREREG-001 Note threshold and the owner-confirmed
+interpretation: same-prompt B is clearly better in this sample, making model
+configuration an important lever and not supporting prompt as the main cause.
+Model and reasoning changes remain bundled; prompt effects were not tested.
+Highlight standards drifted, so H rates are retained for provenance but excluded
+from all conclusions. Pause further model comparison; iterate with GPT-6 Luna medium,
+retain existing GPT-6 Sol high outputs as a reference. q1-v0 human rejudgment is a
+separate scoring scope, not additional generation or an independent blind trial.

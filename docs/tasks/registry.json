@@ -76,7 +76,7 @@
         "bgjob_q1_digest_fixed_history_20261108_A2_B"
       ],
       "blocked_by": [],
-      "next_action": "Blind review and reveal completed; consolidate scoring receipts and owner-approved closure. Continue q1-v0 as a separate scoring session.",
+      "next_action": "Diagnostic closed by owner: pause model comparison; iterate with Luna medium, use GPT-6 Sol high as reference. Only Note rates drive decisions; q1-v0 rejudgment is a separate pending scoring.",
       "evidence_refs": [
         "reading-companion-backend/eval/attentional_v2/fixed_history_digest.py",
         "reading-companion-backend/tests/test_fixed_history_digest.py",

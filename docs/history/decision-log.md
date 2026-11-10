@@ -4503,3 +4503,19 @@ Annotation Pack consumes only complete-product Marginalia and keeps its W3C/DC w
 - `reading-companion-backend/tests/fixtures/prompt_migration_v1.json`
 - `docs/tasks/q1-versioning-skeleton-2026-11-08.md`
 - [归档移动映射](../archive/pre-cleanup-2026-11/move-map.json)
+
+
+## DEC-162 — 2026-11-10: Close Q1 model diagnosis and separate scoring snapshots
+
+Owner decision: pause model comparison after DIAG-001 meets PREREG-001's “明显好”
+Note-rate branch; continue iterations with GPT-6 Luna medium and retain GPT-6 Sol high
+outputs as reference. This does not support prompt as the main cause in the sample;
+model configuration matters, but model/reasoning were not separated and prompt effects
+were not tested. Highlight standard drift excludes H rates from conclusions.
+
+The alternative intermediate-branch A2 blind review is not triggered. Preserve existing
+outputs and pursue rubric-based rejudgment separately. `experiments/scorings.jsonl`
+binds each scoring snapshot; `Q1-DIGEST-DIAG-001-CLOSE-001` in `experiments/log.jsonl`
+contains the owner-confirmed wording and references the computed scoring receipt.
+Primary authority: `docs/backend-reader-evaluation.md` and `experiments/README.md` in
+the backend; execution: `docs/tasks/q1-scoring-ledger-2026-11-10.md`.

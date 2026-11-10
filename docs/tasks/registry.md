@@ -20,7 +20,7 @@ Last updated: `2026-11-10`
 
 ## 当前前置任务
 
-- `TASK-Q1-DIGEST-REPLAY` — `done`: A1/B blind annotation and reveal completed; historical reveal receipt integrated and artifacts independently copied into main state. Scoring consolidation is in progress. [Record](q1-digest-replay-2026-11-08.md).
+- `TASK-Q1-DIGEST-REPLAY` — `done`: A1/B blind annotation and reveal completed; historical reveal receipt integrated and artifacts independently copied into main state. CLOSE-001 records the owner decision: pause model comparison, iterate Luna medium, retain GPT-6 Sol high as reference; only Note rates drive decisions. [Record](q1-digest-replay-2026-11-08.md).
 - `TASK-Q1-MIXED-COMPARISON` — `done`, mechanism_eval / high. Data layer, mixed blind annotation and statistics only; side-by-side/reveal deferred. Annotator 2.2 fixes typing-related toolbar flicker while preserving saved judgments. [Execution](q1-mixed-comparison-2026-11-08.md), [contract](../../reading-companion-backend/experiments/comparison.md).
 
 - `TASK-STEP1-PREREQS` — `done`，mechanism_runtime / high。[执行记录](step1-prereqs-2026-11-01.md)。仅离线替身验证，分部提交、不 push。
