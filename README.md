@@ -644,4 +644,10 @@ Run configuration lookup: `_mechanisms/attentional_v2/runtime/run_configuration.
 
 Q1 prompt releases load exact version files and require private few-shot assets before API startup or reader tests. Provisioning, offline recovery and immutable-version checks: [iteration provenance](reading-companion-backend/experiments/README.md).
 
-Q1 iteration checks (offline): `cd reading-companion-backend && .venv/bin/python scripts/check_prompt_releases.py && .venv/bin/python scripts/check_iteration_provenance.py`. The experiment baseline is `experiments/log.jsonl`; fill its `results.pass_rate` manually. Use this branch's annotator 2.5 for new `weijiang` / rubric-attributed append-only judgments. Existing first-batch journals remain in the Q1 annotation worktree and are bound by prefix hashes. Runtime standard traces now include complete logical request hashes; each invocation retains private samples and a base-commit-bound dirty patch under `_runtime/provenance/`.
+Q1 iteration checks (offline): `cd reading-companion-backend && .venv/bin/python scripts/check_prompt_releases.py && .venv/bin/python scripts/check_iteration_provenance.py`. The historical experiment baseline remains in `experiments/log.jsonl`; computed results are append-only in `experiments/scorings.jsonl`. Do not manually fill or edit old log rows. Use this branch's annotator 2.5 for new `weijiang` / rubric-attributed append-only judgments. Existing first-batch journals remain in the Q1 annotation worktree and are bound by prefix hashes. Runtime standard traces now include complete logical request hashes; each invocation retains private samples and a base-commit-bound dirty patch under `_runtime/provenance/`.
+
+Q1 评分总表：[experiments/INDEX.md](reading-companion-backend/experiments/INDEX.md)。
+主表只列每次评分的最新快照；历史快照、模型/单元/尺子、标注哈希和可比性见折叠小节。
+运行 `cd reading-companion-backend && .venv/bin/python scripts/q1_scoring.py --evidence`
+可复算本机冻结证据；`scripts/q1_experiment_index.py --check` 验证总表。
+本机备份与恢复命令见 [Q1 管理文档](reading-companion-backend/experiments/README.md#中文总表与本机备份)。

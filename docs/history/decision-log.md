@@ -4505,7 +4505,10 @@ Annotation Pack consumes only complete-product Marginalia and keeps its W3C/DC w
 - [归档移动映射](../archive/pre-cleanup-2026-11/move-map.json)
 
 
-## DEC-162 — 2026-11-10: Close Q1 model diagnosis and separate scoring snapshots
+## 2026-11-10 — Close Q1 model diagnosis and separate scoring snapshots
+
+**ID**: DEC-162
+**Status**: accepted
 
 Owner decision: pause model comparison after DIAG-001 meets PREREG-001's “明显好”
 Note-rate branch; continue iterations with GPT-6 Luna medium and retain GPT-6 Sol high

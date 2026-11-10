@@ -132,10 +132,10 @@ JSONL preserves lists of runs and prompt identities plus structured metrics with
 embedding JSON in CSV cells. Required fields cover experiment/date/hypothesis/change,
 at most one changed variable, version + release hash, fixed unit-set path + hash, run
 IDs, rubric, results, conclusion and notes. Reusing historical outputs is explicitly a
-baseline registration, not a model experiment. The initial `Q1-BASELINE-001` has
-`results.pass_rate: null` for the owner to fill; this task calculates no pass rate.
-Results may be filled in that row; unit manifests, rubric files and annotation
-journals do not change. New experiment IDs are added with the checked append command.
+baseline registration, not a model experiment. The historical `Q1-BASELINE-001` retains `results.pass_rate: null` byte-for-byte.
+Its computed scores now live in `scorings.jsonl`; do not manually fill or edit old
+experiment rows. Both logs are append-only. New experiment IDs are added with the
+checked append command; scoring snapshots use the scoring append command below.
 
 For a byte-preserving protocol addendum, append a complete validated row with a
 unique log-row ID and `amends_experiment_id` naming the original experiment. Keep
@@ -221,3 +221,42 @@ checks all bound bytes and recalculates results from frozen inputs. A plain publ
 checkout can validate metadata without private source files; evidence validation
 requires provisioned private data. Path resolution uses the most specific matching
 prefix in append-only `path_mappings`; a later mapping of that same prefix wins.
+
+## 中文总表与本机备份
+
+[INDEX.md](INDEX.md) 的主表按 `series_id` 只显示最新评分快照，原始快照在下方
+折叠；每次评分的小节包含分组分母、逐条款不过数、哈希、标注时间和可比性。
+同一实验的 continuation/addendum 日志合并展示；历史结论不覆盖最新收尾决策。
+
+```sh
+.venv/bin/python scripts/q1_experiment_index.py
+.venv/bin/python scripts/q1_experiment_index.py --check
+```
+
+`make agent-check` 包含评分元数据、日志追加约束及 INDEX 一致性检查；私有证据
+复算使用 `q1_scoring.py --evidence`，不会写标注。补登记程序
+`register_q1_scorings.py` 仅记录初始三次评分，目标目录已存在则拒绝再次运行。
+
+备份采用显式本机快照，不安装定时任务，不访问外部服务，不覆盖或删除旧备份。
+命令只收集 Q1 相关的实验实体副本、两本原始整书产物、第一批及保留批次目录、
+评分快照、当前 q1-v0 会话、私有 rubric 例子和 few-shot；另存复算所需的受版本
+管理脚本、单元清单、prompt 发布登记、rubric/form。不会遍历整个 state、读取
+环境凭据或隐式跟随工作树内的软链接。保留批次只做字节备份与 JSON 语法校验，
+不参与评分或内容审阅。
+
+```sh
+.venv/bin/python scripts/q1_backup.py \
+  --annotation-root /Users/baiweijiang/Documents/Projects/reading-companion-q1-annotation/reading-companion-backend/state/q1_annotation
+```
+
+默认写 `~/Backups/second-reader/<UTC时间戳>/`。`files/` 是真实文件副本，
+`manifest.json` 记录逐文件大小及 SHA-256；`verification.json` 记录恢复结果。
+独立恢复副本保留在 `state/backup_verification/<UTC时间戳>/restore/files/`。
+恢复后的评分脚本直接读取恢复目录内的证据重新计算三个评分，再验证 INDEX；
+不回退读取原工作树。原路径仅作为历史来源信息保留。
+
+源文件在复制期间变化、JSONL 尾行不完整或哈希不符时明确失败，不称为成功备份。
+失败目录保留以供诊断，重试必须使用新时间戳。完成标记是通过恢复验证后才写入的
+`verification.json`。未来可考虑工作期间每小时快照、每轮评分后再补一次；
+是否安装定时任务由用户另行确认。不自动清理旧备份。本机同盘备份防误操作，
+不能防整机或磁盘损坏；本任务未进行任何云端上传。

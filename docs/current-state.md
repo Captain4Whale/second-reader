@@ -7,9 +7,10 @@ Update when: the current objective, active tasks, blockers, active jobs, open de
 
 This file is authoritative for durable current status. Do not keep unique active-state information only in `docs/agent-handoff.md`.
 
-Last verified: `2026-11-10` (Q1 rubric keyboard interaction; earlier review states retain their original evidence boundaries)
+Last verified: `2026-11-10` (Q1 scoring ledger, diagnostic closure and local backup recovery; earlier review states retain their original evidence boundaries)
 
 ## Current Objective
+- `TASK-Q1-SCORING-LEDGER` is complete: three frozen scoring scopes, owner-confirmed DIAG closure, independent artifact relocation and generated Chinese INDEX. Local backup `20261110T121328Z` restored with matching hashes, 224 JSONL parses and all three scores reproduced. No scheduler or upload. Next: continue the isolated q1-v0 rejudgment and append a new scoring snapshot when ready. [Index](../reading-companion-backend/experiments/INDEX.md), [receipt](tasks/q1-scoring-ledger-2026-11-10.md).
 - `TASK-Q1-RUBRIC-ANNOTATOR` is complete: annotator 2.5 adds keyboard criteria/tags, completion and guarded next-item navigation to config-driven q1-v0 rejudgment in an isolated append-only journal, explicit completion and gated old-judgment viewing. Reasons are optional per owner-approved form protocol; omissions are hidden/reused from open_coding and excluded from reports. DIAG-001 has 81 anonymous items ready in `reading-companion-backend/state/q1_rubric_reviews/Q1-DIGEST-DIAG-001-q1-v0`. Next: owner refreshes the HTML and continues rejudgment; no model work or push. Unlimited mixed omissions vs rubric max two remains deferred. [Record](tasks/q1-rubric-annotator-2026-11-09.md).
 - `TASK-Q1-RUBRIC-V0-RELEASE` is complete: exact owner q1-v0 published, old draft and registration preserved by authorized migration, 38 uniquely resolved examples excluded from judge-human agreement. All pass/fail judgments match; body/reason differences are listed without editing the rubric. No model, prompt, mechanism, annotator or old-judgment changes. [Record](tasks/q1-rubric-v0-release-2026-11-09.md).
 - `TASK-Q1-DIGEST-REPLAY` is closed under CLOSE-001: PREREG-001 Note threshold triggered “明显好”; model configuration is an important lever, model/reasoning were not separated and prompt effect was not tested. Owner pauses model comparison and chooses Luna medium for iteration, with existing GPT-6 Sol high outputs as reference. Highlight judgment drift excludes H rates from decisions. Three scoring scopes are registered; q1-v0 rejudgment is pending. [Scoring work](tasks/q1-scoring-ledger-2026-11-10.md).
@@ -3628,13 +3629,12 @@ Last verified: `2026-11-10` (Q1 rubric keyboard interaction; earlier review stat
 ## Machine-Readable Appendix
 ```json
 {
-  "updated_at": "2026-11-09T13:12:57.862320+00:00",
+  "updated_at": "2026-11-10T12:15:13.346013+00:00",
   "last_updated_by": "codex",
   "active_task_ids": [
     "TASK-ATTENTIONAL-V2-STRUCTURAL-REWORK",
     "TASK-V2-NATIVE-READING-PRESENTATION",
-    "TASK-USER-LEVEL-SELECTIVE-V1",
-    "TASK-Q1-DIGEST-REPLAY"
+    "TASK-USER-LEVEL-SELECTIVE-V1"
   ],
   "waiting_task_ids": [
     "TASK-XIDADUO-CONTEXT-SCOPE-DIGEST-20260913",
@@ -3648,6 +3648,7 @@ Last verified: `2026-11-10` (Q1 rubric keyboard interaction; earlier review stat
   "active_job_ids": [],
   "open_decision_ids": [],
   "detail_refs": [
+    "docs/tasks/q1-scoring-ledger-2026-11-10.md",
     "docs/tasks/q1-rubric-v0-release-2026-11-09.md",
     "docs/tasks/q1-versioning-skeleton-2026-11-08.md",
     "docs/tasks/step1-prereqs-2026-11-01.md",

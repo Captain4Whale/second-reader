@@ -87,6 +87,7 @@ def scoring(tmp_path):
                 experiment_id="E",
                 run_id="run",
                 model="test-model",
+                group="测试组",
                 reasoning_effort="medium",
                 product_sha256="a" * 64,
                 prompts=[
@@ -123,7 +124,11 @@ def scoring(tmp_path):
             for p in ["state/batch.json", "state/judgments.jsonl"]
         },
         comparable_to=[],
-        calculation={},
+        calculation={
+            "command": "test",
+            "git_commit": "test",
+            "report": "state/report.json",
+        },
         review_session_id=None,
     )
     row["results"] = calculate(row, root)
@@ -232,3 +237,37 @@ def test_partial_jsonl_refuses_read(tmp_path):
     path.write_text('{"revision":1}')
     with pytest.raises(ValueError, match="Incomplete"):
         read_lines(path)
+
+
+def test_log_prefix_guard_rejects_edit_but_allows_append(tmp_path):
+    import subprocess
+    from scripts.q1_scoring import check_prefixes
+
+    repo = tmp_path / "repo"
+    root = repo / "backend"
+    (root / "experiments").mkdir(parents=True)
+    for name in ["log.jsonl", "scorings.jsonl"]:
+        (root / "experiments" / name).write_text('{"old":true}\n')
+    subprocess.run(["git", "init", "-q", str(repo)], check=True)
+    subprocess.run(["git", "-C", str(repo), "add", "."], check=True)
+    subprocess.run(
+        [
+            "git",
+            "-C",
+            str(repo),
+            "-c",
+            "user.name=Test",
+            "-c",
+            "user.email=test@example.invalid",
+            "commit",
+            "-qm",
+            "snapshot",
+        ],
+        check=True,
+    )
+    path = root / "experiments/scorings.jsonl"
+    path.write_text(path.read_text() + '{"new":true}\n')
+    check_prefixes(root)
+    path.write_text('{"old":false}\n{"new":true}\n')
+    with pytest.raises(ValueError, match="append-only"):
+        check_prefixes(root)

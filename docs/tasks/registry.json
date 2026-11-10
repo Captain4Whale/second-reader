@@ -3,6 +3,32 @@
   "updated_at": "2026-11-10",
   "tasks": [
     {
+      "id": "TASK-Q1-SCORING-LEDGER",
+      "title": "Freeze Q1 scoring receipts, relocate evidence and verify local backup",
+      "status": "done",
+      "lane": "mechanism_eval",
+      "priority": "high",
+      "detail_ref": "docs/tasks/q1-scoring-ledger-2026-11-10.md",
+      "acceptance_ref": "docs/tasks/q1-scoring-ledger-2026-11-10.md",
+      "truth_refs": [
+        "reading-companion-backend/experiments/README.md",
+        "docs/backend-reader-evaluation.md"
+      ],
+      "decision_refs": [
+        "DEC-162"
+      ],
+      "job_refs": [],
+      "blocked_by": [],
+      "next_action": "Continue q1-v0 review; append a new scoring snapshot and manually back up new judgments. No scheduled task or upload configured.",
+      "evidence_refs": [
+        "reading-companion-backend/experiments/INDEX.md",
+        "reading-companion-backend/experiments/scorings.jsonl",
+        "reading-companion-backend/state/backup_verification/20261110T121328Z/verification.json"
+      ],
+      "last_updated": "2026-11-10",
+      "last_updated_by": "codex"
+    },
+    {
       "id": "TASK-Q1-RUBRIC-ANNOTATOR",
       "title": "Add rubric-driven isolated Q1 rejudgment",
       "status": "done",
@@ -133,14 +159,14 @@
       ],
       "job_refs": [],
       "blocked_by": [],
-      "next_action": "Owner fills baseline pass_rate and defines a new published rubric before scoring; keep holdout reserved for final validation. No further model work or push authorized.",
+      "next_action": "Preserve historical baseline bytes; computed scoring receipts now live in scorings.jsonl. q1-v0 is published; continue isolated rejudgment and keep holdout reserved for final validation.",
       "evidence_refs": [
         "reading-companion-backend/experiments/log.jsonl",
         "reading-companion-backend/experiments/frozen.json",
         "reading-companion-backend/experiments/annotations/legacy-context.jsonl",
         "docs/tasks/q1-versioning-skeleton-2026-11-08.md"
       ],
-      "last_updated": "2026-11-08T09:56:19+08:00",
+      "last_updated": "2026-11-10",
       "last_updated_by": "codex"
     },
     {
