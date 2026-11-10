@@ -3,6 +3,20 @@
   "use strict";
   const identityFields = ["rubric_form_version", "rubric_form_sha256", "review_session_id"];
   const assessmentFields = ["failed_criteria", "tags", "criterion_flags", "rubric_uncovered", "review_completed", "prior_judgment_seen"];
+  const stepFields = ["criterion_assessments", "uncovered_reason"];
+  const isReviewSchema = schema => ["q1-mixed-judgment/2", "q1-mixed-judgment/3"].includes(schema);
+  const fieldsFor = schema => schema === "q1-mixed-judgment/3" ? [...assessmentFields,...stepFields] : assessmentFields;
+  const explicit = v => object(v.criterion_assessments);
+  const failed = v => Object.entries(v.criterion_assessments).filter(([,a])=>a.judgment === "fail").map(([id])=>id);
+  const complete = (v, spec) => explicit(v) && spec.criteria.every(c=>["pass","fail"].includes(v.criterion_assessments[c.id]?.judgment));
+  function stepDraft(v, spec, restart = false) {
+    return {...v, criterion_assessments: Object.fromEntries(spec.criteria.map(c=>[c.id,
+      !restart && explicit(v) && v.criterion_assessments[c.id]
+        ? {...v.criterion_assessments[c.id]}
+        : {judgment:!restart && v.failed_criteria?.includes(c.id) ? "fail" : null, reason:""}])),
+      uncovered_reason:v.uncovered_reason ?? "", review_completed:false,
+      star:!restart && complete(v,spec) ? v.star : false};
+  }
   const require = (ok, message) => { if (!ok) throw Error(message); };
   const object = v => !!v && typeof v === "object" && !Array.isArray(v);
   const exact = (v, keys) => object(v) && Object.keys(v).sort().join("|") === [...keys].sort().join("|");
@@ -36,14 +50,15 @@
     }
     return f;
   }
-  const outcome = v => v.failed_criteria.length || v.rubric_uncovered ? "fail" : "pass";
+  const outcome = v => (explicit(v) ? failed(v).length : v.failed_criteria.length) || v.rubric_uncovered ? "fail" : "pass";
   const verification = v => Object.values(v.criterion_flags).some(flags => Object.values(flags).some(Boolean));
   const empty = () => ({ failed_criteria:[], tags:[], criterion_flags:{}, rubric_uncovered:false, review_completed:false, prior_judgment_seen:false });
   function validateAssessment(r, f) {
-    require([...identityFields,...assessmentFields].every(k => Object.hasOwn(r,k)), "缺少重判字段。");
+    const fields = fieldsFor(r.schema);
+    require([...identityFields,...fields].every(k => Object.hasOwn(r,k)), "缺少重判字段。");
     require(typeof r.review_session_id === "string" && /^[a-zA-Z0-9_-]{1,100}$/.test(r.review_session_id), "重判会话无效。");
     if (r.record_type !== "marginalia") {
-      require(r.record_type === "unit_note" && assessmentFields.every(k => r[k] === null), "本次重判不记录漏标。");
+      require(r.record_type === "unit_note" && fields.every(k => r[k] === null), "本次重判不记录漏标。");
       return;
     }
     const spec = f.mark_types[r.type];
@@ -51,6 +66,12 @@
     for (const [field, allowed] of [["failed_criteria",spec.criteria.map(c=>c.id)],["tags",spec.tags.map(t=>t.id)]]) {
       const values = r[field];
       require(Array.isArray(values) && values.every(v => typeof v === "string" && allowed.includes(v)) && new Set(values).size === values.length, "勾选项不属于本批注类型或存在重复。");
+    }
+    if (r.schema === "q1-mixed-judgment/3") {
+      require(exact(r.criterion_assessments, spec.criteria.map(c=>c.id)), "逐项判定必须覆盖全部条件。");
+      require(Object.values(r.criterion_assessments).every(a=>exact(a,["judgment","reason"]) && ["pass","fail"].includes(a.judgment) && typeof a.reason === "string"), "逐项判定或理由无效。");
+      require(typeof r.uncovered_reason === "string", "未覆盖说明无效。");
+      require(JSON.stringify([...failed(r)].sort()) === JSON.stringify([...r.failed_criteria].sort()), "失败条件与逐项判定不一致。");
     }
     require(object(r.criterion_flags), "条目标记无效。");
     for (const [cid, values] of Object.entries(r.criterion_flags)) {
@@ -60,14 +81,14 @@
     require(["rubric_uncovered","review_completed","prior_judgment_seen","star","needs_verification"].every(k=>typeof r[k]==="boolean") && r.review_completed, "未确认的草稿不能写入重判日志。");
     require(r.judgment === outcome(r) && r.needs_verification === verification(r), "自动判定或待核实字段不一致。");
     require(!r.star || !f.policy.star_requires_pass || r.judgment === "pass", "不过的批注不能标星。");
-    require(typeof r.reason === "string" && typeof r.remarks === "string" && (r.judgment !== "fail" || !f.policy.reason_required_on_fail || r.reason.trim()), "理由或备注无效。");
+    require(typeof r.reason === "string" && typeof r.remarks === "string" && (r.judgment !== "fail" || !f.policy.reason_required_on_fail || (r.schema === "q1-mixed-judgment/3" ? failed(r).every(id=>r.criterion_assessments[id].reason.trim()) && (!r.rubric_uncovered || r.uncovered_reason.trim()) : r.reason.trim())), "理由或备注无效。");
   }
   function scopeKey(batchId, context) {
     return context?.review_session_id
       ? "review:" + JSON.stringify([batchId,context.annotator_id,context.rubric_version,context.rubric_sha256,context.rubric_form_version,context.rubric_form_sha256,context.review_session_id])
       : batchId;
   }
-  const api = {identityFields, assessmentFields, reviewFields:[...identityFields,...assessmentFields], validateForm, validateAssessment, outcome, verification, empty, scopeKey};
+  const api = {stepFields, isReviewSchema, fieldsFor, explicit, failed, complete, stepDraft, identityFields, assessmentFields, reviewFields:[...identityFields,...assessmentFields], validateForm, validateAssessment, outcome, verification, empty, scopeKey};
   root.Q1Rubric = api;
   if (typeof module !== "undefined") module.exports = api;
 })(globalThis);

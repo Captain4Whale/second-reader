@@ -279,7 +279,7 @@ test("mixed records append no group identity and reject reveal/density/provenanc
   h.run('var mark=blind.windows[0].marginalia[0];record("marginalia",mark.marginalia_id,{marginalia_id:mark.marginalia_id,type:mark.type,source_quote:mark.source_quote,body_text:mark.body_text,judgment:"pass",reason:"",remarks:"",star:false,needs_verification:false},mark.original_source_range,mark.original_source_range)');
   await h.run("session.writes");
   const r=JSON.parse(h.run("JSON.stringify(state.rows[0])"));
-  assert.equal(r.annotator_version,"q1-annotator/2.5");
+  assert.equal(r.annotator_version,"q1-annotator/3.0");
   h.c.older={...r,annotator_version:"q1-annotator/2.0"};
   assert.equal(h.run('parseJournal(JSON.stringify(older)+"\\n",batch).length'),1);
   assert.equal(r.view,"mixed"); assert.equal(r.comparison_batch_id,h.c.blind.batch_id);
@@ -349,7 +349,7 @@ function reviewHarness() {
     state.reviewResources={form,baseline:[]};session=makeSession(blind,state,handle);batch=blind;`);
   h.run(script.slice(script.indexOf('    function record('),script.indexOf('    function activeMisses(')));
   h.run(script.slice(script.indexOf('    function canRevealPrior('),script.indexOf('    function updatePriorAvailability(')));
-  h.run(`var m=unit().marginalia[0];var fields={...Q1Rubric.empty(),review_completed:true,
+  h.run(`var m=unit().marginalia[0];var fields={...Q1Rubric.empty(),review_completed:true,criterion_assessments:Object.fromEntries(form.mark_types[m.type].criteria.map(c=>[c.id,{judgment:'pass',reason:''}])),uncovered_reason:'',
     marginalia_id:m.marginalia_id,type:m.type,source_quote:m.source_quote,body_text:m.body_text,
     judgment:'pass',reason:'',remarks:'',star:false,needs_verification:false};`);
   return h;
@@ -439,9 +439,9 @@ test('opening a review for the same batch does not import completed open_coding 
   const context={...JSON.parse(h.run('JSON.stringify(state.annotationContext)')),batch_id:h.c.blind.batch_id,rubric_status:'published',
     baseline_sha256:require('node:crypto').createHash('sha256').update('').digest('hex')};
   h.run('record("marginalia",m.marginalia_id,fields,null,m.original_source_range)');await h.run('session.writes');
-  h.run('var older={...state.rows[0],annotator_version:"q1-annotator/2.3"};');
+  h.run('var older={...state.rows[0],schema:"q1-mixed-judgment/2",annotator_version:"q1-annotator/2.3"};for(const k of Q1Rubric.stepFields)delete older[k];');
   assert.equal(h.run('parseJournal(JSON.stringify(older)+"\\n",batch,journalScope(session)).length'),1);
-  h.run('var oldState=structuredClone(state);delete oldState.reviewResources;oldState.annotationContext={...DEFAULT_ANNOTATION_CONTEXT};for(const r of oldState.rows){r.schema="q1-mixed-judgment/1";r.rubric_version="open_coding";r.rubric_sha256=null;for(const k of Q1Rubric.reviewFields)delete r[k]};disk="";settleCurrent=async()=>{};dbGet=async k=>k==="state:"+blind.batch_id?oldState:undefined;dbSaveSession=async()=>{};installSession=async s=>{session=s}');
+  h.run('var oldState=structuredClone(state);delete oldState.reviewResources;oldState.annotationContext={...DEFAULT_ANNOTATION_CONTEXT};for(const r of oldState.rows){r.schema="q1-mixed-judgment/1";r.rubric_version="open_coding";r.rubric_sha256=null;for(const k of [...Q1Rubric.reviewFields,...Q1Rubric.stepFields])delete r[k]};disk="";settleCurrent=async()=>{};dbGet=async k=>k==="state:"+blind.batch_id?oldState:undefined;dbSaveSession=async()=>{};installSession=async s=>{session=s}');
   const contents={'mixed.json':JSON.stringify(h.c.blind),'annotation-context.json':JSON.stringify(context),
     'rubric-form.json':readFileSync(__dirname+'/../rubric/q1-v0.form.json','utf8'),'open_coding.snapshot.jsonl':''};
   h.c.showDirectoryPicker=async()=>({name:'review-folder',requestPermission:async()=> 'granted',getFileHandle:async n=>

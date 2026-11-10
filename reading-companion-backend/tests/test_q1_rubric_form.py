@@ -21,7 +21,7 @@ def review_row(kind='N'):
     return mixed, row, form
 
 
-@pytest.mark.parametrize('version', ['q1-annotator/2.3', 'q1-annotator/2.4', 'q1-annotator/2.5'])
+@pytest.mark.parametrize('version', ['q1-annotator/2.3', 'q1-annotator/2.4', 'q1-annotator/2.5', 'q1-annotator/2.6', 'q1-annotator/3.0'])
 def test_failure_reason_optional_tags_and_verification_do_not_fail(version):
     mixed, row, form = review_row()
     row['annotator_version'] = version
@@ -65,3 +65,55 @@ def test_future_form_ids_work_without_code_change():
     validate_form(form)
     row.update(failed_criteria=['future-criterion'], judgment='fail')
     validate_assessment(row, form)
+
+
+def step_row(kind='N'):
+    mixed, row, form = review_row(kind)
+    row.update(schema='q1-mixed-judgment/3', annotator_version='q1-annotator/3.0',
+               criterion_assessments={c['id']: {'judgment': 'pass', 'reason': ''} for c in form['mark_types'][kind]['criteria']},
+               uncovered_reason='')
+    return mixed, row, form
+
+
+@pytest.mark.parametrize('kind', ['N', 'H'])
+def test_explicit_complete_assessments_and_legacy_prefix(kind):
+    mixed, row, form = step_row(kind)
+    validate_rows([row], mixed)
+    first = next(iter(row['criterion_assessments']))
+    row['criterion_assessments'][first] = {'judgment': 'fail', 'reason': '  本项\n理由  '}
+    row.update(failed_criteria=[first], judgment='fail', reason='旧版整体理由', uncovered_reason='独立说明')
+    validate_rows([row], mixed)
+    old = {k: deepcopy(v) for k, v in row.items() if k not in ('criterion_assessments', 'uncovered_reason')}
+    old.update(schema='q1-mixed-judgment/2', annotator_version='q1-annotator/2.5')
+    row['revision'] = 2
+    validate_rows([old, row], mixed)
+    assert row['criterion_assessments'][first]['reason'] == '  本项\n理由  '
+
+
+@pytest.mark.parametrize('change', [
+    'missing', 'unknown', 'unjudged', 'reason_type', 'extra_field', 'mismatch',
+    'uncovered_type', 'wrong_version', 'star_fail',
+])
+def test_stepwise_bad_shapes_rejected(change):
+    mixed, row, _ = step_row()
+    a = row['criterion_assessments']
+    if change == 'missing':
+        del a['N1']
+    elif change == 'unknown':
+        a['H1'] = a.pop('N1')
+    elif change == 'unjudged':
+        a['N1']['judgment'] = None
+    elif change == 'reason_type':
+        a['N1']['reason'] = 123
+    elif change == 'extra_field':
+        a['N1']['model'] = 'not allowed'
+    elif change == 'mismatch':
+        row['failed_criteria'] = ['N1']
+    elif change == 'uncovered_type':
+        row['uncovered_reason'] = None
+    elif change == 'wrong_version':
+        row['annotator_version'] = 'q1-annotator/2.5'
+    elif change == 'star_fail':
+        row.update(star=True, rubric_uncovered=True, judgment='fail')
+    with pytest.raises(ValueError):
+        validate_rows([row], mixed)

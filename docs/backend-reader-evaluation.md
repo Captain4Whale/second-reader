@@ -23,11 +23,13 @@ examples cannot serve as unseen agreement evidence.
 
 For human q1-v0 rejudgment, use the separate immutable form and isolated journal described
 in [the review protocol](../reading-companion-backend/experiments/rubric-review.md).
-Require explicit completion, derive pass/fail from failed criteria or rubric-uncovered,
+Require each criterion to be explicitly pass/fail before new case completion; retain
+independent optional reasons. Derive overall pass/fail from failed criteria or rubric-uncovered,
 and hide historical judgments until the new assessment is saved. Preserve first
 pre-exposure completion and later revisions. This owner-authorized pass permits optional
 failure reasons and reuses historical omission records without rejudging omissions.
-Human-vs-human comparison includes rubric examples; it is not a held-out judge agreement
+Legacy completed judgments remain whole-case confirmations, not fabricated per-criterion
+results; rejudging appends a new revision. Human-vs-human comparison includes rubric examples; it is not a held-out judge agreement
 measurement. Reports with mark text and anchors belong only under ignored backend state.
 
 Every reader invocation and direct eval trace scope records actual logical request

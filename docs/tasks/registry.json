@@ -30,7 +30,7 @@
     },
     {
       "id": "TASK-Q1-RUBRIC-ANNOTATOR",
-      "title": "Add rubric-driven isolated Q1 rejudgment",
+      "title": "Provide stepwise Q1 rubric rejudgment with explicit criterion outcomes",
       "status": "done",
       "lane": "mechanism_eval",
       "priority": "high",
@@ -44,14 +44,16 @@
       "decision_refs": [],
       "job_refs": [],
       "blocked_by": [],
-      "next_action": "Owner refreshes the HTML to annotator 2.5 and continues the q1-v0 session using the keyboard controls, then runs the private comparison report. No models or push; defer unlimited-mixed vs max-two rubric omission conflict.",
+      "next_action": "Owner opens the 3.0 HTML from /Users/baiweijiang/.codex/worktrees/q1-rubric-stepwise/reading-companion and selects the existing isolated review folder; pending 2.6 edits in the original workspace are preserved. Continue q1-v0 review and run the private per-criterion comparison report. No models or push; omission-limit conflict deferred.",
       "evidence_refs": [
         "reading-companion-backend/rubric/q1-v0.form.json",
         "reading-companion-backend/tools/q1-annotator.html",
         "reading-companion-backend/tools/q1-annotator-keyboard.test.cjs",
         "reading-companion-backend/scripts/q1_rubric_review.py",
         "reading-companion-backend/tests/test_q1_rubric_review.py",
-        "reading-companion-backend/state/q1_rubric_reviews/Q1-DIGEST-DIAG-001-q1-v0/preparation.json"
+        "reading-companion-backend/state/q1_rubric_reviews/Q1-DIGEST-DIAG-001-q1-v0/preparation.json",
+        "reading-companion-backend/tools/q1-rubric-form.test.cjs",
+        "reading-companion-backend/tests/test_q1_rubric_form.py"
       ],
       "last_updated": "2026-11-10",
       "last_updated_by": "codex"

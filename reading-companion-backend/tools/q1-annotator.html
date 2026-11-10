@@ -577,6 +577,21 @@
     #priorReview { margin-top: 16px; border-top: 1px solid #dce2d9; padding-top: 12px; }
     #priorContent { white-space: pre-wrap; overflow-wrap: anywhere; margin-top: 8px; }
     #reviewOutcome { font-weight: 600; }
+    .rubric-steps { display:flex; flex-wrap:wrap; gap:6px; margin:12px 0; }
+    .rubric-steps[hidden] { display:none; }
+    .rubric-steps button { min-width:54px; padding:8px; border-radius:4px; }
+    .rubric-steps [data-state=pass] { background:#e8f1e9; color:#215b47; }
+    .rubric-steps [data-state=fail] { background:#f7e9e4; color:#823c2e; }
+    .rubric-steps [aria-current=step] { outline:2px solid #a98127; outline-offset:2px; }
+    #criterionHelp pre { max-height:min(240px,20vh); overflow:auto; white-space:pre-wrap; font:inherit; font-size:14px; padding-right:8px; }
+    #criterionHelp { margin:8px 0; }
+    #criterionHelp pre { margin:8px 0; }
+    #rubricTitle { margin:8px 0; }
+    #criterionTitle { margin:8px 0; }
+    #criterionReason, #uncoveredReason { height:64px; max-height:120px; overflow:auto; }
+    #legacyReasonText { white-space:pre-wrap; max-height:120px; overflow:auto; font:inherit; }
+    #criterionOutcome { font-weight:600; }
+
     #help { width: min(720px, calc(100vw - 48px)); max-height: calc(100vh - 48px); box-sizing: border-box; overflow-y: auto; padding: 20px; border: 1px solid #b5bfb5; border-radius: 8px; color: #24352b; }
     #help h2 { margin: 0 0 12px; }
     #help p { font-size: 14px; }
@@ -660,20 +675,37 @@
             <p id="markProgress" class="completion-status" role="status"></p>
             <div class="row" id="tabs"></div>
             <div id="editor" hidden>
+              <nav id="rubricSteps" class="rubric-steps" aria-label="Rubric 条目进度" hidden></nav>
               <p id="crossing" class="hint" hidden>跨窗口批注：在起点窗口判断一次。下方保留完整引文，原文仅高亮本窗口内的部分。</p>
               <blockquote id="excerpt"></blockquote>
               <p id="activeNote" class="note" hidden></p>
               <div class="row" id="legacyJudgment"><button id="pass">过 P</button><button id="fail">不过 F</button></div>
               <section id="rubricEditor" hidden>
                 <p id="rubricTitle" class="hint"></p>
-                <p class="hint">数字键勾选不满足的条目；标签不影响通过。Enter 完成并停留，Shift+Enter 完成并到本窗口下一条。</p>
-                <div id="criteria"></div>
-                <div id="rubricTags" class="row"></div>
-                <label class="rubric-choice"><input id="uncovered" type="checkbox" aria-keyshortcuts="0" /> <span>rubric 未覆盖（应当不过，但无对应条目） <kbd>0</kbd></span></label>
-                <div class="row"><button id="completeReview">完成本条</button><span id="reviewOutcome" role="status"></span></div>
+                <div id="criteria">
+                  <h3 id="criterionTitle"></h3>
+                  <div class="row"><button id="criterionPass">过 P</button><button id="criterionFail">不过 F</button><button id="clearCriterion">清除本项判定</button><span id="criterionOutcome" role="status"></span></div>
+                  <details id="criterionHelp" open><summary>判定说明 <span id="criterionHelpKey"></span></summary><pre id="criterionHelpText"></pre></details>
+                  <div id="criterionFlags"></div>
+                  <label class="field" for="criterionReason">本项理由 R <small>选填</small></label><textarea id="criterionReason" rows="2"></textarea>
+                  <div class="row"><button id="prevCriterion">上一项 [</button><button id="nextCriterion">下一项 Enter / ]</button></div>
+                </div>
+                <div id="rubricSummary" hidden>
+                  <p id="legacyReviewNotice" class="hint" hidden>旧版整条确认：未记录独立逐项理由。原结果保留，重新判断后追加新版记录。</p>
+                  <button id="restartReview" hidden>重新逐项判断</button>
+                  <p id="summaryProgress" role="status"></p>
+                  <div id="rubricTags" class="row"></div>
+                  <label class="rubric-choice"><input id="uncovered" type="checkbox" /> <span>rubric 未覆盖 <kbd>0</kbd></span></label>
+                  <div id="uncoveredReasonGroup"><label class="field" for="uncoveredReason">未覆盖说明 R <small>选填</small></label><textarea id="uncoveredReason" rows="2"></textarea></div>
+                  <div id="legacyReasonNotice" hidden><span class="hint">旧版整体理由（保留原文）</span><pre id="legacyReasonText"></pre></div>
+                  <div class="row"><button id="completeReview">完成本条 Enter</button><span id="reviewOutcome" role="status"></span></div>
+                  <p class="hint">全部条件判完后确认。Shift+Enter 完成并到本窗口下一条。</p>
+                </div>
               </section>
+              <div id="caseExtras">
+              <div id="legacyReason">
               <label class="field" for="reason">理由 R <small id="reasonPolicy">不过时必填</small></label
-              ><textarea id="reason" rows="2"></textarea>
+              ><textarea id="reason" rows="2"></textarea></div>
               <div class="row">
                 <label><input id="star" type="checkbox" /> 星标 S</label
                 ><label id="legacyVerify"><input id="verify" type="checkbox" /> 待核实 V</label>
@@ -684,6 +716,7 @@
               <div id="priorReview" hidden>
                 <button id="showPrior" disabled>完成本条并保存后可查看旧判断</button>
                 <div id="priorContent" hidden></div>
+              </div>
               </div>
             </div>
           </aside>
@@ -744,9 +777,9 @@
   <script src="q1-rubric-form.js"></script>
   <script>
     "use strict";
-    const VERSION = "q1-annotator/2.5",
+    const VERSION = "q1-annotator/3.0",
       $ = (id) => document.getElementById(id);
-    const REVIEW_VERSIONS = ["q1-annotator/2.3", "q1-annotator/2.4", VERSION];
+    const REVIEW_VERSIONS = ["q1-annotator/2.3", "q1-annotator/2.4", "q1-annotator/2.5", "q1-annotator/2.6", VERSION];
     const MIXED_VERSIONS = ["q1-annotator/2.0", "q1-annotator/2.1", "q1-annotator/2.2", ...REVIEW_VERSIONS];
     let reviewCompletion = null, navigationEpoch = 0;
     $("annotatorVersion").textContent = VERSION.split("/")[1];
@@ -898,13 +931,14 @@
     function validateMixedRow(r, b, w, scope = null) {
       const base = "schema annotator_version annotator_id rubric_version rubric_sha256 batch_id comparison_batch_id view window_id record_type record_id revision timestamp marginalia_id type judgment reason star needs_verification remarks original_source_range";
       const extra = r.record_type === "marginalia" ? " source_quote body_text" : r.record_type === "omission" ? " action source_quote" : "";
-      const review = r.schema === "q1-mixed-judgment/2";
-      const reviewExtra = review ? " " + Q1Rubric.reviewFields.join(" ") : "";
-      if (!exactKeys(r, base + extra + reviewExtra) || !["q1-mixed-judgment/1", "q1-mixed-judgment/2"].includes(r.schema) || !MIXED_VERSIONS.includes(r.annotator_version) ||
+      const review = Q1Rubric.isReviewSchema(r.schema);
+      const reviewExtra = review ? " " + [...Q1Rubric.identityFields,...Q1Rubric.fieldsFor(r.schema)].join(" ") : "";
+      if (!exactKeys(r, base + extra + reviewExtra) || !(r.schema === "q1-mixed-judgment/1" || Q1Rubric.isReviewSchema(r.schema)) || !MIXED_VERSIONS.includes(r.annotator_version) ||
           r.comparison_batch_id !== b.batch_id || r.view !== "mixed" ||
           !["marginalia", "omission", "unit_note"].includes(r.record_type) ||
           !strictRange(r.original_source_range) || !Number.isFinite(Date.parse(r.timestamp)))
         throw Error("混合判断包含无效字段或来源信息，已停止同步。");
+      if (r.schema === "q1-mixed-judgment/3" && r.annotator_version !== VERSION) throw Error("逐项判断版本不匹配。");
       if (review) {
         if (!scope || !REVIEW_VERSIONS.includes(r.annotator_version) || [...Q1Rubric.identityFields,"annotator_id","rubric_version","rubric_sha256"].some(k=>r[k] !== scope.context[k])) throw Error("重判日志身份不匹配，禁止混入其他会话或旧判断。");
         Q1Rubric.validateAssessment(r, scope.form);
@@ -948,10 +982,10 @@
     const latest = (type, id) =>
       session.state.rows.findLast((r) => r.record_type === type && r.record_id === id);
     function markValue(m) {
-      return (
-        session.state.drafts[m.marginalia_id] || latest("marginalia", m.marginalia_id) ||
-        { ...baseMark(), ...(reviewMode() ? Q1Rubric.empty() : {}) }
-      );
+      const v = session.state.drafts[m.marginalia_id] || latest("marginalia", m.marginalia_id) ||
+        { ...baseMark(), ...(reviewMode() ? Q1Rubric.empty() : {}) };
+      if (!reviewMode() || (v.review_completed && !session.state.drafts[m.marginalia_id])) return v;
+      return Q1Rubric.stepDraft(v, session.form.mark_types[m.type]);
     }
     function dbGet(key) {
       return new Promise((ok, no) => {
@@ -1098,7 +1132,7 @@
               typeof r.remarks === "string" &&
               typeof r.star === "boolean" &&
               typeof r.needs_verification === "boolean" &&
-              (r.schema === "q1-mixed-judgment/2" || r.judgment !== "fail" || !!r.reason.trim())
+              (Q1Rubric.isReviewSchema(r.schema) || r.judgment !== "fail" || !!r.reason.trim())
             : r.record_type === "density"
               ? r.record_id === rowUnit(r) && ["多", "合适", "少"].includes(r.density)
               : r.record_type === "unit_note"
@@ -1424,7 +1458,7 @@
         ...rowContext,
         batch_id: b.batch_id,
         ...(mixed(b) ? {
-          schema: reviewMode(s) ? "q1-mixed-judgment/2" : "q1-mixed-judgment/1", comparison_batch_id: b.batch_id,
+          schema: reviewMode(s) ? "q1-mixed-judgment/3" : "q1-mixed-judgment/1", comparison_batch_id: b.batch_id,
           view: "mixed", window_id: uid(u),
         } : {
         book: b.book,
@@ -1449,7 +1483,7 @@
         remarks: null,
         ...(!mixed(b) ? { source_range: span } : {}),
         original_source_range: original,
-        ...(reviewMode(s) ? Object.fromEntries(Q1Rubric.assessmentFields.map(k=>[k,null])) : {}),
+        ...(reviewMode(s) ? Object.fromEntries(Q1Rubric.fieldsFor(fields.schema ?? "q1-mixed-judgment/3").map(k=>[k,null])) : {}),
         ...fields,
       };
       if (reviewMode(s)) Q1Rubric.validateAssessment(row, s.form);
@@ -1484,7 +1518,7 @@
         miss ||
         note?.trim() ||
         values.some(
-          (v) => v.judgment || v.star || v.needs_verification || v.reason?.trim() || v.remarks?.trim() || v.failed_criteria?.length || v.tags?.length || v.rubric_uncovered,
+          (v) => (v.criterion_assessments && Object.values(v.criterion_assessments).some(a=>a.judgment || a.reason.trim())) || v.judgment || v.star || v.needs_verification || v.reason?.trim() || v.remarks?.trim() || v.failed_criteria?.length || v.tags?.length || v.rubric_uncovered,
         ) ||
         session.state.rows.some((r) => rowUnit(r) === uid(u) && r.record_type === "omission");
       return { done, missing, state: !missing.length ? "done" : started ? "started" : "empty" };
@@ -1702,6 +1736,7 @@
       $("activeNote").textContent = m.body_text || "";
       $("reason").value = v.reason;
       $("memo").value = v.remarks;
+      $("memo").disabled = false;
       $("star").checked = v.star;
       $("verify").checked = v.needs_verification;
       $("pass").setAttribute("aria-pressed", v.judgment === "pass");
@@ -1711,109 +1746,168 @@
       setHidden($("rubricEditor"), !reviewMode());
       setHidden($("priorReview"), !reviewMode());
       setText($("reasonPolicy"), reviewMode() && !session.form.policy.reason_required_on_fail ? "选填" : "不过时必填");
+      setHidden($("legacyReason"), reviewMode());
+      setHidden($("rubricSteps"), !reviewMode());
+      setHidden($("caseExtras"), false);
       if (reviewMode()) renderRubricEditor();
       renderShortcutHelp();
       resizeTextareas();
     }
+    const reviewSpec = () => session.form.mark_types[item().type];
+    const legacyReview = () => !!markValue(item()).review_completed && !Q1Rubric.explicit(markValue(item()));
+    function reviewStep() {
+      const saved = session.state.reviewSteps?.[item().marginalia_id];
+      return legacyReview() ? reviewSpec().criteria.length : Math.min(saved ?? 0, reviewSpec().criteria.length);
+    }
+    const summaryStep = () => reviewStep() === reviewSpec().criteria.length;
+    function setReviewStep(index) {
+      if (!reviewMode() || !item() || composing) return;
+      if (index < 0 || index > reviewSpec().criteria.length) return;
+      flushEdits();
+      navigationEpoch++;
+      say("");
+      session.state.reviewSteps ??= {};
+      session.state.reviewSteps[item().marginalia_id] = index;
+      persist();
+      renderRubricEditor(); renderShortcutHelp();
+      neutralFocus();
+    }
+    function nextReviewStep() {
+      if (summaryStep()) return;
+      const c = reviewSpec().criteria[reviewStep()];
+      if (!markValue(item()).criterion_assessments[c.id].judgment) { say("请先按 P 或 F 判断当前条件。"); return; }
+      say(""); setReviewStep(reviewStep() + 1);
+    }
+    function setCriterion(judgment) {
+      if (summaryStep() || legacyReview()) return;
+      const v = markValue(item()), id = reviewSpec().criteria[reviewStep()].id;
+      draftReview({criterion_assessments:{...v.criterion_assessments,[id]:{...v.criterion_assessments[id],judgment}}});
+      say(""); neutralFocus();
+    }
     function renderRubricEditor() {
-      const spec = session.form.mark_types[item().type];
-      setText($("rubricTitle"), session.form.title + " · " + spec.label + " · 本轮不记录漏标");
-      $("criteria").replaceChildren();
-      $("rubricTags").replaceChildren();
-      function choice(parent, label, change, key) {
-        const line = el("label", "", "rubric-choice"), input = document.createElement("input");
-        input.type = "checkbox";
-        const text = el("span", label);
-        if (key) {
-          text.append(" ", el("kbd", key));
-          input.dataset.shortcut = key;
-          input.setAttribute("aria-keyshortcuts", key);
-        }
-        line.append(input, text); parent.append(line);
-        input.onchange = () => change(input.checked);
-        return input;
-      }
+      const spec = reviewSpec(), index = reviewStep(), v = markValue(item()), legacy = legacyReview();
+      setText($("rubricTitle"), session.form.title + " · " + spec.label + " · " + (summaryStep() ? "汇总" : "条件 " + (index + 1) + "/" + spec.criteria.length));
+      $("rubricSteps").replaceChildren();
       for (const [i, c] of spec.criteria.entries()) {
-        const key = i < 4 ? String(i + 1) : null;
-        const box = el("div", "", "criterion");
-        const input = choice(box, c.id + " " + c.label, checked => changeReviewList("failed_criteria",c.id,checked), key);
-        input.dataset.criterion = c.id;
-        const details = document.createElement("details");
-        const summary = el("summary", "判定说明");
-        if (key) {
-          details.dataset.helpKey = key;
-          summary.append(" ", el("kbd", "Shift+" + key));
-          summary.setAttribute("aria-keyshortcuts", "Shift+" + key);
-        }
-        details.append(summary, el("pre", c.help.replace(/\*\*/g,"")));
-        box.append(details);
-        for (const f of c.flags) {
-          const flag = choice(box, f.label + "（不单独导致不过）", checked => {
+        const cell = button(c.id, () => setReviewStep(i));
+        cell.dataset.criterion = c.id; cell.title = c.label;
+        cell.disabled = legacy;
+        $("rubricSteps").append(cell);
+      }
+      $("rubricSteps").append(button("汇总", () => setReviewStep(spec.criteria.length)));
+      setHidden($("criteria"), summaryStep()); setHidden($("rubricSummary"), !summaryStep());
+      setHidden($("caseExtras"), !summaryStep());
+      if (!summaryStep()) {
+        const c = spec.criteria[index];
+        setText($("criterionTitle"), c.id + " " + c.label);
+        setText($("criterionHelpKey"), index < 4 ? "Shift+" + (index + 1) : "");
+        setText($("criterionHelpText"), c.help.replace(/\*\*/g,""));
+        $("criterionHelp").open = true;
+        $("criterionReason").value = v.criterion_assessments[c.id].reason;
+        $("criterionFlags").replaceChildren();
+        c.flags.forEach((f, i) => {
+          const line = el("label", "", "rubric-choice"), input = document.createElement("input");
+          input.type = "checkbox"; input.dataset.flag = f.id;
+          line.append(input, el("span", f.label + "（不单独导致不过）" + (i === 0 ? " V" : "")));
+          input.onchange = () => {
             const flags = structuredClone(markValue(item()).criterion_flags);
-            flags[c.id] = {...flags[c.id], [f.id]:checked};
-            draftReview({criterion_flags:flags});
-          }, !$("criteria").querySelector('[data-shortcut="V"]') && !box.querySelector('[data-shortcut="V"]') ? "V" : null);
-          flag.dataset.criterionFlag = c.id; flag.dataset.flag = f.id;
-        }
-        $("criteria").append(box);
+            flags[c.id] = {...flags[c.id], [f.id]:input.checked}; draftReview({criterion_flags:flags});
+          };
+          $("criterionFlags").append(line);
+        });
       }
-      for (const [i, tag] of spec.tags.entries()) {
-        const input = choice($("rubricTags"),tag.label,checked=>changeReviewList("tags",tag.id,checked), i < 5 ? String(i + 5) : null);
-        input.dataset.rubricTag = tag.id;
-      }
+      $("rubricTags").replaceChildren();
+      spec.tags.forEach((tag, i) => {
+        const line = el("label", "", "rubric-choice"), input = document.createElement("input");
+        input.type = "checkbox"; input.dataset.rubricTag = tag.id;
+        if (i < 5) input.dataset.shortcut = String(i + 5);
+        line.append(input, el("span", tag.label + (i < 5 ? " " + (i + 5) : "")));
+        input.onchange = () => changeReviewList("tags", tag.id, input.checked);
+        $("rubricTags").append(line);
+      });
+      $("uncoveredReason").value = v.uncovered_reason ?? "";
+      setHidden($("legacyReviewNotice"), !legacy); setHidden($("restartReview"), !legacy);
+      setHidden($("legacyReasonNotice"), !v.reason); setText($("legacyReasonText"), v.reason);
       $("priorContent").replaceChildren(); $("priorContent").hidden = true;
-      syncReviewControls();
+      syncReviewControls(); resizeTextareas();
     }
     function renderShortcutHelp() {
       const review = reviewMode();
-      $("reviewHelp").replaceChildren();
-      $("reviewHelp").hidden = !review || !item();
-      setText($("judgmentHelp"), review ? "Enter / Shift+Enter" : "P / F");
-      setText($("judgmentHelpText"), review
-        ? "完成并停留 / 保存成功后到本窗口下一条；末尾停留。P/F/O 禁用。"
-        : "过 / 不过，判断后停留；F 进入理由框");
-      const verify = !review || (!!item() && !!$("criteria").querySelector('[data-shortcut="V"]'));
-      setText($("flagHelp"), verify ? "S / V" : "S");
-      setText($("flagHelpText"), verify ? "星标 / 待核实" : "星标（当前类型没有待核实）");
+      $("reviewHelp").replaceChildren(); $("reviewHelp").hidden = !review || !item();
+      setText($("judgmentHelp"), "P / F");
+      setText($("judgmentHelpText"), review ? "当前条件过 / 不过，判完停留；理由选填，R 进入。" : "过 / 不过，判断后停留；F 进入理由框");
+      setText($("flagHelp"), review ? "S / V（按步骤）" : "S / V");
+      setText($("flagHelpText"), review ? "汇总中星标 / 当前条件待核实（如有）" : "星标 / 待核实");
       if (!review || !item()) return;
       const entry = (key, text) => $("reviewHelp").append(el("dt", key), el("dd", text));
-      for (const input of $("rubricEditor").querySelectorAll("[data-shortcut]")) {
-        if (input.dataset.shortcut === "V") continue;
-        entry(input.dataset.shortcut, input.closest("label").querySelector("span").firstChild.textContent + "：勾选 / 取消");
-      }
-      const keys = [...$("criteria").querySelectorAll("[data-help-key]")].map(n=>n.dataset.helpKey);
-      if (keys.length) entry("Shift+" + keys[0] + (keys.length > 1 ? "–" + keys.at(-1) : ""), "展开 / 收起对应判定说明");
-      entry("0", "rubric 未覆盖：勾选 / 取消");
-      entry("B", "查看 / 收起旧判断；须完成且浏览器与文件均已保存");
+      entry("Enter", "当前项已判后下一项；汇总中完成并停留");
+      entry("Shift+Enter", "仅汇总中：完成并保存后下一 case；窗口末尾停留");
+      entry("[ / ]", "浏览上一 / 下一步骤，不改变判断");
+      entry("1–" + Math.min(4,reviewSpec().criteria.length), "选择条件；Shift+对应数字展开 / 收起说明");
+      reviewSpec().tags.slice(0,5).forEach((t,i)=>entry(String(i+5), "汇总中：" + t.label));
+      entry("0 / R", "汇总中：未覆盖 / 未覆盖说明（选填）");
+      entry("B", "汇总中查看 / 收起旧判断，须完成且两端保存");
     }
     function changeReviewList(field, id, checked) {
       const values = markValue(item())[field];
       draftReview({[field]:checked ? [...values.filter(v=>v!==id),id] : values.filter(v=>v!==id)});
     }
     function draftReview(fields) {
+      if (legacyReview()) return;
       const v = {...markValue(item()), ...fields};
-      if (session.form.policy.star_requires_pass && Q1Rubric.outcome(v) === "fail") v.star = false;
-      draft({...v, judgment:Q1Rubric.outcome(v), needs_verification:Q1Rubric.verification(v), review_completed:false});
+      v.failed_criteria = Q1Rubric.failed(v);
+      const ready = Q1Rubric.complete(v, reviewSpec()), outcome = Q1Rubric.outcome(v);
+      if (!ready || (session.form.policy.star_requires_pass && outcome === "fail")) v.star = false;
+      draft({...v, judgment:outcome === "fail" || ready ? outcome : null, needs_verification:Q1Rubric.verification(v), review_completed:false});
       syncReviewControls();
     }
     function syncReviewControls() {
       if (!reviewMode() || !item()) return;
-      const v = markValue(item());
-      for (const input of $("criteria").querySelectorAll("[data-criterion]")) input.checked = v.failed_criteria.includes(input.dataset.criterion);
-      for (const input of $("criteria").querySelectorAll("[data-criterion-flag]")) input.checked = !!v.criterion_flags[input.dataset.criterionFlag]?.[input.dataset.flag];
-      for (const input of $("rubricTags").querySelectorAll("input")) input.checked = v.tags.includes(input.dataset.rubricTag);
-      $("uncovered").checked = v.rubric_uncovered;
-      $("star").checked = v.star;
-      $("star").disabled = session.form.policy.star_requires_pass && Q1Rubric.outcome(v) === "fail";
-      const done = markStatus(item()) === "已完成";
-      const touched = !!session.state.drafts[item().marginalia_id] || done;
-      setText($("reviewOutcome"), touched ? (done ? "已完成 · " : "待确认 · ") + (Q1Rubric.outcome(v) === "pass" ? "过" : "不过") : "未标注");
+      const v = markValue(item()), spec = reviewSpec(), legacy = legacyReview();
+      const ready = Q1Rubric.complete(v,spec), done = markStatus(item()) === "已完成";
+      const count = Q1Rubric.explicit(v) ? spec.criteria.filter(c=>v.criterion_assessments[c.id]?.judgment).length : 0;
+      [...$("rubricSteps").children].forEach((cell,i)=>{
+        const c = spec.criteria[i], status = c ? v.criterion_assessments?.[c.id]?.judgment : null;
+        setText(cell, c ? c.id + " " + (legacy ? "旧" : status === "pass" ? "✓" : status === "fail" ? "×" : "·") : "汇总" + (done ? " ✓" : ""));
+        setAttr(cell,"data-state",status ?? "empty"); setAttr(cell,"aria-current",i === reviewStep() ? "step" : null);
+        setAttr(cell,"aria-label",c ? c.id + " " + c.label + " · " + (legacy ? "旧版整条确认" : {pass:"过",fail:"不过"}[status] ?? "未判") : "汇总");
+      });
+      if (!summaryStep()) {
+        const c = spec.criteria[reviewStep()], a = v.criterion_assessments[c.id];
+        setAttr($("criterionPass"),"aria-pressed",a.judgment === "pass");
+        setAttr($("criterionFail"),"aria-pressed",a.judgment === "fail");
+        setText($("criterionOutcome"),{pass:"过",fail:"不过"}[a.judgment] ?? "未判");
+        $("clearCriterion").disabled = a.judgment === null;
+        $("prevCriterion").disabled = reviewStep() === 0;
+        for (const input of $("criterionFlags").querySelectorAll("input")) input.checked = !!v.criterion_flags[c.id]?.[input.dataset.flag];
+      }
+      for (const input of $("rubricTags").querySelectorAll("input")) { input.checked = v.tags.includes(input.dataset.rubricTag); input.disabled = legacy; }
+      $("uncovered").checked = v.rubric_uncovered; $("uncovered").disabled = legacy;
+      $("uncoveredReason").disabled = legacy;
+      setHidden($("uncoveredReasonGroup"), !v.rubric_uncovered);
+      $("memo").disabled = legacy;
+      $("star").checked = v.star; $("star").disabled = legacy || !ready || (session.form.policy.star_requires_pass && Q1Rubric.outcome(v) === "fail");
+      setText($("summaryProgress"), legacy ? "旧版结果：" + (v.judgment === "pass" ? "过" : "不过") : "已判 " + count + "/" + spec.criteria.length + " 项" + (ready ? "" : " · 请判完全部条件"));
+      setText($("reviewOutcome"), legacy ? "旧版整条确认" : (done ? "已完成 · " : "待确认 · ") + (ready ? (Q1Rubric.outcome(v) === "pass" ? "过" : "不过") : "未判完"));
       const saving = reviewCompletion?.session === session && reviewCompletion.id === item().marginalia_id;
       setText($("completeReview"), saving ? "保存中…" : done ? "已完成（修改后再确认）" : "完成本条 Enter");
-      $("completeReview").setAttribute("aria-keyshortcuts", "Enter Shift+Enter");
-      $("completeReview").disabled = done || busy || !!reviewCompletion;
+      $("completeReview").disabled = done || busy || !!reviewCompletion || !ready || legacy;
       updatePriorAvailability();
     }
+    $("criterionPass").onclick = () => setCriterion("pass");
+    $("criterionFail").onclick = () => setCriterion("fail");
+    $("clearCriterion").onclick = () => setCriterion(null);
+    $("prevCriterion").onclick = () => setReviewStep(reviewStep() - 1);
+    $("nextCriterion").onclick = nextReviewStep;
+    $("criterionReason").oninput = () => {
+      const v = markValue(item()), id = reviewSpec().criteria[reviewStep()].id;
+      draftReview({criterion_assessments:{...v.criterion_assessments,[id]:{...v.criterion_assessments[id],reason:$("criterionReason").value}}}); queueEdits();
+    };
+    $("uncoveredReason").oninput = () => { draftReview({uncovered_reason:$("uncoveredReason").value}); queueEdits(); };
+    $("restartReview").onclick = () => {
+      const v = Q1Rubric.stepDraft(markValue(item()),reviewSpec(),true);
+      draft({...v,failed_criteria:[],judgment:null,star:false}); setReviewStep(0);
+    };
     function canRevealPrior() {
       if (!reviewMode() || !item()) return false;
       const row = latest("marginalia", item().marginalia_id);
@@ -1831,7 +1925,8 @@
     }
     $("uncovered").onchange = () => draftReview({rubric_uncovered:$("uncovered").checked});
     async function completeReview(advance = false) {
-      if (busy || composing || reviewCompletion || !reviewMode() || !item()) return;
+      if (busy || composing || reviewCompletion || !reviewMode() || !item() || !summaryStep()) return;
+      if (!legacyReview() && !Q1Rubric.complete(markValue(item()),reviewSpec())) { say("请先判完所有条件。"); return; }
       // Disabling the focused completion button would otherwise move focus to body.
       if (document.activeElement === $("completeReview")) neutralFocus();
       const token = {session, id:item().marginalia_id, epoch:navigationEpoch, focus:document.activeElement};
@@ -1872,8 +1967,9 @@
       const s = session, id = item().marginalia_id, epoch = navigationEpoch, focus = document.activeElement;
       const prior = latest("marginalia", id);
       if (!prior.prior_judgment_seen) {
-        const fields = Object.fromEntries([...Q1Rubric.assessmentFields,"marginalia_id","type","source_quote","body_text","judgment","reason","remarks","star","needs_verification"].map(k=>[k,prior[k]]));
+        const fields = Object.fromEntries([...Q1Rubric.fieldsFor(prior.schema),"marginalia_id","type","source_quote","body_text","judgment","reason","remarks","star","needs_verification"].map(k=>[k,prior[k]]));
         fields.prior_judgment_seen = true;
+        fields.schema = prior.schema;
         record("marginalia",id,fields,rangeOf(item()),item().original_source_range);
         await s.writes; await s.browserWrites;
       }
@@ -2017,7 +2113,7 @@
       const m = item(),
         v = markValue(m);
       session.state.drafts[m.marginalia_id] = {
-        ...(reviewMode() ? Object.fromEntries(Q1Rubric.assessmentFields.map(k=>[k,v[k]])) : {}),
+        ...(reviewMode() ? Object.fromEntries(Q1Rubric.fieldsFor("q1-mixed-judgment/3").map(k=>[k,v[k]])) : {}),
         judgment: v.judgment,
         reason: v.reason,
         star: v.star,
@@ -2035,12 +2131,13 @@
       if (reviewMode() && !confirm) return false;
       const m = item(),
         v = markValue(m);
-      if (v.judgment === "fail" && !v.reason.trim() && (!reviewMode() || session.form.policy.reason_required_on_fail)) {
+      if (!reviewMode() && v.judgment === "fail" && !v.reason.trim()) {
         progress();
         return false;
       }
+      if (reviewMode() && !Q1Rubric.complete(v, session.form.mark_types[m.type])) { say("请先判完所有条件。"); return false; }
       const fields = {
-        ...(reviewMode() ? {...Object.fromEntries(Q1Rubric.assessmentFields.map(k=>[k,v[k]])),review_completed:true} : {}),
+        ...(reviewMode() ? {...Object.fromEntries(Q1Rubric.fieldsFor("q1-mixed-judgment/3").map(k=>[k,v[k]])),review_completed:true} : {}),
         marginalia_id: m.marginalia_id,
         type: m.type,
         source_quote: m.source_quote,
@@ -2052,7 +2149,7 @@
         remarks: v.remarks,
       };
       const prior = latest("marginalia", m.marginalia_id);
-      if (reviewMode()) Q1Rubric.validateAssessment({...session.state.annotationContext, record_type:"marginalia", ...fields}, session.form);
+      if (reviewMode()) Q1Rubric.validateAssessment({...session.state.annotationContext, schema:"q1-mixed-judgment/3", record_type:"marginalia", ...fields}, session.form);
       delete session.state.drafts[m.marginalia_id];
       if (!prior || Object.keys(fields).some((k) => JSON.stringify(sorted(fields[k])) !== JSON.stringify(sorted(prior[k]))))
         record("marginalia", m.marginalia_id, fields, rangeOf(m), m.original_source_range);
@@ -2081,11 +2178,12 @@
       queueEdits();
     };
     $("memo").oninput = () => {
+      if (reviewMode()) { draftReview({remarks:$("memo").value}); queueEdits(); return; }
       draft({ remarks: $("memo").value });
       queueEdits();
     };
     function toggleFlag(key, value) {
-      if (reviewMode()) { if (key === "star") draftReview({star:value}); return; }
+      if (reviewMode()) { if (key === "star" && summaryStep()) draftReview({star:value}); return; }
       const m = item(),
         id = m.marginalia_id,
         prior = latest("marginalia", id) || baseMark();
@@ -2323,6 +2421,7 @@
     function resizeTextareas() {
       for (const field of document.querySelectorAll("textarea")) {
         if (!field.getClientRects().length) continue;
+        if (reviewMode() && ["criterionReason", "uncoveredReason", "memo"].includes(field.id)) { field.style.height = ""; continue; }
         field.style.height = "auto";
         const border = field.offsetHeight - field.clientHeight;
         field.style.height = field.scrollHeight + border + "px";
@@ -2399,7 +2498,7 @@
       finishMiss();
       neutralFocus();
     };
-    for (const id of ["reason", "memo", "unitNote", "missReason"]) {
+    for (const id of ["reason", "memo", "unitNote", "missReason", "criterionReason", "uncoveredReason"]) {
       $(id).addEventListener("blur", () => {
         if (busy) return; // Reconcile the file before committing edits during a connection change.
         if (id === "missReason") finishMiss();
@@ -2461,7 +2560,7 @@
       }
       if (e.target.closest("textarea, select, input:not([type=checkbox]), [contenteditable]:not([contenteditable=false])")) return;
       const k = e.key.toLowerCase();
-      if (reviewMode() && ["p","f","o"].includes(k)) { e.preventDefault(); return; }
+      if (reviewMode() && k === "o") { e.preventDefault(); return; }
       if (k === "j" || k === "k") {
         e.preventDefault();
         const reader = !e.shiftKey && matchMedia("(min-width: 960px)").matches;
@@ -2482,29 +2581,40 @@
       }
       if (reviewMode() && item()) {
         if (e.key === "Enter") {
-          // Do not override native activation of navigation/buttons/disclosures.
           if (e.target.closest("button, a, summary, [role=button]") && e.target !== $("completeReview")) return;
           e.preventDefault();
-          void completeReview(e.shiftKey);
+          if (summaryStep()) void completeReview(e.shiftKey);
+          else if (!e.shiftKey) nextReviewStep();
           return;
         }
         const digit = /^Digit[1-4]$/.test(e.code) ? e.code.slice(-1) : null;
         if (e.shiftKey && digit) {
-          e.preventDefault();
-          const details = $("criteria").querySelector('[data-help-key="' + digit + '"]');
-          if (details) { details.open = !details.open; if (details.open) focusField(details.querySelector("summary")); neutralFocus(); }
+          e.preventDefault(); const index = Number(digit)-1;
+          if (index < reviewSpec().criteria.length && !legacyReview()) {
+            if (reviewStep() === index) $("criterionHelp").open = !$("criterionHelp").open;
+            else setReviewStep(index);
+          }
           return;
         }
-        if (!e.shiftKey && /^[0-9]$/.test(k)) {
+        if (!e.shiftKey && /^[1-4]$/.test(k)) { e.preventDefault(); if (!legacyReview() && Number(k) <= reviewSpec().criteria.length) setReviewStep(Number(k)-1); return; }
+        if (k === "[" || k === "]") { e.preventDefault(); setReviewStep(reviewStep() + (k === "[" ? -1 : 1)); return; }
+        if (k === "p" || k === "f") { e.preventDefault(); setCriterion(k === "p" ? "pass" : "fail"); return; }
+        if (k === "r") {
           e.preventDefault();
-          const control = k === "0" ? $("uncovered") : $("rubricEditor").querySelector('[data-shortcut="' + k + '"]');
-          control?.click();
+          if (!legacyReview()) {
+            if (!summaryStep()) focusField($("criterionReason"));
+            else if (markValue(item()).rubric_uncovered) focusField($("uncoveredReason"));
+          }
           return;
         }
-        if (k === "v" || k === "b") {
+        if (k === "m") { e.preventDefault(); setReviewStep(reviewSpec().criteria.length); if (!legacyReview()) focusField($("memo")); return; }
+        if (k === "v") { e.preventDefault(); if (!summaryStep()) $("criterionFlags").querySelector("input")?.click(); return; }
+        if (["0","5","6","7","8","9","s","b"].includes(k)) {
           e.preventDefault();
-          if (k === "v") $("criteria").querySelector('[data-shortcut="V"]')?.click();
-          else $("showPrior").click();
+          if (summaryStep()) {
+            const control = {"0":"uncovered",s:"star",b:"showPrior"}[k];
+            if (control) $(control).click(); else $("rubricTags").querySelector('[data-shortcut="' + k + '"]')?.click();
+          }
           return;
         }
       }

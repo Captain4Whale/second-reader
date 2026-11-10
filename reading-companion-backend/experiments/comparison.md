@@ -7,9 +7,9 @@ until the A/B diagnostic has been annotated. No model, prompt or mechanism chang
 
 ## Rubric rejudgment
 
-Annotator 2.3 adds isolated form-driven q1-v0 review, documented in
-[the rejudgment protocol](rubric-review.md). This mode writes `q1-mixed-judgment/2`
-to a fresh journal; it never migrates or overwrites open_coding judgments. Original
+Annotator 3.0 provides isolated stepwise q1-v0 review, documented in
+[the rejudgment protocol](rubric-review.md). This mode writes `q1-mixed-judgment/3` with per-criterion outcomes and reasons,
+while accepting existing `/2` whole-case confirmations in the same isolated session; it never migrates or overwrites open_coding judgments. Original
 group-blinding constraints remain unchanged. Revealing a completed mark's historical
 human judgment is distinct from revealing its group identity.
 For this pass, omission controls and recording are disabled and omissions are excluded

@@ -158,3 +158,28 @@ def test_cross_session_or_partial_journal_rejected(prepared):
     (output / "judgments.jsonl").write_text(json.dumps(row))
     with pytest.raises(ValueError, match="Incomplete"):
         review.comparison(output)
+
+
+def test_stepwise_report_preserves_independent_reasons_and_prior_legacy_rows(prepared):
+    source, output, mixed, context, original = prepared
+    w, m = next((w, m) for w in mixed['windows'] for m in w['marginalia'] if m['type'] == 'N')
+    old = new_row(mixed, w, m, context, reason='legacy overall')
+    form, _ = load_form(context['rubric_form_version'])
+    new = deepcopy(old)
+    new.update(schema='q1-mixed-judgment/3', annotator_version='q1-annotator/3.0',
+               criterion_assessments={c['id']: {'judgment': 'pass', 'reason': c['id'] + ' individual'} for c in form['mark_types']['N']['criteria']},
+               uncovered_reason='uncovered text', rubric_uncovered=True, judgment='fail')
+    write_rows(output, [old, new])
+    report = review.comparison(output)
+    item = report['rubric_uncovered'][0]
+    assert len(report['assessments']) == 1
+    assert report['assessments'][0]['marginalia_id'] == item['marginalia_id']
+    assert item['assessment_mode'] == 'stepwise'
+    assert item['criterion_assessments']['N1']['reason'] == 'N1 individual'
+    assert item['new_reason'] == 'legacy overall'
+    assert item['uncovered_reason'] == 'uncovered text'
+    target = output.parent / 'step-report'
+    review.write_report(output, target)
+    text = (target / 'report.md').read_text()
+    assert 'N1 individual' in text and 'uncovered text' in text
+    assert {p.name: p.read_bytes() for p in source.iterdir()} == original

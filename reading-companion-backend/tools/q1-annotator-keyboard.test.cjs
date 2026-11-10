@@ -26,6 +26,14 @@ function harness() {
     const item=()=>hasItem ? marks[session.state.mi] : null;
     const unit=()=>({marginalia:marks}), uid=()=> 'u';
     const reviewMode=()=>review, mixed=()=>review;
+    let step=4, ready=true, legacy=false, decisions=[];
+    const reviewSpec=()=>({criteria:[{id:'N1'},{id:'N2'},{id:'N3'},{id:'N4'}]});
+    const summaryStep=()=>step===4, reviewStep=()=>step, legacyReview=()=>legacy;
+    const markValue=()=>({rubric_uncovered:true});
+    const Q1Rubric={complete:()=>ready};
+    const setReviewStep=i=>{if(i>=0&&i<=4){step=i;navigationEpoch++;}};
+    const nextReviewStep=()=>{step++;};
+    const setCriterion=v=>{decisions.push(v);};
     const markStatus=()=>completed ? '已完成' : '未标注';
     const latest=()=>({revision:saves});
     const draftReview=()=>{};
@@ -49,17 +57,27 @@ function harness() {
   }
   return {c,node,run,key,clicks,moves};
 }
-test('rubric numbers, flags, prior and Shift+digits dispatch only to configured controls',()=>{
-  const h=harness();
-  h.node('rubricEditor').querySelector=s=>s.includes('"1"') ? h.node('criterion') : null;
-  h.node('criteria').querySelector=s=>s.includes('"V"') ? h.node('flag') : s.includes('"1"') ? h.node('explanation') : null;
-  h.node('explanation').querySelector=()=>h.node('summary');
-  h.key('1');h.key('4');h.key('0');h.key('v');h.key('b');
-  assert.deepEqual(h.clicks,['criterion','uncovered','flag','showPrior']);
-  h.key('!',{shiftKey:true,code:'Digit1'});assert.equal(h.node('explanation').open,true);
-  h.key('!',{shiftKey:true,code:'Digit1'});assert.equal(h.node('explanation').open,false);
-  h.node('criteria').querySelector=()=>null;h.key('v');assert.equal(h.clicks.length,4);
-  for(const k of ['p','f','o']) assert.equal(h.key(k).prevented,true);
+test('stepwise keys select criteria, judge, browse and scope summary controls',()=>{
+  const h=harness();h.node('criterionFlags').querySelector=()=>h.node('flag');
+  h.node('rubricTags').querySelector=()=>h.node('tag');
+  h.key('1');assert.equal(h.run('step'),0);h.key('p');h.key('f');
+  assert.equal(h.run('decisions.join(",")'),'pass,fail');assert.equal(h.run('step'),0);
+  h.key('r');assert.equal(h.c.document.activeElement.id,'criterionReason');
+  h.key('Enter');assert.equal(h.run('step'),1);
+  h.key('v');h.key('5');h.key('b');assert.deepEqual(h.clicks,['flag']);
+  h.key('4');assert.equal(h.run('step'),3);
+  h.key('!',{shiftKey:true,code:'Digit1'});assert.equal(h.run('step'),0);
+  h.key('!',{shiftKey:true,code:'Digit1'});assert.equal(h.node('criterionHelp').open,true);
+  h.key(']');assert.equal(h.run('step'),1);h.key('[');assert.equal(h.run('step'),0);
+  h.key('m');assert.equal(h.run('step'),4);assert.equal(h.c.document.activeElement.id,'memo');
+  for(const k of ['5','0','s','b','v'])h.key(k);
+  assert.deepEqual(h.clicks,['flag','tag','uncovered','star','showPrior']);
+  assert.equal(h.key('o').prevented,true);
+});
+test('an incomplete case cannot complete even on summary',async()=>{
+  const h=harness();h.run('ready=false');await h.c.completeReview(true);
+  assert.equal(h.run('saves'),0);assert.equal(h.run('session.state.mi'),0);
+  assert.match(h.run('message'),/所有条件/);
 });
 test('composition, modifiers, editable ancestors, repeat and native controls are respected',()=>{
   const h=harness();
@@ -73,7 +91,7 @@ test('composition, modifiers, editable ancestors, repeat and native controls are
   assert.equal(h.clicks.length,0);assert.equal(h.run('saves'),0);
   h.key('j',{repeat:true});h.key('k',{repeat:true,shiftKey:true});
   assert.deepEqual(h.moves.map(v=>v[0]),['readerScroll','window']);
-  h.key('r');assert.equal(h.c.document.activeElement.id,'reason');
+  h.run('step=0');h.key('r');assert.equal(h.c.document.activeElement.id,'criterionReason');
   h.key('Escape',{target:editable});assert.equal(h.c.document.activeElement.id,'progress');
 });
 test('Open Coding retains P/F/S/V, density, arrows and text fields',()=>{
@@ -110,6 +128,7 @@ test('failed or absent save acknowledgement keeps the current annotation',async(
 });
 for(const change of [
   'chooseMark(1);chooseMark(0)',
+  'setReviewStep(0);setReviewStep(4)',
   "document.activeElement=$('reason')",
   "session.state.drafts.a={reason:'new edit'}",
   'saves++',

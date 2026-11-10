@@ -140,3 +140,90 @@ Validation:
 This is an interaction change, not a mechanism/product-direction decision; this
 record and the rejudgment protocol capture the behavior, so no decision-log entry
 is needed.
+
+## 2026-11-10 stepwise interaction (3.0)
+
+The owner replaced the checkbox review flow with explicit per-criterion decisions.
+Each case now has a second row of rubric squares (unjudged / pass / fail, current
+outline) and a summary step. Only one criterion is displayed. P/F judges and stays;
+R enters its independent optional reason; Enter requires a judgment before advancing.
+The last criterion leads to summary. All criteria must be judged even after an early
+failure. Clear restores unjudged and preserves that criterion's reason. Step/draft
+state survives case/window navigation and reload.
+
+The help text opens by default, scrolls inside a maximum 240px/20vh region, and reasons
+start at two lines. Pass/fail buttons precede the potentially long explanation so they
+remain reachable in the initial small-window view. N2 verification stays in N2;
+labels, star, uncovered/reason, overall memo and historical judgment live in summary.
+Digits select criteria; brackets browse; Shift+digit opens/toggles help. Summary
+Enter confirms/stays; Shift+Enter confirms and advances only after both save receipts.
+Existing case/window navigation, source/page scrolling, native controls, composition
+protection and Open Coding shortcuts remain available. Save failures and navigation
+races retain the 2.5 completion/exposure protections.
+
+New formal records use `q1-mixed-judgment/3`, with exact configured
+`criterion_assessments` keys containing pass/fail plus reason, and `uncovered_reason`.
+`failed_criteria` and overall outcome are derived and validated in JS/Python. Drafts
+may be unjudged; formal rows may not. Historical overall `reason` is separate and
+never split or synthesized from per-criterion reasons. Reports include all completed
+cases' criterion assessments/reasons, including unchanged outcomes, and identify
+legacy whole-case confirmations explicitly.
+
+Existing `/2` completed records still count as complete and are read-only until
+“重新逐项判断”; restart sets every criterion unjudged. Old unfinished drafts retain
+only checked failures as explicit fail, preserving overall reason, notes and flags.
+An incomplete draft cannot retain an enabled star. New completions append `/3` in the
+same session without rewriting the old prefix or snapshot. Old exposure-only
+revisions retain `/2`. Tool versions 2.3–2.6 remain accepted; `/3` requires 3.0.
+Published rubric/form, cache identity and public APIs are unchanged.
+
+Isolation and environment:
+
+- Implementation branch: `codex/q1-rubric-stepwise`, based on `73f4d38`, worktree
+  `/Users/baiweijiang/.codex/worktrees/q1-rubric-stepwise/reading-companion`.
+- At start, the original workspace had uncommitted 2.6 compatibility changes in
+  `q1_comparison_stats.py`, its test, `test_q1_rubric_form.py` and the storage test.
+  These were preserved; the 3.0 implementation is committed separately, not pushed.
+  Open the HTML from the new worktree; refreshing the original HTML still loads 2.x.
+- The independent worktree reuses existing ignored `.venv`, `node_modules`, private
+  prompt assets, job registry and historical evidence through local symlinks for
+  read-only checks. No private evidence was migrated or committed. QA writes stayed
+  in this worktree's ignored `state/q1_rubric_reviews/qa/stepwise-3.0/`.
+
+Validation:
+
+- 42 Node storage/form/keyboard tests; 72 Python rubric/review/statistics/provenance/
+  scoring tests pass, plus affected Python Ruff and `git diff --check`.
+- Prompt releases and frozen iteration checks pass against trusted base `73f4d38`;
+  registered rubric/form bytes are unchanged. `make agent-check` passes Reading
+  Product/Annotation Pack checks (55 tests), OpenAPI and frontend contract checks,
+  scoring/index checks. The initial fresh worktree lacked ignored local evidence;
+  after linking existing evidence for read-only checks, traceability retains the
+  same 17 historical warnings (missing old acceptance refs/paths, duplicate decisions).
+- Isolated headed Chromium with synthetic OPFS: N/H P/F, unjudged gate, clear/reason
+  retention, independent multiline reasons, tags/verification, all-pass star and
+  uncovered clearing star, summary completion, last-case boundary, prior exposure,
+  amendments, case/window/step switching, reload restoration, native Enter/Tab/Space,
+  held-event/modifier/composition-229 guards, slow save + duplicate completion +
+  navigation away/back, file and browser write failure/retry, Open Coding regression.
+  IME guards were exercised by simulated composition/229 events, not an OS-native
+  candidate-window test; the native folder picker was replaced with isolated OPFS.
+- Legacy complete/restart and unfinished-draft migration were exercised in separate
+  synthetic contexts. New `/3` appends preserved the exact `/2` byte prefix.
+- The UI-written 5-revision journal generates a valid private comparison report:
+  5 cases, 4 completed, 1 incomplete, 2 unchanged, 1 old-pass/new-fail,
+  1 old-fail/new-pass and 1 uncovered; per-criterion reasons are displayed.
+- Screenshots inspected at 1600×900 and 960×800: grid status/current outline, N/H,
+  summary and legacy presentation, bounded scrolling explanations, two-line reasons,
+  no horizontal overflow. Long original text/case bodies retain page scrolling;
+  P/F stays visible initially on the checked real small-window case, R brings its
+  reason into view. Rule and source scrolling were exercised independently.
+- Real DIAG-001 display only through copied browser files: still 0/81, five original
+  hashes unchanged. No real decisions, model calls or original browser actions.
+- Evidence: QA inventory, screenshots, `synthetic-session/`, `synthetic-report-final/`,
+  `real-source-hashes.json`, `agent-check-final.log` and `traceability-final.log` in the ignored
+  QA directory above. Synthetic fixture input was read from the prior QA folder.
+
+This is a scoped annotation interaction/protocol extension, fully recorded here and
+in the rejudgment protocol. It does not change mechanism/product direction and needs
+no new mechanism decision-log entry.

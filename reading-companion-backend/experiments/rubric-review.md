@@ -20,33 +20,49 @@ not annotator code. Form text contains rules only, never identifiable rubric exa
 
 ## Completed records
 
-`q1-mixed-judgment/2` retains anonymous batch/window/mark identity, exact content/range,
+`q1-mixed-judgment/3` retains anonymous batch/window/mark identity, exact content/range,
 human/rubric identity, timestamp and append-only per-journal revision. It adds:
 
 | Field | Contract |
 |---|---|
 | rubric_form_version / rubric_form_sha256 | Registered immutable form identity |
 | review_session_id | Isolated rejudgment session; never a group or run identity |
-| failed_criteria | Unique configured criterion IDs for this annotation type |
+| criterion_assessments | Every configured criterion ID → `{judgment: "pass" / "fail", reason: string}` |
+| failed_criteria | Derived unique IDs whose criterion assessment is fail |
+| uncovered_reason | Optional explanation for rubric_uncovered; independent of historical overall reason |
 | tags | Unique configured tag IDs; do not cause failure |
 | criterion_flags | Configured criterion → flag → boolean; N2 has needs_verification |
 | rubric_uncovered | Owner considers this a failure not covered by criteria |
 | review_completed | true for persisted annotation assessments; drafts stay in browser |
 | prior_judgment_seen | Whether historical judgment has been revealed; cannot revert |
 
-No failed criterion and no uncovered flag means pass; otherwise fail. `judgment` is a
-checked derived field. `needs_verification` mirrors configured criterion flags without
-causing failure. Stars require pass. Merely opening a mark, toggling a control or moving
-away never confirms it. Explicit completion distinguishes an unchecked valid pass from
-an untouched form. Subsequent assessments append revisions. `unit_note` remains supported
-with null assessment fields; omission records are not supported in this mode.
+Every criterion must be explicitly pass/fail before a new completed record can be
+written. Browser drafts may contain null judgments. Any failed criterion or uncovered
+flag yields fail; otherwise pass. `judgment` and `failed_criteria` are checked derived
+fields. Tags and `needs_verification` (a mirror of criterion flags) do not cause failure.
+Stars require all criteria judged and overall pass. Per-criterion and uncovered reasons
+are optional under the published form policy. Historical overall `reason` keeps its
+original meaning; do not split it into criterion reasons or concatenate new reasons there.
+`unit_note` remains supported with null assessment fields; omissions are not supported.
 
-New journals cannot mix legacy records, people, rubrics, forms or review-session IDs.
-Old q1-mixed-judgment/1 and legacy single-group journals keep their previous validation
-rules, including nonempty failure reasons. New parsing does not rewrite old rows.
-The browser and Python validators both check choices, mirrors, identities and exposure
-ordering. First completion must precede viewing the old judgment; exposure stays true
-in later revisions. Both first completion and later amendments remain inspectable.
+New confirmations append revisions; editing a completed case makes an unconfirmed browser
+draft until all criteria are judged and the summary is confirmed again. Navigation,
+checkboxes, P/F and typing never append a completed judgment by themselves.
+
+Legacy `/2` completed rows remain complete and show “旧版整条确认”, without fabricated
+per-criterion pass results. “重新逐项判断” starts a new draft with every criterion
+unjudged, retaining historical reason/remarks and flags. Only a completed new review
+appends `/3`. Legacy unfinished drafts retain checked failures as fail; unchecked
+criteria stay unjudged, and the old overall reason stays separate. Clearing a new
+criterion restores unjudged while retaining its reason.
+
+A journal may contain `/2` and `/3` revisions from the same person, rubric, form and
+review session. Existing raw prefixes, snapshots, cache keys and session identities are
+unchanged. JS/Python accept `/2` rows from annotators 2.3–2.6 and 3.0 (for a legacy
+exposure-only revision); `/3` requires 3.0. `/1` and single-group Open Coding retain
+their previous validation, including nonempty failure reasons, and remain separate.
+First completion must precede prior-judgment exposure; exposure cannot revert. Both
+first completion and later amendments remain inspectable.
 
 ## Prepare, annotate and compare
 
@@ -65,7 +81,7 @@ then copies exact `mixed.json`, exact registered `rubric-form.json`, and an exac
 canonical batch provenance are not copied. A prepared baseline stays fixed even if the
 original journal later gains revisions; prepare another session to choose a newer baseline.
 
-Open the prepared directory using annotator 2.5's “打开批次文件夹”. The HTML requires
+Open the prepared directory using annotator 3.0's “打开批次文件夹”. The HTML requires
 the adjacent `q1-rubric-form.js`; keep both files together. The UI reads only the mixed
 projection, context, form, baseline and new result journal. Browser drafts and remembered
 handles are keyed by batch, annotator, rubric, form and review session. Old cache keys
@@ -75,39 +91,50 @@ the loaded annotator version and current rubric/mode. Opening a folder does not 
 HTML code. Failed folder loads keep the prior batch visible and name the selected folder
 and missing required file; they do not silently create missing review resources or import
 old labels. Selecting only the JSON file does not load the companion review context/form.
-Checkboxes preview pass/fail; “完成本条” confirms it. Reasons and remarks are optional.
-Stars require pass. N2 “待核实” and tags do not fail a mark by themselves. P/F/O and
-source-selection omission actions are disabled in review; S and configured verification
-V remain available. Window notes remain separate optional records.
+The case's rubric squares show unjudged (·), pass (✓) or fail (×), with an outline
+for the current step. One criterion is visible at a time. Help opens by default and
+scrolls within at most 240px (20vh on shorter viewports); optional reasons start at
+two lines. N2 verification is inside N2. The summary contains tags, star, uncovered
+and its optional reason, case remarks and historical judgment. Even after one failure,
+judge every remaining criterion before confirmation. Window notes remain separate.
 
-## Keyboard interaction (annotator 2.5)
+## Keyboard interaction (annotator 3.0)
 
-Outside text inputs, 1–4 toggle Note criteria; 1–3 toggle Highlight criteria. Note
-labels use 5/6/7 (teacher tone, redundancy, too terse). 0 toggles uncovered; V toggles
-the configured verification flag and S toggles a permitted star. Shift+1–4 expands
-or collapses the corresponding criterion explanation (1–3 for Highlights). B toggles
-prior judgment visibility under the same save/exposure gate. Inline hints and the ?
-help panel show the current annotation type's controls.
+| Key | Action outside text inputs |
+|---|---|
+| P / F | Current criterion pass / fail; stay, without focusing reason |
+| R | Current criterion reason; in summary, uncovered reason when enabled |
+| Enter | Judged criterion → next step; last criterion → summary; summary → complete/stay |
+| Shift+Enter | Summary only: complete/save, then next case within this window |
+| [ / ] | Browse previous / next step without changing judgment |
+| 1–4 | Select Note criterion; Highlights use 1–3 |
+| Shift+number | Toggle current explanation; select and open another criterion's explanation |
+| V | Current criterion's first configured verification flag, if present |
+| 5/6/7 | Summary: Note tags (teacher tone, redundancy, too terse) |
+| 0 / S / B | Summary: uncovered / permitted star / saved prior judgment |
+| M / U | Summary case remarks / window remarks |
+| ↑ / ↓, ← / → | Previous/next case, previous/next window; existing boundaries |
+| J / K, Shift+J / K | Source scrolling / page scrolling |
+| ? / Esc | Shortcut help / exit input or help, keeping the current step |
 
-Enter confirms and stays. Shift+Enter confirms then moves one item forward within
-the current window, only after both browser and disk acknowledge the assessment.
-It stays at the last item; use the existing right arrow to change windows. Missing
-connections, failed writes or pending amendments prevent automatic advancement.
-Completion does not reappend an unchanged assessment. A pending completion cannot
-advance or steal focus after navigation (including away and back), changed input,
-focus or opening help. Repeated keydown events do not toggle/complete/reveal; J/K
-and Shift+J/K still support held scrolling.
+Enter on an unjudged criterion prompts P/F and does not assume pass. New cases start
+at the first criterion; revisiting and reloading restore each case's step and draft.
+Single actions ignore held repeats; J/K scrolling still repeats. Text-field Enter
+inserts a newline, Esc keeps the unconfirmed draft, and IME/229 or Cmd/Ctrl/Option
+input is not intercepted. Native button/link/disclosure Enter, Tab and checkbox Space
+remain available. Open Coding retains P/F, density 1/2/3, omission O and existing keys;
+rubric mode still disables omission O.
 
-Text-field Enter remains a newline, Esc returns to reading without confirming the
-rubric draft, and IME/229 or Cmd/Ctrl/Option input is not intercepted. Native button,
-link and summary Enter activation, Tab traversal and checkbox Space remain available.
-R/M/U and arrows keep their Open Coding behavior; P/F/O remain disabled in review.
-Legacy Open Coding keeps P/F, density 1/2/3, omission O and the existing shortcuts.
+Summary completion is shared by button and keyboard. Both browser and disk must
+acknowledge before advancing. It stays at the last case; use → to change windows.
+Missing connections, failed writes or pending amendments prevent advancement.
+Concurrent completion and unchanged revisions do not duplicate submissions. Pending
+work cannot advance or steal focus after changing case/window/step (including away
+and back), input, focus or opening help. Save failures remain visible with retry controls.
 
-Bindings follow rendered configuration order (first four criteria on 1–4, first five
-tags on 5–9, first configured verification flag on V); absent controls have no action.
-Additional configured controls remain available through Tab/Space. The frozen form,
-rubric and journal schemas are unchanged; JS and Python accept 2.3/2.4/2.5 review rows.
+Bindings use configured order (first four criteria 1–4, first five tags 5–9, first
+criterion verification flag V). Other configured controls remain reachable by keyboard.
+Published rubric and frozen form bytes are unchanged; keys live only in the UI.
 
 The old-judgment toggle unlocks only when the current completed assessment is saved in
 both browser and file. Failed/slow writes or a pending amendment keep it locked. Opening
@@ -118,8 +145,12 @@ from accidental priming, not encryption of the local baseline file.
 
 Reports pair each anonymous marginalia ID with the latest completed revision in each
 journal. JSON and Markdown contain the note body or Highlight quote, exact anchor,
-old/new outcomes, old reason, failed criteria, tags/flags, new reason and remarks, and
-exposure/first-completion revision metadata. They group old-pass/new-fail, old-fail/new-pass,
+old/new outcomes, old reason, failed criteria, tags/flags, historical overall new reason,
+criterion assessments and independent reasons, uncovered reason, remarks, and
+exposure/first-completion revision metadata. `assessment_mode` distinguishes `stepwise`
+from `legacy_whole_case`; legacy `criterion_assessments` is null. The `assessments` list
+and Markdown detail section cover every completed case, including unchanged outcomes.
+They group old-pass/new-fail, old-fail/new-pass,
 and rubric-uncovered (which may overlap a disagreement group). Missing new assessments
 remain incomplete, not passes; unmatched baseline labels are counted separately. Reports
 do not read blind keys or group maps and do not analyze omissions or window notes.

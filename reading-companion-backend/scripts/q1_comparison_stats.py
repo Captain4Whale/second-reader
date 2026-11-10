@@ -23,7 +23,7 @@ from scripts.q1_comparison import (  # noqa: E402
     span,
 )
 from scripts.check_iteration_provenance import rubric_identity  # noqa: E402
-from scripts.q1_rubric_form import REVIEW_FIELDS, load_form, validate_assessment  # noqa: E402
+from scripts.q1_rubric_form import REVIEW_FIELDS, REVIEW_SCHEMAS, STEP_FIELDS, load_form, validate_assessment  # noqa: E402
 
 
 def load_bundle(folder):
@@ -136,7 +136,7 @@ def validate_rows(rows, mixed):
     for i, r in enumerate(rows, 1):
         require(isinstance(r, dict), "Journal rows must be objects")
         rt = r.get("record_type")
-        review = r.get("schema") == "q1-mixed-judgment/2"
+        review = r.get("schema") in REVIEW_SCHEMAS
         extra = (
             {"source_quote", "body_text"}
             if rt == "marginalia"
@@ -145,12 +145,12 @@ def validate_rows(rows, mixed):
             else set()
         )
         require(
-            rt in ("marginalia", "omission", "unit_note") and set(r) == base | extra | (REVIEW_FIELDS if review else set()),
+            rt in ("marginalia", "omission", "unit_note") and set(r) == base | extra | ((REVIEW_FIELDS | (STEP_FIELDS if r["schema"] == "q1-mixed-judgment/3" else set())) if review else set()),
             "Unsupported/extra record fields (reveal, preference and legacy records are not mixed judgments)",
         )
         require(
-            r["schema"] in ("q1-mixed-judgment/1", "q1-mixed-judgment/2")
-            and r["annotator_version"] in (("q1-annotator/2.3", "q1-annotator/2.4", "q1-annotator/2.5") if review else ("q1-annotator/2.0", "q1-annotator/2.1", "q1-annotator/2.2", "q1-annotator/2.3", "q1-annotator/2.4", "q1-annotator/2.5"))
+            r["schema"] in ("q1-mixed-judgment/1", *REVIEW_SCHEMAS)
+            and r["annotator_version"] in (("q1-annotator/2.3", "q1-annotator/2.4", "q1-annotator/2.5", "q1-annotator/2.6", "q1-annotator/3.0") if review else ("q1-annotator/2.0", "q1-annotator/2.1", "q1-annotator/2.2", "q1-annotator/2.3", "q1-annotator/2.4", "q1-annotator/2.5", "q1-annotator/2.6", "q1-annotator/3.0"))
             and r["view"] == "mixed"
             and r["batch_id"] == r["comparison_batch_id"] == mixed["batch_id"]
             and type(r["revision"]) is int
@@ -175,6 +175,8 @@ def validate_rows(rows, mixed):
             r["rubric_sha256"] == rubrics[version]["rubric_sha256"],
             "Unknown/draft/changed rubric",
         )
+        if r['schema'] == 'q1-mixed-judgment/3':
+            require(r['annotator_version'] == 'q1-annotator/3.0', 'Stepwise journal/version mismatch')
         if review:
             fv = r['rubric_form_version']
             if fv not in forms:
@@ -262,7 +264,7 @@ def validate_rows(rows, mixed):
 
 
     if review_scopes:
-        require(len(review_scopes) == 1 and all(r['schema'] == 'q1-mixed-judgment/2' for r in rows),
+        require(len(review_scopes) == 1 and all(r['schema'] in REVIEW_SCHEMAS for r in rows),
                 'Review journal must contain one isolated session/form scope')
 
 

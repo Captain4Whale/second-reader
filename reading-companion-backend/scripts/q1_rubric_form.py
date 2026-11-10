@@ -7,6 +7,8 @@ from scripts.check_iteration_provenance import BACKEND, rubric_identity, sha
 IDENTITY_FIELDS = {'rubric_form_version', 'rubric_form_sha256', 'review_session_id'}
 ASSESSMENT_FIELDS = {'failed_criteria', 'tags', 'criterion_flags', 'rubric_uncovered',
                      'review_completed', 'prior_judgment_seen'}
+STEP_FIELDS = {'criterion_assessments', 'uncovered_reason'}
+REVIEW_SCHEMAS = {'q1-mixed-judgment/2', 'q1-mixed-judgment/3'}
 REVIEW_FIELDS = IDENTITY_FIELDS | ASSESSMENT_FIELDS
 
 
@@ -61,16 +63,24 @@ def load_form(version, root=BACKEND):
 
 def validate_assessment(row, form):
     """Validate derived outcome, allowed choices, and all optional flag mirrors."""
-    require(REVIEW_FIELDS <= row.keys(), 'Missing review fields')
+    stepwise = row.get('schema') == 'q1-mixed-judgment/3'
+    fields = ASSESSMENT_FIELDS | (STEP_FIELDS if stepwise else set())
+    require(IDENTITY_FIELDS | fields <= row.keys(), 'Missing review fields')
     require(isinstance(row['review_session_id'], str) and bool(re.fullmatch(r'[a-zA-Z0-9_-]{1,100}', row['review_session_id'])), 'Invalid review session')
     if row['record_type'] != 'marginalia':
-        require(row['record_type'] == 'unit_note' and all(row[k] is None for k in ASSESSMENT_FIELDS), 'Rubric review does not record omissions')
+        require(row['record_type'] == 'unit_note' and all(row[k] is None for k in fields), 'Rubric review does not record omissions')
         return
     spec = form['mark_types'][row['type']]
     for field, allowed in [('failed_criteria', {c['id'] for c in spec['criteria']}), ('tags', {t['id'] for t in spec['tags']})]:
         values = row[field]
         require(isinstance(values, list) and all(isinstance(v, str) for v in values)
                 and len(values) == len(set(values)) and set(values) <= allowed, 'Invalid rubric choices')
+    if stepwise:
+        assessments = row['criterion_assessments']
+        require(isinstance(assessments, dict) and set(assessments) == {c['id'] for c in spec['criteria']}, 'Missing/unknown criterion assessment')
+        require(all(isinstance(a, dict) and set(a) == {'judgment', 'reason'} and a['judgment'] in ('pass', 'fail') and isinstance(a['reason'], str) for a in assessments.values()), 'Invalid/unjudged criterion assessment')
+        require(isinstance(row['uncovered_reason'], str), 'Invalid uncovered reason')
+        require(set(row['failed_criteria']) == {cid for cid, a in assessments.items() if a['judgment'] == 'fail'}, 'Failed criteria mismatch')
     flags = row['criterion_flags']
     require(isinstance(flags, dict), 'Invalid criterion flags')
     verified = False
@@ -87,7 +97,8 @@ def validate_assessment(row, form):
     require(row['needs_verification'] == verified, 'Verification mirror mismatch')
     require(not row['star'] or not form['policy']['star_requires_pass'] or expected == 'pass', 'A failing annotation cannot be starred')
     require(isinstance(row['reason'], str) and isinstance(row['remarks'], str), 'Invalid review text')
-    require(expected != 'fail' or not form['policy']['reason_required_on_fail'] or row['reason'].strip(), 'Failure reason required')
+    reasons_present = (all(row['criterion_assessments'][cid]['reason'].strip() for cid in row['failed_criteria']) and (not row['rubric_uncovered'] or row['uncovered_reason'].strip())) if stepwise else row['reason'].strip()
+    require(expected != 'fail' or not form['policy']['reason_required_on_fail'] or reasons_present, 'Failure reason required')
 
 
 def check_forms(root=BACKEND):

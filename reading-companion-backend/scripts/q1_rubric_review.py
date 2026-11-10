@@ -143,7 +143,7 @@ def read_review(folder):
     )
     require(
         all(
-            r["schema"] == "q1-mixed-judgment/2"
+            r["schema"] in ("q1-mixed-judgment/2", "q1-mixed-judgment/3")
             and all(
                 r[k] == context[k]
                 for k in [
@@ -173,6 +173,7 @@ def comparison(folder):
             first.setdefault(r["record_id"], r)
     groups = {"old_pass_new_fail": [], "old_fail_new_pass": [], "rubric_uncovered": []}
     incomplete, unpaired, unchanged = [], [], 0
+    assessments = []
     for w in mixed["windows"]:
         for m in w["marginalia"]:
             mid = m["marginalia_id"]
@@ -196,6 +197,9 @@ def comparison(folder):
                 criterion_flags=b["criterion_flags"],
                 rubric_uncovered=b["rubric_uncovered"],
                 new_reason=b["reason"],
+                assessment_mode="stepwise" if b["schema"] == "q1-mixed-judgment/3" else "legacy_whole_case",
+                criterion_assessments=b.get("criterion_assessments"),
+                uncovered_reason=b.get("uncovered_reason", ""),
                 remarks=b["remarks"],
                 old_revision=a["revision"] if a else None,
                 new_revision=b["revision"],
@@ -203,6 +207,7 @@ def comparison(folder):
                 first_completed_judgment=first[mid]["judgment"],
                 prior_judgment_seen=b["prior_judgment_seen"],
             )
+            assessments.append(item)
             if b["rubric_uncovered"]:
                 groups["rubric_uncovered"].append(item)
             if not a or a["judgment"] not in ("pass", "fail"):
@@ -231,6 +236,7 @@ def comparison(folder):
             **{k: len(v) for k, v in groups.items()},
         },
         **groups,
+        assessments=assessments,
         incomplete=incomplete,
         unpaired=unpaired,
         notes=[
@@ -288,7 +294,11 @@ def write_report(folder, output):
                 + "；rubric 未覆盖："
                 + str(r["rubric_uncovered"]),
                 "",
-                "新理由：" + r["new_reason"],
+                "旧版整体理由：" + r["new_reason"],
+                "",
+                "逐项判定与理由：" + (json.dumps(r["criterion_assessments"], ensure_ascii=False) if r["criterion_assessments"] is not None else "旧版整条确认，未记录独立逐项理由"),
+                "",
+                "未覆盖说明：" + r["uncovered_reason"],
                 "",
                 "备注：" + r["remarks"],
                 "",
@@ -298,6 +308,19 @@ def write_report(folder, output):
                 + str(r["first_completed_revision"]),
                 "",
             ]
+    lines += ["## 全部已完成条目的逐项判定", ""]
+    for item in report['assessments']:
+        lines += ["### " + item['marginalia_id'] + " · " + item['type'], ""]
+        if item['criterion_assessments'] is None:
+            lines += ["旧版整条确认；未记录独立逐项理由。", ""]
+        else:
+            for cid, assessment in item['criterion_assessments'].items():
+                lines += [cid + "：" + ("过" if assessment['judgment'] == 'pass' else "不过"), "",
+                          "理由：" + assessment['reason'], ""]
+        if item['new_reason']:
+            lines += ["旧版整体理由：" + item['new_reason'], ""]
+        if item['uncovered_reason']:
+            lines += ["未覆盖说明：" + item['uncovered_reason'], ""]
     output.mkdir(parents=True, exist_ok=False)
     (output / "report.json").write_bytes(encode(report))
     (output / "report.md").write_text("\n".join(lines), encoding="utf-8")
