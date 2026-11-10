@@ -182,3 +182,42 @@ The independent copy is `state/experiments/Q1-DIGEST-DIAG-001/files`, with an ad
 and the manifest hash; historical paths/records remain unchanged. Verify with
 `python scripts/q1_private_snapshot.py state/experiments/Q1-DIGEST-DIAG-001`.
 This copy is not a backup; the source worktree must still be preserved.
+
+## Scoring receipts (q1-scoring/1)
+
+`experiments/scorings.jsonl` is append-only: one row per frozen scoring snapshot,
+not per generation run. `series_id` identifies one scoring scope; `scoring_id`
+identifies its snapshot. A later row names the immediately preceding snapshot in
+`supersedes`; it never edits a pending or completed row. Changing products, unit set,
+rubric/form, scorer or review session requires a new series. `comparable_to` records
+explicit comparison scope and limitations, not just a list of unrelated IDs.
+
+Each row binds product/run/group/model/reasoning/prompt identities; a frozen unit
+manifest; rubric/form hashes; human or versioned judge identity; per-journal SHA-256,
+cutoff revision, original timestamp range and annotator versions; exposure context;
+and the statistics implementation and input evidence hashes. Historical prompt release
+hashes remain reconstructed, with unavailable actual request hashes null. Human
+open_coding has no form or criterion counts; those fields are null, never inferred
+from free-text reasons. Published form criteria may overlap on one failed annotation.
+
+Note and Highlight counts stay separate per product group. `total` counts eligible
+outputs, `judged = passed + failed`, and `pass_rate = passed / judged` (null when
+unjudged). Completion and missing counts are explicit. New rubric rows count only
+completed judgments. A pending receipt binds an empty snapshot, not a live journal.
+`registered_at` is the real backfill time; judgment dates remain historical.
+
+Private snapshots/reports live under ignored `state/scorings/`. To validate, recompute,
+or append a fully prepared receipt without changing any annotations:
+
+```sh
+.venv/bin/python scripts/q1_scoring.py --base-ref TRUSTED_PRE_CHANGE_COMMIT
+.venv/bin/python scripts/q1_scoring.py --evidence --base-ref TRUSTED_PRE_CHANGE_COMMIT
+.venv/bin/python scripts/q1_scoring.py --append state/scorings/new-receipt.json
+```
+
+Validation rejects rewritten log prefixes, duplicate IDs, broken snapshot chains,
+unknown releases, mismatched scope/counts and partial JSONL tails. `--evidence` also
+checks all bound bytes and recalculates results from frozen inputs. A plain public
+checkout can validate metadata without private source files; evidence validation
+requires provisioned private data. Path resolution uses the most specific matching
+prefix in append-only `path_mappings`; a later mapping of that same prefix wins.
