@@ -86,3 +86,57 @@ now supplements the earlier OPFS-only acceptance. No form, rubric or historical 
 Validation: 51 focused Python tests, 24 Node tests, affected Python lint and frozen-provenance
 checks pass. The 17 historical traceability warnings remain unchanged. The original
 313-row journal still has the same `28fff5eb…` hash after native-folder recovery.
+
+## 2026-11-10 keyboard interaction (2.5)
+
+Owner-approved keyboard flow is implemented in the existing standalone annotator:
+1–4 criteria (1–3 for Highlights), 5/6/7 Note labels, 0 uncovered, Shift+digits criterion
+help, B prior judgment, Enter completion/stay and Shift+Enter completion/next within
+the current window. Last items stay; existing arrows, J/K, R/M/U, S/V and legacy
+Open Coding controls keep their meanings. Keys are shown inline and in a compact,
+mode/type-aware help dialog that opens at its heading. Configured controls and existing
+mouse handlers remain the source of action semantics; published rubric/form bytes,
+journal schemas and cache identities are unchanged.
+
+Completion is shared by button and keyboard. It checks both save receipts (storage
+queues report failures without rejecting), suppresses concurrent completion and does
+not duplicate unchanged revisions. Pending work cannot navigate or steal focus after
+leaving and returning, editing, switching focus or opening help. Errors keep the item
+visible with a save-state explanation. V now respects held-key suppression; scrolling
+still repeats. Native button/summary Enter, checkbox Space, Tab, text input/newlines,
+IME guards and modifier combinations remain supported. Prior reveal also checks the
+navigation epoch before rendering an asynchronous result.
+
+Version 2.5 is accepted by browser import and Python statistics alongside 2.3/2.4;
+Open Coding version acceptance remains backward compatible. Refresh existing HTML
+pages to load the new code. No model calls, original journal edits or push.
+
+Validation:
+
+- 37 Node storage/form/keyboard tests; 50 focused Python rubric/review/statistics/
+  provenance tests; affected Python Ruff and frozen prompt/provenance checks pass.
+- `make agent-check` passes contract/OpenAPI/frontend checks, including 55 Annotation
+  Pack tests; it retains the same 17 historical traceability warnings.
+- Isolated headed Chromium, synthetic OPFS files: all N/H toggles and reversals,
+  pass/fail and star rules, input/newlines, completion, exposure reveal/collapse,
+  Shift+Enter boundaries, restored unconfirmed amendments, slow disk, duplicate
+  completion, navigation away/back during save, disk/browser failures and retry.
+  Tab/Space/native Enter, held V, mode-specific help and Open Coding P/F/S/V/O
+  were exercised with browser input. Composition/229 guards use simulated events
+  and unit tests; the OS-native IME candidate UI and file picker were not automated.
+- UI-written 2.5 journal successfully produces an offline comparison report: five
+  items, three completed, two incomplete, one old-pass/new-fail difference.
+- Screenshots at 1600×900 and 960×800 cover criteria/labels, expanded explanations,
+  completion/prior judgment, save failure and N/H help. No horizontal overflow,
+  overlapping controls or clipped help; long annotation panels retain page scrolling.
+  Exploratory checks covered focus on completion controls, amendments/reload and
+  late save receipts after navigation.
+- Real DIAG-001 was opened only in an isolated copied browser filesystem for display;
+  five original input-file hashes remained unchanged and no judgments were entered.
+  It still showed 0/81 at verification. Original Edge was not reloaded or operated.
+- Private QA inventory, screenshots, synthetic journal/report and source-hash receipt:
+  `reading-companion-backend/state/q1_rubric_reviews/qa/keyboard-2.5/` (ignored).
+
+This is an interaction change, not a mechanism/product-direction decision; this
+record and the rejudgment protocol capture the behavior, so no decision-log entry
+is needed.

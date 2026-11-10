@@ -570,12 +570,21 @@
     }
     .rubric-choice { display: flex; gap: 8px; align-items: flex-start; margin: 8px 0; }
     .rubric-choice input { margin-top: 4px; flex: none; }
+    kbd { font: 12px ui-monospace, monospace; color: #526052; background: #f4f5f0; border: 1px solid #ccd4c9; border-radius: 3px; padding: 1px 4px; white-space: nowrap; }
     .criterion { padding: 8px 0; border-bottom: 1px solid #dce2d9; }
     .criterion details { margin-left: 24px; font-size: 13px; color: #526052; }
     .criterion pre { white-space: pre-wrap; font: inherit; }
     #priorReview { margin-top: 16px; border-top: 1px solid #dce2d9; padding-top: 12px; }
     #priorContent { white-space: pre-wrap; overflow-wrap: anywhere; margin-top: 8px; }
     #reviewOutcome { font-weight: 600; }
+    #help { width: min(720px, calc(100vw - 48px)); max-height: calc(100vh - 48px); box-sizing: border-box; overflow-y: auto; padding: 20px; border: 1px solid #b5bfb5; border-radius: 8px; color: #24352b; }
+    #help h2 { margin: 0 0 12px; }
+    #help p { font-size: 14px; }
+    #help dl { display: grid; grid-template-columns: 150px minmax(0, 1fr); gap: 6px 12px; font-size: 14px; }
+    #help dl[hidden] { display: none; }
+    #help dt { font-weight: 600; }
+    #help dd { margin: 0; }
+    @media (max-width: 540px) { #help dl { grid-template-columns: 1fr; } #help dd { margin-bottom: 8px; } }
   </style>
   <div id="toolbar">
     <header>
@@ -657,10 +666,10 @@
               <div class="row" id="legacyJudgment"><button id="pass">过 P</button><button id="fail">不过 F</button></div>
               <section id="rubricEditor" hidden>
                 <p id="rubricTitle" class="hint"></p>
-                <p class="hint">勾选不满足的条目；标签不影响通过。检查完后点“完成本条”。</p>
+                <p class="hint">数字键勾选不满足的条目；标签不影响通过。Enter 完成并停留，Shift+Enter 完成并到本窗口下一条。</p>
                 <div id="criteria"></div>
                 <div id="rubricTags" class="row"></div>
-                <label class="rubric-choice"><input id="uncovered" type="checkbox" /> rubric 未覆盖（应当不过，但无对应条目）</label>
+                <label class="rubric-choice"><input id="uncovered" type="checkbox" aria-keyshortcuts="0" /> <span>rubric 未覆盖（应当不过，但无对应条目） <kbd>0</kbd></span></label>
                 <div class="row"><button id="completeReview">完成本条</button><span id="reviewOutcome" role="status"></span></div>
               </section>
               <label class="field" for="reason">理由 R <small id="reasonPolicy">不过时必填</small></label
@@ -704,9 +713,9 @@
   </main>
   <button id="selection" class="primary" hidden>记为漏标 O</button>
   <dialog id="help" aria-labelledby="helpTitle">
-    <h2 id="helpTitle">快捷键</h2>
+    <h2 id="helpTitle" tabindex="-1">快捷键</h2>
     <p>顶部方格按批次顺序对应单元。点击跳转，或用 Tab 聚焦后按 Enter；描边表示当前单元。</p>
-    <p>文本框外使用。文本框内 Enter 换行，Esc 保存并返回。</p>
+    <p>文本框外使用。文本框内 Enter 换行，Esc 返回阅读；重判草稿需明确完成。Tab 切换控件，Space 切换复选框；按钮、链接和折叠标题保留 Enter 操作。</p>
     <dl>
       <dt>↑ / ↓</dt>
       <dd>上一条 / 下一条批注</dd>
@@ -718,8 +727,8 @@
       <dd>整页向下 / 向上滚动（超长侧栏）</dd>
       <dt id="judgmentHelp">P / F</dt>
       <dd id="judgmentHelpText">过 / 不过，判断后停留；F 进入理由框</dd>
-      <dt>S / V</dt>
-      <dd>星标 / 待核实</dd>
+      <dt id="flagHelp">S / V</dt>
+      <dd id="flagHelpText">星标 / 待核实</dd>
       <dt id="densityHelp">1 / 2 / 3</dt>
       <dd>密度多 / 合适 / 少</dd>
       <dt>R / M / U</dt>
@@ -729,15 +738,17 @@
       <dt>? / Esc</dt>
       <dd>查看说明 / 返回阅读</dd>
     </dl>
+    <dl id="reviewHelp" hidden></dl>
     <button id="closeHelp">关闭 Esc</button>
   </dialog>
   <script src="q1-rubric-form.js"></script>
   <script>
     "use strict";
-    const VERSION = "q1-annotator/2.4",
+    const VERSION = "q1-annotator/2.5",
       $ = (id) => document.getElementById(id);
-    const REVIEW_VERSIONS = ["q1-annotator/2.3", VERSION];
+    const REVIEW_VERSIONS = ["q1-annotator/2.3", "q1-annotator/2.4", VERSION];
     const MIXED_VERSIONS = ["q1-annotator/2.0", "q1-annotator/2.1", "q1-annotator/2.2", ...REVIEW_VERSIONS];
+    let reviewCompletion = null, navigationEpoch = 0;
     $("annotatorVersion").textContent = VERSION.split("/")[1];
     function setText(node, text) {
       if (node.textContent !== text) node.textContent = text;
@@ -1681,6 +1692,7 @@
         n.classList.toggle("active", n.dataset.items.split(",").includes(String(session.state.mi)));
       $("editor").hidden = !m;
       if (!m) {
+        renderShortcutHelp();
         return;
       }
       const v = markValue(m);
@@ -1700,6 +1712,7 @@
       setHidden($("priorReview"), !reviewMode());
       setText($("reasonPolicy"), reviewMode() && !session.form.policy.reason_required_on_fail ? "选填" : "不过时必填");
       if (reviewMode()) renderRubricEditor();
+      renderShortcutHelp();
       resizeTextareas();
     }
     function renderRubricEditor() {
@@ -1707,36 +1720,71 @@
       setText($("rubricTitle"), session.form.title + " · " + spec.label + " · 本轮不记录漏标");
       $("criteria").replaceChildren();
       $("rubricTags").replaceChildren();
-      function choice(parent, label, change) {
+      function choice(parent, label, change, key) {
         const line = el("label", "", "rubric-choice"), input = document.createElement("input");
         input.type = "checkbox";
-        line.append(input, el("span", label)); parent.append(line);
+        const text = el("span", label);
+        if (key) {
+          text.append(" ", el("kbd", key));
+          input.dataset.shortcut = key;
+          input.setAttribute("aria-keyshortcuts", key);
+        }
+        line.append(input, text); parent.append(line);
         input.onchange = () => change(input.checked);
         return input;
       }
-      for (const c of spec.criteria) {
+      for (const [i, c] of spec.criteria.entries()) {
+        const key = i < 4 ? String(i + 1) : null;
         const box = el("div", "", "criterion");
-        const input = choice(box, c.id + " " + c.label, checked => changeReviewList("failed_criteria",c.id,checked));
+        const input = choice(box, c.id + " " + c.label, checked => changeReviewList("failed_criteria",c.id,checked), key);
         input.dataset.criterion = c.id;
         const details = document.createElement("details");
-        details.append(el("summary", "判定说明"), el("pre", c.help.replace(/\*\*/g,"")));
+        const summary = el("summary", "判定说明");
+        if (key) {
+          details.dataset.helpKey = key;
+          summary.append(" ", el("kbd", "Shift+" + key));
+          summary.setAttribute("aria-keyshortcuts", "Shift+" + key);
+        }
+        details.append(summary, el("pre", c.help.replace(/\*\*/g,"")));
         box.append(details);
         for (const f of c.flags) {
           const flag = choice(box, f.label + "（不单独导致不过）", checked => {
             const flags = structuredClone(markValue(item()).criterion_flags);
             flags[c.id] = {...flags[c.id], [f.id]:checked};
             draftReview({criterion_flags:flags});
-          });
+          }, !$("criteria").querySelector('[data-shortcut="V"]') && !box.querySelector('[data-shortcut="V"]') ? "V" : null);
           flag.dataset.criterionFlag = c.id; flag.dataset.flag = f.id;
         }
         $("criteria").append(box);
       }
-      for (const tag of spec.tags) {
-        const input = choice($("rubricTags"),tag.label,checked=>changeReviewList("tags",tag.id,checked));
+      for (const [i, tag] of spec.tags.entries()) {
+        const input = choice($("rubricTags"),tag.label,checked=>changeReviewList("tags",tag.id,checked), i < 5 ? String(i + 5) : null);
         input.dataset.rubricTag = tag.id;
       }
       $("priorContent").replaceChildren(); $("priorContent").hidden = true;
       syncReviewControls();
+    }
+    function renderShortcutHelp() {
+      const review = reviewMode();
+      $("reviewHelp").replaceChildren();
+      $("reviewHelp").hidden = !review || !item();
+      setText($("judgmentHelp"), review ? "Enter / Shift+Enter" : "P / F");
+      setText($("judgmentHelpText"), review
+        ? "完成并停留 / 保存成功后到本窗口下一条；末尾停留。P/F/O 禁用。"
+        : "过 / 不过，判断后停留；F 进入理由框");
+      const verify = !review || (!!item() && !!$("criteria").querySelector('[data-shortcut="V"]'));
+      setText($("flagHelp"), verify ? "S / V" : "S");
+      setText($("flagHelpText"), verify ? "星标 / 待核实" : "星标（当前类型没有待核实）");
+      if (!review || !item()) return;
+      const entry = (key, text) => $("reviewHelp").append(el("dt", key), el("dd", text));
+      for (const input of $("rubricEditor").querySelectorAll("[data-shortcut]")) {
+        if (input.dataset.shortcut === "V") continue;
+        entry(input.dataset.shortcut, input.closest("label").querySelector("span").firstChild.textContent + "：勾选 / 取消");
+      }
+      const keys = [...$("criteria").querySelectorAll("[data-help-key]")].map(n=>n.dataset.helpKey);
+      if (keys.length) entry("Shift+" + keys[0] + (keys.length > 1 ? "–" + keys.at(-1) : ""), "展开 / 收起对应判定说明");
+      entry("0", "rubric 未覆盖：勾选 / 取消");
+      entry("B", "查看 / 收起旧判断；须完成且浏览器与文件均已保存");
     }
     function changeReviewList(field, id, checked) {
       const values = markValue(item())[field];
@@ -1760,8 +1808,10 @@
       const done = markStatus(item()) === "已完成";
       const touched = !!session.state.drafts[item().marginalia_id] || done;
       setText($("reviewOutcome"), touched ? (done ? "已完成 · " : "待确认 · ") + (Q1Rubric.outcome(v) === "pass" ? "过" : "不过") : "未标注");
-      setText($("completeReview"), done ? "已完成（修改后再确认）" : "完成本条");
-      $("completeReview").disabled = done || busy;
+      const saving = reviewCompletion?.session === session && reviewCompletion.id === item().marginalia_id;
+      setText($("completeReview"), saving ? "保存中…" : done ? "已完成（修改后再确认）" : "完成本条 Enter");
+      $("completeReview").setAttribute("aria-keyshortcuts", "Enter Shift+Enter");
+      $("completeReview").disabled = done || busy || !!reviewCompletion;
       updatePriorAvailability();
     }
     function canRevealPrior() {
@@ -1775,27 +1825,51 @@
       if (!reviewMode() || !item()) return;
       const allowed = canRevealPrior();
       $("showPrior").disabled = !allowed;
-      setText($("showPrior"), allowed ? ($("priorContent").hidden ? "查看旧判断" : "收起旧判断") : "完成本条并保存后可查看旧判断");
+      setText($("showPrior"), allowed ? ($("priorContent").hidden ? "查看旧判断 B" : "收起旧判断 B") : "完成本条并保存后可查看旧判断 B");
+      $("showPrior").setAttribute("aria-keyshortcuts", "B");
       if (!allowed) { $("priorContent").replaceChildren(); $("priorContent").hidden = true; }
     }
     $("uncovered").onchange = () => draftReview({rubric_uncovered:$("uncovered").checked});
-    $("completeReview").onclick = async () => {
-      if (busy || composing || !reviewMode() || !item()) return;
+    async function completeReview(advance = false) {
+      if (busy || composing || reviewCompletion || !reviewMode() || !item()) return;
+      // Disabling the focused completion button would otherwise move focus to body.
+      if (document.activeElement === $("completeReview")) neutralFocus();
+      const token = {session, id:item().marginalia_id, epoch:navigationEpoch, focus:document.activeElement};
+      reviewCompletion = token;
       try {
-        draftReview({});
-        saveMark(true);
-        await session.writes;
-        await session.browserWrites;
+        if (markStatus(item()) !== "已完成") {
+          draftReview({});
+          if (!saveMark(true)) return;
+        }
         syncReviewControls();
+        const revision = latest("marginalia", token.id)?.revision;
+        await token.session.writes;
+        await token.session.browserWrites;
+        if (session !== token.session || navigationEpoch !== token.epoch || item()?.marginalia_id !== token.id) return;
+        if (session.state.drafts[token.id] || latest("marginalia", token.id)?.revision !== revision) return;
+        if (!canRevealPrior()) {
+          say("本条尚未确认两端保存，已停留。请查看顶部保存状态，恢复同步后再继续。");
+          return;
+        }
+        if (document.activeElement !== token.focus || $("help").open) return;
+        say("");
+        if (advance && unit().marginalia[session.state.mi + 1]) chooseMark(session.state.mi + 1, true);
+        else if (advance) say("本窗口已到最后一条；按 → 切换下一窗口。");
         neutralFocus();
-      } catch (err) { say(err.message); }
-    };
+      } catch (err) {
+        if (session === token.session && navigationEpoch === token.epoch) say(err.message);
+      } finally {
+        reviewCompletion = null;
+        syncReviewControls();
+      }
+    }
+    $("completeReview").onclick = () => completeReview();
     $("showPrior").onclick = async () => {
       if (!canRevealPrior()) return;
       if (!$("priorContent").hidden) {
         $("priorContent").replaceChildren(); $("priorContent").hidden = true; updatePriorAvailability(); return;
       }
-      const s = session, id = item().marginalia_id;
+      const s = session, id = item().marginalia_id, epoch = navigationEpoch, focus = document.activeElement;
       const prior = latest("marginalia", id);
       if (!prior.prior_judgment_seen) {
         const fields = Object.fromEntries([...Q1Rubric.assessmentFields,"marginalia_id","type","source_quote","body_text","judgment","reason","remarks","star","needs_verification"].map(k=>[k,prior[k]]));
@@ -1803,10 +1877,14 @@
         record("marginalia",id,fields,rangeOf(item()),item().original_source_range);
         await s.writes; await s.browserWrites;
       }
-      if (s !== session || item()?.marginalia_id !== id || !canRevealPrior()) return;
+      if (s !== session || navigationEpoch !== epoch || item()?.marginalia_id !== id || !canRevealPrior()) return;
       const old = s.baseline.findLast(r=>r.record_type === "marginalia" && r.record_id === id);
       $("priorContent").textContent = old ? "open_coding：" + ({pass:"过",fail:"不过"}[old.judgment] ?? "未判") + "\n理由：" + old.reason + (old.remarks ? "\n备注：" + old.remarks : "") : "旧快照中没有本条判断。";
       $("priorContent").hidden = false; updatePriorAvailability();
+      if (document.activeElement === focus && !$("help").open) {
+        focusField($("showPrior"));
+        neutralFocus();
+      }
     };
     function renderMiss() {
       if (reviewMode()) { $("misses").replaceChildren(); $("missEditor").hidden = true; return; }
@@ -1878,8 +1956,6 @@
       $("omissionHelp").hidden = reviewMode();
       $("omissionHelp").nextElementSibling.hidden = reviewMode();
       $("chooseFile").hidden = reviewMode();
-      $("judgmentHelp").textContent = reviewMode() ? "完成本条" : "P / F";
-      $("judgmentHelpText").textContent = reviewMode() ? "勾选后点击完成；P/F 在重判模式禁用。理由选填，本轮不记录漏标。" : "过 / 不过，判断后停留；F 进入理由框";
       $("star").disabled = false;
       $("densityHelp").hidden = mixed();
       $("densityHelp").nextElementSibling.hidden = mixed();
@@ -1900,6 +1976,7 @@
         b.setAttribute("aria-pressed", b.dataset.density === latest("density", uid(unit()))?.density);
     }
     function chooseMark(i, scroll) {
+      navigationEpoch++;
       flushEdits();
       session.state.mi = i;
       persist();
@@ -1926,6 +2003,7 @@
     }
     function goUnit(i) {
       if (!units(session.batch)[i] || i === session.state.ui) return;
+      navigationEpoch++;
       flushEdits();
       session.state.ui = i;
       session.state.mi = 0;
@@ -2343,6 +2421,8 @@
       } else {
         flushEdits();
         $("help").showModal();
+        $("helpTitle").focus({preventScroll:true});
+        $("help").scrollTop = 0;
       }
     }
     $("helpButton").onclick = showHelp;
@@ -2353,7 +2433,7 @@
     $("help").addEventListener("cancel", () => {
       setTimeout(neutralFocus, 0);
     });
-    document.addEventListener("keydown", (e) => {
+    function handleKeydown(e) {
       if (
         !session ||
         busy ||
@@ -2379,12 +2459,9 @@
         }
         return;
       }
-      if (e.target.matches("textarea, input:not([type=checkbox]), [contenteditable=true]")) return;
+      if (e.target.closest("textarea, select, input:not([type=checkbox]), [contenteditable]:not([contenteditable=false])")) return;
       const k = e.key.toLowerCase();
       if (reviewMode() && ["p","f","o"].includes(k)) { e.preventDefault(); return; }
-      if (reviewMode() && k === "v") {
-        e.preventDefault(); $("criteria").querySelector("[data-criterion-flag]")?.click(); return;
-      }
       if (k === "j" || k === "k") {
         e.preventDefault();
         const reader = !e.shiftKey && matchMedia("(min-width: 960px)").matches;
@@ -2402,6 +2479,34 @@
         e.preventDefault();
         showHelp();
         return;
+      }
+      if (reviewMode() && item()) {
+        if (e.key === "Enter") {
+          // Do not override native activation of navigation/buttons/disclosures.
+          if (e.target.closest("button, a, summary, [role=button]") && e.target !== $("completeReview")) return;
+          e.preventDefault();
+          void completeReview(e.shiftKey);
+          return;
+        }
+        const digit = /^Digit[1-4]$/.test(e.code) ? e.code.slice(-1) : null;
+        if (e.shiftKey && digit) {
+          e.preventDefault();
+          const details = $("criteria").querySelector('[data-help-key="' + digit + '"]');
+          if (details) { details.open = !details.open; if (details.open) focusField(details.querySelector("summary")); neutralFocus(); }
+          return;
+        }
+        if (!e.shiftKey && /^[0-9]$/.test(k)) {
+          e.preventDefault();
+          const control = k === "0" ? $("uncovered") : $("rubricEditor").querySelector('[data-shortcut="' + k + '"]');
+          control?.click();
+          return;
+        }
+        if (k === "v" || k === "b") {
+          e.preventDefault();
+          if (k === "v") $("criteria").querySelector('[data-shortcut="V"]')?.click();
+          else $("showPrior").click();
+          return;
+        }
       }
       if (e.shiftKey && !["p", "f", "s", "v", "r", "m", "u", "o"].includes(k)) return;
       const actions = { p: "pass", f: "fail", s: "star", v: "verify" };
@@ -2439,7 +2544,8 @@
         }
         neutralFocus();
       }
-    });
+    }
+    document.addEventListener("keydown", handleKeydown);
     $("open").onchange = async (e) => {
       const file = e.target.files[0];
       if (!file || busy) return;

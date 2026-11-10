@@ -65,7 +65,7 @@ then copies exact `mixed.json`, exact registered `rubric-form.json`, and an exac
 canonical batch provenance are not copied. A prepared baseline stays fixed even if the
 original journal later gains revisions; prepare another session to choose a newer baseline.
 
-Open the prepared directory using annotator 2.4's “打开批次文件夹”. The HTML requires
+Open the prepared directory using annotator 2.5's “打开批次文件夹”. The HTML requires
 the adjacent `q1-rubric-form.js`; keep both files together. The UI reads only the mixed
 projection, context, form, baseline and new result journal. Browser drafts and remembered
 handles are keyed by batch, annotator, rubric, form and review session. Old cache keys
@@ -79,6 +79,35 @@ Checkboxes preview pass/fail; “完成本条” confirms it. Reasons and remark
 Stars require pass. N2 “待核实” and tags do not fail a mark by themselves. P/F/O and
 source-selection omission actions are disabled in review; S and configured verification
 V remain available. Window notes remain separate optional records.
+
+## Keyboard interaction (annotator 2.5)
+
+Outside text inputs, 1–4 toggle Note criteria; 1–3 toggle Highlight criteria. Note
+labels use 5/6/7 (teacher tone, redundancy, too terse). 0 toggles uncovered; V toggles
+the configured verification flag and S toggles a permitted star. Shift+1–4 expands
+or collapses the corresponding criterion explanation (1–3 for Highlights). B toggles
+prior judgment visibility under the same save/exposure gate. Inline hints and the ?
+help panel show the current annotation type's controls.
+
+Enter confirms and stays. Shift+Enter confirms then moves one item forward within
+the current window, only after both browser and disk acknowledge the assessment.
+It stays at the last item; use the existing right arrow to change windows. Missing
+connections, failed writes or pending amendments prevent automatic advancement.
+Completion does not reappend an unchanged assessment. A pending completion cannot
+advance or steal focus after navigation (including away and back), changed input,
+focus or opening help. Repeated keydown events do not toggle/complete/reveal; J/K
+and Shift+J/K still support held scrolling.
+
+Text-field Enter remains a newline, Esc returns to reading without confirming the
+rubric draft, and IME/229 or Cmd/Ctrl/Option input is not intercepted. Native button,
+link and summary Enter activation, Tab traversal and checkbox Space remain available.
+R/M/U and arrows keep their Open Coding behavior; P/F/O remain disabled in review.
+Legacy Open Coding keeps P/F, density 1/2/3, omission O and the existing shortcuts.
+
+Bindings follow rendered configuration order (first four criteria on 1–4, first five
+tags on 5–9, first configured verification flag on V); absent controls have no action.
+Additional configured controls remain available through Tab/Space. The frozen form,
+rubric and journal schemas are unchanged; JS and Python accept 2.3/2.4/2.5 review rows.
 
 The old-judgment toggle unlocks only when the current completed assessment is saved in
 both browser and file. Failed/slow writes or a pending amendment keep it locked. Opening
@@ -106,7 +135,7 @@ form within this protocol needs no UI-code change. A protocol expansion (for exa
 annotation type or omission review) requires a separate implementation decision.
 
 ```sh
-node --test tools/q1-annotator-storage.test.cjs tools/q1-rubric-form.test.cjs
+node --test tools/q1-annotator-storage.test.cjs tools/q1-annotator-keyboard.test.cjs tools/q1-rubric-form.test.cjs
 .venv/bin/python -m pytest tests/test_q1_rubric_form.py tests/test_q1_rubric_review.py tests/test_q1_comparison_stats.py tests/test_iteration_provenance.py -q
 .venv/bin/python scripts/check_iteration_provenance.py
 ```

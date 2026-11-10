@@ -21,7 +21,7 @@ def review_row(kind='N'):
     return mixed, row, form
 
 
-@pytest.mark.parametrize('version', ['q1-annotator/2.3', 'q1-annotator/2.4'])
+@pytest.mark.parametrize('version', ['q1-annotator/2.3', 'q1-annotator/2.4', 'q1-annotator/2.5'])
 def test_failure_reason_optional_tags_and_verification_do_not_fail(version):
     mixed, row, form = review_row()
     row['annotator_version'] = version
