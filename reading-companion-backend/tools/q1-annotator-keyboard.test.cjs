@@ -90,7 +90,7 @@ test('composition, modifiers, editable ancestors, repeat and native controls are
   h.key(' ',{target:h.node('checkbox')});
   assert.equal(h.clicks.length,0);assert.equal(h.run('saves'),0);
   h.key('j',{repeat:true});h.key('k',{repeat:true,shiftKey:true});
-  assert.deepEqual(h.moves.map(v=>v[0]),['readerScroll','decisionScroll']);
+  assert.deepEqual(h.moves.map(v=>v[0]),['readerScroll','window']);
   h.run('step=0');h.key('r');assert.equal(h.c.document.activeElement.id,'criterionReason');
   h.key('Escape',{target:editable});assert.equal(h.c.document.activeElement.id,'progress');
 });
@@ -112,21 +112,22 @@ test('scroll keys follow the visible review surface and preserve narrow/Open Cod
   h.node('criterionHelp').open=false;h.key('j',{shiftKey:true});
   h.c.matchMedia=()=>({matches:false});h.key('j',{shiftKey:true});
   h.c.matchMedia=()=>({matches:true});h.run('review=false');h.key('k',{shiftKey:true});
-  assert.deepEqual(h.moves.map(v=>v[0]),['criterionHelpText','readerScroll','decisionScroll','window','window']);
+  assert.deepEqual(h.moves.map(v=>v[0]),['window','readerScroll','window','window','window']);
   h.run('review=true');h.node('criterionHelp').open=true;
   h.node('decisionScroll').scrollHeight=700;h.key('j',{shiftKey:true});
   h.run('hasItem=false');h.key('j',{shiftKey:true});
-  assert.deepEqual(h.moves.slice(-2).map(v=>v[0]),['decisionScroll','decisionScroll']);
+  assert.deepEqual(h.moves.slice(-2).map(v=>v[0]),['window','window']);
 });
-test('U opens window notes and focus reveals the field in its nearest desktop scroller',()=>{
+test('U opens window notes and reveals the field in the page',()=>{
   const h=harness(), seen=[];
   const field=h.node('unitNote');
   field.focus=options=>seen.push(['focus',options.preventScroll]);
-  field.scrollIntoView=options=>seen.push(['scroll',options.block]);
+  h.c.revealReviewElement=field=>seen.push(['reveal',field.id]);
+  h.c.resizeTextareas=()=>{};
   const focusField=vm.runInContext('('+extract('    function focusField(', '    function neutralFocus(')+')',h.c);
   focusField(field);
   assert.equal(h.node('windowNotes').open,true);
-  assert.deepEqual(seen,[['focus',true],['scroll','nearest']]);
+  assert.deepEqual(seen,[['focus',true],['reveal','unitNote']]);
   assert.equal(h.moves.length,0);
 });
 test('completion stays or advances within window, without duplicate revisions',async()=>{
@@ -167,4 +168,18 @@ test('Shift+Enter on the completion button survives disabling the focused contro
   const h=harness();h.c.document.activeElement=h.node('completeReview');
   await h.c.completeReview(true);
   assert.equal(h.run('session.state.mi'),1);assert.equal(h.c.document.activeElement.id,'progress');
+});
+
+
+test('page reveal leaves visible headings in place and clears toolbar/footer for fields',()=>{
+  const h=harness();h.c.window.innerHeight=800;
+  h.node('toolbar').getBoundingClientRect=()=>({bottom:140});
+  h.node('reviewActions').offsetHeight=60;
+  const reveal=vm.runInContext('('+extract('    function revealReviewElement(', '    function focusField(')+')',h.c);
+  reveal({getBoundingClientRect:()=>({top:200,bottom:240,height:40})});
+  assert.equal(h.moves.length,0);
+  reveal({getBoundingClientRect:()=>({top:700,bottom:764,height:64})});
+  assert.equal(h.moves.at(-1)[1],48);
+  reveal({getBoundingClientRect:()=>({top:100,bottom:140,height:40})});
+  assert.equal(h.moves.at(-1)[1],-52);
 });

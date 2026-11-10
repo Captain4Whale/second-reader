@@ -279,7 +279,7 @@ test("mixed records append no group identity and reject reveal/density/provenanc
   h.run('var mark=blind.windows[0].marginalia[0];record("marginalia",mark.marginalia_id,{marginalia_id:mark.marginalia_id,type:mark.type,source_quote:mark.source_quote,body_text:mark.body_text,judgment:"pass",reason:"",remarks:"",star:false,needs_verification:false},mark.original_source_range,mark.original_source_range)');
   await h.run("session.writes");
   const r=JSON.parse(h.run("JSON.stringify(state.rows[0])"));
-  assert.equal(r.annotator_version,"q1-annotator/3.1");
+  assert.equal(r.annotator_version,"q1-annotator/3.2");
   h.c.older={...r,annotator_version:"q1-annotator/2.0"};
   assert.equal(h.run('parseJournal(JSON.stringify(older)+"\\n",batch).length'),1);
   assert.equal(r.view,"mixed"); assert.equal(r.comparison_batch_id,h.c.blind.batch_id);
@@ -383,16 +383,17 @@ test('failed review write cannot unlock prior judgments; retry preserves complet
   assert.equal(h.run('state.rows.length'),1);
 });
 
-test('3.1 appends stepwise revisions after an unchanged 3.0 journal prefix',async()=>{
+for (const version of ['3.0','3.1']) test('3.2 appends after an unchanged '+version+' journal prefix',async()=>{
   const h=reviewHarness();
   h.run('record("marginalia",m.marginalia_id,fields,null,m.original_source_range)');await h.run('session.writes');
-  assert.equal(h.run('state.rows[0].annotator_version'),'q1-annotator/3.1');
-  h.run('state.rows[0].annotator_version="q1-annotator/3.0";disk=JSON.stringify(state.rows[0])+"\\n";var prefix=disk;session=makeSession(batch,state,handle)');
+  assert.equal(h.run('state.rows[0].annotator_version'),'q1-annotator/3.2');
+  h.c.previousVersion="q1-annotator/"+version;
+  h.run('state.rows[0].annotator_version=previousVersion;disk=JSON.stringify(state.rows[0])+"\\n";var prefix=disk;session=makeSession(batch,state,handle)');
   await h.run('reconcile(session)');
   h.run('record("marginalia",m.marginalia_id,{...fields,remarks:"amended"},null,m.original_source_range)');await h.run('session.writes');
   assert.equal(h.run('disk.startsWith(prefix)'),true);
   assert.equal(h.run('parseJournal(disk,batch,journalScope(session)).length'),2);
-  assert.equal(h.run('state.rows[1].annotator_version'),'q1-annotator/3.1');
+  assert.equal(h.run('state.rows[1].annotator_version'),'q1-annotator/3.2');
 });
 
 test('review exposure cannot start true or revert; legacy rows cannot enter review journal',async()=>{

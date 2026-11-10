@@ -35,7 +35,7 @@
       "lane": "mechanism_eval",
       "priority": "high",
       "detail_ref": "docs/tasks/q1-rubric-annotator-2026-11-09.md",
-      "acceptance_ref": "docs/tasks/q1-rubric-annotator-2026-11-09.md#2026-11-10-layout-31",
+      "acceptance_ref": "docs/tasks/q1-rubric-annotator-2026-11-09.md#2026-11-11-natural-layout-32",
       "truth_refs": [
         "reading-companion-backend/experiments/rubric-review.md",
         "reading-companion-backend/experiments/comparison.md",
@@ -44,7 +44,7 @@
       "decision_refs": [],
       "job_refs": [],
       "blocked_by": [],
-      "next_action": "Owner refreshes default main workspace annotator 3.1 and selects the existing isolated review folder, then continues q1-v0 review. Layout work is a local commit only, no push. Schema/form/cache identities and 3.0/older compatibility retained. No model work; omission-limit conflict deferred.",
+      "next_action": "Refresh default main workspace annotator 3.2 and select the existing review folder. Natural reading flow replaces fixed-height panes; 3.0/3.1 records and form/cache identities remain compatible. Local commit only, no push; no models or original annotation edits.",
       "evidence_refs": [
         "reading-companion-backend/rubric/q1-v0.form.json",
         "reading-companion-backend/tools/q1-annotator.html",
@@ -54,9 +54,10 @@
         "reading-companion-backend/state/q1_rubric_reviews/Q1-DIGEST-DIAG-001-q1-v0/preparation.json",
         "reading-companion-backend/tools/q1-rubric-form.test.cjs",
         "reading-companion-backend/tests/test_q1_rubric_form.py",
-        "reading-companion-backend/state/q1_rubric_reviews/qa/layout-3.1/inventory.md"
+        "reading-companion-backend/state/q1_rubric_reviews/qa/layout-3.1/inventory.md",
+        "reading-companion-backend/state/q1_rubric_reviews/qa/layout-3.2/inventory.md"
       ],
-      "last_updated": "2026-11-10",
+      "last_updated": "2026-11-11",
       "last_updated_by": "codex"
     },
     {

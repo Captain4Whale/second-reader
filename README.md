@@ -545,7 +545,7 @@ The subsequently authorized C-only recovery uses `.venv/bin/python -m eval.atten
 
 ## Q1 manual error analysis
 
-Annotator 3.1 supports window-aligned mixed blind comparisons and stepwise rubric
+Annotator 3.2 supports window-aligned mixed blind comparisons and stepwise rubric
 rejudgment. For q1-v0, follow [the rejudgment protocol](reading-companion-backend/experiments/rubric-review.md):
 open the prepared review folder using “打开批次文件夹”. Keep `q1-rubric-form.js` next to
 the HTML. A second row of squares shows each criterion as unjudged / pass / fail;
@@ -553,13 +553,14 @@ only the selected criterion and its optional reason are shown. Every criterion m
 be judged before confirming the case in “汇总”. Labels, star, uncovered, case remarks
 and prior judgment live in that summary. This pass has no omission controls.
 
-Review layout: ≥1440px uses source / current annotation / decision columns at
-44% / 26% / 30%; 960–1439px stacks annotation above decision to the right of source;
-<960px uses a single natural-scrolling column. Desktop content scrolls locally and
-previous/next/completion stay in the bottom action area. Window progress and collapsed
-remarks are below the annotation; **U** expands/focuses remarks, “已填写” marks existing
-content. **Shift+J/K** scrolls desktop review decisions (or their explanation when the
-form fits), while narrow screens and Open Coding keep page scrolling.
+Review layout: ≥1440px uses source / annotation / decision columns at 44% / 26% / 30%;
+960–1439px places annotation followed by decision to the right of source; <960px uses
+one column. Quotes, Notes, explanations and prior judgments expand naturally with the
+page; reasons/remarks grow as typed. Only desktop source has independent scrolling.
+A wide-screen annotation sticks only when it fits. Desktop previous/next/completion
+uses a sticky bottom bar with space to reveal the last content and focused field.
+Window notes remain collapsed until **U** opens/focuses them. **R/M** reveal the relevant
+field; **Shift+J/K** scrolls the page. Refresh an already-open page to load 3.2.
 
 Outside text fields, **P/F** marks the current criterion pass/fail and stays;
 **R** focuses its optional reason. **Enter** advances only after a judgment, then
@@ -576,11 +577,11 @@ New confirmations append `q1-mixed-judgment/3` with independent criterion reason
 Old completed rows remain “旧版整条确认”; explicitly restart to make a new stepwise
 assessment. Old drafts retain checked failures; unchecked criteria remain unjudged.
 Historical overall reasons are retained separately. No journal or cache identity is
-rewritten. Annotator 3.1 is available in the default workspace `main`: open
+rewritten. Annotator 3.2 is available in the default workspace `main`: open
 `reading-companion-backend/tools/q1-annotator.html` from the main workspace and refresh
 any already-open page. Opening a batch folder does not update the HTML code. The original
 2.6 compatibility edits are backed up in a local stash; compatible behavior and tests
-are retained, along with 3.0 journal compatibility.
+are retained, along with 3.0/3.1 journal compatibility.
 
 The legacy open_coding instructions below retain their original behavior.
 
@@ -664,7 +665,7 @@ Run configuration lookup: `_mechanisms/attentional_v2/runtime/run_configuration.
 
 Q1 prompt releases load exact version files and require private few-shot assets before API startup or reader tests. Provisioning, offline recovery and immutable-version checks: [iteration provenance](reading-companion-backend/experiments/README.md).
 
-Q1 iteration checks (offline): `cd reading-companion-backend && .venv/bin/python scripts/check_prompt_releases.py && .venv/bin/python scripts/check_iteration_provenance.py`. The historical experiment baseline remains in `experiments/log.jsonl`; computed results are append-only in `experiments/scorings.jsonl`. Do not manually fill or edit old log rows. Use this branch's annotator 3.1 for new `weijiang` / rubric-attributed append-only judgments. Existing first-batch journals remain in the Q1 annotation worktree and are bound by prefix hashes. Runtime standard traces now include complete logical request hashes; each invocation retains private samples and a base-commit-bound dirty patch under `_runtime/provenance/`.
+Q1 iteration checks (offline): `cd reading-companion-backend && .venv/bin/python scripts/check_prompt_releases.py && .venv/bin/python scripts/check_iteration_provenance.py`. The historical experiment baseline remains in `experiments/log.jsonl`; computed results are append-only in `experiments/scorings.jsonl`. Do not manually fill or edit old log rows. Use this branch's annotator 3.2 for new `weijiang` / rubric-attributed append-only judgments. Existing first-batch journals remain in the Q1 annotation worktree and are bound by prefix hashes. Runtime standard traces now include complete logical request hashes; each invocation retains private samples and a base-commit-bound dirty patch under `_runtime/provenance/`.
 
 Q1 评分总表：[experiments/INDEX.md](reading-companion-backend/experiments/INDEX.md)。
 主表只列每次评分的最新快照；历史快照、模型/单元/尺子、标注哈希和可比性见折叠小节。

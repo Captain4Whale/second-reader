@@ -34,7 +34,7 @@ Last updated: `2026-11-10`
 
 - `TASK-Q1-SCORING-LEDGER` — `done`: three scoring scopes, merged DIAG closure, latest-only Chinese index, independent artifact copy and verified local backup/restore. [Index](../../reading-companion-backend/experiments/INDEX.md), [receipt](q1-scoring-ledger-2026-11-10.md).
 
-- `TASK-Q1-RUBRIC-ANNOTATOR` — `done`, mechanism_eval / high. Annotator 3.1 separates source / annotation / decision, keeps desktop actions visible and preserves 3.0 stepwise criteria/save gates, `/3` schema and older journals. Implemented on default `main`; local commit only, no push. Real DIAG-001 read-only/hash-checked, 0/81; owner rejudgment pending. Omission-limit conflict deferred. [Execution](q1-rubric-annotator-2026-11-09.md#2026-11-10-layout-31).
+- `TASK-Q1-RUBRIC-ANNOTATOR` — `done`, mechanism_eval / high. Annotator 3.2 removes fixed-height reading panes; content expands with the page and desktop actions stay accessible and preserves 3.0 stepwise criteria/save gates, `/3` schema and older journals. Implemented on default `main`; local commit only, no push. Real DIAG-001 read-only/hash-checked, 0/81; owner rejudgment pending. Omission-limit conflict deferred. [Execution](q1-rubric-annotator-2026-11-09.md#2026-11-11-natural-layout-32).
 
 - `TASK-Q1-RUBRIC-V0-RELEASE` — `done`, mechanism_eval / high. Exact rubric publication, preserved frozen draft, 38 verified example exclusions and append-only release registration. [Execution](q1-rubric-v0-release-2026-11-09.md).
 

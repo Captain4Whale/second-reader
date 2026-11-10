@@ -592,7 +592,7 @@
     #legacyReasonText { white-space:pre-wrap; max-height:120px; overflow:auto; font:inherit; }
     #criterionOutcome { font-weight:600; }
 
-    /* Rubric workspace: one DOM/control per field, three independent reading surfaces. */
+    /* Natural rubric reading flow; only source scrolls independently. */
     .rubric-layout #casePanel { grid-area: case; }
     .rubric-layout .panel { padding: 14px; }
     .rubric-layout h2 { margin: 0 0 10px; font-size: 19px; }
@@ -618,44 +618,30 @@
     .rubric-layout #reviewActions button { padding:6px 9px; }
     .rubric-layout #decisionScroll { overflow-wrap:anywhere; }
     .rubric-layout #caseExtras { margin-top:12px; }
+    .rubric-layout #caseScroll, .rubric-layout #decisionScroll,
+    .rubric-layout #windowNotes, .rubric-layout #priorContent,
+    .rubric-layout #legacyReasonText, .rubric-layout #criterionHelp pre {
+      height:auto; max-height:none; overflow:visible;
+    }
+    .rubric-layout #criterionReason, .rubric-layout #uncoveredReason,
+    .rubric-layout #memo, .rubric-layout #unitNote { min-height:64px; max-height:none; overflow:hidden; }
+    .rubric-layout #rubricTitle { display:none; }
     @media (min-width:960px) {
-      .rubric-layout { height:calc(100dvh - var(--reader-top, 140px) - 12px); align-items:stretch;
-        gap:12px; grid-template-columns:minmax(0, 44fr) minmax(0, 56fr);
-        grid-template-rows:minmax(150px, 42fr) minmax(0, 58fr);
+      .rubric-layout { align-items:start; gap:12px;
+        grid-template-columns:minmax(0,44fr) minmax(0,56fr);
         grid-template-areas:"source case" "source review"; }
       .rubric-layout .judgments { display:contents; }
-      .rubric-layout article { position:static; height:100%; }
-      .rubric-layout #casePanel, .rubric-layout #reviewPanel { display:flex; flex-direction:column; min-height:0; }
-      .rubric-layout #caseScroll { flex:1; min-height:0; overflow-y:auto; overscroll-behavior:contain; }
-      .rubric-layout #windowNotes { flex:none; max-height:45%; overflow-y:auto; }
-      .rubric-layout #reviewPanel > h2 { flex:none; }
-      .rubric-layout #editor { display:flex; flex:1; flex-direction:column; min-height:0; }
-      .rubric-layout #editor[hidden], .rubric-layout #caseContent[hidden] { display:none; }
-      .rubric-layout #rubricSteps, .rubric-layout #reviewActions { flex:none; }
-      .rubric-layout #decisionScroll { flex:1; min-height:0; overflow-y:auto; overscroll-behavior:contain; }
-      .rubric-layout textarea { scroll-margin:8px; }
-      .rubric-layout #editor:not(.summary-mode) #decisionScroll { display:flex; flex-direction:column; }
-      .rubric-layout #rubricEditor:not([hidden]) { display:flex; flex-direction:column; flex:1; min-height:0; }
-      .rubric-layout #criteria:not([hidden]) { display:flex; flex-direction:column; flex:1; min-height:350px; }
-      .rubric-layout #criteria > * { flex-shrink:0; }
-      .rubric-layout #criterionHelp[open] { display:flex; flex-direction:column; flex:1; min-height:90px; }
-      .rubric-layout #criterionHelp::details-content { display:flex; flex-direction:column; flex:1; min-height:0; overflow:hidden; }
-      .rubric-layout #criterionHelpText { flex:1; min-height:0; max-height:none; overflow-y:auto; }
-      .rubric-layout #criterionReason { flex:none; height:64px; min-height:64px; }
-      .rubric-layout #memo { height:64px; overflow-y:auto; }
-      .rubric-layout #priorContent { max-height:220px; overflow-y:auto; }
-    }
-    @media (min-width:960px) and (max-width:1439px) {
+      .rubric-layout article { position:sticky; top:var(--reader-top); }
+      .rubric-layout #reviewActions { position:sticky; bottom:0; z-index:2;
+        padding:10px 0; margin-top:16px; box-shadow:0 -8px 12px var(--paper); }
+      .rubric-layout #editor { padding-bottom:12px; }
       .rubric-layout #caseNavigation h2 small { display:inline; margin-left:8px; }
-    }
-    @media (min-width:960px) and (max-width:1439px) and (max-height:700px) {
-      .rubric-layout { grid-template-rows:minmax(130px,40fr) minmax(0,60fr); }
-      .rubric-layout #judgmentHeading { display:none; }
-      .rubric-layout textarea { scroll-margin:0; }
     }
     @media (min-width:1440px) {
       .rubric-layout { grid-template-columns:minmax(0,44fr) minmax(0,26fr) minmax(0,30fr);
-        grid-template-rows:minmax(0,1fr); grid-template-areas:"source case review"; }
+        grid-template-areas:"source case review"; }
+      .rubric-layout #casePanel.fits-viewport { position:sticky; top:var(--reader-top); }
+      .rubric-layout #caseNavigation h2 small { display:block; margin-left:0; }
     }
     @media (max-width:959px) {
       .rubric-layout { grid-template-columns:minmax(0,1fr); grid-template-areas:"source" "case" "review"; }
@@ -861,9 +847,9 @@
   <script src="q1-rubric-form.js"></script>
   <script>
     "use strict";
-    const VERSION = "q1-annotator/3.1",
+    const VERSION = "q1-annotator/3.2",
       $ = (id) => document.getElementById(id);
-    const REVIEW_VERSIONS = ["q1-annotator/2.3", "q1-annotator/2.4", "q1-annotator/2.5", "q1-annotator/2.6", "q1-annotator/3.0", VERSION];
+    const REVIEW_VERSIONS = ["q1-annotator/2.3", "q1-annotator/2.4", "q1-annotator/2.5", "q1-annotator/2.6", "q1-annotator/3.0", "q1-annotator/3.1", VERSION];
     const MIXED_VERSIONS = ["q1-annotator/2.0", "q1-annotator/2.1", "q1-annotator/2.2", ...REVIEW_VERSIONS];
     let reviewCompletion = null, navigationEpoch = 0;
     $("annotatorVersion").textContent = VERSION.split("/")[1];
@@ -1022,7 +1008,7 @@
           !["marginalia", "omission", "unit_note"].includes(r.record_type) ||
           !strictRange(r.original_source_range) || !Number.isFinite(Date.parse(r.timestamp)))
         throw Error("混合判断包含无效字段或来源信息，已停止同步。");
-      if (r.schema === "q1-mixed-judgment/3" && !["q1-annotator/3.0", VERSION].includes(r.annotator_version)) throw Error("逐项判断版本不匹配。");
+      if (r.schema === "q1-mixed-judgment/3" && !["q1-annotator/3.0", "q1-annotator/3.1", VERSION].includes(r.annotator_version)) throw Error("逐项判断版本不匹配。");
       if (review) {
         if (!scope || !REVIEW_VERSIONS.includes(r.annotator_version) || [...Q1Rubric.identityFields,"annotator_id","rubric_version","rubric_sha256"].some(k=>r[k] !== scope.context[k])) throw Error("重判日志身份不匹配，禁止混入其他会话或旧判断。");
         Q1Rubric.validateAssessment(r, scope.form);
@@ -1855,6 +1841,7 @@
       persist();
       renderRubricEditor(); renderShortcutHelp();
       neutralFocus();
+      revealReviewElement(summaryStep() ? $("rubricSteps") : $("criterionTitle"));
     }
     function nextReviewStep() {
       if (summaryStep()) return;
@@ -1920,7 +1907,7 @@
     }
     function renderShortcutHelp() {
       const review = reviewMode();
-      setText($("pageScrollHelp"), review ? "桌面：判定区向下 / 向上滚动（表单已完整显示时滚动说明）；窄屏：整页滚动" : "整页向下 / 向上滚动（超长侧栏）");
+      setText($("pageScrollHelp"), review ? "整页向下 / 向上滚动（批注与判定连续展开）" : "整页向下 / 向上滚动（超长侧栏）");
       $("reviewHelp").replaceChildren(); $("reviewHelp").hidden = !review || !item();
       setText($("judgmentHelp"), "P / F");
       setText($("judgmentHelpText"), review ? "当前条件过 / 不过，判完停留；理由选填，R 进入。" : "过 / 不过，判断后停留；F 进入理由框");
@@ -2190,6 +2177,7 @@
       editor();
       progress();
       if (scroll) revealMark();
+      if (reviewMode()) revealReviewElement($("caseNavigation"));
     }
     function revealMark() {
       const mark = $("source").querySelector("mark.active");
@@ -2531,7 +2519,6 @@
     function resizeTextareas() {
       for (const field of document.querySelectorAll("textarea")) {
         if (!field.getClientRects().length) continue;
-        if (reviewMode() && ["criterionReason", "uncoveredReason", "memo", "unitNote"].includes(field.id)) { field.style.height = ""; continue; }
         field.style.height = "auto";
         const border = field.offsetHeight - field.clientHeight;
         field.style.height = field.scrollHeight + border + "px";
@@ -2543,10 +2530,17 @@
         $("toolbar").getBoundingClientRect().height + 12 + "px",
       );
     }
-    new ResizeObserver(updateReaderTop).observe($("toolbar"));
+    function updateCaseSticky() {
+      const available = window.innerHeight - $("toolbar").getBoundingClientRect().height - 24;
+      $("casePanel").classList.toggle("fits-viewport", reviewMode() && $("casePanel").offsetHeight <= available);
+    }
+    new ResizeObserver(() => { updateReaderTop(); updateCaseSticky(); }).observe($("toolbar"));
+    new ResizeObserver(updateCaseSticky).observe($("casePanel"));
+    $("windowNotes").addEventListener("toggle", () => { resizeTextareas(); updateCaseSticky(); });
     window.addEventListener("resize", () => {
       resizeTextareas();
       updateReaderTop();
+      updateCaseSticky();
     });
     updateReaderTop();
     document.addEventListener("input", (e) => {
@@ -2554,13 +2548,21 @@
     });
     let editTimer,
       composing = false;
+    function revealReviewElement(field) {
+      const rect = field.getBoundingClientRect();
+      const top = $("toolbar").getBoundingClientRect().bottom + 12;
+      const actions = matchMedia("(min-width:960px)").matches ? $("reviewActions").offsetHeight + 24 : 12;
+      const bottom = window.innerHeight - actions;
+      if (rect.top < top || rect.top > bottom || rect.height > bottom - top)
+        window.scrollBy({top:rect.top - top, behavior:"instant"});
+      else if (rect.bottom > bottom)
+        window.scrollBy({top:rect.bottom - bottom, behavior:"instant"});
+    }
     function focusField(field) {
       if (field.id === "unitNote" && reviewMode()) $("windowNotes").open = true;
+      if (reviewMode()) resizeTextareas();
       field.focus({ preventScroll: true });
-      if (reviewMode() && matchMedia("(min-width: 960px)").matches) {
-        field.scrollIntoView({block:"nearest", inline:"nearest", behavior:"instant"});
-        return;
-      }
+      if (reviewMode()) { revealReviewElement(field); return; }
       const rect = field.getBoundingClientRect();
       const top = $("toolbar").getBoundingClientRect().bottom + 12;
       if (rect.top < top || rect.top > window.innerHeight - 60)
@@ -2681,12 +2683,7 @@
       if (k === "j" || k === "k") {
         e.preventDefault();
         const reader = !e.shiftKey && matchMedia("(min-width: 960px)").matches;
-        const decision = e.shiftKey && reviewMode() && matchMedia("(min-width: 960px)").matches;
-        const pane = $("decisionScroll");
-        const help = decision && item() && !summaryStep() && $("criterionHelp").open &&
-          pane.scrollHeight <= pane.clientHeight + 1;
-        const target = reader ? $("readerScroll") : decision ?
-          (help ? $("criterionHelpText") : pane) : window;
+        const target = reader ? $("readerScroll") : window;
         target.scrollBy({
           top:
             (k === "j" ? 1 : -1) *

@@ -296,3 +296,41 @@ Validation:
 Operator behavior is documented in the root README and `experiments/rubric-review.md`.
 No API/frontend integration, mechanism or evaluation policy changed; their stable docs
 and decision log need no update for this bounded annotator presentation change.
+
+## 2026-11-11 natural layout 3.2
+
+Owner feedback showed that 3.1's viewport-height constraint left the actual Note and
+rules squeezed beneath navigation, particularly at medium widths/display enlargement.
+3.2 prioritizes readable content and permits page scrolling. Implemented directly on
+main from `adebf77`; one local commit, no push.
+
+- Wide 44/26/30 columns remain. Medium layout uses source left, annotation then decision
+  right with natural row heights. Mobile stays single-column. Source remains sticky and
+  independently scrollable; the wide annotation sticks only when its full height fits.
+- Removed nested reading scrollers and height caps for quotes, Notes, explanations,
+  expanded prior text and remarks. Textareas grow. Desktop actions stick at the viewport
+  bottom within the editor; flow space and focus offsets keep final content reachable.
+- R/M/U reveal page fields; condition/case navigation reveals the appropriate heading.
+  J/K still scrolls desktop source, Shift+J/K scrolls the page. No cloned controls.
+- Version 3.2 accepts 3.0/3.1 and earlier records. Schema `/3`, form/hash, cache identities,
+  assessment rules, completion/save gates and Open Coding remain unchanged.
+
+Validation: 47 Node tests, 82 focused Python tests and affected Ruff checks passed.
+Browser acceptance used playwright-interactive with isolated synthetic OPFS batches at
+1920×1080, 1600×900, 1440×900, 1280×800, 390×844, and effective 125%/150% desktop
+viewports (1280×720 / 1067×600). Checked full quote/Note/help, long reason/prior, fit-only
+sticky behavior, Note/Highlight summary and prior gate, empty/cross-boundary windows,
+Open Coding switching, unique controls, toolbar stability, IME composition, refresh
+recovery and injected browser/disk failures with retry. Chinese composition was CDP
+simulated, not OS candidate-menu automation; native folder picker was substituted with
+isolated real filesystem handles. No model calls.
+
+Real DIAG-001 was displayed from an exact isolated copy without test judgments; all five
+original input/journal hashes remain unchanged and the journal still has zero completed
+rows. Private screenshots, measurements, synthetic revisions and hash receipts live in
+`reading-companion-backend/state/q1_rubric_reviews/qa/layout-3.2/` (ignored).
+
+This is an annotator presentation correction, with no API, rubric, mechanism or evaluation
+policy change. README/protocol/current task records are updated; no decision-log change
+is needed. Frozen-asset checks and `make agent-check` passed; the latter retains the
+same 17 historical traceability warnings, with no new issues.

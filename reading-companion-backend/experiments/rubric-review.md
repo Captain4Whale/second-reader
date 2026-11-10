@@ -58,8 +58,8 @@ criterion restores unjudged while retaining its reason.
 
 A journal may contain `/2` and `/3` revisions from the same person, rubric, form and
 review session. Existing raw prefixes, snapshots, cache keys and session identities are
-unchanged. JS/Python accept `/2` rows from annotators 2.3–2.6, 3.0 and 3.1 (for a legacy
-exposure-only revision); `/3` accepts 3.0 and 3.1. `/1` and single-group Open Coding retain
+unchanged. JS/Python accept `/2` rows from annotators 2.3–2.6, 3.0, 3.1 and 3.2 (for a legacy
+exposure-only revision); `/3` accepts 3.0, 3.1 and 3.2. `/1` and single-group Open Coding retain
 their previous validation, including nonempty failure reasons, and remain separate.
 First completion must precede prior-judgment exposure; exposure cannot revert. Both
 first completion and later amendments remain inspectable.
@@ -81,7 +81,7 @@ then copies exact `mixed.json`, exact registered `rubric-form.json`, and an exac
 canonical batch provenance are not copied. A prepared baseline stays fixed even if the
 original journal later gains revisions; prepare another session to choose a newer baseline.
 
-Open the prepared directory using annotator 3.1's “打开批次文件夹”. The HTML requires
+Open the prepared directory using annotator 3.2's “打开批次文件夹”. The HTML requires
 the adjacent `q1-rubric-form.js`; keep both files together. The UI reads only the mixed
 projection, context, form, baseline and new result journal. Browser drafts and remembered
 handles are keyed by batch, annotator, rubric, form and review session. Old cache keys
@@ -92,35 +92,39 @@ HTML code. Failed folder loads keep the prior batch visible and name the selecte
 and missing required file; they do not silently create missing review resources or import
 old labels. Selecting only the JSON file does not load the companion review context/form.
 The case's rubric squares show unjudged (·), pass (✓) or fail (×), with an outline
-for the current step. One criterion is visible at a time. Help opens by default and uses the remaining desktop decision space with its own
-scrollbar; narrow screens retain the 240px / 20vh limit. Optional reasons start at
-two lines and long reasons scroll inside the field. N2 verification is inside N2. The summary contains tags, star, uncovered
+for the current step. One criterion is visible at a time. Help opens by default and
+expands to its full content height. Reasons and remarks grow with their text; they do
+not use capped internal reading areas. N2 verification is inside N2. The summary contains tags, star, uncovered
 and its optional reason, case remarks and historical judgment. Even after one failure,
 judge every remaining criterion before confirmation. Window notes remain separate.
 
-## Layout (annotator 3.1)
+## Layout (annotator 3.2)
 
-- At ≥1440 CSS pixels, source / current annotation / decision use 44% / 26% / 30%
-  of the available width (excluding gaps). Each panel uses the actual viewport space
-  below the measured toolbar. Source text, complete quotes/Notes and long explanations
-  remain available through local scrolling. Source typography is unchanged.
-- At 960–1439px, source stays left; annotation and decision stack on the right with
-  local scrolling. Previous/next criterion and completion remain in the decision's
-  fixed bottom action area. Short desktop viewports omit the duplicate decision heading.
-- Below 960px, source → annotation → decision use natural page scrolling.
-- Window progress is at the annotation panel's bottom; window remarks start collapsed.
-  “已填写” identifies an existing note. **U** opens and focuses the same note field.
-  **R/M** reveal the appropriate decision field in its own scroller. Each field has one
-  DOM control; changing mode/size retains drafts and does not bind another handler.
-- Summary-only tags, star, remarks and gated prior viewing retain the 3.0 workflow.
-  Expanded prior text scrolls locally; the completion action stays visible on desktop.
-  Open Coding retains its previous layout, density/omission behavior and page scrolling.
+Readability takes priority over fitting one viewport. Long content extends the page;
+source/body font sizes and all judgment semantics stay unchanged.
 
-This is a presentation/version change only: `q1-mixed-judgment/3`, registered form/hash,
-cache identities, explicit criterion outcomes and completion/save gates are unchanged.
-Existing 3.0 journals can be read and receive new 3.1 revisions without prefix edits.
+- ≥1440 CSS pixels: source / annotation / decision retain 44% / 26% / 30% widths.
+  Desktop source stays sticky with independent scrolling. A wide-screen annotation
+  panel sticks only when its complete height fits below the toolbar; long annotations
+  scroll naturally with the page.
+- 960–1439px: source left; annotation followed by decision on the right, with natural
+  heights. No 42%/58% row split or nested reading scrollers. <960px uses single-column
+  source → annotation → decision page flow.
+- Complete quotes, Notes, explanations, expanded prior judgments and window remarks
+  are never height-capped. Textareas grow. Help remains initially open and collapsible.
+- P/F follows the current criterion heading. Desktop previous/next/completion lives in
+  a sticky bottom action bar with trailing flow space; focused fields clear both the
+  toolbar and actions. On narrow screens actions remain in ordinary flow.
+- Window remarks start collapsed and show “已填写” when present; U expands/focuses them.
+  R/M reveal their fields in the page. Switching cases reveals annotation navigation;
+  switching criteria scrolls only when the target heading is outside the usable view.
+- Every field has one DOM control. Reflow does not duplicate handlers or discard drafts.
+  Open Coding keeps its previous layout and density/omission behavior.
 
-## Keyboard interaction (annotator 3.1)
+`q1-mixed-judgment/3`, form/hash, caches, explicit outcomes, completion and prior-view
+save gates are unchanged. Existing 3.0/3.1 journal prefixes remain intact when appending 3.2.
+
+## Keyboard interaction (annotator 3.2)
 
 | Key | Action outside text inputs |
 |---|---|
@@ -137,7 +141,7 @@ Existing 3.0 journals can be read and receive new 3.1 revisions without prefix e
 | M / U | Summary case remarks / expand and focus window remarks |
 | ↑ / ↓, ← / → | Previous/next case, previous/next window; existing boundaries |
 | J / K | Source scrolling; narrow screens scroll the page |
-| Shift+J / K | Desktop review: decision scrolling (explanation when the whole form already fits); narrow screens and Open Coding: page scrolling |
+| Shift+J / K | Page scrolling in all modes; no nested review scrolling |
 | ? / Esc | Shortcut help / exit input or help, keeping the current step |
 
 Enter on an unjudged criterion prompts P/F and does not assume pass. New cases start
