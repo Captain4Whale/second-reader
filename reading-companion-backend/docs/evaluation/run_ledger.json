@@ -1,6 +1,6 @@
 {
   "schema_version": 1,
-  "updated_at": "2026-11-08T06:04:56.398937Z",
+  "updated_at": "2026-11-08T09:39:02.151226Z",
   "entries": [
     {
       "run_id": "attentional_v2_excerpt_surface_v1_1_judged_20260406",
@@ -4006,7 +4006,7 @@
       "date": "2026-11-08",
       "surface": "fixed_history_digest_pilot",
       "lane": "mechanism_eval",
-      "status": "review_pending",
+      "status": "completed",
       "mechanisms": [
         "attentional_v2"
       ],
@@ -4024,7 +4024,9 @@
         "A1_summary": "reading-companion-backend/state/experiments/q1_digest_fixed_history_20261108/A1-full/summary.json",
         "A1_validation": "reading-companion-backend/state/experiments/q1_digest_fixed_history_20261108/A1-full/validation-summary.json",
         "baseline_product_checks": "reading-companion-backend/state/experiments/q1_digest_fixed_history_20261108/A1-full/baseline-product-checks.json",
-        "blind_batch_validation": "reading-companion-backend/state/experiments/q1_digest_fixed_history_20261108/continuation/blind-batch-validation.json"
+        "blind_batch_validation": "reading-companion-backend/state/experiments/q1_digest_fixed_history_20261108/continuation/blind-batch-validation.json",
+        "blind_annotation_statistics": "reading-companion-backend/state/experiments/q1_digest_fixed_history_20261108/reveal-001/statistics.json",
+        "reveal_receipt": "reading-companion-backend/state/experiments/q1_digest_fixed_history_20261108/reveal-001/reveal-receipt.json"
       },
       "job_ids": [
         "bgjob_q1_digest_fixed_history_20261108_A1_pilot",
@@ -4032,10 +4034,12 @@
       ],
       "report_paths": [
         "docs/tasks/q1-digest-replay-2026-11-08.md",
-        "reading-companion-backend/state/experiments/q1_digest_fixed_history_20261108/A1-full/report.md"
+        "reading-companion-backend/state/experiments/q1_digest_fixed_history_20261108/A1-full/report.md",
+        "reading-companion-backend/state/experiments/q1_digest_fixed_history_20261108/reveal-001/report.md",
+        "reading-companion-backend/state/experiments/q1_digest_fixed_history_20261108/reveal-001/notes.md"
       ],
       "catalog_status": "not_cataloged",
-      "notes": "A1 only completed all 16 registered units: approved pilot reused, 15 new requests; original 34 marks (9 H/25 N), A1 31 (10 H/21 N). 105 memory-line occurrences match original trace IDs/order and audit text. All 473 original output files unchanged; all anchors exact. A1 156855 input/7647 output tokens including pilot; actual billed cost unknown. Descriptive comparison only; A2/B not started and require owner confirmation. A1/B mixed batch now packaged under diag-001; the earlier A1-only checkpoint wording describes its initial acceptance gate."
+      "notes": "A1 only completed all 16 registered units: approved pilot reused, 15 new requests; original 34 marks (9 H/25 N), A1 31 (10 H/21 N). 105 memory-line occurrences match original trace IDs/order and audit text. All 473 original output files unchanged; all anchors exact. A1 156855 input/7647 output tokens including pilot; actual billed cost unknown. Descriptive comparison only; A2/B not started and require owner confirmation. A1/B mixed batch now packaged under diag-001; the earlier A1-only checkpoint wording describes its initial acceptance gate. Owner completed 81-mark A1/B annotation; authorized snapshot-bound reveal registered as Q1-DIGEST-DIAG-001-REVEAL-001. Earlier blind-review-pending statements are historical. Human judgments complete; no evidence-catalog promotion. Model/effort and judgment-standard limitations are in the report."
     },
     {
       "run_id": "q1_digest_fixed_history_20261108_A2",
@@ -4069,7 +4073,7 @@
       "date": "2026-11-08",
       "surface": "fixed_history_digest_diagnostic",
       "lane": "mechanism_eval",
-      "status": "review_pending",
+      "status": "completed",
       "mechanisms": [
         "attentional_v2"
       ],
@@ -4081,17 +4085,21 @@
       "summary_paths": {
         "completion": "reading-companion-backend/state/experiments/q1_digest_fixed_history_20261108/B-full/summary.json",
         "manifest_checks": "reading-companion-backend/state/experiments/q1_digest_fixed_history_20261108/continuation/manifest-checks.json",
-        "blind_batch_validation": "reading-companion-backend/state/experiments/q1_digest_fixed_history_20261108/continuation/blind-batch-validation.json"
+        "blind_batch_validation": "reading-companion-backend/state/experiments/q1_digest_fixed_history_20261108/continuation/blind-batch-validation.json",
+        "blind_annotation_statistics": "reading-companion-backend/state/experiments/q1_digest_fixed_history_20261108/reveal-001/statistics.json",
+        "reveal_receipt": "reading-companion-backend/state/experiments/q1_digest_fixed_history_20261108/reveal-001/reveal-receipt.json"
       },
       "job_ids": [
         "bgjob_q1_digest_fixed_history_20261108_A2_B"
       ],
       "report_paths": [
         "reading-companion-backend/state/experiments/q1_digest_fixed_history_20261108/continuation/report.md",
-        "docs/tasks/q1-digest-replay-2026-11-08.md"
+        "docs/tasks/q1-digest-replay-2026-11-08.md",
+        "reading-companion-backend/state/experiments/q1_digest_fixed_history_20261108/reveal-001/report.md",
+        "reading-companion-backend/state/experiments/q1_digest_fixed_history_20261108/reveal-001/notes.md"
       ],
       "catalog_status": "not_cataloged",
-      "notes": "B completed 16 fixed units at clean ca4e28c; exact original memory IDs/order/text and A1 prompt equality verified; per-unit physical requests and quota retries retained. No memory updates/settlement or original artifacts changed. B content and mark statistics withheld pending blind annotation. A1/B mixed batch now packaged under diag-001; the earlier A1-only checkpoint wording describes its initial acceptance gate."
+      "notes": "B completed 16 fixed units at clean ca4e28c; exact original memory IDs/order/text and A1 prompt equality verified; per-unit physical requests and quota retries retained. No memory updates/settlement or original artifacts changed. B content and mark statistics withheld pending blind annotation. A1/B mixed batch now packaged under diag-001; the earlier A1-only checkpoint wording describes its initial acceptance gate. Owner completed 81-mark A1/B annotation; authorized snapshot-bound reveal registered as Q1-DIGEST-DIAG-001-REVEAL-001. Earlier blind-review-pending statements are historical. Human judgments complete; no evidence-catalog promotion. Model/effort and judgment-standard limitations are in the report."
     },
     {
       "run_id": "q1_full_bovary_d414030_20261103",

@@ -173,3 +173,12 @@ marked `reconstructed_after_run`, and actual request hashes remain null. Do not
 substitute today's patch or a saved pre-gateway manifest for an observed old request.
 The one-time `register_q1_baseline.py` preserves the construction procedure and refuses
 to overwrite existing registration; it is not a command to resample or regenerate.
+
+## Independent DIAG-001 artifact copy
+
+The former main-workspace DIAG path is still a symlink into the replay worktree.
+The independent copy is `state/experiments/Q1-DIGEST-DIAG-001/files`, with an adjacent
+`manifest.json`. `Q1-DIGEST-DIAG-001-LOCATION-001` appends old-to-new path mappings
+and the manifest hash; historical paths/records remain unchanged. Verify with
+`python scripts/q1_private_snapshot.py state/experiments/Q1-DIGEST-DIAG-001`.
+This copy is not a backup; the source worktree must still be preserved.

@@ -1,6 +1,6 @@
 # Fixed-history Digest rerun diagnostic
 
-Status: waiting for owner review of the completed 16-unit A1 diagnostic, 2026-11-08.
+Status: A1/B blind annotation revealed; waiting for owner review of the report and next experiment decision, 2026-11-08. Earlier sections below are chronological checkpoints.
 Branch: `codex/q1-digest-replay`, base `b5fa38c` (comparison import contract present).
 
 ## Authorized scope
@@ -393,3 +393,53 @@ request hashes as part of its anonymous projection and is not a provenance recei
 Private checks: `state/experiments/q1_digest_fixed_history_20261108/continuation/preregistration-001/`
 contains `request-hash-audit.json` and `registration-receipt.json`. No quality judgment
 or threshold decision was computed; the prior-exposure limitation remains in effect.
+
+
+## Completed blind annotation and authorized reveal
+
+At 2026-11-08T09:39:02.151226+00:00, appended the unique linked row
+`Q1-DIGEST-DIAG-001-REVEAL-001`; the prior 13,118 log bytes remain identical.
+The frozen 313-row / revision-313 journal (81/81 marks judged) has SHA-256
+`28fff5eb3b0269d69c46d46b66f67f654dcc1ac6703e07edd4cbec4f627235b5`.
+Statistics use `weijiang / open_coding`, latest revision per record, with an
+independent recomputation. Annotation starts after the preregistration timestamp.
+
+Read-only version audit: `81a0a5d` (2.1) restores explicit Highlight/Note labels in
+mixed navigation; `96c5a15` (2.2) avoids redundant DOM updates and stabilizes the
+save-status width to fix typing-related flicker. Both accept old journals; neither
+changes judgment fields nor adds group/model/original identifiers. Mixed projection
+field/value scans and storage tests find no explicit group leak. UI cues were not
+constant throughout annotation: final marks retain 3 records from 2.0, 57 from 2.1,
+and 21 from 2.2. Familiarity/style cues remain outside that metadata guarantee.
+The replay checkout fast-forwarded to main's existing `96c5a15` to use its
+cross-version statistics parser; no annotator/comparison implementation was edited.
+
+A1 (`gpt-6-luna`, medium): Note 4/21 (19.05%), Highlight 9/10 (90%), no stars.
+B (`gpt-6-sol`, high): Note 21/30 (70%), Highlight 15/20 (75%), four Note stars.
+B−A1 Note rate is +50.95 percentage points: the preregistered ≥25-point threshold
+is met within this sample. The same 16 units' original first annotations were
+Note 3/25 (12%), Highlight 3/9 (33.33%). Different generated output populations
+prevent attributing these rate changes entirely to judgment-standard drift.
+Six exactly identical Highlight quotes/anchors permit a narrower check: three
+change fail→pass, three remain unchanged. No identical Note body+anchor pair exists.
+This establishes some rejudgment inconsistency, not its cause.
+
+Private evidence: `reading-companion-backend/state/experiments/q1_digest_fixed_history_20261108/reveal-001/`
+contains `report.md`, the grouped 51-Note `notes.md` (no source excerpts), raw statistics,
+independent analysis, version diffs, frozen current/baseline journals, scripts and
+append receipt. Baseline attribution uses the immutable legacy-context journal-prefix
+hashes; all 16 units/mark IDs/source identities/coordinates were verified.
+
+The result does not establish that prompt is the dominant cause: there is no prompt
+arm, and B changes model plus reasoning effort together. Prior exposure and UI changes
+also limit interpretation. Mechanism/default changes are deferred until the owner
+reviews individual reasons and chooses the next controlled experiment. No new model
+calls, A2 blind annotation, evidence-catalog promotion or push. This is a bounded
+sample-level diagnostic, not a new stable mechanism requirement or direction decision;
+no stable mechanism or decision-log change is warranted.
+
+Reveal validation: 18 comparison/provenance tests and 15 annotator-storage tests
+passed; full ledger/provenance and `make agent-check` passed (55 contract tests,
+17 pre-existing traceability warnings). Final source journal still matches the frozen
+snapshot. The report hash and unchanged prior experiment-log prefix were rechecked;
+private `validation.json` binds report/scripts/input fingerprints. No tool code changed.

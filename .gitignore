@@ -63,3 +63,8 @@ reading-companion-backend/state/rubric_examples/
 # Keep analysis reports docs, but ignore generated logs
 reading-companion-backend/analysis_reports/*.log
 reading-companion-backend/analysis_reports/test_runs/
+
+# Independent DIAG artifact copies, scoring snapshots and restore verification.
+reading-companion-backend/state/experiments/Q1-DIGEST-DIAG-001/
+reading-companion-backend/state/scorings/
+reading-companion-backend/state/backup_verification/

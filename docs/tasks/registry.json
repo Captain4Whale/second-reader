@@ -61,7 +61,7 @@
     {
       "id": "TASK-Q1-DIGEST-REPLAY",
       "title": "Fixed-history Digest replay and model diagnostic",
-      "status": "waiting",
+      "status": "done",
       "lane": "mechanism_eval",
       "priority": "high",
       "detail_ref": "docs/tasks/q1-digest-replay-2026-11-08.md",
@@ -76,7 +76,7 @@
         "bgjob_q1_digest_fixed_history_20261108_A2_B"
       ],
       "blocked_by": [],
-      "next_action": "Owner annotates retained A1/B mixed.json under open_coding criteria and Note-rate thresholds in Q1-DIGEST-DIAG-001-PREREG-001, linked to DIAG-001. No reveal or further generation; only consider A2 blind annotation if the owner-specified intermediate condition is met.",
+      "next_action": "Blind review and reveal completed; consolidate scoring receipts and owner-approved closure. Continue q1-v0 as a separate scoring session.",
       "evidence_refs": [
         "reading-companion-backend/eval/attentional_v2/fixed_history_digest.py",
         "reading-companion-backend/tests/test_fixed_history_digest.py",
@@ -88,7 +88,7 @@
         "reading-companion-backend/state/experiments/q1_digest_fixed_history_20261108/continuation/blind-batch-validation.json",
         "reading-companion-backend/state/experiments/q1_digest_fixed_history_20261108/continuation/preregistration-001/request-hash-audit.json"
       ],
-      "last_updated": "2026-11-08",
+      "last_updated": "2026-11-10",
       "last_updated_by": "codex"
     },
     {
