@@ -32,11 +32,11 @@ Last updated: `2026-11-11`
 
 ## Done
 
-- `TASK-Q1-RUBRIC-V1-RELEASE` — `done`: exact v1 rubric, 38 verified examples, new immutable form and fresh DIAG-001 review session. v0 preserved; N2/N4 judgments cannot be pooled. Two append-only log rows include owner Highlight clarification; INDEX now displays the addendum and keeps the old closure explicitly historical. [Receipt](q1-rubric-v1-release-2026-11-11.md).
+- `TASK-Q1-RUBRIC-V1-RELEASE` — `done`: exact v1 rubric, 38 verified examples, new immutable form and DIAG-001 review session, now 81/81 complete with an anonymous open_coding comparison and exact snapshots. v0 preserved; N2/N4 judgments cannot be pooled. Two append-only log rows include owner Highlight clarification; INDEX now displays the addendum and keeps the old closure explicitly historical. [Receipt](q1-rubric-v1-release-2026-11-11.md).
 
 - `TASK-Q1-SCORING-LEDGER` — `done`: three scoring scopes, merged DIAG closure, latest-only Chinese index, independent artifact copy and verified local backup/restore. [Index](../../reading-companion-backend/experiments/INDEX.md), [receipt](q1-scoring-ledger-2026-11-10.md).
 
-- `TASK-Q1-RUBRIC-ANNOTATOR` — `done`, mechanism_eval / high. Annotator 3.2 removes fixed-height reading panes; content expands with the page and desktop actions stay accessible and preserves 3.0 stepwise criteria/save gates, `/3` schema and older journals. Implemented on default `main`; local commit only, no push. Real DIAG-001 read-only/hash-checked, 0/81; owner rejudgment pending. Omission-limit conflict deferred. [Execution](q1-rubric-annotator-2026-11-09.md#2026-11-11-natural-layout-32).
+- `TASK-Q1-RUBRIC-ANNOTATOR` — `done`, mechanism_eval / high. Annotator 3.2 removes fixed-height reading panes; content expands with the page and desktop actions stay accessible and preserves 3.0 stepwise criteria/save gates, `/3` schema and older journals. Implemented on default `main`; local commit only, no push. The earlier layout check was 0/81; the subsequent v1 review is now complete, with its anonymous comparison linked in TASK-Q1-RUBRIC-V1-RELEASE. Omission-limit conflict deferred. [Execution](q1-rubric-annotator-2026-11-09.md#2026-11-11-natural-layout-32).
 
 - `TASK-Q1-RUBRIC-V0-RELEASE` — `done`, mechanism_eval / high. Exact rubric publication, preserved frozen draft, 38 verified example exclusions and append-only release registration. [Execution](q1-rubric-v0-release-2026-11-09.md).
 

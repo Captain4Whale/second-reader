@@ -20,14 +20,16 @@
       ],
       "job_refs": [],
       "blocked_by": [],
-      "next_action": "Owner reviews the new q1-v1 session. Preserve stopped v0; never pool or migrate v0/v1 criterion judgments. No model or prompt work authorized.",
+      "next_action": "Owner inspects the completed 81/81 anonymous v1-versus-open_coding report. Preserve v0 and all raw judgments; no group reveal, automatic scoring receipt or mechanism/prompt changes.",
       "evidence_refs": [
         "reading-companion-backend/rubric/q1-v1.verification.md",
         "reading-companion-backend/rubric/q1-v1.form.json",
         "reading-companion-backend/experiments/log.jsonl",
         "reading-companion-backend/state/q1_rubric_reviews/Q1-DIGEST-DIAG-001-q1-v1/preparation.json",
         "reading-companion-backend/scripts/q1_experiment_index.py",
-        "reading-companion-backend/tests/test_q1_experiment_index.py"
+        "reading-companion-backend/tests/test_q1_experiment_index.py",
+        "reading-companion-backend/state/q1_rubric_reviews/reports/Q1-DIGEST-DIAG-001-q1-v1-vs-open-coding-20261111T135153Z/manifest.json",
+        "reading-companion-backend/state/q1_rubric_reviews/reports/Q1-DIGEST-DIAG-001-q1-v1-vs-open-coding-20261111T135153Z/summary.md"
       ],
       "last_updated": "2026-11-11",
       "last_updated_by": "codex"
@@ -49,7 +51,7 @@
       ],
       "job_refs": [],
       "blocked_by": [],
-      "next_action": "Use the new q1-v1 review session; preserve the stopped v0 scope and its existing scoring receipt. Append future scoring snapshots only when explicitly requested.",
+      "next_action": "Inspect the completed anonymous q1-v1 comparison; preserve existing receipts. A future scoring registration requires an explicit request.",
       "evidence_refs": [
         "reading-companion-backend/experiments/INDEX.md",
         "reading-companion-backend/experiments/scorings.jsonl",

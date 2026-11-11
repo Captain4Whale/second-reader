@@ -94,3 +94,43 @@ scope remains Note-only; scores, raw logs and DEC-162 are unchanged.
 Validation: 12 focused index/scoring tests passed, Ruff, generated INDEX consistency and
 trusted-base provenance checks; protected log/scoring/decision bytes compared with
 `556a852`. No new decision or evaluation run is introduced; no push.
+
+## 2026-11-11 completed anonymous review comparison
+
+The owner completed 81/81 v1 assessments. Ran the existing `q1_rubric_review.py report`
+against the original v1 session; no group/model keys were loaded and no annotations,
+historical logs or scoring receipts were written. The report is descriptive human
+rejudgment comparison only; no mechanism/prompt recommendations or modifications
+are inferred from criterion counts.
+
+Report directory (main workspace, ignored):
+`reading-companion-backend/state/q1_rubric_reviews/reports/Q1-DIGEST-DIAG-001-q1-v1-vs-open-coding-20261111T135153Z`
+
+- `report.md` / `report.json`: standard per-annotation comparison.
+- `summary.md` / `summary.json`: disagreement split by rubric-example membership,
+  criterion/tag/flag counts, exact original reason strings grouped by frequency.
+- `snapshot/`: exact context, form, mixed projection, baseline and review journals.
+- `manifest.json`: input/output SHA-256 values, source session and code commit.
+- `summarize.py`: reproducible calculation and checks; `example-membership.json`
+  contains anonymous membership only, without group/run/model mapping.
+
+38 published example identities were projected to `(batch_id, marginalia_id)` only;
+36 occur in this session and two are outside it. The report retains examples and
+non-examples, rather than excluding examples as in held-out judge evaluation. All
+counts use latest completed marginalia rows; omissions and window notes are excluded.
+Reasons are grouped by exact string within each criterion without trimming or semantic
+merging; empty reasons remain empty and are not inferred from old reasons or remarks.
+
+Review snapshot SHA-256:
+`259a4c704174478003457a46b4ceb27d7ecb8c726e1ae3d842ebbcfb2fe5c1db`.
+Baseline snapshot SHA-256:
+`28fff5eb3b0269d69c46d46b66f67f654dcc1ac6703e07edd4cbec4f627235b5`.
+Report JSON SHA-256:
+`421d3eff253de35a4bfad9d76c26f645c60c19815e19d8b0147307171fe17747`.
+
+Validation: 81 paired completed judgments, no missing/unpaired cases; disagreement
+counts independently recomputed from raw snapshots; all manifest hashes and source
+files verified unchanged before/after reporting. New raw inputs remain private under
+the existing ignored review-session territory. No model/eval job was launched, no new
+run ledger or experiment/scoring row was added, and no rubric or runtime behavior
+changed. This is a reporting completion, not a new decision-log entry.
