@@ -25,7 +25,9 @@
         "reading-companion-backend/rubric/q1-v1.verification.md",
         "reading-companion-backend/rubric/q1-v1.form.json",
         "reading-companion-backend/experiments/log.jsonl",
-        "reading-companion-backend/state/q1_rubric_reviews/Q1-DIGEST-DIAG-001-q1-v1/preparation.json"
+        "reading-companion-backend/state/q1_rubric_reviews/Q1-DIGEST-DIAG-001-q1-v1/preparation.json",
+        "reading-companion-backend/scripts/q1_experiment_index.py",
+        "reading-companion-backend/tests/test_q1_experiment_index.py"
       ],
       "last_updated": "2026-11-11",
       "last_updated_by": "codex"

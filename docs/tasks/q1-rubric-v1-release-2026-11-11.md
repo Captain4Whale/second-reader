@@ -54,11 +54,10 @@ publication and an explicit append-only correction requested by the owner, not n
 mechanism/product direction. The addendum and stable evaluation doc carry the clarification.
 Old scores/thresholds and exclusion of H rates from the existing decision remain intact.
 The generated INDEX is refreshed from the logs; no new scoring receipt is fabricated.
-Its existing generator hardcodes the earlier Highlight drift sentence and displays
-experiment_closure conclusions only, so it lists the new addendum ID but does not
-render its correction text. The current clarification lives in log.jsonl and the
-stable evaluation/current-state docs. Generator changes are deferred as outside this
-configuration/publication task; the v0 pending scoring receipt remains historical.
+At initial publication the generator still hardcoded the earlier Highlight drift
+sentence and displayed experiment_closure conclusions only. The owner subsequently
+authorized the narrow generator follow-up below; the v0 pending scoring receipt
+remains historical.
 
 ## Validation
 
@@ -82,3 +81,16 @@ model/eval job was launched, so no new job or run-ledger entry is needed.
 Local check setup reuses the main-workspace Python environment and frontend dependencies
 through ignored links, and copies private prompt assets plus job-registry metadata into
 ignored state. No service, system setting or source workspace dependency was changed.
+
+## 2026-11-11 INDEX clarification follow-up
+
+The owner authorized a separate local commit to correct the generator. The table
+now shows the owner-verification conclusion from the append-only log, and each
+relevant experiment detail includes all three case findings. The original closure
+conclusion remains verbatim in an explicitly historical fold below the addendum.
+No correction is invented when an older log has no addendum. Existing decision
+scope remains Note-only; scores, raw logs and DEC-162 are unchanged.
+
+Validation: 12 focused index/scoring tests passed, Ruff, generated INDEX consistency and
+trusted-base provenance checks; protected log/scoring/decision bytes compared with
+`556a852`. No new decision or evaluation run is introduced; no push.

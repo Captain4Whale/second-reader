@@ -32,7 +32,7 @@ Last updated: `2026-11-11`
 
 ## Done
 
-- `TASK-Q1-RUBRIC-V1-RELEASE` — `done`: exact v1 rubric, 38 verified examples, new immutable form and fresh DIAG-001 review session. v0 preserved; N2/N4 judgments cannot be pooled. Two append-only log rows include owner Highlight clarification. [Receipt](q1-rubric-v1-release-2026-11-11.md).
+- `TASK-Q1-RUBRIC-V1-RELEASE` — `done`: exact v1 rubric, 38 verified examples, new immutable form and fresh DIAG-001 review session. v0 preserved; N2/N4 judgments cannot be pooled. Two append-only log rows include owner Highlight clarification; INDEX now displays the addendum and keeps the old closure explicitly historical. [Receipt](q1-rubric-v1-release-2026-11-11.md).
 
 - `TASK-Q1-SCORING-LEDGER` — `done`: three scoring scopes, merged DIAG closure, latest-only Chinese index, independent artifact copy and verified local backup/restore. [Index](../../reading-companion-backend/experiments/INDEX.md), [receipt](q1-scoring-ledger-2026-11-10.md).
 

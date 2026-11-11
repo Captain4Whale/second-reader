@@ -57,6 +57,25 @@ def safe(value):
     return str(value).replace("|", "\\|").replace("\n", "<br>")
 
 
+def verification_notes(logs, *, include_cases=False):
+    parts = []
+    for entry in logs:
+        if entry.get("record_type") != "owner_verification_addendum":
+            continue
+        parts += [
+            "",
+            f"**所有者补充核对 · {entry['date']}**（`{entry['experiment_id']}`）",
+            "",
+            entry["conclusion"],
+        ]
+        if include_cases:
+            parts += [""] + [
+                f"- {case['book']} `{case['unit_id']}`：{case['finding']}"
+                for case in entry.get("results", {}).get("cases", [])
+            ]
+    return parts
+
+
 def details(row, logs):
     sid = row["scoring_id"]
     ruler = row["rubric"]
@@ -137,7 +156,19 @@ def details(row, logs):
         (r for r in reversed(logs) if r.get("record_type") == "experiment_closure"),
         None,
     )
-    if closing:
+    verification = verification_notes(logs, include_cases=True)
+    parts += verification
+    if closing and verification:
+        parts += [
+            "",
+            "<details>",
+            "<summary>原收尾记录（历史原文；后续核对见上文）</summary>",
+            "",
+            closing["conclusion"],
+            "",
+            "</details>",
+        ]
+    elif closing:
         parts += ["", closing["conclusion"]]
     parts += ["", "</details>", ""]
     return "\n".join(parts)
@@ -151,7 +182,11 @@ def render(root=BACKEND):
         "# 实验与评分总表",
         "",
         "主表每个评分范围只显示最新快照；通过率 = 通过数 / 已判数。含原文的证据仅存本机忽略目录。",
-        "DIAG-001 的 Highlight 标准有漂移，仅保留数字追溯；决策只依据 Note。",
+        "DIAG-001 的 Highlight 数字保留用于追溯；现有决策仍只依据 Note。",
+    ]
+    for logs in grouped.values():
+        output += verification_notes(logs)
+    output += [
         "",
         "| 评分／单元 | 产物配置 | 尺子／评分者 | Note 通过率 | Highlight 通过率 | 状态 |",
         "|---|---|---|---|---|---|",

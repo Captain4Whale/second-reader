@@ -94,10 +94,12 @@ and [separate review sessions](rubric-review.md#published-v1-and-separate-sessio
 Its 38-example exclusion list has exactly the same identities as v0; the two former
 N2 counterexamples now belong to N1. Use the list matching the chosen rubric version.
 The stopped v0 review and the fresh v1 review must not share criterion judgments.
-The current INDEX generator retains its historical Highlight-drift wording and frozen
-v0 pending score. Read the owner correction in log row
-`Q1-DIGEST-DIAG-001-HIGHLIGHT-RECONCILIATION-001` and the current review protocol;
-publication does not rewrite old scores or change that generator.
+The INDEX shows the owner correction from
+`Q1-DIGEST-DIAG-001-HIGHLIGHT-RECONCILIATION-001` above the table and the three case
+findings in the experiment details. Original closure text is explicitly folded as
+historical text when owner verification addenda are present. Conclusions are read
+from the append-only log, not hardcoded in the generator; the frozen v0 pending
+score and all historical records remain unchanged.
 
 Model-generated Note bodies and human reasons without separately copied book passages
 may be tracked in a rubric, as explicitly authorized for q1-v0. Book passages, anchors,

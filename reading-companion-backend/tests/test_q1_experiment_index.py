@@ -42,3 +42,60 @@ def test_experiment_addenda_merge_and_bad_links_reject():
     assert len(families(rows)["E"]) == 3
     with pytest.raises(ValueError, match="linkage"):
         families([{"experiment_id": "E", "amends_experiment_id": "missing"}])
+
+
+def test_owner_correction_is_visible_and_original_closure_is_historical(scoring):  # noqa: F811
+    root, score = scoring
+    (root / "experiments/scorings.jsonl").write_text(json.dumps(score) + "\n")
+    closing = {
+        "experiment_id": "C",
+        "amends_experiment_id": "E",
+        "record_type": "experiment_closure",
+        "conclusion": "旧结论：标准漂移。",
+    }
+    addendum = {
+        "experiment_id": "A",
+        "amends_experiment_id": "C",
+        "record_type": "owner_verification_addendum",
+        "date": "2026-11-11",
+        "conclusion": "不是标准漂移，是规则未写明加一次误操作。",
+        "results": {
+            "cases": [
+                {"book": "测试书", "unit_id": "u1", "finding": "旧判定是误操作。"}
+            ]
+        },
+    }
+    log = root / "experiments/log.jsonl"
+    with log.open("a") as stream:
+        for row in (closing, addendum):
+            stream.write(json.dumps(row, ensure_ascii=False) + "\n")
+    protected = {p: p.read_bytes() for p in (log, root / "experiments/scorings.jsonl")}
+    output = render(root)
+    top = output.split("| 评分／单元 |")[0]
+    assert addendum["conclusion"] in top and "`A`" in top
+    assert closing["conclusion"] not in top
+    assert "测试书 `u1`：旧判定是误操作。" in output
+    assert output.index(addendum["conclusion"]) < output.index(closing["conclusion"])
+    assert "<summary>原收尾记录（历史原文；后续核对见上文）</summary>" in output
+    assert all(p.read_bytes() == raw for p, raw in protected.items())
+
+
+def test_without_owner_addendum_does_not_invent_a_correction(scoring):  # noqa: F811
+    root, score = scoring
+    (root / "experiments/scorings.jsonl").write_text(json.dumps(score) + "\n")
+    with (root / "experiments/log.jsonl").open("a") as stream:
+        stream.write(
+            json.dumps(
+                {
+                    "experiment_id": "C",
+                    "amends_experiment_id": "E",
+                    "record_type": "experiment_closure",
+                    "conclusion": "原始收尾结论",
+                }
+            )
+            + "\n"
+        )
+    output = render(root)
+    assert "原始收尾结论" in output
+    assert "所有者补充核对" not in output
+    assert "标准有漂移" not in output
