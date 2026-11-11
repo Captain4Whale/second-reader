@@ -9,10 +9,10 @@ from scripts.q1_comparison_stats import validate_rows
 from tests.test_q1_comparison_stats import record
 
 
-def review_row(kind='N'):
+def review_row(kind='N', form_version='q1-v0.form.v1'):
     _, mixed, _ = build_bundle(*synthetic_inputs())
     w, m = next((w, m) for w in mixed['windows'] for m in w['marginalia'] if m['type'] == kind)
-    form, digest = load_form('q1-v0.form.v1')
+    form, digest = load_form(form_version)
     row = record(mixed, w, m, schema='q1-mixed-judgment/2', annotator_version='q1-annotator/2.3',
                  rubric_version=form['rubric_version'], rubric_sha256=form['rubric_sha256'],
                  rubric_form_version=form['form_version'], rubric_form_sha256=digest,
@@ -56,6 +56,23 @@ def test_exposure_monotonic_and_journals_isolated():
         validate_rows([row, seen, {**row,'revision':3}], mixed)
     with pytest.raises(ValueError, match='isolated'):
         validate_rows([row, {**row,'revision':2,'review_session_id':'other'}], mixed)
+
+
+def test_published_v1_is_a_separate_scope_despite_shared_criterion_ids():
+    mixed, old, old_form = review_row()
+    form, digest = load_form('q1-v1.form.v1')
+    new = {**old, 'rubric_version': form['rubric_version'],
+           'rubric_sha256': form['rubric_sha256'],
+           'rubric_form_version': form['form_version'], 'rubric_form_sha256': digest}
+    validate_rows([new], mixed)
+    assert form['policy'] == old_form['policy']
+    assert form['mark_types']['N']['criteria'][1]['label'] == '准确'
+    assert form['mark_types']['N']['criteria'][1]['flags'] == old_form['mark_types']['N']['criteria'][1]['flags']
+    for kind in ('N', 'H'):
+        assert form['mark_types'][kind]['tags'] == old_form['mark_types'][kind]['tags']
+        assert [c['id'] for c in form['mark_types'][kind]['criteria']] == [c['id'] for c in old_form['mark_types'][kind]['criteria']]
+    with pytest.raises(ValueError, match='isolated'):
+        validate_rows([old, {**new, 'revision': 2}], mixed)
 
 
 def test_future_form_ids_work_without_code_change():

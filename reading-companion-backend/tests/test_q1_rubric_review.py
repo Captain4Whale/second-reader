@@ -11,8 +11,8 @@ from scripts.q1_rubric_form import load_form
 from tests.test_q1_comparison_stats import record, write_rows
 
 
-@pytest.fixture
-def prepared(tmp_path, monkeypatch):
+@pytest.fixture(params=["q1-v0.form.v1", "q1-v1.form.v1"])
+def prepared(tmp_path, monkeypatch, request):
     source = tmp_path / "source"
     source.mkdir()
     b, mixed, key = build_bundle(*synthetic_inputs())
@@ -44,7 +44,7 @@ def prepared(tmp_path, monkeypatch):
     monkeypatch.setattr(review, "BACKEND", tmp_path)
     (tmp_path / "rubric").symlink_to(real_backend / "rubric", target_is_directory=True)
     output = tmp_path / "state/review"
-    context = review.prepare(source, output)
+    context = review.prepare(source, output, form_version=request.param)
     return source, output, mixed, context, original
 
 

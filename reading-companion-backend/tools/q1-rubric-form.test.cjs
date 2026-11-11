@@ -25,6 +25,20 @@ function stepRow(kind='N') {
   r.criterion_assessments=Object.fromEntries(form.mark_types[kind].criteria.map(c=>[c.id,{judgment:'pass',reason:''}]));
   return r;
 }
+test('published v1 loads in the unchanged engine and has a distinct cache scope',()=>{
+  const v1=JSON.parse(fs.readFileSync(__dirname+'/../rubric/q1-v1.form.json','utf8'));
+  rules.validateForm(v1);
+  assert.deepEqual(v1.policy,form.policy);
+  const r={...stepRow(),rubric_form_version:v1.form_version};
+  r.criterion_flags={N2:{needs_verification:true}};
+  r.needs_verification=rules.verification(r);
+  rules.validateAssessment(r,v1);
+  r.criterion_assessments.N4.judgment='fail';
+  r.failed_criteria=rules.failed(r);r.judgment=rules.outcome(r);
+  rules.validateAssessment(r,v1);
+  const context=f=>({annotator_id:'weijiang',rubric_version:f.rubric_version,rubric_sha256:f.rubric_sha256,rubric_form_version:f.form_version,rubric_form_sha256:'f',review_session_id:'same'});
+  assert.notEqual(rules.scopeKey('batch',context(form)),rules.scopeKey('batch',context(v1)));
+});
 test('explicit all-pass, multifail and independent reasons validate; legacy reason stays independent',()=>{
   for(const kind of ['N','H']) {
     const r=stepRow(kind);rules.validateAssessment(r,form);
