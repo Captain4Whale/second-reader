@@ -195,6 +195,11 @@ selection still uses `annotation-context.json`.
 
 ## Rubric example exclusion
 
+For `q1-v1`, use [`rubric/q1-v1.examples.json`](../rubric/q1-v1.examples.json)
+under the same exclusion rules below. Its 38 identities match v0 exactly; only two
+counterexamples move from N2 to N1. Pin the selected version's hashes. Do not pool
+v0/v1 criterion judgments: N2 and N4 have different meanings.
+
 When measuring LLM-judge agreement with human judgments under `q1-v0`, exclude every
 annotation in [`rubric/q1-v0.examples.json`](../rubric/q1-v0.examples.json) from the
 agreement evaluation set and denominator. All 38 entries count, including positive,

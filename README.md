@@ -546,12 +546,17 @@ The subsequently authorized C-only recovery uses `.venv/bin/python -m eval.atten
 ## Q1 manual error analysis
 
 Annotator 3.2 supports window-aligned mixed blind comparisons and stepwise rubric
-rejudgment. For q1-v0, follow [the rejudgment protocol](reading-companion-backend/experiments/rubric-review.md):
+rejudgment. For q1-v0 or q1-v1, follow [the rejudgment protocol](reading-companion-backend/experiments/rubric-review.md):
 open the prepared review folder using “打开批次文件夹”. Keep `q1-rubric-form.js` next to
 the HTML. A second row of squares shows each criterion as unjudged / pass / fail;
 only the selected criterion and its optional reason are shown. Every criterion must
 be judged before confirming the case in “汇总”. Labels, star, uncovered, case remarks
 and prior judgment live in that summary. This pass has no omission controls.
+
+New v1 preparation must explicitly pass `--form q1-v1.form.v1`; the CLI default
+remains v0. Select the new v1 session directory listed in the protocol. Keep the
+stopped v0 session intact: N2/N4 changed meaning, so its criterion judgments cannot
+be migrated into or pooled with v1.
 
 Review layout: ≥1440px uses source / annotation / decision columns at 44% / 26% / 30%;
 960–1439px places annotation followed by decision to the right of source; <960px uses

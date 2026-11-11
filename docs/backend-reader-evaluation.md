@@ -21,7 +21,13 @@ evaluation must exclude every rubric example (including ID-only references) in
 upstream-unit exclusions follow the comparison workflow. Pin both file hashes; these
 examples cannot serve as unseen agreement evidence.
 
-For human q1-v0 rejudgment, use the separate immutable form and isolated journal described
+The published `q1-v1` uses its own rubric/form hashes and
+`reading-companion-backend/rubric/q1-v1.examples.json`, with the same 38 identities.
+N2 is accuracy only; disagreement quality moves to N1 and relevance moves to N4.
+Keep v0/v1 criterion judgments in separate sessions and scoring scopes. Publication
+does not migrate or reinterpret any old annotation.
+
+For human q1-v0 or q1-v1 rejudgment, use the separate immutable form and isolated journal described
 in [the review protocol](../reading-companion-backend/experiments/rubric-review.md).
 Require each criterion to be explicitly pass/fail before new case completion; retain
 independent optional reasons. Derive overall pass/fail from failed criteria or rubric-uncovered,
@@ -1240,7 +1246,12 @@ DIAG-001 CLOSE-001 applies the PREREG-001 Note threshold and the owner-confirmed
 interpretation: same-prompt B is clearly better in this sample, making model
 configuration an important lever and not supporting prompt as the main cause.
 Model and reasoning changes remain bundled; prompt effects were not tested.
-Highlight standards drifted, so H rates are retained for provenance but excluded
-from all conclusions. Pause further model comparison; iterate with GPT-6 Luna medium,
-retain existing GPT-6 Sol high outputs as a reference. q1-v0 human rejudgment is a
-separate scoring scope, not additional generation or an independent blind trial.
+CLOSE-001 originally attributed Highlight disagreement to standards drift. The owner
+verification in `Q1-DIGEST-DIAG-001-HIGHLIGHT-RECONCILIATION-001` supplements that
+wording: the three identical-selection/opposite-judgment cases reflect unwritten rules
+and one mistaken action, not standards drift. DEC-162 and the original log row remain
+unchanged. H rates remain excluded from the existing decision; this addendum does not
+authorize new model/prompt work or reinterpret historical scores. Pause further model
+comparison; iterate with GPT-6 Luna medium, retain existing GPT-6 Sol high outputs as a
+reference. The stopped q1-v0 and new q1-v1 human reviews are separate scoring scopes,
+not additional generation or independent blind trials.

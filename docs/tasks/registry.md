@@ -7,7 +7,7 @@ Update when: task status, priority, blockers, decision refs, job refs, evidence 
 
 This document is the human-readable companion to `docs/tasks/registry.json`.
 
-Last updated: `2026-11-10`
+Last updated: `2026-11-11`
 
 ## Status Values
 - `active`
@@ -31,6 +31,8 @@ Last updated: `2026-11-10`
 - `TASK-RESUME-READING-PLAN-FREEZE` — `done`，mechanism_runtime / high。已实现计划身份校验、复用与拒绝不一致 resume。[离线证据](step1-prereqs-2026-11-01.md#d-计划冻结)。
 
 ## Done
+
+- `TASK-Q1-RUBRIC-V1-RELEASE` — `done`: exact v1 rubric, 38 verified examples, new immutable form and fresh DIAG-001 review session. v0 preserved; N2/N4 judgments cannot be pooled. Two append-only log rows include owner Highlight clarification. [Receipt](q1-rubric-v1-release-2026-11-11.md).
 
 - `TASK-Q1-SCORING-LEDGER` — `done`: three scoring scopes, merged DIAG closure, latest-only Chinese index, independent artifact copy and verified local backup/restore. [Index](../../reading-companion-backend/experiments/INDEX.md), [receipt](q1-scoring-ledger-2026-11-10.md).
 

@@ -88,6 +88,17 @@ as `q1-v0-draft`, with its original registration and the explicit migration rece
 retained in `rubric/releases.json` and bound by `experiments/frozen.json`.
 This one-time authorized migration does not relax the existing draft-freezing rule.
 
+`q1-v1` and `q1-v1.form.v1` were published on 2026-11-11 as new files and registry
+entries; all v0 bytes/identities remain unchanged. See [v1 verification](../rubric/q1-v1.verification.md)
+and [separate review sessions](rubric-review.md#published-v1-and-separate-sessions-2026-11-11).
+Its 38-example exclusion list has exactly the same identities as v0; the two former
+N2 counterexamples now belong to N1. Use the list matching the chosen rubric version.
+The stopped v0 review and the fresh v1 review must not share criterion judgments.
+The current INDEX generator retains its historical Highlight-drift wording and frozen
+v0 pending score. Read the owner correction in log row
+`Q1-DIGEST-DIAG-001-HIGHLIGHT-RECONCILIATION-001` and the current review protocol;
+publication does not rewrite old scores or change that generator.
+
 Model-generated Note bodies and human reasons without separately copied book passages
 may be tracked in a rubric, as explicitly authorized for q1-v0. Book passages, anchors,
 rendered prompt examples and raw source-bearing data remain in ignored state directories.

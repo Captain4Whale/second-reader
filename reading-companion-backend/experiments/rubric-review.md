@@ -8,7 +8,36 @@ publication entries and q1-v0 Markdown remain immutable. Add a new form version 
 later changes; criterion/tag IDs, labels, help and supported policies are configuration,
 not annotator code. Form text contains rules only, never identifiable rubric examples.
 
-## Owner-authorized differences from q1-v0 Markdown
+## Published v1 and separate sessions (2026-11-11)
+
+The new published rubric is `q1-v1`, with `rubric/q1-v1.form.json` registered as
+`q1-v1.form.v1`. N2 now means accuracy only; substantiated disagreement belongs to
+N1, and relevance to the anchor belongs to N4. IDs N1–N4 / H1–H3, tag IDs/labels,
+N2's verification flag and policy are retained. Help is derived from the corresponding
+v1 sections without identifiable examples. The annotator and record schema are unchanged.
+
+The owner stopped the q1-v0 review after a few judgments because N2 combined different
+questions. At preparation time its on-disk journal was empty; browser-only judgments
+or drafts were not inspected. Preserve the complete old session and any drafts as-is.
+Do not migrate, delete or merge judgments. **N2 and N4 changed meaning: per-criterion
+judgments from the v0 and v1 sessions must never be pooled or treated as the same measure.**
+Rubric/form hashes and a fresh session ID keep storage and future scoring separate.
+
+The prepared v1 directory is:
+`/Users/baiweijiang/.codex/worktrees/q1-rubric-v1/reading-companion/reading-companion-backend/state/q1_rubric_reviews/Q1-DIGEST-DIAG-001-q1-v1`.
+Session ID: `a46a04d3-6e04-430d-bd60-0f744f910a33`. It contains 81 annotations,
+zero completed judgments and an empty new journal; its baseline is the original
+313-revision open_coding journal, not the stopped v0 review. The old session remains at
+`/Users/baiweijiang/Documents/Projects/reading-companion/reading-companion-backend/state/q1_rubric_reviews/Q1-DIGEST-DIAG-001-q1-v0`.
+Open the new directory with the existing main-workspace annotator 3.2.
+
+v1 explicitly supports optional criterion reasons, so the v0 reason-policy difference
+below no longer applies. The unchanged form policy also permits an empty uncovered
+reason; v1 Markdown asks for a sentence there. The form deliberately retains the
+owner-requested policy, rather than silently adding validation. This pass still does
+not record omissions, even though the rubric describes unit-level omissions.
+
+## Historical v0 operational differences (retained for v0)
 
 - A failure reason is optional for this rejudgment; q1-v0 Markdown says to write one.
   `policy.reason_required_on_fail=false` records this operational difference.
@@ -69,9 +98,12 @@ first completion and later amendments remain inspectable.
 Run from `reading-companion-backend/`:
 
 ```sh
-.venv/bin/python scripts/q1_rubric_review.py prepare "$ORIGINAL_BLIND_BATCH" --output state/q1_rubric_reviews/NEW_SESSION
+.venv/bin/python scripts/q1_rubric_review.py prepare "$ORIGINAL_BLIND_BATCH" --form q1-v1.form.v1 --output state/q1_rubric_reviews/NEW_SESSION
 .venv/bin/python scripts/q1_rubric_review.py report state/q1_rubric_reviews/NEW_SESSION --output state/q1_rubric_reviews/NEW_REPORT
 ```
+
+For v0, explicitly select `--form q1-v0.form.v1`; omitting `--form` still defaults
+to v0 for compatibility. Never reuse a prepared directory to switch rubric versions.
 
 Output paths must be new directories under ignored backend `state/`; neither command
 overwrites an existing destination. Preparation checks the original bundle and baseline,

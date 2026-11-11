@@ -53,6 +53,8 @@ reading-companion-backend/state/q1_comparison/
 reading-companion-backend/state/q1_comparison_browser/
 # Isolated rubric keyboard/stepwise QA journals, browser captures and reports.
 reading-companion-backend/state/q1_rubric_reviews/qa/
+# Version-isolated human review sessions, including the fresh q1-v1 session.
+reading-companion-backend/state/q1_rubric_reviews/
 reading-companion-backend/state/
 # Private prompt examples, byte-comparison captures, rendered samples and dirty patches.
 reading-companion-backend/state/prompt_assets/

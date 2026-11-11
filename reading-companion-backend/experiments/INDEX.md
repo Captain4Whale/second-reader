@@ -88,7 +88,7 @@ DIAG-001 的 Highlight 标准有漂移，仅保留数字追溯；决策只依据
 
 复算：`python scripts/q1_scoring.py --evidence`；代码提交 `534870911cce55f59c62d4c9db0fcb0664b15532`；[私有统计报告](../state/scorings/q1-initial-20261110/Q1-SCORE-DIAG-OPEN-S001.report.json)。
 
-本实验日志合并：`Q1-DIGEST-DIAG-001` → `Q1-DIGEST-DIAG-001-CONTINUATION` → `Q1-DIGEST-DIAG-001-PREREG-001` → `Q1-DIGEST-DIAG-001-REVEAL-001` → `Q1-DIGEST-DIAG-001-LOCATION-001` → `Q1-DIGEST-DIAG-001-CLOSE-001`。
+本实验日志合并：`Q1-DIGEST-DIAG-001` → `Q1-DIGEST-DIAG-001-CONTINUATION` → `Q1-DIGEST-DIAG-001-PREREG-001` → `Q1-DIGEST-DIAG-001-REVEAL-001` → `Q1-DIGEST-DIAG-001-LOCATION-001` → `Q1-DIGEST-DIAG-001-CLOSE-001` → `Q1-DIGEST-DIAG-001-HIGHLIGHT-RECONCILIATION-001`。
 
 DIAG-001 的 A1/B 混合盲标已完成，结果引用关联评分账。PREREG-001 登记的通过标准为：Highlight 选中本段值得停下来的文字且范围完整；Note 提供原文未直接说出的东西，不是语文阅读理解，且准确、与锚点相关。登记的决策指标是 B 相对 A1 的 Note 通过率差：高 25 个百分点以上为明显好，10 个点以内为无差别，介于两者之间则盲标 A2 测噪声后再判。
 
@@ -138,7 +138,7 @@ DIAG-001 的 A1/B 混合盲标已完成，结果引用关联评分账。PREREG-0
 
 复算：`python scripts/q1_scoring.py --evidence`；代码提交 `534870911cce55f59c62d4c9db0fcb0664b15532`；[私有统计报告](../state/scorings/q1-initial-20261110/Q1-SCORE-DIAG-Q1V0-S001.report.json)。
 
-本实验日志合并：`Q1-DIGEST-DIAG-001` → `Q1-DIGEST-DIAG-001-CONTINUATION` → `Q1-DIGEST-DIAG-001-PREREG-001` → `Q1-DIGEST-DIAG-001-REVEAL-001` → `Q1-DIGEST-DIAG-001-LOCATION-001` → `Q1-DIGEST-DIAG-001-CLOSE-001`。
+本实验日志合并：`Q1-DIGEST-DIAG-001` → `Q1-DIGEST-DIAG-001-CONTINUATION` → `Q1-DIGEST-DIAG-001-PREREG-001` → `Q1-DIGEST-DIAG-001-REVEAL-001` → `Q1-DIGEST-DIAG-001-LOCATION-001` → `Q1-DIGEST-DIAG-001-CLOSE-001` → `Q1-DIGEST-DIAG-001-HIGHLIGHT-RECONCILIATION-001`。
 
 DIAG-001 的 A1/B 混合盲标已完成，结果引用关联评分账。PREREG-001 登记的通过标准为：Highlight 选中本段值得停下来的文字且范围完整；Note 提供原文未直接说出的东西，不是语文阅读理解，且准确、与锚点相关。登记的决策指标是 B 相对 A1 的 Note 通过率差：高 25 个百分点以上为明显好，10 个点以内为无差别，介于两者之间则盲标 A2 测噪声后再判。
 

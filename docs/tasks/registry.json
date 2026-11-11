@@ -1,7 +1,35 @@
 {
   "version": 1,
-  "updated_at": "2026-11-10",
+  "updated_at": "2026-11-11",
   "tasks": [
+    {
+      "id": "TASK-Q1-RUBRIC-V1-RELEASE",
+      "title": "Publish Q1 rubric v1 and form; prepare a separate DIAG-001 review",
+      "status": "done",
+      "lane": "mechanism_eval",
+      "priority": "high",
+      "detail_ref": "docs/tasks/q1-rubric-v1-release-2026-11-11.md",
+      "acceptance_ref": "docs/tasks/q1-rubric-v1-release-2026-11-11.md#validation",
+      "truth_refs": [
+        "reading-companion-backend/experiments/rubric-review.md",
+        "reading-companion-backend/experiments/README.md",
+        "docs/backend-reader-evaluation.md"
+      ],
+      "decision_refs": [
+        "DEC-162"
+      ],
+      "job_refs": [],
+      "blocked_by": [],
+      "next_action": "Owner reviews the new q1-v1 session. Preserve stopped v0; never pool or migrate v0/v1 criterion judgments. No model or prompt work authorized.",
+      "evidence_refs": [
+        "reading-companion-backend/rubric/q1-v1.verification.md",
+        "reading-companion-backend/rubric/q1-v1.form.json",
+        "reading-companion-backend/experiments/log.jsonl",
+        "reading-companion-backend/state/q1_rubric_reviews/Q1-DIGEST-DIAG-001-q1-v1/preparation.json"
+      ],
+      "last_updated": "2026-11-11",
+      "last_updated_by": "codex"
+    },
     {
       "id": "TASK-Q1-SCORING-LEDGER",
       "title": "Freeze Q1 scoring receipts, relocate evidence and verify local backup",
@@ -19,13 +47,13 @@
       ],
       "job_refs": [],
       "blocked_by": [],
-      "next_action": "Continue q1-v0 review; append a new scoring snapshot and manually back up new judgments. No scheduled task or upload configured.",
+      "next_action": "Use the new q1-v1 review session; preserve the stopped v0 scope and its existing scoring receipt. Append future scoring snapshots only when explicitly requested.",
       "evidence_refs": [
         "reading-companion-backend/experiments/INDEX.md",
         "reading-companion-backend/experiments/scorings.jsonl",
         "reading-companion-backend/state/backup_verification/20261110T121328Z/verification.json"
       ],
-      "last_updated": "2026-11-10",
+      "last_updated": "2026-11-11",
       "last_updated_by": "codex"
     },
     {
@@ -44,7 +72,7 @@
       "decision_refs": [],
       "job_refs": [],
       "blocked_by": [],
-      "next_action": "Refresh default main workspace annotator 3.2 and select the existing review folder. Natural reading flow replaces fixed-height panes; 3.0/3.1 records and form/cache identities remain compatible. Local commit only, no push; no models or original annotation edits.",
+      "next_action": "Use unchanged main-workspace annotator 3.2 with the new q1-v1 session; keep v0 session and drafts intact. See TASK-Q1-RUBRIC-V1-RELEASE.",
       "evidence_refs": [
         "reading-companion-backend/rubric/q1-v0.form.json",
         "reading-companion-backend/tools/q1-annotator.html",
