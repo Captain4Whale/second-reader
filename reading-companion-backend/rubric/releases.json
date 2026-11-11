@@ -32,5 +32,16 @@
       "path": "rubric/q1-v0.migration.json",
       "sha256": "e893e423ea29f107814354c546678d1ce254f87370e1c7ddd160fab7ac1ba590"
     }
+  },
+  "q1-v1": {
+    "status": "published",
+    "path": "rubric/q1-v1.md",
+    "sha256": "adabae9d16162163ffe25dfe81cd60515788d899aa436da25476095d614de2e3",
+    "date": "2026-11-11",
+    "published_at": "2026-11-11T11:33:35.237720+00:00",
+    "examples": {
+      "path": "rubric/q1-v1.examples.json",
+      "sha256": "fd15ce4dae933aebc4ef5eee2c9f18c0621a863a857cdb99b0161a6de6f5d331"
+    }
   }
 }
