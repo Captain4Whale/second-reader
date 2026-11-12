@@ -199,6 +199,57 @@ def calculate(row, root=BACKEND):
                         },
                     }
                 )
+        elif inputs["kind"] == "adjudicated_conversion":
+            from scripts.q1_adjudicated_conversion import (
+                load_conversion,
+                conversion_counts,
+            )
+
+            context, _, projection, _, _, raw = read_review(root / inputs["review"])
+            require(
+                projection == mixed
+                and context["review_session_id"] == row["review_session_id"],
+                "Conversion session/product mismatch",
+            )
+            require(
+                context["annotator_id"] == row["scorer"]["id"]
+                and raw == (root / snap["path"]).read_bytes(),
+                "Conversion source scorer/snapshot mismatch",
+            )
+            converted = load_conversion(
+                root / inputs["review"],
+                root / inputs["adjudication"],
+                {
+                    "version": row["rubric"]["version"],
+                    "sha256": row["rubric"]["sha256"],
+                },
+            )
+            require(
+                converted == json.loads((root / inputs["conversion"]).read_bytes()),
+                "Recomputed conversion differs",
+            )
+            for g in b["groups"]:
+                selected = [
+                    r
+                    for r in converted["records"]
+                    if key["marginalia"][r["marginalia_id"]]["opaque_group_id"]
+                    == g["opaque_group_id"]
+                ]
+                result.append(
+                    {
+                        "run_id": g["run_id"],
+                        "counts": conversion_counts(selected),
+                        "by_book": [
+                            {
+                                "book": book,
+                                "counts": conversion_counts(
+                                    [r for r in selected if r["book"] == book]
+                                ),
+                            }
+                            for book in sorted({r["book"] for r in selected})
+                        ],
+                    }
+                )
         else:
             context, form, projection, _, rows, _ = read_review(root / inputs["review"])
             require(
@@ -333,9 +384,23 @@ def validate(row, root=BACKEND, evidence=False):
             "Missing hash evidence boundary",
         )
     require(
-        row["inputs"]["kind"] in ["legacy", "mixed", "rubric"],
+        row["inputs"]["kind"]
+        in ["legacy", "mixed", "rubric", "adjudicated_conversion"],
         "Unknown scoring adapter",
     )
+    converted = row["inputs"]["kind"] == "adjudicated_conversion"
+    if converted:
+        require(
+            row["rubric"]["version"] == "q1-v2"
+            and row["rubric"]["form_version"] is None
+            and row["scorer"]["kind"] == "human",
+            "Conversion is v2-shaped human evidence without a v2 form",
+        )
+        require(
+            row["calculation"].get("method") == "q1-v1_plus_owner_adjudication_to_v2"
+            and row["calculation"].get("basis"),
+            "Missing conversion provenance",
+        )
     for snap in row["snapshots"]:
         require(
             type(snap["revision"]) is int
@@ -347,7 +412,7 @@ def validate(row, root=BACKEND, evidence=False):
     total_judged = total_unjudged = 0
     for g in row["results"]:
         require(set(g["counts"]) == {"Note", "Highlight"}, "Missing H/N results")
-        for c in g["counts"].values():
+        for kind, c in g["counts"].items():
             require(
                 all(
                     type(c[k]) is int and c[k] >= 0
@@ -366,7 +431,7 @@ def validate(row, root=BACKEND, evidence=False):
             )
             require(
                 (c["failed_criteria"] is None)
-                == (row["rubric"]["form_version"] is None),
+                == (row["rubric"]["form_version"] is None and not converted),
                 "Criteria availability mismatch",
             )
             if c["failed_criteria"] is not None:
@@ -377,6 +442,32 @@ def validate(row, root=BACKEND, evidence=False):
                     ),
                     "Invalid criterion count",
                 )
+            if converted:
+                core = "N1" if kind == "Note" else "H1"
+                require(
+                    set(c["failed_criteria"]) == {core},
+                    "Converted core criteria mismatch",
+                )
+                require(
+                    all(
+                        type(v["count"]) is int and 0 <= v["count"] <= c["judged"]
+                        for field in ("tags", "vetoes")
+                        for v in c[field].values()
+                    ),
+                    "Invalid converted tag/veto count",
+                )
+                require(
+                    c["uncertain"] is None,
+                    "Conversion cannot invent uncertainty annotations",
+                )
+                if kind == "Note":
+                    require(
+                        type(c["clean_passed"]) is int
+                        and 0 <= c["clean_passed"] <= c["passed"]
+                        and c["clean_pass_rate"]
+                        == (c["clean_passed"] / c["judged"] if c["judged"] else None),
+                        "Invalid clean pass count/rate",
+                    )
             total_judged += c["judged"]
             total_unjudged += c["unjudged"]
     require(
@@ -392,6 +483,20 @@ def validate(row, root=BACKEND, evidence=False):
     )
     if evidence:
         expected = set(row["inputs"].get("batches", []))
+        if converted:
+            expected.update(
+                row["inputs"][key]
+                for key in ("conversion", "adjudication", "adjudication_evidence")
+            )
+            specification = json.loads(
+                (root / row["inputs"]["adjudication"]).read_bytes()
+            )
+            require(
+                (root / row["inputs"]["adjudication"]).parent
+                / specification["adjudication_file"]
+                == root / row["inputs"]["adjudication_evidence"],
+                "Adjudication evidence path mismatch",
+            )
         if row["inputs"].get("bundle"):
             expected.update(
                 str(Path(row["inputs"]["bundle"]) / n)

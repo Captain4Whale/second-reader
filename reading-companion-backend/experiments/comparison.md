@@ -195,6 +195,12 @@ selection still uses `annotation-context.json`.
 
 ## Rubric example exclusion
 
+For `q1-v2`, use [`rubric/q1-v2.examples.json`](../rubric/q1-v2.examples.json):
+22 unique DIAG-001 examples, verified against the v1-plus-owner-adjudication conversion,
+not against open_coding. They remain construction examples and are excluded from
+future judge agreement measurement under that rubric. Do not reinterpret older
+scopes or their 38-entry exclusion lists. Human conversion/scoring retains all 81 marks.
+
 For `q1-v1`, use [`rubric/q1-v1.examples.json`](../rubric/q1-v1.examples.json)
 under the same exclusion rules below. Its 38 identities match v0 exactly; only two
 counterexamples move from N2 to N1. Pin the selected version's hashes. Do not pool

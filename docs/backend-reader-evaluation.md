@@ -1237,6 +1237,15 @@ The plan fingerprint excludes timestamps and invocation receipt IDs, so repeated
 
 ## Frozen scoring receipts and Q1 diagnostic disposition
 
+For the v2-shaped final human result, preserve the distinction between **q1-v1
+wording plus owner adjudication converted into v2 structure** and a fresh v2 annotation.
+V1 core decisions are not silently rejudged under rewritten v2 wording. Each derived
+decision binds its original revision or explicit adjudication; vetoes and friction
+tags follow the recorded conversion rules. Note clean pass rate counts passes with
+neither empty-talk nor redundancy over all judged Notes. Repeated exposure and prior
+group reveal remain comparability limits, even if an editable failure-type worksheet
+omits group labels. Do not infer missing failure types or new uncertainty flags.
+
 Every reported Q1 rate must reference `experiments/scorings.jsonl`: fixed output identity,
 unit set, rubric/form, scorer, immutable journal prefix and separate H/N denominators.
 An append changes neither past scores nor historical judgments. See

@@ -198,6 +198,35 @@ This copy is not a backup; the source worktree must still be preserved.
 
 ## Scoring receipts (q1-scoring/1)
 
+### v1 + owner adjudication converted into v2 structure
+
+`q1-v2` is published without a v2 form. The `adjudicated_conversion` scoring input
+adapter recomputes a separate `q1-adjudicated-conversion/1` artifact from frozen v1
+judgments, the byte-preserved owner adjudication and its explicit ID binding. This
+is **v1 wording plus owner adjudication mapped into v2 structure**, not a fresh v2
+annotation. No derived record is appended to an annotation journal. Each record
+retains its v1 revision, core-decision source and applicable adjudication item.
+
+N1/H1 remain the core decisions; Note N2/N3 failures and Highlight H2/H3 failures
+become vetoes. N4 failure becomes an anchor-issue tag, and only the exact uncovered
+reason `尾巴：阅读理解` becomes an empty-talk tag. Any other uncovered reason stops
+conversion. Existing tags and verification flags are retained. New v2 uncertainty
+was not collected and stays null. Clean Note pass rate uses all judged Notes as
+denominator and passes without empty-talk/redundancy as numerator. Tags may overlap.
+
+The receipt's journal snapshot is still the original v1 journal, not fabricated
+human revisions. It binds both the conversion specification and original adjudication
+bytes, validates the conversion artifact by recomputation, and reports core failures,
+vetoes, tags and clean pass counts per group plus per-book subdivisions. A missing
+v2 form is intentional; other scoring adapters retain their existing validation.
+Comparability records state identical 81 outputs, repeated owner exposure, previously
+revealed groups, and the difference between rejudgment and deterministic conversion.
+
+N1 failure-type worksheets are separate private pending inputs: prefill only explicit
+rubric-example types or exact v1 reasons, retain sources, omit group/model identities,
+and leave the rest blank. Completing a worksheet does not alter a frozen conversion;
+import is a separate owner-requested task.
+
 `experiments/scorings.jsonl` is append-only: one row per frozen scoring snapshot,
 not per generation run. `series_id` identifies one scoring scope; `scoring_id`
 identifies its snapshot. A later row names the immediately preceding snapshot in
