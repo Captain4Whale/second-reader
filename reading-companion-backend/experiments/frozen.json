@@ -10,5 +10,7 @@
   "rubric/q1-v0.form.json": "40a97086fd03f48fc2df997c6ce7bbdb58e2333fc3a741ad082434ac196b1586",
   "rubric/q1-v1.md": "adabae9d16162163ffe25dfe81cd60515788d899aa436da25476095d614de2e3",
   "rubric/q1-v1.examples.json": "fd15ce4dae933aebc4ef5eee2c9f18c0621a863a857cdb99b0161a6de6f5d331",
-  "rubric/q1-v1.form.json": "0b7d3d49bc33affe65f2adf8ee6934adae3ae1957a42789a0fb655e355a14126"
+  "rubric/q1-v1.form.json": "0b7d3d49bc33affe65f2adf8ee6934adae3ae1957a42789a0fb655e355a14126",
+  "rubric/q1-v2.md": "887d58eccf9eb5ab81c82b1751d63609186cbe0210a6d613559ad88d6904550e",
+  "rubric/q1-v2.examples.json": "e9483639bee817d301518efb251e25459d389b14309df5c26956ccbf9f04bbb1"
 }
