@@ -1,7 +1,36 @@
 {
   "version": 1,
-  "updated_at": "2026-11-11",
+  "updated_at": "2026-11-12",
   "tasks": [
+    {
+      "id": "TASK-Q1-RUBRIC-V2-CONVERSION",
+      "title": "Publish Q1 rubric v2 and register v1 plus owner adjudication converted into v2 structure",
+      "status": "done",
+      "lane": "mechanism_eval",
+      "priority": "high",
+      "detail_ref": "docs/tasks/q1-rubric-v2-conversion-2026-11-12.md",
+      "acceptance_ref": "docs/tasks/q1-rubric-v2-conversion-2026-11-12.md#validation",
+      "truth_refs": [
+        "reading-companion-backend/experiments/README.md",
+        "reading-companion-backend/experiments/comparison.md",
+        "docs/backend-reader-evaluation.md"
+      ],
+      "decision_refs": [],
+      "job_refs": [],
+      "blocked_by": [],
+      "next_action": "Owner fills the anonymous 25-item failure-type worksheet (10 prefilled, 15 blank); import only in a separately requested task. Preserve source judgments; no v2 form or model work.",
+      "evidence_refs": [
+        "reading-companion-backend/rubric/q1-v2.verification.md",
+        "reading-companion-backend/rubric/q1-v2.examples.json",
+        "reading-companion-backend/experiments/scorings.jsonl",
+        "reading-companion-backend/experiments/log.jsonl",
+        "reading-companion-backend/state/scorings/q1-v2-final-20261112/summary.md",
+        "reading-companion-backend/state/scorings/q1-v2-final-20261112/conversion.json",
+        "reading-companion-backend/state/scorings/q1-v2-final-20261112/failure-types-to-fill.md"
+      ],
+      "last_updated": "2026-11-12",
+      "last_updated_by": "codex"
+    },
     {
       "id": "TASK-Q1-RUBRIC-V1-RELEASE",
       "title": "Publish Q1 rubric v1 and form; prepare a separate DIAG-001 review",
@@ -20,7 +49,7 @@
       ],
       "job_refs": [],
       "blocked_by": [],
-      "next_action": "Owner inspects the completed 81/81 anonymous v1-versus-open_coding report. Preserve v0 and all raw judgments; no group reveal, automatic scoring receipt or mechanism/prompt changes.",
+      "next_action": "Completed v1 and owner-adjudicated v2-structure scores are registered separately under TASK-Q1-RUBRIC-V2-CONVERSION. Preserve all raw journals/releases; owner fills the anonymous failure-type worksheet before a separately requested import.",
       "evidence_refs": [
         "reading-companion-backend/rubric/q1-v1.verification.md",
         "reading-companion-backend/rubric/q1-v1.form.json",
@@ -31,7 +60,7 @@
         "reading-companion-backend/state/q1_rubric_reviews/reports/Q1-DIGEST-DIAG-001-q1-v1-vs-open-coding-20261111T135153Z/manifest.json",
         "reading-companion-backend/state/q1_rubric_reviews/reports/Q1-DIGEST-DIAG-001-q1-v1-vs-open-coding-20261111T135153Z/summary.md"
       ],
-      "last_updated": "2026-11-11",
+      "last_updated": "2026-11-12",
       "last_updated_by": "codex"
     },
     {
@@ -51,13 +80,13 @@
       ],
       "job_refs": [],
       "blocked_by": [],
-      "next_action": "Inspect the completed anonymous q1-v1 comparison; preserve existing receipts. A future scoring registration requires an explicit request.",
+      "next_action": "Completed v1 and owner-adjudicated v2-structure scores are registered separately under TASK-Q1-RUBRIC-V2-CONVERSION. Preserve all raw journals/releases; owner fills the anonymous failure-type worksheet before a separately requested import.",
       "evidence_refs": [
         "reading-companion-backend/experiments/INDEX.md",
         "reading-companion-backend/experiments/scorings.jsonl",
         "reading-companion-backend/state/backup_verification/20261110T121328Z/verification.json"
       ],
-      "last_updated": "2026-11-11",
+      "last_updated": "2026-11-12",
       "last_updated_by": "codex"
     },
     {
@@ -76,7 +105,7 @@
       "decision_refs": [],
       "job_refs": [],
       "blocked_by": [],
-      "next_action": "Use unchanged main-workspace annotator 3.2 with the new q1-v1 session; keep v0 session and drafts intact. See TASK-Q1-RUBRIC-V1-RELEASE.",
+      "next_action": "Completed v1 and owner-adjudicated v2-structure scores are registered separately under TASK-Q1-RUBRIC-V2-CONVERSION. Preserve all raw journals/releases; owner fills the anonymous failure-type worksheet before a separately requested import.",
       "evidence_refs": [
         "reading-companion-backend/rubric/q1-v0.form.json",
         "reading-companion-backend/tools/q1-annotator.html",
@@ -89,7 +118,7 @@
         "reading-companion-backend/state/q1_rubric_reviews/qa/layout-3.1/inventory.md",
         "reading-companion-backend/state/q1_rubric_reviews/qa/layout-3.2/inventory.md"
       ],
-      "last_updated": "2026-11-11",
+      "last_updated": "2026-11-12",
       "last_updated_by": "codex"
     },
     {

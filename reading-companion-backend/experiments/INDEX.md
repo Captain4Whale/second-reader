@@ -12,6 +12,8 @@ DIAG-001 的 Highlight 数字保留用于追溯；现有决策仍只依据 Note�
 | [第一批开放编码](#q1-score-baseline-open-s001)<br>67 单元 | GPT-6 Luna / medium | 开放编码<br>weijiang | 包法利：3/37（8.11%）<br>人类简史：5/47（10.64%） | 包法利：1/3（33.33%）<br>人类简史：15/23（65.22%） | 已完成 |
 | [DIAG-001 混合盲标](#q1-score-diag-open-s001)<br>16 单元 | GPT-6 Luna / medium<br>GPT-6 Sol / high | 开放编码<br>weijiang | A1：4/21（19.05%）<br>B：21/30（70.00%） | A1：9/10（90.00%）<br>B：15/20（75.00%） | 已完成 |
 | [DIAG-001 q1-v0 重判](#q1-score-diag-q1v0-s001)<br>16 单元 | GPT-6 Luna / medium<br>GPT-6 Sol / high | q1-v0<br>q1-v0.form.v1<br>weijiang | A1：待标（共 21）<br>B：待标（共 30） | A1：待标（共 10）<br>B：待标（共 20） | 待标 |
+| [DIAG-001 q1-v1 原始重判](#q1-score-diag-q1v1-s001)<br>16 单元 | GPT-6 Luna / medium<br>GPT-6 Sol / high | q1-v1<br>q1-v1.form.v1<br>weijiang | A1：1/21（4.76%）<br>B：15/30（50.00%） | A1：10/10（100.00%）<br>B：18/20（90.00%） | 已完成 |
+| [DIAG-001 v1 + 所有者裁决 → v2 结构换算（非 v2 逐条标注）](#q1-score-diag-q1v2-converted-s001)<br>16 单元 | GPT-6 Luna / medium<br>GPT-6 Sol / high | q1-v2 结构换算<br>无表单<br>weijiang | A1：3/21（14.29%）<br>B：22/30（73.33%） | A1：10/10（100.00%）<br>B：18/20（90.00%） | 已完成 |
 
 以下小节包含哈希、标注时间、分母、可比范围及合并后的实验日志。
 
@@ -92,7 +94,7 @@ DIAG-001 的 Highlight 数字保留用于追溯；现有决策仍只依据 Note�
 
 复算：`python scripts/q1_scoring.py --evidence`；代码提交 `534870911cce55f59c62d4c9db0fcb0664b15532`；[私有统计报告](../state/scorings/q1-initial-20261110/Q1-SCORE-DIAG-OPEN-S001.report.json)。
 
-本实验日志合并：`Q1-DIGEST-DIAG-001` → `Q1-DIGEST-DIAG-001-CONTINUATION` → `Q1-DIGEST-DIAG-001-PREREG-001` → `Q1-DIGEST-DIAG-001-REVEAL-001` → `Q1-DIGEST-DIAG-001-LOCATION-001` → `Q1-DIGEST-DIAG-001-CLOSE-001` → `Q1-DIGEST-DIAG-001-HIGHLIGHT-RECONCILIATION-001`。
+本实验日志合并：`Q1-DIGEST-DIAG-001` → `Q1-DIGEST-DIAG-001-CONTINUATION` → `Q1-DIGEST-DIAG-001-PREREG-001` → `Q1-DIGEST-DIAG-001-REVEAL-001` → `Q1-DIGEST-DIAG-001-LOCATION-001` → `Q1-DIGEST-DIAG-001-CLOSE-001` → `Q1-DIGEST-DIAG-001-HIGHLIGHT-RECONCILIATION-001` → `Q1-DIGEST-DIAG-001-V2-CONVERSION-001`。
 
 **所有者补充核对 · 2026-11-11**（`Q1-DIGEST-DIAG-001-HIGHLIGHT-RECONCILIATION-001`）
 
@@ -155,7 +157,145 @@ DIAG-001 的 A1/B 混合盲标已完成，结果引用关联评分账。PREREG-0
 
 复算：`python scripts/q1_scoring.py --evidence`；代码提交 `534870911cce55f59c62d4c9db0fcb0664b15532`；[私有统计报告](../state/scorings/q1-initial-20261110/Q1-SCORE-DIAG-Q1V0-S001.report.json)。
 
-本实验日志合并：`Q1-DIGEST-DIAG-001` → `Q1-DIGEST-DIAG-001-CONTINUATION` → `Q1-DIGEST-DIAG-001-PREREG-001` → `Q1-DIGEST-DIAG-001-REVEAL-001` → `Q1-DIGEST-DIAG-001-LOCATION-001` → `Q1-DIGEST-DIAG-001-CLOSE-001` → `Q1-DIGEST-DIAG-001-HIGHLIGHT-RECONCILIATION-001`。
+本实验日志合并：`Q1-DIGEST-DIAG-001` → `Q1-DIGEST-DIAG-001-CONTINUATION` → `Q1-DIGEST-DIAG-001-PREREG-001` → `Q1-DIGEST-DIAG-001-REVEAL-001` → `Q1-DIGEST-DIAG-001-LOCATION-001` → `Q1-DIGEST-DIAG-001-CLOSE-001` → `Q1-DIGEST-DIAG-001-HIGHLIGHT-RECONCILIATION-001` → `Q1-DIGEST-DIAG-001-V2-CONVERSION-001`。
+
+**所有者补充核对 · 2026-11-11**（`Q1-DIGEST-DIAG-001-HIGHLIGHT-RECONCILIATION-001`）
+
+所有者核对上述 3 条 Highlight 后确认：不是标准漂移，是规则未写明加一次误操作。
+
+- 包法利 `u000031`：第一批的理由评价的是附带的 Note。
+- 人类简史 `u000237`：第一批因遗漏相邻句子判不过，按 q1-v0 起应判过并记漏标。
+- 人类简史 `u000144`：第一批判不过是误操作。
+
+<details>
+<summary>原收尾记录（历史原文；后续核对见上文）</summary>
+
+DIAG-001 的 A1/B 混合盲标已完成，结果引用关联评分账。PREREG-001 登记的通过标准为：Highlight 选中本段值得停下来的文字且范围完整；Note 提供原文未直接说出的东西，不是语文阅读理解，且准确、与锚点相关。登记的决策指标是 B 相对 A1 的 Note 通过率差：高 25 个百分点以上为明显好，10 个点以内为无差别，介于两者之间则盲标 A2 测噪声后再判。
+
+本次 A1 为 4/21（19.05%），B 为 21/30（70%），B 高 50.95 个百分点，落入“明显好”一侧，触发该预登记判断，不触发中间区间的 A2 盲标测噪声步骤。
+
+在同一 prompt、固定历史上下文的这批诊断中，B 明显更好。这不支持“质量问题主要来自 prompt”，说明模型配置是重要杠杆；但 B 同时更换了模型与推理强度，两者未拆分，prompt 的作用本实验没有检验。该判断限于这批 dev 样本，并保留既往产物暴露及标注展示变化的局限。Highlight 的判定标准在本轮标注中有过漂移，本次 Highlight 通过率不用于任何结论，只有 Note 通过率作为决策依据。
+
+本轮模型对比暂停，后续使用 GPT-6 Luna medium 迭代；B 的现有产物作为参照上限，这是工作参考定位，不是已证明的能力上限。B 实际使用 GPT-6 Sol high，而非 GPT-6.1。DIAG-001 诊断阶段收尾，q1-v0 重判作为独立评分继续登记。
+
+</details>
+
+</details>
+
+<a id="q1-score-diag-q1v1-s001"></a>
+<details>
+<summary>DIAG-001 q1-v1 原始重判 · Q1-SCORE-DIAG-Q1V1-S001</summary>
+
+- 实验：`Q1-DIGEST-DIAG-001`；范围：16 单元，[diag-001.json](unit-sets/diag-001.json)，SHA-256 `a991dbcfeb9bf9fe09282d04de86b14ab86da97fa86ba6d04bb7e1875c357db4`。
+- 评分者：human / weijiang；尺子：q1-v1，表单：q1-v1.form.v1。
+- rubric SHA-256：`adabae9d16162163ffe25dfe81cd60515788d899aa436da25476095d614de2e3`；表单 SHA-256：`0b7d3d49bc33affe65f2adf8ee6934adae3ae1957a42789a0fb655e355a14126`。
+- 登记：2026-11-12T13:26:19.809370+00:00；评分快照状态：completed；会话：`a46a04d3-6e04-430d-bd60-0f744f910a33`。
+- 盲化：相同 81 条产物；所有者已多次读过这些批注；组别此前已揭晓。v1 界面隐藏组别，81 条保存记录 prior_judgment_seen 均为 false；不把此事实解释为独立盲评。
+
+- A1：**gpt-6-luna / medium**，run `q1_digest_fixed_history_20261108_A1`；产物 SHA-256 `f4a864630f41d6385244bd81332afaa07e7013cdd5f404553a99c96a100aa81a`。
+  - prompt `attentional_v2.digest.v24` / `b20654a196efd6d83e6e8411f580c9bb119054878e6de74b8575ccfc3a33571e`；证据：runtime_recorded。
+  - 实际请求哈希：16 条；逐请求对应关系见评分账。
+- B：**gpt-6-sol / high**，run `q1_digest_fixed_history_20261108_B`；产物 SHA-256 `3b57de54a2c0735cd32942a80df16a7109660363f1e062f35c764a538c4f7262`。
+  - prompt `attentional_v2.digest.v24` / `b20654a196efd6d83e6e8411f580c9bb119054878e6de74b8575ccfc3a33571e`；证据：runtime_recorded。
+  - 实际请求哈希：16 条；逐请求对应关系见评分账。
+
+| 产物 | 类型 | 通过/已判 | 产物总数 | 不过 | 未判 |
+|---|---|---|---:|---:|---:|
+| A1 | Highlight | 10/10（100.00%） | 10 | 0 | 0 |
+| A1 | Note | 1/21（4.76%） | 21 | 20 | 0 |
+| B | Highlight | 18/20（90.00%） | 20 | 2 | 0 |
+| B | Note | 15/30（50.00%） | 30 | 15 | 0 |
+
+逐条款不过数：开放编码不适用；待标条目不计入条款统计。多个条款可重叠。
+- A1 Highlight：H1 值得停下来：0；H2 范围完整：0；H3 脱离上下文仍有价值：0
+- A1 Note：N1 增量：18；N2 准确：0；N3 不剧透：1；N4 锚点：0
+- B Highlight：H1 值得停下来：2；H2 范围完整：0；H3 脱离上下文仍有价值：1
+- B Note：N1 增量：12；N2 准确：0；N3 不剧透：0；N4 锚点：2
+
+标注快照：
+- [judgments.jsonl](../state/scorings/q1-v2-final-20261112/source-q1-v1/judgments.jsonl)；截止 revision **81**；SHA-256 `259a4c704174478003457a46b4ceb27d7ecb8c726e1ae3d842ebbcfb2fe5c1db`；原标注时间 ['2026-11-11T11:52:16.488Z', '2026-11-11T13:49:59.850Z']；工具版本 q1-annotator/3.2。
+
+可比性：
+- `Q1-SCORE-DIAG-OPEN-S001`：same_outputs_different_rubric；相同 81 条产物；所有者已多次读过这些批注；组别此前已揭晓。open_coding 与 q1-v1 的规则、展示及判定粒度不同，变化不是独立盲评差异。
+
+复算：`python scripts/q1_scoring.py --evidence`；代码提交 `4de3724b8db1d331e8a5df7b2af83ca2c7f8e67a`；[私有统计报告](../state/scorings/q1-v2-final-20261112/q1-v1-scoring-report.json)。
+
+本实验日志合并：`Q1-DIGEST-DIAG-001` → `Q1-DIGEST-DIAG-001-CONTINUATION` → `Q1-DIGEST-DIAG-001-PREREG-001` → `Q1-DIGEST-DIAG-001-REVEAL-001` → `Q1-DIGEST-DIAG-001-LOCATION-001` → `Q1-DIGEST-DIAG-001-CLOSE-001` → `Q1-DIGEST-DIAG-001-HIGHLIGHT-RECONCILIATION-001` → `Q1-DIGEST-DIAG-001-V2-CONVERSION-001`。
+
+**所有者补充核对 · 2026-11-11**（`Q1-DIGEST-DIAG-001-HIGHLIGHT-RECONCILIATION-001`）
+
+所有者核对上述 3 条 Highlight 后确认：不是标准漂移，是规则未写明加一次误操作。
+
+- 包法利 `u000031`：第一批的理由评价的是附带的 Note。
+- 人类简史 `u000237`：第一批因遗漏相邻句子判不过，按 q1-v0 起应判过并记漏标。
+- 人类简史 `u000144`：第一批判不过是误操作。
+
+<details>
+<summary>原收尾记录（历史原文；后续核对见上文）</summary>
+
+DIAG-001 的 A1/B 混合盲标已完成，结果引用关联评分账。PREREG-001 登记的通过标准为：Highlight 选中本段值得停下来的文字且范围完整；Note 提供原文未直接说出的东西，不是语文阅读理解，且准确、与锚点相关。登记的决策指标是 B 相对 A1 的 Note 通过率差：高 25 个百分点以上为明显好，10 个点以内为无差别，介于两者之间则盲标 A2 测噪声后再判。
+
+本次 A1 为 4/21（19.05%），B 为 21/30（70%），B 高 50.95 个百分点，落入“明显好”一侧，触发该预登记判断，不触发中间区间的 A2 盲标测噪声步骤。
+
+在同一 prompt、固定历史上下文的这批诊断中，B 明显更好。这不支持“质量问题主要来自 prompt”，说明模型配置是重要杠杆；但 B 同时更换了模型与推理强度，两者未拆分，prompt 的作用本实验没有检验。该判断限于这批 dev 样本，并保留既往产物暴露及标注展示变化的局限。Highlight 的判定标准在本轮标注中有过漂移，本次 Highlight 通过率不用于任何结论，只有 Note 通过率作为决策依据。
+
+本轮模型对比暂停，后续使用 GPT-6 Luna medium 迭代；B 的现有产物作为参照上限，这是工作参考定位，不是已证明的能力上限。B 实际使用 GPT-6 Sol high，而非 GPT-6.1。DIAG-001 诊断阶段收尾，q1-v0 重判作为独立评分继续登记。
+
+</details>
+
+</details>
+
+<a id="q1-score-diag-q1v2-converted-s001"></a>
+<details>
+<summary>DIAG-001 v1 + 所有者裁决 → v2 结构换算（非 v2 逐条标注） · Q1-SCORE-DIAG-Q1V2-CONVERTED-S001</summary>
+
+- 实验：`Q1-DIGEST-DIAG-001`；范围：16 单元，[diag-001.json](unit-sets/diag-001.json)，SHA-256 `a991dbcfeb9bf9fe09282d04de86b14ab86da97fa86ba6d04bb7e1875c357db4`。
+- 评分者：human / weijiang；尺子：q1-v2，表单：无。
+- rubric SHA-256：`887d58eccf9eb5ab81c82b1751d63609186cbe0210a6d613559ad88d6904550e`；表单 SHA-256：`None`。
+- 登记：2026-11-12T13:26:19.809370+00:00；评分快照状态：completed；会话：`a46a04d3-6e04-430d-bd60-0f744f910a33`。
+- 盲化：相同 81 条产物；所有者已多次读过这些批注；组别此前已揭晓。这里只换算既有 v1 判定和所有者裁决，不是新增人工标注，不是独立盲评。
+
+**结构换算依据**：N1/H1 取自 q1-v1 文字下的人工判定及所有者裁决，再换算为 v2 结构；不是按 q1-v2 逐条标注。
+
+- A1：**gpt-6-luna / medium**，run `q1_digest_fixed_history_20261108_A1`；产物 SHA-256 `f4a864630f41d6385244bd81332afaa07e7013cdd5f404553a99c96a100aa81a`。
+  - prompt `attentional_v2.digest.v24` / `b20654a196efd6d83e6e8411f580c9bb119054878e6de74b8575ccfc3a33571e`；证据：runtime_recorded。
+  - 实际请求哈希：16 条；逐请求对应关系见评分账。
+- B：**gpt-6-sol / high**，run `q1_digest_fixed_history_20261108_B`；产物 SHA-256 `3b57de54a2c0735cd32942a80df16a7109660363f1e062f35c764a538c4f7262`。
+  - prompt `attentional_v2.digest.v24` / `b20654a196efd6d83e6e8411f580c9bb119054878e6de74b8575ccfc3a33571e`；证据：runtime_recorded。
+  - 实际请求哈希：16 条；逐请求对应关系见评分账。
+
+| 产物 | 类型 | 通过/已判 | 产物总数 | 不过 | 未判 |
+|---|---|---|---:|---:|---:|
+| A1 | Highlight | 10/10（100.00%） | 10 | 0 | 0 |
+| A1 | Note | 3/21（14.29%） | 21 | 18 | 0 |
+| B | Highlight | 18/20（90.00%） | 20 | 2 | 0 |
+| B | Note | 22/30（73.33%） | 30 | 8 | 0 |
+
+换算后的干净通过率、否决项与标签（可重叠）：
+
+- A1 Note 干净通过率：2/21（9.52%）。
+- A1 Highlight：范围不完整 0；离开上下文看不懂 0。
+- A1 Note：有错误信息 0；有剧透 1；锚点问题 0；有空话 1；冗余 0；老师口吻 1；太简练 0。
+- B Note 干净通过率：19/30（63.33%）。
+- B Highlight：范围不完整 0；离开上下文看不懂 1。
+- B Note：有错误信息 0；有剧透 0；锚点问题 2；有空话 1；冗余 3；老师口吻 0；太简练 3。
+
+逐条款不过数：开放编码不适用；待标条目不计入条款统计。多个条款可重叠。
+- A1 Highlight：H1 值得停下来：0
+- A1 Note：N1 增量：17
+- B Highlight：H1 值得停下来：2
+- B Note：N1 增量：8
+
+标注快照：
+- [judgments.jsonl](../state/scorings/q1-v2-final-20261112/source-q1-v1/judgments.jsonl)；截止 revision **81**；SHA-256 `259a4c704174478003457a46b4ceb27d7ecb8c726e1ae3d842ebbcfb2fe5c1db`；原标注时间 ['2026-11-11T11:52:16.488Z', '2026-11-11T13:49:59.850Z']；工具版本 q1-annotator/3.2。
+
+可比性：
+- `Q1-SCORE-DIAG-OPEN-S001`：same_outputs_different_rubric；相同 81 条产物；所有者已多次读过这些批注；组别此前已揭晓。N1 依据 q1-v1 文字加所有者裁决，其他字段按固定规则换算为 v2 结构；不是按 q1-v2 逐条标注，不能把差异归因于新模型或纯 rubric 效果。
+- `Q1-SCORE-DIAG-Q1V1-S001`：same_outputs_different_rubric；相同 81 条产物；所有者已多次读过这些批注；组别此前已揭晓。N1 依据 q1-v1 文字加所有者裁决，其他字段按固定规则换算为 v2 结构；不是按 q1-v2 逐条标注，不能把差异归因于新模型或纯 rubric 效果。
+
+复算：`python scripts/q1_scoring.py --evidence`；代码提交 `4de3724b8db1d331e8a5df7b2af83ca2c7f8e67a`；[私有统计报告](../state/scorings/q1-v2-final-20261112/v2-scoring-report.json)。
+
+本实验日志合并：`Q1-DIGEST-DIAG-001` → `Q1-DIGEST-DIAG-001-CONTINUATION` → `Q1-DIGEST-DIAG-001-PREREG-001` → `Q1-DIGEST-DIAG-001-REVEAL-001` → `Q1-DIGEST-DIAG-001-LOCATION-001` → `Q1-DIGEST-DIAG-001-CLOSE-001` → `Q1-DIGEST-DIAG-001-HIGHLIGHT-RECONCILIATION-001` → `Q1-DIGEST-DIAG-001-V2-CONVERSION-001`。
 
 **所有者补充核对 · 2026-11-11**（`Q1-DIGEST-DIAG-001-HIGHLIGHT-RECONCILIATION-001`）
 
