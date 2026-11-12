@@ -91,6 +91,8 @@ def details(row, logs):
         f"- 盲化：{row['blinding'].get('notes', '')}",
         "",
     ]
+    if row["inputs"]["kind"] == "adjudicated_conversion":
+        parts += ["**结构换算依据**：" + row["calculation"]["basis"], ""]
     for p in row["products"]:
         parts += [
             f"- {label(p)}：**{p['model']} / {p['reasoning_effort']}**，run `{p['run_id']}`；产物 SHA-256 `{p['product_sha256']}`。"
@@ -118,6 +120,27 @@ def details(row, logs):
             parts += [
                 f"| {label(products[g['run_id']])} | {kind} | {rate(c)} | {c['total']} | {c['failed']} | {c['unjudged']} |"
             ]
+    if row["inputs"]["kind"] == "adjudicated_conversion":
+        parts += ["", "换算后的干净通过率、否决项与标签（可重叠）：", ""]
+        for g in row["results"]:
+            n = g["counts"]["Note"]
+            clean = (
+                f"{n['clean_passed']}/{n['judged']}（{100 * n['clean_pass_rate']:.2f}%）"
+                if n["judged"]
+                else "待标"
+            )
+            parts += [f"- {label(products[g['run_id']])} Note 干净通过率：{clean}。"]
+            for kind, c in g["counts"].items():
+                fields = [
+                    f"{v['label']} {v['count']}"
+                    for field in ("vetoes", "tags")
+                    for v in c[field].values()
+                ]
+                parts += [
+                    f"- {label(products[g['run_id']])} {kind}："
+                    + "；".join(fields)
+                    + "。"
+                ]
     parts += [
         "",
         "逐条款不过数：开放编码不适用；待标条目不计入条款统计。多个条款可重叠。",
@@ -205,7 +228,10 @@ def render(root=BACKEND):
         ruler = (
             "开放编码"
             if r["rubric"]["version"] == "open_coding"
-            else r["rubric"]["version"] + "<br>" + r["rubric"]["form_version"]
+            else r["rubric"]["version"]
+            + (" 结构换算" if r["inputs"]["kind"] == "adjudicated_conversion" else "")
+            + "<br>"
+            + (r["rubric"]["form_version"] or "无表单")
         )
         output += [
             f"| [{safe(r['title'])}](#{r['scoring_id'].lower()})<br>{r['unit_set']['count']} 单元 | {models} | {ruler}<br>{r['scorer']['id']} | {metric(r, 'Note')} | {metric(r, 'Highlight')} | "

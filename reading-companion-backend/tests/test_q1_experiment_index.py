@@ -99,3 +99,36 @@ def test_without_owner_addendum_does_not_invent_a_correction(scoring):  # noqa: 
     assert "原始收尾结论" in output
     assert "所有者补充核对" not in output
     assert "标准有漂移" not in output
+
+
+def test_converted_human_results_without_a_form_are_labeled_and_rendered(scoring):  # noqa: F811
+    from scripts.q1_adjudicated_conversion import BASIS, conversion_counts
+
+    root, row = scoring
+    releases = json.loads((root / "rubric/releases.json").read_text())
+    row["rubric"] = {
+        "version": "q1-v2",
+        "sha256": releases["q1-v2"]["sha256"],
+        "form_version": None,
+        "form_sha256": None,
+    }
+    row["inputs"]["kind"] = "adjudicated_conversion"
+    row["calculation"].update(method="q1-v1_plus_owner_adjudication_to_v2", basis=BASIS)
+    row["results"][0]["counts"] = conversion_counts(
+        [
+            {
+                "type": "N",
+                "judgment": "pass",
+                "core": {"judgment": "pass"},
+                "vetoes": [],
+                "tags": ["empty_talk"],
+                "clean_pass": False,
+                "needs_verification": False,
+            }
+        ]
+    )
+    (root / "experiments/scorings.jsonl").write_text(json.dumps(row) + "\n")
+    output = render(root)
+    assert "q1-v2 结构换算<br>无表单" in output
+    assert BASIS in output and "Note 干净通过率：0/1（0.00%）" in output
+    assert "有空话 1" in output
