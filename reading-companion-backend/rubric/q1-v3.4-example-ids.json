@@ -1,0 +1,399 @@
+{
+  "usage": {
+    "exclude_from_judge_tests": true,
+    "forbidden_in_generation_prompts": true,
+    "note": "这些条目是 rubric 构建例子：以后测 judge 必须排除，也不能放进生成用的 prompt。以组别和批注 ID 的组合去重。"
+  },
+  "schema": "q1-rubric-example-ids/1",
+  "rubric_version": "q1-v3.4",
+  "rubric_path": "rubric/q1-v3.4.md",
+  "rubric_sha256": "ebb78a2da46a2026cb72fc07f695a73916efad14346fd41730c29a3f47821c5b",
+  "verdict_definition": "verdict 是按本 rubric 例示的最终 Note 过／不过，不是历史人工判定；occurrences.judgment 保留各处的单项判定或标签。逆向选择一条 N1 过，但最终因读着费劲而不过。",
+  "section_definition": "sections 汇总显式写出该组别和批注 ID 的所有小节；occurrences 记录各次出现的行号和判定。",
+  "count": 23,
+  "explicit_id_occurrence_count": 25,
+  "entries": [
+    {
+      "group": "B",
+      "annotation_id": "u000022-replay-m002",
+      "verdict": "过",
+      "sections": [
+        "2.2 N1 增量（价值，必须过）"
+      ],
+      "occurrences": [
+        {
+          "section": "2.2 N1 增量（价值，必须过）",
+          "example": "补充：读懂这句必需的背景* ★（包法利）",
+          "rubric_line": 149,
+          "judgment": "N1 过"
+        }
+      ]
+    },
+    {
+      "group": "B",
+      "annotation_id": "u000015-replay-m003",
+      "verdict": "过",
+      "sections": [
+        "2.2 N1 增量（价值，必须过）"
+      ],
+      "occurrences": [
+        {
+          "section": "2.2 N1 增量（价值，必须过）",
+          "example": "补充：名字之外还有东西*（人类简史）",
+          "rubric_line": 154,
+          "judgment": "N1 过"
+        }
+      ]
+    },
+    {
+      "group": "B",
+      "annotation_id": "u000153-replay-m001",
+      "verdict": "过",
+      "sections": [
+        "2.2 N1 增量（价值，必须过）"
+      ],
+      "occurrences": [
+        {
+          "section": "2.2 N1 增量（价值，必须过）",
+          "example": "补充：修正作者，读者自己发现不了* ★（人类简史）",
+          "rubric_line": 159,
+          "judgment": "N1 过"
+        }
+      ]
+    },
+    {
+      "group": "B",
+      "annotation_id": "u000135-replay-m002",
+      "verdict": "过",
+      "sections": [
+        "2.2 N1 增量（价值，必须过）"
+      ],
+      "occurrences": [
+        {
+          "section": "2.2 N1 增量（价值，必须过）",
+          "example": "补充：回答作者的问题*（人类简史）",
+          "rubric_line": 164,
+          "judgment": "N1 过"
+        }
+      ]
+    },
+    {
+      "group": "B",
+      "annotation_id": "u000064-replay-m005",
+      "verdict": "过",
+      "sections": [
+        "2.2 N1 增量（价值，必须过）"
+      ],
+      "occurrences": [
+        {
+          "section": "2.2 N1 增量（价值，必须过）",
+          "example": "补充：拿已有的理论来检验* ★（人类简史）",
+          "rubric_line": 169,
+          "judgment": "N1 过"
+        }
+      ]
+    },
+    {
+      "group": "B",
+      "annotation_id": "u000133-replay-m002",
+      "verdict": "过",
+      "sections": [
+        "2.2 N1 增量（价值，必须过）"
+      ],
+      "occurrences": [
+        {
+          "section": "2.2 N1 增量（价值，必须过）",
+          "example": "解读：连到前文*（包法利）",
+          "rubric_line": 176,
+          "judgment": "N1 过"
+        }
+      ]
+    },
+    {
+      "group": "B",
+      "annotation_id": "u000133-replay-m003",
+      "verdict": "过",
+      "sections": [
+        "2.2 N1 增量（价值，必须过）",
+        "2.3 读着费劲（一票否决）"
+      ],
+      "occurrences": [
+        {
+          "section": "2.2 N1 增量（价值，必须过）",
+          "example": "解读：有论证的反驳*（包法利）",
+          "rubric_line": 181,
+          "judgment": "N1 过"
+        },
+        {
+          "section": "2.3 读着费劲（一票否决）",
+          "example": "不勾（拿不准）：有几层转折，但一遍能复述*（包法利）",
+          "rubric_line": 274,
+          "judgment": "读着费劲：不勾；拿不准"
+        }
+      ]
+    },
+    {
+      "group": "B",
+      "annotation_id": "u000064-replay-m004",
+      "verdict": "过",
+      "sections": [
+        "2.2 N1 增量（价值，必须过）"
+      ],
+      "occurrences": [
+        {
+          "section": "2.2 N1 增量（价值，必须过）",
+          "example": "解读：把深的想法说浅*（人类简史）",
+          "rubric_line": 186,
+          "judgment": "N1 过"
+        }
+      ]
+    },
+    {
+      "group": "B",
+      "annotation_id": "u000155-replay-m002",
+      "verdict": "过",
+      "sections": [
+        "2.2 N1 增量（价值，必须过）"
+      ],
+      "occurrences": [
+        {
+          "section": "2.2 N1 增量（价值，必须过）",
+          "example": "挂早了，仍判过*（包法利）",
+          "rubric_line": 191,
+          "judgment": "N1 过"
+        }
+      ]
+    },
+    {
+      "group": "B",
+      "annotation_id": "u000237-replay-m004",
+      "verdict": "不过",
+      "sections": [
+        "2.2 N1 增量（价值，必须过）",
+        "2.3 读着费劲（一票否决）"
+      ],
+      "occurrences": [
+        {
+          "section": "2.2 N1 增量（价值，必须过）",
+          "example": "读着费劲，但 N1 过*（人类简史）",
+          "rubric_line": 196,
+          "judgment": "N1 过"
+        },
+        {
+          "section": "2.3 读着费劲（一票否决）",
+          "example": "勾：内容有了，一遍读不出来*（人类简史）",
+          "rubric_line": 269,
+          "judgment": "读着费劲：勾"
+        }
+      ]
+    },
+    {
+      "group": "B",
+      "annotation_id": "u000155-replay-m003",
+      "verdict": "不过",
+      "sections": [
+        "2.2 N1 增量（价值，必须过）"
+      ],
+      "occurrences": [
+        {
+          "section": "2.2 N1 增量（价值，必须过）",
+          "example": "没新东西：把原句说得更抽象*（包法利）",
+          "rubric_line": 203,
+          "judgment": "N1 不过"
+        }
+      ]
+    },
+    {
+      "group": "A1",
+      "annotation_id": "u000133-replay-m002",
+      "verdict": "不过",
+      "sections": [
+        "2.2 N1 增量（价值，必须过）"
+      ],
+      "occurrences": [
+        {
+          "section": "2.2 N1 增量（价值，必须过）",
+          "example": "没新东西：只描述手法*（包法利；和\"有论证的反驳\"是同一处）",
+          "rubric_line": 208,
+          "judgment": "N1 不过"
+        }
+      ]
+    },
+    {
+      "group": "A1",
+      "annotation_id": "u000155-replay-m003",
+      "verdict": "不过",
+      "sections": [
+        "2.2 N1 增量（价值，必须过）"
+      ],
+      "occurrences": [
+        {
+          "section": "2.2 N1 增量（价值，必须过）",
+          "example": "没新东西：纠正没人会有的误解*（包法利）",
+          "rubric_line": 213,
+          "judgment": "N1 不过"
+        }
+      ]
+    },
+    {
+      "group": "A1",
+      "annotation_id": "u000153-replay-m001",
+      "verdict": "不过",
+      "sections": [
+        "2.2 N1 增量（价值，必须过）"
+      ],
+      "occurrences": [
+        {
+          "section": "2.2 N1 增量（价值，必须过）",
+          "example": "下文马上讲了*（人类简史）",
+          "rubric_line": 218,
+          "judgment": "N1 不过"
+        }
+      ]
+    },
+    {
+      "group": "A1",
+      "annotation_id": "u000133-replay-m001",
+      "verdict": "不过",
+      "sections": [
+        "2.2 N1 增量（价值，必须过）"
+      ],
+      "occurrences": [
+        {
+          "section": "2.2 N1 增量（价值，必须过）",
+          "example": "只提问不回答：前文已有答案*（包法利）",
+          "rubric_line": 223,
+          "judgment": "N1 不过"
+        }
+      ]
+    },
+    {
+      "group": "A1",
+      "annotation_id": "u000135-replay-m002",
+      "verdict": "不过",
+      "sections": [
+        "2.2 N1 增量（价值，必须过）"
+      ],
+      "occurrences": [
+        {
+          "section": "2.2 N1 增量（价值，必须过）",
+          "example": "只提问不回答：作者的问题没回答*（人类简史；和\"回答作者的问题\"是同一处）",
+          "rubric_line": 228,
+          "judgment": "N1 不过"
+        }
+      ]
+    },
+    {
+      "group": "B",
+      "annotation_id": "u000144-replay-m005",
+      "verdict": "不过",
+      "sections": [
+        "2.2 N1 增量（价值，必须过）"
+      ],
+      "occurrences": [
+        {
+          "section": "2.2 N1 增量（价值，必须过）",
+          "example": "有东西没送到：知识只剩一个词*（人类简史）",
+          "rubric_line": 233,
+          "judgment": "N1 不过"
+        }
+      ]
+    },
+    {
+      "group": "B",
+      "annotation_id": "u000031-replay-m004",
+      "verdict": "不过",
+      "sections": [
+        "2.2 N1 增量（价值，必须过）"
+      ],
+      "occurrences": [
+        {
+          "section": "2.2 N1 增量（价值，必须过）",
+          "example": "有东西没送到：关键一步没写*（包法利）",
+          "rubric_line": 238,
+          "judgment": "N1 不过"
+        }
+      ]
+    },
+    {
+      "group": "B",
+      "annotation_id": "u000144-replay-m006",
+      "verdict": "不过",
+      "sections": [
+        "2.3 读着费劲（一票否决）"
+      ],
+      "occurrences": [
+        {
+          "section": "2.3 读着费劲（一票否决）",
+          "example": "勾：同一个想法，一个读得懂，一个读不懂*（人类简史）",
+          "rubric_line": 264,
+          "judgment": "读着费劲：勾"
+        }
+      ]
+    },
+    {
+      "group": "A1",
+      "annotation_id": "u000015-replay-m001",
+      "verdict": "不过",
+      "sections": [
+        "2.4 有剧透（一票否决）"
+      ],
+      "occurrences": [
+        {
+          "section": "2.4 有剧透（一票否决）",
+          "example": "勾*（人类简史）",
+          "rubric_line": 290,
+          "judgment": "有剧透：勾"
+        }
+      ]
+    },
+    {
+      "group": "A1",
+      "annotation_id": "u000022-replay-m002",
+      "verdict": "过",
+      "sections": [
+        "2.6 标签（只看最后判\"过\"的批注）"
+      ],
+      "occurrences": [
+        {
+          "section": "2.6 标签（只看最后判\"过\"的批注）",
+          "example": "有空话",
+          "rubric_line": 315,
+          "judgment": "有空话：标"
+        }
+      ]
+    },
+    {
+      "group": "B",
+      "annotation_id": "u000022-replay-m001",
+      "verdict": "过",
+      "sections": [
+        "2.6 标签（只看最后判\"过\"的批注）"
+      ],
+      "occurrences": [
+        {
+          "section": "2.6 标签（只看最后判\"过\"的批注）",
+          "example": "有空话",
+          "rubric_line": 319,
+          "judgment": "有空话：不标"
+        }
+      ]
+    },
+    {
+      "group": "B",
+      "annotation_id": "u000006-replay-m003",
+      "verdict": "过",
+      "sections": [
+        "2.6 标签（只看最后判\"过\"的批注）"
+      ],
+      "occurrences": [
+        {
+          "section": "2.6 标签（只看最后判\"过\"的批注）",
+          "example": "冗余",
+          "rubric_line": 327,
+          "judgment": "冗余：标"
+        }
+      ]
+    }
+  ]
+}

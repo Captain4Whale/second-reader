@@ -12,5 +12,9 @@
   "rubric/q1-v1.examples.json": "fd15ce4dae933aebc4ef5eee2c9f18c0621a863a857cdb99b0161a6de6f5d331",
   "rubric/q1-v1.form.json": "0b7d3d49bc33affe65f2adf8ee6934adae3ae1957a42789a0fb655e355a14126",
   "rubric/q1-v2.md": "887d58eccf9eb5ab81c82b1751d63609186cbe0210a6d613559ad88d6904550e",
-  "rubric/q1-v2.examples.json": "e9483639bee817d301518efb251e25459d389b14309df5c26956ccbf9f04bbb1"
+  "rubric/q1-v2.examples.json": "e9483639bee817d301518efb251e25459d389b14309df5c26956ccbf9f04bbb1",
+  "rubric/q1-v3.4.md": "ebb78a2da46a2026cb72fc07f695a73916efad14346fd41730c29a3f47821c5b",
+  "rubric/q1-annotation-guide.md": "361b1ea6fa007bd48b3df31786d02161cf748911ec9ed75ffa4b2189d9ffaa97",
+  "rubric/q1-design-notes.md": "e59208ac53bc730105ad0d61ced1c33be20cd7d88520e0f29e722459b9838f6d",
+  "rubric/q1-v3.4-example-ids.json": "b938ecf01faf98013b5a42c8e8856c66de7b85a97dbd72e88155ff3a595d854d"
 }
