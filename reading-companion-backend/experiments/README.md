@@ -196,6 +196,15 @@ and the manifest hash; historical paths/records remain unchanged. Verify with
 `python scripts/q1_private_snapshot.py state/experiments/Q1-DIGEST-DIAG-001`.
 This copy is not a backup; the source worktree must still be preserved.
 
+## v3.4 Note sessions
+
+The independent `q1-v3.4.form.v1` records per-Note judgments in each private session's
+`judgments.jsonl`, never in the scoring ledger. It preserves the published v0/v1 forms
+and old adapters. See [v3.4 operation and schema](rubric-review.md#published-v34-note-review-2026-11-15).
+The source/context, judgments and QA artifacts stay in `state/`. Future v3.4 scoring
+receipts reference frozen hashes without embedding book text, quotes, Note bodies or
+free-text reasons. This form task does not create a scoring snapshot or new batch.
+
 ## Scoring receipts (q1-scoring/1)
 
 ### v1 + owner adjudication converted into v2 structure

@@ -210,6 +210,17 @@ then update this document in the same task.
   - `abandoned` no longer means “process exited without a status file”
   - use it only when the process is gone and the registry cannot infer either trustworthy success or trustworthy failure from runtime state, exit code, outputs, or check probes
 
+## Local Q1 Note annotation tool
+
+`reading-companion-backend/scripts/q1_note_review.py serve SESSION` runs the independent
+v3.4 Note form on `127.0.0.1:8767` and opens the browser (`--port` / `--no-open` override).
+It does not start the product API, invoke a model, create an eval job or publish scoring.
+Stop with Ctrl-C and restart with the same session path. Immutable first impression,
+drafts, exposure events and corrections recover from private append-only session files;
+an incomplete JSONL tail stops writes rather than being truncated. Test and formal
+sessions must use different directories. See the [operator contract](../reading-companion-backend/experiments/rubric-review.md#published-v34-note-review-2026-11-15)
+for preparation, identity validation and later scoring boundaries.
+
 ## Step 0 recovery boundary
 
 Resume requires attentional runtime schema `3` and `checkpoint_format=chapter-planner-2026-11`. Older runs explicitly report retirement: Step 0 is inspectable at `4bc7ee0`, and pre-cleanup history at `pre-cleanup-2026-11`. Old books remain readable; startup backfill is unchanged. Chapter completion/checkpoint/Product finalization continue without slow-cycle model calls.

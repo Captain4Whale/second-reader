@@ -8,6 +8,137 @@ publication entries and q1-v0 Markdown remain immutable. Add a new form version 
 later changes; criterion/tag IDs, labels, help and supported policies are configuration,
 not annotator code. Form text contains rules only, never identifiable rubric examples.
 
+## Published v3.4 Note review (2026-11-15)
+
+The owner-approved `q1-v3.4.form.v1` is a separate Note-only protocol and entrypoint.
+The published rubric owns options/thresholds; `q1-annotation-guide.md` owns sequence.
+The v0/v1 forms, browser entrypoint, caches and old journal readers are unchanged.
+Form schema is `q1-note-rubric-form/1`; journal schema is `q1-note-judgment/1`.
+`form-releases.json` and `frozen.json` append the new identity, including the rubric
+and annotation-guide hashes. The existing form loader dispatches by schema.
+
+### Start and storage
+
+From the backend, launch an existing prepared session:
+
+```sh
+.venv/bin/python scripts/q1_note_review.py serve state/q1_rubric_reviews/Q1-DIGEST-DIAG-001-q1-v3.4
+```
+
+This binds only `127.0.0.1:8767` and opens the browser; `--no-open` and `--port` are
+available. Stop with Ctrl-C; restart preserves all locks and judgments. No API server,
+model, frontend build, cloud call or npm install is needed. This is a Chinese internal
+annotation tool, not a change to the product application's locale or public API.
+
+To prepare another isolated session from an **existing** comparison bundle:
+
+```sh
+.venv/bin/python scripts/q1_note_review.py prepare --source state/PATH_TO_EXISTING_BLIND_BATCH --session state/q1_rubric_reviews/NEW_SESSION --book-root state/PATH_TO_FIRST_ORIGINAL --book-root state/PATH_TO_SECOND_ORIGINAL --seed 20261115
+```
+
+Each book root must contain `public/book_document.json` and `_assets/source.epub`.
+Both EPUB and substrate identity must match the original batch. `launch` accepts the
+same arguments and prepares only if the session does not exist, then serves it.
+Existing directories are never overwritten. `--purpose test --test-mark ANONYMOUS_ID`
+(repeat the latter) restricts an isolated test session; formal preparation does not
+sample or regenerate a batch. It selects all existing Notes, leaving Highlights intact.
+All Notes across books share deterministic `sha256-sort-v1` order, bound with its seed,
+ordered ID list and fingerprint. This is display randomization, not sampling.
+
+Everything containing source text stays under ignored `state/`: `context.json`,
+`judgments.jsonl`, `progress.jsonl`, screenshots and test evidence. `manifest.json`
+binds input/context/form identity and session purpose. Formal and test directories
+must differ; the page labels their purpose. Only explicit upstream unit notes are
+carried forward; no historical annotation outcomes or blind group mappings reach UI.
+Anonymous IDs permit later operator-side attribution through the original blind key.
+Existing exposure to DIAG-001 is not undone by hiding groups in this new interface.
+
+### Interaction contract
+
+- One Note at a time, original source through the **end of its complete anchor**.
+  Exact Unicode code-point coordinates also split a paragraph at the anchor end.
+  Earlier context initially offers four preceding pieces and can expand through earlier
+  chapters. No other annotations are shown.
+- Within-unit and outside-unit following text remain absent from the initial response.
+  Only N1 and spoiler steps may request it; each request is persisted before delivery.
+  Each step has independent `viewed_following_text`, timestamp/range events. Switching
+  steps collapses the text; exposures never reset. Following text stops at chapter end:
+  “更远的后文靠你对这本书的了解”.
+- Original notes use exact source HTML blocks, numeric note links and reciprocal
+  backlinks. Independently deduplicated BookDocument link arrays are not zipped.
+  Missing/unresolved links display “未解析” and do not block; conflicting resource/ID
+  resolutions raise `UnreliableNotesError` and require owner review, never guessing.
+- First impression explicitly locks before difficulty; difficulty completes before any
+  later options appear. Unfinished drafts are durable in `progress.jsonl`. Both return
+  and reload preserve locks. The first impression is immutable for the session.
+- Difficulty is three-way: 一遍能复述 / 能改写得更直白 / 改写不出. The third automatically
+  marks uncertainty; only the second is a veto. Explicit later correction preserves
+  `original_choice`, ordered `amendments` (from/to/time/reason), and final `choice`.
+  Outcome and future statistics always use the final choice. Count changed items by
+  nonempty amendments, transitions by each event, and original-to-final separately.
+- N1 following use has four choices: 没用到 / 紧接着几段 / 挂早了 /
+  更远后文，转第四步判剧透. The fourth is the owner-approved form branch; the first
+  three alone cannot encode distant spoilers. Immediate repetition forces N1 fail
+  plus 下文马上讲了. Early anchor is judged at the hypothetical correct location,
+  and adds an anchor tag only if the final result passes. Distant following use
+  does not replace the independent spoiler decision.
+- N1 passing style is single-select; failing types are multi-select. They cannot coexist.
+  Other style, other failure, and uncovered require explanations. **Other failure is
+  already in rubric 2.2**, not an extra form criterion. It categorizes an N1 failure;
+  uncovered says the rubric's criteria cannot express the reason for failure.
+- Even N1 failure must complete spoiler and incorrect-information steps. Default unchecked
+  vetoes become judgments only on explicit step completion. Verification is separate.
+- Outcome is derived from N1 and all three vetoes plus uncovered. Uncovered immediately
+  clears tags/star. Failing journal rows omit `tags` entirely. Stars require pass.
+- Uncertainty is per item (`unsure`); `unsure_sources` distinguishes `automatic`,
+  `manual`, or both. Automatic difficulty uncertainty disappears if its triggering
+  choice changes; manual uncertainty is preserved. Original choice and amendments
+  retain evidence of prior automatic uncertainty. Reasons, paraphrase and rewrite
+  text are optional except the three required explanations above.
+- Explicit completion appends a complete judgment; corrections append revisions with
+  `supersedes_revision`. `progress.jsonl` is a separate append-only transition journal,
+  not a statistics input. The server rejects stale page versions and incomplete JSONL
+  tails, fsyncs saves, and recovers a completed record if interrupted between the two
+  journal writes. Source/form/context identities are checked on open. The server
+  restricts paths and rejects cross-origin writes.
+
+### Future scoring boundary
+
+`read_note_review()` in `scripts/q1_note_session.py` validates and reads v3.4 records;
+`q1_scoring.py` is unchanged and does not yet accept this protocol. A future adapter
+must bind frozen journal bytes/hashes and select latest complete revisions within one
+session/annotator/rubric/form scope. **No scoring snapshot is created by this task.**
+Future `experiments/scorings.jsonl` rows carry hashes/identifiers/aggregate results,
+never book text, quotes, Note bodies or free-text reasons; private evidence stays in state.
+
+All Appendix A measures are recoverable: pass rate; pass without 有空话/冗余 over all;
+that same clean numerator over passes; independent N1 and veto rates; other-style count
+and pass rates with/without those items; uncertainty, verification and uncovered counts;
+N1 pass failing only on difficulty. Per-item uncertainty counts once even with several
+uncertain criteria; automatic/manual/both remain separable. The frozen-threshold inputs
+are locked-first-impression disagreement / eligible completed Notes, uncovered count,
+and uncertain-item proportion. No numeric threshold is invented by the form.
+
+`unit_note` revisions carry `unit_key`, `remarks` and `upstream_excluded`; “上游：”
+activates exclusion of the entire unit. Apply latest unit-note state before denominators,
+not a stale per-mark copy. Unit notes do not enter annotation counts. No omission or
+within-unit redundancy form is added. The frozen manifest detects incomplete coverage;
+a finished-batch rate must not disguise missing judgments. Zero denominators are null.
+
+Each applicable step stores `started_at`, `completed_at`, `active_ms`; fail-only label
+skips are explicit. First reading occurs during step one, so difficulty-duration work
+must include both steps one and two. Correction timestamps do not replace initial
+completion times. `active_ms` measures visible-page interaction time, not pure reading
+or attention, and background-tab time is excluded.
+
+### v3.4 verification
+
+```sh
+.venv/bin/python -m pytest -q tests/test_q1_note_form.py tests/test_q1_note_session.py tests/test_q1_rubric_form.py tests/test_q1_rubric_review.py tests/test_q1_comparison_stats.py tests/test_q1_scoring.py tests/test_iteration_provenance.py
+node --test tools/q1-annotator-storage.test.cjs tools/q1-annotator-keyboard.test.cjs tools/q1-rubric-form.test.cjs
+.venv/bin/python scripts/check_iteration_provenance.py --base-ref b870d6e^
+```
+
 ## Published v1 and separate sessions (2026-11-11)
 
 The new published rubric is `q1-v1`, with `rubric/q1-v1.form.json` registered as

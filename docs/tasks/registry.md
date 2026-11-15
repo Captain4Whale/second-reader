@@ -32,6 +32,8 @@ Last updated: `2026-11-12`
 
 ## Done
 
+- `TASK-Q1-RUBRIC-V34-FORM` — `done`: immutable Note-only v3.4 form, independent local entrypoint and append-only private sessions; initial DIAG-001 formal session has 51 Notes and an empty judgment journal. Three isolated test cases, 124 Python and 48 legacy Node tests. No sampling, model runs or scoring snapshot. [Record](q1-rubric-v3.4-form-2026-11-15.md).
+
 - `TASK-Q1-RUBRIC-V2-CONVERSION` — `done`: published exact v2 and 22 verified examples, no form; registered raw v1 and owner-adjudicated v2-structure conversion scores (Note 25/51, H 28/30). Anonymous failure-type worksheet: 25 items, 10 prefilled, 15 blank; owner completion and later import pending separately. No original annotations or prior releases changed. [Receipt](q1-rubric-v2-conversion-2026-11-12.md).
 
 - `TASK-Q1-RUBRIC-V1-RELEASE` — `done`: exact v1 rubric, 38 verified examples, new immutable form and DIAG-001 review session, now 81/81 complete with an anonymous open_coding comparison and exact snapshots. v0 preserved; N2/N4 judgments cannot be pooled. Two append-only log rows include owner Highlight clarification; INDEX now displays the addendum and keeps the old closure explicitly historical. [Receipt](q1-rubric-v1-release-2026-11-11.md).

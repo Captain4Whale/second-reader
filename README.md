@@ -545,6 +545,21 @@ The subsequently authorized C-only recovery uses `.venv/bin/python -m eval.atten
 
 ## Q1 manual error analysis
 
+Q1 rubric v3.4 has a separate Note-only form (v0/v1 remain on the existing annotator).
+Start the prepared, initially empty DIAG-001 session from the workspace root:
+
+```sh
+reading-companion-backend/.venv/bin/python reading-companion-backend/scripts/q1_note_review.py serve reading-companion-backend/state/q1_rubric_reviews/Q1-DIGEST-DIAG-001-q1-v3.4
+```
+
+It opens `http://127.0.0.1:8767`; Ctrl-C stops it. Session preparation, anchor-limited
+context, original-note resolution, append-only records and future statistics:
+[v3.4 protocol](reading-companion-backend/experiments/rubric-review.md#published-v34-note-review-2026-11-15).
+Private test sessions stay under `state/q1_rubric_reviews/qa/`; no scoring receipt is
+created. A fresh checkout needs the private source bundle and matching book roots;
+see the protocol's `prepare` command.
+
+
 Annotator 3.2 supports window-aligned mixed blind comparisons and stepwise rubric
 rejudgment. For q1-v0 or q1-v1, follow [the rejudgment protocol](reading-companion-backend/experiments/rubric-review.md):
 open the prepared review folder using “打开批次文件夹”. Keep `q1-rubric-form.js` next to

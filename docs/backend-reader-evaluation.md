@@ -1264,3 +1264,23 @@ authorize new model/prompt work or reinterpret historical scores. Pause further 
 comparison; iterate with GPT-6 Luna medium, retain existing GPT-6 Sol high outputs as a
 reference. The stopped q1-v0 and new q1-v1 human reviews are separate scoring scopes,
 not additional generation or independent blind trials.
+
+
+## Q1 v3.4 Note annotation evidence
+
+The v3.4 form follows the published annotation guide's first-impression → difficulty →
+N1 → spoiler → incorrect-information → derived outcome → pass-only tags sequence.
+First impression remains immutable. Difficulty amendments retain original and ordered
+from/to choices; outcome and future statistics use the final value. Per-item uncertainty
+retains automatic/manual attribution. Observer context ends at the anchor; later text
+is separately logged in N1 and spoiler and limited to the current chapter. Original
+notes are verified through source links; unresolved notes remain explicitly unresolved.
+
+`q1-note-judgment/1` and unit-note revisions under private `state/` contain Appendix A
+inputs and the three freeze-gate metrics (first-impression disagreement, uncovered
+count, uncertain-item proportion). Apply latest upstream unit exclusions before
+counting, and do not count revisions or unit-note rows as additional annotations.
+The protocol does not set numeric freeze thresholds. Its future scoring adapter must
+use frozen hashes and complete scope coverage; scoring receipts never embed source
+text or free-text judgments. No v3.4 scoring adapter or snapshot is introduced here.
+See [operator and record contract](../reading-companion-backend/experiments/rubric-review.md#published-v34-note-review-2026-11-15).

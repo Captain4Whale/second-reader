@@ -1,0 +1,64 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1" />
+    <title>Q1 v3.4 · Note 标注</title>
+    <link rel="stylesheet" href="/style.css" />
+  </head>
+  <body>
+    <header>
+      <div>
+        <strong>Q1 v3.4</strong><span> Note 标注</span
+        ><span id="purpose" class="badge"></span>
+      </div>
+      <div id="position"></div>
+      <div id="status" role="status">正在连接会话…</div>
+    </header>
+    <main>
+      <div id="error" role="alert" hidden></div>
+      <div class="layout">
+        <section class="source">
+          <div class="eyebrow">原文 · 到锚点为止</div>
+          <h1 id="book"></h1>
+          <p id="chapter" class="muted"></p>
+          <button id="anchorGo" type="button">定位锚点</button>
+          <details id="earlier">
+            <summary>查看前文</summary>
+            <button id="moreEarlier" type="button">展开更早前文</button>
+            <div id="olderText"></div>
+            <div id="recentText"></div>
+          </details>
+          <div id="sourceText"></div>
+          <div id="following"></div>
+          <details id="notes">
+            <summary>原书注释 <span id="noteStatus"></span></summary>
+            <div id="notesText"></div>
+          </details>
+        </section>
+        <section class="decision">
+          <div class="note">
+            <div class="eyebrow">批注正文</div>
+            <p id="body"></p>
+          </div>
+          <section id="workflow"></section>
+          <details class="unit">
+            <summary>单元备注 / 上游问题</summary>
+            <p class="muted">
+              原书注释等混入正文时，以“上游：”开头。本单元所有批注在以后统计时排除。
+            </p>
+            <textarea id="unitNote" aria-label="单元备注" rows="2"></textarea
+            ><button id="saveUnit" type="button">保存单元备注</button>
+          </details>
+        </section>
+      </div>
+      <footer>
+        <button id="prev" type="button">上一条</button
+        ><span id="saveHint">步骤会保存到本机会话</span
+        ><button id="decisionGo" type="button">返回判定</button>
+        <button id="next" type="button">下一条</button>
+      </footer>
+    </main>
+    <script src="/app.js"></script>
+  </body>
+</html>
