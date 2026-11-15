@@ -212,14 +212,15 @@ then update this document in the same task.
 
 ## Local Q1 Note annotation tool
 
-`reading-companion-backend/scripts/q1_note_review.py serve SESSION` runs the independent
-v3.4 Note form on `127.0.0.1:8767` and opens the browser (`--port` / `--no-open` override).
-It does not start the product API, invoke a model, create an eval job or publish scoring.
-Stop with Ctrl-C and restart with the same session path. Immutable first impression,
-drafts, exposure events and corrections recover from private append-only session files;
-an incomplete JSONL tail stops writes rather than being truncated. Test and formal
-sessions must use different directories. See the [operator contract](../reading-companion-backend/experiments/rubric-review.md#published-v34-note-review-2026-11-15)
-for preparation, identity validation and later scoring boundaries.
+Q1 v3.4 uses the existing `tools/q1-annotator.html` offline entrypoint (tool 3.3).
+Open it in Chrome / Edge, then authorize the prepared session directory using
+“打开批次文件夹”. No Python service or product API runs during annotation.
+The legacy `q1_note_review.py serve SESSION` / `launch` commands now open this HTML
+and print the directory to select; `prepare` still packages source context offline.
+Browser IndexedDB stores drafts, locks, timing and exposure history. Completed records
+append to the selected `judgments.jsonl`; browser/file failure prevents advancement.
+Existing service-era `progress.jsonl` is imported read-only, not rewritten or appended.
+Test and formal sessions use separate directories. See the [operator contract](../reading-companion-backend/experiments/rubric-review.md#published-v34-note-review-2026-11-15).
 
 ## Step 0 recovery boundary
 

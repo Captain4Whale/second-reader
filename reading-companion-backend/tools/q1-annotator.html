@@ -703,7 +703,7 @@
     <section id="landing">
       <h2>开始一个批次</h2>
       <p>
-        选择含 batch.json 的批次文件夹并授权，即可自动连接同目录的
+        选择批次或 v3.4 会话文件夹并授权，即可自动连接同目录的
         judgments.jsonl。理由和备注会按你的原话保存。
       </p>
     </section>
@@ -845,12 +845,17 @@
     <button id="closeHelp">关闭 Esc</button>
   </dialog>
   <script src="q1-rubric-form.js"></script>
+  <script src="q1-journal.js"></script>
+  <script src="q1-note-protocol.js"></script>
+  <script src="q1-note-offline.js"></script>
+  <script src="q1-note-annotator.js"></script>
   <script>
     "use strict";
-    const VERSION = "q1-annotator/3.2",
+    const VERSION = "q1-annotator/3.3",
       $ = (id) => document.getElementById(id);
-    const REVIEW_VERSIONS = ["q1-annotator/2.3", "q1-annotator/2.4", "q1-annotator/2.5", "q1-annotator/2.6", "q1-annotator/3.0", "q1-annotator/3.1", VERSION];
+    const REVIEW_VERSIONS = ["q1-annotator/2.3", "q1-annotator/2.4", "q1-annotator/2.5", "q1-annotator/2.6", "q1-annotator/3.0", "q1-annotator/3.1", "q1-annotator/3.2", VERSION];
     const MIXED_VERSIONS = ["q1-annotator/2.0", "q1-annotator/2.1", "q1-annotator/2.2", ...REVIEW_VERSIONS];
+    let noteController = null;
     let reviewCompletion = null, navigationEpoch = 0;
     $("annotatorVersion").textContent = VERSION.split("/")[1];
     function setText(node, text) {
@@ -1008,7 +1013,7 @@
           !["marginalia", "omission", "unit_note"].includes(r.record_type) ||
           !strictRange(r.original_source_range) || !Number.isFinite(Date.parse(r.timestamp)))
         throw Error("混合判断包含无效字段或来源信息，已停止同步。");
-      if (r.schema === "q1-mixed-judgment/3" && !["q1-annotator/3.0", "q1-annotator/3.1", VERSION].includes(r.annotator_version)) throw Error("逐项判断版本不匹配。");
+      if (r.schema === "q1-mixed-judgment/3" && !["q1-annotator/3.0", "q1-annotator/3.1", "q1-annotator/3.2", VERSION].includes(r.annotator_version)) throw Error("逐项判断版本不匹配。");
       if (review) {
         if (!scope || !REVIEW_VERSIONS.includes(r.annotator_version) || [...Q1Rubric.identityFields,"annotator_id","rubric_version","rubric_sha256"].some(k=>r[k] !== scope.context[k])) throw Error("重判日志身份不匹配，禁止混入其他会话或旧判断。");
         Q1Rubric.validateAssessment(r, scope.form);
@@ -1230,13 +1235,7 @@
       }
       return rows;
     }
-    function compareHistories(local, remote) {
-      const n = Math.min(local.length, remote.length);
-      for (let i = 0; i < n; i++)
-        if (JSON.stringify(sorted(local[i])) !== JSON.stringify(sorted(remote[i])))
-          throw Error("浏览器与文件历史发生分叉，已停止同步并保留双方内容；请导出浏览器记录后核对。");
-      return remote.length - local.length;
-    }
+    const compareHistories = (local,remote) => Q1Journal.compare(local,remote);
     async function reconcile(s) {
       const remote = parseJournal(await (await s.handle.getFile()).text(), s.batch, journalScope(s));
       if (compareHistories(s.state.rows, remote) > 0) s.state.rows = remote;
@@ -1261,28 +1260,7 @@
             return;
           }
           const rows = s.state.rows.slice();
-          const journal = await (await s.handle.getFile()).text();
-          const remote = parseJournal(journal, s.batch, journalScope(s));
-          if (compareHistories(rows, remote) > 0)
-            throw Error("文件有较新记录，已暂停写入；请点击重试文件同步核对并恢复。");
-          const suffix = rows
-            .slice(remote.length)
-            .map((r) => JSON.stringify(r) + "\n")
-            .join("");
-          if (suffix) {
-            const stream = await s.handle.createWritable({ keepExistingData: true, mode: "exclusive" });
-            try {
-              const current = await s.handle.getFile();
-              if ((await current.text()) !== journal)
-                throw Error("结果文件已被其他窗口修改，请重试同步。");
-              await stream.seek(current.size);
-              await stream.write(suffix);
-              await stream.close();
-            } catch (err) {
-              await stream.abort().catch(() => {});
-              throw err;
-            }
-          }
+          await Q1Journal.append(s.handle, rows, raw => parseJournal(raw, s.batch, journalScope(s)));
           s.diskAck = rows.length;
           s.diskError = null;
           s.permissionNeeded = false;
@@ -1343,6 +1321,7 @@
       });
     }
     async function settleCurrent() {
+      if(noteController){await noteController.flush();await noteController.session.sync();return;}
       if (!session) return;
       flushEdits();
       await session.writes;
@@ -1369,6 +1348,9 @@
     }
     async function installSession(s) {
       await dbSaveSession(s); // Commit selection + reconciled history atomically before replacing the UI.
+      if (noteController) { noteController.dispose(); noteController = null; }
+      $("fileOptions").hidden = false;
+      $("saveState").hidden = false;
       session = s;
       for (const id of ["work", "workbar", "bookContext", "batchProgress", "export"])
         $(id).hidden = false;
@@ -1399,6 +1381,7 @@
       if (!restoring && !s.handle) say("单独打开 JSON 仅保存到浏览器；请连接本批次的结果文件。");
     }
     function setBusy(value) {
+      if(document.getElementById("noteOffline"))document.getElementById("noteOffline").inert=value;
       busy = value;
       $("work").inert = value;
       $("workbar").inert = value;
@@ -1407,6 +1390,17 @@
         $(id).disabled = value;
       $("openFolder").disabled = value || !window.showDirectoryPicker;
       if (session && reviewMode()) syncReviewControls();
+    }
+    async function installNoteDirectory(directory) {
+      const next = await Q1NoteOffline.Session.load(directory, {get:dbGet, put:dbPut});
+      const view = await Q1NoteOffline.mount(next);
+      try { await dbPut("last", {noteKey:next.key}); }
+      catch (e) { view.dispose(); throw e; }
+      if (noteController) noteController.dispose();
+      noteController = view;
+      for (const id of ["work", "workbar", "bookContext", "batchProgress", "landing", "export", "fileOptions", "link", "retryBrowser", "saveState", "saveDetail"])
+        $(id).hidden = true;
+      say("");
     }
     async function openFolder() {
       if (busy) return;
@@ -1424,6 +1418,14 @@
         try { batchFile = await directory.getFileHandle("mixed.json"); }
         catch (err) {
           if (err.name !== "NotFoundError") throw err;
+          let noteManifest;
+          try { noteManifest = JSON.parse(await (await (await directory.getFileHandle("manifest.json")).getFile()).text()); }
+          catch (e) { if (e.name !== "NotFoundError") throw e; }
+          if (noteManifest?.schema === "q1-note-session/1") {
+            await settleCurrent();
+            await installNoteDirectory(directory);
+            return;
+          }
           opening = "batch.json";
           try { batchFile = await directory.getFileHandle("batch.json"); }
           catch (fallbackError) {
@@ -1471,7 +1473,7 @@
         }
       } finally {
         setBusy(false);
-        if (session) queueEdits();
+        if (session && !noteController) queueEdits();
       }
     }
     async function connect(choose = false) {
@@ -2652,6 +2654,7 @@
       setTimeout(neutralFocus, 0);
     });
     function handleKeydown(e) {
+      if(typeof noteController!=="undefined" && noteController)return;
       if (
         !session ||
         busy ||
@@ -2822,7 +2825,14 @@
         r.onerror = () => no(r.error);
       });
       const last = await dbGet("last");
-      if (last) await activate(await dbGet("batch:" + (last.id ?? last)), true, last.context);
+      if (last?.noteKey) {
+        const dir = await dbGet("directory:" + last.noteKey);
+        if (dir) {
+          try { await installNoteDirectory(dir); }
+          catch (e) { say("恢复需要重新打开会话文件夹；草稿保留。" + e.message); }
+        }
+      }
+      else if (last) await activate(await dbGet("batch:" + (last.id ?? last)), true, last.context);
       $("open").disabled = false;
       $("openFolder").disabled = !window.showDirectoryPicker;
       if (!window.showDirectoryPicker)

@@ -18,11 +18,13 @@
       "decision_refs": [],
       "job_refs": [],
       "blocked_by": [],
-      "next_action": "Owner annotates in an isolated formal v3.4 session. Future snapshot adapter must bind hashes, exclude upstream units and keep source text private. No model or sampling work authorized.",
+      "next_action": "Open original offline q1-annotator.html (3.3), select the isolated v3.4 formal folder. Future snapshot adapter binds hashes and excludes upstream units; no source text in scoring receipts.",
       "evidence_refs": [
         "reading-companion-backend/rubric/q1-v3.4.form.v1.json",
         "reading-companion-backend/tests/test_q1_note_session.py",
-        "reading-companion-backend/state/q1_rubric_reviews/qa/v3.4-20261115/qa-inventory.md"
+        "reading-companion-backend/state/q1_rubric_reviews/qa/v3.4-20261115/qa-inventory.md",
+        "reading-companion-backend/tools/q1-note-protocol.test.cjs",
+        "reading-companion-backend/tools/q1-note-offline.test.cjs"
       ],
       "last_updated": "2026-11-15",
       "last_updated_by": "codex"

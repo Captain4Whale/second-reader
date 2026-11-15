@@ -207,17 +207,12 @@ def main():
                 "已有测试会话条目不符",
             )
     if args.command in ("serve", "launch"):
-        srv = server(Store(args.session), args.port)
-        url = f"http://127.0.0.1:{srv.server_port}"
-        print(f"Q1 Note review: {url}", flush=True)
+        Store(args.session)  # Validate before opening; never write existing evidence.
+        print(f"打开批次文件夹：{args.session.resolve()}", flush=True)
+        url = (BACKEND / "tools/q1-annotator.html").as_uri()
+        print(f"离线标注器：{url}", flush=True)
         if not args.no_open:
             webbrowser.open(url)
-        try:
-            srv.serve_forever()
-        except KeyboardInterrupt:
-            pass
-        finally:
-            srv.server_close()
 
 
 if __name__ == "__main__":

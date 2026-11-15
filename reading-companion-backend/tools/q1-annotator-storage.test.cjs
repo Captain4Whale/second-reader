@@ -20,6 +20,7 @@ function harness() {
   };
   const c = vm.createContext({
     Q1Rubric: require('./q1-rubric-form.js'),
+    Q1Journal: require('./q1-journal.js'),
     document: { getElementById: get },
     window: { showOpenFilePicker() {} },
     structuredClone,
@@ -279,7 +280,7 @@ test("mixed records append no group identity and reject reveal/density/provenanc
   h.run('var mark=blind.windows[0].marginalia[0];record("marginalia",mark.marginalia_id,{marginalia_id:mark.marginalia_id,type:mark.type,source_quote:mark.source_quote,body_text:mark.body_text,judgment:"pass",reason:"",remarks:"",star:false,needs_verification:false},mark.original_source_range,mark.original_source_range)');
   await h.run("session.writes");
   const r=JSON.parse(h.run("JSON.stringify(state.rows[0])"));
-  assert.equal(r.annotator_version,"q1-annotator/3.2");
+  assert.equal(r.annotator_version,"q1-annotator/3.3");
   h.c.older={...r,annotator_version:"q1-annotator/2.0"};
   assert.equal(h.run('parseJournal(JSON.stringify(older)+"\\n",batch).length'),1);
   assert.equal(r.view,"mixed"); assert.equal(r.comparison_batch_id,h.c.blind.batch_id);
@@ -383,17 +384,17 @@ test('failed review write cannot unlock prior judgments; retry preserves complet
   assert.equal(h.run('state.rows.length'),1);
 });
 
-for (const version of ['3.0','3.1']) test('3.2 appends after an unchanged '+version+' journal prefix',async()=>{
+for (const version of ['3.0','3.1','3.2']) test('3.3 appends after an unchanged '+version+' journal prefix',async()=>{
   const h=reviewHarness();
   h.run('record("marginalia",m.marginalia_id,fields,null,m.original_source_range)');await h.run('session.writes');
-  assert.equal(h.run('state.rows[0].annotator_version'),'q1-annotator/3.2');
+  assert.equal(h.run('state.rows[0].annotator_version'),'q1-annotator/3.3');
   h.c.previousVersion="q1-annotator/"+version;
   h.run('state.rows[0].annotator_version=previousVersion;disk=JSON.stringify(state.rows[0])+"\\n";var prefix=disk;session=makeSession(batch,state,handle)');
   await h.run('reconcile(session)');
   h.run('record("marginalia",m.marginalia_id,{...fields,remarks:"amended"},null,m.original_source_range)');await h.run('session.writes');
   assert.equal(h.run('disk.startsWith(prefix)'),true);
   assert.equal(h.run('parseJournal(disk,batch,journalScope(session)).length'),2);
-  assert.equal(h.run('state.rows[1].annotator_version'),'q1-annotator/3.2');
+  assert.equal(h.run('state.rows[1].annotator_version'),'q1-annotator/3.3');
 });
 
 test('review exposure cannot start true or revert; legacy rows cannot enter review journal',async()=>{
@@ -413,6 +414,7 @@ test('invalid review snapshot fails before acquiring a result handle or changing
   h.run('var before=session,reads=[];settleCurrent=async()=>{}');
   const ctx={...JSON.parse(h.run('JSON.stringify(state.annotationContext)')),batch_id:h.c.blind.batch_id,rubric_status:'published'};
   h.c.showDirectoryPicker=async()=>({requestPermission:async()=> 'granted',getFileHandle:async n=>{
+    if(n==='manifest.json')throw Object.assign(Error('not found'),{name:'NotFoundError'});
     h.c.reads.push(n);
     const content={'mixed.json':JSON.stringify(h.c.blind),'annotation-context.json':JSON.stringify(ctx),'rubric-form.json':'{}','open_coding.snapshot.jsonl':''}[n];
     if(content===undefined)throw Error('Should not acquire writable handle');
@@ -432,6 +434,7 @@ test('folder errors name missing inputs and preserve the current session without
     const formText=readFileSync(__dirname+'/../rubric/q1-v0.form.json','utf8');
     h.run('var before=session,committed=false;settleCurrent=async()=>{};dbSaveSession=async()=>{committed=true};dbGet=async()=>undefined');
     h.c.showDirectoryPicker=async()=>({name:'chosen-folder',requestPermission:async()=> 'granted',getFileHandle:async n=>{
+    if(n==='manifest.json')throw Object.assign(Error('not found'),{name:'NotFoundError'});
       if(missing==='batch'||n===missing)throw Object.assign(Error('native not found'),{name:'NotFoundError'});
       const content={'mixed.json':JSON.stringify(h.c.blind),'annotation-context.json':JSON.stringify(context),
         'rubric-form.json':formText,'open_coding.snapshot.jsonl':''}[n];
@@ -457,8 +460,7 @@ test('opening a review for the same batch does not import completed open_coding 
   h.run('var oldState=structuredClone(state);delete oldState.reviewResources;oldState.annotationContext={...DEFAULT_ANNOTATION_CONTEXT};for(const r of oldState.rows){r.schema="q1-mixed-judgment/1";r.rubric_version="open_coding";r.rubric_sha256=null;for(const k of [...Q1Rubric.reviewFields,...Q1Rubric.stepFields])delete r[k]};disk="";settleCurrent=async()=>{};dbGet=async k=>k==="state:"+blind.batch_id?oldState:undefined;dbSaveSession=async()=>{};installSession=async s=>{session=s}');
   const contents={'mixed.json':JSON.stringify(h.c.blind),'annotation-context.json':JSON.stringify(context),
     'rubric-form.json':readFileSync(__dirname+'/../rubric/q1-v0.form.json','utf8'),'open_coding.snapshot.jsonl':''};
-  h.c.showDirectoryPicker=async()=>({name:'review-folder',requestPermission:async()=> 'granted',getFileHandle:async n=>
-    n==='judgments.jsonl'?h.c.handle:{getFile:async()=>({text:async()=>contents[n]})}});
+  h.c.showDirectoryPicker=async()=>({name:'review-folder',requestPermission:async()=> 'granted',getFileHandle:async n=>{if(n==='manifest.json')throw Object.assign(Error('not found'),{name:'NotFoundError'});return n==='judgments.jsonl'?h.c.handle:{getFile:async()=>({text:async()=>contents[n]})};}});
   await h.run('openFolder()');
   assert.equal(h.run('reviewMode()'),true);assert.equal(h.run('session.state.rows.length'),0);
   assert.equal(h.run('oldState.rows.length'),1);assert.equal(h.run('disk'),'');

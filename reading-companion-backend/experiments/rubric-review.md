@@ -10,25 +10,35 @@ not annotator code. Form text contains rules only, never identifiable rubric exa
 
 ## Published v3.4 Note review (2026-11-15)
 
-The owner-approved `q1-v3.4.form.v1` is a separate Note-only protocol and entrypoint.
+The owner-approved `q1-v3.4.form.v1` is a Note-only protocol in the existing offline annotator (tool 3.3).
 The published rubric owns options/thresholds; `q1-annotation-guide.md` owns sequence.
-The v0/v1 forms, browser entrypoint, caches and old journal readers are unchanged.
+The v0/v1 forms and cache identities stay unchanged. Old readers accept tool 3.3 without changing old judgment semantics.
 Form schema is `q1-note-rubric-form/1`; journal schema is `q1-note-judgment/1`.
 `form-releases.json` and `frozen.json` append the new identity, including the rubric
 and annotation-guide hashes. The existing form loader dispatches by schema.
 
 ### Start and storage
 
-From the backend, launch an existing prepared session:
+Open `tools/q1-annotator.html` in Chrome / Edge, then choose the prepared session
+through “打开批次文件夹”. This is the same offline entrypoint and directory permission
+flow as earlier versions. No local service, model, npm install or frontend build is
+needed. Keep the sibling scripts next to the HTML. Tool version is `q1-annotator/3.3`;
+it is separate from rubric `q1-v3.4`, frozen form `q1-v3.4.form.v1` and record schema.
+The earlier `serve SESSION` / `launch` commands now open this HTML and print the
+folder to select. The old `q1-note-annotator.html` is a pointer to this entrypoint.
 
-```sh
-.venv/bin/python scripts/q1_note_review.py serve state/q1_rubric_reviews/Q1-DIGEST-DIAG-001-q1-v3.4
-```
+The existing 3.2 responsive grid, typography, natural heights and sticky desktop actions
+are reused by the v3.4 mode. The original stylesheet is shared at runtime, not forked.
+The v3.4 mode uses isolated DOM controls to keep legacy event handlers and drafts intact.
+Help opens by default. Progress squares follow the frozen mixed-book Note order.
 
-This binds only `127.0.0.1:8767` and opens the browser; `--no-open` and `--port` are
-available. Stop with Ctrl-C; restart preserves all locks and judgments. No API server,
-model, frontend build, cloud call or npm install is needed. This is a Chinese internal
-annotation tool, not a change to the product application's locale or public API.
+P/F, Enter, Shift+Enter, R/M/U, J/K, Shift+J/K, ?, Esc, V/S/0 retain applicable meanings.
+1–7 and [ / ] browse already-open steps; earlier locked steps are read-only. Enter
+cannot skip required decisions. At the label step 5–9 toggle the five configured tags.
+Arrows follow the randomized Note sequence, not old unit grouping. Three-way choices
+and conditional options remain reachable by Tab, arrows and Space. Native controls,
+text entry, modifiers, held keys and IME composition are guarded. First impression
+cannot be changed via shortcuts; explicit difficulty amendments preserve original values.
 
 To prepare another isolated session from an **existing** comparison bundle:
 
@@ -46,7 +56,7 @@ All Notes across books share deterministic `sha256-sort-v1` order, bound with it
 ordered ID list and fingerprint. This is display randomization, not sampling.
 
 Everything containing source text stays under ignored `state/`: `context.json`,
-`judgments.jsonl`, `progress.jsonl`, screenshots and test evidence. `manifest.json`
+`judgments.jsonl`, existing `progress.jsonl`, screenshots and test evidence. `manifest.json`
 binds input/context/form identity and session purpose. Formal and test directories
 must differ; the page labels their purpose. Only explicit upstream unit notes are
 carried forward; no historical annotation outcomes or blind group mappings reach UI.
@@ -69,7 +79,7 @@ Existing exposure to DIAG-001 is not undone by hiding groups in this new interfa
   Missing/unresolved links display “未解析” and do not block; conflicting resource/ID
   resolutions raise `UnreliableNotesError` and require owner review, never guessing.
 - First impression explicitly locks before difficulty; difficulty completes before any
-  later options appear. Unfinished drafts are durable in `progress.jsonl`. Both return
+  later options appear. Unfinished drafts are durable in the original browser IndexedDB database, keyed by batch, annotator, rubric, form and session. Existing `progress.jsonl` is imported read-only. Both return
   and reload preserve locks. The first impression is immutable for the session.
 - Difficulty is three-way: 一遍能复述 / 能改写得更直白 / 改写不出. The third automatically
   marks uncertainty; only the second is a veto. Explicit later correction preserves
@@ -96,11 +106,17 @@ Existing exposure to DIAG-001 is not undone by hiding groups in this new interfa
   retain evidence of prior automatic uncertainty. Reasons, paraphrase and rewrite
   text are optional except the three required explanations above.
 - Explicit completion appends a complete judgment; corrections append revisions with
-  `supersedes_revision`. `progress.jsonl` is a separate append-only transition journal,
-  not a statistics input. The server rejects stale page versions and incomplete JSONL
-  tails, fsyncs saves, and recovers a completed record if interrupted between the two
-  journal writes. Source/form/context identities are checked on open. The server
-  restricts paths and rejects cross-origin writes.
+  `supersedes_revision`. Browser state is saved before disk writes. Both receipts are
+  required before advancing. Failed writes keep the draft/record available for retry;
+  repeated retries cannot duplicate submissions. Directory handles are remembered,
+  permission restoration is explicit. Prefix conflicts and incomplete JSONL stop sync
+  without rewriting either side. The original and v3.4 modes share the JSONL append
+  primitive (`q1-journal.js`) and browser tab lock. No new draft file is written.
+- Browser restoration imports existing service-era progress without changing its bytes.
+  A newer completed journal revision supersedes an older browser draft. Context, form,
+  session, randomization and journal identities are checked before loading. UI hides
+  future text until the permitted step; this is interaction protection, not encryption
+  against someone examining local files or developer tools.
 
 ### Future scoring boundary
 
@@ -135,7 +151,7 @@ or attention, and background-tab time is excluded.
 
 ```sh
 .venv/bin/python -m pytest -q tests/test_q1_note_form.py tests/test_q1_note_session.py tests/test_q1_rubric_form.py tests/test_q1_rubric_review.py tests/test_q1_comparison_stats.py tests/test_q1_scoring.py tests/test_iteration_provenance.py
-node --test tools/q1-annotator-storage.test.cjs tools/q1-annotator-keyboard.test.cjs tools/q1-rubric-form.test.cjs
+node --test tools/q1-annotator-storage.test.cjs tools/q1-annotator-keyboard.test.cjs tools/q1-rubric-form.test.cjs tools/q1-note-protocol.test.cjs tools/q1-note-offline.test.cjs
 .venv/bin/python scripts/check_iteration_provenance.py --base-ref b870d6e^
 ```
 
@@ -356,7 +372,7 @@ form within this protocol needs no UI-code change. A protocol expansion (for exa
 annotation type or omission review) requires a separate implementation decision.
 
 ```sh
-node --test tools/q1-annotator-storage.test.cjs tools/q1-annotator-keyboard.test.cjs tools/q1-rubric-form.test.cjs
+node --test tools/q1-annotator-storage.test.cjs tools/q1-annotator-keyboard.test.cjs tools/q1-rubric-form.test.cjs tools/q1-note-protocol.test.cjs tools/q1-note-offline.test.cjs
 .venv/bin/python -m pytest tests/test_q1_rubric_form.py tests/test_q1_rubric_review.py tests/test_q1_comparison_stats.py tests/test_iteration_provenance.py -q
 .venv/bin/python scripts/check_iteration_provenance.py
 ```

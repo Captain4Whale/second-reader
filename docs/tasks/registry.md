@@ -32,7 +32,7 @@ Last updated: `2026-11-12`
 
 ## Done
 
-- `TASK-Q1-RUBRIC-V34-FORM` — `done`: immutable Note-only v3.4 form, independent local entrypoint and append-only private sessions; initial DIAG-001 formal session has 51 Notes and an empty judgment journal. Three isolated test cases, 124 Python and 48 legacy Node tests. No sampling, model runs or scoring snapshot. [Record](q1-rubric-v3.4-form-2026-11-15.md).
+- `TASK-Q1-RUBRIC-V34-FORM` — `done`: immutable Note-only v3.4 form, original offline annotator 3.3 entrypoint and append-only private sessions; initial DIAG-001 formal session has 51 Notes and an empty judgment journal. Original implementation and offline follow-up are recorded with isolated QA. No sampling, model runs or scoring snapshot. [Record](q1-rubric-v3.4-form-2026-11-15.md).
 
 - `TASK-Q1-RUBRIC-V2-CONVERSION` — `done`: published exact v2 and 22 verified examples, no form; registered raw v1 and owner-adjudicated v2-structure conversion scores (Note 25/51, H 28/30). Anonymous failure-type worksheet: 25 items, 10 prefilled, 15 blank; owner completion and later import pending separately. No original annotations or prior releases changed. [Receipt](q1-rubric-v2-conversion-2026-11-12.md).
 

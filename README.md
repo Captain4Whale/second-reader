@@ -545,22 +545,23 @@ The subsequently authorized C-only recovery uses `.venv/bin/python -m eval.atten
 
 ## Q1 manual error analysis
 
-Q1 rubric v3.4 has a separate Note-only form (v0/v1 remain on the existing annotator).
-Start the prepared, initially empty DIAG-001 session from the workspace root:
+Q1 rubric v3.4 is available in the **same offline annotator, version 3.3**.
+Open the HTML in Chrome / Edge (no local service is needed):
 
 ```sh
-reading-companion-backend/.venv/bin/python reading-companion-backend/scripts/q1_note_review.py serve reading-companion-backend/state/q1_rubric_reviews/Q1-DIGEST-DIAG-001-q1-v3.4
+open reading-companion-backend/tools/q1-annotator.html
 ```
 
-It opens `http://127.0.0.1:8767`; Ctrl-C stops it. Session preparation, anchor-limited
-context, original-note resolution, append-only records and future statistics:
-[v3.4 protocol](reading-companion-backend/experiments/rubric-review.md#published-v34-note-review-2026-11-15).
-Private test sessions stay under `state/q1_rubric_reviews/qa/`; no scoring receipt is
-created. A fresh checkout needs the private source bundle and matching book roots;
-see the protocol's `prepare` command.
+Click **打开批次文件夹** and select
+`reading-companion-backend/state/q1_rubric_reviews/Q1-DIGEST-DIAG-001-q1-v3.4`.
+Keep the neighboring JS files with the HTML. The folder picker connects `judgments.jsonl`;
+IndexedDB retains drafts and locks. Reload the HTML to load an upgraded tool version.
+The previously supplied `q1_note_review.py serve SESSION` command now validates the
+session and opens this offline HTML; it no longer starts an HTTP service.
+[v3.4 protocol](reading-companion-backend/experiments/rubric-review.md#published-v34-note-review-2026-11-15)
+covers preparation, schema and shortcuts. Formal and QA sessions remain separate.
 
-
-Annotator 3.2 supports window-aligned mixed blind comparisons and stepwise rubric
+Annotator 3.3 supports window-aligned mixed blind comparisons and stepwise rubric
 rejudgment. For q1-v0 or q1-v1, follow [the rejudgment protocol](reading-companion-backend/experiments/rubric-review.md):
 open the prepared review folder using “打开批次文件夹”. Keep `q1-rubric-form.js` next to
 the HTML. A second row of squares shows each criterion as unjudged / pass / fail;
@@ -580,7 +581,7 @@ page; reasons/remarks grow as typed. Only desktop source has independent scrolli
 A wide-screen annotation sticks only when it fits. Desktop previous/next/completion
 uses a sticky bottom bar with space to reveal the last content and focused field.
 Window notes remain collapsed until **U** opens/focuses them. **R/M** reveal the relevant
-field; **Shift+J/K** scrolls the page. Refresh an already-open page to load 3.2.
+field; **Shift+J/K** scrolls the page. Refresh an already-open page to load 3.3.
 
 Outside text fields, **P/F** marks the current criterion pass/fail and stays;
 **R** focuses its optional reason. **Enter** advances only after a judgment, then
@@ -597,7 +598,7 @@ New confirmations append `q1-mixed-judgment/3` with independent criterion reason
 Old completed rows remain “旧版整条确认”; explicitly restart to make a new stepwise
 assessment. Old drafts retain checked failures; unchecked criteria remain unjudged.
 Historical overall reasons are retained separately. No journal or cache identity is
-rewritten. Annotator 3.2 is available in the default workspace `main`: open
+rewritten. Annotator 3.3 is available in the default workspace `main`: open
 `reading-companion-backend/tools/q1-annotator.html` from the main workspace and refresh
 any already-open page. Opening a batch folder does not update the HTML code. The original
 2.6 compatibility edits are backed up in a local stash; compatible behavior and tests
@@ -685,7 +686,7 @@ Run configuration lookup: `_mechanisms/attentional_v2/runtime/run_configuration.
 
 Q1 prompt releases load exact version files and require private few-shot assets before API startup or reader tests. Provisioning, offline recovery and immutable-version checks: [iteration provenance](reading-companion-backend/experiments/README.md).
 
-Q1 iteration checks (offline): `cd reading-companion-backend && .venv/bin/python scripts/check_prompt_releases.py && .venv/bin/python scripts/check_iteration_provenance.py`. The historical experiment baseline remains in `experiments/log.jsonl`; computed results are append-only in `experiments/scorings.jsonl`. Do not manually fill or edit old log rows. Use this branch's annotator 3.2 for new `weijiang` / rubric-attributed append-only judgments. Existing first-batch journals remain in the Q1 annotation worktree and are bound by prefix hashes. Runtime standard traces now include complete logical request hashes; each invocation retains private samples and a base-commit-bound dirty patch under `_runtime/provenance/`.
+Q1 iteration checks (offline): `cd reading-companion-backend && .venv/bin/python scripts/check_prompt_releases.py && .venv/bin/python scripts/check_iteration_provenance.py`. The historical experiment baseline remains in `experiments/log.jsonl`; computed results are append-only in `experiments/scorings.jsonl`. Do not manually fill or edit old log rows. Use this branch's annotator 3.3 for new `weijiang` / rubric-attributed append-only judgments. Existing first-batch journals remain in the Q1 annotation worktree and are bound by prefix hashes. Runtime standard traces now include complete logical request hashes; each invocation retains private samples and a base-commit-bound dirty patch under `_runtime/provenance/`.
 
 Q1 评分总表：[experiments/INDEX.md](reading-companion-backend/experiments/INDEX.md)。
 主表只列每次评分的最新快照；历史快照、模型/单元/尺子、标注哈希和可比性见折叠小节。

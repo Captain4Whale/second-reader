@@ -1268,6 +1268,10 @@ not additional generation or independent blind trials.
 
 ## Q1 v3.4 Note annotation evidence
 
+The original offline annotator 3.3 hosts this mode. IndexedDB retains incomplete
+steps and locks; existing service progress is imported read-only. Completed judgments
+use the same approved Note schema and private session directory.
+
 The v3.4 form follows the published annotation guide's first-impression → difficulty →
 N1 → spoiler → incorrect-information → derived outcome → pass-only tags sequence.
 First impression remains immutable. Difficulty amendments retain original and ordered
