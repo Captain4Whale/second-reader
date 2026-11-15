@@ -1,0 +1,1131 @@
+{
+  "schema": "q1-rubric-validation-sampling/1",
+  "created_at": "2026-11-15T20:10:25.997971+08:00",
+  "experiment_series_id": "Q1-RUBRIC-V34-VALIDATION-001",
+  "preregistration_id": "Q1-RUBRIC-V34-VALIDATION-001-PREREG-001",
+  "base_commit": "b870d6e586a25c21446ae15c9266a6cf14587808",
+  "branch": "codex/261115-new-batch",
+  "policy": {
+    "seed": 20261115,
+    "prng": "CPython random.Random (MT19937), shuffle in place",
+    "python_version": "3.9.6",
+    "book_order": [
+      "bovary",
+      "sapiens"
+    ],
+    "stratum_order": [
+      1,
+      2,
+      3
+    ],
+    "allocation_per_book_or_set": [
+      4,
+      5,
+      4
+    ],
+    "position_basis": "All accepted units ordered by BookDocument chapter array, then source start paragraph_index and char_offset; not unit_id or settlement order.",
+    "stratum_formula": "floor((source_order_rank - 1) * 3 / total_book_units) + 1",
+    "position_percent_formula": "round(100 * (source_order_rank - 0.5) / total_book_units, 2); unit-rank percentile, not character/page percentage",
+    "boundaries": {
+      "bovary": [
+        [
+          1,
+          118
+        ],
+        [
+          119,
+          235
+        ],
+        [
+          236,
+          352
+        ]
+      ],
+      "sapiens": [
+        [
+          1,
+          82
+        ],
+        [
+          83,
+          164
+        ],
+        [
+          165,
+          245
+        ]
+      ]
+    },
+    "procedure": [
+      "Build book source order and strata before filtering. Bovary pool is batch 2; Sapiens pool is the full book.",
+      "Remove first open-coding, DIAG-001, known upstream exclusions and Bovary batch 3 by source identity plus unit ID.",
+      "Initialize random.Random(20261115) once. In book order bovary,sapiens and stratum order 1,2,3, shuffle each remaining source-ordered candidate list once.",
+      "For each book, reserve the first 4/5/4 candidates for validation. Inspect exact source; on suspected original-footnote/non-body contamination, replace from the next unreserved candidate of the same stratum queue. Recheck every replacement, preserving the full rejection chain.",
+      "After Sapiens validation, use each SAME queue at its current cursor to reserve 4/5/4 acceptance candidates, with the same inspection/replacement rule. Never reshuffle or manually choose replacements.",
+      "Persist all ordered candidate queues, all rejected IDs/reasons/replacement IDs, source hashes and the final lists. Do not use annotation quality, historical pass rates or expected Note yield for selection."
+    ],
+    "source_review_scope": "Agent inspection of complete accepted source text only, including acceptance eligibility review; no new model generation or human annotation. In-text citation markers, headings, section separators and author figure/map captions are not automatically treated as leaked footnote bodies.",
+    "model_generation": "Not started; pilot units are not selected in this commit."
+  },
+  "sources": {
+    "bovary": {
+      "book_document_path": "/Users/baiweijiang/Documents/Projects/reading-companion/reading-companion-backend/state/eval_local_datasets/q1_fullbooks_d414030_20261103/bovary/output/public/book_document.json",
+      "book_document_sha256": "b8531548cc71b436bcbef02882b93ccf2c543cf411a3deed203a6497cc85a8d6",
+      "unit_span_ledger_path": "/Users/baiweijiang/Documents/Projects/reading-companion/reading-companion-backend/state/eval_local_datasets/q1_fullbooks_d414030_20261103/bovary/output/_mechanisms/attentional_v2/runtime/unit_span_ledger.jsonl",
+      "unit_span_ledger_sha256": "a60a675c4132db3df9371cbacf97cb3ed1bfbd41e1cad8c9ae0e941ff2dadcd4",
+      "unit_memory_path": "/Users/baiweijiang/Documents/Projects/reading-companion/reading-companion-backend/state/eval_local_datasets/q1_fullbooks_d414030_20261103/bovary/output/_mechanisms/attentional_v2/runtime/unit_memory.sqlite",
+      "unit_memory_sha256": "1136843eac8aa94ea94c9c14660ef427f69cc76d5ccd79107db6fe610aded640"
+    },
+    "sapiens": {
+      "book_document_path": "/Users/baiweijiang/Documents/Projects/reading-companion/reading-companion-backend/state/eval_local_datasets/q1_fullbooks_d414030_20261103/sapiens/output/public/book_document.json",
+      "book_document_sha256": "e9911f6723520594e184a4b89ea4b4d119affa3bd2a7a9b139e53f10b8ee96b9",
+      "unit_span_ledger_path": "/Users/baiweijiang/Documents/Projects/reading-companion/reading-companion-backend/state/eval_local_datasets/q1_fullbooks_d414030_20261103/sapiens/output/_mechanisms/attentional_v2/runtime/unit_span_ledger.jsonl",
+      "unit_span_ledger_sha256": "940fa48df37b5e42e7b97f98faaa8169cda1fb412bf8cb324bb6a3dea38ac692",
+      "unit_memory_path": "/Users/baiweijiang/Documents/Projects/reading-companion/reading-companion-backend/state/eval_local_datasets/q1_fullbooks_d414030_20261103/sapiens/output/_mechanisms/attentional_v2/runtime/unit_memory.sqlite",
+      "unit_memory_sha256": "a98ca0236c54b9efa5cb21be84b6936bf46edac87520ebfe6e3200daa034c832"
+    }
+  },
+  "exclusion_sources": {
+    "first_open_coding": {
+      "path": "experiments/unit-sets/dev-v1.json",
+      "sha256": "c25a0396c99dc9db4bb25f9e7958b975142cfd11d79834f13cbe92e1afb7a680",
+      "filter": "all units",
+      "count": 67
+    },
+    "diag_001": {
+      "path": "experiments/unit-sets/diag-001.json",
+      "sha256": "a991dbcfeb9bf9fe09282d04de86b14ab86da97fa86ba6d04bb7e1875c357db4",
+      "filter": "all units",
+      "count": 16
+    },
+    "bovary_batch_3": {
+      "path": "experiments/unit-sets/holdout-v1.json",
+      "sha256": "661d28ee351db4b93ba8af1b7b360fe814a8ecdbbe56818dd70e7168b38f22c5",
+      "filter": "batch_number == 3; reference only, no copied batch-3 list",
+      "count": 39
+    }
+  },
+  "known_upstream_exclusions": [
+    {
+      "book": "bovary",
+      "unit_id": "u000039"
+    },
+    {
+      "book": "bovary",
+      "unit_id": "u000091"
+    },
+    {
+      "book": "bovary",
+      "unit_id": "u000246"
+    },
+    {
+      "book": "bovary",
+      "unit_id": "u000283"
+    }
+  ],
+  "new_upstream_exclusions": [
+    {
+      "book": "bovary",
+      "unit_id": "u000214",
+      "reason": "单元全部为编号原书注释，无叙事正文。"
+    },
+    {
+      "book": "bovary",
+      "unit_id": "u000215",
+      "reason": "单元全部为编号原书注释，含歌剧情节说明及歌唱家释注。"
+    },
+    {
+      "book": "sapiens",
+      "unit_id": "u000037",
+      "reason": "单元全部为编号原书注释，对遗骨暴力痕迹统计作补充说明。"
+    }
+  ],
+  "ordered_candidate_queues_before_source_review": {
+    "bovary": {
+      "1": [
+        "u000109",
+        "u000089",
+        "u000043",
+        "u000032",
+        "u000017",
+        "u000064",
+        "u000014",
+        "u000024",
+        "u000015",
+        "u000058",
+        "u000041",
+        "u000003",
+        "u000018"
+      ],
+      "2": [
+        "u000195",
+        "u000177",
+        "u000175",
+        "u000214",
+        "u000161",
+        "u000215",
+        "u000145",
+        "u000150",
+        "u000197",
+        "u000151",
+        "u000131"
+      ],
+      "3": [
+        "u000262",
+        "u000281",
+        "u000329",
+        "u000239",
+        "u000273",
+        "u000241",
+        "u000301",
+        "u000309",
+        "u000297",
+        "u000347",
+        "u000245",
+        "u000280"
+      ]
+    },
+    "sapiens": {
+      "1": [
+        "u000027",
+        "u000061",
+        "u000048",
+        "u000033",
+        "u000039",
+        "u000037",
+        "u000076",
+        "u000074",
+        "u000041",
+        "u000066",
+        "u000058",
+        "u000070",
+        "u000031",
+        "u000011",
+        "u000026",
+        "u000055",
+        "u000035",
+        "u000024",
+        "u000013",
+        "u000065",
+        "u000244",
+        "u000068",
+        "u000040",
+        "u000034",
+        "u000002",
+        "u000060",
+        "u000019",
+        "u000028",
+        "u000023",
+        "u000001",
+        "u000009",
+        "u000036",
+        "u000007",
+        "u000020",
+        "u000047",
+        "u000006",
+        "u000069",
+        "u000077",
+        "u000241",
+        "u000054",
+        "u000046",
+        "u000018",
+        "u000043",
+        "u000022",
+        "u000071",
+        "u000063",
+        "u000016",
+        "u000005",
+        "u000038",
+        "u000067",
+        "u000025",
+        "u000057",
+        "u000059",
+        "u000032",
+        "u000062",
+        "u000044",
+        "u000030",
+        "u000243",
+        "u000004",
+        "u000053",
+        "u000056",
+        "u000012",
+        "u000051",
+        "u000010",
+        "u000073",
+        "u000052",
+        "u000049",
+        "u000045",
+        "u000042",
+        "u000050",
+        "u000242"
+      ],
+      "2": [
+        "u000125",
+        "u000148",
+        "u000152",
+        "u000094",
+        "u000128",
+        "u000081",
+        "u000098",
+        "u000089",
+        "u000133",
+        "u000157",
+        "u000142",
+        "u000106",
+        "u000116",
+        "u000092",
+        "u000084",
+        "u000102",
+        "u000149",
+        "u000132",
+        "u000147",
+        "u000130",
+        "u000124",
+        "u000079",
+        "u000118",
+        "u000119",
+        "u000111",
+        "u000099",
+        "u000110",
+        "u000097",
+        "u000114",
+        "u000100",
+        "u000091",
+        "u000123",
+        "u000141",
+        "u000159",
+        "u000136",
+        "u000086",
+        "u000158",
+        "u000101",
+        "u000151",
+        "u000112",
+        "u000121",
+        "u000105",
+        "u000090",
+        "u000145",
+        "u000131",
+        "u000103",
+        "u000108",
+        "u000107",
+        "u000088",
+        "u000096",
+        "u000150",
+        "u000139",
+        "u000155",
+        "u000120",
+        "u000093",
+        "u000143",
+        "u000083",
+        "u000154",
+        "u000085",
+        "u000156",
+        "u000127",
+        "u000129",
+        "u000080",
+        "u000134",
+        "u000104",
+        "u000117",
+        "u000095",
+        "u000140",
+        "u000082",
+        "u000137",
+        "u000115",
+        "u000160"
+      ],
+      "3": [
+        "u000189",
+        "u000183",
+        "u000165",
+        "u000176",
+        "u000221",
+        "u000198",
+        "u000231",
+        "u000206",
+        "u000228",
+        "u000161",
+        "u000179",
+        "u000174",
+        "u000197",
+        "u000162",
+        "u000204",
+        "u000166",
+        "u000220",
+        "u000205",
+        "u000211",
+        "u000187",
+        "u000214",
+        "u000192",
+        "u000229",
+        "u000219",
+        "u000240",
+        "u000190",
+        "u000200",
+        "u000235",
+        "u000180",
+        "u000181",
+        "u000168",
+        "u000163",
+        "u000167",
+        "u000215",
+        "u000184",
+        "u000222",
+        "u000238",
+        "u000217",
+        "u000178",
+        "u000226",
+        "u000218",
+        "u000207",
+        "u000224",
+        "u000212",
+        "u000201",
+        "u000193",
+        "u000234",
+        "u000245",
+        "u000236",
+        "u000223",
+        "u000171",
+        "u000233",
+        "u000213",
+        "u000227",
+        "u000191",
+        "u000194",
+        "u000199",
+        "u000164",
+        "u000225",
+        "u000208",
+        "u000195",
+        "u000177",
+        "u000196",
+        "u000170",
+        "u000202",
+        "u000186",
+        "u000209",
+        "u000173",
+        "u000188",
+        "u000185",
+        "u000203"
+      ]
+    }
+  },
+  "draw_order_after_replacements": {
+    "validation": {
+      "bovary": [
+        "u000109",
+        "u000089",
+        "u000043",
+        "u000032",
+        "u000195",
+        "u000177",
+        "u000175",
+        "u000145",
+        "u000161",
+        "u000262",
+        "u000281",
+        "u000329",
+        "u000239"
+      ],
+      "sapiens": [
+        "u000027",
+        "u000061",
+        "u000048",
+        "u000033",
+        "u000125",
+        "u000148",
+        "u000152",
+        "u000094",
+        "u000128",
+        "u000189",
+        "u000183",
+        "u000165",
+        "u000176"
+      ]
+    },
+    "acceptance": {
+      "sapiens": [
+        "u000039",
+        "u000041",
+        "u000076",
+        "u000074",
+        "u000081",
+        "u000098",
+        "u000089",
+        "u000133",
+        "u000157",
+        "u000221",
+        "u000198",
+        "u000231",
+        "u000206"
+      ]
+    }
+  },
+  "replacements": [
+    {
+      "set": "validation",
+      "book": "bovary",
+      "stratum": 2,
+      "excluded_unit_id": "u000214",
+      "reason": "单元全部为编号原书注释，无叙事正文。",
+      "replacement_unit_id": "u000215",
+      "replacement_queue_index_1based": 6,
+      "replacement_status": "rejected"
+    },
+    {
+      "set": "validation",
+      "book": "bovary",
+      "stratum": 2,
+      "excluded_unit_id": "u000215",
+      "reason": "单元全部为编号原书注释，含歌剧情节说明及歌唱家释注。",
+      "replacement_unit_id": "u000145",
+      "replacement_queue_index_1based": 7,
+      "replacement_status": "retained"
+    },
+    {
+      "set": "acceptance",
+      "book": "sapiens",
+      "stratum": 1,
+      "excluded_unit_id": "u000037",
+      "reason": "单元全部为编号原书注释，对遗骨暴力痕迹统计作补充说明。",
+      "replacement_unit_id": "u000041",
+      "replacement_queue_index_1based": 9,
+      "replacement_status": "retained"
+    }
+  ],
+  "source_review_receipts": [
+    {
+      "book": "bovary",
+      "unit_id": "u000032",
+      "source_text_sha256": "d740db80223b62975aee83d6b5ebfa433540459dad4904889a0ea5b5ae03b7d4",
+      "source_characters": 2317,
+      "reviewer": "Codex",
+      "review_type": "source_contamination_only",
+      "status": "retained",
+      "reason": "逐段检查未发现混入原书脚注或尾注正文；不是整书无污染证明。"
+    },
+    {
+      "book": "bovary",
+      "unit_id": "u000043",
+      "source_text_sha256": "24284f4849b5f2206111bb4e6b987ff7f3cdc119ac77f2fd68fc5e14c6647fbe",
+      "source_characters": 403,
+      "reviewer": "Codex",
+      "review_type": "source_contamination_only",
+      "status": "retained",
+      "reason": "逐段检查未发现混入原书脚注或尾注正文；不是整书无污染证明。"
+    },
+    {
+      "book": "bovary",
+      "unit_id": "u000089",
+      "source_text_sha256": "1415fcd38eeb5e0054bafd4afafef60ee543d36e3a4eb7e98a772d9576bcacf8",
+      "source_characters": 774,
+      "reviewer": "Codex",
+      "review_type": "source_contamination_only",
+      "status": "retained",
+      "reason": "逐段检查未发现混入原书脚注或尾注正文；不是整书无污染证明。"
+    },
+    {
+      "book": "bovary",
+      "unit_id": "u000109",
+      "source_text_sha256": "ee45d9b3afea5e11aeed82cecd992f4521c102039348b9f068559c9e3b406f44",
+      "source_characters": 445,
+      "reviewer": "Codex",
+      "review_type": "source_contamination_only",
+      "status": "retained",
+      "reason": "逐段检查未发现混入原书脚注或尾注正文；不是整书无污染证明。"
+    },
+    {
+      "book": "bovary",
+      "unit_id": "u000145",
+      "source_text_sha256": "13beb92cb97be3c62e897950a1a06af6439454b55348e6b7485655b57dd02cfb",
+      "source_characters": 796,
+      "reviewer": "Codex",
+      "review_type": "source_contamination_only",
+      "status": "retained",
+      "reason": "逐段检查未发现混入原书脚注或尾注正文；不是整书无污染证明。"
+    },
+    {
+      "book": "bovary",
+      "unit_id": "u000161",
+      "source_text_sha256": "b174f4adb48edef008a12b758a83c6e669a79671a143020b6f6f2499c64b4c86",
+      "source_characters": 1579,
+      "reviewer": "Codex",
+      "review_type": "source_contamination_only",
+      "status": "retained",
+      "reason": "逐段检查未发现混入原书脚注或尾注正文；不是整书无污染证明。"
+    },
+    {
+      "book": "bovary",
+      "unit_id": "u000175",
+      "source_text_sha256": "52412abb8a10408635751ca4c0004862300d8e24c676244778e264e639298fbc",
+      "source_characters": 1089,
+      "reviewer": "Codex",
+      "review_type": "source_contamination_only",
+      "status": "retained",
+      "reason": "逐段检查未发现混入原书脚注或尾注正文；不是整书无污染证明。"
+    },
+    {
+      "book": "bovary",
+      "unit_id": "u000177",
+      "source_text_sha256": "47269feb2b89972355a7e13f7549dedfd67d85c1235af836da014af17c066acb",
+      "source_characters": 590,
+      "reviewer": "Codex",
+      "review_type": "source_contamination_only",
+      "status": "retained",
+      "reason": "逐段检查未发现混入原书脚注或尾注正文；不是整书无污染证明。"
+    },
+    {
+      "book": "bovary",
+      "unit_id": "u000195",
+      "source_text_sha256": "48eb0306688949146c43725faa591dd469a42423efb3ad5f509b48e24acc3add",
+      "source_characters": 960,
+      "reviewer": "Codex",
+      "review_type": "source_contamination_only",
+      "status": "retained",
+      "reason": "逐段检查未发现混入原书脚注或尾注正文；不是整书无污染证明。"
+    },
+    {
+      "book": "bovary",
+      "unit_id": "u000214",
+      "source_text_sha256": "03046cf8319f58a8b3d90a6230bfe8d774e8a2e4d509efd6093d3d16d079e4b1",
+      "source_characters": 18,
+      "reviewer": "Codex",
+      "review_type": "source_contamination_only",
+      "status": "excluded",
+      "reason": "单元全部为编号原书注释，无叙事正文。"
+    },
+    {
+      "book": "bovary",
+      "unit_id": "u000215",
+      "source_text_sha256": "2672a03862a76296cec68e0dd5c4bc6e15111254a81e9b56693276157292697d",
+      "source_characters": 138,
+      "reviewer": "Codex",
+      "review_type": "source_contamination_only",
+      "status": "excluded",
+      "reason": "单元全部为编号原书注释，含歌剧情节说明及歌唱家释注。"
+    },
+    {
+      "book": "bovary",
+      "unit_id": "u000239",
+      "source_text_sha256": "93dcfd744d2e013b01d03e611325d8d9609c7240491ac75ad55ed4a61bb2337c",
+      "source_characters": 485,
+      "reviewer": "Codex",
+      "review_type": "source_contamination_only",
+      "status": "retained",
+      "reason": "逐段检查未发现混入原书脚注或尾注正文；不是整书无污染证明。"
+    },
+    {
+      "book": "bovary",
+      "unit_id": "u000262",
+      "source_text_sha256": "908d98486984bb5d1d22f056b5e44797ad07823dfc48f2293c73bb1765f4cf12",
+      "source_characters": 407,
+      "reviewer": "Codex",
+      "review_type": "source_contamination_only",
+      "status": "retained",
+      "reason": "逐段检查未发现混入原书脚注或尾注正文；不是整书无污染证明。"
+    },
+    {
+      "book": "bovary",
+      "unit_id": "u000281",
+      "source_text_sha256": "2fdf3b476f00e9810060541857290d07536f7910982f692bfd6f18dccd9a6614",
+      "source_characters": 385,
+      "reviewer": "Codex",
+      "review_type": "source_contamination_only",
+      "status": "retained",
+      "reason": "逐段检查未发现混入原书脚注或尾注正文；不是整书无污染证明。"
+    },
+    {
+      "book": "bovary",
+      "unit_id": "u000329",
+      "source_text_sha256": "9f7331627090b9988be13ddbb2a1159e62d64eca71fee189834cb456d547c4a8",
+      "source_characters": 1473,
+      "reviewer": "Codex",
+      "review_type": "source_contamination_only",
+      "status": "retained",
+      "reason": "逐段检查未发现混入原书脚注或尾注正文；不是整书无污染证明。"
+    },
+    {
+      "book": "sapiens",
+      "unit_id": "u000027",
+      "source_text_sha256": "25cd2d9f2d92edf442dab53b8e923a94ffd44c56ed0724668df48bfbccfbd051",
+      "source_characters": 720,
+      "reviewer": "Codex",
+      "review_type": "source_contamination_only",
+      "status": "retained",
+      "reason": "逐段检查未发现混入原书脚注或尾注正文；不是整书无污染证明。"
+    },
+    {
+      "book": "sapiens",
+      "unit_id": "u000033",
+      "source_text_sha256": "f580f93db712d90314bab74770889b1546b288f88920989d9b44a4f18a3528c9",
+      "source_characters": 2025,
+      "reviewer": "Codex",
+      "review_type": "source_contamination_only",
+      "status": "retained",
+      "reason": "逐段检查未发现混入原书脚注或尾注正文；不是整书无污染证明。"
+    },
+    {
+      "book": "sapiens",
+      "unit_id": "u000037",
+      "source_text_sha256": "9f54b494eb14ff3eee10f4b07aba43f1d176aae2e1a48f10b58f8fae78de1e8b",
+      "source_characters": 112,
+      "reviewer": "Codex",
+      "review_type": "source_contamination_only",
+      "status": "excluded",
+      "reason": "单元全部为编号原书注释，对遗骨暴力痕迹统计作补充说明。"
+    },
+    {
+      "book": "sapiens",
+      "unit_id": "u000039",
+      "source_text_sha256": "a17b03633840d7a7a4d43fd909a8af183c32a716f7d59f7a868b446d3bb2464a",
+      "source_characters": 640,
+      "reviewer": "Codex",
+      "review_type": "source_contamination_only",
+      "status": "retained",
+      "reason": "逐段检查未发现混入原书脚注或尾注正文；不是整书无污染证明。"
+    },
+    {
+      "book": "sapiens",
+      "unit_id": "u000041",
+      "source_text_sha256": "978254f575739bf96ed9662a1403e9742cb02922d7e7f2407659c49ec687abe4",
+      "source_characters": 1196,
+      "reviewer": "Codex",
+      "review_type": "source_contamination_only",
+      "status": "retained",
+      "reason": "逐段检查未发现混入原书脚注或尾注正文；不是整书无污染证明。"
+    },
+    {
+      "book": "sapiens",
+      "unit_id": "u000048",
+      "source_text_sha256": "67470379047a8fb35047ddaaa82f8f0e15a48cf766e645ca9e5cda9258e7649f",
+      "source_characters": 1148,
+      "reviewer": "Codex",
+      "review_type": "source_contamination_only",
+      "status": "retained",
+      "reason": "逐段检查未发现混入原书脚注或尾注正文；不是整书无污染证明。"
+    },
+    {
+      "book": "sapiens",
+      "unit_id": "u000061",
+      "source_text_sha256": "7e3cfe1b93387c3ba865d4b268778db3a91a5cf29b00c926aa84cc6f6937b504",
+      "source_characters": 890,
+      "reviewer": "Codex",
+      "review_type": "source_contamination_only",
+      "status": "retained",
+      "reason": "逐段检查未发现混入原书脚注或尾注正文；不是整书无污染证明。"
+    },
+    {
+      "book": "sapiens",
+      "unit_id": "u000074",
+      "source_text_sha256": "ed7d98d2dba86ff018ec2aed1df649d2469685f0c0beccef8ca6559dd3216d70",
+      "source_characters": 1630,
+      "reviewer": "Codex",
+      "review_type": "source_contamination_only",
+      "status": "retained",
+      "reason": "逐段检查未发现混入原书脚注或尾注正文；不是整书无污染证明。"
+    },
+    {
+      "book": "sapiens",
+      "unit_id": "u000076",
+      "source_text_sha256": "0d7a97ea1ffb69bdc823050c6b80476f0b6a8978a2726b2ed0a83a271a5c1d61",
+      "source_characters": 595,
+      "reviewer": "Codex",
+      "review_type": "source_contamination_only",
+      "status": "retained",
+      "reason": "逐段检查未发现混入原书脚注或尾注正文；不是整书无污染证明。"
+    },
+    {
+      "book": "sapiens",
+      "unit_id": "u000081",
+      "source_text_sha256": "29a082ce6f37780d36ed1e7b4981640af1bd043ef610feb88ddcd9d1587be9f2",
+      "source_characters": 1348,
+      "reviewer": "Codex",
+      "review_type": "source_contamination_only",
+      "status": "retained",
+      "reason": "逐段检查未发现混入原书脚注或尾注正文；不是整书无污染证明。"
+    },
+    {
+      "book": "sapiens",
+      "unit_id": "u000089",
+      "source_text_sha256": "1f3fc25230a36139bff9683fa33d993651f1d62749393b2a3309531ab5b203e1",
+      "source_characters": 889,
+      "reviewer": "Codex",
+      "review_type": "source_contamination_only",
+      "status": "retained",
+      "reason": "逐段检查未发现混入原书脚注或尾注正文；不是整书无污染证明。"
+    },
+    {
+      "book": "sapiens",
+      "unit_id": "u000094",
+      "source_text_sha256": "51e76cf5c5337e1c84b72bd1774116905f083da9d16fbd6e3a9d52a77a660b57",
+      "source_characters": 1243,
+      "reviewer": "Codex",
+      "review_type": "source_contamination_only",
+      "status": "retained",
+      "reason": "逐段检查未发现混入原书脚注或尾注正文；不是整书无污染证明。"
+    },
+    {
+      "book": "sapiens",
+      "unit_id": "u000098",
+      "source_text_sha256": "6ae39b01c2c306572c7a64d11921ac158223fef55047bcf8f9b9d0d90eedfcf2",
+      "source_characters": 1562,
+      "reviewer": "Codex",
+      "review_type": "source_contamination_only",
+      "status": "retained",
+      "reason": "逐段检查未发现混入原书脚注或尾注正文；不是整书无污染证明。"
+    },
+    {
+      "book": "sapiens",
+      "unit_id": "u000125",
+      "source_text_sha256": "a0ececa18618278a71f283f35d569584cb1a44e41043e806946876c90be61387",
+      "source_characters": 1400,
+      "reviewer": "Codex",
+      "review_type": "source_contamination_only",
+      "status": "retained",
+      "reason": "逐段检查未发现混入原书脚注或尾注正文；不是整书无污染证明。"
+    },
+    {
+      "book": "sapiens",
+      "unit_id": "u000128",
+      "source_text_sha256": "5746a756c66b65a0e7367e4592094f79275c9984a3dba99479528c2b8863c570",
+      "source_characters": 1422,
+      "reviewer": "Codex",
+      "review_type": "source_contamination_only",
+      "status": "retained",
+      "reason": "逐段检查未发现混入原书脚注或尾注正文；不是整书无污染证明。"
+    },
+    {
+      "book": "sapiens",
+      "unit_id": "u000133",
+      "source_text_sha256": "94c0dbabecdfe2a491f0cac4262911ef6ad1f6e51e2f7dbb17c8f6f15d39be72",
+      "source_characters": 371,
+      "reviewer": "Codex",
+      "review_type": "source_contamination_only",
+      "status": "retained",
+      "reason": "逐段检查未发现混入原书脚注或尾注正文；不是整书无污染证明。"
+    },
+    {
+      "book": "sapiens",
+      "unit_id": "u000148",
+      "source_text_sha256": "d5061e3fe756c8339a44ac0352baed4949e957475869a360616d387dded08dfd",
+      "source_characters": 470,
+      "reviewer": "Codex",
+      "review_type": "source_contamination_only",
+      "status": "retained",
+      "reason": "逐段检查未发现混入原书脚注或尾注正文；不是整书无污染证明。"
+    },
+    {
+      "book": "sapiens",
+      "unit_id": "u000152",
+      "source_text_sha256": "a80d8f68ed4be131bf692883fbc4799f19247f4015248a813af09bba0ba7873b",
+      "source_characters": 904,
+      "reviewer": "Codex",
+      "review_type": "source_contamination_only",
+      "status": "retained",
+      "reason": "逐段检查未发现混入原书脚注或尾注正文；不是整书无污染证明。"
+    },
+    {
+      "book": "sapiens",
+      "unit_id": "u000157",
+      "source_text_sha256": "f441dfa84444240786f60e4749a5895b83853403b4ef6a2dc267d1e6c7e7639e",
+      "source_characters": 978,
+      "reviewer": "Codex",
+      "review_type": "source_contamination_only",
+      "status": "retained",
+      "reason": "逐段检查未发现混入原书脚注或尾注正文；不是整书无污染证明。"
+    },
+    {
+      "book": "sapiens",
+      "unit_id": "u000165",
+      "source_text_sha256": "cbb1e8f2b7e82199f58ab5dffbb1bb13e6422e32e553caaf80707de9591da16a",
+      "source_characters": 1530,
+      "reviewer": "Codex",
+      "review_type": "source_contamination_only",
+      "status": "retained",
+      "reason": "逐段检查未发现混入原书脚注或尾注正文；不是整书无污染证明。"
+    },
+    {
+      "book": "sapiens",
+      "unit_id": "u000176",
+      "source_text_sha256": "15f770fa88285a9b68f76b4a59d86822fe722107cb1d265c957b9d727e1d1515",
+      "source_characters": 467,
+      "reviewer": "Codex",
+      "review_type": "source_contamination_only",
+      "status": "retained",
+      "reason": "逐段检查未发现混入原书脚注或尾注正文；不是整书无污染证明。"
+    },
+    {
+      "book": "sapiens",
+      "unit_id": "u000183",
+      "source_text_sha256": "f6a735b04ed819bd311a9f885365819bfcc6cbf2cf19716560b506f49d834adc",
+      "source_characters": 1597,
+      "reviewer": "Codex",
+      "review_type": "source_contamination_only",
+      "status": "retained",
+      "reason": "逐段检查未发现混入原书脚注或尾注正文；不是整书无污染证明。"
+    },
+    {
+      "book": "sapiens",
+      "unit_id": "u000189",
+      "source_text_sha256": "6f5234901086c71928cf28763394c759a6c4eadd076d54f443dba830fc40fdcb",
+      "source_characters": 1702,
+      "reviewer": "Codex",
+      "review_type": "source_contamination_only",
+      "status": "retained",
+      "reason": "逐段检查未发现混入原书脚注或尾注正文；不是整书无污染证明。"
+    },
+    {
+      "book": "sapiens",
+      "unit_id": "u000198",
+      "source_text_sha256": "7cf89acbfda39f2bcdb574e592bf15f85afeed9a66f685781b3be3d05103508a",
+      "source_characters": 1243,
+      "reviewer": "Codex",
+      "review_type": "source_contamination_only",
+      "status": "retained",
+      "reason": "逐段检查未发现混入原书脚注或尾注正文；不是整书无污染证明。"
+    },
+    {
+      "book": "sapiens",
+      "unit_id": "u000206",
+      "source_text_sha256": "89a72b74ecb29113771974411153607be9c217eee2d493d4b1cf1ac7de0ee71e",
+      "source_characters": 1221,
+      "reviewer": "Codex",
+      "review_type": "source_contamination_only",
+      "status": "retained",
+      "reason": "逐段检查未发现混入原书脚注或尾注正文；不是整书无污染证明。"
+    },
+    {
+      "book": "sapiens",
+      "unit_id": "u000221",
+      "source_text_sha256": "fd304ef7e00ddd2afa70b62c408963ed689a777ce3e869285096c542415737d6",
+      "source_characters": 978,
+      "reviewer": "Codex",
+      "review_type": "source_contamination_only",
+      "status": "retained",
+      "reason": "逐段检查未发现混入原书脚注或尾注正文；不是整书无污染证明。"
+    },
+    {
+      "book": "sapiens",
+      "unit_id": "u000231",
+      "source_text_sha256": "99295dfc008aa69d40ffd66f0caffffeae1cc913f988234e55f984009f873e34",
+      "source_characters": 390,
+      "reviewer": "Codex",
+      "review_type": "source_contamination_only",
+      "status": "retained",
+      "reason": "逐段检查未发现混入原书脚注或尾注正文；不是整书无污染证明。"
+    }
+  ],
+  "intersections": {
+    "validation & first_open_coding": [],
+    "validation & diag_001": [],
+    "validation & bovary_batch_3": [],
+    "validation & known_upstream": [],
+    "validation & new_upstream": [],
+    "acceptance & first_open_coding": [],
+    "acceptance & diag_001": [],
+    "acceptance & bovary_batch_3": [],
+    "acceptance & known_upstream": [],
+    "acceptance & new_upstream": [],
+    "validation & acceptance": [],
+    "validation/bovary & validation/sapiens": [],
+    "validation/bovary & acceptance/sapiens": [],
+    "validation/sapiens & acceptance/sapiens": []
+  },
+  "exclusion_source_overlap_note": {
+    "first_open_coding & diag_001": 16,
+    "first_open_coding & known_upstream": 4,
+    "meaning": "Exclusion sources intentionally overlap; only new sets vs each other and vs exclusions must be disjoint."
+  },
+  "bovary_batch2_disposition": {
+    "selected_13_no_longer_unseen": [
+      {
+        "book": "bovary",
+        "unit_id": "u000032"
+      },
+      {
+        "book": "bovary",
+        "unit_id": "u000043"
+      },
+      {
+        "book": "bovary",
+        "unit_id": "u000089"
+      },
+      {
+        "book": "bovary",
+        "unit_id": "u000109"
+      },
+      {
+        "book": "bovary",
+        "unit_id": "u000145"
+      },
+      {
+        "book": "bovary",
+        "unit_id": "u000161"
+      },
+      {
+        "book": "bovary",
+        "unit_id": "u000175"
+      },
+      {
+        "book": "bovary",
+        "unit_id": "u000177"
+      },
+      {
+        "book": "bovary",
+        "unit_id": "u000195"
+      },
+      {
+        "book": "bovary",
+        "unit_id": "u000239"
+      },
+      {
+        "book": "bovary",
+        "unit_id": "u000262"
+      },
+      {
+        "book": "bovary",
+        "unit_id": "u000281"
+      },
+      {
+        "book": "bovary",
+        "unit_id": "u000329"
+      }
+    ],
+    "remaining_23_reserved_holdout": [
+      {
+        "book": "bovary",
+        "unit_id": "u000003"
+      },
+      {
+        "book": "bovary",
+        "unit_id": "u000014"
+      },
+      {
+        "book": "bovary",
+        "unit_id": "u000015"
+      },
+      {
+        "book": "bovary",
+        "unit_id": "u000017"
+      },
+      {
+        "book": "bovary",
+        "unit_id": "u000018"
+      },
+      {
+        "book": "bovary",
+        "unit_id": "u000024"
+      },
+      {
+        "book": "bovary",
+        "unit_id": "u000041"
+      },
+      {
+        "book": "bovary",
+        "unit_id": "u000058"
+      },
+      {
+        "book": "bovary",
+        "unit_id": "u000064"
+      },
+      {
+        "book": "bovary",
+        "unit_id": "u000131"
+      },
+      {
+        "book": "bovary",
+        "unit_id": "u000150"
+      },
+      {
+        "book": "bovary",
+        "unit_id": "u000151"
+      },
+      {
+        "book": "bovary",
+        "unit_id": "u000197"
+      },
+      {
+        "book": "bovary",
+        "unit_id": "u000214"
+      },
+      {
+        "book": "bovary",
+        "unit_id": "u000215"
+      },
+      {
+        "book": "bovary",
+        "unit_id": "u000241"
+      },
+      {
+        "book": "bovary",
+        "unit_id": "u000245"
+      },
+      {
+        "book": "bovary",
+        "unit_id": "u000273"
+      },
+      {
+        "book": "bovary",
+        "unit_id": "u000280"
+      },
+      {
+        "book": "bovary",
+        "unit_id": "u000297"
+      },
+      {
+        "book": "bovary",
+        "unit_id": "u000301"
+      },
+      {
+        "book": "bovary",
+        "unit_id": "u000309"
+      },
+      {
+        "book": "bovary",
+        "unit_id": "u000347"
+      }
+    ],
+    "upstream_ineligible_within_reserved_holdout": [
+      {
+        "book": "bovary",
+        "unit_id": "u000214"
+      },
+      {
+        "book": "bovary",
+        "unit_id": "u000215"
+      }
+    ],
+    "other_21_source_unreviewed_this_task": 21,
+    "policy": "保留未入选23个的holdout身份；其中u000214、u000215同时标记上游排除，不能直接验收。holdout-v1原样不动。"
+  },
+  "pilot_exclusions": {
+    "must_exclude": [
+      "validation",
+      "acceptance",
+      "first_open_coding",
+      "diag_001",
+      "known_upstream",
+      "new_upstream",
+      "bovary_batch_2",
+      "bovary_batch_3"
+    ],
+    "pilot_unit_ids": null,
+    "status": "not_selected; no empty-set assertion substitutes for future pilot eligibility validation"
+  },
+  "unit_sets": {
+    "validation": {
+      "path": "experiments/unit-sets/q1-v34-validation-001.json",
+      "sha256": "bbda0a0fc82b9c1b5d73df43d70a67dae398e3e589b822cee823cff83e66db7b",
+      "count": 26
+    },
+    "acceptance": {
+      "path": "experiments/unit-sets/q1-v34-acceptance-sapiens-001.json",
+      "sha256": "bccf643c94de3e0a9e349e0a60d383b7e3820951378deb2670912e2a190bc5d1",
+      "count": 13
+    }
+  },
+  "private_review_evidence": {
+    "path": "/Users/baiweijiang/.codex/worktrees/261115-new-batch/reading-companion/reading-companion-backend/state/experiments/Q1-RUBRIC-V34-VALIDATION-001/sampling",
+    "preparation_script_sha256": "4eb50d72b49eccac2f92dbbb039a205eed751f3b53a2c2b5514c0e28ce0db1fb",
+    "source_review_decisions_sha256": "6cb279d8c7462b80abf7b66e9e7fedbabb682ffb55ac0cb72c3ce99bccd3958b",
+    "original_settings_sha256": "a38def1764d56470327e437d0655c1d474370520943cb9a247069ccc34848bbd"
+  }
+}

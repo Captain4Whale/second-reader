@@ -1,0 +1,533 @@
+{
+  "schema": "fixed-unit-set/1",
+  "unit_set_id": "q1-v34-acceptance-sapiens-001",
+  "purpose": "holdout",
+  "created_at": "2026-11-15",
+  "experiment_series_id": "Q1-RUBRIC-V34-VALIDATION-001",
+  "preregistration_id": "Q1-RUBRIC-V34-VALIDATION-001-PREREG-001",
+  "sampling_seed": 20261115,
+  "position_basis": "All accepted units ordered by BookDocument chapter array, then source start paragraph_index and char_offset; not unit_id or settlement order.",
+  "generation_status": "reserved_do_not_run",
+  "units": [
+    {
+      "run_id": "q1_full_sapiens_d414030_20261103",
+      "reading_id": "urn:uuid:543c532f-855c-4aec-80a8-eddd4071a1b0",
+      "product_sha256": "198e72038ecbf318d555a28bfe3540c41548cc7c994ac7acad1aacc78edb4dd5",
+      "original_epub_sha256": "286aa16483029b6318a8a4a34abc912b8788275fde9823b45d2750b124eb009b",
+      "original_substrate_sha256": "d4724f7e472ae0d729b0e2c4f1042ae21c2e6df87dd3997060869d1531e5927d",
+      "book": "sapiens",
+      "unit_id": "u000039",
+      "original_source_range": {
+        "start": {
+          "chapter_id": 10,
+          "paragraph_index": 8,
+          "char_offset": 0
+        },
+        "end": {
+          "chapter_id": 10,
+          "paragraph_index": 10,
+          "char_offset": 128
+        }
+      },
+      "source_range": {
+        "start": {
+          "chapter_id": 10,
+          "paragraph_index": 8,
+          "char_offset": 0
+        },
+        "end": {
+          "chapter_id": 10,
+          "paragraph_index": 10,
+          "char_offset": 128
+        }
+      },
+      "source_order_rank": 43,
+      "total_book_units": 245,
+      "position_percent": 17.35,
+      "stratum": 1,
+      "chapter_id": 10,
+      "chapter_title": "第四章 毁天灭地的人类洪水",
+      "chapter_label": "第四章 毁天灭地的人类洪水"
+    },
+    {
+      "run_id": "q1_full_sapiens_d414030_20261103",
+      "reading_id": "urn:uuid:543c532f-855c-4aec-80a8-eddd4071a1b0",
+      "product_sha256": "198e72038ecbf318d555a28bfe3540c41548cc7c994ac7acad1aacc78edb4dd5",
+      "original_epub_sha256": "286aa16483029b6318a8a4a34abc912b8788275fde9823b45d2750b124eb009b",
+      "original_substrate_sha256": "d4724f7e472ae0d729b0e2c4f1042ae21c2e6df87dd3997060869d1531e5927d",
+      "book": "sapiens",
+      "unit_id": "u000041",
+      "original_source_range": {
+        "start": {
+          "chapter_id": 10,
+          "paragraph_index": 19,
+          "char_offset": 0
+        },
+        "end": {
+          "chapter_id": 10,
+          "paragraph_index": 27,
+          "char_offset": 91
+        }
+      },
+      "source_range": {
+        "start": {
+          "chapter_id": 10,
+          "paragraph_index": 19,
+          "char_offset": 0
+        },
+        "end": {
+          "chapter_id": 10,
+          "paragraph_index": 27,
+          "char_offset": 91
+        }
+      },
+      "source_order_rank": 45,
+      "total_book_units": 245,
+      "position_percent": 18.16,
+      "stratum": 1,
+      "chapter_id": 10,
+      "chapter_title": "第四章 毁天灭地的人类洪水",
+      "chapter_label": "第四章 毁天灭地的人类洪水"
+    },
+    {
+      "run_id": "q1_full_sapiens_d414030_20261103",
+      "reading_id": "urn:uuid:543c532f-855c-4aec-80a8-eddd4071a1b0",
+      "product_sha256": "198e72038ecbf318d555a28bfe3540c41548cc7c994ac7acad1aacc78edb4dd5",
+      "original_epub_sha256": "286aa16483029b6318a8a4a34abc912b8788275fde9823b45d2750b124eb009b",
+      "original_substrate_sha256": "d4724f7e472ae0d729b0e2c4f1042ae21c2e6df87dd3997060869d1531e5927d",
+      "book": "sapiens",
+      "unit_id": "u000074",
+      "original_source_range": {
+        "start": {
+          "chapter_id": 14,
+          "paragraph_index": 23,
+          "char_offset": 0
+        },
+        "end": {
+          "chapter_id": 14,
+          "paragraph_index": 30,
+          "char_offset": 229
+        }
+      },
+      "source_range": {
+        "start": {
+          "chapter_id": 14,
+          "paragraph_index": 23,
+          "char_offset": 0
+        },
+        "end": {
+          "chapter_id": 14,
+          "paragraph_index": 30,
+          "char_offset": 229
+        }
+      },
+      "source_order_rank": 78,
+      "total_book_units": 245,
+      "position_percent": 31.63,
+      "stratum": 1,
+      "chapter_id": 14,
+      "chapter_title": "第七章 记忆过载",
+      "chapter_label": "第七章 记忆过载"
+    },
+    {
+      "run_id": "q1_full_sapiens_d414030_20261103",
+      "reading_id": "urn:uuid:543c532f-855c-4aec-80a8-eddd4071a1b0",
+      "product_sha256": "198e72038ecbf318d555a28bfe3540c41548cc7c994ac7acad1aacc78edb4dd5",
+      "original_epub_sha256": "286aa16483029b6318a8a4a34abc912b8788275fde9823b45d2750b124eb009b",
+      "original_substrate_sha256": "d4724f7e472ae0d729b0e2c4f1042ae21c2e6df87dd3997060869d1531e5927d",
+      "book": "sapiens",
+      "unit_id": "u000076",
+      "original_source_range": {
+        "start": {
+          "chapter_id": 14,
+          "paragraph_index": 49,
+          "char_offset": 0
+        },
+        "end": {
+          "chapter_id": 14,
+          "paragraph_index": 52,
+          "char_offset": 148
+        }
+      },
+      "source_range": {
+        "start": {
+          "chapter_id": 14,
+          "paragraph_index": 49,
+          "char_offset": 0
+        },
+        "end": {
+          "chapter_id": 14,
+          "paragraph_index": 52,
+          "char_offset": 148
+        }
+      },
+      "source_order_rank": 80,
+      "total_book_units": 245,
+      "position_percent": 32.45,
+      "stratum": 1,
+      "chapter_id": 14,
+      "chapter_title": "第七章 记忆过载",
+      "chapter_label": "第七章 记忆过载"
+    },
+    {
+      "run_id": "q1_full_sapiens_d414030_20261103",
+      "reading_id": "urn:uuid:543c532f-855c-4aec-80a8-eddd4071a1b0",
+      "product_sha256": "198e72038ecbf318d555a28bfe3540c41548cc7c994ac7acad1aacc78edb4dd5",
+      "original_epub_sha256": "286aa16483029b6318a8a4a34abc912b8788275fde9823b45d2750b124eb009b",
+      "original_substrate_sha256": "d4724f7e472ae0d729b0e2c4f1042ae21c2e6df87dd3997060869d1531e5927d",
+      "book": "sapiens",
+      "unit_id": "u000081",
+      "original_source_range": {
+        "start": {
+          "chapter_id": 15,
+          "paragraph_index": 16,
+          "char_offset": 0
+        },
+        "end": {
+          "chapter_id": 15,
+          "paragraph_index": 21,
+          "char_offset": 276
+        }
+      },
+      "source_range": {
+        "start": {
+          "chapter_id": 15,
+          "paragraph_index": 16,
+          "char_offset": 0
+        },
+        "end": {
+          "chapter_id": 15,
+          "paragraph_index": 21,
+          "char_offset": 276
+        }
+      },
+      "source_order_rank": 85,
+      "total_book_units": 245,
+      "position_percent": 34.49,
+      "stratum": 2,
+      "chapter_id": 15,
+      "chapter_title": "第八章 历史从无正义",
+      "chapter_label": "第八章 历史从无正义"
+    },
+    {
+      "run_id": "q1_full_sapiens_d414030_20261103",
+      "reading_id": "urn:uuid:543c532f-855c-4aec-80a8-eddd4071a1b0",
+      "product_sha256": "198e72038ecbf318d555a28bfe3540c41548cc7c994ac7acad1aacc78edb4dd5",
+      "original_epub_sha256": "286aa16483029b6318a8a4a34abc912b8788275fde9823b45d2750b124eb009b",
+      "original_substrate_sha256": "d4724f7e472ae0d729b0e2c4f1042ae21c2e6df87dd3997060869d1531e5927d",
+      "book": "sapiens",
+      "unit_id": "u000089",
+      "original_source_range": {
+        "start": {
+          "chapter_id": 15,
+          "paragraph_index": 67,
+          "char_offset": 0
+        },
+        "end": {
+          "chapter_id": 15,
+          "paragraph_index": 71,
+          "char_offset": 221
+        }
+      },
+      "source_range": {
+        "start": {
+          "chapter_id": 15,
+          "paragraph_index": 67,
+          "char_offset": 0
+        },
+        "end": {
+          "chapter_id": 15,
+          "paragraph_index": 71,
+          "char_offset": 221
+        }
+      },
+      "source_order_rank": 93,
+      "total_book_units": 245,
+      "position_percent": 37.76,
+      "stratum": 2,
+      "chapter_id": 15,
+      "chapter_title": "第八章 历史从无正义",
+      "chapter_label": "第八章 历史从无正义"
+    },
+    {
+      "run_id": "q1_full_sapiens_d414030_20261103",
+      "reading_id": "urn:uuid:543c532f-855c-4aec-80a8-eddd4071a1b0",
+      "product_sha256": "198e72038ecbf318d555a28bfe3540c41548cc7c994ac7acad1aacc78edb4dd5",
+      "original_epub_sha256": "286aa16483029b6318a8a4a34abc912b8788275fde9823b45d2750b124eb009b",
+      "original_substrate_sha256": "d4724f7e472ae0d729b0e2c4f1042ae21c2e6df87dd3997060869d1531e5927d",
+      "book": "sapiens",
+      "unit_id": "u000098",
+      "original_source_range": {
+        "start": {
+          "chapter_id": 17,
+          "paragraph_index": 26,
+          "char_offset": 0
+        },
+        "end": {
+          "chapter_id": 17,
+          "paragraph_index": 32,
+          "char_offset": 199
+        }
+      },
+      "source_range": {
+        "start": {
+          "chapter_id": 17,
+          "paragraph_index": 26,
+          "char_offset": 0
+        },
+        "end": {
+          "chapter_id": 17,
+          "paragraph_index": 32,
+          "char_offset": 199
+        }
+      },
+      "source_order_rank": 102,
+      "total_book_units": 245,
+      "position_percent": 41.43,
+      "stratum": 2,
+      "chapter_id": 17,
+      "chapter_title": "第九章 历史的方向",
+      "chapter_label": "第九章 历史的方向"
+    },
+    {
+      "run_id": "q1_full_sapiens_d414030_20261103",
+      "reading_id": "urn:uuid:543c532f-855c-4aec-80a8-eddd4071a1b0",
+      "product_sha256": "198e72038ecbf318d555a28bfe3540c41548cc7c994ac7acad1aacc78edb4dd5",
+      "original_epub_sha256": "286aa16483029b6318a8a4a34abc912b8788275fde9823b45d2750b124eb009b",
+      "original_substrate_sha256": "d4724f7e472ae0d729b0e2c4f1042ae21c2e6df87dd3997060869d1531e5927d",
+      "book": "sapiens",
+      "unit_id": "u000133",
+      "original_source_range": {
+        "start": {
+          "chapter_id": 20,
+          "paragraph_index": 89,
+          "char_offset": 0
+        },
+        "end": {
+          "chapter_id": 20,
+          "paragraph_index": 91,
+          "char_offset": 91
+        }
+      },
+      "source_range": {
+        "start": {
+          "chapter_id": 20,
+          "paragraph_index": 89,
+          "char_offset": 0
+        },
+        "end": {
+          "chapter_id": 20,
+          "paragraph_index": 91,
+          "char_offset": 91
+        }
+      },
+      "source_order_rank": 137,
+      "total_book_units": 245,
+      "position_percent": 55.71,
+      "stratum": 2,
+      "chapter_id": 20,
+      "chapter_title": "第十二章 宗教的法则",
+      "chapter_label": "第十二章 宗教的法则"
+    },
+    {
+      "run_id": "q1_full_sapiens_d414030_20261103",
+      "reading_id": "urn:uuid:543c532f-855c-4aec-80a8-eddd4071a1b0",
+      "product_sha256": "198e72038ecbf318d555a28bfe3540c41548cc7c994ac7acad1aacc78edb4dd5",
+      "original_epub_sha256": "286aa16483029b6318a8a4a34abc912b8788275fde9823b45d2750b124eb009b",
+      "original_substrate_sha256": "d4724f7e472ae0d729b0e2c4f1042ae21c2e6df87dd3997060869d1531e5927d",
+      "book": "sapiens",
+      "unit_id": "u000157",
+      "original_source_range": {
+        "start": {
+          "chapter_id": 23,
+          "paragraph_index": 118,
+          "char_offset": 0
+        },
+        "end": {
+          "chapter_id": 23,
+          "paragraph_index": 123,
+          "char_offset": 121
+        }
+      },
+      "source_range": {
+        "start": {
+          "chapter_id": 23,
+          "paragraph_index": 118,
+          "char_offset": 0
+        },
+        "end": {
+          "chapter_id": 23,
+          "paragraph_index": 123,
+          "char_offset": 121
+        }
+      },
+      "source_order_rank": 161,
+      "total_book_units": 245,
+      "position_percent": 65.51,
+      "stratum": 2,
+      "chapter_id": 23,
+      "chapter_title": "第十四章 发现自己的无知",
+      "chapter_label": "第十四章 发现自己的无知"
+    },
+    {
+      "run_id": "q1_full_sapiens_d414030_20261103",
+      "reading_id": "urn:uuid:543c532f-855c-4aec-80a8-eddd4071a1b0",
+      "product_sha256": "198e72038ecbf318d555a28bfe3540c41548cc7c994ac7acad1aacc78edb4dd5",
+      "original_epub_sha256": "286aa16483029b6318a8a4a34abc912b8788275fde9823b45d2750b124eb009b",
+      "original_substrate_sha256": "d4724f7e472ae0d729b0e2c4f1042ae21c2e6df87dd3997060869d1531e5927d",
+      "book": "sapiens",
+      "unit_id": "u000198",
+      "original_source_range": {
+        "start": {
+          "chapter_id": 26,
+          "paragraph_index": 17,
+          "char_offset": 0
+        },
+        "end": {
+          "chapter_id": 26,
+          "paragraph_index": 23,
+          "char_offset": 142
+        }
+      },
+      "source_range": {
+        "start": {
+          "chapter_id": 26,
+          "paragraph_index": 17,
+          "char_offset": 0
+        },
+        "end": {
+          "chapter_id": 26,
+          "paragraph_index": 23,
+          "char_offset": 142
+        }
+      },
+      "source_order_rank": 202,
+      "total_book_units": 245,
+      "position_percent": 82.24,
+      "stratum": 3,
+      "chapter_id": 26,
+      "chapter_title": "第十七章 工业的巨轮",
+      "chapter_label": "第十七章 工业的巨轮"
+    },
+    {
+      "run_id": "q1_full_sapiens_d414030_20261103",
+      "reading_id": "urn:uuid:543c532f-855c-4aec-80a8-eddd4071a1b0",
+      "product_sha256": "198e72038ecbf318d555a28bfe3540c41548cc7c994ac7acad1aacc78edb4dd5",
+      "original_epub_sha256": "286aa16483029b6318a8a4a34abc912b8788275fde9823b45d2750b124eb009b",
+      "original_substrate_sha256": "d4724f7e472ae0d729b0e2c4f1042ae21c2e6df87dd3997060869d1531e5927d",
+      "book": "sapiens",
+      "unit_id": "u000206",
+      "original_source_range": {
+        "start": {
+          "chapter_id": 27,
+          "paragraph_index": 1,
+          "char_offset": 0
+        },
+        "end": {
+          "chapter_id": 27,
+          "paragraph_index": 7,
+          "char_offset": 145
+        }
+      },
+      "source_range": {
+        "start": {
+          "chapter_id": 27,
+          "paragraph_index": 1,
+          "char_offset": 0
+        },
+        "end": {
+          "chapter_id": 27,
+          "paragraph_index": 7,
+          "char_offset": 145
+        }
+      },
+      "source_order_rank": 210,
+      "total_book_units": 245,
+      "position_percent": 85.51,
+      "stratum": 3,
+      "chapter_id": 27,
+      "chapter_title": "第十八章 一场永远的革命",
+      "chapter_label": "第十八章 一场永远的革命"
+    },
+    {
+      "run_id": "q1_full_sapiens_d414030_20261103",
+      "reading_id": "urn:uuid:543c532f-855c-4aec-80a8-eddd4071a1b0",
+      "product_sha256": "198e72038ecbf318d555a28bfe3540c41548cc7c994ac7acad1aacc78edb4dd5",
+      "original_epub_sha256": "286aa16483029b6318a8a4a34abc912b8788275fde9823b45d2750b124eb009b",
+      "original_substrate_sha256": "d4724f7e472ae0d729b0e2c4f1042ae21c2e6df87dd3997060869d1531e5927d",
+      "book": "sapiens",
+      "unit_id": "u000221",
+      "original_source_range": {
+        "start": {
+          "chapter_id": 28,
+          "paragraph_index": 15,
+          "char_offset": 0
+        },
+        "end": {
+          "chapter_id": 28,
+          "paragraph_index": 21,
+          "char_offset": 38
+        }
+      },
+      "source_range": {
+        "start": {
+          "chapter_id": 28,
+          "paragraph_index": 15,
+          "char_offset": 0
+        },
+        "end": {
+          "chapter_id": 28,
+          "paragraph_index": 21,
+          "char_offset": 38
+        }
+      },
+      "source_order_rank": 225,
+      "total_book_units": 245,
+      "position_percent": 91.63,
+      "stratum": 3,
+      "chapter_id": 28,
+      "chapter_title": "第十九章 从此过着幸福快乐的日子",
+      "chapter_label": "第十九章 从此过着幸福快乐的日子"
+    },
+    {
+      "run_id": "q1_full_sapiens_d414030_20261103",
+      "reading_id": "urn:uuid:543c532f-855c-4aec-80a8-eddd4071a1b0",
+      "product_sha256": "198e72038ecbf318d555a28bfe3540c41548cc7c994ac7acad1aacc78edb4dd5",
+      "original_epub_sha256": "286aa16483029b6318a8a4a34abc912b8788275fde9823b45d2750b124eb009b",
+      "original_substrate_sha256": "d4724f7e472ae0d729b0e2c4f1042ae21c2e6df87dd3997060869d1531e5927d",
+      "book": "sapiens",
+      "unit_id": "u000231",
+      "original_source_range": {
+        "start": {
+          "chapter_id": 29,
+          "paragraph_index": 13,
+          "char_offset": 0
+        },
+        "end": {
+          "chapter_id": 29,
+          "paragraph_index": 16,
+          "char_offset": 106
+        }
+      },
+      "source_range": {
+        "start": {
+          "chapter_id": 29,
+          "paragraph_index": 13,
+          "char_offset": 0
+        },
+        "end": {
+          "chapter_id": 29,
+          "paragraph_index": 16,
+          "char_offset": 106
+        }
+      },
+      "source_order_rank": 235,
+      "total_book_units": 245,
+      "position_percent": 95.71,
+      "stratum": 3,
+      "chapter_id": 29,
+      "chapter_title": "第二十章 智人末日",
+      "chapter_label": "第二十章 智人末日"
+    }
+  ]
+}
