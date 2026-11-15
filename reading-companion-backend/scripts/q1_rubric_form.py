@@ -18,6 +18,9 @@ def require(condition, message):
 
 
 def validate_form(form):
+    if form.get('schema') == 'q1-note-rubric-form/1':
+        from scripts.q1_note_form import validate_form as validate_note_form
+        return validate_note_form(form)
     require(set(form) == {'schema', 'form_version', 'rubric_version', 'rubric_sha256',
                          'title', 'protocol_notes', 'policy', 'mark_types'}, 'Invalid form fields')
     require(form['schema'] == 'q1-rubric-form/1', 'Unsupported form schema')
@@ -55,6 +58,11 @@ def load_form(version, root=BACKEND):
     require(path.is_relative_to((root / 'rubric').resolve()), 'Form path outside rubric')
     require(sha(path) == release['sha256'], 'Form fingerprint changed')
     form = validate_form(json.loads(path.read_text()))
+    if form['schema'] == 'q1-note-rubric-form/1':
+        rubric_release = json.loads((root / 'rubric/releases.json').read_text())[form['rubric_version']]
+        guide = rubric_release['annotation_guide']
+        require(sha(root / guide['path']) == guide['sha256'] == form['annotation_guide_sha256']
+                == release['annotation_guide_sha256'], 'Annotation guide fingerprint changed')
     identity = rubric_identity(form['rubric_version'], root)
     require(form['form_version'] == version and form['rubric_version'] == release['rubric_version']
             and form['rubric_sha256'] == release['rubric_sha256'] == identity['rubric_sha256'], 'Form/rubric identity mismatch')
