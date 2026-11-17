@@ -137,7 +137,8 @@ globalThis.Q1NoteView = async function (host, session) {
   );
   const api = (path, body) => session.api(path, body);
   function textArea(parent, id, label, value = "") {
-    parent.append(node("label", label, "text"));
+    const shortcut = {paraphrase:"Y",n1Paraphrase:"Y",rewrite:"I",reason:"M",n1Reason:"R"}[id];
+    parent.append(node("label", label + (shortcut ? ` · ${shortcut}` : ""), "text"));
     parent.lastChild.htmlFor = id;
     const t = node("textarea");
     t.id = id;
@@ -169,7 +170,7 @@ globalThis.Q1NoteView = async function (host, session) {
       i.checked = value === v;
       l.append(
         i,
-        node("span", v === "pass" ? "过" : v === "fail" ? "不过" : v),
+        node("span", v === "pass" ? "过 · P" : v === "fail" ? "不过 · F" : name === "difficulty" ? `${v} · ${["Q", "G", "Z"][values.indexOf(v)]}` : v),
       );
       f.append(l);
     }
@@ -630,7 +631,7 @@ globalThis.Q1NoteView = async function (host, session) {
       flags.append(
         node("p", "已自动勾选拿不准：读着费劲选择了“改写不出”。", "muted"),
       );
-    check(flags, "uncovered", "rubric 未覆盖", r.rubric_uncovered);
+    check(flags, "uncovered", "rubric 未覆盖 · 0", r.rubric_uncovered);
     if (r.rubric_uncovered)
       textArea(
         flags,
@@ -1036,6 +1037,10 @@ globalThis.Q1NoteView = async function (host, session) {
       if (el && !el.hidden && !el.disabled) el.click();
     });
     if (inspecting !== null) return;
+    if (key === "y") return run(() => focusField(data.state.stage === 2 ? "n1Paraphrase" : "paraphrase"));
+    if (key === "i") return run(() => focusField("rewrite"));
+    if (data.state.stage === 1 && ["q","g","z"].includes(key))
+      return run(() => host.querySelectorAll('[name="difficulty"]')[["q","g","z"].indexOf(key)]?.click());
     const groups = {d:"difficulty",b:"followingUse",w:"style",x:"failure",t:"tag"};
     if (groups[key]) return run(() => focusGroup(groups[key]));
     if (key === "enter") return run(() => completeCurrent(e.shiftKey));

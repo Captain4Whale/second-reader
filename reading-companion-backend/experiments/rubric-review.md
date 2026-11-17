@@ -45,6 +45,10 @@ mobile annotation is not a supported workflow target. Progress squares follow th
 frozen mixed-book Note order.
 
 P/F, Enter, Shift+Enter, R/M/U, J/K, Shift+J/K, ?, Esc, V/S/0 retain applicable meanings.
+Q/G/Z directly choose the three difficulty options in displayed order; Y focuses
+the current paraphrase, I the difficulty rewrite, and M the overall reason. These
+keys are displayed beside the corresponding options/fields; 0 is shown beside uncovered.
+Text-entry focus suppresses these keys until Esc.
 D/B/W/X/T focus difficulty, following-use, writing style, failure types and tags.
 Use native arrows for radios and Tab/Shift+Tab plus Space for checkboxes; arrows
 inside controls never navigate records. N toggles manual uncertainty; C returns to

@@ -99,3 +99,17 @@ test('keyboard uses native arrows in controls, preserves IME and traps help dial
  key('ArrowRight');key('d',{isComposing:true});assert.deepEqual(events,[]);
  dialog.open=true;key('p');assert.deepEqual(events,[]);key('Escape');assert.deepEqual(events,['prevent','close']);
 });
+test('difficulty direct choices and text shortcuts work outside text entry only',async()=>{
+ const calls=[];
+ const c=vm.createContext({composing:false,busy:false,inspecting:null,data:{state:{stage:1}},
+ $:()=>({open:false}),host:{querySelectorAll:()=>[0,1,2].map(i=>({click:()=>calls.push(i)}))},
+ focusField:id=>calls.push(id),shownError:e=>{throw e;}});
+ vm.runInContext(extract('  function keydown(', '  document.addEventListener("keydown", keydown'),c);
+ for(const key of ['q','g','z','y','i','m']) {
+ c.e={key,preventDefault(){},composedPath:()=>[{matches:()=>false,closest:()=>null}]};
+ vm.runInContext('keydown(e)',c);await Promise.resolve();
+ }
+ assert.deepEqual(calls,[0,1,2,'paraphrase','rewrite','reason']);
+ c.e={key:'g',preventDefault(){},composedPath:()=>[{closest:()=>({tagName:'TEXTAREA'})}]};
+ vm.runInContext('keydown(e)',c);await Promise.resolve();assert.equal(calls.length,6);
+});
