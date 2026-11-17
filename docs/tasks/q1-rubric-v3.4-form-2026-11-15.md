@@ -177,3 +177,20 @@ Native Edge opened this session and displayed `1 / 46`, `0 / 46`, synchronized,
 first impression unselected. No judgment was entered by the agent. DIAG-001 and QA
 sessions remain separate. This is an artifact handoff using existing validated code;
 no form/schema change, score snapshot, quality assessment or architecture decision.
+
+
+## Generation branch merged (2026-11-17)
+
+Owner authorized merging `codex/261115-new-batch` into main after both parallel tasks
+completed. Its three commits (`0257f03`, `48d463e`, `fcad1a3`) merged without conflicts;
+the experiment log retains the main prefix plus the five branch additions. All 596
+private evidence files were copied from the generation worktree into the matching
+main-workspace `state/experiments/Q1-RUBRIC-V34-VALIDATION-001/` paths and verified
+byte-for-byte. Completed job records were copied only where absent. Neither the
+source worktree nor the frozen stability sample was deleted or changed.
+
+The active session was backed up under
+`state/q1_rubric_reviews/merge-backups/20261117T115456Z/` before merging. Its immutable
+files remain identical, and its journal prefixes remain intact (owner appends during
+annotation are allowed). Browser state was not touched. No generation or scoring
+snapshot was run, and no push was requested.

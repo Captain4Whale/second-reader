@@ -1,0 +1,1053 @@
+{
+  "schema": "fixed-unit-set/1",
+  "unit_set_id": "q1-v34-validation-001",
+  "purpose": "dev",
+  "created_at": "2026-11-15",
+  "experiment_series_id": "Q1-RUBRIC-V34-VALIDATION-001",
+  "preregistration_id": "Q1-RUBRIC-V34-VALIDATION-001-PREREG-001",
+  "sampling_seed": 20261115,
+  "position_basis": "All accepted units ordered by BookDocument chapter array, then source start paragraph_index and char_offset; not unit_id or settlement order.",
+  "generation_status": "not_started",
+  "units": [
+    {
+      "run_id": "q1_full_bovary_d414030_20261103",
+      "reading_id": "urn:uuid:c9d2d9e3-f6d2-4626-a824-62870c84a188",
+      "product_sha256": "5e80fafa3ad30afa88fbf4c883b75cf34732324c90e954803c590411d58c9b17",
+      "original_epub_sha256": "6c3ba694599f11be94c122b51c2714f746805d73d52191e0c4494ec0871b9b15",
+      "original_substrate_sha256": "e57694d8800cecfef18dc3113cfa54c8162397f78ebb243f923e035b20a93c53",
+      "book": "bovary",
+      "unit_id": "u000032",
+      "original_source_range": {
+        "start": {
+          "chapter_id": 12,
+          "paragraph_index": 7,
+          "char_offset": 0
+        },
+        "end": {
+          "chapter_id": 12,
+          "paragraph_index": 12,
+          "char_offset": 350
+        }
+      },
+      "source_range": {
+        "start": {
+          "chapter_id": 12,
+          "paragraph_index": 7,
+          "char_offset": 0
+        },
+        "end": {
+          "chapter_id": 12,
+          "paragraph_index": 12,
+          "char_offset": 350
+        }
+      },
+      "source_order_rank": 33,
+      "total_book_units": 352,
+      "position_percent": 9.23,
+      "stratum": 1,
+      "chapter_id": 12,
+      "chapter_title": "第6章",
+      "chapter_label": "第一部 · 第6章"
+    },
+    {
+      "run_id": "q1_full_bovary_d414030_20261103",
+      "reading_id": "urn:uuid:c9d2d9e3-f6d2-4626-a824-62870c84a188",
+      "product_sha256": "5e80fafa3ad30afa88fbf4c883b75cf34732324c90e954803c590411d58c9b17",
+      "original_epub_sha256": "6c3ba694599f11be94c122b51c2714f746805d73d52191e0c4494ec0871b9b15",
+      "original_substrate_sha256": "e57694d8800cecfef18dc3113cfa54c8162397f78ebb243f923e035b20a93c53",
+      "book": "bovary",
+      "unit_id": "u000043",
+      "original_source_range": {
+        "start": {
+          "chapter_id": 13,
+          "paragraph_index": 27,
+          "char_offset": 0
+        },
+        "end": {
+          "chapter_id": 13,
+          "paragraph_index": 30,
+          "char_offset": 30
+        }
+      },
+      "source_range": {
+        "start": {
+          "chapter_id": 13,
+          "paragraph_index": 27,
+          "char_offset": 0
+        },
+        "end": {
+          "chapter_id": 13,
+          "paragraph_index": 30,
+          "char_offset": 30
+        }
+      },
+      "source_order_rank": 44,
+      "total_book_units": 352,
+      "position_percent": 12.36,
+      "stratum": 1,
+      "chapter_id": 13,
+      "chapter_title": "第7章",
+      "chapter_label": "第一部 · 第7章"
+    },
+    {
+      "run_id": "q1_full_bovary_d414030_20261103",
+      "reading_id": "urn:uuid:c9d2d9e3-f6d2-4626-a824-62870c84a188",
+      "product_sha256": "5e80fafa3ad30afa88fbf4c883b75cf34732324c90e954803c590411d58c9b17",
+      "original_epub_sha256": "6c3ba694599f11be94c122b51c2714f746805d73d52191e0c4494ec0871b9b15",
+      "original_substrate_sha256": "e57694d8800cecfef18dc3113cfa54c8162397f78ebb243f923e035b20a93c53",
+      "book": "bovary",
+      "unit_id": "u000089",
+      "original_source_range": {
+        "start": {
+          "chapter_id": 19,
+          "paragraph_index": 54,
+          "char_offset": 0
+        },
+        "end": {
+          "chapter_id": 19,
+          "paragraph_index": 60,
+          "char_offset": 214
+        }
+      },
+      "source_range": {
+        "start": {
+          "chapter_id": 19,
+          "paragraph_index": 54,
+          "char_offset": 0
+        },
+        "end": {
+          "chapter_id": 19,
+          "paragraph_index": 60,
+          "char_offset": 214
+        }
+      },
+      "source_order_rank": 90,
+      "total_book_units": 352,
+      "position_percent": 25.43,
+      "stratum": 1,
+      "chapter_id": 19,
+      "chapter_title": "第3章",
+      "chapter_label": "第二部 · 第3章"
+    },
+    {
+      "run_id": "q1_full_bovary_d414030_20261103",
+      "reading_id": "urn:uuid:c9d2d9e3-f6d2-4626-a824-62870c84a188",
+      "product_sha256": "5e80fafa3ad30afa88fbf4c883b75cf34732324c90e954803c590411d58c9b17",
+      "original_epub_sha256": "6c3ba694599f11be94c122b51c2714f746805d73d52191e0c4494ec0871b9b15",
+      "original_substrate_sha256": "e57694d8800cecfef18dc3113cfa54c8162397f78ebb243f923e035b20a93c53",
+      "book": "bovary",
+      "unit_id": "u000109",
+      "original_source_range": {
+        "start": {
+          "chapter_id": 22,
+          "paragraph_index": 74,
+          "char_offset": 0
+        },
+        "end": {
+          "chapter_id": 22,
+          "paragraph_index": 78,
+          "char_offset": 18
+        }
+      },
+      "source_range": {
+        "start": {
+          "chapter_id": 22,
+          "paragraph_index": 74,
+          "char_offset": 0
+        },
+        "end": {
+          "chapter_id": 22,
+          "paragraph_index": 78,
+          "char_offset": 18
+        }
+      },
+      "source_order_rank": 110,
+      "total_book_units": 352,
+      "position_percent": 31.11,
+      "stratum": 1,
+      "chapter_id": 22,
+      "chapter_title": "第6章",
+      "chapter_label": "第二部 · 第6章"
+    },
+    {
+      "run_id": "q1_full_bovary_d414030_20261103",
+      "reading_id": "urn:uuid:c9d2d9e3-f6d2-4626-a824-62870c84a188",
+      "product_sha256": "5e80fafa3ad30afa88fbf4c883b75cf34732324c90e954803c590411d58c9b17",
+      "original_epub_sha256": "6c3ba694599f11be94c122b51c2714f746805d73d52191e0c4494ec0871b9b15",
+      "original_substrate_sha256": "e57694d8800cecfef18dc3113cfa54c8162397f78ebb243f923e035b20a93c53",
+      "book": "bovary",
+      "unit_id": "u000145",
+      "original_source_range": {
+        "start": {
+          "chapter_id": 25,
+          "paragraph_index": 54,
+          "char_offset": 0
+        },
+        "end": {
+          "chapter_id": 25,
+          "paragraph_index": 64,
+          "char_offset": 186
+        }
+      },
+      "source_range": {
+        "start": {
+          "chapter_id": 25,
+          "paragraph_index": 54,
+          "char_offset": 0
+        },
+        "end": {
+          "chapter_id": 25,
+          "paragraph_index": 64,
+          "char_offset": 186
+        }
+      },
+      "source_order_rank": 146,
+      "total_book_units": 352,
+      "position_percent": 41.34,
+      "stratum": 2,
+      "chapter_id": 25,
+      "chapter_title": "第9章",
+      "chapter_label": "第二部 · 第9章"
+    },
+    {
+      "run_id": "q1_full_bovary_d414030_20261103",
+      "reading_id": "urn:uuid:c9d2d9e3-f6d2-4626-a824-62870c84a188",
+      "product_sha256": "5e80fafa3ad30afa88fbf4c883b75cf34732324c90e954803c590411d58c9b17",
+      "original_epub_sha256": "6c3ba694599f11be94c122b51c2714f746805d73d52191e0c4494ec0871b9b15",
+      "original_substrate_sha256": "e57694d8800cecfef18dc3113cfa54c8162397f78ebb243f923e035b20a93c53",
+      "book": "bovary",
+      "unit_id": "u000161",
+      "original_source_range": {
+        "start": {
+          "chapter_id": 27,
+          "paragraph_index": 6,
+          "char_offset": 0
+        },
+        "end": {
+          "chapter_id": 27,
+          "paragraph_index": 20,
+          "char_offset": 144
+        }
+      },
+      "source_range": {
+        "start": {
+          "chapter_id": 27,
+          "paragraph_index": 6,
+          "char_offset": 0
+        },
+        "end": {
+          "chapter_id": 27,
+          "paragraph_index": 20,
+          "char_offset": 144
+        }
+      },
+      "source_order_rank": 162,
+      "total_book_units": 352,
+      "position_percent": 45.88,
+      "stratum": 2,
+      "chapter_id": 27,
+      "chapter_title": "第11章",
+      "chapter_label": "第二部 · 第11章"
+    },
+    {
+      "run_id": "q1_full_bovary_d414030_20261103",
+      "reading_id": "urn:uuid:c9d2d9e3-f6d2-4626-a824-62870c84a188",
+      "product_sha256": "5e80fafa3ad30afa88fbf4c883b75cf34732324c90e954803c590411d58c9b17",
+      "original_epub_sha256": "6c3ba694599f11be94c122b51c2714f746805d73d52191e0c4494ec0871b9b15",
+      "original_substrate_sha256": "e57694d8800cecfef18dc3113cfa54c8162397f78ebb243f923e035b20a93c53",
+      "book": "bovary",
+      "unit_id": "u000175",
+      "original_source_range": {
+        "start": {
+          "chapter_id": 28,
+          "paragraph_index": 41,
+          "char_offset": 0
+        },
+        "end": {
+          "chapter_id": 28,
+          "paragraph_index": 54,
+          "char_offset": 211
+        }
+      },
+      "source_range": {
+        "start": {
+          "chapter_id": 28,
+          "paragraph_index": 41,
+          "char_offset": 0
+        },
+        "end": {
+          "chapter_id": 28,
+          "paragraph_index": 54,
+          "char_offset": 211
+        }
+      },
+      "source_order_rank": 176,
+      "total_book_units": 352,
+      "position_percent": 49.86,
+      "stratum": 2,
+      "chapter_id": 28,
+      "chapter_title": "第12章",
+      "chapter_label": "第二部 · 第12章"
+    },
+    {
+      "run_id": "q1_full_bovary_d414030_20261103",
+      "reading_id": "urn:uuid:c9d2d9e3-f6d2-4626-a824-62870c84a188",
+      "product_sha256": "5e80fafa3ad30afa88fbf4c883b75cf34732324c90e954803c590411d58c9b17",
+      "original_epub_sha256": "6c3ba694599f11be94c122b51c2714f746805d73d52191e0c4494ec0871b9b15",
+      "original_substrate_sha256": "e57694d8800cecfef18dc3113cfa54c8162397f78ebb243f923e035b20a93c53",
+      "book": "bovary",
+      "unit_id": "u000177",
+      "original_source_range": {
+        "start": {
+          "chapter_id": 28,
+          "paragraph_index": 69,
+          "char_offset": 0
+        },
+        "end": {
+          "chapter_id": 28,
+          "paragraph_index": 85,
+          "char_offset": 21
+        }
+      },
+      "source_range": {
+        "start": {
+          "chapter_id": 28,
+          "paragraph_index": 69,
+          "char_offset": 0
+        },
+        "end": {
+          "chapter_id": 28,
+          "paragraph_index": 85,
+          "char_offset": 21
+        }
+      },
+      "source_order_rank": 178,
+      "total_book_units": 352,
+      "position_percent": 50.43,
+      "stratum": 2,
+      "chapter_id": 28,
+      "chapter_title": "第12章",
+      "chapter_label": "第二部 · 第12章"
+    },
+    {
+      "run_id": "q1_full_bovary_d414030_20261103",
+      "reading_id": "urn:uuid:c9d2d9e3-f6d2-4626-a824-62870c84a188",
+      "product_sha256": "5e80fafa3ad30afa88fbf4c883b75cf34732324c90e954803c590411d58c9b17",
+      "original_epub_sha256": "6c3ba694599f11be94c122b51c2714f746805d73d52191e0c4494ec0871b9b15",
+      "original_substrate_sha256": "e57694d8800cecfef18dc3113cfa54c8162397f78ebb243f923e035b20a93c53",
+      "book": "bovary",
+      "unit_id": "u000195",
+      "original_source_range": {
+        "start": {
+          "chapter_id": 30,
+          "paragraph_index": 1,
+          "char_offset": 0
+        },
+        "end": {
+          "chapter_id": 30,
+          "paragraph_index": 4,
+          "char_offset": 166
+        }
+      },
+      "source_range": {
+        "start": {
+          "chapter_id": 30,
+          "paragraph_index": 1,
+          "char_offset": 0
+        },
+        "end": {
+          "chapter_id": 30,
+          "paragraph_index": 4,
+          "char_offset": 166
+        }
+      },
+      "source_order_rank": 196,
+      "total_book_units": 352,
+      "position_percent": 55.54,
+      "stratum": 2,
+      "chapter_id": 30,
+      "chapter_title": "第14章",
+      "chapter_label": "第二部 · 第14章"
+    },
+    {
+      "run_id": "q1_full_bovary_d414030_20261103",
+      "reading_id": "urn:uuid:c9d2d9e3-f6d2-4626-a824-62870c84a188",
+      "product_sha256": "5e80fafa3ad30afa88fbf4c883b75cf34732324c90e954803c590411d58c9b17",
+      "original_epub_sha256": "6c3ba694599f11be94c122b51c2714f746805d73d52191e0c4494ec0871b9b15",
+      "original_substrate_sha256": "e57694d8800cecfef18dc3113cfa54c8162397f78ebb243f923e035b20a93c53",
+      "book": "bovary",
+      "unit_id": "u000239",
+      "original_source_range": {
+        "start": {
+          "chapter_id": 34,
+          "paragraph_index": 78,
+          "char_offset": 0
+        },
+        "end": {
+          "chapter_id": 34,
+          "paragraph_index": 82,
+          "char_offset": 110
+        }
+      },
+      "source_range": {
+        "start": {
+          "chapter_id": 34,
+          "paragraph_index": 78,
+          "char_offset": 0
+        },
+        "end": {
+          "chapter_id": 34,
+          "paragraph_index": 82,
+          "char_offset": 110
+        }
+      },
+      "source_order_rank": 240,
+      "total_book_units": 352,
+      "position_percent": 68.04,
+      "stratum": 3,
+      "chapter_id": 34,
+      "chapter_title": "第2章",
+      "chapter_label": "第三部 · 第2章"
+    },
+    {
+      "run_id": "q1_full_bovary_d414030_20261103",
+      "reading_id": "urn:uuid:c9d2d9e3-f6d2-4626-a824-62870c84a188",
+      "product_sha256": "5e80fafa3ad30afa88fbf4c883b75cf34732324c90e954803c590411d58c9b17",
+      "original_epub_sha256": "6c3ba694599f11be94c122b51c2714f746805d73d52191e0c4494ec0871b9b15",
+      "original_substrate_sha256": "e57694d8800cecfef18dc3113cfa54c8162397f78ebb243f923e035b20a93c53",
+      "book": "bovary",
+      "unit_id": "u000262",
+      "original_source_range": {
+        "start": {
+          "chapter_id": 37,
+          "paragraph_index": 171,
+          "char_offset": 0
+        },
+        "end": {
+          "chapter_id": 37,
+          "paragraph_index": 177,
+          "char_offset": 134
+        }
+      },
+      "source_range": {
+        "start": {
+          "chapter_id": 37,
+          "paragraph_index": 171,
+          "char_offset": 0
+        },
+        "end": {
+          "chapter_id": 37,
+          "paragraph_index": 177,
+          "char_offset": 134
+        }
+      },
+      "source_order_rank": 263,
+      "total_book_units": 352,
+      "position_percent": 74.57,
+      "stratum": 3,
+      "chapter_id": 37,
+      "chapter_title": "第5章",
+      "chapter_label": "第三部 · 第5章"
+    },
+    {
+      "run_id": "q1_full_bovary_d414030_20261103",
+      "reading_id": "urn:uuid:c9d2d9e3-f6d2-4626-a824-62870c84a188",
+      "product_sha256": "5e80fafa3ad30afa88fbf4c883b75cf34732324c90e954803c590411d58c9b17",
+      "original_epub_sha256": "6c3ba694599f11be94c122b51c2714f746805d73d52191e0c4494ec0871b9b15",
+      "original_substrate_sha256": "e57694d8800cecfef18dc3113cfa54c8162397f78ebb243f923e035b20a93c53",
+      "book": "bovary",
+      "unit_id": "u000281",
+      "original_source_range": {
+        "start": {
+          "chapter_id": 38,
+          "paragraph_index": 144,
+          "char_offset": 0
+        },
+        "end": {
+          "chapter_id": 38,
+          "paragraph_index": 151,
+          "char_offset": 79
+        }
+      },
+      "source_range": {
+        "start": {
+          "chapter_id": 38,
+          "paragraph_index": 144,
+          "char_offset": 0
+        },
+        "end": {
+          "chapter_id": 38,
+          "paragraph_index": 151,
+          "char_offset": 79
+        }
+      },
+      "source_order_rank": 282,
+      "total_book_units": 352,
+      "position_percent": 79.97,
+      "stratum": 3,
+      "chapter_id": 38,
+      "chapter_title": "第6章",
+      "chapter_label": "第三部 · 第6章"
+    },
+    {
+      "run_id": "q1_full_bovary_d414030_20261103",
+      "reading_id": "urn:uuid:c9d2d9e3-f6d2-4626-a824-62870c84a188",
+      "product_sha256": "5e80fafa3ad30afa88fbf4c883b75cf34732324c90e954803c590411d58c9b17",
+      "original_epub_sha256": "6c3ba694599f11be94c122b51c2714f746805d73d52191e0c4494ec0871b9b15",
+      "original_substrate_sha256": "e57694d8800cecfef18dc3113cfa54c8162397f78ebb243f923e035b20a93c53",
+      "book": "bovary",
+      "unit_id": "u000329",
+      "original_source_range": {
+        "start": {
+          "chapter_id": 42,
+          "paragraph_index": 21,
+          "char_offset": 0
+        },
+        "end": {
+          "chapter_id": 42,
+          "paragraph_index": 38,
+          "char_offset": 57
+        }
+      },
+      "source_range": {
+        "start": {
+          "chapter_id": 42,
+          "paragraph_index": 21,
+          "char_offset": 0
+        },
+        "end": {
+          "chapter_id": 42,
+          "paragraph_index": 38,
+          "char_offset": 57
+        }
+      },
+      "source_order_rank": 330,
+      "total_book_units": 352,
+      "position_percent": 93.61,
+      "stratum": 3,
+      "chapter_id": 42,
+      "chapter_title": "第10章",
+      "chapter_label": "第三部 · 第10章"
+    },
+    {
+      "run_id": "q1_full_sapiens_d414030_20261103",
+      "reading_id": "urn:uuid:543c532f-855c-4aec-80a8-eddd4071a1b0",
+      "product_sha256": "198e72038ecbf318d555a28bfe3540c41548cc7c994ac7acad1aacc78edb4dd5",
+      "original_epub_sha256": "286aa16483029b6318a8a4a34abc912b8788275fde9823b45d2750b124eb009b",
+      "original_substrate_sha256": "d4724f7e472ae0d729b0e2c4f1042ae21c2e6df87dd3997060869d1531e5927d",
+      "book": "sapiens",
+      "unit_id": "u000027",
+      "original_source_range": {
+        "start": {
+          "chapter_id": 9,
+          "paragraph_index": 21,
+          "char_offset": 0
+        },
+        "end": {
+          "chapter_id": 9,
+          "paragraph_index": 25,
+          "char_offset": 200
+        }
+      },
+      "source_range": {
+        "start": {
+          "chapter_id": 9,
+          "paragraph_index": 21,
+          "char_offset": 0
+        },
+        "end": {
+          "chapter_id": 9,
+          "paragraph_index": 25,
+          "char_offset": 200
+        }
+      },
+      "source_order_rank": 31,
+      "total_book_units": 245,
+      "position_percent": 12.45,
+      "stratum": 1,
+      "chapter_id": 9,
+      "chapter_title": "第三章 亚当和夏娃的一天",
+      "chapter_label": "第三章 亚当和夏娃的一天"
+    },
+    {
+      "run_id": "q1_full_sapiens_d414030_20261103",
+      "reading_id": "urn:uuid:543c532f-855c-4aec-80a8-eddd4071a1b0",
+      "product_sha256": "198e72038ecbf318d555a28bfe3540c41548cc7c994ac7acad1aacc78edb4dd5",
+      "original_epub_sha256": "286aa16483029b6318a8a4a34abc912b8788275fde9823b45d2750b124eb009b",
+      "original_substrate_sha256": "d4724f7e472ae0d729b0e2c4f1042ae21c2e6df87dd3997060869d1531e5927d",
+      "book": "sapiens",
+      "unit_id": "u000033",
+      "original_source_range": {
+        "start": {
+          "chapter_id": 9,
+          "paragraph_index": 51,
+          "char_offset": 0
+        },
+        "end": {
+          "chapter_id": 9,
+          "paragraph_index": 61,
+          "char_offset": 163
+        }
+      },
+      "source_range": {
+        "start": {
+          "chapter_id": 9,
+          "paragraph_index": 51,
+          "char_offset": 0
+        },
+        "end": {
+          "chapter_id": 9,
+          "paragraph_index": 61,
+          "char_offset": 163
+        }
+      },
+      "source_order_rank": 37,
+      "total_book_units": 245,
+      "position_percent": 14.9,
+      "stratum": 1,
+      "chapter_id": 9,
+      "chapter_title": "第三章 亚当和夏娃的一天",
+      "chapter_label": "第三章 亚当和夏娃的一天"
+    },
+    {
+      "run_id": "q1_full_sapiens_d414030_20261103",
+      "reading_id": "urn:uuid:543c532f-855c-4aec-80a8-eddd4071a1b0",
+      "product_sha256": "198e72038ecbf318d555a28bfe3540c41548cc7c994ac7acad1aacc78edb4dd5",
+      "original_epub_sha256": "286aa16483029b6318a8a4a34abc912b8788275fde9823b45d2750b124eb009b",
+      "original_substrate_sha256": "d4724f7e472ae0d729b0e2c4f1042ae21c2e6df87dd3997060869d1531e5927d",
+      "book": "sapiens",
+      "unit_id": "u000048",
+      "original_source_range": {
+        "start": {
+          "chapter_id": 12,
+          "paragraph_index": 1,
+          "char_offset": 0
+        },
+        "end": {
+          "chapter_id": 12,
+          "paragraph_index": 6,
+          "char_offset": 178
+        }
+      },
+      "source_range": {
+        "start": {
+          "chapter_id": 12,
+          "paragraph_index": 1,
+          "char_offset": 0
+        },
+        "end": {
+          "chapter_id": 12,
+          "paragraph_index": 6,
+          "char_offset": 178
+        }
+      },
+      "source_order_rank": 52,
+      "total_book_units": 245,
+      "position_percent": 21.02,
+      "stratum": 1,
+      "chapter_id": 12,
+      "chapter_title": "第五章 史上最大骗局",
+      "chapter_label": "第五章 史上最大骗局"
+    },
+    {
+      "run_id": "q1_full_sapiens_d414030_20261103",
+      "reading_id": "urn:uuid:543c532f-855c-4aec-80a8-eddd4071a1b0",
+      "product_sha256": "198e72038ecbf318d555a28bfe3540c41548cc7c994ac7acad1aacc78edb4dd5",
+      "original_epub_sha256": "286aa16483029b6318a8a4a34abc912b8788275fde9823b45d2750b124eb009b",
+      "original_substrate_sha256": "d4724f7e472ae0d729b0e2c4f1042ae21c2e6df87dd3997060869d1531e5927d",
+      "book": "sapiens",
+      "unit_id": "u000061",
+      "original_source_range": {
+        "start": {
+          "chapter_id": 13,
+          "paragraph_index": 16,
+          "char_offset": 0
+        },
+        "end": {
+          "chapter_id": 13,
+          "paragraph_index": 21,
+          "char_offset": 150
+        }
+      },
+      "source_range": {
+        "start": {
+          "chapter_id": 13,
+          "paragraph_index": 16,
+          "char_offset": 0
+        },
+        "end": {
+          "chapter_id": 13,
+          "paragraph_index": 21,
+          "char_offset": 150
+        }
+      },
+      "source_order_rank": 65,
+      "total_book_units": 245,
+      "position_percent": 26.33,
+      "stratum": 1,
+      "chapter_id": 13,
+      "chapter_title": "第六章 盖起金字塔",
+      "chapter_label": "第六章 盖起金字塔"
+    },
+    {
+      "run_id": "q1_full_sapiens_d414030_20261103",
+      "reading_id": "urn:uuid:543c532f-855c-4aec-80a8-eddd4071a1b0",
+      "product_sha256": "198e72038ecbf318d555a28bfe3540c41548cc7c994ac7acad1aacc78edb4dd5",
+      "original_epub_sha256": "286aa16483029b6318a8a4a34abc912b8788275fde9823b45d2750b124eb009b",
+      "original_substrate_sha256": "d4724f7e472ae0d729b0e2c4f1042ae21c2e6df87dd3997060869d1531e5927d",
+      "book": "sapiens",
+      "unit_id": "u000094",
+      "original_source_range": {
+        "start": {
+          "chapter_id": 17,
+          "paragraph_index": 1,
+          "char_offset": 0
+        },
+        "end": {
+          "chapter_id": 17,
+          "paragraph_index": 6,
+          "char_offset": 273
+        }
+      },
+      "source_range": {
+        "start": {
+          "chapter_id": 17,
+          "paragraph_index": 1,
+          "char_offset": 0
+        },
+        "end": {
+          "chapter_id": 17,
+          "paragraph_index": 6,
+          "char_offset": 273
+        }
+      },
+      "source_order_rank": 98,
+      "total_book_units": 245,
+      "position_percent": 39.8,
+      "stratum": 2,
+      "chapter_id": 17,
+      "chapter_title": "第九章 历史的方向",
+      "chapter_label": "第九章 历史的方向"
+    },
+    {
+      "run_id": "q1_full_sapiens_d414030_20261103",
+      "reading_id": "urn:uuid:543c532f-855c-4aec-80a8-eddd4071a1b0",
+      "product_sha256": "198e72038ecbf318d555a28bfe3540c41548cc7c994ac7acad1aacc78edb4dd5",
+      "original_epub_sha256": "286aa16483029b6318a8a4a34abc912b8788275fde9823b45d2750b124eb009b",
+      "original_substrate_sha256": "d4724f7e472ae0d729b0e2c4f1042ae21c2e6df87dd3997060869d1531e5927d",
+      "book": "sapiens",
+      "unit_id": "u000125",
+      "original_source_range": {
+        "start": {
+          "chapter_id": 20,
+          "paragraph_index": 32,
+          "char_offset": 0
+        },
+        "end": {
+          "chapter_id": 20,
+          "paragraph_index": 40,
+          "char_offset": 248
+        }
+      },
+      "source_range": {
+        "start": {
+          "chapter_id": 20,
+          "paragraph_index": 32,
+          "char_offset": 0
+        },
+        "end": {
+          "chapter_id": 20,
+          "paragraph_index": 40,
+          "char_offset": 248
+        }
+      },
+      "source_order_rank": 129,
+      "total_book_units": 245,
+      "position_percent": 52.45,
+      "stratum": 2,
+      "chapter_id": 20,
+      "chapter_title": "第十二章 宗教的法则",
+      "chapter_label": "第十二章 宗教的法则"
+    },
+    {
+      "run_id": "q1_full_sapiens_d414030_20261103",
+      "reading_id": "urn:uuid:543c532f-855c-4aec-80a8-eddd4071a1b0",
+      "product_sha256": "198e72038ecbf318d555a28bfe3540c41548cc7c994ac7acad1aacc78edb4dd5",
+      "original_epub_sha256": "286aa16483029b6318a8a4a34abc912b8788275fde9823b45d2750b124eb009b",
+      "original_substrate_sha256": "d4724f7e472ae0d729b0e2c4f1042ae21c2e6df87dd3997060869d1531e5927d",
+      "book": "sapiens",
+      "unit_id": "u000128",
+      "original_source_range": {
+        "start": {
+          "chapter_id": 20,
+          "paragraph_index": 52,
+          "char_offset": 0
+        },
+        "end": {
+          "chapter_id": 20,
+          "paragraph_index": 58,
+          "char_offset": 180
+        }
+      },
+      "source_range": {
+        "start": {
+          "chapter_id": 20,
+          "paragraph_index": 52,
+          "char_offset": 0
+        },
+        "end": {
+          "chapter_id": 20,
+          "paragraph_index": 58,
+          "char_offset": 180
+        }
+      },
+      "source_order_rank": 132,
+      "total_book_units": 245,
+      "position_percent": 53.67,
+      "stratum": 2,
+      "chapter_id": 20,
+      "chapter_title": "第十二章 宗教的法则",
+      "chapter_label": "第十二章 宗教的法则"
+    },
+    {
+      "run_id": "q1_full_sapiens_d414030_20261103",
+      "reading_id": "urn:uuid:543c532f-855c-4aec-80a8-eddd4071a1b0",
+      "product_sha256": "198e72038ecbf318d555a28bfe3540c41548cc7c994ac7acad1aacc78edb4dd5",
+      "original_epub_sha256": "286aa16483029b6318a8a4a34abc912b8788275fde9823b45d2750b124eb009b",
+      "original_substrate_sha256": "d4724f7e472ae0d729b0e2c4f1042ae21c2e6df87dd3997060869d1531e5927d",
+      "book": "sapiens",
+      "unit_id": "u000148",
+      "original_source_range": {
+        "start": {
+          "chapter_id": 23,
+          "paragraph_index": 51,
+          "char_offset": 0
+        },
+        "end": {
+          "chapter_id": 23,
+          "paragraph_index": 54,
+          "char_offset": 120
+        }
+      },
+      "source_range": {
+        "start": {
+          "chapter_id": 23,
+          "paragraph_index": 51,
+          "char_offset": 0
+        },
+        "end": {
+          "chapter_id": 23,
+          "paragraph_index": 54,
+          "char_offset": 120
+        }
+      },
+      "source_order_rank": 152,
+      "total_book_units": 245,
+      "position_percent": 61.84,
+      "stratum": 2,
+      "chapter_id": 23,
+      "chapter_title": "第十四章 发现自己的无知",
+      "chapter_label": "第十四章 发现自己的无知"
+    },
+    {
+      "run_id": "q1_full_sapiens_d414030_20261103",
+      "reading_id": "urn:uuid:543c532f-855c-4aec-80a8-eddd4071a1b0",
+      "product_sha256": "198e72038ecbf318d555a28bfe3540c41548cc7c994ac7acad1aacc78edb4dd5",
+      "original_epub_sha256": "286aa16483029b6318a8a4a34abc912b8788275fde9823b45d2750b124eb009b",
+      "original_substrate_sha256": "d4724f7e472ae0d729b0e2c4f1042ae21c2e6df87dd3997060869d1531e5927d",
+      "book": "sapiens",
+      "unit_id": "u000152",
+      "original_source_range": {
+        "start": {
+          "chapter_id": 23,
+          "paragraph_index": 80,
+          "char_offset": 0
+        },
+        "end": {
+          "chapter_id": 23,
+          "paragraph_index": 83,
+          "char_offset": 324
+        }
+      },
+      "source_range": {
+        "start": {
+          "chapter_id": 23,
+          "paragraph_index": 80,
+          "char_offset": 0
+        },
+        "end": {
+          "chapter_id": 23,
+          "paragraph_index": 83,
+          "char_offset": 324
+        }
+      },
+      "source_order_rank": 156,
+      "total_book_units": 245,
+      "position_percent": 63.47,
+      "stratum": 2,
+      "chapter_id": 23,
+      "chapter_title": "第十四章 发现自己的无知",
+      "chapter_label": "第十四章 发现自己的无知"
+    },
+    {
+      "run_id": "q1_full_sapiens_d414030_20261103",
+      "reading_id": "urn:uuid:543c532f-855c-4aec-80a8-eddd4071a1b0",
+      "product_sha256": "198e72038ecbf318d555a28bfe3540c41548cc7c994ac7acad1aacc78edb4dd5",
+      "original_epub_sha256": "286aa16483029b6318a8a4a34abc912b8788275fde9823b45d2750b124eb009b",
+      "original_substrate_sha256": "d4724f7e472ae0d729b0e2c4f1042ae21c2e6df87dd3997060869d1531e5927d",
+      "book": "sapiens",
+      "unit_id": "u000165",
+      "original_source_range": {
+        "start": {
+          "chapter_id": 24,
+          "paragraph_index": 53,
+          "char_offset": 0
+        },
+        "end": {
+          "chapter_id": 24,
+          "paragraph_index": 59,
+          "char_offset": 242
+        }
+      },
+      "source_range": {
+        "start": {
+          "chapter_id": 24,
+          "paragraph_index": 53,
+          "char_offset": 0
+        },
+        "end": {
+          "chapter_id": 24,
+          "paragraph_index": 59,
+          "char_offset": 242
+        }
+      },
+      "source_order_rank": 169,
+      "total_book_units": 245,
+      "position_percent": 68.78,
+      "stratum": 3,
+      "chapter_id": 24,
+      "chapter_title": "第十五章 科学与帝国的联姻",
+      "chapter_label": "第十五章 科学与帝国的联姻"
+    },
+    {
+      "run_id": "q1_full_sapiens_d414030_20261103",
+      "reading_id": "urn:uuid:543c532f-855c-4aec-80a8-eddd4071a1b0",
+      "product_sha256": "198e72038ecbf318d555a28bfe3540c41548cc7c994ac7acad1aacc78edb4dd5",
+      "original_epub_sha256": "286aa16483029b6318a8a4a34abc912b8788275fde9823b45d2750b124eb009b",
+      "original_substrate_sha256": "d4724f7e472ae0d729b0e2c4f1042ae21c2e6df87dd3997060869d1531e5927d",
+      "book": "sapiens",
+      "unit_id": "u000176",
+      "original_source_range": {
+        "start": {
+          "chapter_id": 25,
+          "paragraph_index": 1,
+          "char_offset": 0
+        },
+        "end": {
+          "chapter_id": 25,
+          "paragraph_index": 4,
+          "char_offset": 189
+        }
+      },
+      "source_range": {
+        "start": {
+          "chapter_id": 25,
+          "paragraph_index": 1,
+          "char_offset": 0
+        },
+        "end": {
+          "chapter_id": 25,
+          "paragraph_index": 4,
+          "char_offset": 189
+        }
+      },
+      "source_order_rank": 180,
+      "total_book_units": 245,
+      "position_percent": 73.27,
+      "stratum": 3,
+      "chapter_id": 25,
+      "chapter_title": "第十六章 资本主义教条",
+      "chapter_label": "第十六章 资本主义教条"
+    },
+    {
+      "run_id": "q1_full_sapiens_d414030_20261103",
+      "reading_id": "urn:uuid:543c532f-855c-4aec-80a8-eddd4071a1b0",
+      "product_sha256": "198e72038ecbf318d555a28bfe3540c41548cc7c994ac7acad1aacc78edb4dd5",
+      "original_epub_sha256": "286aa16483029b6318a8a4a34abc912b8788275fde9823b45d2750b124eb009b",
+      "original_substrate_sha256": "d4724f7e472ae0d729b0e2c4f1042ae21c2e6df87dd3997060869d1531e5927d",
+      "book": "sapiens",
+      "unit_id": "u000183",
+      "original_source_range": {
+        "start": {
+          "chapter_id": 25,
+          "paragraph_index": 48,
+          "char_offset": 0
+        },
+        "end": {
+          "chapter_id": 25,
+          "paragraph_index": 55,
+          "char_offset": 297
+        }
+      },
+      "source_range": {
+        "start": {
+          "chapter_id": 25,
+          "paragraph_index": 48,
+          "char_offset": 0
+        },
+        "end": {
+          "chapter_id": 25,
+          "paragraph_index": 55,
+          "char_offset": 297
+        }
+      },
+      "source_order_rank": 187,
+      "total_book_units": 245,
+      "position_percent": 76.12,
+      "stratum": 3,
+      "chapter_id": 25,
+      "chapter_title": "第十六章 资本主义教条",
+      "chapter_label": "第十六章 资本主义教条"
+    },
+    {
+      "run_id": "q1_full_sapiens_d414030_20261103",
+      "reading_id": "urn:uuid:543c532f-855c-4aec-80a8-eddd4071a1b0",
+      "product_sha256": "198e72038ecbf318d555a28bfe3540c41548cc7c994ac7acad1aacc78edb4dd5",
+      "original_epub_sha256": "286aa16483029b6318a8a4a34abc912b8788275fde9823b45d2750b124eb009b",
+      "original_substrate_sha256": "d4724f7e472ae0d729b0e2c4f1042ae21c2e6df87dd3997060869d1531e5927d",
+      "book": "sapiens",
+      "unit_id": "u000189",
+      "original_source_range": {
+        "start": {
+          "chapter_id": 25,
+          "paragraph_index": 80,
+          "char_offset": 0
+        },
+        "end": {
+          "chapter_id": 25,
+          "paragraph_index": 88,
+          "char_offset": 277
+        }
+      },
+      "source_range": {
+        "start": {
+          "chapter_id": 25,
+          "paragraph_index": 80,
+          "char_offset": 0
+        },
+        "end": {
+          "chapter_id": 25,
+          "paragraph_index": 88,
+          "char_offset": 277
+        }
+      },
+      "source_order_rank": 193,
+      "total_book_units": 245,
+      "position_percent": 78.57,
+      "stratum": 3,
+      "chapter_id": 25,
+      "chapter_title": "第十六章 资本主义教条",
+      "chapter_label": "第十六章 资本主义教条"
+    }
+  ]
+}

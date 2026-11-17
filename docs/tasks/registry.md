@@ -32,7 +32,7 @@ Last updated: `2026-11-12`
 
 ## Done
 
-- `TASK-Q1-RUBRIC-V34-FORM` — `done`: offline annotator 3.4; new validation session `Q1-RUBRIC-V34-VALIDATION-001-q1-v3.4` connected on 2026-11-17 with 46 Notes. Historical DIAG-001 session preserved. No rerun, scoring snapshot or merge. [Record](q1-rubric-v3.4-form-2026-11-15.md).
+- `TASK-Q1-RUBRIC-V34-FORM` — `done`: offline annotator 3.4; new validation session `Q1-RUBRIC-V34-VALIDATION-001-q1-v3.4` connected on 2026-11-17 with 46 Notes. Historical DIAG-001 session preserved. Generation branch merged into main on 2026-11-17; no rerun or scoring snapshot. [Record](q1-rubric-v3.4-form-2026-11-15.md).
 
 - `TASK-Q1-RUBRIC-V2-CONVERSION` — `done`: published exact v2 and 22 verified examples, no form; registered raw v1 and owner-adjudicated v2-structure conversion scores (Note 25/51, H 28/30). Anonymous failure-type worksheet: 25 items, 10 prefilled, 15 blank; owner completion and later import pending separately. No original annotations or prior releases changed. [Receipt](q1-rubric-v2-conversion-2026-11-12.md).
 

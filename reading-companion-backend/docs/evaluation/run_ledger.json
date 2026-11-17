@@ -1,6 +1,6 @@
 {
   "schema_version": 1,
-  "updated_at": "2026-11-08T09:39:02.151226Z",
+  "updated_at": "2026-11-15T12:52:56.112829Z",
   "entries": [
     {
       "run_id": "attentional_v2_excerpt_surface_v1_1_judged_20260406",
@@ -4234,6 +4234,105 @@
       "local_missing_allowed": [],
       "metadata": {},
       "updated_at": "2026-11-03T12:22:01.427676Z"
+    },
+    {
+      "run_id": "q1_rubric_v34_validation_001_pilot_terra_medium",
+      "date": "2026-11-15",
+      "surface": "fixed_history_digest_pilot",
+      "lane": "mechanism_eval",
+      "status": "review_pending",
+      "mechanisms": [
+        "attentional_v2"
+      ],
+      "dataset_or_manifest": [
+        "reading-companion-backend/experiments/unit-sets/q1-v34-pilot-001.json"
+      ],
+      "run_dir": "reading-companion-backend/state/experiments/Q1-RUBRIC-V34-VALIDATION-001/pilot",
+      "summary_paths": {
+        "pilot": "reading-companion-backend/state/experiments/Q1-RUBRIC-V34-VALIDATION-001/pilot/summary.json",
+        "status": "reading-companion-backend/state/experiments/Q1-RUBRIC-V34-VALIDATION-001/pilot/status.json",
+        "validation": "reading-companion-backend/state/experiments/Q1-RUBRIC-V34-VALIDATION-001/pilot/validation.json"
+      },
+      "job_ids": [
+        "bgjob_q1_v34_validation_001_pilot"
+      ],
+      "report_paths": [
+        "reading-companion-backend/experiments/q1-v34-validation-001-pilot.md",
+        "reading-companion-backend/state/experiments/Q1-RUBRIC-V34-VALIDATION-001/pilot/annotations.md"
+      ],
+      "catalog_status": "not_cataloged",
+      "notes": "Completed three-unit Terra medium Digest v24 pilot: 4 Notes, 2 Highlights, 29070 input and 1185 output tokens, no retries or truncation. Excluded from formal statistics; owner approval required before formal generation.",
+      "parent_run_id": "",
+      "child_run_ids": [],
+      "synthetic": false,
+      "local_missing_allowed": [],
+      "metadata": {
+        "excluded_from_formal_statistics": true
+      },
+      "updated_at": "2026-11-15T12:30:08.063666Z"
+    },
+    {
+      "run_id": "q1_rubric_v34_validation_001_diagnostic_high",
+      "date": "2026-11-15",
+      "surface": "fixed_history_digest",
+      "lane": "mechanism_eval",
+      "status": "review_pending",
+      "mechanisms": [
+        "attentional_v2"
+      ],
+      "dataset_or_manifest": [
+        "reading-companion-backend/experiments/unit-sets/q1-v34-pilot-001.json"
+      ],
+      "run_dir": "reading-companion-backend/state/experiments/Q1-RUBRIC-V34-VALIDATION-001/diagnostic-high",
+      "summary_paths": {
+        "summary": "reading-companion-backend/state/experiments/Q1-RUBRIC-V34-VALIDATION-001/diagnostic-high/summary.json"
+      },
+      "job_ids": [
+        "bgjob_q1_v34_validation_001_diagnostic_high"
+      ],
+      "report_paths": [
+        "reading-companion-backend/experiments/q1-v34-validation-001-result.md"
+      ],
+      "catalog_status": "not_cataloged",
+      "notes": "Completed once; upstream reasoning=0, output=660; excluded from all statistics; formal remains medium.",
+      "parent_run_id": "",
+      "child_run_ids": [],
+      "synthetic": false,
+      "local_missing_allowed": [],
+      "metadata": {},
+      "updated_at": "2026-11-15T12:52:56.111158Z"
+    },
+    {
+      "run_id": "q1_rubric_v34_validation_001_formal_terra_medium",
+      "date": "2026-11-15",
+      "surface": "fixed_history_digest",
+      "lane": "mechanism_eval",
+      "status": "review_pending",
+      "mechanisms": [
+        "attentional_v2"
+      ],
+      "dataset_or_manifest": [
+        "reading-companion-backend/experiments/unit-sets/q1-v34-validation-001.json"
+      ],
+      "run_dir": "reading-companion-backend/state/experiments/Q1-RUBRIC-V34-VALIDATION-001/formal",
+      "summary_paths": {
+        "summary": "reading-companion-backend/state/experiments/Q1-RUBRIC-V34-VALIDATION-001/formal/summary.json",
+        "verification": "reading-companion-backend/state/experiments/Q1-RUBRIC-V34-VALIDATION-001/formal/verification.json"
+      },
+      "job_ids": [
+        "bgjob_q1_v34_validation_001_formal"
+      ],
+      "report_paths": [
+        "reading-companion-backend/experiments/q1-v34-validation-001-result.md"
+      ],
+      "catalog_status": "not_cataloged",
+      "notes": "Completed 26 serial calls: 46 Notes, 10 Highlights; waiting blind annotation. Stability 15 identities frozen privately; no judgments or catalog promotion.",
+      "parent_run_id": "",
+      "child_run_ids": [],
+      "synthetic": false,
+      "local_missing_allowed": [],
+      "metadata": {},
+      "updated_at": "2026-11-15T12:52:56.071213Z"
     }
   ]
 }
