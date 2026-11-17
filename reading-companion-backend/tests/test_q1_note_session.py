@@ -602,3 +602,15 @@ def test_correction_cannot_unlock_protected_or_future_steps(store, target):
     to_conclusion(store)
     with pytest.raises(ValueError, match="只能修改"):
         act(store, "reopen", {"step": target})
+
+
+def test_difficulty_correction_immediately_after_step_two(store):
+    to_n1(store)
+    original = store.state("anonymous-note")["record"]["reading_difficulty"]["choice"]
+    state = act(store, "amend", {"choice": DIFFICULTY[1]})
+    assert state["stage"] == 2
+    assert state["record"]["reading_difficulty"]["original_choice"] == original
+    assert state["record"]["vetoes"]["reading_difficulty"] is True
+    state = act(store, "amend", {"choice": DIFFICULTY[2]})
+    assert state["record"]["vetoes"]["reading_difficulty"] is False
+    assert state["record"]["reading_difficulty"]["amendments"][-1]["from"] == DIFFICULTY[1]

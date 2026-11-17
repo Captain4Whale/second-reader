@@ -151,3 +151,17 @@ test('Shift+R edits the inspected completed step without toggling source context
  c.e.repeat=false;c.e.composedPath=()=>[{closest:()=>({tagName:'TEXTAREA'})}];
  vm.runInContext('keydown(e)',c);await Promise.resolve();assert.equal(calls.length,1);
 });
+
+test('completed difficulty offers the same edit entry and focuses amendment selection',()=>{
+  let focused=false;
+  const appended=[];
+  const amendment={open:false,querySelector:()=>({focus(){focused=true;}})};
+  const c=vm.createContext({i:1,w:{append:n=>appended.push(n)},r:{},
+    node:(tag,text)=>({tag,text}),amendControls:()=>amendment});
+  vm.runInContext(extract('    if (i === 1) {\n      const edit', '    w.append(node("p", values[i]));'),c);
+  assert.equal(appended[0].id,'editCompletedStep');
+  assert.match(appended[0].text,/Shift\+R/);
+  appended[0].onclick();
+  assert.equal(amendment.open,true);
+  assert.equal(focused,true);
+});

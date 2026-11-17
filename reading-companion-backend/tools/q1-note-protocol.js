@@ -312,7 +312,7 @@
     }
     if (action === "open") {
     } else if (action === "amend") {
-      need(i >= 5, "完成核心判断后才能修正读着费劲");
+      need(i >= 2, "完成读着费劲后才能修正");
       const d = r.reading_difficulty;
       need(
         difficulty.includes(v.choice) && v.choice !== d.choice,

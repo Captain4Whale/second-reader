@@ -60,7 +60,9 @@ validation focuses the missing input. The help dialog isolates page shortcuts an
 restores focus on close. Existing legacy keyboard handlers remain unchanged.
 
 1–7 and [ / ] browse already-open steps. First impression stays read-only; difficulty
-retains its explicit amendment flow. Completed N1 and later steps offer “修改此步”
+offers “修改此步” (Shift+R) immediately after completion, opening its amendment
+controls without waiting for the conclusion. Original choice and every from/to revision
+remain recorded; final choice drives the conclusion. Completed N1 and later steps offer “修改此步”
 (Shift+R), including before the record is submitted. Reopening preserves filled values
 and following-text exposure, but clears completion timestamps from that step onward
 and requires reconfirmation. Submitted revisions remain in the append-only journal. Enter

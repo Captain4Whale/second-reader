@@ -202,3 +202,18 @@ test("correction cannot unlock first impression, difficulty, future or current s
   for (const step of [0,1,5,6,7,-1,2.5,"2",true])
     assert.throws(() => h.act("reopen", {step}), /只能修改/);
 });
+
+test('difficulty can be corrected immediately after leaving step two with audit trail', () => {
+  const h=setup();
+  assert.throws(()=>h.act('amend',{choice:P.difficulty[1]}),/完成读着费劲/);
+  h.act('complete',{judgment:'pass'});
+  h.act('complete',{choice:P.difficulty[0]});
+  h.act('amend',{choice:P.difficulty[1]});
+  assert.equal(h.s.stage,2);
+  assert.equal(h.s.record.reading_difficulty.original_choice,P.difficulty[0]);
+  assert.equal(h.s.record.vetoes.reading_difficulty,true);
+  h.act('amend',{choice:P.difficulty[2]});
+  assert.equal(h.s.record.vetoes.reading_difficulty,false);
+  assert.equal(h.s.record.reading_difficulty.amendments[1].from,P.difficulty[1]);
+  assert.equal(h.s.record.reading_difficulty.amendments[1].to,P.difficulty[2]);
+});

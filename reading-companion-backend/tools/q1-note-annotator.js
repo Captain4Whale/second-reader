@@ -709,6 +709,7 @@ globalThis.Q1NoteView = async function (host, session) {
     };
     d.append(b);
     w.append(d);
+    return d;
   }
   function autoGrow() {
     host.querySelectorAll("textarea").forEach((t) => {
@@ -874,7 +875,7 @@ globalThis.Q1NoteView = async function (host, session) {
     }
     inspecting = i;
     const w = $("workflow");
-    w.replaceChildren(node("h2", labels[i] + (i < 2 ? " · 已完成，只读" : " · 已完成")));
+    w.replaceChildren(node("h2", labels[i] + (i === 0 ? " · 已完成，只读" : " · 已完成")));
     if (i >= 2) {
       const edit = node("button", "修改此步 · Shift+R");
       edit.id = "editCompletedStep";
@@ -902,6 +903,16 @@ globalThis.Q1NoteView = async function (host, session) {
         outcomeLabel(r.judgment),
         (r.tags || []).join("、"),
       ];
+    if (i === 1) {
+      const edit = node("button", "修改此步 · Shift+R");
+      edit.id = "editCompletedStep";
+      w.append(edit);
+      const amendment = amendControls(w, r);
+      edit.onclick = () => {
+        amendment.open = true;
+        amendment.querySelector("select").focus();
+      };
+    }
     w.append(node("p", values[i]));
     if (i > 0) w.append(helpContent(boot.form.steps[i].help));
     const returnLabel = data.state.stage === 7 ? "返回已完成结果" : `返回第 ${data.state.stage + 1} 步：${labels[data.state.stage]}`;

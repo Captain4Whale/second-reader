@@ -412,7 +412,7 @@ class Store:
             if action == "open":
                 pass
             elif action == "amend":
-                require(stage >= 5, "完成核心判断后才能修正读着费劲")
+                require(stage >= 2, "完成读着费劲后才能修正")
                 choice = values.get("choice")
                 require(
                     choice in DIFFICULTY
