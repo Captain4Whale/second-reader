@@ -27,16 +27,20 @@ it is separate from rubric `q1-v3.4`, frozen form `q1-v3.4.form.v1` and record s
 The earlier `serve SESSION` / `launch` commands now open this HTML and print the
 folder to select. The old `q1-note-annotator.html` is a pointer to this entrypoint.
 
-The existing 3.2 responsive grid, typography, natural heights and sticky desktop actions
-are reused by the v3.4 mode. The original stylesheet is shared at runtime, not forked.
+The v3.4 Note mode retains the shared typography, natural heights and sticky desktop
+actions. At desktop widths (≥960 CSS pixels), source occupies 46% and a continuous
+annotation-then-decision column occupies 54%, including wide monitors. The content
+is capped at 1600 CSS pixels; progress, step navigation and options use compact spacing.
+The legacy 3.2 grid below still applies to the older forms. The original stylesheet
+is shared at runtime with Note-specific layout overrides.
 The v3.4 mode uses isolated DOM controls to keep legacy event handlers and drafts intact.
 Tool 3.4 puts all decision/uncertainty fields before the full guidance. Full guidance
 starts collapsed and remembers each step's preference locally; concise prompts remain
 visible. “查看当前批注” expands the complete Note next to the decision without saving a
 judgment. Opening a case positions the anchor without opening following text; saving
 or advancing steps preserves the reader position. Read-only outcomes use Chinese and
-return buttons name their destination. Export/retry live under “更多操作”; errors keep
-a directly visible retry action. Desktop 100% and 125% zoom are the acceptance target;
+return buttons name their destination. Export/retry live under “更多操作”; storage errors keep
+a directly visible retry action; validation errors instead name the missing input. Desktop 100% and 125% zoom are the acceptance target;
 mobile annotation is not a supported workflow target. Progress squares follow the
 frozen mixed-book Note order.
 

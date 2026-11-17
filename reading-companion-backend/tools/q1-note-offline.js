@@ -317,6 +317,31 @@ Q1NoteOffline.mount = async function (session) {
  #notePreview{margin:8px 0 12px} #notePreview summary{font-weight:600} #notePreview p{line-height:1.7}
  #workflow .help{margin-top:16px;border-top:1px solid var(--line);padding-top:10px} #workflow .stepHint{margin:8px 0;color:#526052}
  #saveError{color:#a12828;margin:8px 0} #saveError[hidden]{display:none}
+ /* Note review uses one continuous annotation column at every desktop width. */
+ :host{max-width:1600px;margin-inline:auto}
+ .rubric-layout{grid-template-columns:minmax(0,1fr);grid-template-areas:"source" "review";gap:16px}
+ .annotationColumn{grid-area:review;min-width:0;display:flex;flex-direction:column;gap:12px}
+ .rubric-layout .judgments{display:block}
+ .rubric-layout #casePanel,.rubric-layout #casePanel.fits-viewport{position:static}
+ #casePanel h2{font-size:15px;margin-bottom:6px}
+ #casePanel .note{margin:0 0 10px;padding-left:12px;line-height:1.7}
+ #casePanel details{font-size:13px}
+ #rubricSteps button{font-size:13px;padding:4px 7px;min-width:0}
+ #rubricSteps{margin-bottom:8px}
+ #workflow fieldset{margin:10px 0}
+ #workflow .option{display:inline-flex;margin:6px 18px 6px 0}
+ #workflow .stepHint{font-size:14px;line-height:1.6}
+ #notePreview{display:none}
+ #noteBar{font-size:14px}
+ #noteBar button{padding:4px 8px}
+ #unitGrid{gap:3px;margin-top:6px}
+ #unitGrid button{font-size:12px;min-width:25px;padding:2px 5px}
+ @media(min-width:960px){
+   .rubric-layout{grid-template-columns:minmax(0,46fr) minmax(0,54fr);grid-template-areas:"source review"}
+   #notePreview{display:block;font-size:13px;margin:0 0 8px}
+   .rubric-layout #readerScroll{padding:0 4px 8px}
+ }
+
  `;
   host.append(style);
   const wrap = document.createElement("div");
@@ -324,8 +349,8 @@ Q1NoteOffline.mount = async function (session) {
  <div id="noteBar"><div class="row"><strong>q1-v3.4 · Note</strong><span id="purpose"></span><span id="position"></span><span id="batchCounts"></span><button id="noteHelp">? 快捷键</button><span id="status" role="status"></span><details id="noteMore"><summary>更多操作</summary><button id="exportNote">导出 JSONL</button><button id="retry">重试保存 / 恢复授权</button></details></div><div id="saveError" hidden><span id="error" role="alert" hidden></span><button id="retryVisible">重试保存 / 恢复授权</button></div><div id="unitGrid" aria-label="随机顺序条目进度"></div></div>
  <div class="layout rubric-layout">
  <article><h2 id="book"></h2><p id="chapter"></p><div class="row"><span>原文 · 到锚点为止</span><button id="anchorGo">定位锚点</button></div><p id="anchorStatus" class="muted" hidden></p><div id="readerScroll" tabindex="0"><details id="earlier"><summary>查看前文</summary><button id="moreEarlier">展开更早前文</button><div id="olderText"></div><div id="recentText"></div></details><div id="sourceText"></div><div id="following"></div><details id="notes"><summary>原书注释 <span id="noteStatus"></span></summary><div id="notesText"></div></details></div></article>
- <aside id="casePanel" class="panel"><h2 id="caseTitle" tabindex="-1">当前批注</h2><div id="caseScroll"><p id="body" class="note"></p></div><details><summary>单元备注 U</summary><p class="hint">上游问题以“上游：”开头，之后统计排除整个单元。</p><textarea id="unitNote" rows="2"></textarea><button id="saveUnit">保存单元备注</button></details></aside>
- <div class="judgments"><aside class="panel review-panel"><nav id="rubricSteps"></nav><details id="notePreview"><summary>查看当前批注</summary><p id="previewBody" class="note"></p></details><div id="decisionScroll"><section id="workflow"></section></div><div id="reviewActions"></div><div class="row"><button id="prev">上一条 ↑</button><button id="decisionGo">定位当前判定</button><button id="next">下一条 ↓</button><span id="saveHint"></span></div></aside></div></div>
+ <div class="annotationColumn"><aside id="casePanel" class="panel"><h2 id="caseTitle" tabindex="-1">当前批注</h2><div id="caseScroll"><p id="body" class="note"></p></div><details><summary>单元备注 U</summary><p class="hint">上游问题以“上游：”开头，之后统计排除整个单元。</p><textarea id="unitNote" rows="2"></textarea><button id="saveUnit">保存单元备注</button></details></aside>
+ <div class="judgments"><aside class="panel review-panel"><nav id="rubricSteps"></nav><details id="notePreview"><summary>查看当前批注</summary><p id="previewBody" class="note"></p></details><div id="decisionScroll"><section id="workflow"></section></div><div id="reviewActions"></div><div class="row"><button id="prev">上一条 ↑</button><button id="decisionGo">定位当前判定</button><button id="next">下一条 ↓</button><span id="saveHint"></span></div></aside></div></div></div>
  <dialog id="shortcutHelp"><h2>快捷键 · v3.4</h2><p>P / F：当前二选一判定；Enter：确认当前步骤；Shift+Enter：末步提交后下一条。</p><p>1–7 或 [ / ]：回看已开放步骤；Shift+数字：提示展开 / 收起。第一印象与费劲的锁定不受回看影响。</p><p>↑ / ↓、← / →：按随机顺序上一条 / 下一条。J / K：原文滚动；Shift+J / K：页面滚动。</p><p>R：本项理由；M：整条理由；U：单元备注；V：待核实；S：星；0：未覆盖；?：帮助；Esc：退出输入。</p><p>标签步骤 5–9 切换标签。三选一、多选及写法请用 Tab、方向键和空格操作。输入法和文本框不拦截快捷键。</p><button id="closeNoteHelp">关闭 Esc</button></dialog>`;
   host.append(wrap);
   try {
