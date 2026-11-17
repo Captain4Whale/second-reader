@@ -148,3 +148,32 @@ and iteration provenance checks pass. Workspace agent checks pass with existing
 historical traceability warnings and the existing scoring evidence-not-verified notice.
 No new architecture decision is introduced: this is a usability correction within the
 already-approved offline approach, so the decision log is unchanged.
+
+
+## New validation batch connected (2026-11-17)
+
+The owner requested the completed new batch, not DIAG-001 reannotation. Source is
+`Q1-RUBRIC-V34-VALIDATION-001-RESULT-001` in the separate worktree
+`/Users/baiweijiang/.codex/worktrees/261115-new-batch/reading-companion`, commit
+`fcad1a346893`. Its branch has not been merged as part of this handoff.
+
+The existing fixed-history exporter verifies the registered unit-set hash, each of
+26 result hashes, packet hashes and exact source anchors. Window metadata comes from
+the accepted packets; the existing comparison builder assigns opaque identities and
+retains all 46 Notes and 10 Highlights. The existing Note session preparer creates
+chapter-bounded contexts and a seeded mixed-book order (20261115). Counts verified:
+18 Bovary Notes and 28 Sapiens Notes. Original-note resolution: 10 cases resolved,
+36 unresolved; no ambiguity raised. No model calls or original-result edits.
+
+Private paths relative to backend:
+- Active formal session: `state/q1_rubric_reviews/Q1-RUBRIC-V34-VALIDATION-001-q1-v3.4/`.
+- Source export, canonical bundle, blind identity map and receipt:
+  `state/experiments/Q1-RUBRIC-V34-VALIDATION-001/annotation-handoff/`.
+- `receipt.json` binds the source/result registration, unit set, session manifest,
+  randomization and frozen stability receipt without disclosing selection identities.
+  The blind key preserves source/unit/original marginalia IDs for later stability use.
+
+Native Edge opened this session and displayed `1 / 46`, `0 / 46`, synchronized,
+first impression unselected. No judgment was entered by the agent. DIAG-001 and QA
+sessions remain separate. This is an artifact handoff using existing validated code;
+no form/schema change, score snapshot, quality assessment or architecture decision.

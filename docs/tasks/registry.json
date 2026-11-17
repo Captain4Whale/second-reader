@@ -18,7 +18,7 @@
       "decision_refs": [],
       "job_refs": [],
       "blocked_by": [],
-      "next_action": "Open original offline q1-annotator.html (3.4), select the isolated v3.4 formal folder. Future snapshot adapter binds hashes and excludes upstream units; no source text in scoring receipts.",
+      "next_action": "Annotate the 46-Note Q1-RUBRIC-V34-VALIDATION-001-q1-v3.4 formal session in the offline annotator. Preserve the old 51-Note DIAG-001 session; do not expose the frozen stability sample. Generation branch remains separate; no scoring snapshot yet.",
       "evidence_refs": [
         "reading-companion-backend/rubric/q1-v3.4.form.v1.json",
         "reading-companion-backend/tests/test_q1_note_session.py",
