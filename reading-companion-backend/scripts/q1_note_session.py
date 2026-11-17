@@ -439,7 +439,7 @@ class Store:
                     r["steps"]["conclusion"].pop("completed_at", None)
             elif action == "reopen":
                 target = values.get("step", 2)
-                require(type(target) is int and 2 <= target <= 6 and target < stage, "只能修改已经完成的 N1 及后续步骤")
+                require(type(target) is int and 1 <= target <= 6 and target < stage, "只能返回已经完成的第二步及后续步骤")
                 state["stage"] = target
                 r["review_completed"] = False
                 for k in STEPS[target:]:
@@ -466,7 +466,7 @@ class Store:
                 r["context"]["viewed_original_notes"] = True
             elif action in ("save", "complete", "submit"):
                 require(stage < 7, "记录已提交，先点击重新检查")
-                self.apply_values(r, stage, values)
+                self.apply_values(r, stage, values, active_ms)
                 if action == "complete":
                     require(stage < 6, "标签之后请提交")
                     self.complete_step(r, stage)
@@ -519,7 +519,7 @@ class Store:
             s.setdefault("viewed_following_text", False)
             s.setdefault("following_text_views", [])
 
-    def apply_values(self, r, stage, v):
+    def apply_values(self, r, stage, v, active_ms=0):
         # Only editable fields for the current stage are accepted, never identity or locked evidence.
         allowed = {
             "manual_unsure",
@@ -561,6 +561,12 @@ class Store:
             require(not r["first_impression"].get("locked_at"), "第一印象已经锁定")
             r["first_impression"]["judgment"] = v["judgment"]
         elif stage == 1:
+            d = r["reading_difficulty"]
+            if "choice" in v:
+                require(v["choice"] in DIFFICULTY, "请选择读着费劲的判断")
+                if d["original_choice"] and v["choice"] != d["choice"]:
+                    d["amendments"].append({"from": d["choice"], "to": v["choice"],
+                        "at": now(), "reason": v.get("reason", ""), "active_ms": active_ms})
             for k in ("choice", "paraphrase", "rewrite"):
                 if k in v:
                     require(isinstance(v[k], str), "费劲字段无效")
@@ -616,7 +622,8 @@ class Store:
         if stage == 1:
             d = r["reading_difficulty"]
             require(d["choice"] in DIFFICULTY, "请选择读着费劲的判断")
-            d["original_choice"] = d["choice"]
+            if d["original_choice"] is None:
+                d["original_choice"] = d["choice"]
         if stage == 2:
             validate_n1(r["n1"])
         require(

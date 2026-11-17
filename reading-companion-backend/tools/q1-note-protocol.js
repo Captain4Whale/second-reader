@@ -335,7 +335,7 @@
       }
     } else if (action === "reopen") {
       const target = v.step ?? 2;
-      need(Number.isInteger(target) && target >= 2 && target <= 6 && target < i, "只能修改已经完成的 N1 及后续步骤");
+      need(Number.isInteger(target) && target >= 1 && target <= 6 && target < i, "只能返回已经完成的第二步及后续步骤");
       s.stage = target;
       r.review_completed = false;
       steps.slice(target).forEach((k) => {
@@ -401,8 +401,15 @@
         need(!r.first_impression.locked_at, "第一印象已经锁定");
         r.first_impression.judgment = v.judgment;
       }
-      if (i === 1)
-        for (const k of per[i]) if (k in v) r.reading_difficulty[k] = v[k];
+      if (i === 1) {
+        const d = r.reading_difficulty;
+        if ("choice" in v) {
+          need(difficulty.includes(v.choice), "请选择读着费劲的判断");
+          if (d.original_choice && v.choice !== d.choice)
+            d.amendments.push({from:d.choice, to:v.choice, at:now(), reason:v.reason || "", active_ms:ms});
+        }
+        for (const k of per[i]) if (k in v) d[k] = v[k];
+      }
       if (i === 2 && v.n1) {
         r.n1 = copy(v.n1);
         if (r.n1.following_text_use === "紧接着几段") {
@@ -443,7 +450,7 @@
             difficulty.includes(r.reading_difficulty.choice),
             "请选择读着费劲的判断",
           );
-          r.reading_difficulty.original_choice = r.reading_difficulty.choice;
+          r.reading_difficulty.original_choice ??= r.reading_difficulty.choice;
         }
         if (i === 2) n1valid(r.n1, f);
         r.steps[steps[i]].completed_at = now();

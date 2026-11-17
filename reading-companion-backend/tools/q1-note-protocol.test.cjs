@@ -197,10 +197,10 @@ test("N1 correction preserves exposure and appends a new confirmed revision", ()
   assert.equal(h.rows[1].judgment, "fail");
   assert.deepEqual(h.rows[1].steps.n1.following_text_views, exposure);
 });
-test("correction cannot unlock first impression, difficulty, future or current steps", () => {
+test("correction cannot unlock first impression, future or current steps", () => {
   const h = setup(); core(h);
-  for (const step of [0,1,5,6,7,-1,2.5,"2",true])
-    assert.throws(() => h.act("reopen", {step}), /只能修改/);
+  for (const step of [0,5,6,7,-1,2.5,"2",true])
+    assert.throws(() => h.act("reopen", {step}), /只能返回/);
 });
 
 test('difficulty can be corrected immediately after leaving step two with audit trail', () => {
@@ -216,4 +216,33 @@ test('difficulty can be corrected immediately after leaving step two with audit 
   assert.equal(h.s.record.vetoes.reading_difficulty,false);
   assert.equal(h.s.record.reading_difficulty.amendments[1].from,P.difficulty[1]);
   assert.equal(h.s.record.reading_difficulty.amendments[1].to,P.difficulty[2]);
+});
+
+test('original difficulty form records every changed saved value, never replaces the initial judgment', () => {
+  const h=setup();core(h);done(h);
+  const original=JSON.stringify(h.rows[0]);
+  const first=structuredClone(h.s.record.first_impression);
+  h.act('reopen',{step:1});
+  h.act('save',{choice:P.difficulty[1],paraphrase:'重新复述',rewrite:'更直接'});
+  assert.equal(h.s.record.judgment,'fail');
+  h.act('save',{choice:P.difficulty[1]}); // Repeated autosave is not another amendment.
+  h.act('save',{choice:P.difficulty[2],manual_unsure:true});
+  assert.deepEqual([...h.s.record.unsure_sources['读着费劲']].sort(),['automatic','manual']);
+  h.act('complete',{choice:P.difficulty[0],manual_unsure:true});
+  assert.equal(h.s.stage,2);
+  assert.equal(h.s.record.reading_difficulty.original_choice,P.difficulty[0]);
+  assert.equal(h.s.record.reading_difficulty.amendments.length,3);
+  assert.deepEqual(h.s.record.reading_difficulty.amendments.map(a=>[a.from,a.to]),[
+    [P.difficulty[0],P.difficulty[1]],[P.difficulty[1],P.difficulty[2]],[P.difficulty[2],P.difficulty[0]]]);
+  h.act('complete',{});h.act('complete',{});h.act('complete',{});done(h);
+  assert.equal(JSON.stringify(h.rows[0]),original);
+  assert.equal(h.rows[1].supersedes_revision,1);
+  assert.deepEqual(h.s.record.first_impression,first);
+  assert.deepEqual(h.s.record.unsure_sources['读着费劲'],['manual']);
+  assert.equal(h.s.record.judgment,'pass');
+});
+test('revisiting difficulty without changing the choice does not invent an amendment',()=>{
+  const h=setup();core(h);h.act('reopen',{step:1});h.act('complete',{});
+  assert.equal(h.s.record.reading_difficulty.amendments.length,0);
+  assert.equal(h.s.record.reading_difficulty.original_choice,P.difficulty[0]);
 });

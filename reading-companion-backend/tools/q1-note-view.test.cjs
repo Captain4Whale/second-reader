@@ -139,29 +139,14 @@ test('actual difficulty render call preserves selection across redraw for every 
  }
 });
 
-test('Shift+R edits the inspected completed step without toggling source context',async()=>{
- const calls=[];
- const c=vm.createContext({composing:false,busy:false,inspecting:2,data:{state:{stage:3}},
-  $:id=>id==='shortcutHelp'?{open:false}:id==='editCompletedStep'?{click:()=>calls.push('edit')}:null,
-  shownError:e=>{throw e;}});
- vm.runInContext(extract('  function keydown(', '  document.addEventListener("keydown", keydown'),c);
- c.e={key:'R',shiftKey:true,preventDefault(){},composedPath:()=>[{closest:()=>null}]};
- vm.runInContext('keydown(e)',c);await Promise.resolve();assert.deepEqual(calls,['edit']);
- c.e.repeat=true;vm.runInContext('keydown(e)',c);await Promise.resolve();assert.equal(calls.length,1);
- c.e.repeat=false;c.e.composedPath=()=>[{closest:()=>({tagName:'TEXTAREA'})}];
- vm.runInContext('keydown(e)',c);await Promise.resolve();assert.equal(calls.length,1);
-});
-
-test('completed difficulty offers the same edit entry and focuses amendment selection',()=>{
-  let focused=false;
-  const appended=[];
-  const amendment={open:false,querySelector:()=>({focus(){focused=true;}})};
-  const c=vm.createContext({i:1,w:{append:n=>appended.push(n)},r:{},
-    node:(tag,text)=>({tag,text}),amendControls:()=>amendment});
-  vm.runInContext(extract('    if (i === 1) {\n      const edit', '    w.append(node("p", values[i]));'),c);
-  assert.equal(appended[0].id,'editCompletedStep');
-  assert.match(appended[0].text,/Shift\+R/);
-  appended[0].onclick();
-  assert.equal(amendment.open,true);
-  assert.equal(focused,true);
+test('returning to steps two through seven opens the original form directly',async()=>{
+  for (const step of [1,2,3,4,5,6]) {
+    const calls=[];
+    const c=vm.createContext({data:{state:{stage:7}},flush:async()=>calls.push('flush'),
+      post:async(a,v)=>calls.push([a,v.step]),focusDecision:()=>calls.push('focus')});
+    vm.runInContext(extract('  async function inspect(', '  $("workflow").addEventListener("compositionstart"'),c);
+    await vm.runInContext(`inspect(${step})`,c);
+    assert.deepEqual(calls,['flush',['reopen',step],'focus']);
+  }
+  assert.doesNotMatch(src,/editCompletedStep|amendControls|保存费劲修正/);
 });

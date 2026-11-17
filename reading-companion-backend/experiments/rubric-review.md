@@ -59,18 +59,17 @@ and Esc returns to the decision. Save redraws preserve control focus and text se
 validation focuses the missing input. The help dialog isolates page shortcuts and
 restores focus on close. Existing legacy keyboard handlers remain unchanged.
 
-1–7 and [ / ] browse already-open steps. First impression stays read-only; difficulty
-offers “修改此步” (Shift+R) immediately after completion, opening its amendment
-controls without waiting for the conclusion. Original choice and every from/to revision
-remain recorded; final choice drives the conclusion. Completed N1 and later steps offer “修改此步”
-(Shift+R), including before the record is submitted. Reopening preserves filled values
-and following-text exposure, but clears completion timestamps from that step onward
-and requires reconfirmation. Submitted revisions remain in the append-only journal. Enter
-cannot skip required decisions. At the label step 5–9 toggle the five configured tags.
-Arrows follow the randomized Note sequence, not old unit grouping. Three-way choices
-and conditional options remain reachable by Tab, arrows and Space. Native controls,
-text entry, modifiers, held keys and IME composition are guarded. First impression
-cannot be changed via shortcuts; explicit difficulty amendments preserve original values.
+1–7 and [ / ] return to already-open steps. From step two onward, returning directly
+renders the original editable form with its saved selections, fields, shortcuts and
+Continue action. There is no separate read-only summary or amendment panel. Returning
+clears completion from that step onward; reconfirm the following steps with their
+saved values. First impression remains read-only. Difficulty changes after its first
+completion automatically append from/to/timestamp history on save, retain the original
+choice, and use the final choice for the conclusion. Repeated saves of the same choice
+do not add amendments. Submitted revisions remain in the append-only journal.
+Enter cannot skip required decisions. At the label step 5–9 toggle the five configured
+tags. Arrows follow the randomized Note sequence, not old unit grouping. Native controls,
+text entry, modifiers, held keys and IME composition are guarded.
 
 To prepare another isolated session from an **existing** comparison bundle:
 

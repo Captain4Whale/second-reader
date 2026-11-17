@@ -597,10 +597,10 @@ def test_midflow_n1_correction_preserves_exposure_and_append_history(store):
     assert result["steps"]["n1"]["following_text_views"] == exposure
 
 
-@pytest.mark.parametrize("target", [0, 1, 5, 6, 7, -1, 2.5, "2", True])
+@pytest.mark.parametrize("target", [0, 5, 6, 7, -1, 2.5, "2", True])
 def test_correction_cannot_unlock_protected_or_future_steps(store, target):
     to_conclusion(store)
-    with pytest.raises(ValueError, match="只能修改"):
+    with pytest.raises(ValueError, match="只能返回"):
         act(store, "reopen", {"step": target})
 
 
@@ -614,3 +614,28 @@ def test_difficulty_correction_immediately_after_step_two(store):
     state = act(store, "amend", {"choice": DIFFICULTY[2]})
     assert state["record"]["vetoes"]["reading_difficulty"] is False
     assert state["record"]["reading_difficulty"]["amendments"][-1]["from"] == DIFFICULTY[1]
+
+
+def test_return_to_original_difficulty_form_preserves_history_and_old_submission(store):
+    to_conclusion(store)
+    finish(store)
+    prefix = (store.folder / "judgments.jsonl").read_bytes()
+    first = deepcopy(store.state("anonymous-note")["record"]["first_impression"])
+    act(store, "reopen", {"step": 1})
+    act(store, "save", {"choice": DIFFICULTY[1], "paraphrase": "复述", "rewrite": "改写"})
+    act(store, "save", {"choice": DIFFICULTY[1]})
+    act(store, "save", {"choice": DIFFICULTY[2], "manual_unsure": True})
+    state = act(store, "complete", {"choice": DIFFICULTY[0], "manual_unsure": True})
+    assert state["stage"] == 2
+    d = state["record"]["reading_difficulty"]
+    assert d["original_choice"] == DIFFICULTY[0]
+    assert [(a["from"], a["to"]) for a in d["amendments"]] == [
+        (DIFFICULTY[0], DIFFICULTY[1]), (DIFFICULTY[1], DIFFICULTY[2]), (DIFFICULTY[2], DIFFICULTY[0])]
+    for _ in range(3):
+        act(store, "complete")
+    result = finish(store)
+    assert result["judgment"] == "pass"
+    assert result["first_impression"] == first
+    assert result["unsure_sources"]["读着费劲"] == ["manual"]
+    assert result["supersedes_revision"] == 1
+    assert (store.folder / "judgments.jsonl").read_bytes().startswith(prefix)

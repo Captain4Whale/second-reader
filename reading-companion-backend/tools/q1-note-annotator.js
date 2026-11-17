@@ -467,7 +467,6 @@ globalThis.Q1NoteView = async function (host, session) {
       const b = node("button", "重新检查 N1 及后续项");
       b.onclick = () => post("reopen").catch(shownError);
       w.append(b);
-      amendControls(w, r);
       updateStatus();
       return;
     }
@@ -615,7 +614,6 @@ globalThis.Q1NoteView = async function (host, session) {
         if (r.vetoes[k]) failures.push(label);
       if (r.rubric_uncovered) failures.push("rubric 未覆盖");
       if (failures.length) w.append(node("p", failures.join("、")));
-      amendControls(w, r);
     }
     if (s === 6 && r.judgment === "pass") {
       for (const label of c.tags) {
@@ -665,52 +663,6 @@ globalThis.Q1NoteView = async function (host, session) {
     updateStatus();
     autoGrow();
   }
-  function amendControls(w, r) {
-    const d = node("details");
-    d.append(
-      node("summary", `修正读着费劲 · 当前：${difficultyLabel(r.reading_difficulty.choice)}`),
-    );
-    d.append(
-      node(
-        "p",
-        `首次：${difficultyLabel(r.reading_difficulty.original_choice)}。修正不覆盖原值，结论使用最终值。`,
-        "muted",
-      ),
-    );
-    const sel = node("select");
-    sel.setAttribute("aria-label", "修正后的费劲选项");
-    for (const v of boot.form.choices.reading_difficulty) {
-      const o = node("option", difficultyLabel(v));
-      o.value = v;
-      sel.append(o);
-    }
-    sel.value = r.reading_difficulty.choice;
-    d.append(sel);
-    const reason = textArea(d, "amendReason", "修正理由（选填）", "");
-    const rewrite = textArea(
-      d,
-      "amendRewrite",
-      "修正后的改写文本（选填）",
-      r.reading_difficulty.rewrite,
-    );
-    const b = node("button", "保存费劲修正");
-    b.type = "button";
-    b.onclick = async () => {
-      try {
-        await flush();
-        await post("amend", {
-          choice: sel.value,
-          reason: reason.value,
-          rewrite: rewrite.value,
-        });
-      } catch (e) {
-        shownError(e);
-      }
-    };
-    d.append(b);
-    w.append(d);
-    return d;
-  }
   function autoGrow() {
     host.querySelectorAll("textarea").forEach((t) => {
       t.style.height = "auto";
@@ -718,8 +670,6 @@ globalThis.Q1NoteView = async function (host, session) {
     });
   }
   $("workflow").addEventListener("input", (e) => {
-    if (e.target.id.startsWith("amend") || e.target.tagName === "SELECT")
-      return;
     editEpoch++;
     dirty = true;
     updateStatus();
@@ -873,48 +823,17 @@ globalThis.Q1NoteView = async function (host, session) {
       render();
       return;
     }
+    if (i >= 1) {
+      await post("reopen", {step:i});
+      focusDecision();
+      return;
+    }
     inspecting = i;
     const w = $("workflow");
-    w.replaceChildren(node("h2", labels[i] + (i === 0 ? " · 已完成，只读" : " · 已完成")));
-    if (i >= 2) {
-      const edit = node("button", "修改此步 · Shift+R");
-      edit.id = "editCompletedStep";
-      edit.onclick = async () => {
-        try { await post("reopen", {step:i}); focusDecision(); }
-        catch (error) { shownError(error); }
-      };
-      w.append(edit, node("p", "保留已填内容；修改后需重新确认本步及后续步骤。第一印象保持锁定。", "muted"));
-    }
-    const r = data.state.record,
-      values = [
-        outcomeLabel(r.first_impression.judgment),
-        difficultyLabel(r.reading_difficulty.choice),
-        [
-          r.n1.following_text_use,
-          r.n1.judgment === "pass" ? "过" : "不过",
-          r.n1.writing_style,
-          ...(r.n1.failure_types || []),
-          r.n1.reason,
-        ]
-          .filter(Boolean)
-          .join(" · "),
-        r.vetoes.spoiler ? "勾选" : "未勾选",
-        r.vetoes.incorrect_information ? "勾选" : "未勾选",
-        outcomeLabel(r.judgment),
-        (r.tags || []).join("、"),
-      ];
-    if (i === 1) {
-      const edit = node("button", "修改此步 · Shift+R");
-      edit.id = "editCompletedStep";
-      w.append(edit);
-      const amendment = amendControls(w, r);
-      edit.onclick = () => {
-        amendment.open = true;
-        amendment.querySelector("select").focus();
-      };
-    }
-    w.append(node("p", values[i]));
-    if (i > 0) w.append(helpContent(boot.form.steps[i].help));
+    w.replaceChildren(
+      node("h2", "第一印象 · 已完成，只读"),
+      node("p", outcomeLabel(data.state.record.first_impression.judgment)),
+    );
     const returnLabel = data.state.stage === 7 ? "返回已完成结果" : `返回第 ${data.state.stage + 1} 步：${labels[data.state.stage]}`;
     const b = node("button", returnLabel);
     b.onclick = () => { render(); focusDecision(); };
@@ -1061,8 +980,6 @@ globalThis.Q1NoteView = async function (host, session) {
       const el = $("following-" + (e.shiftKey ? "after_unit" : "within_unit"));
       if (el && !el.hidden && !el.disabled) el.click();
     });
-    if (key === "r" && e.shiftKey && inspecting !== null)
-      return run(() => $("editCompletedStep")?.click());
     if (inspecting !== null) return;
     if (key === "y") return run(() => focusField(data.state.stage === 2 ? "n1Paraphrase" : "paraphrase"));
     if (key === "i") return run(() => focusField("rewrite"));
