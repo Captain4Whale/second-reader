@@ -122,3 +122,29 @@ Offline follow-up validation:
   these existing user drafts were not rewritten or removed.
 - Workspace traceability retains its existing warnings. Runtime-doc history reminder
   is addressed by the concrete no-new-mechanism-decision rationale above.
+
+## Desktop usability follow-up (annotator 3.4, 2026-11-17)
+
+Tool 3.4 retains the frozen form and record schema. Decision fields and uncertainty
+flags now precede collapsible full guidance; per-step expansion preferences stay in
+local browser UI storage, outside judgments. The decision area can reveal the full
+current Note, the header/session controls are compact, and cases open at their anchor
+without revealing following text. Read-only outcomes use Chinese and return controls
+name the destination. Pending steps remain disabled after a save. Old journal versions,
+including 3.3, remain readable; the comparison reader only expands its tool-version
+allowlist, with no new statistics or snapshot logic.
+
+Acceptance targets PC at normal usage sizes (100% and the owner's 125% zoom), not
+mobile annotation. Native Edge Computer Use verified three/two-column layouts,
+full-Note disclosure, read-only first impression, explicit return target, anchor
+positioning, help preference across refresh, M/Esc/Enter and step-5 restoration with
+synced status. Test interaction used only the existing isolated `qa/offline-3.3/session`;
+no formal judgment was entered or submitted. Screenshots are in private
+`state/q1_rubric_reviews/qa/offline-3.4/` (before, medium, wide, supplementary zoom).
+This was a focused usability check, not a full accessibility certification.
+
+Validation: 73 Node tests and 111 focused Python tests pass; immutable prompt releases
+and iteration provenance checks pass. Workspace agent checks pass with existing
+historical traceability warnings and the existing scoring evidence-not-verified notice.
+No new architecture decision is introduced: this is a usability correction within the
+already-approved offline approach, so the decision log is unchanged.

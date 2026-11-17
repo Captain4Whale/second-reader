@@ -34,6 +34,8 @@
     main {
       padding-block: 12px;
     }
+    body:has(#noteOffline) #toolbar header { padding-block:4px; }
+    body:has(#noteOffline) #toolbar h1 { margin:4px 0; }
     #toolbar {
       position: sticky;
       top: 0;
@@ -851,9 +853,9 @@
   <script src="q1-note-annotator.js"></script>
   <script>
     "use strict";
-    const VERSION = "q1-annotator/3.3",
+    const VERSION = "q1-annotator/3.4",
       $ = (id) => document.getElementById(id);
-    const REVIEW_VERSIONS = ["q1-annotator/2.3", "q1-annotator/2.4", "q1-annotator/2.5", "q1-annotator/2.6", "q1-annotator/3.0", "q1-annotator/3.1", "q1-annotator/3.2", VERSION];
+    const REVIEW_VERSIONS = ["q1-annotator/2.3", "q1-annotator/2.4", "q1-annotator/2.5", "q1-annotator/2.6", "q1-annotator/3.0", "q1-annotator/3.1", "q1-annotator/3.2", "q1-annotator/3.3", VERSION];
     const MIXED_VERSIONS = ["q1-annotator/2.0", "q1-annotator/2.1", "q1-annotator/2.2", ...REVIEW_VERSIONS];
     let noteController = null;
     let reviewCompletion = null, navigationEpoch = 0;
@@ -1013,7 +1015,7 @@
           !["marginalia", "omission", "unit_note"].includes(r.record_type) ||
           !strictRange(r.original_source_range) || !Number.isFinite(Date.parse(r.timestamp)))
         throw Error("混合判断包含无效字段或来源信息，已停止同步。");
-      if (r.schema === "q1-mixed-judgment/3" && !["q1-annotator/3.0", "q1-annotator/3.1", "q1-annotator/3.2", VERSION].includes(r.annotator_version)) throw Error("逐项判断版本不匹配。");
+      if (r.schema === "q1-mixed-judgment/3" && !["q1-annotator/3.0", "q1-annotator/3.1", "q1-annotator/3.2", "q1-annotator/3.3", VERSION].includes(r.annotator_version)) throw Error("逐项判断版本不匹配。");
       if (review) {
         if (!scope || !REVIEW_VERSIONS.includes(r.annotator_version) || [...Q1Rubric.identityFields,"annotator_id","rubric_version","rubric_sha256"].some(k=>r[k] !== scope.context[k])) throw Error("重判日志身份不匹配，禁止混入其他会话或旧判断。");
         Q1Rubric.validateAssessment(r, scope.form);

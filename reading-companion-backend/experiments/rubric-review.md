@@ -10,9 +10,9 @@ not annotator code. Form text contains rules only, never identifiable rubric exa
 
 ## Published v3.4 Note review (2026-11-15)
 
-The owner-approved `q1-v3.4.form.v1` is a Note-only protocol in the existing offline annotator (tool 3.3).
+The owner-approved `q1-v3.4.form.v1` is a Note-only protocol in the existing offline annotator (tool 3.4).
 The published rubric owns options/thresholds; `q1-annotation-guide.md` owns sequence.
-The v0/v1 forms and cache identities stay unchanged. Old readers accept tool 3.3 without changing old judgment semantics.
+The v0/v1 forms and cache identities stay unchanged. Old readers accept tool 3.4 without changing old judgment semantics.
 Form schema is `q1-note-rubric-form/1`; journal schema is `q1-note-judgment/1`.
 `form-releases.json` and `frozen.json` append the new identity, including the rubric
 and annotation-guide hashes. The existing form loader dispatches by schema.
@@ -22,7 +22,7 @@ and annotation-guide hashes. The existing form loader dispatches by schema.
 Open `tools/q1-annotator.html` in Chrome / Edge, then choose the prepared session
 through “打开批次文件夹”. This is the same offline entrypoint and directory permission
 flow as earlier versions. No local service, model, npm install or frontend build is
-needed. Keep the sibling scripts next to the HTML. Tool version is `q1-annotator/3.3`;
+needed. Keep the sibling scripts next to the HTML. Tool version is `q1-annotator/3.4`;
 it is separate from rubric `q1-v3.4`, frozen form `q1-v3.4.form.v1` and record schema.
 The earlier `serve SESSION` / `launch` commands now open this HTML and print the
 folder to select. The old `q1-note-annotator.html` is a pointer to this entrypoint.
@@ -30,7 +30,15 @@ folder to select. The old `q1-note-annotator.html` is a pointer to this entrypoi
 The existing 3.2 responsive grid, typography, natural heights and sticky desktop actions
 are reused by the v3.4 mode. The original stylesheet is shared at runtime, not forked.
 The v3.4 mode uses isolated DOM controls to keep legacy event handlers and drafts intact.
-Help opens by default. Progress squares follow the frozen mixed-book Note order.
+Tool 3.4 puts all decision/uncertainty fields before the full guidance. Full guidance
+starts collapsed and remembers each step's preference locally; concise prompts remain
+visible. “查看当前批注” expands the complete Note next to the decision without saving a
+judgment. Opening a case positions the anchor without opening following text; saving
+or advancing steps preserves the reader position. Read-only outcomes use Chinese and
+return buttons name their destination. Export/retry live under “更多操作”; errors keep
+a directly visible retry action. Desktop 100% and 125% zoom are the acceptance target;
+mobile annotation is not a supported workflow target. Progress squares follow the
+frozen mixed-book Note order.
 
 P/F, Enter, Shift+Enter, R/M/U, J/K, Shift+J/K, ?, Esc, V/S/0 retain applicable meanings.
 1–7 and [ / ] browse already-open steps; earlier locked steps are read-only. Enter
@@ -151,7 +159,7 @@ or attention, and background-tab time is excluded.
 
 ```sh
 .venv/bin/python -m pytest -q tests/test_q1_note_form.py tests/test_q1_note_session.py tests/test_q1_rubric_form.py tests/test_q1_rubric_review.py tests/test_q1_comparison_stats.py tests/test_q1_scoring.py tests/test_iteration_provenance.py
-node --test tools/q1-annotator-storage.test.cjs tools/q1-annotator-keyboard.test.cjs tools/q1-rubric-form.test.cjs tools/q1-note-protocol.test.cjs tools/q1-note-offline.test.cjs
+node --test tools/q1-annotator-storage.test.cjs tools/q1-annotator-keyboard.test.cjs tools/q1-rubric-form.test.cjs tools/q1-note-protocol.test.cjs tools/q1-note-offline.test.cjs tools/q1-note-view.test.cjs
 .venv/bin/python scripts/check_iteration_provenance.py --base-ref b870d6e^
 ```
 
@@ -372,7 +380,7 @@ form within this protocol needs no UI-code change. A protocol expansion (for exa
 annotation type or omission review) requires a separate implementation decision.
 
 ```sh
-node --test tools/q1-annotator-storage.test.cjs tools/q1-annotator-keyboard.test.cjs tools/q1-rubric-form.test.cjs tools/q1-note-protocol.test.cjs tools/q1-note-offline.test.cjs
+node --test tools/q1-annotator-storage.test.cjs tools/q1-annotator-keyboard.test.cjs tools/q1-rubric-form.test.cjs tools/q1-note-protocol.test.cjs tools/q1-note-offline.test.cjs tools/q1-note-view.test.cjs
 .venv/bin/python -m pytest tests/test_q1_rubric_form.py tests/test_q1_rubric_review.py tests/test_q1_comparison_stats.py tests/test_iteration_provenance.py -q
 .venv/bin/python scripts/check_iteration_provenance.py
 ```

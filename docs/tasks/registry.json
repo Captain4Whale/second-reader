@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "updated_at": "2026-11-15",
+  "updated_at": "2026-11-17",
   "tasks": [
     {
       "id": "TASK-Q1-RUBRIC-V34-FORM",
@@ -18,7 +18,7 @@
       "decision_refs": [],
       "job_refs": [],
       "blocked_by": [],
-      "next_action": "Open original offline q1-annotator.html (3.3), select the isolated v3.4 formal folder. Future snapshot adapter binds hashes and excludes upstream units; no source text in scoring receipts.",
+      "next_action": "Open original offline q1-annotator.html (3.4), select the isolated v3.4 formal folder. Future snapshot adapter binds hashes and excludes upstream units; no source text in scoring receipts.",
       "evidence_refs": [
         "reading-companion-backend/rubric/q1-v3.4.form.v1.json",
         "reading-companion-backend/tests/test_q1_note_session.py",
@@ -26,7 +26,7 @@
         "reading-companion-backend/tools/q1-note-protocol.test.cjs",
         "reading-companion-backend/tools/q1-note-offline.test.cjs"
       ],
-      "last_updated": "2026-11-15",
+      "last_updated": "2026-11-17",
       "last_updated_by": "codex"
     },
     {

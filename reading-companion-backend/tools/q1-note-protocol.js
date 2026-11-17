@@ -246,7 +246,7 @@
       schema: "q1-note-judgment/1",
       ...identity,
       session_manifest_sha256: manifestHash,
-      annotator_version: "q1-annotator/3.3",
+      annotator_version: "q1-annotator/3.4",
       record_type: "marginalia",
       record_id: c.record_id,
       marginalia_id: c.record_id,
@@ -466,7 +466,7 @@
             supersedes_revision: old?.revision ?? null,
             timestamp: now(),
             event_version: s.version + 1,
-            annotator_version: "q1-annotator/3.3",
+            annotator_version: "q1-annotator/3.4",
           });
           validate(r, f, old);
           s.stage = 7;
