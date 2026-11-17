@@ -113,3 +113,15 @@ test('difficulty direct choices and text shortcuts work outside text entry only'
  c.e={key:'g',preventDefault(){},composedPath:()=>[{closest:()=>({tagName:'TEXTAREA'})}]};
  vm.runInContext('keydown(e)',c);await Promise.resolve();assert.equal(calls.length,6);
 });
+test('difficulty labels explain rubric while radio values retain historical identity',()=>{
+ const values=['一遍能复述','能改写得更直白','改写不出'];
+ function node(tag,text){return {tag,text,children:[],append(...xs){this.children.push(...xs);}};}
+ const w=node('div'),c=vm.createContext({node,document:{createElement:node},w,values});
+ vm.runInContext(extract('  const difficultyLabel','  function stepHint(')+extract('  function radios(', '  function get('),c);
+ vm.runInContext('radios(w,"difficulty","费劲",values,"改写不出")',c);
+ const labels=w.children[0].children.slice(1);
+ assert.deepEqual(labels.map(l=>l.children[0].value),values);
+ assert.equal(labels[2].children[0].checked,true);
+ assert.match(labels[2].children[1].text,/想法本身复杂.*表达已尽量清楚.*不否决.*拿不准.*Z/);
+ assert.match(labels[1].children[1].text,/不丢内容.*G/);
+});

@@ -33,6 +33,11 @@ globalThis.Q1NoteView = async function (host, session) {
       helpPreferences = {};
   } catch {}
   const outcomeLabel = (value) => ({ pass: "过", fail: "不过" }[value] || "未判定");
+  const difficultyLabel = (value) => ({
+    "一遍能复述": "读一遍能准确复述意思（不否决）",
+    "能改写得更直白": "读一遍说不出或说偏了，但能改写得更直白且不丢内容（否决）",
+    "改写不出": "读一遍说不出或说偏了；想法本身复杂，表达已尽量清楚，无法更直白且不丢内容（不否决，标拿不准）",
+  }[value] || value || "未判定");
   function stepHint(spec) {
     if (spec.id === "conclusion")
       return "N1 过，且读着费劲、有剧透、有错误信息均未勾选，结论才是过。rubric 未覆盖会强制不过；待核实不影响结论。";
@@ -170,7 +175,7 @@ globalThis.Q1NoteView = async function (host, session) {
       i.checked = value === v;
       l.append(
         i,
-        node("span", v === "pass" ? "过 · P" : v === "fail" ? "不过 · F" : name === "difficulty" ? `${v} · ${["Q", "G", "Z"][values.indexOf(v)]}` : v),
+        node("span", v === "pass" ? "过 · P" : v === "fail" ? "不过 · F" : name === "difficulty" ? `${difficultyLabel(v)} · ${["Q", "G", "Z"][values.indexOf(v)]}` : v),
       );
       f.append(l);
     }
@@ -445,7 +450,7 @@ globalThis.Q1NoteView = async function (host, session) {
       w.append(
         node(
           "p",
-          `读着费劲：${r.reading_difficulty.choice}；修改 ${r.reading_difficulty.amendments.length} 次。`,
+          `读着费劲：${difficultyLabel(r.reading_difficulty.choice)}；修改 ${r.reading_difficulty.amendments.length} 次。`,
           "muted",
         ),
       );
@@ -501,12 +506,12 @@ globalThis.Q1NoteView = async function (host, session) {
         "difficulty",
         "就用刚才那一遍，马上判断",
         c.reading_difficulty,
-        r.reading_difficulty.choice,
+        difficultyLabel(r.reading_difficulty.choice),
       );
       w.append(
         node(
           "p",
-          "“改写不出”：想法本身就绕，已经说得尽量清楚。不勾否决，自动勾拿不准。",
+          "第三项指想法本身就绕、表达已尽量清楚，不是仅仅自己暂时不会改写；不勾否决，自动勾拿不准。",
           "muted",
         ),
       );
@@ -629,7 +634,7 @@ globalThis.Q1NoteView = async function (host, session) {
     );
     if (r.unsure_sources[labels[s]]?.includes("automatic"))
       flags.append(
-        node("p", "已自动勾选拿不准：读着费劲选择了“改写不出”。", "muted"),
+        node("p", "已自动勾选拿不准：选择了“想法本身复杂，表达已尽量清楚”。", "muted"),
       );
     check(flags, "uncovered", "rubric 未覆盖 · 0", r.rubric_uncovered);
     if (r.rubric_uncovered)
@@ -663,19 +668,19 @@ globalThis.Q1NoteView = async function (host, session) {
   function amendControls(w, r) {
     const d = node("details");
     d.append(
-      node("summary", `修正读着费劲 · 当前：${r.reading_difficulty.choice}`),
+      node("summary", `修正读着费劲 · 当前：${difficultyLabel(r.reading_difficulty.choice)}`),
     );
     d.append(
       node(
         "p",
-        `首次：${r.reading_difficulty.original_choice}。修正不覆盖原值，结论使用最终值。`,
+        `首次：${difficultyLabel(r.reading_difficulty.original_choice)}。修正不覆盖原值，结论使用最终值。`,
         "muted",
       ),
     );
     const sel = node("select");
     sel.setAttribute("aria-label", "修正后的费劲选项");
     for (const v of boot.form.choices.reading_difficulty) {
-      const o = node("option", v);
+      const o = node("option", difficultyLabel(v));
       o.value = v;
       sel.append(o);
     }
@@ -873,7 +878,7 @@ globalThis.Q1NoteView = async function (host, session) {
     const r = data.state.record,
       values = [
         outcomeLabel(r.first_impression.judgment),
-        r.reading_difficulty.choice,
+        difficultyLabel(r.reading_difficulty.choice),
         [
           r.n1.following_text_use,
           r.n1.judgment === "pass" ? "过" : "不过",
