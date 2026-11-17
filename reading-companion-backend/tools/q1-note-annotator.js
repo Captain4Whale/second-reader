@@ -874,7 +874,16 @@ globalThis.Q1NoteView = async function (host, session) {
     }
     inspecting = i;
     const w = $("workflow");
-    w.replaceChildren(node("h2", labels[i] + " · 已完成，只读"));
+    w.replaceChildren(node("h2", labels[i] + (i < 2 ? " · 已完成，只读" : " · 已完成")));
+    if (i >= 2) {
+      const edit = node("button", "修改此步 · Shift+R");
+      edit.id = "editCompletedStep";
+      edit.onclick = async () => {
+        try { await post("reopen", {step:i}); focusDecision(); }
+        catch (error) { shownError(error); }
+      };
+      w.append(edit, node("p", "保留已填内容；修改后需重新确认本步及后续步骤。第一印象保持锁定。", "muted"));
+    }
     const r = data.state.record,
       values = [
         outcomeLabel(r.first_impression.judgment),
@@ -1041,6 +1050,8 @@ globalThis.Q1NoteView = async function (host, session) {
       const el = $("following-" + (e.shiftKey ? "after_unit" : "within_unit"));
       if (el && !el.hidden && !el.disabled) el.click();
     });
+    if (key === "r" && e.shiftKey && inspecting !== null)
+      return run(() => $("editCompletedStep")?.click());
     if (inspecting !== null) return;
     if (key === "y") return run(() => focusField(data.state.stage === 2 ? "n1Paraphrase" : "paraphrase"));
     if (key === "i") return run(() => focusField("rewrite"));

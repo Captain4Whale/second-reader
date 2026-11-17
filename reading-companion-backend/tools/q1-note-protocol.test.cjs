@@ -166,3 +166,39 @@ test("fingerprint compact unicode", () =>
     P.canonical({ z: ["文", true], a: { b: 1 } }),
     '{"a":{"b":1},"z":["文",true]}',
   ));
+
+for (const target of [2, 3, 4]) test(`correct completed step ${target} before submission`, () => {
+  const h = setup(); core(h);
+  const before = structuredClone(h.s.record);
+  h.act("reopen", {step: target});
+  assert.equal(h.s.stage, target);
+  assert.deepEqual(h.s.record.first_impression, before.first_impression);
+  assert.deepEqual(h.s.record.reading_difficulty, before.reading_difficulty);
+  assert.deepEqual(h.s.record.n1, before.n1);
+  for (const k of P.steps.slice(target)) assert.equal(h.s.record.steps[k].completed_at, undefined);
+  assert.throws(() => h.act("submit"), /顺序/);
+  assert.equal(h.rows.length, 0);
+});
+test("N1 correction preserves exposure and appends a new confirmed revision", () => {
+  const h = setup();
+  h.act("complete", {judgment:"pass"}); h.act("complete", {choice:P.difficulty[0]});
+  h.act("following", {scope:"within_unit"});
+  h.act("complete", {n1:{following_text_use:"没用到",judgment:"fail",failure_types:["下文马上讲了"]}});
+  const exposure = structuredClone(h.s.record.steps.n1.following_text_views);
+  h.act("reopen", {step:2});
+  assert.deepEqual(h.s.record.steps.n1.following_text_views, exposure);
+  h.act("complete", {n1:{following_text_use:"没用到",judgment:"pass",writing_style:"补充"}});
+  h.act("complete", {spoiler:false}); h.act("complete", {incorrect_information:false});
+  done(h); const original = JSON.stringify(h.rows[0]);
+  h.act("reopen", {step:3}); h.act("complete", {spoiler:true});
+  h.act("complete", {incorrect_information:false}); done(h);
+  assert.equal(JSON.stringify(h.rows[0]), original);
+  assert.equal(h.rows[1].supersedes_revision, 1);
+  assert.equal(h.rows[1].judgment, "fail");
+  assert.deepEqual(h.rows[1].steps.n1.following_text_views, exposure);
+});
+test("correction cannot unlock first impression, difficulty, future or current steps", () => {
+  const h = setup(); core(h);
+  for (const step of [0,1,5,6,7,-1,2.5,"2",true])
+    assert.throws(() => h.act("reopen", {step}), /只能修改/);
+});

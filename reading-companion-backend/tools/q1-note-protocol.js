@@ -334,10 +334,11 @@
         delete r.steps.conclusion.completed_at;
       }
     } else if (action === "reopen") {
-      need(i === 7, "尚未提交");
-      s.stage = 2;
+      const target = v.step ?? 2;
+      need(Number.isInteger(target) && target >= 2 && target <= 6 && target < i, "只能修改已经完成的 N1 及后续步骤");
+      s.stage = target;
       r.review_completed = false;
-      steps.slice(2).forEach((k) => {
+      steps.slice(target).forEach((k) => {
         r.steps[k] ??= {};
         delete r.steps[k].completed_at;
       });

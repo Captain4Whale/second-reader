@@ -138,3 +138,16 @@ test('actual difficulty render call preserves selection across redraw for every 
   assert.deepEqual(inputs.filter(i=>i.checked).map(i=>i.value),choice?[choice]:[]);
  }
 });
+
+test('Shift+R edits the inspected completed step without toggling source context',async()=>{
+ const calls=[];
+ const c=vm.createContext({composing:false,busy:false,inspecting:2,data:{state:{stage:3}},
+  $:id=>id==='shortcutHelp'?{open:false}:id==='editCompletedStep'?{click:()=>calls.push('edit')}:null,
+  shownError:e=>{throw e;}});
+ vm.runInContext(extract('  function keydown(', '  document.addEventListener("keydown", keydown'),c);
+ c.e={key:'R',shiftKey:true,preventDefault(){},composedPath:()=>[{closest:()=>null}]};
+ vm.runInContext('keydown(e)',c);await Promise.resolve();assert.deepEqual(calls,['edit']);
+ c.e.repeat=true;vm.runInContext('keydown(e)',c);await Promise.resolve();assert.equal(calls.length,1);
+ c.e.repeat=false;c.e.composedPath=()=>[{closest:()=>({tagName:'TEXTAREA'})}];
+ vm.runInContext('keydown(e)',c);await Promise.resolve();assert.equal(calls.length,1);
+});

@@ -557,3 +557,48 @@ def test_prepare_filters_notes_without_mutating_source_and_reproduces_order(
         mod.prepare(source, tmp_path / "state/a", ["book"])
     with pytest.raises(ValueError, match="只能写入 test"):
         mod.prepare(source, tmp_path / "state/c", ["book"], mark_ids=["item-1"])
+
+
+@pytest.mark.parametrize("target", [2, 3, 4])
+def test_correct_completed_step_before_submission(store, target):
+    to_conclusion(store)
+    before = deepcopy(store.state("anonymous-note")["record"])
+    state = act(store, "reopen", {"step": target})
+    assert state["stage"] == target
+    assert state["record"]["first_impression"] == before["first_impression"]
+    assert state["record"]["reading_difficulty"] == before["reading_difficulty"]
+    assert state["record"]["n1"] == before["n1"]
+    for key in mod.STEPS[target:]:
+        assert "completed_at" not in state["record"]["steps"][key]
+    with pytest.raises(ValueError, match="顺序"):
+        act(store, "submit")
+    assert store.read_judgments() == []
+
+
+def test_midflow_n1_correction_preserves_exposure_and_append_history(store):
+    to_n1(store)
+    act(store, "following", {"scope": "within_unit"})
+    act(store, "complete", {"n1": dict(following_text_use="没用到", judgment="fail", failure_types=["下文马上讲了"])})
+    exposure = deepcopy(store.state("anonymous-note")["record"]["steps"]["n1"]["following_text_views"])
+    state = act(store, "reopen", {"step": 2})
+    assert state["record"]["steps"]["n1"]["following_text_views"] == exposure
+    act(store, "complete", {"n1": dict(following_text_use="没用到", judgment="pass", writing_style="补充")})
+    act(store, "complete", {"spoiler": False})
+    act(store, "complete", {"incorrect_information": False})
+    finish(store)
+    prefix = (store.folder / "judgments.jsonl").read_bytes()
+    act(store, "reopen", {"step": 3})
+    act(store, "complete", {"spoiler": True})
+    act(store, "complete", {"incorrect_information": False})
+    result = finish(store)
+    assert result["judgment"] == "fail"
+    assert result["supersedes_revision"] == 1
+    assert (store.folder / "judgments.jsonl").read_bytes().startswith(prefix)
+    assert result["steps"]["n1"]["following_text_views"] == exposure
+
+
+@pytest.mark.parametrize("target", [0, 1, 5, 6, 7, -1, 2.5, "2", True])
+def test_correction_cannot_unlock_protected_or_future_steps(store, target):
+    to_conclusion(store)
+    with pytest.raises(ValueError, match="只能修改"):
+        act(store, "reopen", {"step": target})

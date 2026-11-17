@@ -59,7 +59,11 @@ and Esc returns to the decision. Save redraws preserve control focus and text se
 validation focuses the missing input. The help dialog isolates page shortcuts and
 restores focus on close. Existing legacy keyboard handlers remain unchanged.
 
-1–7 and [ / ] browse already-open steps; earlier locked steps are read-only. Enter
+1–7 and [ / ] browse already-open steps. First impression stays read-only; difficulty
+retains its explicit amendment flow. Completed N1 and later steps offer “修改此步”
+(Shift+R), including before the record is submitted. Reopening preserves filled values
+and following-text exposure, but clears completion timestamps from that step onward
+and requires reconfirmation. Submitted revisions remain in the append-only journal. Enter
 cannot skip required decisions. At the label step 5–9 toggle the five configured tags.
 Arrows follow the randomized Note sequence, not old unit grouping. Three-way choices
 and conditional options remain reachable by Tab, arrows and Space. Native controls,

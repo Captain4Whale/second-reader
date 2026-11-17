@@ -438,10 +438,11 @@ class Store:
                     r["review_completed"] = False
                     r["steps"]["conclusion"].pop("completed_at", None)
             elif action == "reopen":
-                require(stage == 7, "尚未提交")
-                state["stage"] = 2
+                target = values.get("step", 2)
+                require(type(target) is int and 2 <= target <= 6 and target < stage, "只能修改已经完成的 N1 及后续步骤")
+                state["stage"] = target
                 r["review_completed"] = False
-                for k in STEPS[2:]:
+                for k in STEPS[target:]:
                     r["steps"].setdefault(k, {}).pop("completed_at", None)
             elif action == "following":
                 require(stage in (2, 3), "只有 N1 和有剧透两步可以展开后文")
