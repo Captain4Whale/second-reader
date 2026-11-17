@@ -51,3 +51,15 @@ test('help preferences default closed, restore, and tolerate unavailable storage
   const c=vm.createContext({localStorage:{getItem(){throw Error('blocked');}}});
   assert.doesNotThrow(()=>vm.runInContext(snippet,c));
 });
+test('first-impression selection survives redraw using protocol values, not display labels',()=>{
+  const radiosCall=src.slice(src.indexOf('    if (s === 0)\n      radios('),src.indexOf('    if (s === 1) {',src.indexOf('    if (s === 0)\n      radios(')));
+  function element(tag){return {tag,children:[],append(...children){this.children.push(...children);}};}
+  for(const judgment of [null,'pass','fail']) {
+    const w=element('section');
+    const c=vm.createContext({s:0,r:{first_impression:{judgment}},w,
+      node:element,document:{createElement:element}});
+    vm.runInContext(extract('  function radios(', '  function get(')+radiosCall,c);
+    const inputs=w.children[0].children.slice(1).map(label=>label.children[0]);
+    assert.deepEqual(inputs.filter(i=>i.checked).map(i=>i.value),judgment?[judgment]:[]);
+  }
+});

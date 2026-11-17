@@ -446,7 +446,7 @@ globalThis.Q1NoteView = async function (host, session) {
         "first",
         "第一遍读完，直觉是？",
         ["pass", "fail"],
-        outcomeLabel(r.first_impression.judgment),
+        r.first_impression.judgment,
       );
     if (s === 1) {
       radios(

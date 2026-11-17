@@ -194,3 +194,12 @@ The active session was backed up under
 files remain identical, and its journal prefixes remain intact (owner appends during
 annotation are allowed). Browser state was not touched. No generation or scoring
 snapshot was run, and no push was requested.
+
+
+### First-impression selection redraw fix (2026-11-17)
+
+The 3.4 Chinese read-only display change accidentally passed a translated label into
+the editable first-impression radio renderer. A saved `pass`/`fail` consequently
+redrew as unselected. Restore the protocol value at that call site; keep translation
+only in labels/read-only summaries. Regression coverage renders null/pass/fail and
+checks the selected input after redraw. No journal, schema, lock or assessment change.
