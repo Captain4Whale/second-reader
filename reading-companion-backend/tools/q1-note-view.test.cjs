@@ -63,3 +63,20 @@ test('first-impression selection survives redraw using protocol values, not disp
     assert.deepEqual(inputs.filter(i=>i.checked).map(i=>i.value),judgment?[judgment]:[]);
   }
 });
+test('validation feedback hides retry while storage errors retain recovery',()=>{
+  const h=harness();
+  vm.runInContext(extract('  function shownError(', '  function tick('),h.c);
+  h.run('shownError({code:"FORM_VALIDATION",message:"请选择第一印象"})');
+  assert.equal(h.get('status').textContent,'请检查判定内容');
+  assert.equal(h.get('retryVisible').hidden,true);
+  assert.equal(h.get('error').textContent,'请选择第一印象');
+  h.run('shownError(new Error("disk failed"))');
+  assert.equal(h.get('retryVisible').hidden,false);
+  assert.match(h.get('status').textContent,/保存失败/);
+});
+test('conclusion hint explains decision instead of displaying markdown table header',()=>{
+  const h=harness();
+  const hint=h.run('stepHint({id:"conclusion",help:"| 项 | 类型 | 问题 |"})');
+  assert.match(hint,/N1 过/);assert.match(hint,/未覆盖/);assert.doesNotMatch(hint,/\|/);
+  assert.equal(h.run('stepHint({id:"n1",help:"**原说明**"})'),'原说明');
+});

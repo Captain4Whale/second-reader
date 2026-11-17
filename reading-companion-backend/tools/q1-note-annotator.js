@@ -33,6 +33,11 @@ globalThis.Q1NoteView = async function (host, session) {
       helpPreferences = {};
   } catch {}
   const outcomeLabel = (value) => ({ pass: "过", fail: "不过" }[value] || "未判定");
+  function stepHint(spec) {
+    if (spec.id === "conclusion")
+      return "N1 过，且读着费劲、有剧透、有错误信息均未勾选，结论才是过。rubric 未覆盖会强制不过；待核实不影响结论。";
+    return spec.help.split("\n").find(line => line.trim())?.replaceAll("**", "") || "";
+  }
   function focusDecision() {
     const title = $("workflow").querySelector("h2");
     if (title) {
@@ -71,6 +76,9 @@ globalThis.Q1NoteView = async function (host, session) {
     return host;
   }
   function shownError(error) {
+    const validation = error.code === "FORM_VALIDATION";
+    $("status").textContent = validation ? "请检查判定内容" : "保存失败 · 请重试";
+    $("retryVisible").hidden = validation;
     $("saveError").hidden = false;
     $("error").hidden = false;
     $("error").textContent = error.message;
@@ -239,7 +247,8 @@ globalThis.Q1NoteView = async function (host, session) {
       return result;
     } catch (e) {
       active += duration;
-      $("status").textContent = "保存失败 · 请重试";
+      $("status").textContent = e.code === "FORM_VALIDATION"
+        ? "请检查判定内容" : "保存失败 · 请重试";
       throw e;
     } finally {
       busy = false;
@@ -433,7 +442,7 @@ globalThis.Q1NoteView = async function (host, session) {
         helpPreferences[spec.id] = help.open;
         try { localStorage.setItem(preferenceKey, JSON.stringify(helpPreferences)); } catch {}
       });
-      w.append(node("p", spec.help.split("\n").find(line => line.trim())?.replaceAll("**", "") || "", "stepHint"));
+      w.append(node("p", stepHint(spec), "stepHint"));
       help.append(
         node("summary", `完整判定说明 · rubric ${spec.section}`),
         helpContent(spec.help),

@@ -256,15 +256,21 @@
         this.state.drafts[b.id] || P.initial(c, this.m, this.manifestHash);
       if (b.action !== "open")
         P.need(b.version === state.version, "状态已改变，请重试恢复后继续");
-      const next = P.transition(
-        state,
-        b.action,
-        b.values,
-        b.active_ms || 0,
-        this.form,
-        c,
-        this.state.rows,
-      );
+      let next;
+      try {
+        next = P.transition(
+          state,
+          b.action,
+          b.values,
+          b.active_ms || 0,
+          this.form,
+          c,
+          this.state.rows,
+        );
+      } catch (error) {
+        error.code = "FORM_VALIDATION";
+        throw error;
+      }
       this.state.drafts[b.id] = next;
       this.state.index = this.m.record_ids.indexOf(b.id);
       if (b.action === "submit") this.state.rows.push(P.copy(next.record));

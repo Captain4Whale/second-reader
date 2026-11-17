@@ -203,3 +203,11 @@ the editable first-impression radio renderer. A saved `pass`/`fail` consequently
 redrew as unselected. Restore the protocol value at that call site; keep translation
 only in labels/read-only summaries. Regression coverage renders null/pass/fail and
 checks the selected input after redraw. No journal, schema, lock or assessment change.
+
+
+### 2026-11-17：校验提示与结论说明修复
+
+- 离线适配器仅在协议转换被拒绝时标记 FORM_VALIDATION；磁盘、浏览器存储和版本冲突仍走保存恢复路径。界面校验提示显示具体缺项，不再显示恢复授权按钮。
+- 结论步骤使用可读的合成规则提示，避免把冻结表单说明的 Markdown 表头当成摘要。冻结表单、规则及数据格式不变。
+- 新增测试覆盖校验/存储错误区分、重试入口显隐和结论摘要；Computer Use 在独立 QA 会话复现“其他写法缺说明”，补齐后推进到结论并提交。正式会话 5 个文件前后哈希一致，未刷新正式标签页。
+- QA 路径：`state/q1_rubric_reviews/qa/flow-3.4-20261117/`。只修界面反馈，未改变任务状态、产品方向或评分口径。

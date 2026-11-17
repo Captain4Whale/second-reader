@@ -219,3 +219,10 @@ test("service-era progress imports read-only and keeps first lock", async () => 
   await act(restored, "save", { choice: P.difficulty[2] });
   assert.equal(x.files["progress.jsonl"], prefix);
 });
+test('invalid transition is validation feedback, persistence failure is not', async () => {
+  const f=await fixture(); await act(f.s,'open');
+  await assert.rejects(act(f.s,'complete',{}),e=>e.code==='FORM_VALIDATION');
+  assert.equal(f.s.state.drafts.r.stage,0);
+  f.dbFail=true;
+  await assert.rejects(act(f.s,'complete',{judgment:'pass'}),e=>e.code!=='FORM_VALIDATION');
+});
