@@ -38,6 +38,36 @@ globalThis.Q1NoteView = async function (host, session) {
       return "N1 过，且读着费劲、有剧透、有错误信息均未勾选，结论才是过。rubric 未覆盖会强制不过；待核实不影响结论。";
     return spec.help.split("\n").find(line => line.trim())?.replaceAll("**", "") || "";
   }
+  function rememberFocus() {
+    const el = host.activeElement;
+    if (!el) return null;
+    return {el, id:el.id, name:el.name, value:el.value,
+      start:el.selectionStart, end:el.selectionEnd};
+  }
+  function restoreFocus(f) {
+    if (!f || (host.activeElement && host.activeElement !== f.el)) return;
+    const target = f.id ? $(f.id) : [...host.querySelectorAll("input")]
+      .find(e => e.name === f.name && e.value === f.value);
+    if (!target) { focusDecision(); return; }
+    target.focus({preventScroll:true});
+    if (typeof f.start === "number" && target.setSelectionRange)
+      target.setSelectionRange(f.start, f.end);
+  }
+  function focusGroup(name) {
+    const all = [...host.querySelectorAll(`#workflow [name="${name}"]`)].filter(e=>!e.disabled);
+    const el = all.find(e=>e.checked) || all[0];
+    if (el) { el.focus(); el.scrollIntoView({block:"nearest"}); }
+  }
+  function focusMissing() {
+    const missing = [...host.querySelectorAll('textarea')]
+      .find(e => e.labels?.[0]?.textContent.includes('必填') && !e.value.trim());
+    if (missing) return focusField(missing.id);
+    for (const name of ['first','difficulty','followingUse','n1','style','failure']) {
+      const group = [...host.querySelectorAll(`#workflow [name="${name}"]`)];
+      if (group.length && !group.some(e=>e.checked)) return focusGroup(name);
+    }
+    focusDecision();
+  }
   function focusDecision() {
     const title = $("workflow").querySelector("h2");
     if (title) {
@@ -82,6 +112,7 @@ globalThis.Q1NoteView = async function (host, session) {
     $("saveError").hidden = false;
     $("error").hidden = false;
     $("error").textContent = error.message;
+    if (validation) focusMissing();
   }
   function tick() {
     const t = performance.now();
@@ -127,7 +158,8 @@ globalThis.Q1NoteView = async function (host, session) {
   }
   function radios(parent, name, title, values, value) {
     const f = node("fieldset");
-    f.append(node("legend", title));
+    const keys = {difficulty:"D",followingUse:"B",style:"W"};
+    f.append(node("legend", title + (keys[name] ? ` · ${keys[name]}` : "")));
     for (const v of values) {
       const l = node("label", undefined, "option"),
         i = node("input");
@@ -242,7 +274,11 @@ globalThis.Q1NoteView = async function (host, session) {
       dirty = editEpoch !== epoch;
       $("error").hidden = true;
       $("saveError").hidden = true;
-      if (renderAfter && !dirty) render();
+      if (renderAfter && !dirty) {
+        const focus = rememberFocus();
+        render();
+        if (action === "save") restoreFocus(focus);
+      }
       else updateStatus();
       return result;
     } catch (e) {
@@ -355,6 +391,7 @@ globalThis.Q1NoteView = async function (host, session) {
           "followingControl",
         );
         button.type = "button";
+        button.id = "following-" + scope;
         button.hidden = !data.has_following[scope];
         const content = node("div", undefined, "followingText");
         content.hidden = true;
@@ -513,7 +550,7 @@ globalThis.Q1NoteView = async function (host, session) {
           );
       }
       if (n.judgment === "fail") {
-        w.append(node("p", "失败类型（至少一个，可多选）"));
+        w.append(node("p", "失败类型（至少一个，可多选）· X"));
         for (const label of c.failure_types) {
           const i = check(
             w,
@@ -586,7 +623,7 @@ globalThis.Q1NoteView = async function (host, session) {
     check(
       flags,
       "manualUnsure",
-      "这一项拿不准（手动）",
+      "这一项拿不准（手动）· N",
       r.unsure_sources[labels[s]]?.includes("manual"),
     );
     if (r.unsure_sources[labels[s]]?.includes("automatic"))
@@ -783,7 +820,11 @@ globalThis.Q1NoteView = async function (host, session) {
     await flush();
     await post(stage === 6 ? "submit" : "complete", collect());
     if (advance && epoch === interactionEpoch) await openCase(index + 1);
-    else if (epoch === interactionEpoch) focusDecision();
+    else if (epoch === interactionEpoch) {
+      focusDecision();
+      const first = host.querySelector("#workflow input:not(:disabled)");
+      first?.focus({preventScroll:true});
+    }
   }
   async function init() {
     boot = await api("/bootstrap");
@@ -901,8 +942,14 @@ globalThis.Q1NoteView = async function (host, session) {
     a.click();
     setTimeout(() => URL.revokeObjectURL(url), 30000);
   };
+  let helpReturn;
+  $("shortcutHelp").addEventListener("close", () => {
+    if (helpReturn?.isConnected) helpReturn.focus();
+    else focusDecision();
+  });
   $("noteHelp").onclick = () => {
     const d = $("shortcutHelp");
+    if (!d.open) helpReturn = host.activeElement;
     if (d.open) d.close();
     else d.showModal();
   };
@@ -927,12 +974,15 @@ globalThis.Q1NoteView = async function (host, session) {
       return;
     const t = e.composedPath()[0],
       key = e.key.toLowerCase();
-    if (key === "escape") {
-      t.blur?.();
-      $("shortcutHelp").close();
+    if ($("shortcutHelp").open) {
+      if (key === "escape") { e.preventDefault(); $("shortcutHelp").close(); }
       return;
     }
-    if (t.closest?.("textarea,input,select,[contenteditable=true]")) return;
+    if (key === "escape") {
+      e.preventDefault(); focusDecision(); return;
+    }
+    if (t.closest?.('textarea,select,input:not([type=radio]):not([type=checkbox]),[contenteditable=true]')) return;
+    if (t.matches?.('input') && ['arrowup','arrowdown','arrowleft','arrowright',' '].includes(key)) return;
     if (
       key === "enter" &&
       t.id !== "noteComplete" &&
@@ -975,7 +1025,19 @@ globalThis.Q1NoteView = async function (host, session) {
         const help = host.querySelector("#workflow details.help");
         if (help) help.open = !help.open;
       });
+    if (key === "c") return run(() => $("decisionGo").click());
+    if (key === "a") return run(locateAnchor);
+    if (["e","o","h"].includes(key)) return run(() => {
+      const el = key === "e" ? $("earlier") : key === "o" ? $("notes") : host.querySelector("#workflow details.help");
+      if (el) { el.open = !el.open; el.querySelector("summary")?.focus(); }
+    });
+    if (key === "l" && inspecting === null) return run(() => {
+      const el = $("following-" + (e.shiftKey ? "after_unit" : "within_unit"));
+      if (el && !el.hidden && !el.disabled) el.click();
+    });
     if (inspecting !== null) return;
+    const groups = {d:"difficulty",b:"followingUse",w:"style",x:"failure",t:"tag"};
+    if (groups[key]) return run(() => focusGroup(groups[key]));
     if (key === "enter") return run(() => completeCurrent(e.shiftKey));
     if (key === "r")
       return run(() =>
@@ -987,6 +1049,7 @@ globalThis.Q1NoteView = async function (host, session) {
       const el = host.querySelector(`#workflow [name="${name}"]`);
       el?.click();
     };
+    if (key === "n") return run(() => toggle("manualUnsure"));
     if (key === "0") return run(() => toggle("uncovered"));
     if (key === "s") return run(() => toggle("star"));
     if (key === "v") return run(() => toggle("verification"));

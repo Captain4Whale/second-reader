@@ -12,7 +12,7 @@ function harness(width=1200) {
       scrollIntoView(opts){this.scrolled=opts;},focus(opts){this.focused=opts;}});
     return nodes.get(id);
   };
-  const c=vm.createContext({$:get,innerWidth:width});
+  const c=vm.createContext({$:get,innerWidth:width,host:{querySelectorAll:()=>[]}});
   vm.runInContext(extract('  const outcomeLabel','  function node('),c);
   return {get,c,run:code=>vm.runInContext(code,c)};
 }
@@ -79,4 +79,23 @@ test('conclusion hint explains decision instead of displaying markdown table hea
   const hint=h.run('stepHint({id:"conclusion",help:"| 项 | 类型 | 问题 |"})');
   assert.match(hint,/N1 过/);assert.match(hint,/未覆盖/);assert.doesNotMatch(hint,/\|/);
   assert.equal(h.run('stepHint({id:"n1",help:"**原说明**"})'),'原说明');
+});
+test('redraw restores option focus without stealing a newer focus',()=>{
+ const h=harness();
+ const old={name:'difficulty',value:'一遍能复述'},fresh={...old,focus(){this.focused=true;}},newer={id:'reason'};
+ h.c.host={activeElement:old,querySelectorAll:()=>[fresh]};
+ const f=h.run('rememberFocus()');h.c.f=f;
+ h.c.host.activeElement=newer;h.run('restoreFocus(f)');assert.equal(fresh.focused,undefined);
+ h.c.host.activeElement=null;h.run('restoreFocus(f)');assert.equal(fresh.focused,true);
+});
+test('keyboard uses native arrows in controls, preserves IME and traps help dialog',()=>{
+ const events=[];
+ const dialog={open:false,close(){this.open=false;events.push('close');}};
+ const c=vm.createContext({composing:false,busy:false,inspecting:null,data:{state:{stage:1}},
+  $:()=>dialog,host:{querySelector:()=>null},focusGroup:n=>events.push(n),shownError:()=>{},
+  focusDecision:()=>events.push('decision')});
+ vm.runInContext(extract('  function keydown(', '  document.addEventListener("keydown", keydown'),c);
+ function key(key,props={}) {c.e={key,preventDefault(){events.push('prevent');},composedPath:()=>[{matches:()=>true,closest:()=>null}],...props};vm.runInContext('keydown(e)',c);}
+ key('ArrowRight');key('d',{isComposing:true});assert.deepEqual(events,[]);
+ dialog.open=true;key('p');assert.deepEqual(events,[]);key('Escape');assert.deepEqual(events,['prevent','close']);
 });

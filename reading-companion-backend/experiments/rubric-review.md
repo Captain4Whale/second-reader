@@ -45,6 +45,16 @@ mobile annotation is not a supported workflow target. Progress squares follow th
 frozen mixed-book Note order.
 
 P/F, Enter, Shift+Enter, R/M/U, J/K, Shift+J/K, ?, Esc, V/S/0 retain applicable meanings.
+D/B/W/X/T focus difficulty, following-use, writing style, failure types and tags.
+Use native arrows for radios and Tab/Shift+Tab plus Space for checkboxes; arrows
+inside controls never navigate records. N toggles manual uncertainty; C returns to
+the current decision. A locates the anchor, E/O/H toggle earlier text/book notes/help,
+and L/Shift+L expand within-unit/after-unit following text only at eligible steps.
+Enter from a radio/checkbox confirms the step; textareas retain newline behavior,
+and Esc returns to the decision. Save redraws preserve control focus and text selection;
+validation focuses the missing input. The help dialog isolates page shortcuts and
+restores focus on close. Existing legacy keyboard handlers remain unchanged.
+
 1–7 and [ / ] browse already-open steps; earlier locked steps are read-only. Enter
 cannot skip required decisions. At the label step 5–9 toggle the five configured tags.
 Arrows follow the randomized Note sequence, not old unit grouping. Three-way choices
