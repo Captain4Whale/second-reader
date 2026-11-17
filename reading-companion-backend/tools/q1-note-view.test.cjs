@@ -3,7 +3,83 @@ const assert = require('node:assert/strict');
 const vm = require('node:vm');
 const fs = require('node:fs');
 const src = fs.readFileSync(__dirname+'/q1-note-annotator.js','utf8');
-function extract(start,end) {return src.slice(src.indexOf(start),src.indexOf(end));}
+function extract(start,end) {
+  const from=src.indexOf(start),to=src.indexOf(end,from);
+  assert.ok(from>=0 && to>from,`source boundary missing: ${start} / ${end}`);
+  return src.slice(from,to);
+}
+function keyboardHarness(step=1) {
+  const calls=[],errors=[],listeners={},nodes=new Map();
+  const get=id=>{
+    if(!nodes.has(id)) nodes.set(id,{id,open:false,hidden:false,disabled:false,
+      click(){calls.push(id);},close(){this.open=false;calls.push('close');}});
+    return nodes.get(id);
+  };
+  const options={difficulty:[0,1,2],tag:[0,1,2,3,4]};
+  const host={addEventListener:(name,fn)=>listeners[name]=fn,
+    querySelector:selector=>selector==='[name="tag"]'&&options.tag?.length?{name:'tag'}:null,
+    querySelectorAll:selector=> (selector.includes('difficulty')?options.difficulty:selector.includes('tag')?options.tag:[])
+      .map(i=>({click(){calls.push(i);}}))};
+  const c=vm.createContext({composing:false,busy:false,tagMode:false,pendingGroupFocus:null,executing:false,dirty:false,
+    boot:{record_ids:['r1','r2']},index:0,commandTail:Promise.resolve(),pendingContinuation:null,
+    data:{state:{stage:step,viewStep:step,record:{first_impression:{}}}},
+    $:get,host,innerWidth:1200,document:{getElementById:get},
+    currentStep:()=>c.data.state.viewStep ?? c.data.state.stage,
+    currentId:()=>c.boot.record_ids[c.index],
+    focusGroup:name=>calls.push(name),focusField:id=>calls.push(id),
+    focusDecision:()=>calls.push('decision'),shownError:error=>errors.push(error),
+    save:async()=>{calls.push('save');c.dirty=false;},
+    inspect:async i=>{calls.push(['navigate',i]);c.data.state.viewStep=i;},
+    completeCurrent:async advance=>calls.push(['complete',advance]),
+    openCase:async i=>{calls.push(['case',i]);c.index=i;},
+  });
+  vm.runInContext(extract('  function enqueue(', '  async function persistUI(')+
+    extract('  function queueContinue(', '  async function completeCurrent(')+
+    extract('  function queuedGroupKey(', '  document.addEventListener("keydown", keydown'),c);
+  return {c,calls,errors,listeners,get,options,host,
+    key(key,props={},target={matches:()=>false,closest:()=>null}) {
+      const event={key,preventDefault(){this.prevented=true;},composedPath:()=>[target],...props};
+      c.event=event;vm.runInContext('keydown(event)',c);return event;
+    },
+    async drain(){await c.commandTail;if(c.pendingContinuation)await c.pendingContinuation;await Promise.resolve();assert.deepEqual(errors,[]);}
+  };
+}
+function postHarness() {
+ const calls=[],fields=new Map(),get=id=>{
+  if(!fields.has(id))fields.set(id,{value:'',hidden:false,textContent:''});
+  return fields.get(id);
+ };
+ const c=vm.createContext({$:get,active:0,busy:false,dirty:false,composing:false,editEpoch:0,timer:null,
+  clearTimeout,host:{querySelectorAll:()=>[]},
+  data:{state:{version:1,viewStep:2,record:{first_impression:{}}},unit_note:''},
+  currentId:()=> 'r',currentStep:()=>c.data.state.viewStep,elapsed:()=>0,captureUI:()=>({}),
+  collect:()=>c.values,values:{n1:{writing_style:'补充'}},
+  render:()=>calls.push(['render',c.data.state.version]),rememberFocus:()=>null,restoreFocus:()=>{},
+  updateStatus:()=>{},updateNavigation:()=>{},persistUI:async()=>calls.push('ui'),
+  api:async(path,body)=>{calls.push(body.action);return {...c.data,state:{...c.data.state,version:c.data.state.version+1}};}});
+ vm.runInContext(extract('  function lockEditing(', '  function updateStatus(')+
+  extract('  async function save(', '  async function openCase('),c);
+ return {c,calls,get,run:code=>vm.runInContext(code,c)};
+}
+function groupHarness() {
+ const h=keyboardHarness(2),groups={};
+ for(const [name,values] of Object.entries({n1:['pass','fail'],style:['补充','联想','解读'],followingUse:['没用到','紧接着几段','挂早了'],failure:['没新东西','下文马上讲了']})) {
+  groups[name]=values.map(value=>({name,value,type:name==='failure'?'checkbox':'radio',checked:false,disabled:false,
+   focus(){h.host.activeElement=this;},scrollIntoView(){},
+   click(){
+    if(this.type==='radio')groups[name].forEach(el=>el.checked=false);
+    this.checked=this.type==='radio'||!this.checked;h.c.dirty=true;h.calls.push([name,value]);
+   }}));
+ }
+ h.host.querySelectorAll=selector=>groups[selector.match(/name="([^"]+)"/)?.[1]]||[];
+ h.host.querySelector=selector=>{
+  const group=groups[selector.match(/name="([^"]+)"/)?.[1]]||[];
+  const value=selector.match(/value="([^"]+)"/)?.[1];
+  return value?group.find(el=>el.value===value):group[0];
+ };
+ vm.runInContext(extract('  function focusGroup(', '  function focusMissing('),h.c);
+ return {...h,groups};
+}
 function harness(width=1200) {
   const nodes=new Map();
   const get=id=> {
@@ -74,6 +150,20 @@ test('validation feedback hides retry while storage errors retain recovery',()=>
   assert.equal(h.get('retryVisible').hidden,false);
   assert.match(h.get('status').textContent,/保存失败/);
 });
+test('status separates unsaved browser drafts from submitted file synchronization',()=>{
+ const h=harness();h.c.dirty=false;h.c.session={};
+ h.c.data={state:{record:{review_completed:false}},receipt:{browser_saved:false,journal_revision:0,file_revision:0,pending_file:false}};
+ vm.runInContext(extract('  function updateStatus(', '  async function save('),h.c);
+ h.run('updateStatus()');assert.doesNotMatch(h.get('status').textContent,/草稿已保存在此浏览器/);
+ assert.match(h.get('status').textContent,/尚未保存|保存失败/);
+ h.c.data.receipt={browser_saved:true,journal_revision:2,file_revision:1,pending_file:true,submitted_revision:2};
+ h.run('updateStatus()');assert.match(h.get('status').textContent,/草稿已保存在此浏览器/);
+ assert.match(h.get('status').textContent,/已提交记录待同步文件/);
+ assert.match(h.get('status').textContent,/本条有待提交修改/);
+ h.c.data.receipt.pending_file=false;h.c.data.receipt.file_revision=2;h.c.data.state.record.review_completed=true;
+ h.run('updateStatus()');assert.match(h.get('status').textContent,/修订 2/);
+ assert.doesNotMatch(h.get('status').textContent,/本条有待提交修改|待同步文件/);
+});
 test('conclusion hint explains decision instead of displaying markdown table header',()=>{
   const h=harness();
   const hint=h.run('stepHint({id:"conclusion",help:"| 项 | 类型 | 问题 |"})');
@@ -88,30 +178,22 @@ test('redraw restores option focus without stealing a newer focus',()=>{
  h.c.host.activeElement=newer;h.run('restoreFocus(f)');assert.equal(fresh.focused,undefined);
  h.c.host.activeElement=null;h.run('restoreFocus(f)');assert.equal(fresh.focused,true);
 });
-test('keyboard uses native arrows in controls, preserves IME and traps help dialog',()=>{
- const events=[];
- const dialog={open:false,close(){this.open=false;events.push('close');}};
- const c=vm.createContext({composing:false,busy:false,inspecting:null,data:{state:{stage:1}},
-  $:()=>dialog,host:{querySelector:()=>null},focusGroup:n=>events.push(n),shownError:()=>{},
-  focusDecision:()=>events.push('decision')});
- vm.runInContext(extract('  function keydown(', '  document.addEventListener("keydown", keydown'),c);
- function key(key,props={}) {c.e={key,preventDefault(){events.push('prevent');},composedPath:()=>[{matches:()=>true,closest:()=>null}],...props};vm.runInContext('keydown(e)',c);}
- key('ArrowRight');key('d',{isComposing:true});assert.deepEqual(events,[]);
- dialog.open=true;key('p');assert.deepEqual(events,[]);key('Escape');assert.deepEqual(events,['prevent','close']);
+test('keyboard uses native arrows in controls, preserves IME and traps help dialog',async()=>{
+ const h=keyboardHarness(),input={matches:()=>true,closest:()=>null};
+ assert.equal(h.key('ArrowRight',{},input).prevented,undefined);
+ assert.equal(h.key('d',{isComposing:true}).prevented,undefined);
+ assert.equal(h.key('d',{keyCode:229}).prevented,undefined);
+ h.c.composing=true;h.key('g');h.c.composing=false;
+ h.get('shortcutHelp').open=true;h.key('p');
+ await h.drain();assert.deepEqual(h.calls,[]);
+ assert.equal(h.key('Escape').prevented,true);assert.deepEqual(h.calls,['close']);
 });
 test('difficulty direct choices and text shortcuts work outside text entry only',async()=>{
- const calls=[];
- const c=vm.createContext({composing:false,busy:false,inspecting:null,data:{state:{stage:1}},
- $:()=>({open:false}),host:{querySelectorAll:()=>[0,1,2].map(i=>({click:()=>calls.push(i)}))},
- focusField:id=>calls.push(id),shownError:e=>{throw e;}});
- vm.runInContext(extract('  function keydown(', '  document.addEventListener("keydown", keydown'),c);
- for(const key of ['q','g','z','y','i','m']) {
- c.e={key,preventDefault(){},composedPath:()=>[{matches:()=>false,closest:()=>null}]};
- vm.runInContext('keydown(e)',c);await Promise.resolve();
- }
- assert.deepEqual(calls,[0,1,2,'paraphrase','rewrite','reason']);
- c.e={key:'g',preventDefault(){},composedPath:()=>[{closest:()=>({tagName:'TEXTAREA'})}]};
- vm.runInContext('keydown(e)',c);await Promise.resolve();assert.equal(calls.length,6);
+ const h=keyboardHarness();
+ for(const key of ['q','g','z','y','i','m']) h.key(key);
+ await h.drain();assert.deepEqual(h.calls,[0,1,2,'paraphrase','rewrite','reason']);
+ h.key('g',{}, {closest:()=>({tagName:'TEXTAREA'})});
+ await h.drain();assert.equal(h.calls.length,6);
 });
 test('difficulty labels explain rubric while radio values retain historical identity',()=>{
  const values=['一遍能复述','能改写得更直白','改写不出'];
@@ -139,14 +221,223 @@ test('actual difficulty render call preserves selection across redraw for every 
  }
 });
 
-test('returning to steps two through seven opens the original form directly',async()=>{
-  for (const step of [1,2,3,4,5,6]) {
-    const calls=[];
-    const c=vm.createContext({data:{state:{stage:7}},flush:async()=>calls.push('flush'),
-      post:async(a,v)=>calls.push([a,v.step]),focusDecision:()=>calls.push('focus')});
-    vm.runInContext(extract('  async function inspect(', '  $("workflow").addEventListener("compositionstart"'),c);
-    await vm.runInContext(`inspect(${step})`,c);
-    assert.deepEqual(calls,['flush',['reopen',step],'focus']);
+test('reopening an N1 other branch restores hidden explanation without overriding an intentional clear',()=>{
+ const branches={otherWriting:'保留的其他写法说明',otherFailure:'保留的其他失败说明'};
+ for(const [judgment,id,key] of [['pass','otherWriting','other_writing_explanation'],['fail','otherFailure','other_failure_explanation']]) {
+  const fields={n1Paraphrase:{value:'复述'},n1Reason:{value:'理由'}};
+  const c=vm.createContext({currentStep:()=>2,uiState:()=>({branches}),
+   data:{state:{record:{uncovered_reason:'',reason:''},ui:{branches}}},
+   $:id=>fields[id],checked:()=>false,
+   get:name=>({n1:judgment,followingUse:'没用到',style:'其他写法'}[name]),
+   host:{querySelector:()=>null,querySelectorAll:()=>[{value:'其他'}]}});
+  vm.runInContext(extract('  function collect(', '  const currentStep'),c);
+  assert.equal(vm.runInContext('collect()',c).n1[key],branches[id]);
+  fields[id]={value:''};
+  assert.equal(vm.runInContext('collect()',c).n1[key],'');
+ }
+});
+
+test('returning to completed steps navigates without reopening or clearing subsequent answers',async()=>{
+  const P=require('./q1-note-protocol.js');
+  const record={first_impression:{judgment:'pass',locked_at:'locked'},review_completed:true,
+    reading_difficulty:{choice:'一遍能复述',original_choice:'一遍能复述'},
+    n1:{judgment:'pass',writing_style:'补充'},tags:['冗余'],revision:4,
+    steps:{first_impression:{completed_at:'first'},reading_difficulty:{completed_at:'difficulty'},n1:{completed_at:'n1'}}};
+  const data={state:{stage:7,viewStep:7,maxUnlockedStage:6,dirtySteps:[],version:5,record}};
+  const snapshot=JSON.stringify(record),calls=[];
+  const c=vm.createContext({data,tagMode:true,flush:async()=>calls.push('flush'),
+    currentStep:()=>c.data.state.viewStep,
+    post:async(a,v)=>{calls.push([a,v.step]);c.data.state=P.transition(c.data.state,a,v,0,{}, {}, []);},
+    focusDecision:()=>calls.push('focus')});
+  vm.runInContext(extract('  async function inspect(', '  host.addEventListener("compositionstart"'),c);
+  for(const step of [1,2,3,4,5,6,0]) {
+    calls.length=0;await vm.runInContext(`inspect(${step})`,c);
+    assert.deepEqual(calls,['flush',['navigate',step],'focus']);
+    assert.equal(c.data.state.viewStep,step);
+    assert.equal(c.data.state.stage,7);assert.equal(c.data.state.maxUnlockedStage,6);
+    assert.equal(JSON.stringify(c.data.state.record),snapshot);
   }
+  assert.equal(c.tagMode,false);
   assert.doesNotMatch(src,/editCompletedStep|amendControls|保存费劲修正/);
+});
+test('navigation enforces first-pass frontier and revisiting current step does not post',async()=>{
+  const calls=[],c=vm.createContext({data:{state:{stage:2,viewStep:1,maxUnlockedStage:2}},
+    currentStep:()=>c.data.state.viewStep,flush:async()=>calls.push('flush'),
+    post:async(a,v)=>calls.push([a,v.step]),focusDecision:()=>calls.push('focus')});
+  vm.runInContext(extract('  async function inspect(', '  host.addEventListener("compositionstart"'),c);
+  await vm.runInContext('inspect(3)',c);await vm.runInContext('inspect(-1)',c);
+  assert.deepEqual(calls,[]);
+  await vm.runInContext('inspect(1)',c);assert.deepEqual(calls,['flush','focus']);
+  calls.length=0;await vm.runInContext('inspect(2)',c);
+  assert.deepEqual(calls,['flush',['navigate',2],'focus']);
+});
+test('number keys navigate normally; T explicitly enables tag numbers and Escape exits',async()=>{
+  const h=keyboardHarness(6);
+  h.key('5');await h.drain();assert.deepEqual(h.calls,[['navigate',4]]);
+  h.key('7');await h.drain();assert.equal(h.c.tagMode,false);
+  h.calls.length=0;h.key('t');await h.drain();assert.equal(h.c.tagMode,true);
+  for(const key of ['5','6','7','8','9']) h.key(key);
+  await h.drain();assert.deepEqual(h.calls,['tag',0,1,2,3,4]);
+  h.key('Escape');assert.equal(h.c.tagMode,false);
+  h.key('6');await h.drain();assert.deepEqual(h.calls.slice(-2),['decision',['navigate',5]]);
+});
+test('tag mode exits when focus leaves tags, and missing tags cannot enable it',async()=>{
+  const h=keyboardHarness(6);h.key('t');await h.drain();
+  h.listeners.focusin({target:{matches:selector=>selector==='[name="tag"]'}});
+  assert.equal(h.c.tagMode,true);
+  h.listeners.focusin({target:{matches:()=>false}});assert.equal(h.c.tagMode,false);
+  h.options.tag=[];h.key('t');await h.drain();assert.equal(h.c.tagMode,false);
+});
+test('T then a tag number retain their meaning while an earlier command is still saving',async()=>{
+  const h=keyboardHarness(6);let release;
+  h.c.blocked=()=>new Promise(resolve=>release=resolve);
+  vm.runInContext('enqueue(blocked)',h.c);await Promise.resolve();await Promise.resolve();
+  h.key('t');h.key('5');release();await h.drain();
+  assert.deepEqual(h.calls,['tag',0]);
+  assert.equal(h.c.data.state.viewStep,6);
+});
+test('shift shortcuts focus conditional fields without triggering ordinary groups',async()=>{
+  const h=keyboardHarness(2);
+  h.key('W',{shiftKey:true,code:'KeyW'});h.key('X',{shiftKey:true,code:'KeyX'});
+  h.key(')',{shiftKey:true,code:'Digit0'});
+  await h.drain();assert.deepEqual(h.calls,['otherWriting','otherFailure','uncoveredReason']);
+  h.calls.length=0;h.key('w');h.key('x');h.key('y');h.key('r');h.key('m');
+  await h.drain();assert.deepEqual(h.calls,['style','failure','n1Paraphrase','n1Reason','reason']);
+});
+test('file shortcuts retain trusted activation; Ctrl Enter saves unit note while typing',async()=>{
+  const h=keyboardHarness();
+  for(const key of ['O','S','V']) h.key(key,{shiftKey:true});
+  assert.deepEqual(h.calls,['openFolder','exportNote','retry']);
+  const target={id:'unitNote',closest:()=>({tagName:'TEXTAREA'})};
+  assert.equal(h.key('Enter',{ctrlKey:true},target).prevented,true);
+  assert.deepEqual(h.calls,['openFolder','exportNote','retry','saveUnit']);
+  await h.drain();
+});
+test('rapid choices are serialized through slow saves instead of discarded while busy',async()=>{
+  const h=keyboardHarness();let release;
+  h.host.querySelectorAll=()=>[0,1,2].map(i=>({click(){h.calls.push(i);h.c.dirty=true;}}));
+  let saves=0;
+  h.c.save=async()=>{h.calls.push('save-start');if(++saves===1)await new Promise(resolve=>release=resolve);h.c.dirty=false;h.calls.push('save-end');};
+  h.c.busy=true;
+  h.key('q');await Promise.resolve();await Promise.resolve();
+  assert.deepEqual(h.calls,[0,'save-start']);
+  h.key('g');h.key('Enter');assert.deepEqual(h.calls,[0,'save-start']);
+  release();await h.drain();
+  assert.deepEqual(h.calls,[0,'save-start','save-end',1,'save-start','save-end',['complete',undefined]]);
+});
+test('queued repeated continuation runs once and stale case choices cannot edit the next item',async()=>{
+  const h=keyboardHarness();
+  h.c.completeCurrent=async()=>{h.calls.push('complete');h.c.data.state.viewStep++;};
+  h.key('Enter');h.key('Enter');await h.drain();assert.deepEqual(h.calls,['complete']);
+  h.calls.length=0;h.c.data.state.viewStep=1;
+  h.key('ArrowDown');h.key('g');await h.drain();
+  assert.deepEqual(h.calls,[['case',1]]);
+});
+test('step navigation followed immediately by difficulty choice judges the destination step',async()=>{
+ for(const step of [2,7,0]) {
+  const h=keyboardHarness(step);
+  if(step===0)h.c.data.state.record.first_impression.locked_at='already locked';
+  h.key('2');h.key('g');await h.drain();
+  assert.deepEqual(h.calls,[['navigate',1],1]);
+ }
+});
+test('blocked navigation then choice and repeated Enter judges and continues the destination once',async()=>{
+ const h=keyboardHarness(2);let release;
+ h.c.blocked=()=>new Promise(resolve=>release=resolve);
+ vm.runInContext('enqueue(blocked)',h.c);await Promise.resolve();await Promise.resolve();
+ h.c.completeCurrent=async()=>{h.calls.push(['complete',h.c.data.state.viewStep]);h.c.data.state.viewStep++;};
+ h.key('2');h.key('g');h.key('Enter');h.key('Enter');
+ release();await h.drain();
+ assert.deepEqual(h.calls,[['navigate',1],1,['complete',1]]);
+ assert.equal(h.c.data.state.viewStep,2);assert.equal(h.c.pendingContinuation,null);
+ h.key('Enter');await h.drain();assert.deepEqual(h.calls.at(-1),['complete',2]);
+});
+test('a failed command reports the error and does not poison later queued commands',async()=>{
+  const h=keyboardHarness(),failure=new Error('validation');
+  h.c.completeCurrent=async()=>{throw failure;};h.key('Enter');h.key('g');
+  await h.c.commandTail;await Promise.resolve();
+  assert.deepEqual(h.errors,[failure]);assert.deepEqual(h.calls,[1]);
+});
+test('flush renders the latest same-step edit after a slow save preserves newer input',async()=>{
+ const h=postHarness();let release,requests=0;
+ h.c.api=async(path,body)=>{
+  h.calls.push(['save',body.values.n1.writing_style]);
+  if(++requests===1)await new Promise(resolve=>release=resolve);
+  return {...h.c.data,state:{...h.c.data.state,version:h.c.data.state.version+1}};
+ };
+ h.c.dirty=true;const pending=h.run('save(true)');
+ h.c.editEpoch++;h.c.values={n1:{writing_style:'其他写法',other_writing_explanation:''}};
+ release();await pending;
+ assert.equal(h.c.dirty,true);assert.deepEqual(h.calls,[['save','补充']]);
+ await h.run('flush()');
+ assert.equal(h.c.dirty,false);
+ assert.deepEqual(h.calls,[['save','补充'],['save','其他写法'],['render',3],'ui']);
+});
+test('same-step validation redraws saved conditional controls before reporting the missing field',async()=>{
+ const h=postHarness(),error=Object.assign(new Error('其他写法必须说明'),{code:'FORM_VALIDATION',step:2});
+ h.c.api=async()=>{throw error;};
+ await assert.rejects(h.run('post("complete", {})'),e=>e===error);
+ assert.deepEqual(h.calls,[['render',1]]);assert.equal(h.c.busy,false);
+});
+test('queued native changes collect the latest DOM and drain edits arriving during a save',async()=>{
+ const h=postHarness(),handlers={};
+ Object.assign(h.c,{boot:{record_ids:['r']},index:0,commandTail:Promise.resolve(),executing:false,
+  editEpoch:0,autoGrow:()=>{},setTimeout:()=>1,shownError:error=>{throw error;}});
+ h.get('workflow').addEventListener=(event,handler)=>handlers[event]=handler;
+ vm.runInContext(extract('  function enqueue(', '  async function persistUI(')+
+  extract('  $("workflow").addEventListener("input"', '  $("prev").onclick'),h.c);
+ const nativeChange=value=>{
+  h.c.values={n1:{writing_style:value}};
+  handlers.input();handlers.change({target:{matches:()=>true}});
+ };
+ let release,requests=0;
+ h.c.api=async(path,body)=>{
+  h.calls.push(['save',body.values.n1.writing_style]);
+  if(++requests===1)await new Promise(resolve=>release=resolve);
+  return {...h.c.data,state:{...h.c.data.state,version:h.c.data.state.version+1}};
+ };
+ nativeChange('补充');nativeChange('联想');
+ await Promise.resolve();await Promise.resolve();
+ assert.deepEqual(h.calls,[['save','联想']]);
+ assert.equal(h.c.executing,true);
+ nativeChange('其他写法');release();await h.c.commandTail;
+ assert.deepEqual(h.calls,[['save','联想'],['save','其他写法'],['render',3]]);
+ assert.equal(h.c.dirty,false);assert.equal(h.c.executing,false);
+});
+test('P then W and Space waits for the pass save before selecting the writing style',async()=>{
+ const h=groupHarness();let release,saves=0;
+ h.c.save=async()=>{if(++saves===1)await new Promise(resolve=>release=resolve);h.c.dirty=false;};
+ h.key('p');await Promise.resolve();await Promise.resolve();
+ h.key('w');assert.equal(h.key(' ').prevented,true);
+ assert.deepEqual(h.calls,[['n1','pass']]);
+ release();await h.drain();
+ assert.deepEqual(h.calls,[['n1','pass'],['style','补充']]);
+ assert.equal(h.groups.style[0].checked,true);assert.equal(h.c.pendingGroupFocus,null);
+});
+test('rapid B Space F Enter applies following choice and N1 failure before attempting completion',async()=>{
+ const h=groupHarness();let release;
+ h.c.blocked=()=>new Promise(resolve=>release=resolve);
+ vm.runInContext('enqueue(blocked)',h.c);await Promise.resolve();await Promise.resolve();
+ h.c.save=async()=>{h.c.dirty=false;};
+ h.c.completeCurrent=async()=>h.calls.push(['complete',h.groups.followingUse.find(el=>el.checked)?.value,h.groups.n1.find(el=>el.checked)?.value]);
+ h.key('b');h.key(' ');h.key('f');h.key('Enter');release();await h.drain();
+ assert.deepEqual(h.calls,[['followingUse','没用到'],['n1','fail'],['complete','没用到','fail']]);
+});
+test('queued group arrows select radio options but move checkbox focus without toggling',async()=>{
+ const radio=groupHarness();radio.key('w');radio.key('ArrowRight');await radio.drain();
+ assert.deepEqual(radio.calls.filter(c=>Array.isArray(c)),[['style','联想']]);
+ const multi=groupHarness();multi.key('x');multi.key('ArrowRight');multi.key(' ');await multi.drain();
+ assert.deepEqual(multi.calls.filter(c=>Array.isArray(c)),[['failure','下文马上讲了']]);
+ assert.equal(multi.groups.failure[0].checked,false);assert.equal(multi.groups.failure[1].checked,true);
+ for(const key of ['ArrowRight',' '])
+  assert.equal(multi.key(key,{}, {matches:()=>true,closest:()=>null}).prevented,undefined);
+});
+test('switching cases clears stale pending group focus before the next item handles keys',async()=>{
+ const h=postHarness();
+ Object.assign(h.c,{boot:{record_ids:['r','next']},index:0,pendingGroupFocus:'style',tagMode:true,
+  clock:0,performance:{now:()=>1},flush:async()=>{},render:()=>{},focusDecision:()=>{},
+  requestAnimationFrame:()=>{},api:async()=>({state:{version:1,viewStep:0,ui:{readerScroll:0}},unit_note:''})});
+ vm.runInContext(extract('  async function openCase(', '  function render('),h.c);
+ await h.run('openCase(1)');
+ assert.equal(h.c.pendingGroupFocus,null);assert.equal(h.c.tagMode,false);assert.equal(h.c.index,1);
 });

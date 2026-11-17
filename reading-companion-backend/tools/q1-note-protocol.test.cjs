@@ -246,3 +246,235 @@ test('revisiting difficulty without changing the choice does not invent an amend
   assert.equal(h.s.record.reading_difficulty.amendments.length,0);
   assert.equal(h.s.record.reading_difficulty.original_choice,P.difficulty[0]);
 });
+
+test("navigation preserves progress, completed record and first-pass access gates", () => {
+  const h = setup();
+  assert.throws(() => h.act("navigate", {step:1}), /已开放/);
+  assert.throws(() => h.act("submit"), /顺序/);
+  h.act("complete", {judgment:"pass"});
+  h.act("complete", {choice:P.difficulty[0]});
+  const before = structuredClone(h.s.record);
+  h.act("navigate", {step:1});
+  assert.equal(h.s.stage, 2);
+  assert.equal(h.s.viewStep, 1);
+  assert.equal(h.s.maxUnlockedStage, 2);
+  h.act("save", {choice:P.difficulty[0], paraphrase:"", rewrite:"", manual_unsure:false});
+  h.act("navigate", {step:2});
+  assert.deepEqual(h.s.record, before);
+  assert.deepEqual(h.s.dirtySteps, []);
+  assert.throws(() => h.act("navigate", {step:3}), /已开放/);
+  h.act("navigate", {step:0});
+  assert.throws(() => h.act("save", {judgment:"fail"}), /锁定/);
+  assert.throws(() => h.act("save", {manual_unsure:true}), /锁定/);
+});
+
+test("submitted browsing and unchanged saves do not create another revision", () => {
+  const h = setup(); core(h); done(h);
+  const before = structuredClone(h.s.record);
+  assert.equal(h.s.viewStep, 7);
+  assert.throws(() => h.act("submit"), /已提交/);
+  h.act("navigate", {step:1});
+  h.act("save", {choice:P.difficulty[0]});
+  h.act("complete", {choice:P.difficulty[0]});
+  assert.equal(h.s.viewStep, 2);
+  assert.equal(h.s.stage, 7);
+  assert.deepEqual(h.s.record, before);
+  assert.deepEqual(h.s.dirtySteps, []);
+  h.act("navigate", {step:6});
+  assert.throws(() => h.act("submit"), /顺序/);
+  assert.equal(h.rows.length, 1);
+});
+
+test("completed steps can be edited then reviewed once without replaying unchanged later steps", () => {
+  const h = setup(); core(h); done(h);
+  const original = structuredClone(h.rows[0]);
+  h.act("navigate", {step:1});
+  h.act("save", {choice:P.difficulty[1]});
+  assert.equal(h.s.stage, 6);
+  assert.equal(h.s.viewStep, 1);
+  assert.equal(h.s.maxUnlockedStage, 6);
+  assert.deepEqual(h.s.dirtySteps, [1,5,6]);
+  assert.equal(h.s.record.review_completed, false);
+  assert.deepEqual(h.s.record.steps.n1, original.steps.n1);
+  h.act("navigate", {step:4});
+  h.act("save", {needs_verification:false});
+  h.act("navigate", {step:6});
+  const r = h.act("submit").record;
+  assert.equal(r.judgment, "fail");
+  assert.ok(!("tags" in r));
+  assert.equal(r.supersedes_revision, 1);
+  assert.deepEqual(r.first_impression, original.first_impression);
+  assert.deepEqual(r.steps.n1, original.steps.n1);
+  assert.deepEqual(r.steps.spoiler, original.steps.spoiler);
+  assert.equal(r.steps.reading_difficulty.started_at, original.steps.reading_difficulty.started_at);
+  assert.ok(r.steps.reading_difficulty.active_ms > original.steps.reading_difficulty.active_ms);
+  assert.deepEqual(h.rows[0], original);
+  assert.deepEqual(h.s.dirtySteps, []);
+  assert.equal(h.s.viewStep, 7);
+});
+
+test("final review validates unfinished conditional edits and identifies the failing step", () => {
+  const h = setup(); core(h); done(h);
+  h.act("navigate", {step:2});
+  h.act("save", {n1:{following_text_use:"没用到", judgment:"pass", writing_style:"其他写法"}});
+  h.act("complete"); // Already-open steps remain navigable with an incomplete draft.
+  assert.equal(h.s.viewStep, 3);
+  h.act("navigate", {step:6});
+  assert.throws(() => h.act("submit"), error => error.step === 2 && /说明/.test(error.message));
+  assert.equal(h.rows.length, 1);
+  h.act("navigate", {step:2});
+  h.act("save", {n1:{following_text_use:"没用到", judgment:"pass", writing_style:"其他写法", other_writing_explanation:"写法及增量"}});
+  h.act("navigate", {step:6});
+  assert.equal(h.act("submit").record.revision, 2);
+});
+
+test("final review requires uncovered reason after edits and clears pass-only fields", () => {
+  const h = setup(); core(h); h.act("complete");
+  h.act("submit", {tags:["冗余"], star:true});
+  h.act("navigate", {step:3});
+  h.act("save", {rubric_uncovered:true});
+  assert.equal(h.s.record.star, false);
+  assert.ok(!("tags" in h.s.record));
+  h.act("navigate", {step:6});
+  assert.throws(() => h.act("submit"), error => error.step === 6 && /原因/.test(error.message));
+  h.act("save", {uncovered_reason:"未覆盖的情况"});
+  const r = h.act("submit").record;
+  assert.equal(r.judgment, "fail");
+  assert.ok(!("tags" in r));
+  assert.equal(r.star, false);
+});
+
+test("difficulty edits retain the original and continuous transitions with separate uncertainty sources", () => {
+  const h = setup(); core(h); done(h);
+  h.act("navigate", {step:1});
+  h.act("save", {choice:P.difficulty[1]});
+  h.act("save", {choice:P.difficulty[2], manual_unsure:true});
+  assert.deepEqual(h.s.record.unsure_sources.读着费劲, ["automatic","manual"]);
+  h.act("save", {choice:P.difficulty[0]});
+  h.act("navigate", {step:6});
+  const r = h.act("submit").record;
+  assert.equal(r.reading_difficulty.original_choice, P.difficulty[0]);
+  assert.deepEqual(r.reading_difficulty.amendments.map(a => [a.from,a.to]), [
+    [P.difficulty[0],P.difficulty[1]], [P.difficulty[1],P.difficulty[2]], [P.difficulty[2],P.difficulty[0]],
+  ]);
+  assert.equal(r.judgment, "pass");
+  assert.deepEqual(r.unsure_sources.读着费劲, ["manual"]);
+});
+
+test("automatic anchor tag clears with its cause while manual and unknown legacy tags survive", () => {
+  const early = {following_text_use:"挂早了", judgment:"pass", writing_style:"补充"};
+  const plain = {...early, following_text_use:"没用到"};
+  const h = setup(); core(h, P.difficulty[0], early); done(h);
+  assert.deepEqual(h.s.anchorTagSources, ["automatic"]);
+  h.act("navigate", {step:2}); h.act("save", {n1:plain});
+  assert.deepEqual(h.s.record.tags, []);
+  h.act("navigate", {step:6}); h.act("save", {tags:["锚点问题"]});
+  assert.deepEqual(h.s.anchorTagSources, ["manual"]);
+  h.act("navigate", {step:2}); h.act("save", {n1:early});
+  h.act("save", {n1:plain});
+  assert.deepEqual(h.s.record.tags, ["锚点问题"]);
+  h.act("navigate", {step:6}); h.act("submit");
+  const legacy = {version:1, stage:7, record:structuredClone(h.s.record)};
+  let migrated = P.normalizeDraft(legacy);
+  assert.deepEqual(migrated.anchorTagSources, ["legacy"]);
+  migrated = P.transition(migrated, "navigate", {step:2}, 1, form, c);
+  migrated = P.transition(migrated, "save", {n1:early}, 1, form, c);
+  migrated = P.transition(migrated, "save", {n1:plain}, 1, form, c);
+  assert.deepEqual(migrated.record.tags, ["锚点问题"]);
+  assert.ok(!("anchorTagSources" in h.s.record));
+});
+
+test("normalization migrates old drafts without mutating rows or draft-only UI data", () => {
+  const h = setup(); core(h); done(h);
+  const legacy = {version:12, stage:7, record:structuredClone(h.s.record), ui:{branchDrafts:{n1:{note:"draft"}}}};
+  const before = structuredClone(legacy);
+  const migrated = P.normalizeDraft(legacy);
+  assert.equal(migrated.viewStep, 7);
+  assert.equal(migrated.maxUnlockedStage, 6);
+  assert.deepEqual(migrated.dirtySteps, []);
+  assert.deepEqual(migrated.ui, legacy.ui);
+  assert.deepEqual(legacy, before);
+  const opened = P.transition({...migrated, viewStep:1}, "open", {}, 2, form, c);
+  assert.equal(opened.viewStep, 1);
+  assert.deepEqual(opened.record, before.record);
+  assert.deepEqual(opened.ui, legacy.ui);
+  const reopened = structuredClone(legacy);
+  reopened.stage = 1;
+  for (const key of P.steps.slice(1)) delete reopened.record.steps[key].completed_at;
+  assert.equal(P.normalizeDraft(reopened).maxUnlockedStage, 6);
+});
+
+test("new revisions change tool version without changing the journal schema or legacy validity", () => {
+  const h = setup(); core(h); done(h);
+  const old = structuredClone(h.s.record);
+  old.annotator_version = "q1-annotator/3.4";
+  P.validate(old, form);
+  h.act("navigate", {step:5}); h.act("save", {reason:"补充理由"});
+  h.act("navigate", {step:6});
+  const r = h.act("submit").record;
+  assert.equal(r.annotator_version, "q1-annotator/3.5");
+  assert.equal(r.schema, old.schema);
+  for (const key of ["viewStep","maxUnlockedStage","dirtySteps","pendingActiveMs","anchorTagSources","ui"])
+    assert.ok(!(key in r));
+});
+
+test("viewing following text after submission appends exposure in the next confirmed revision", () => {
+  const h = setup(); core(h); done(h);
+  const original = structuredClone(h.rows[0]);
+  h.act("navigate", {step:2}); h.act("following", {scope:"within_unit"});
+  assert.equal(h.s.stage, 6);
+  assert.deepEqual(h.s.dirtySteps, [2]);
+  h.act("navigate", {step:6});
+  const r = h.act("submit").record;
+  assert.equal(r.steps.n1.viewed_following_text, true);
+  assert.equal(r.steps.n1.following_text_views.length, 1);
+  assert.deepEqual(r.steps.spoiler, original.steps.spoiler);
+  assert.deepEqual(h.rows[0], original);
+});
+
+test("legacy reopened drafts can confirm the missing suffix at final review only after all steps were opened", () => {
+  const h = setup(); core(h); done(h);
+  const original = structuredClone(h.rows[0]);
+  h.act("reopen", {step:1});
+  assert.equal(h.s.stage, 1);
+  assert.equal(h.s.maxUnlockedStage, 6);
+  assert.equal(h.s.record.steps.n1.completed_at, undefined);
+  h.act("navigate", {step:6});
+  const r = h.act("submit").record;
+  assert.equal(r.revision, 2);
+  for (const key of P.steps.slice(1)) {
+    assert.ok(r.steps[key].completed_at);
+    assert.equal(r.steps[key].started_at, original.steps[key].started_at);
+  }
+  assert.deepEqual(r.steps.first_impression, original.steps.first_impression);
+  const early = setup(); core(early);
+  early.act("reopen", {step:1});
+  assert.equal(early.s.maxUnlockedStage, 5);
+  assert.throws(() => early.act("navigate", {step:6}), /已开放/);
+  early.act("navigate", {step:5});
+  assert.throws(() => early.act("submit"), /顺序/);
+});
+
+test("first original-note exposure from the submitted summary returns to final confirmation", () => {
+  for (const difficulty of [P.difficulty[0], P.difficulty[1]]) {
+    const h = setup(); core(h, difficulty); done(h);
+    const original = structuredClone(h.rows[0]);
+    assert.equal(h.s.viewStep, 7);
+    h.act("notes");
+    assert.equal(h.s.stage, 6);
+    assert.equal(h.s.viewStep, 6);
+    assert.deepEqual(h.s.dirtySteps, [6]);
+    assert.equal(h.s.record.review_completed, false);
+    assert.equal(h.s.record.context.viewed_original_notes, true);
+    assert.equal(h.rows.length, 1);
+    const r = h.act("submit").record;
+    assert.equal(r.supersedes_revision, 1);
+    assert.equal(r.context.viewed_original_notes, true);
+    assert.deepEqual(h.rows[0], original);
+    const submitted = structuredClone(h.s.record);
+    h.act("notes");
+    assert.equal(h.s.viewStep, 7);
+    assert.deepEqual(h.s.dirtySteps, []);
+    assert.deepEqual(h.s.record, submitted);
+  }
+});

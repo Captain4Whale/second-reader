@@ -7,7 +7,7 @@ Update when: task status, priority, blockers, decision refs, job refs, evidence 
 
 This document is the human-readable companion to `docs/tasks/registry.json`.
 
-Last updated: `2026-11-12`
+Last updated: `2026-11-17`
 
 ## Status Values
 - `active`
@@ -30,9 +30,11 @@ Last updated: `2026-11-12`
 - `TASK-LIGHTWEIGHT-CLEANUP-STEP0` — `done`，mechanism_runtime / high。D1–D7 已按执行指令实施，Batch 4 跳过。依据 DEC-160；[执行与验收](lightweight-cleanup-step0-execution-2026-11-01.md)，[历史数字核查](lightweight-cleanup-step0-historical-evidence-2026-11-01.md)。
 - `TASK-RESUME-READING-PLAN-FREEZE` — `done`，mechanism_runtime / high。已实现计划身份校验、复用与拒绝不一致 resume。[离线证据](step1-prereqs-2026-11-01.md#d-计划冻结)。
 
-## Done
+## Q1 tool repair verification
 
-- `TASK-Q1-RUBRIC-V34-FORM` — `done`: offline annotator 3.4; new validation session `Q1-RUBRIC-V34-VALIDATION-001-q1-v3.4` connected on 2026-11-17 with 46 Notes. Historical DIAG-001 session preserved. Generation branch merged into main on 2026-11-17; no rerun or scoring snapshot. [Record](q1-rubric-v3.4-form-2026-11-15.md).
+- `TASK-Q1-RUBRIC-V34-FORM` — `active`: annotator 3.5 repair implemented; core native Edge workflow passed at 100%/125%, with 133 tool tests and 116 pytest checks. Native IME candidate confirmation remains untested; Chinese text persistence passed. Preserve the 46-Note `Q1-RUBRIC-V34-VALIDATION-001-q1-v3.4` formal session and historical DIAG-001 data. No rerun or scoring snapshot. [Coverage and remaining gap](q1-rubric-v3.4-form-2026-11-15.md#annotator-35-repair).
+
+## Done
 
 - `TASK-Q1-RUBRIC-V2-CONVERSION` — `done`: published exact v2 and 22 verified examples, no form; registered raw v1 and owner-adjudicated v2-structure conversion scores (Note 25/51, H 28/30). Anonymous failure-type worksheet: 25 items, 10 prefilled, 15 blank; owner completion and later import pending separately. No original annotations or prior releases changed. [Receipt](q1-rubric-v2-conversion-2026-11-12.md).
 

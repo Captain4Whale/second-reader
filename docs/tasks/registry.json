@@ -5,11 +5,11 @@
     {
       "id": "TASK-Q1-RUBRIC-V34-FORM",
       "title": "Implement the approved Q1 v3.4 Note annotation form",
-      "status": "done",
+      "status": "active",
       "lane": "mechanism_eval",
       "priority": "high",
       "detail_ref": "docs/tasks/q1-rubric-v3.4-form-2026-11-15.md",
-      "acceptance_ref": "docs/tasks/q1-rubric-v3.4-form-2026-11-15.md#validation",
+      "acceptance_ref": "docs/tasks/q1-rubric-v3.4-form-2026-11-15.md#annotator-35-repair",
       "truth_refs": [
         "reading-companion-backend/experiments/rubric-review.md",
         "reading-companion-backend/rubric/q1-v3.4.md",
@@ -18,13 +18,16 @@
       "decision_refs": [],
       "job_refs": [],
       "blocked_by": [],
-      "next_action": "Annotate the 46-Note Q1-RUBRIC-V34-VALIDATION-001-q1-v3.4 formal session in the offline annotator. Preserve the old 51-Note DIAG-001 session; do not expose the frozen stability sample. Generation branch merged into main; private evidence copied and verified. No scoring snapshot yet.",
+      "next_action": "Annotator 3.5 is implemented with core native Edge workflow verified at 100%/125%; native IME candidate confirmation remains untested because the local input source could not be reliably switched. Chinese text persistence is verified. Preserve the 46-Note formal and historical DIAG-001 sessions; no formal QA writes, model runs or scoring snapshot.",
       "evidence_refs": [
         "reading-companion-backend/rubric/q1-v3.4.form.v1.json",
         "reading-companion-backend/tests/test_q1_note_session.py",
         "reading-companion-backend/state/q1_rubric_reviews/qa/v3.4-20261115/qa-inventory.md",
         "reading-companion-backend/tools/q1-note-protocol.test.cjs",
-        "reading-companion-backend/tools/q1-note-offline.test.cjs"
+        "reading-companion-backend/tools/q1-note-offline.test.cjs",
+        "reading-companion-backend/state/q1_rubric_reviews/qa/interaction-audit-20261117-mcxxb4gf/audit.md",
+        "reading-companion-backend/state/q1_rubric_reviews/qa/annotator-35-20261117/audit.md",
+        "reading-companion-backend/state/q1_rubric_reviews/qa/annotator-35-20261117/validation.json"
       ],
       "last_updated": "2026-11-17",
       "last_updated_by": "codex"

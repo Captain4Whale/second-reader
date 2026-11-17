@@ -10,9 +10,12 @@ not annotator code. Form text contains rules only, never identifiable rubric exa
 
 ## Published v3.4 Note review (2026-11-15)
 
-The owner-approved `q1-v3.4.form.v1` is a Note-only protocol in the existing offline annotator (tool 3.4).
+The owner-approved `q1-v3.4.form.v1` is a Note-only protocol in the existing offline annotator (tool 3.5).
 The published rubric owns options/thresholds; `q1-annotation-guide.md` owns sequence.
-The v0/v1 forms and cache identities stay unchanged. Old readers accept tool 3.4 without changing old judgment semantics.
+The v0/v1 forms and cache identities stay unchanged. The 3.5 repair keeps the same journal schema and historical judgment semantics;
+reader compatibility and core native desktop checks pass. Native IME candidate
+confirmation remains untested; Chinese text persistence is verified. The precise
+coverage is in the [current repair receipt](../../docs/tasks/q1-rubric-v3.4-form-2026-11-15.md#annotator-35-repair).
 Form schema is `q1-note-rubric-form/1`; journal schema is `q1-note-judgment/1`.
 `form-releases.json` and `frozen.json` append the new identity, including the rubric
 and annotation-guide hashes. The existing form loader dispatches by schema.
@@ -22,19 +25,21 @@ and annotation-guide hashes. The existing form loader dispatches by schema.
 Open `tools/q1-annotator.html` in Chrome / Edge, then choose the prepared session
 through “打开批次文件夹”. This is the same offline entrypoint and directory permission
 flow as earlier versions. No local service, model, npm install or frontend build is
-needed. Keep the sibling scripts next to the HTML. Tool version is `q1-annotator/3.4`;
+needed. Keep the sibling scripts next to the HTML. In Note mode the tool version is `q1-annotator/3.5`;
 it is separate from rubric `q1-v3.4`, frozen form `q1-v3.4.form.v1` and record schema.
 The earlier `serve SESSION` / `launch` commands now open this HTML and print the
 folder to select. The old `q1-note-annotator.html` is a pointer to this entrypoint.
 
-The v3.4 Note mode retains the shared typography, natural heights and sticky desktop
-actions. At desktop widths (≥960 CSS pixels), source occupies 46% and a continuous
+The v3.4 Note mode retains the shared typography, natural heights and desktop
+columns. At desktop widths (≥960 CSS pixels), source occupies 46% and a continuous
 annotation-then-decision column occupies 54%, including wide monitors. The content
 is capped at 1600 CSS pixels; progress, step navigation and options use compact spacing.
-The legacy 3.2 grid below still applies to the older forms. The original stylesheet
+The Note action row follows the form in normal document flow, so it does not overlay
+reason fields at desktop zoom. The session header also shows Enter and 1–7 navigation
+hints. The legacy 3.2 grid below still applies to the older forms. The original stylesheet
 is shared at runtime with Note-specific layout overrides.
 The v3.4 mode uses isolated DOM controls to keep legacy event handlers and drafts intact.
-Tool 3.4 puts all decision/uncertainty fields before the full guidance. Full guidance
+Decision/uncertainty fields precede the full guidance. Full guidance
 starts collapsed and remembers each step's preference locally; concise prompts remain
 visible. “查看当前批注” expands the complete Note next to the decision without saving a
 judgment. Opening a case positions the anchor without opening following text; saving
@@ -44,32 +49,68 @@ a directly visible retry action; validation errors instead name the missing inpu
 mobile annotation is not a supported workflow target. Progress squares follow the
 frozen mixed-book Note order.
 
-P/F, Enter, Shift+Enter, R/M/U, J/K, Shift+J/K, ?, Esc, V/S/0 retain applicable meanings.
-Q/G/Z directly choose the three difficulty options in displayed order; Y focuses
-the current paraphrase, I the difficulty rewrite, and M the overall reason. These
-keys are displayed beside the corresponding options/fields; 0 is shown beside uncovered.
-Text-entry focus suppresses these keys until Esc.
-D/B/W/X/T focus difficulty, following-use, writing style, failure types and tags.
-Use native arrows for radios and Tab/Shift+Tab plus Space for checkboxes; arrows
-inside controls never navigate records. N toggles manual uncertainty; C returns to
-the current decision. A locates the anchor, E/O/H toggle earlier text/book notes/help,
-and L/Shift+L expand within-unit/after-unit following text only at eligible steps.
-Enter from a radio/checkbox confirms the step; textareas retain newline behavior,
-and Esc returns to the decision. Save redraws preserve control focus and text selection;
-validation focuses the missing input. The help dialog isolates page shortcuts and
-restores focus on close. Existing legacy keyboard handlers remain unchanged.
+### Note-mode keyboard and revision flow
 
-1–7 and [ / ] return to already-open steps. From step two onward, returning directly
-renders the original editable form with its saved selections, fields, shortcuts and
-Continue action. There is no separate read-only summary or amendment panel. Returning
-clears completion from that step onward; reconfirm the following steps with their
-saved values. First impression remains read-only. Difficulty changes after its first
-completion automatically append from/to/timestamp history on save, retain the original
-choice, and use the final choice for the conclusion. Repeated saves of the same choice
-do not add amendments. Submitted revisions remain in the append-only journal.
-Enter cannot skip required decisions. At the label step 5–9 toggle the five configured
-tags. Arrows follow the randomized Note sequence, not old unit grouping. Native controls,
-text entry, modifiers, held keys and IME composition are guarded.
+The following keys apply to the v3.4 Note mode; older-form handlers remain unchanged.
+Every option, input and conditional explanation shows its applicable key. Text inputs
+keep ordinary typing, Enter/newline and native selection. Esc keeps the draft and
+returns to the current decision. IME composition and other modified browser/system
+commands do not invoke single-key judgment actions. The help dialog isolates page
+shortcuts and restores focus when closed.
+
+| Key | v3.4 Note action |
+|---|---|
+| P / F | Current binary judgment; spoiler/error unchecked or checked |
+| Q / G / Z | Directly select difficulty's three options in displayed order |
+| D / B / W / X | Focus difficulty, following use, writing style or failure group |
+| Y / I | Current paraphrase / difficulty rewrite |
+| R / M / U | N1 reason (otherwise overall reason) / overall reason / unit note |
+| Shift+W / Shift+X / Shift+0 | Other-writing explanation / other-failure explanation / uncovered reason |
+| N / 0 / V / S | Manual uncertainty / uncovered / needs verification / star, when applicable |
+| 1–7 or [ / ] | Browse already-open steps; first impression remains read-only |
+| T, then 5–9 | Explicit tag shortcut mode; toggle configured tags while this mode is active |
+| Enter | Validate and continue from the current step; final step confirms/submits |
+| Shift+Enter | Final step: submit, then next Note after save succeeds |
+| Ctrl+Enter in unit note | Save the unit note |
+| A / C / Shift+C | Locate source anchor / focus current decision / toggle nearby current Note |
+| E / Shift+E / O / H | Earlier text / more earlier text / book notes / full current guidance |
+| L / Shift+L | Within-unit / after-unit following text, only at N1 or spoiler |
+| J / K; Shift+J / K | Scroll source; scroll page |
+| Arrows outside controls | Previous/next Note in frozen randomized order |
+| Shift+O / Shift+S / Shift+V | Open session directory / export submitted JSONL / retry file save |
+| ? / Esc | Help / close help or leave text/tag shortcuts |
+
+Native arrows select radios; Tab/Shift+Tab and Space operate checkboxes. Arrows in
+controls do not navigate Notes. Enter on a native button/link/disclosure activates that
+control. Entering step seven does not implicitly activate tag shortcuts: ordinary
+1–7 still navigates. T activates the visible tag mode; Esc, leaving the group or
+changing steps exits it. Failing outcomes have no tag shortcuts.
+
+First-time decisions still follow the required order. Returning to an already-open
+step only changes the viewed form; it does not clear completed steps or decrease the
+submitted count. Step two onward uses the original editable controls and saved values,
+without a separate amendment panel. Editing preserves access to all previously opened
+steps, so the annotator can finish with one unified final review rather than repeat
+unchanged later decisions. Enter may validate the current edit and continue, but is
+not required before navigating to another already-open step. Final submission validates
+the whole record and focuses any missing/invalid field; it updates completion times
+for edited steps without changing untouched later steps' times.
+
+First impression remains locked. Difficulty changes after first completion append
+from/to/timestamp history, keep the original choice, and use the final choice for the
+outcome. Repeated saves of the same choice do not create amendments. Only actual
+record changes create a pending revision; mere navigation does not. Newly recorded
+following-text exposure or the first original-note view is an audit change and is
+retained for final submission. A submitted
+item keeps its prior row and submitted count while its pending revision is identified
+separately. The next explicit submission appends a new revision.
+
+Within the same step, saving preserves focus, selection, reader position and expanded
+context. Changing steps still collapses following text according to the exposure
+protocol. Temporarily hidden branch explanations stay in the browser draft and return
+when that branch is selected again; submitted JSON contains only the active branch.
+Save and navigation actions are serialized so a late response cannot apply an older
+choice or advance another Note. Repeated continuation cannot submit duplicate rows.
 
 To prepare another isolated session from an **existing** comparison bundle:
 
@@ -79,7 +120,8 @@ To prepare another isolated session from an **existing** comparison bundle:
 
 Each book root must contain `public/book_document.json` and `_assets/source.epub`.
 Both EPUB and substrate identity must match the original batch. `launch` accepts the
-same arguments and prepares only if the session does not exist, then serves it.
+same arguments and prepares only if the session does not exist, then opens the
+offline HTML.
 Existing directories are never overwritten. `--purpose test --test-mark ANONYMOUS_ID`
 (repeat the latter) restricts an isolated test session; formal preparation does not
 sample or regenerate a batch. It selects all existing Notes, leaving Highlights intact.
@@ -89,7 +131,7 @@ ordered ID list and fingerprint. This is display randomization, not sampling.
 Everything containing source text stays under ignored `state/`: `context.json`,
 `judgments.jsonl`, existing `progress.jsonl`, screenshots and test evidence. `manifest.json`
 binds input/context/form identity and session purpose. Formal and test directories
-must differ; the page labels their purpose. Only explicit upstream unit notes are
+must differ; the page displays session identity, directory and purpose. Only explicit upstream unit notes are
 carried forward; no historical annotation outcomes or blind group mappings reach UI.
 Anonymous IDs permit later operator-side attribution through the original blind key.
 Existing exposure to DIAG-001 is not undone by hiding groups in this new interface.
@@ -143,6 +185,11 @@ Existing exposure to DIAG-001 is not undone by hiding groups in this new interfa
   permission restoration is explicit. Prefix conflicts and incomplete JSONL stop sync
   without rewriting either side. The original and v3.4 modes share the JSONL append
   primitive (`q1-journal.js`) and browser tab lock. No new draft file is written.
+- Browser draft persistence, pending submitted-item revisions and file synchronization
+  have separate status. A browser draft is not a file receipt. Submitted counts use
+  the latest journal rows, with pending revisions shown separately. Export includes
+  submitted rows, not unfinished browser drafts. Older draft navigation defaults are
+  restored from their recorded stage/timestamps without changing journal bytes.
 - Browser restoration imports existing service-era progress without changing its bytes.
   A newer completed journal revision supersedes an older browser draft. Context, form,
   session, randomization and journal identities are checked before loading. UI hides
@@ -174,8 +221,11 @@ a finished-batch rate must not disguise missing judgments. Zero denominators are
 
 Each applicable step stores `started_at`, `completed_at`, `active_ms`; fail-only label
 skips are explicit. First reading occurs during step one, so difficulty-duration work
-must include both steps one and two. Correction timestamps do not replace initial
-completion times. `active_ms` measures visible-page interaction time, not pure reading
+must include both steps one and two. On a later correction, an edited step
+receives its new confirmation time; untouched steps keep theirs, and the previous
+submitted revision retains its earlier timestamps. `started_at` is the first entry
+into the step, so subtracting it from a later completion is not first-read duration.
+`active_ms` measures visible-page interaction time, not pure reading
 or attention, and background-tab time is excluded.
 
 ### v3.4 verification

@@ -1,6 +1,6 @@
 # Q1 rubric v3.4 Note form
 
-Status: done; initial service-based UI superseded by the offline follow-up below. Scope: implement the owner-approved Note form and isolated session protocol.
+Status: implemented with core native desktop workflow verified; native IME candidate confirmation remains untested. Initial form publication and batch preparation are complete; the initial service-based UI is historical. Scope: preserve the approved Note protocol while repairing its offline interaction.
 No sampling, generation, old-type conversion, Highlight form, statistical adapter or scoring snapshot.
 
 ## Implementation
@@ -261,3 +261,99 @@ Computer Use 在当前桌面 Edge 100% / 125% 缩放检查初始页、选项选�
 按用户反馈撤掉“修改此步”中间入口、Shift+R 和独立费劲修正表单。点击已完成的第二步及后续步骤，直接显示原来的选项、输入、快捷键和继续按钮，保留已填内容；返回处及之后重新确认。第一印象仍只读。第二步通过原表单保存时自动追加 from/to/时间，保留初值；相同值重复保存不算修正，结论和自动拿不准依据最终值计算。协议的既有 amend 操作保留用于兼容，冻结定义和历史记录不变。
 
 91 项 Node、47 项 Python 测试通过，覆盖所有可编辑步骤的直接返回、第二步原值/修改链/自动与手动拿不准、旧提交前缀保留和新修订提交。隔离 QA 脚本副本已同步；本轮 Computer Use 在获取浏览器时因当前 URL 不允许操作而被中止，因此未完成本轮 UI 实测。没有绕过工具限制或操作正式页，正式会话 5 个文件哈希一致。这是同一工具的交互简化，不改变任务状态、评分口径或产品方向。
+
+
+<a id="annotator-35-repair"></a>
+## 2026-11-17：annotator 3.5 交互修复与复验
+
+Status: repair implemented; core native desktop workflow verified, with the native
+IME candidate-confirmation limitation below. The owner approved the audit repair
+plan and selected final unified review after edits; do not require confirmation
+of every unchanged later step. This section supersedes the earlier return/reopen
+interaction descriptions, not the frozen rubric or historical validation evidence.
+
+The native pre-repair audit used an isolated copy of the 46-Note validation session:
+`reading-companion-backend/state/q1_rubric_reviews/qa/interaction-audit-20261117-mcxxb4gf/audit.md`.
+It reproduced navigation clearing completion, tag/step numeric shortcut conflicts,
+missing conditional-field keys, collapsed context after saves, lost hidden-branch
+text, and misleading browser/file synchronization status. Its pass/fail evidence and
+unmeasured native IME/punctuation cases are recorded separately; those results do not
+prove the repaired version works.
+
+The repair retains the offline HTML, existing letter keys, two-column reading layout,
+IndexedDB/session identities and append-only JSONL. The mounted Note-mode tool version is
+`q1-annotator/3.5`; rubric `q1-v3.4`, form `q1-v3.4.form.v1`, schema
+`q1-note-judgment/1`, old forms and scoring boundaries remain unchanged.
+
+- Draft navigation separates the viewed step, furthest-open step and actual edits.
+  Browsing does not reopen judgments, clear later completion timestamps or reduce
+  submitted counts. Editing uses the original form and leaves opened steps reachable.
+  Final submission validates the entire revision; unchanged later steps need no repeat.
+- First impression stays locked; difficulty retains its initial choice, final choice
+  and continuous amendments. New drafts remain browser-only, and modified submitted
+  items show a pending revision separately from their preserved submitted row.
+- Ordinary 1–7 always navigates. T explicitly enters tag shortcuts 5–9; Esc, leaving
+  that group or changing steps exits. Main actions show Enter/Shift+Enter. Conditional
+  explanation fields and context/file controls gain visible direct keys; the complete
+  map is maintained in the operator protocol rather than duplicated here.
+- Same-step saves preserve context, focus, selection and scroll; hidden branch text
+  remains in the browser draft. Submitted records still contain only the valid active
+  branch. Serialized input/save handling prevents stale responses and repeated submits.
+- Compact session identity/status and reduced duplicate headings preserve the two
+  columns, typography and natural long-content flow at desktop 100%/125%. The final
+  Note action row follows the form naturally; the sticky version overlapped the reason
+  field during the 125% trial and was removed. The header now shows Enter and 1–7 hints.
+
+### Current repair validation
+
+The repair passed 133 tool tests (including 34 view tests), 116 pytest checks, and
+`check_iteration_provenance.py --base-ref HEAD` plus
+`check_prompt_releases.py --base-ref HEAD` (three immutable releases). These checks cover protocol, view, storage,
+keyboard, legacy-reader compatibility and unchanged published identities; they do
+not substitute for native UI observations.
+
+The fresh QA root is
+`reading-companion-backend/state/q1_rubric_reviews/qa/annotator-35-20261117/`.
+Its `ui/` and `session/` contain an independent copy of the 46-Note input, a new test
+session identity and separate browser storage/lock. Native Computer Use used the
+local full-screen Edge desktop at 100% and 125%; it did not operate the formal tab.
+Detailed evidence is recorded in this QA directory's `audit.md` and `validation.json`.
+
+Observed coverage:
+
+- Three test Notes exercised passing/failing outcomes and revisions. The six journal
+  rows include one unit note and two revisions. Backtracking and ordinary numeric /
+  bracket navigation retain opened stages; Enter and Shift+Enter complete and submit.
+- Mouse binary choices and checkbox select/deselect, T then 5–9 tag mode, direct field
+  keys and conditional explanation keys, Q/G/Z original/final difficulty values and
+  amendment history were exercised through the native UI.
+- Following text stays expanded during same-step N redraws; N1 and spoiler exposure
+  are recorded separately. First original-note viewing was checked in final review.
+- Refresh and close/reopen restored drafts and Chinese text. A permissions failure
+  was induced only in the QA folder, then Shift+V recovered file append exactly once.
+  Shift+S export was exercised.
+- The 125% pass found the sticky action row obscuring the reason field. After changing
+  it to normal flow, M located a fully visible reason field; Enter and 1–7 hints were
+  added to the session header.
+
+Remaining gap: native IME candidate selection/confirmation was **not** tested, because
+Computer Use could not reliably switch the local input source. Chinese text persistence
+has been tested; it is not evidence for candidate-window key handling. Therefore this
+receipt states core workflow verification, not complete per-control native acceptance.
+Saved-history fork/corruption and browser-database write failure have automated
+coverage only; file-write failure was the one fault injected in the native session.
+The native control table records tested categories, not every field combination.
+
+Data readback used the delivery `Q1NoteOffline.Session.parse`: all six journal rows
+and three Notes validated. The final export matched the journal byte-for-byte.
+Automatic/manual uncertainty remained distinguishable, fail rows omitted tags, and
+unchanged steps kept completion times across revisions. All five formal files have
+identical before/after byte counts and SHA-256 hashes, recorded in
+`formal-before.json` / `formal-after.json` under the QA root. All source-bearing test
+records and screenshots remain under ignored `state/`. No formal page refresh, formal
+judgment write or data migration was part of this QA.
+
+This is a scoped repair of an existing tool, not a product/mechanism direction or
+storage architecture change; the decision log is intentionally unchanged. No model
+calls, resampling, scoring snapshot, rubric/form republishing or historical data
+conversion are authorized by this repair.

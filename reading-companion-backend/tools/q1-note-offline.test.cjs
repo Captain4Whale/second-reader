@@ -94,6 +94,7 @@ async function fixture() {
     dir,
     host,
     files,
+    db,
     set diskFail(v) {
       diskFail = v;
     },
@@ -225,4 +226,205 @@ test('invalid transition is validation feedback, persistence failure is not', as
   assert.equal(f.s.state.drafts.r.stage,0);
   f.dbFail=true;
   await assert.rejects(act(f.s,'complete',{judgment:'pass'}),e=>e.code!=='FORM_VALIDATION');
+});
+
+
+test("legacy browser drafts recover previously opened steps without rewriting logs", async () => {
+  const x = await fixture();
+  await ready(x.s);
+  const old = structuredClone(x.s.state);
+  const d = old.drafts.r;
+  d.stage = 1;
+  delete d.viewStep;
+  delete d.maxUnlockedStage;
+  delete d.dirtySteps;
+  for (const key of P.steps.slice(1)) delete d.record.steps[key]?.completed_at;
+  x.db.set("state:" + x.s.key, old);
+  const restored = await Q1NoteOffline.Session.load(x.dir, x.host);
+  assert.equal(restored.state.drafts.r.stage, 1);
+  assert.equal(restored.state.drafts.r.viewStep, 1);
+  assert.equal(restored.state.drafts.r.maxUnlockedStage, 6);
+  assert.equal(x.files["judgments.jsonl"], "");
+  assert.equal(x.files["progress.jsonl"], "");
+  assert.deepEqual(restored.state.drafts.r.record.first_impression, d.record.first_impression);
+});
+
+test("browsing a submitted record preserves its completion and file receipt", async () => {
+  const x = await fixture();
+  await ready(x.s);
+  await act(x.s, "submit");
+  const original = structuredClone(x.s.state.rows[0]);
+  const prefix = x.files["judgments.jsonl"];
+  const viewed = await act(x.s, "navigate", { step: 1 });
+  assert.equal(viewed.state.viewStep, 1);
+  assert.equal(viewed.state.stage, 7);
+  assert.equal(viewed.state.maxUnlockedStage, 6);
+  assert.deepEqual(viewed.state.record, original);
+  assert.equal(viewed.receipt.submitted_revision, 1);
+  assert.equal(viewed.receipt.has_unsubmitted_changes, false);
+  assert.equal(viewed.receipt.file_revision, 1);
+  await act(x.s, "navigate", { step: 2 });
+  assert.equal(x.files["judgments.jsonl"], prefix);
+  const boot = await x.s.api("/bootstrap");
+  assert.deepEqual(boot.completed, ["r"]);
+  assert.equal(boot.session_id, "test");
+  assert.equal(boot.directory_name, "test");
+  assert.equal(boot.tool_version, "q1-annotator/3.5");
+});
+
+test("browser-only UI metadata survives reload without changing the judgment version", async () => {
+  const x = await fixture();
+  await ready(x.s);
+  const original = structuredClone(x.s.state.drafts.r);
+  await act(x.s, "ui_meta", { ui: { branches: { otherWriting: "keep explanation" }, reader: { scrollTop: 130, earlier: true } } });
+  await act(x.s, "ui_meta", { ui: { reader: { scrollTop: 240, earlier: true } } });
+  assert.equal(x.s.state.drafts.r.version, original.version);
+  assert.deepEqual(x.s.state.drafts.r.record, original.record);
+  const restored = await Q1NoteOffline.Session.load(x.dir, x.host);
+  assert.deepEqual(restored.state.drafts.r.ui, {
+    branches: { otherWriting: "keep explanation" }, reader: { scrollTop: 240, earlier: true },
+  });
+  assert.equal(x.files["judgments.jsonl"], "");
+  assert.equal(x.files["progress.jsonl"], "");
+});
+
+test("action UI metadata is persisted with the judgment but excluded from exported rows", async () => {
+  const x = await fixture();
+  await ready(x.s);
+  await x.s.api("/action", {
+    id: "r", action: "submit", version: x.s.state.drafts.r.version,
+    values: {}, ui: { branches: { otherFailure: "inactive explanation" } }, active_ms: 1,
+  });
+  const restored = await Q1NoteOffline.Session.load(x.dir, x.host);
+  assert.equal(restored.state.drafts.r.ui.branches.otherFailure, "inactive explanation");
+  const row = JSON.parse(x.files["judgments.jsonl"]);
+  assert.equal(Object.hasOwn(row, "ui"), false);
+  assert.equal(Object.hasOwn(row, "viewStep"), false);
+  assert.equal(Object.hasOwn(row, "dirtySteps"), false);
+});
+
+test("draft and pending-file receipts stay distinct across edits and a failed revision", async () => {
+  const x = await fixture();
+  await ready(x.s);
+  assert.equal(x.s.receipt("r").has_unsubmitted_changes, true);
+  assert.equal(x.s.receipt("r").file_revision, 0);
+  await act(x.s, "submit");
+  const prefix = x.files["judgments.jsonl"];
+  const untouched = x.s.state.rows[0].steps.n1.completed_at;
+  await act(x.s, "navigate", { step: 1 });
+  await act(x.s, "save", { choice: P.difficulty[1] });
+  assert.deepEqual(x.s.receipt("r"), {
+    browser_saved: true, journal_revision: 1, file_revision: 1,
+    pending_file: false, submitted_revision: 1, has_unsubmitted_changes: true,
+  });
+  await act(x.s, "navigate", { step: 6 });
+  x.diskFail = true;
+  await assert.rejects(act(x.s, "submit"), /disk failed/);
+  assert.equal(x.s.receipt("r").browser_saved, true);
+  assert.equal(x.s.receipt("r").file_revision, 1);
+  assert.equal(x.s.receipt("r").journal_revision, 2);
+  assert.equal(x.s.receipt("r").pending_file, true);
+  assert.equal(x.files["judgments.jsonl"], prefix);
+  x.diskFail = false;
+  const receipt = await x.s.sync();
+  assert.equal(receipt.file_revision, 2);
+  assert.equal(receipt.pending_file, false);
+  await x.s.sync();
+  assert.equal(x.files["judgments.jsonl"].trim().split("\n").length, 2);
+  assert.equal(x.s.state.rows[1].steps.n1.completed_at, untouched);
+  assert.equal(x.s.state.rows[1].reading_difficulty.amendments.length, 1);
+  assert.equal(x.files["judgments.jsonl"].startsWith(prefix), true);
+});
+
+
+test("saving an untouched empty unit note does not append a judgment row", async () => {
+  const x = await fixture();
+  await act(x.s, "unit_note", { remarks: "" });
+  await act(x.s, "unit_note", { remarks: "" });
+  assert.equal(x.s.state.rows.length, 0);
+  assert.equal(x.files["judgments.jsonl"], "");
+  await act(x.s, "unit_note", { remarks: "QA note" });
+  await act(x.s, "unit_note", { remarks: "QA note" });
+  assert.equal(x.s.state.rows.length, 1);
+});
+
+test("reading UI metadata can be cached while a submitted row awaits disk retry", async () => {
+  const x = await fixture();
+  await ready(x.s);
+  x.diskFail = true;
+  await assert.rejects(act(x.s, "submit"), /disk failed/);
+  const original = structuredClone(x.s.state.drafts.r);
+  const result = await act(x.s, "ui_meta", { ui: { reader: { scrollTop: 80 } } });
+  assert.equal(result.state.version, original.version);
+  assert.deepEqual(result.state.record, original.record);
+  assert.equal(result.receipt.pending_file, true);
+  assert.equal(result.receipt.browser_saved, true);
+  assert.equal(x.files["judgments.jsonl"], "");
+  x.diskFail = false;
+  const restored = await Q1NoteOffline.Session.load(x.dir, x.host);
+  assert.equal(restored.state.drafts.r.ui.reader.scrollTop, 80);
+  assert.equal(restored.state.rows.length, 1);
+  assert.equal(restored.receipt("r").pending_file, false);
+});
+
+test("file failure returns the applied draft version and retry does not duplicate a submission", async () => {
+  const x = await fixture(); await ready(x.s);
+  const before = x.s.state.drafts.r.version;
+  x.diskFail = true;
+  let failure;
+  await assert.rejects(act(x.s, "submit"), error => {
+    failure = error;
+    return /disk failed/.test(error.message);
+  });
+  assert.equal(failure.actionApplied, true);
+  assert.equal(failure.currentState.version, before + 1);
+  assert.equal(failure.currentState.stage, 7);
+  assert.equal(failure.receipt.browser_saved, true);
+  assert.equal(failure.receipt.pending_file, true);
+  assert.equal(failure.receipt.submitted_revision, 1);
+  failure.currentState.record.reason = "caller copy";
+  assert.equal(x.s.state.drafts.r.record.reason, "");
+  x.diskFail = false;
+  await x.s.sync();
+  const revisited = await x.s.api("/action", {
+    id:"r", action:"navigate", values:{step:1}, version:failure.currentState.version,
+  });
+  assert.equal(revisited.state.viewStep, 1);
+  assert.equal(x.files["judgments.jsonl"].trim().split("\n").length, 1);
+  assert.equal(x.s.state.rows.length, 1);
+});
+
+test("post-transition browser failure distinguishes in-memory progress from persisted recovery", async () => {
+  const x = await fixture(); await ready(x.s);
+  const before = x.s.state.drafts.r.version, originalPut = x.host.put;
+  let calls = 0;
+  x.host.put = async (...args) => {
+    if (++calls === 2) throw Error("late browser failed");
+    return originalPut(...args);
+  };
+  let failure;
+  await assert.rejects(act(x.s, "submit"), error => {
+    failure = error;
+    return /late browser failed/.test(error.message);
+  });
+  assert.equal(failure.actionApplied, true);
+  assert.equal(failure.currentState.version, before + 1);
+  assert.equal(failure.receipt.browser_saved, false);
+  assert.equal(failure.receipt.pending_file, true);
+  assert.equal(x.files["judgments.jsonl"], "");
+  x.host.put = originalPut;
+  await x.s.sync();
+  await x.s.api("/action", {id:"r", action:"navigate", values:{step:2}, version:failure.currentState.version});
+  assert.equal(x.s.state.rows.length, 1);
+  assert.equal(x.files["judgments.jsonl"].trim().split("\n").length, 1);
+});
+
+test("validation and pre-transition persistence failure report that the action was not applied", async () => {
+  const x = await fixture(); await act(x.s, "open");
+  const before = x.s.state.drafts.r.version;
+  await assert.rejects(act(x.s, "complete"), error =>
+    error.code === "FORM_VALIDATION" && !error.actionApplied && error.currentState.version === before);
+  x.dbFail = true;
+  await assert.rejects(act(x.s, "complete", {judgment:"pass"}), error =>
+    !error.actionApplied && error.currentState.version === before && error.receipt.browser_saved === false);
 });

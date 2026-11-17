@@ -228,6 +228,58 @@
       s.following_text_views ??= [];
     }
   }
+  // UI navigation and revision bookkeeping live only in drafts, never in journal rows.
+  function normalizeDraft(state) {
+    const s = copy(state), r = s.record;
+    need(Number.isInteger(s.stage) && s.stage >= 0 && s.stage <= 7, "草稿步骤无效");
+    const reached = steps.reduce((max, key, index) =>
+      r.steps[key]?.started_at || r.steps[key]?.completed_at ? Math.max(max, index) : max,
+      Math.min(s.stage, 6));
+    const existing = Number.isInteger(s.maxUnlockedStage) ? s.maxUnlockedStage : 0;
+    s.maxUnlockedStage = Math.min(6, Math.max(reached, existing));
+    // Never infer exposure permission from partially filled values alone.
+    if (!r.first_impression.locked_at) s.maxUnlockedStage = 0;
+    else if (!r.reading_difficulty.original_choice) s.maxUnlockedStage = Math.min(1, s.maxUnlockedStage);
+    if (!Number.isInteger(s.viewStep) || s.viewStep < 0 ||
+        (s.viewStep > s.maxUnlockedStage && !(s.stage === 7 && s.viewStep === 7)))
+      s.viewStep = s.stage === 7 ? 7 : Math.min(s.stage, s.maxUnlockedStage);
+    s.dirtySteps = [...new Set((s.dirtySteps || []).filter(i => Number.isInteger(i) && i >= 0 && i <= 6))].sort();
+    s.pendingActiveMs ??= {};
+    // Existing rows cannot tell whether the annotator chose this tag manually.
+    if (!Array.isArray(s.anchorTagSources))
+      s.anchorTagSources = r.tags?.includes("锚点问题") ? ["legacy"] : [];
+    return s;
+  }
+  function deriveDraft(s) {
+    const r = s.record;
+    const sources = new Set(s.anchorTagSources.filter(x => x !== "automatic"));
+    if (r.n1.following_text_use === "挂早了") sources.add("automatic");
+    // Remove only a tag whose automatic origin is known in this draft.
+    if (r.tags?.includes("锚点问题") && !sources.size)
+      r.tags = r.tags.filter(t => t !== "锚点问题");
+    derive(r);
+    if (r.judgment === "fail") s.anchorTagSources = [];
+    else {
+      s.anchorTagSources = [...sources];
+      if (sources.size && !r.tags.includes("锚点问题")) r.tags.push("锚点问题");
+    }
+  }
+  function validateStep(r, i, f) {
+    try {
+      if (i === 0) need(["pass", "fail"].includes(r.first_impression.judgment), "请选择第一印象");
+      if (i === 1) need(difficulty.includes(r.reading_difficulty.choice), "请选择读着费劲的判断");
+      if (i === 2) n1valid(r.n1, f);
+      if (i === 3) need(typeof r.vetoes.spoiler === "boolean", "请判断有剧透");
+      if (i === 4) need(typeof r.vetoes.incorrect_information === "boolean" && typeof r.needs_verification === "boolean", "错误信息或待核实值无效");
+      if (i === 6) need(r.judgment === "fail" || (Array.isArray(r.tags) && r.tags.every(t => f.choices.tags.includes(t))), "标签选项无效");
+    } catch (error) { error.step = i; throw error; }
+  }
+  function semantic(r) {
+    return canonical(Object.fromEntries([
+      "first_impression", "reading_difficulty", "n1", "vetoes", "unsure_sources",
+      "needs_verification", "rubric_uncovered", "uncovered_reason", "reason", "tags", "star",
+    ].map(k => [k, r[k]])));
+  }
   function initial(c, m, manifestHash) {
     const identity = Object.fromEntries(
       [
@@ -246,7 +298,7 @@
       schema: "q1-note-judgment/1",
       ...identity,
       session_manifest_sha256: manifestHash,
-      annotator_version: "q1-annotator/3.4",
+      annotator_version: "q1-annotator/3.5",
       record_type: "marginalia",
       record_id: c.record_id,
       marginalia_id: c.record_id,
@@ -299,67 +351,71 @@
       review_completed: false,
     };
     start(r, 0);
-    return { version: 0, stage: 0, record: r };
+    return { version: 0, stage: 0, viewStep: 0, maxUnlockedStage: 0, dirtySteps: [], pendingActiveMs: {}, anchorTagSources: [], record: r };
   }
   function transition(state, action, v = {}, ms = 0, f, c, rows = []) {
-    const s = copy(state),
-      r = s.record,
-      i = s.stage;
+    const s = normalizeDraft(state), r = s.record, i = s.viewStep;
     need(Number.isInteger(ms) && ms >= 0 && ms <= 86400000, "计时无效");
-    if (i < 7) {
-      start(r, i);
-      r.steps[steps[i]].active_ms += ms;
-    }
-    if (action === "open") {
+    if (i < 7) s.pendingActiveMs[i] = (s.pendingActiveMs[i] || 0) + ms;
+    const accountTime = step => {
+      start(r, step);
+      r.steps[steps[step]].active_ms += s.pendingActiveMs[step] || 0;
+      delete s.pendingActiveMs[step];
+    };
+    const markDirty = step => {
+      s.dirtySteps = [...new Set([...s.dirtySteps, step])].sort();
+      r.review_completed = false;
+      if (s.stage === 7) s.stage = 6;
+    };
+    if (action === "navigate") {
+      need(Number.isInteger(v.step) && v.step >= 0 && v.step <= s.maxUnlockedStage, "只能查看已开放步骤");
+      s.viewStep = v.step;
+    } else if (action === "open") {
+      // Restoring a draft or viewing a submitted record never revises it.
     } else if (action === "amend") {
-      need(i >= 2, "完成读着费劲后才能修正");
-      const d = r.reading_difficulty;
-      need(
-        difficulty.includes(v.choice) && v.choice !== d.choice,
-        "请选择不同的费劲选项",
-      );
-      d.amendments.push({
-        from: d.choice,
-        to: v.choice,
-        at: now(),
-        reason: v.reason || "",
-        active_ms: ms,
-      });
+      // Retained for older callers; the current UI edits the original step form.
+      need(s.maxUnlockedStage >= 2, "完成读着费劲后才能修正");
+      const wasSubmitted = s.stage === 7, d = r.reading_difficulty;
+      need(difficulty.includes(v.choice) && v.choice !== d.choice, "请选择不同的费劲选项");
+      d.amendments.push({from:d.choice, to:v.choice, at:now(), reason:v.reason || "", active_ms:ms});
       d.choice = v.choice;
       d.rewrite = v.rewrite ?? d.rewrite;
-      derive(r);
-      if (i === 7) {
-        s.stage = 5;
-        r.review_completed = false;
+      markDirty(1);
+      deriveDraft(s);
+      if (wasSubmitted) {
+        s.stage = s.viewStep = 5;
         delete r.steps.conclusion.completed_at;
       }
     } else if (action === "reopen") {
+      // Compatibility: legacy callers deliberately restart the suffix.
       const target = v.step ?? 2;
-      need(Number.isInteger(target) && target >= 1 && target <= 6 && target < i, "只能返回已经完成的第二步及后续步骤");
-      s.stage = target;
+      need(Number.isInteger(target) && target >= 1 && target <= 6 && target < s.stage, "只能返回已经完成的第二步及后续步骤");
+      s.stage = s.viewStep = target;
       r.review_completed = false;
-      steps.slice(target).forEach((k) => {
-        r.steps[k] ??= {};
-        delete r.steps[k].completed_at;
-      });
+      steps.slice(target).forEach(k => { r.steps[k] ??= {}; delete r.steps[k].completed_at; });
     } else if (action === "following") {
       need([2, 3].includes(i), "只有 N1 和有剧透两步可以展开后文");
       need(["within_unit", "after_unit"].includes(v.scope), "后文范围无效");
       const parts = c.context[v.scope];
       need(parts.length, "本章此范围没有后文");
+      accountTime(i);
       const p = r.steps[steps[i]];
       p.viewed_following_text = true;
-      p.following_text_views.push({
-        opened_at: now(),
-        scope: v.scope,
-        range: { start: parts[0].range.start, end: parts.at(-1).range.end },
-      });
-    } else if (action === "notes") r.context.viewed_original_notes = true;
-    else {
-      need(
-        ["save", "complete", "submit"].includes(action) && i < 7,
-        "记录已提交，先重新检查",
-      );
+      p.following_text_views.push({opened_at:now(), scope:v.scope,
+        range:{start:parts[0].range.start, end:parts.at(-1).range.end}});
+      markDirty(i);
+    } else if (action === "notes") {
+      if (!r.context.viewed_original_notes) {
+        r.context.viewed_original_notes = true;
+        // The submitted summary is a view, not an eighth assessment step.
+        const step = i === 7 ? 6 : i;
+        s.viewStep = step;
+        markDirty(step);
+      }
+    } else {
+      need(["save", "complete", "submit"].includes(action), "未知操作");
+      need(i < 7, "当前判定已提交，请先返回要修改的步骤");
+      const before = semantic(r), previousResult = canonical([r.judgment, r.tags, r.star]);
       const per = [
         ["judgment"],
         ["choice", "paraphrase", "rewrite"],
@@ -398,7 +454,7 @@
         else delete r.unsure_sources[labels[i]];
       }
       if (i === 0 && v.judgment) {
-        need(!r.first_impression.locked_at, "第一印象已经锁定");
+        need(!r.first_impression.locked_at || v.judgment === r.first_impression.judgment, "第一印象已经锁定");
         r.first_impression.judgment = v.judgment;
       }
       if (i === 1) {
@@ -430,55 +486,67 @@
       }
       if (i === 6 && "tags" in v) {
         need(r.judgment === "pass" || !v.tags.length, "不过不能标标签");
-        r.tags = v.tags;
+        const had = r.tags?.includes("锚点问题");
+        const has = v.tags.includes("锚点问题");
+        if (has && !had) s.anchorTagSources = ["manual"];
+        else if (!has) s.anchorTagSources = [];
+        r.tags = copy(v.tags);
       }
-      derive(r);
-      if (action !== "save") {
-        need(
-          !r.rubric_uncovered || r.uncovered_reason.trim(),
-          "rubric 未覆盖必须写原因",
-        );
-        if (i === 0) {
-          need(
-            ["pass", "fail"].includes(r.first_impression.judgment),
-            "请选择第一印象",
-          );
-          r.first_impression.locked_at = now();
+      if (semantic(r) !== before) deriveDraft(s);
+      if (semantic(r) !== before) {
+        need(i !== 0 || !r.first_impression.locked_at, "第一印象已经锁定");
+        accountTime(i);
+        markDirty(i);
+        if (previousResult !== canonical([r.judgment, r.tags, r.star])) {
+          for (const step of [5, 6])
+            if (r.steps[steps[step]]?.completed_at || r.steps[steps[step]]?.status) markDirty(step);
         }
-        if (i === 1) {
-          need(
-            difficulty.includes(r.reading_difficulty.choice),
-            "请选择读着费劲的判断",
-          );
-          r.reading_difficulty.original_choice ??= r.reading_difficulty.choice;
-        }
-        if (i === 2) n1valid(r.n1, f);
-        r.steps[steps[i]].completed_at = now();
-        if (action === "complete") {
-          need(i < 6, "标签之后请提交");
+      }
+      if (action === "complete") {
+        need(i < 6, "标签之后请提交");
+        if (i === s.stage) {
+          validateStep(r, i, f);
+          need(!r.rubric_uncovered || r.uncovered_reason.trim(), "rubric 未覆盖必须写原因");
+          accountTime(i);
+          if (i === 0) r.first_impression.locked_at = now();
+          if (i === 1) r.reading_difficulty.original_choice ??= r.reading_difficulty.choice;
+          r.steps[steps[i]].completed_at = now();
+          s.dirtySteps = s.dirtySteps.filter(step => step !== i);
           s.stage++;
-          if (s.stage === 6 && r.judgment === "fail")
-            r.steps.tags = { status: "skipped_due_to_fail" };
+          s.maxUnlockedStage = Math.max(s.maxUnlockedStage, Math.min(s.stage, 6));
+          if (s.stage === 6 && r.judgment === "fail") r.steps.tags = {status:"skipped_due_to_fail"};
           else start(r, s.stage);
-        } else {
-          need(i === 6, "请按顺序完成所有步骤");
-          if (r.judgment === "fail")
-            r.steps.tags = { status: "skipped_due_to_fail" };
-          r.review_completed = true;
-          const old = rows.findLast(
-            (x) =>
-              x.record_type === "marginalia" && x.record_id === r.record_id,
-          );
-          Object.assign(r, {
-            revision: rows.length + 1,
-            supersedes_revision: old?.revision ?? null,
-            timestamp: now(),
-            event_version: s.version + 1,
-            annotator_version: "q1-annotator/3.4",
-          });
-          validate(r, f, old);
-          s.stage = 7;
         }
+        // Previously confirmed steps stay editable; final submit reviews their changes together.
+        s.viewStep = Math.min(i + 1, s.maxUnlockedStage);
+      } else if (action === "submit") {
+        need(i === 6 && s.stage !== 7 && s.maxUnlockedStage === 6, "请按顺序完成所有步骤后提交");
+        for (let step = 0; step <= 6; step++) validateStep(r, step, f);
+        if (r.rubric_uncovered && !r.uncovered_reason.trim()) {
+          const error = Error("rubric 未覆盖必须写原因"); error.step = 6; throw error;
+        }
+        accountTime(6);
+        // Older reopen drafts cleared a suffix of completion times. Once all steps
+        // have been opened, final review confirms that suffix at the current time.
+        const toConfirm = new Set([...s.dirtySteps, ...steps.flatMap((key, step) =>
+          !r.steps[key]?.completed_at ? [step] : [])]);
+        for (const step of toConfirm) {
+          if (step === 0) continue;
+          if (step === 6 && r.judgment === "fail") continue;
+          accountTime(step);
+          r.steps[steps[step]].completed_at = now();
+        }
+        if (r.judgment === "fail") r.steps.tags = {status:"skipped_due_to_fail"};
+        else r.steps.tags.completed_at = now();
+        r.review_completed = true;
+        const old = rows.findLast(x => x.record_type === "marginalia" && x.record_id === r.record_id);
+        Object.assign(r, {revision:rows.length + 1, supersedes_revision:old?.revision ?? null,
+          timestamp:now(), event_version:s.version + 1, annotator_version:"q1-annotator/3.5"});
+        validate(r, f, old);
+        s.stage = 7;
+        s.maxUnlockedStage = 6;
+        s.viewStep = 7;
+        s.dirtySteps = [];
       }
     }
     s.version++;
@@ -497,6 +565,7 @@
     validate,
     n1valid,
     initial,
+    normalizeDraft,
     transition,
   };
   root.Q1NoteProtocol = api;

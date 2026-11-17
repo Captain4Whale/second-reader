@@ -9,13 +9,20 @@ globalThis.Q1NoteView = async function (host, session) {
     index = 0,
     dirty = false,
     timer,
+    uiTimer,
     active = 0,
     clock = performance.now(),
     busy = false,
     editEpoch = 0,
     interactionEpoch = 0,
     composing = false,
-    inspecting = null;
+    tagMode = false,
+    pendingGroupFocus = null,
+    executing = false,
+    pendingContinuation = null,
+    commandTail = Promise.resolve(),
+    renderedCase = null,
+    renderedStep = null;
   const labels = [
     "第一印象",
     "读着费劲",
@@ -136,13 +143,13 @@ globalThis.Q1NoteView = async function (host, session) {
       const t = performance.now();
       if (document.hidden) active += t - clock;
       clock = t;
-      if (dirty && !busy && !composing) save().catch(shownError);
+      if (dirty && !composing) enqueue(() => save()).catch(shownError);
     },
     { signal: abort.signal },
   );
   const api = (path, body) => session.api(path, body);
   function textArea(parent, id, label, value = "") {
-    const shortcut = {paraphrase:"Y",n1Paraphrase:"Y",rewrite:"I",reason:"M",n1Reason:"R"}[id];
+    const shortcut = {paraphrase:"Y",n1Paraphrase:"Y",rewrite:"I",reason:"M",n1Reason:"R",otherWriting:"Shift+W",otherFailure:"Shift+X",uncoveredReason:"Shift+0"}[id];
     parent.append(node("label", label + (shortcut ? ` · ${shortcut}` : ""), "text"));
     parent.lastChild.htmlFor = id;
     const t = node("textarea");
@@ -203,7 +210,7 @@ globalThis.Q1NoteView = async function (host, session) {
     }
   }
   function collect() {
-    const s = data.state.stage,
+    const s = currentStep(),
       r = data.state.record;
     if (s === 7) return {};
     const v = {
@@ -229,14 +236,14 @@ globalThis.Q1NoteView = async function (host, session) {
       if (n.judgment === "pass") {
         n.writing_style = get("style") ?? null;
         if (n.writing_style === "其他写法")
-          n.other_writing_explanation = $("otherWriting")?.value ?? "";
+          n.other_writing_explanation = $("otherWriting")?.value ?? uiState().branches?.otherWriting ?? "";
       }
       if (n.judgment === "fail") {
         n.failure_types = [
           ...host.querySelectorAll("[name=failure]:checked"),
         ].map((x) => x.value);
         if (n.failure_types.includes("其他"))
-          n.other_failure_explanation = $("otherFailure")?.value ?? "";
+          n.other_failure_explanation = $("otherFailure")?.value ?? uiState().branches?.otherFailure ?? "";
       }
       v.n1 = n;
     }
@@ -251,30 +258,61 @@ globalThis.Q1NoteView = async function (host, session) {
       );
     return v;
   }
-  async function post(action, values = {}, renderAfter = true) {
-    if (busy) throw Error("正在保存，请稍候");
-    const epoch = editEpoch;
-    const duration = elapsed();
+  const currentStep = () => data.state.viewStep ?? data.state.stage;
+  const currentId = () => boot.record_ids[index];
+  const uiState = () => data.state.ui ??= {};
+  function captureUI() {
+    const ui = uiState();
+    const branches = {...ui.branches};
+    for (const [id, key] of [["otherWriting","otherWriting"],["otherFailure","otherFailure"]])
+      if ($(id)) branches[key] = $(id).value;
+    const following = {};
+    host.querySelectorAll(".followingText").forEach(el => {
+      if (!el.hidden) following[el.dataset.scope] = true;
+    });
+    return {...ui, branches, readerScroll:$("readerScroll").scrollTop,
+      earlierOpen:$("earlier").open, notesOpen:$("notes").open,
+      olderOpen:$("moreEarlier").hidden && !!data.earlier_count,
+      previewOpen:$("notePreview").open, unitOpen:$("unitDetails").open,
+      followingStep:currentStep(), following};
+  }
+  function enqueue(work, {stepBound = false, saveAfter = true} = {}) {
+    const id = boot && currentId(), step = data && currentStep();
+    const task = commandTail.then(async () => {
+      if (id && (id !== currentId() || (stepBound && step !== currentStep()))) return;
+      executing = true;
+      try {
+        const result = await work();
+        while (saveAfter && dirty && !composing) await save(true);
+        return result;
+      } finally { executing = false; }
+    });
+    commandTail = task.catch(() => {});
+    return task;
+  }
+  async function persistUI() {
+    if (!data || renderedCase !== currentId()) return;
+    const ui = captureUI();
+    data.state.ui = ui;
+    await api("/action", {id:currentId(), action:"ui_meta", values:{ui}});
+  }
+  function lockEditing() {
+    const controls = [...host.querySelectorAll("#workflow input,#workflow textarea")];
+    const previous = controls.map(el => [el, el.disabled]);
+    controls.forEach(el => { el.disabled = true; });
+    return () => previous.forEach(([el, disabled]) => { el.disabled = disabled; });
+  }
+  async function post(action, values = {}, renderAfter = true, epoch = editEpoch) {
+    const id = currentId(), duration = elapsed(), ui = captureUI();
     let succeeded = false;
-    const controls =
-      action === "save"
-        ? []
-        : [...host.querySelectorAll("input,textarea,select")].map((e) => [
-            e,
-            e.disabled,
-          ]);
-    controls.forEach(([e]) => (e.disabled = true));
+    const unlock = ["navigate","complete","submit"].includes(action) ? lockEditing() : () => {};
     busy = true;
-    $("status").textContent = "正在保存…";
-    host.querySelectorAll("button").forEach((b) => (b.disabled = true));
+    $("status").textContent = "正在保存草稿…";
     try {
       const result = await api("/action", {
-        id: boot.record_ids[index],
-        action,
-        values,
-        version: data?.state.version,
-        active_ms: duration,
+        id, action, values, ui, version:data.state.version, active_ms:duration,
       });
+      if (id !== currentId()) return result;
       data = result;
       succeeded = true;
       dirty = editEpoch !== epoch;
@@ -284,81 +322,88 @@ globalThis.Q1NoteView = async function (host, session) {
         const focus = rememberFocus();
         render();
         if (action === "save") restoreFocus(focus);
-      }
-      else updateStatus();
+      } else updateStatus();
       return result;
     } catch (e) {
       active += duration;
-      $("status").textContent = e.code === "FORM_VALIDATION"
-        ? "请检查判定内容" : "保存失败 · 请重试";
+      if (e.currentState && e.currentState.version !== data.state.version) {
+        const oldStep = currentStep(), hasNewInput = editEpoch !== epoch;
+        data.state = e.currentState;
+        data.receipt = e.receipt;
+        dirty = hasNewInput;
+        if (oldStep !== currentStep() || !hasNewInput) {
+          const focus = rememberFocus(); render(); restoreFocus(focus);
+        }
+      }
+      if (e.code === "FORM_VALIDATION" && !dirty) render();
+      if (Number.isInteger(e.step) && e.step !== currentStep()) {
+        data = await api("/action", {id,action:"navigate",values:{step:e.step},version:data.state.version});
+        render();
+      }
       throw e;
     } finally {
+      unlock();
       busy = false;
-      controls.forEach(([e, disabled]) => {
-        if (e.isConnected) e.disabled = disabled;
-      });
-      host.querySelectorAll("button").forEach((b) => (b.disabled = false));
       updateNavigation();
-      $("prev").disabled = index === 0;
-      $("next").disabled = index === boot.record_ids.length - 1;
-      if (dirty && succeeded) {
-        clearTimeout(timer);
-        timer = setTimeout(() => save(true).catch(shownError), 700);
-      }
+      if (succeeded) updateStatus();
     }
   }
   function updateStatus() {
-    $("status").textContent = dirty ? "草稿尚未保存" : "浏览器和文件已同步";
+    const receipt = data.receipt ?? session.receipt?.(currentId());
+    const parts = [dirty || receipt?.browser_saved === false ? "草稿尚未保存" : "草稿已保存在此浏览器"];
+    if (receipt?.pending_file) parts.push("已提交记录待同步文件");
+    else if (receipt?.file_revision) parts.push(`已提交记录已同步文件（修订 ${receipt.file_revision}）`);
+    else parts.push("尚无已提交记录");
+    if (receipt?.submitted_revision && !data.state.record.review_completed)
+      parts.push("本条有待提交修改");
+    $("status").textContent = parts.join(" · ");
   }
-  async function save(renderAfter = false) {
+  async function save(renderAfter = true) {
     clearTimeout(timer);
-    if (!dirty) return;
-    if (busy || composing) return;
+    if (!dirty || composing || (currentStep() === 0 && data.state.record.first_impression.locked_at)) return;
     await post("save", collect(), renderAfter);
   }
   async function flush() {
     clearTimeout(timer);
-    if (busy) throw Error("正在保存，请稍候再操作");
-    if (dirty) await save();
+    if (dirty) await save(true);
     if (data && $("unitNote").value !== data.unit_note) {
-      await api("/action", {
-        id: boot.record_ids[index],
-        action: "unit_note",
-        values: { remarks: $("unitNote").value },
-      });
-      data.unit_note = $("unitNote").value;
+      const value = $("unitNote").value;
+      const result = await api("/action", {id:currentId(),action:"unit_note",values:{remarks:value}});
+      data.unit_note = value;
+      data.receipt = result.receipt;
     }
+    await persistUI();
   }
   async function openCase(i) {
     if (i < 0 || i >= boot.record_ids.length) return;
-    await flush();
-    busy = true;
-    try {
-      const result = await api("/action", {
-        id: boot.record_ids[i],
-        action: "open",
-      });
-      index = i;
-      data = result;
-    } finally {
-      busy = false;
-    }
+    if (data) await flush();
+    const unlock = data ? lockEditing() : () => {};
+    let result;
+    try { result = await api("/action", {id:boot.record_ids[i],action:"open"}); }
+    finally { unlock(); }
+    index = i;
+    data = result;
     active = 0;
     clock = performance.now();
+    tagMode = false;
+    pendingGroupFocus = null;
     render();
     $("prev").disabled = index === 0;
     $("next").disabled = index === boot.record_ids.length - 1;
-    $("notePreview").open = false;
-    $("caseTitle").scrollIntoView({ block: "nearest" });
-    requestAnimationFrame(locateAnchor);
+    if (data.state.ui?.readerScroll === undefined) requestAnimationFrame(locateAnchor);
+    focusDecision();
   }
   function render() {
-    const sourceScroll = $("readerScroll").scrollTop;
+    const sameCase = renderedCase === currentId(), sameStep = sameCase && renderedStep === currentStep();
+    const sourceScroll = sameCase ? $("readerScroll").scrollTop : (uiState().readerScroll ?? 0);
+    const ui = uiState();
+    if (!sameStep) tagMode = false;
+    renderedCase = currentId(); renderedStep = currentStep();
     requestAnimationFrame(() => { $("readerScroll").scrollTop = sourceScroll; });
-    inspecting = null;
+
     updateNavigation();
     requestAnimationFrame(updateLayout);
-    const s = data.state.stage,
+    const s = currentStep(),
       r = data.state.record,
       c = boot.form.choices;
     $("position").textContent = `${index + 1} / ${boot.record_ids.length} 条`;
@@ -368,18 +413,23 @@ globalThis.Q1NoteView = async function (host, session) {
     $("chapter").textContent = data.case.chapter_title;
     $("body").textContent = data.case.body_text;
     $("previewBody").textContent = data.case.body_text;
-    $("decisionGo").textContent = "定位当前判定";
+    $("decisionGo").textContent = "定位当前判定 · C";
+    $("sessionIdentity").textContent = `${boot.session_id} · 文件夹 ${boot.directory_name} · 工具 3.5`;
     segments($("sourceText"), data.prefix);
     $("chapter").hidden = $("sourceText").firstElementChild?.textContent.trim() === data.case.chapter_title?.trim();
     segments($("recentText"), data.recent);
     $("olderText").replaceChildren();
-    $("earlier").open = false;
+    $("earlier").open = !!ui.earlierOpen;
     $("moreEarlier").hidden = !data.earlier_count;
-    $("notes").open = false;
+    $("notes").open = !!ui.notesOpen;
     $("notesText").replaceChildren();
     $("noteStatus").textContent =
       data.notes_status === "resolved" ? "可查看" : "未解析或部分未解析";
     $("unitNote").value = data.unit_note;
+    $("unitDetails").open = !!ui.unitOpen;
+    $("notePreview").open = !!ui.previewOpen;
+    if (ui.olderOpen) { segments($("olderText"), data.case.context.earlier.slice(0,-4)); $("moreEarlier").hidden=true; }
+    if (ui.notesOpen) renderNotes(data.case.context.original_notes);
     const f = $("following");
     f.replaceChildren();
     if (s === 2 || s === 3) {
@@ -393,30 +443,34 @@ globalThis.Q1NoteView = async function (host, session) {
       for (const scope of ["within_unit", "after_unit"]) {
         const button = node(
           "button",
-          scope === "within_unit" ? "展开单元内后文" : "展开单元外后文",
+          scope === "within_unit" ? "展开单元内后文 · L" : "展开单元外后文 · Shift+L",
           "followingControl",
         );
         button.type = "button";
         button.id = "following-" + scope;
         button.hidden = !data.has_following[scope];
         const content = node("div", undefined, "followingText");
-        content.hidden = true;
-        button.onclick = async () => {
+        content.dataset.scope = scope;
+        content.hidden = !(ui.followingStep === s && ui.following?.[scope]);
+        if (!content.hidden) { segments(content,data.case.context[scope]); button.textContent=button.textContent.replace("展开","收起"); }
+        button.activate = async () => {
           try {
             if (!content.hidden) {
               content.hidden = true;
               button.textContent = button.textContent.replace("收起", "展开");
-              return;
+              await persistUI(); return;
             }
             await flush();
             const result = await post("following", { scope }, false);
             segments(content, result.following);
             content.hidden = false;
             button.textContent = button.textContent.replace("展开", "收起");
+            await persistUI();
           } catch (e) {
             shownError(e);
           }
         };
+        button.onclick = () => enqueue(button.activate, {stepBound:true}).catch(shownError);
         f.append(button, content);
       }
     } else if (s < 2)
@@ -465,14 +519,21 @@ globalThis.Q1NoteView = async function (host, session) {
           ),
         );
       const b = node("button", "重新检查 N1 及后续项");
-      b.onclick = () => post("reopen").catch(shownError);
+      b.onclick = () => enqueue(() => inspect(2)).catch(shownError);
       w.append(b);
       updateStatus();
       return;
     }
+    if (s === 0 && r.first_impression.locked_at) {
+      w.replaceChildren(node("h2", "第一印象 · 已锁定"), node("p", outcomeLabel(r.first_impression.judgment)),
+        node("p", "第一印象确认后不能修改。已开放步骤可直接切换。", "muted"));
+      const b = node("button", "返回第 2 步 · 2 / Enter");
+      b.onclick = () => enqueue(() => inspect(1)).catch(shownError);
+      $("reviewActions").replaceChildren(b); updateStatus(); return;
+    }
     const spec = boot.form.steps[s];
     w.append(
-      node("div", `第 ${s + 1} / 7 步`, "eyebrow"),
+      node("div", `第 ${s + 1} / 7 步 · Enter ${s === 6 ? "提交" : "继续"} · 1–7 切换已开放步骤`, "eyebrow"),
       node("h2", s === 6 && r.judgment === "fail" ? "提交检查" : spec.label),
     );
     if (s === 0) w.append(node("p", spec.help));
@@ -486,7 +547,7 @@ globalThis.Q1NoteView = async function (host, session) {
       });
       w.append(node("p", stepHint(spec), "stepHint"));
       help.append(
-        node("summary", `完整判定说明 · rubric ${spec.section}`),
+        node("summary", `完整判定说明 · H · rubric ${spec.section}`),
         helpContent(spec.help),
       );
       w.append(help);
@@ -551,7 +612,7 @@ globalThis.Q1NoteView = async function (host, session) {
             w,
             "otherWriting",
             "这是什么写法、增量在哪（必填）",
-            n.other_writing_explanation,
+            n.other_writing_explanation ?? ui.branches?.otherWriting,
           );
       }
       if (n.judgment === "fail") {
@@ -570,7 +631,7 @@ globalThis.Q1NoteView = async function (host, session) {
             w,
             "otherFailure",
             "其他失败类型说明（必填）",
-            n.other_failure_explanation,
+            n.other_failure_explanation ?? ui.branches?.otherFailure,
           );
           w.append(
             node(
@@ -584,10 +645,10 @@ globalThis.Q1NoteView = async function (host, session) {
       textArea(w, "n1Paraphrase", "读懂后的复述（选填）", n.paraphrase);
       textArea(w, "n1Reason", "N1 理由（选填）", n.reason);
     }
-    if (s === 3) check(w, "spoiler", "有剧透", r.vetoes.spoiler);
+    if (s === 3) check(w, "spoiler", "有剧透 · F 勾 / P 不勾", r.vetoes.spoiler);
     if (s === 4) {
-      check(w, "incorrect", "有错误信息", r.vetoes.incorrect_information);
-      check(w, "verification", "待核实（不影响结论）", r.needs_verification);
+      check(w, "incorrect", "有错误信息 · F 勾 / P 不勾", r.vetoes.incorrect_information);
+      check(w, "verification", "待核实（不影响结论）· V", r.needs_verification);
       w.append(
         node(
           "p",
@@ -616,8 +677,9 @@ globalThis.Q1NoteView = async function (host, session) {
       if (failures.length) w.append(node("p", failures.join("、")));
     }
     if (s === 6 && r.judgment === "pass") {
-      for (const label of c.tags) {
-        const i = check(w, "tag", label, r.tags?.includes(label));
+      w.append(node("p", tagMode ? "标签快捷键已启用：5–9 选择，Esc 退出" : "按 T 进入标签组；普通状态 1–7 切换步骤", "tagModeHint"));
+      for (const [tagIndex, label] of c.tags.entries()) {
+        const i = check(w, "tag", `${label} · T 后 ${tagIndex+5}`, r.tags?.includes(label));
         i.value = label;
         if (label === "锚点问题" && r.n1.following_text_use === "挂早了")
           i.disabled = true;
@@ -643,7 +705,7 @@ globalThis.Q1NoteView = async function (host, session) {
         r.uncovered_reason,
       );
     if (s >= 5 && r.judgment === "pass")
-      check(flags, "star", "星 · 范例级批注", r.star);
+      check(flags, "star", "星 · 范例级批注 · S", r.star);
     textArea(flags, "reason", "整条理由（选填）", r.reason);
     w.append(flags);
     const helpPanel = w.querySelector("details.help");
@@ -651,15 +713,16 @@ globalThis.Q1NoteView = async function (host, session) {
     const complete = node(
       "button",
       s === 6
-        ? "确认并提交本条"
+        ? "确认并提交本条 · Enter"
         : s === 0
-          ? "锁定第一印象，继续"
-          : "完成此步，继续",
+          ? "锁定第一印象，继续 · Enter"
+          : "继续下一步 · Enter",
       "primary",
     );
-    complete.onclick = () => completeCurrent(false).catch(shownError);
+    complete.onclick = () => queueContinue(false);
     complete.id = "noteComplete";
     $("reviewActions").replaceChildren(complete);
+    if (s === 6) $("reviewActions").append(node("span", "提交后下一条 · Shift+Enter", "muted"));
     updateStatus();
     autoGrow();
   }
@@ -669,81 +732,69 @@ globalThis.Q1NoteView = async function (host, session) {
       t.style.height = Math.max(72, t.scrollHeight + 2) + "px";
     });
   }
-  $("workflow").addEventListener("input", (e) => {
+  $("workflow").addEventListener("input", () => {
     editEpoch++;
     dirty = true;
     updateStatus();
     autoGrow();
     clearTimeout(timer);
-    if (!composing) timer = setTimeout(() => save().catch(shownError), 500);
+    if (!composing) timer = setTimeout(() => enqueue(() => save()).catch(shownError), 500);
   });
-  $("workflow").addEventListener("change", async (e) => {
+  $("workflow").addEventListener("change", (e) => {
     if (!e.target.matches("input")) return;
     dirty = true;
     clearTimeout(timer);
-    try {
-      await save(true);
-    } catch (err) {
-      shownError(err);
-    }
+    enqueue(() => save(true), {stepBound:true}).catch(shownError);
   });
-  $("prev").onclick = () => openCase(index - 1).catch(shownError);
+  $("prev").onclick = () => enqueue(() => openCase(index - 1)).catch(shownError);
   $("anchorGo").onclick = locateAnchor;
-  $("decisionGo").onclick = () => { if (inspecting !== null) render(); focusDecision(); };
-  $("next").onclick = () => openCase(index + 1).catch(shownError);
-  $("moreEarlier").onclick = async () => {
-    try {
-      segments(
-        $("olderText"),
-        await api("/earlier?id=" + encodeURIComponent(boot.record_ids[index])),
-      );
-      $("moreEarlier").hidden = true;
-    } catch (e) {
-      shownError(e);
-    }
-  };
-  $("notes").addEventListener("toggle", async () => {
-    if (!$("notes").open) return;
-    try {
+  $("decisionGo").onclick = focusDecision;
+  $("next").onclick = () => enqueue(() => openCase(index + 1)).catch(shownError);
+  async function showEarlier() {
+    segments($("olderText"), await api("/earlier?id=" + encodeURIComponent(currentId())));
+    $("moreEarlier").hidden = true;
+    await persistUI();
+  }
+  $("moreEarlier").onclick = () => enqueue(showEarlier).catch(shownError);
+  function renderNotes(notes) {
+    const target = $("notesText"); target.replaceChildren();
+    if (!notes.items.length)
+      target.append(node("p", "未解析：未找到可核实的注释链接，可继续标注。", "muted"));
+    for (const n of notes.items)
+      target.append(node("p", n.status === "resolved" ? `${n.marker} ${n.text}` : `${n.marker} 未解析，可继续标注。`));
+  }
+  $("notes").addEventListener("toggle", () => {
+    if (!data || !$("notes").open) return;
+    renderNotes(data.case.context.original_notes);
+    if (data.state.record.context.viewed_original_notes) return;
+    enqueue(async () => {
       await flush();
+      const step = currentStep();
       const result = await post("notes", {}, false);
-      const host = $("notesText");
-      host.replaceChildren();
-      if (!result.notes.items.length)
-        host.append(
-          node("p", "未解析：未找到可核实的注释链接，可继续标注。", "muted"),
-        );
-      for (const n of result.notes.items)
-        host.append(
-          node(
-            "p",
-            n.status === "resolved"
-              ? `${n.marker} ${n.text}`
-              : `${n.marker} 未解析，可继续标注。`,
-          ),
-        );
-    } catch (e) {
-      shownError(e);
-    }
+      if (currentStep() !== step) render();
+      renderNotes(result.notes);
+      await persistUI();
+    }).catch(shownError);
   });
-  $("saveUnit").onclick = async () => {
-    try {
-      await flush();
-      await api("/action", {
-        id: boot.record_ids[index],
-        action: "unit_note",
-        values: { remarks: $("unitNote").value },
-      });
-      data.unit_note = $("unitNote").value;
-      $("status").textContent = "单元备注已保存";
-    } catch (e) {
-      shownError(e);
+  $("saveUnit").onclick = () => enqueue(async () => {
+    await flush();
+    updateStatus();
+  }).catch(shownError);
+  for (const id of ["earlier","notes","notePreview","unitDetails"])
+    $(id).addEventListener("toggle", () => {
+      if (data && renderedCase === currentId()) enqueue(persistUI, {saveAfter:false}).catch(shownError);
+    });
+  $("readerScroll").addEventListener("scroll", () => {
+    if (data) {
+      uiState().readerScroll = $("readerScroll").scrollTop;
+      clearTimeout(uiTimer);
+      uiTimer = setTimeout(() => enqueue(persistUI, {saveAfter:false}).catch(shownError), 200);
     }
-  };
+  }, {passive:true});
   window.addEventListener(
     "beforeunload",
     (e) => {
-      if (dirty || busy) {
+      if (dirty || busy || session.browserSaved === false) {
         e.preventDefault();
         e.returnValue = "";
       }
@@ -769,85 +820,71 @@ globalThis.Q1NoteView = async function (host, session) {
     document.addEventListener(event, () => interactionEpoch++, {
       signal: abort.signal,
     });
+  function queueContinue(advance) {
+    if (pendingContinuation) return;
+    pendingContinuation = enqueue(() => completeCurrent(advance))
+      .catch(shownError).finally(() => { pendingContinuation = null; });
+  }
   async function completeCurrent(advance) {
-    if (busy || inspecting !== null) return;
-    const stage = data.state.stage;
-    if (stage === 7 || (advance && stage !== 6)) return;
+    const step = currentStep();
+    if (step === 7 || (advance && step !== 6)) return;
+    if (step === 0 && data.state.record.first_impression.locked_at) return inspect(1);
     const epoch = interactionEpoch;
     await flush();
-    await post(stage === 6 ? "submit" : "complete", collect());
-    if (advance && epoch === interactionEpoch) await openCase(index + 1);
-    else if (epoch === interactionEpoch) {
-      focusDecision();
-      const first = host.querySelector("#workflow input:not(:disabled)");
-      first?.focus({preventScroll:true});
+    if (step === 6 && data.state.stage === 7 && data.state.record.review_completed) {
+      if (advance) await openCase(index + 1);
+      return;
     }
+    await post(step === 6 ? "submit" : "complete", collect());
+    if (advance && epoch === interactionEpoch) await openCase(index + 1);
+    else if (epoch === interactionEpoch) focusDecision();
   }
   async function init() {
     boot = await api("/bootstrap");
     await openCase(Math.max(0, boot.record_ids.indexOf(boot.last_id)));
   }
   function updateNavigation() {
-    const grid = $("unitGrid");
-    grid.replaceChildren();
+    const submitted = new Set(session.state.rows.filter(r => r.record_type === "marginalia").map(r => r.record_id));
+    const grid = $("unitGrid"); grid.replaceChildren();
+    let pending = 0;
     boot.record_ids.forEach((rid, i) => {
-      const st = session.state.drafts[rid];
-      const b = node(
-        "button",
-        String(i + 1),
-        "unit-cell" + (st?.stage === 7 ? " done" : st ? " started" : ""),
-      );
-      b.title = `第 ${i + 1} 条 · ${st?.stage === 7 ? "已完成" : st ? "进行中" : "未开始"}`;
+      const st = session.state.drafts[rid], done = submitted.has(rid), changed = done && st && !st.record.review_completed;
+      if (changed) pending++;
+      const status = changed ? "有待提交修改" : done ? "已提交" : st?.record.first_impression.judgment ? "进行中" : "未开始";
+      const b = node("button", String(i+1), "unit-cell" + (done ? " done" : status === "进行中" ? " started" : "") + (changed ? " changed" : ""));
+      b.title = `第 ${i+1} 条 · ${status}`;
       b.setAttribute("aria-label", b.title);
-      b.setAttribute("aria-current", String(i === index));
-      b.onclick = () => openCase(i).catch(shownError);
+      b.setAttribute("aria-current", String(i===index));
+      b.onclick = () => enqueue(() => openCase(i)).catch(shownError);
       grid.append(b);
     });
-    const nav = $("rubricSteps");
-    nav.replaceChildren();
-    labels.forEach((label, i) => {
-      const done =
-        !!data.state.record.steps[session.form.steps[i].id]?.completed_at;
-      const b = node("button", `${i + 1} ${label}${done ? " ✓" : ""}`);
-      b.disabled = i > Math.min(6, data.state.stage);
-      b.onclick = () => inspect(i).catch(shownError);
+    const nav = $("rubricSteps"); nav.replaceChildren();
+    labels.forEach((label,i) => {
+      const changed = data.state.dirtySteps?.includes(i);
+      const done = !!data.state.record.steps[session.form.steps[i].id]?.completed_at;
+      const b = node("button", `${i+1} ${label}${changed ? " · 已修改" : done ? " ✓" : ""}`);
+      b.disabled = i > (data.state.maxUnlockedStage ?? Math.min(6,data.state.stage));
+      b.setAttribute("aria-current", String(i === currentStep()));
+      b.onclick = () => enqueue(() => inspect(i)).catch(shownError);
       nav.append(b);
     });
-    $("batchCounts").textContent =
-      `已完成 ${boot.record_ids.filter((id) => session.state.drafts[id]?.stage === 7).length} / ${boot.record_ids.length}`;
+    $("batchCounts").textContent = `已提交 ${submitted.size} / ${boot.record_ids.length}${pending ? ` · ${pending} 条待提交修改` : ""}`;
   }
   async function inspect(i) {
-    if (i < 0 || i > 6 || i > data.state.stage) return;
+    if (i < 0 || i > 6 || i > (data.state.maxUnlockedStage ?? Math.min(6,data.state.stage))) return;
     await flush();
-    if (i === data.state.stage) {
-      render();
-      return;
-    }
-    if (i >= 1) {
-      await post("reopen", {step:i});
-      focusDecision();
-      return;
-    }
-    inspecting = i;
-    const w = $("workflow");
-    w.replaceChildren(
-      node("h2", "第一印象 · 已完成，只读"),
-      node("p", outcomeLabel(data.state.record.first_impression.judgment)),
-    );
-    const returnLabel = data.state.stage === 7 ? "返回已完成结果" : `返回第 ${data.state.stage + 1} 步：${labels[data.state.stage]}`;
-    const b = node("button", returnLabel);
-    b.onclick = () => { render(); focusDecision(); };
-    $("decisionGo").textContent = returnLabel;
-    w.append(b);
-    $("reviewActions").replaceChildren();
+    if (i === currentStep()) { focusDecision(); return; }
+    tagMode = false;
+    await post("navigate", {step:i});
+    focusDecision();
   }
-  $("workflow").addEventListener("compositionstart", () => {
+  host.addEventListener("compositionstart", () => {
     composing = true;
     clearTimeout(timer);
   });
-  $("workflow").addEventListener("compositionend", () => {
+  host.addEventListener("compositionend", () => {
     composing = false;
-    timer = setTimeout(() => save().catch(shownError), 500);
+    timer = setTimeout(() => enqueue(() => save()).catch(shownError), 500);
   });
   $("unitNote").addEventListener("input", () => {
     session.state.unitDrafts[data.case.unit_key] = $("unitNote").value;
@@ -857,22 +894,14 @@ globalThis.Q1NoteView = async function (host, session) {
   $("unitNote").addEventListener("blur", () => {
     $("saveUnit").click();
   });
-  $("retry").onclick = async () => {
-    try {
-      if (
-        (await session.directory.requestPermission({ mode: "readwrite" })) !==
-        "granted"
-      )
-        throw Error("需要文件夹授权");
-      await session.sync();
-      dirty = false;
-      await openCase(index);
-      $("error").hidden = true;
-      $("saveError").hidden = true;
-    } catch (e) {
-      shownError(e);
-    }
-  };
+  $("retry").onclick = () => enqueue(async () => {
+    if ((await session.directory.requestPermission({mode:"readwrite"})) !== "granted")
+      throw Error("需要文件夹授权");
+    await session.sync();
+    await flush();
+    await openCase(index);
+    $("error").hidden = true; $("saveError").hidden = true;
+  }).catch(shownError);
   $("retryVisible").onclick = () => $("retry").click();
   $("exportNote").onclick = () => {
     const a = document.createElement("a"),
@@ -907,125 +936,123 @@ globalThis.Q1NoteView = async function (host, session) {
     el.focus();
     el.scrollIntoView({ block: "nearest" });
   }
+  function queuedGroupKey(name, key) {
+    const all = [...host.querySelectorAll(`#workflow [name="${name}"]`)].filter(el => !el.disabled);
+    if (!all.length) return;
+    const focused = all.includes(host.activeElement) ? host.activeElement : all.find(el => el.checked) || all[0];
+    const offset = ["arrowright","arrowdown"].includes(key) ? 1 : -1;
+    const target = key === " " ? focused : all[(all.indexOf(focused) + offset + all.length) % all.length];
+    target.focus();
+    if (key === " " || target.type === "radio") target.click();
+  }
   function keydown(e) {
-    if (
-      e.isComposing ||
-      composing ||
-      e.keyCode === 229 ||
-      e.metaKey ||
-      e.ctrlKey ||
-      e.altKey
-    )
-      return;
-    const t = e.composedPath()[0],
-      key = e.key.toLowerCase();
+    if (e.isComposing || composing || e.keyCode === 229) return;
+    const t = e.composedPath()[0], key = e.key.toLowerCase();
+    if (t.id === "unitNote" && e.ctrlKey && !e.metaKey && !e.altKey && key === "enter") {
+      e.preventDefault(); $("saveUnit").click(); return;
+    }
+    if (e.metaKey || e.ctrlKey || e.altKey) return;
     if ($("shortcutHelp").open) {
       if (key === "escape") { e.preventDefault(); $("shortcutHelp").close(); }
       return;
     }
     if (key === "escape") {
-      e.preventDefault(); focusDecision(); return;
+      e.preventDefault(); tagMode = false; updateTagMode(); focusDecision(); return;
     }
     if (t.closest?.('textarea,select,input:not([type=radio]):not([type=checkbox]),[contenteditable=true]')) return;
-    if (t.matches?.('input') && ['arrowup','arrowdown','arrowleft','arrowright',' '].includes(key)) return;
-    if (
-      key === "enter" &&
-      t.id !== "noteComplete" &&
-      t.closest?.("button,a,summary")
-    )
-      return;
-    if (e.repeat && !["j", "k"].includes(key)) return;
-    if (busy) return;
-    const run = (f) => {
+    if (pendingGroupFocus && ['arrowup','arrowdown','arrowleft','arrowright',' '].includes(key)) {
       e.preventDefault();
-      Promise.resolve().then(f).catch(shownError);
-    };
-    if (key === "?") return run(() => $("noteHelp").click());
-    if (["j", "k"].includes(key)) {
-      e.preventDefault();
-      (e.shiftKey || innerWidth < 960 ? window : $("readerScroll")).scrollBy({
-        top: key === "j" ? 180 : -180,
-      });
-      return;
+      const group = pendingGroupFocus;
+      enqueue(() => queuedGroupKey(group,key)).catch(shownError); return;
     }
-    if (key === "arrowdown" || key === "arrowup")
-      return run(() => openCase(index + (key === "arrowdown" ? 1 : -1)));
-    if (key === "arrowleft" || key === "arrowright")
-      return run(() => openCase(index + (key === "arrowright" ? 1 : -1)));
-    if (key === "[" || key === "]")
-      return run(() =>
-        inspect(
-          (inspecting ?? Math.min(data.state.stage, 6)) +
-            (key === "[" ? -1 : 1),
-        ),
-      );
-    if (data.state.stage === 6 && /^[5-9]$/.test(key))
-      return run(() =>
-        host.querySelectorAll("[name=tag]")[Number(key) - 5]?.click(),
-      );
-    if (/^[1-7]$/.test(key) && !e.shiftKey)
-      return run(() => inspect(Number(key) - 1));
-    if (e.shiftKey && /^Digit[1-7]$/.test(e.code))
-      return run(() => {
-        const help = host.querySelector("#workflow details.help");
-        if (help) help.open = !help.open;
-      });
-    if (key === "c") return run(() => $("decisionGo").click());
-    if (key === "a") return run(locateAnchor);
-    if (["e","o","h"].includes(key)) return run(() => {
-      const el = key === "e" ? $("earlier") : key === "o" ? $("notes") : host.querySelector("#workflow details.help");
-      if (el) { el.open = !el.open; el.querySelector("summary")?.focus(); }
-    });
-    if (key === "l" && inspecting === null) return run(() => {
-      const el = $("following-" + (e.shiftKey ? "after_unit" : "within_unit"));
-      if (el && !el.hidden && !el.disabled) el.click();
-    });
-    if (inspecting !== null) return;
-    if (key === "y") return run(() => focusField(data.state.stage === 2 ? "n1Paraphrase" : "paraphrase"));
-    if (key === "i") return run(() => focusField("rewrite"));
-    if (data.state.stage === 1 && ["q","g","z"].includes(key))
-      return run(() => host.querySelectorAll('[name="difficulty"]')[["q","g","z"].indexOf(key)]?.click());
-    const groups = {d:"difficulty",b:"followingUse",w:"style",x:"failure",t:"tag"};
-    if (groups[key]) return run(() => focusGroup(groups[key]));
-    if (key === "enter") return run(() => completeCurrent(e.shiftKey));
-    if (key === "r")
-      return run(() =>
-        focusField(data.state.stage === 2 ? "n1Reason" : "reason"),
-      );
-    if (key === "m") return run(() => focusField("reason"));
-    if (key === "u") return run(() => focusField("unitNote"));
-    const toggle = (name) => {
-      const el = host.querySelector(`#workflow [name="${name}"]`);
-      el?.click();
+    if (t.matches?.('input') && ['arrowup','arrowdown','arrowleft','arrowright',' '].includes(key)) return;
+    if (key === "enter" && t.id !== "noteComplete" && t.closest?.("button,a,summary")) return;
+    if (e.repeat && !["j","k"].includes(key)) return;
+    const run = (f,stepBound=false) => {
+      e.preventDefault();
+      enqueue(f,{stepBound}).catch(shownError);
     };
+    // Native browser pickers need the original trusted user activation.
+    if (e.shiftKey && key === "o") { e.preventDefault(); document.getElementById("openFolder").click(); return; }
+    if (e.shiftKey && key === "s") { e.preventDefault(); $("exportNote").click(); return; }
+    if (e.shiftKey && key === "v") { e.preventDefault(); $("retry").click(); return; }
+    if (key === "?" || (e.shiftKey && e.code === "Slash")) return run(() => $("noteHelp").click(),false);
+    if (["j","k"].includes(key)) {
+      e.preventDefault();
+      (e.shiftKey || innerWidth < 960 ? window : $("readerScroll")).scrollBy({top:key === "j" ? 180 : -180}); return;
+    }
+    if (["arrowdown","arrowup","arrowleft","arrowright"].includes(key))
+      return run(() => openCase(index + (["arrowdown","arrowright"].includes(key) ? 1 : -1)),false);
+    if (key === "[" || key === "]" || ["BracketLeft","BracketRight"].includes(e.code))
+      return run(() => inspect(Math.min(currentStep(),6) + (key === "[" || e.code === "BracketLeft" ? -1 : 1)),false);
+    if (/^[1-9]$/.test(key) && !e.shiftKey) return run(() => {
+      if (tagMode && currentStep() === 6 && /^[5-9]$/.test(key))
+        host.querySelectorAll('[name="tag"]')[Number(key)-5]?.click();
+      else if (Number(key) <= 7) return inspect(Number(key)-1);
+    },false);
+    if (e.shiftKey && e.code === "Digit0") return run(() => focusField("uncoveredReason"));
+    if (e.shiftKey && /^Digit[1-7]$/.test(e.code)) return run(() => toggleDetails(host.querySelector("#workflow details.help")));
+    if (e.shiftKey && key === "w") return run(() => focusField("otherWriting"));
+    if (e.shiftKey && key === "x") return run(() => focusField("otherFailure"));
+    if (e.shiftKey && key === "e") return run(async () => { $("earlier").open=true; await showEarlier(); });
+    if (e.shiftKey && key === "c") return run(() => toggleDetails($("notePreview")));
+    if (key === "c") return run(focusDecision);
+    if (key === "a") return run(locateAnchor);
+    if (["e","o","h"].includes(key)) return run(() => toggleDetails(key === "e" ? $("earlier") : key === "o" ? $("notes") : host.querySelector("#workflow details.help")));
+    if (key === "l") return run(() => {
+      const el = $("following-"+(e.shiftKey ? "after_unit" : "within_unit"));
+      if (el && !el.hidden && !el.disabled) return el.activate();
+    });
+    if (key === "u") return run(() => focusField("unitNote"));
+    if (key === "y") return run(() => focusField(currentStep() === 2 ? "n1Paraphrase" : "paraphrase"));
+    if (key === "i") return run(() => focusField("rewrite"));
+    if (["q","g","z"].includes(key))
+      return run(() => { if (currentStep() === 1) host.querySelectorAll('[name="difficulty"]')[["q","g","z"].indexOf(key)]?.click(); });
+    const groups = {d:"difficulty",b:"followingUse",w:"style",x:"failure",t:"tag"};
+    if (groups[key]) {
+      const group = groups[key]; pendingGroupFocus = group;
+      return run(() => {
+        try {
+          if (key === "t" && host.querySelector('[name="tag"]')) { tagMode=true; updateTagMode(); }
+          focusGroup(group);
+        } finally { if (pendingGroupFocus === group) pendingGroupFocus=null; }
+      });
+    }
+    if (key === "enter") { e.preventDefault(); queueContinue(e.shiftKey); return; }
+    if (key === "r") return run(() => focusField(currentStep() === 2 ? "n1Reason" : "reason"));
+    if (key === "m") return run(() => focusField("reason"));
+    const toggle = name => host.querySelector(`#workflow [name="${name}"]`)?.click();
     if (key === "n") return run(() => toggle("manualUnsure"));
     if (key === "0") return run(() => toggle("uncovered"));
     if (key === "s") return run(() => toggle("star"));
     if (key === "v") return run(() => toggle("verification"));
-    if (["p", "f"].includes(key))
-      return run(() => {
-        const stage = data.state.stage;
-        if ([0, 2].includes(stage))
-          host
-            .querySelector(
-              `[name="${stage === 0 ? "first" : "n1"}"][value="${key === "p" ? "pass" : "fail"}"]`,
-            )
-            ?.click();
-        else if ([3, 4].includes(stage)) {
-          const el = host.querySelector(
-            `[name="${stage === 3 ? "spoiler" : "incorrect"}"]`,
-          );
-          if (el && el.checked !== (key === "f")) el.click();
-        }
-      });
+    if (["p","f"].includes(key)) return run(() => {
+      const step = currentStep();
+      if ([0,2].includes(step)) host.querySelector(`[name="${step===0 ? "first" : "n1"}"][value="${key==='p' ? 'pass' : 'fail'}"]`)?.click();
+      else if ([3,4].includes(step)) {
+        const el = host.querySelector(`[name="${step===3 ? 'spoiler' : 'incorrect'}"]`);
+        if (el && el.checked !== (key === "f")) el.click();
+      }
+    });
   }
+  function toggleDetails(el) {
+    if (el) { el.open=!el.open; el.querySelector("summary")?.focus(); }
+  }
+  function updateTagMode() {
+    const hint = host.querySelector(".tagModeHint");
+    if (hint) hint.textContent = tagMode ? "标签快捷键已启用：5–9 选择，Esc 退出" : "按 T 进入标签组；普通状态 1–7 切换步骤";
+  }
+  host.addEventListener("focusin", (e) => {
+    if (tagMode && !e.target.matches('[name="tag"]')) { tagMode=false; updateTagMode(); }
+  });
   document.addEventListener("keydown", keydown, { signal: abort.signal });
 
   await init();
   return {
-    flush,
+    flush: () => enqueue(flush),
     dispose: () => {
       clearTimeout(timer);
+      clearTimeout(uiTimer);
       abort.abort();
     },
     session,
