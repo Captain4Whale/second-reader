@@ -125,3 +125,16 @@ test('difficulty labels explain rubric while radio values retain historical iden
  assert.match(labels[2].children[1].text,/想法本身复杂.*表达已尽量清楚.*不否决.*拿不准.*Z/);
  assert.match(labels[1].children[1].text,/不丢内容.*G/);
 });
+
+test('actual difficulty render call preserves selection across redraw for every stored value',()=>{
+ const values=['一遍能复述','能改写得更直白','改写不出'];
+ const start=src.indexOf('      radios(',src.indexOf('    if (s === 1) {',src.indexOf('    const spec = boot.form.steps[s];')));
+ const call=src.slice(start,src.indexOf('      w.append(',start));
+ function node(tag,text){return {tag,text,children:[],append(...xs){this.children.push(...xs);}};}
+ for(const choice of [null,...values]) {
+  const w=node('div'),ctx=vm.createContext({node,document:{createElement:node},w,c:{reading_difficulty:values},r:{reading_difficulty:{choice}}});
+  vm.runInContext(extract('  const difficultyLabel','  function stepHint(')+extract('  function radios(', '  function get(')+call,ctx);
+  const inputs=w.children[0].children.slice(1).map(l=>l.children[0]);
+  assert.deepEqual(inputs.filter(i=>i.checked).map(i=>i.value),choice?[choice]:[]);
+ }
+});

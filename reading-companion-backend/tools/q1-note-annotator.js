@@ -506,7 +506,7 @@ globalThis.Q1NoteView = async function (host, session) {
         "difficulty",
         "就用刚才那一遍，马上判断",
         c.reading_difficulty,
-        difficultyLabel(r.reading_difficulty.choice),
+        r.reading_difficulty.choice,
       );
       w.append(
         node(
