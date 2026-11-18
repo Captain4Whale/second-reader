@@ -659,7 +659,7 @@ def v2_record(store, *, previous=False):
                legacy_inferences=[], acknowledged_warnings=[])
     row["reading_difficulty"] = dict(first_pass="复述得出",
         locked_at=old["steps"]["reading_difficulty"]["completed_at"],
-        paraphrase=old["reading_difficulty"]["paraphrase"], rewrite=None, rewrite_text="",
+        paraphrase=old["reading_difficulty"]["paraphrase"], rewrite_judgment=None, rewrite_text="",
         veto=False, amendments=[])
     if previous:
         row.update(revision=2, supersedes_revision=1, event_version=2 ** 32,
@@ -704,7 +704,7 @@ def test_v2_first_pass_evidence_is_immutable(store, field):
                revision=2, event_version=previous["event_version"] + 1)
     if field == "first_pass":
         row["reading_difficulty"][field] = "复述不出或说偏"
-        row["reading_difficulty"]["rewrite"] = "改写不出"
+        row["reading_difficulty"]["rewrite_judgment"] = "改写不出"
         from scripts.q1_note_form import derive
         derive(row)
     elif field == "locked_at":
@@ -728,14 +728,14 @@ def test_v2_rewrite_amendments_and_auto_manual_uncertainty(store):
     from scripts.q1_note_form import derive
     row, _ = v2_record(store)
     d = row["reading_difficulty"]
-    d.update(first_pass="复述不出或说偏", rewrite="能改写得更直白")
+    d.update(first_pass="复述不出或说偏", rewrite_judgment="能改写得更直白")
     derive(row)
     row["steps"]["tags"] = {"status": "skipped_due_to_fail"}
     assert validate_assessment(row)["judgment"] == "fail"
     previous = deepcopy(row)
     row.update(amendment_kind="post_discussion", amendment_reason="讨论后确认表达已清楚",
                supersedes_revision=1, revision=2, event_version=row["event_version"] + 1)
-    d["rewrite"] = "改写不出"
+    d["rewrite_judgment"] = "改写不出"
     d["amendments"].append({"from": "能改写得更直白", "to": "改写不出", "at": mod.now(), "reason": "讨论后确认", "active_ms": 4})
     row["unsure_sources"]["读着费劲"] = ["manual"]
     derive(row)
@@ -790,7 +790,7 @@ def test_v2_initial_record_does_not_claim_discussion_revision(store):
 def test_v2_upgrade_must_keep_first_submitted_reading_observation(store, field):
     row, first = v2_record(store, previous=True)
     if field == "first_pass":
-        row["reading_difficulty"].update(first_pass="复述不出或说偏", rewrite="改写不出")
+        row["reading_difficulty"].update(first_pass="复述不出或说偏", rewrite_judgment="改写不出")
         from scripts.q1_note_form import derive
         derive(row)
     else:
@@ -840,10 +840,10 @@ def test_v2_rewrite_revision_requires_history_from_previous_value(store):
     from scripts.q1_note_form import derive
     row, _ = v2_record(store)
     d = row["reading_difficulty"]
-    d.update(first_pass="复述不出或说偏", rewrite="改写不出")
+    d.update(first_pass="复述不出或说偏", rewrite_judgment="改写不出")
     derive(row)
     previous = deepcopy(row)
-    d["rewrite"] = "能改写得更直白"
+    d["rewrite_judgment"] = "能改写得更直白"
     derive(row)
     row.update(amendment_kind="post_discussion", amendment_reason="讨论", supersedes_revision=1,
                revision=2, event_version=row["event_version"] + 1)
@@ -888,3 +888,20 @@ def test_unit_note_reopens_under_original_manifest_identity_without_event_schema
     (store.folder / "judgments.jsonl").write_bytes(b"".join(mod.encoded(row) for row in result))
     with pytest.raises(ValueError, match="身份"):
         mod.Store(store.folder)
+
+
+def test_reader_normalizes_only_premerge_v2_rewrite_without_rewriting_journal(store):
+    current, legacy = v2_record(store, previous=True)
+    d = current["reading_difficulty"]
+    d["rewrite_text"] = "独立的改写文本"
+    early = deepcopy(current)
+    fields = early["reading_difficulty"]
+    fields["rewrite"] = fields.pop("rewrite_judgment")
+    journal = store.folder / "judgments.jsonl"
+    mod.append(journal, early)
+    before = journal.read_bytes()
+    assert mod.read_note_review(store.folder)[1] == [legacy, current]
+    assert journal.read_bytes() == before
+    fields["rewrite_judgment"] = None
+    with pytest.raises(ValueError, match="重复"):
+        validate_assessment(early, legacy)

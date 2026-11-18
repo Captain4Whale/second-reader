@@ -214,14 +214,14 @@ test('difficulty form has two independent unanswered groups and locks only first
  const call=src.slice(start,src.indexOf('    if (s === 2) {',start));
  function node(tag,text){return {tag,text,children:[],append(...xs){this.children.push(...xs);},
   querySelectorAll(selector){return this.children.flatMap(el=>[...(el.name==='firstPass'?[el]:[]),...(el.querySelectorAll?.(selector)||[])]);}};}
- for(const d of [{first_pass:null,rewrite:null},{first_pass:'复述得出',rewrite:null,rewrite_text:'保留的改写'},{first_pass:'复述不出或说偏',rewrite:null},{first_pass:'复述不出或说偏',rewrite:'改写不出',locked_at:'locked'}]) {
+ for(const d of [{first_pass:null,rewrite_judgment:null},{first_pass:'复述得出',rewrite_judgment:null,rewrite_text:'保留的改写'},{first_pass:'复述不出或说偏',rewrite_judgment:null},{first_pass:'复述不出或说偏',rewrite_judgment:'改写不出',locked_at:'locked'}]) {
   const w=node('div'),fields={},ctx=vm.createContext({s:1,node,document:{createElement:node},w,r:{reading_difficulty:d},
    textArea:(parent,id,label,value)=>{const field={id,label,value};fields[id]=field;parent.append(field);return field;}});
   vm.runInContext(extract('  const difficultyLabel','  function stepHint(')+extract('  function radios(', '  function get(')+call,ctx);
   const groups=w.children.filter(el=>el.tag==='fieldset');
   const inputs=group=>group.children.slice(1).map(l=>l.children[0]);
   assert.deepEqual(inputs(groups[0]).filter(i=>i.checked).map(i=>i.value),d.first_pass?[d.first_pass]:[]);
-  if(d.first_pass==='复述不出或说偏')assert.deepEqual(inputs(groups[1]).filter(i=>i.checked).map(i=>i.value),d.rewrite?[d.rewrite]:[]);
+  if(d.first_pass==='复述不出或说偏')assert.deepEqual(inputs(groups[1]).filter(i=>i.checked).map(i=>i.value),d.rewrite_judgment?[d.rewrite_judgment]:[]);
   else assert.equal(groups.length,1);
   assert.equal(!!fields.paraphrase.readOnly,!!d.locked_at);
   assert.ok(fields.rewrite);assert.equal(fields.rewrite.value,d.rewrite_text);
@@ -459,7 +459,7 @@ test('first-pass evidence is omitted after locking while rewrite answer and text
  vm.runInContext(extract('  function collect(', '  const currentStep'),c);
  const values=vm.runInContext('collect()',c);
  assert.equal('first_pass' in values,false);assert.equal('paraphrase' in values,false);
- assert.equal(values.rewrite,'能改写得更直白');assert.equal(values.rewrite_text,'这是一句改写');
+ assert.equal(values.rewrite_judgment,'能改写得更直白');assert.equal(values.rewrite_text,'这是一句改写');
 });
 test('unanswered veto checks stay unanswered instead of becoming false on save',()=>{
  for(const step of [3,4])for(const selected of [undefined,'false','true']) {
@@ -568,7 +568,7 @@ test('legacy difficulty display distinguishes initial evidence from later cross-
   const result=h.run('difficultyView(legacy)'),text=h.run('difficultySummary(legacy)');
   assert.equal(result.first_pass,firstPass);assert.equal(result.rewrite_text,'旧改写');
   assert.match(text,/旧版最初：.*最终：.*第一遍未独立记录/);
-  assert.equal(result.rewrite,final==='一遍能复述'?null:final);
+  assert.equal(result.rewrite_judgment,final==='一遍能复述'?null:final);
   assert.deepEqual(legacy,{original_choice:initial,choice:final,paraphrase:'旧文本',rewrite:'旧改写'});
  }
  h.c.legacy={choice:'能改写得更直白'};
@@ -586,7 +586,7 @@ test('changing the unlocked first answer to understood explicitly clears a stale
   data:{state:{record:{reading_difficulty:{first_pass:'复述不出或说偏'},reason:'',uncovered_reason:''}}},host:{querySelector:()=>null}});
  vm.runInContext(extract('  function collect(', '  const currentStep'),c);
  const values=vm.runInContext('collect()',c);
- assert.equal(values.first_pass,'复述得出');assert.equal(values.rewrite,null);
+ assert.equal(values.first_pass,'复述得出');assert.equal(values.rewrite_judgment,null);
 });
 test('legacy readonly difficulty renders old answers and text without inventing two independent observations',()=>{
  const start=src.indexOf('    if (s === 1) {',src.indexOf('    const spec = boot.form.steps[s];'));

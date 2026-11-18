@@ -49,13 +49,13 @@ globalThis.Q1NoteView = async function (host, session) {
     if ("first_pass" in value) return value;
     return {...value,
       first_pass:value.original_choice === "一遍能复述" ? "复述得出" : value.original_choice ? "复述不出或说偏" : null,
-      rewrite:["能改写得更直白","改写不出"].includes(value.choice) ? value.choice : null,
+      rewrite_judgment:["能改写得更直白","改写不出"].includes(value.choice) ? value.choice : null,
       rewrite_text:value.rewrite || "", legacy:true};
   }
   function difficultySummary(value) {
     const d = difficultyView(value);
     if (d.legacy) return `旧版最初：${difficultyLabel(value.original_choice)}；最终：${difficultyLabel(value.choice)}（第一遍未独立记录）`;
-    return [d.first_pass || "未判定", d.first_pass === "复述不出或说偏" ? d.rewrite || "改写尚未判定" : ""].filter(Boolean).join("；");
+    return [d.first_pass || "未判定", d.first_pass === "复述不出或说偏" ? d.rewrite_judgment || "改写尚未判定" : ""].filter(Boolean).join("；");
   }
   function checkValue(record, key) {
     if (record.checks) return record.checks[key];
@@ -247,8 +247,8 @@ globalThis.Q1NoteView = async function (host, session) {
         v.paraphrase = $("paraphrase").value;
       }
       const firstPass = v.first_pass ?? r.reading_difficulty.first_pass;
-      if (firstPass === "复述不出或说偏" && get("rewriteChoice")) v.rewrite = get("rewriteChoice");
-      else if (firstPass === "复述得出") v.rewrite = null;
+      if (firstPass === "复述不出或说偏" && get("rewriteChoice")) v.rewrite_judgment = get("rewriteChoice");
+      else if (firstPass === "复述得出") v.rewrite_judgment = null;
       v.rewrite_text = $("rewrite")?.value ?? r.reading_difficulty.rewrite_text ?? "";
     }
     if (s === 2) {
@@ -612,7 +612,7 @@ globalThis.Q1NoteView = async function (host, session) {
         }
         if (d.first_pass === "复述不出或说偏") {
           radios(w, "rewriteChoice", "能否写得更直白，又不丢内容？（必选）",
-            ["能改写得更直白", "改写不出"], d.rewrite);
+            ["能改写得更直白", "改写不出"], d.rewrite_judgment);
           w.append(node("p", "改写不出：想法本身复杂，表达已尽量清楚，无法更直白且不丢内容；不否决，自动标拿不准。", "muted"));
         }
         textArea(w, "rewrite", "更直白的改写（选填）", d.rewrite_text);
@@ -971,7 +971,7 @@ globalThis.Q1NoteView = async function (host, session) {
     const a = document.createElement("a"),
       url = URL.createObjectURL(
         new Blob(
-          rows.map((r) => JSON.stringify(r) + "\n"),
+          rows.map((r) => JSON.stringify(Q1NoteProtocol.normalizeRecord(r)) + "\n"),
           { type: "application/x-ndjson" },
         ),
       );

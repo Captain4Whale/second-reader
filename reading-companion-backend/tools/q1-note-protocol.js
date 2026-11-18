@@ -250,13 +250,13 @@
     if (!isV2(r)) return deriveLegacy(r);
     const d = r.reading_difficulty;
     d.veto = r.vetoes.reading_difficulty =
-      d.first_pass === firstPass[1] && d.rewrite === rewriteChoices[0];
+      d.first_pass === firstPass[1] && d.rewrite_judgment === rewriteChoices[0];
     r.vetoes.spoiler = r.checks.spoiler === true;
     r.vetoes.incorrect_information = r.checks.incorrect_information === true;
     const manual = (r.unsure_sources[labels[1]] || []).includes("manual");
     delete r.unsure_sources[labels[1]];
     const sources = [
-      ...(d.first_pass === firstPass[1] && d.rewrite === rewriteChoices[1]
+      ...(d.first_pass === firstPass[1] && d.rewrite_judgment === rewriteChoices[1]
         ? ["automatic"]
         : []),
       ...(manual ? ["manual"] : []),
@@ -269,7 +269,7 @@
       r.rubric_uncovered;
     const complete =
       firstPass.includes(d.first_pass) &&
-      (d.first_pass === firstPass[0] || rewriteChoices.includes(d.rewrite)) &&
+      (d.first_pass === firstPass[0] || rewriteChoices.includes(d.rewrite_judgment)) &&
       r.n1.judgment === "pass" &&
       Object.values(r.checks).every((v) => typeof v === "boolean");
     r.judgment = veto ? "fail" : complete ? "pass" : null;
@@ -298,7 +298,7 @@
   function validateDifficulty(d, complete = true) {
     need(
       Object.keys(d).sort().join() ===
-        "amendments,first_pass,locked_at,paraphrase,rewrite,rewrite_text,veto",
+        "amendments,first_pass,locked_at,paraphrase,rewrite_judgment,rewrite_text,veto",
       "费劲字段无效",
     );
     need(firstPass.includes(d.first_pass), "请选择第一遍能否准确复述");
@@ -308,14 +308,14 @@
     );
     need(
       d.first_pass === firstPass[0]
-        ? d.rewrite === null
-        : rewriteChoices.includes(d.rewrite),
+        ? d.rewrite_judgment === null
+        : rewriteChoices.includes(d.rewrite_judgment),
       "请判断能否改写得更直白且不丢内容",
     );
     if (complete)
       need(Number.isFinite(Date.parse(d.locked_at)), "第一遍复述尚未锁定");
     need(Array.isArray(d.amendments), "改写修改历史无效");
-    let cursor = d.amendments[0]?.from ?? d.rewrite;
+    let cursor = d.amendments[0]?.from ?? d.rewrite_judgment;
     for (const a of d.amendments) {
       need(
         rewriteChoices.includes(a.from) &&
@@ -331,7 +331,7 @@
       cursor = a.to;
     }
     need(
-      cursor === d.rewrite &&
+      cursor === d.rewrite_judgment &&
         (d.first_pass !== firstPass[0] || !d.amendments.length),
       "改写最终值与历史不符",
     );
@@ -366,7 +366,19 @@
       throw error;
     }
   }
+  // Early v2 builds stored the radio answer in rewrite. Keep journal rows intact
+  // for append-only comparison; normalize only the consumer's view.
+  function normalizeRecord(row) {
+    const d = row?.reading_difficulty;
+    if (row?.event_schema_version !== 2 || !d || !Object.hasOwn(d, "rewrite")) return row;
+    need(!Object.hasOwn(d, "rewrite_judgment"), "改写判断字段重复");
+    const {rewrite, ...fields} = d;
+    return {...row, reading_difficulty: {...fields, rewrite_judgment: rewrite}};
+  }
+
   function validate(r, f, old, firstSubmitted) {
+    r = normalizeRecord(r);
+    old = normalizeRecord(old);
     need(
       r.event_schema_version === undefined || r.event_schema_version === 2,
       "事件协议版本无效",
@@ -566,12 +578,12 @@
           ];
         if (next)
           need(
-            next.from === old.reading_difficulty.rewrite,
+            next.from === old.reading_difficulty.rewrite_judgment,
             "改写修改历史起点不符",
           );
         else
           need(
-            r.reading_difficulty.rewrite === old.reading_difficulty.rewrite,
+            r.reading_difficulty.rewrite_judgment === old.reading_difficulty.rewrite_judgment,
             "改写变化缺少修改历史",
           );
       } else {
@@ -662,7 +674,7 @@
             now()
           : null,
         paraphrase: source.paraphrase ?? "",
-        rewrite: inferred === firstPass[0] ? null : finalRewrite,
+        rewrite_judgment: inferred === firstPass[0] ? null : finalRewrite,
         rewrite_text: old.rewrite ?? "",
         veto: false,
         amendments: [],
@@ -715,6 +727,7 @@
   }
   function normalizeDraft(state, options = {}) {
     const s = copy(state);
+    s.record = normalizeRecord(s.record);
     need(
       Number.isInteger(s.stage) && s.stage >= 0 && s.stage <= 7,
       "草稿步骤无效",
@@ -853,7 +866,7 @@
         first_pass: null,
         locked_at: null,
         paraphrase: "",
-        rewrite: null,
+        rewrite_judgment: null,
         rewrite_text: "",
         veto: false,
         amendments: [],
@@ -980,24 +993,24 @@
       s.viewStep = target;
     } else if (action === "amend") {
       need(s.maxUnlockedStage >= 2, "完成读着费劲后才能修正");
-      const rewrite = v.rewrite ?? v.choice,
+      const judgment = v.rewrite_judgment ?? v.choice,
         d = r.reading_difficulty;
       need(
         d.first_pass === firstPass[1] &&
-          rewriteChoices.includes(rewrite) &&
-          rewrite !== d.rewrite,
+          rewriteChoices.includes(judgment) &&
+          judgment !== d.rewrite_judgment,
         "请选择不同的改写判断",
       );
-      if (rewriteChoices.includes(d.rewrite)) {
+      if (rewriteChoices.includes(d.rewrite_judgment)) {
         d.amendments.push({
-          from: d.rewrite,
-          to: rewrite,
+          from: d.rewrite_judgment,
+          to: judgment,
           at: now(),
           reason: v.reason || "",
           active_ms: ms,
         });
       }
-      d.rewrite = rewrite;
+      d.rewrite_judgment = judgment;
       if (v.rewrite_text !== undefined) d.rewrite_text = v.rewrite_text;
       accountTime(1);
       markDirty(1);
@@ -1026,7 +1039,7 @@
         previousResult = canonical([r.judgment, r.tags, r.star]);
       const per = [
         ["judgment"],
-        ["first_pass", "paraphrase", "rewrite", "rewrite_text"],
+        ["first_pass", "paraphrase", "rewrite_judgment", "rewrite_text"],
         ["n1"],
         ["spoiler"],
         ["incorrect_information", "needs_verification"],
@@ -1087,39 +1100,39 @@
           d.first_pass = v.first_pass;
         }
         if ("paraphrase" in v) d.paraphrase = v.paraphrase;
-        if ("rewrite" in v) {
+        if ("rewrite_judgment" in v) {
           need(
-            v.rewrite === null || rewriteChoices.includes(v.rewrite),
+            v.rewrite_judgment === null || rewriteChoices.includes(v.rewrite_judgment),
             "改写选项无效",
           );
           need(
-            d.first_pass !== firstPass[0] || v.rewrite === null,
+            d.first_pass !== firstPass[0] || v.rewrite_judgment === null,
             "一遍能复述不需要改写判断",
           );
           need(
             !d.locked_at ||
               d.first_pass !== firstPass[1] ||
-              d.rewrite === null ||
-              v.rewrite !== null,
+              d.rewrite_judgment === null ||
+              v.rewrite_judgment !== null,
             "已确认的改写判断不能清空",
           );
           if (
             d.locked_at &&
-            rewriteChoices.includes(d.rewrite) &&
-            rewriteChoices.includes(v.rewrite) &&
-            v.rewrite !== d.rewrite
+            rewriteChoices.includes(d.rewrite_judgment) &&
+            rewriteChoices.includes(v.rewrite_judgment) &&
+            v.rewrite_judgment !== d.rewrite_judgment
           ) {
             d.amendments.push({
-              from: d.rewrite,
-              to: v.rewrite,
+              from: d.rewrite_judgment,
+              to: v.rewrite_judgment,
               at: now(),
               reason: v.reason || "",
               active_ms: ms,
             });
           }
-          d.rewrite = v.rewrite;
+          d.rewrite_judgment = v.rewrite_judgment;
         }
-        if (d.first_pass === firstPass[0]) d.rewrite = null;
+        if (d.first_pass === firstPass[0]) d.rewrite_judgment = null;
         if ("rewrite_text" in v) d.rewrite_text = v.rewrite_text;
       }
       if (i === 2 && v.n1) {
@@ -1253,6 +1266,7 @@
     eventVersionBase,
     dangerousFollowing,
     readOnly,
+    normalizeRecord,
     migrateRecord,
     copy,
     need,

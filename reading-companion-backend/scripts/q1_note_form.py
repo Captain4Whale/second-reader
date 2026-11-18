@@ -149,7 +149,7 @@ def derive(row):
     """Update dependent values, preserving only currently applicable fields."""
     difficulty = row["reading_difficulty"]
     v2 = row.get("event_schema_version") == 2
-    value = difficulty["rewrite"] if v2 else difficulty["choice"]
+    value = difficulty["rewrite_judgment"] if v2 else difficulty["choice"]
     row["vetoes"]["reading_difficulty"] = value == DIFFICULTY[1]
     if v2:
         for key in ("spoiler", "incorrect_information"):
@@ -221,7 +221,7 @@ def validate_n1(n, event_schema_version=1):
 def _validate_v2_difficulty(d):
     require(
         isinstance(d, dict) and set(d) == {
-            "first_pass", "locked_at", "paraphrase", "rewrite", "rewrite_text",
+            "first_pass", "locked_at", "paraphrase", "rewrite_judgment", "rewrite_text",
             "veto", "amendments",
         },
         "新版费劲字段无效",
@@ -231,11 +231,11 @@ def _validate_v2_difficulty(d):
     require(all(isinstance(d[k], str) for k in ("paraphrase", "rewrite_text")), "费劲文字无效")
     require(isinstance(d["amendments"], list) and all(isinstance(a, dict) for a in d["amendments"]), "费劲修改历史无效")
     require(
-        d["rewrite"] is None if d["first_pass"] == FIRST_PASS[0] else d["rewrite"] in REWRITE,
+        d["rewrite_judgment"] is None if d["first_pass"] == FIRST_PASS[0] else d["rewrite_judgment"] in REWRITE,
         "第一遍复述结果与改写分支不符",
     )
-    require(type(d["veto"]) is bool and d["veto"] == (d["rewrite"] == REWRITE[0]), "费劲否决值无效")
-    cursor = d["amendments"][0].get("from") if d["amendments"] else d["rewrite"]
+    require(type(d["veto"]) is bool and d["veto"] == (d["rewrite_judgment"] == REWRITE[0]), "费劲否决值无效")
+    cursor = d["amendments"][0].get("from") if d["amendments"] else d["rewrite_judgment"]
     for a in d["amendments"]:
         require(
             isinstance(a, dict) and a.get("from") == cursor
@@ -247,12 +247,27 @@ def _validate_v2_difficulty(d):
         require(isinstance(a.get("reason"), str), "修正理由必须是文字")
         require(type(a.get("active_ms")) is int and a["active_ms"] >= 0, "修正计时无效")
         cursor = a["to"]
-    require(cursor == d["rewrite"], "费劲最终值与历史不符")
+    require(cursor == d["rewrite_judgment"], "费劲最终值与历史不符")
     require(d["first_pass"] != FIRST_PASS[0] or not d["amendments"], "复述得出不能改写判断")
+
+
+def normalize_record(row):
+    """Read the pre-merge v2 field spelling without changing v1 text or disk rows."""
+    if not row or row.get("event_schema_version") != 2:
+        return row
+    difficulty = row.get("reading_difficulty", {})
+    if "rewrite" not in difficulty:
+        return row
+    require("rewrite_judgment" not in difficulty, "改写判断字段重复")
+    fields = difficulty.copy()
+    fields["rewrite_judgment"] = fields.pop("rewrite")
+    return {**row, "reading_difficulty": fields}
 
 
 def validate_assessment(row, previous=None, first_submitted=None):
     """Validate one complete record; previous enforces immutable evidence on amendments."""
+    row = normalize_record(row)
+    previous = normalize_record(previous)
     require(
         row.get("schema") == SCHEMA
         and row.get("type") == "N"
@@ -338,7 +353,7 @@ def validate_assessment(row, previous=None, first_submitted=None):
     require(
         d["veto"]
         == row["vetoes"]["reading_difficulty"]
-        == ((d["rewrite"] == REWRITE[0]) if v2 else (d["choice"] == DIFFICULTY[1])),
+        == ((d["rewrite_judgment"] == REWRITE[0]) if v2 else (d["choice"] == DIFFICULTY[1])),
         "费劲结论必须使用最终值",
     )
     require(
@@ -371,7 +386,7 @@ def validate_assessment(row, previous=None, first_submitted=None):
         )
     require(
         ("automatic" in row["unsure_sources"].get("读着费劲", []))
-        == ((d["rewrite"] == REWRITE[1]) if v2 else (d["choice"] == DIFFICULTY[2])),
+        == ((d["rewrite_judgment"] == REWRITE[1]) if v2 else (d["choice"] == DIFFICULTY[2])),
         "改写不出必须自动拿不准",
     )
     for name in STEPS:
@@ -413,7 +428,7 @@ def validate_assessment(row, previous=None, first_submitted=None):
             )
             added = d["amendments"][len(old["amendments"]):]
             require(
-                (added[0]["from"] == old["rewrite"]) if added else d["rewrite"] == old["rewrite"],
+                (added[0]["from"] == old["rewrite_judgment"]) if added else d["rewrite_judgment"] == old["rewrite_judgment"],
                 "费劲修改历史必须接续上次提交",
             )
             require(

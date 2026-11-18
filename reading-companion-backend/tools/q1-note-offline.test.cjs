@@ -117,7 +117,7 @@ async function ready(s) {
   await act(s, "open");
   for (const v of [
     { judgment: "pass" },
-    { first_pass:"复述不出或说偏", rewrite:"改写不出" },
+    { first_pass:"复述不出或说偏", rewrite_judgment:"改写不出" },
     {
       n1: {
         following_text_use: "没用到",
@@ -218,7 +218,7 @@ test("service-era progress imports read-only and keeps first lock", async () => 
     restored.state.drafts.r.record.first_impression,
     event.state.record.first_impression,
   );
-  await act(restored, "save", { first_pass:"复述不出或说偏", rewrite:"改写不出" });
+  await act(restored, "save", { first_pass:"复述不出或说偏", rewrite_judgment:"改写不出" });
   assert.equal(x.files["progress.jsonl"], prefix);
 });
 test('invalid transition is validation feedback, persistence failure is not', async () => {
@@ -315,7 +315,7 @@ test("draft and pending-file receipts stay distinct across edits and a failed re
   await act(x.s, "navigate", { step: 1 });
   await act(x.s, "begin_discussion");
   await act(x.s, "navigate", { step: 1 });
-  await act(x.s, "save", { rewrite:"能改写得更直白", amendment_reason:"测试理由" });
+  await act(x.s, "save", { rewrite_judgment:"能改写得更直白", amendment_reason:"测试理由" });
   assert.deepEqual(x.s.receipt("r"), {
     browser_saved: true, journal_revision: 1, file_revision: 1,
     pending_file: false, submitted_revision: 1, has_unsubmitted_changes: true,

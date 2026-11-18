@@ -19,7 +19,8 @@ original identities.
 - In step two, record the first pass with **Q** (复述得出) or **G** (复述不出或说偏).
   The latter opens a required rewrite judgment, **W** (能改写得更直白) or **Z** (改写不出).
   Completing this step locks the first-pass result, optional paraphrase and lock time.
-  The rewrite judgment and optional rewrite text can still be revised. A successful
+  The rewrite judgment (`reading_difficulty.rewrite_judgment`) and optional
+  rewrite text (`reading_difficulty.rewrite_text`) can still be revised. A successful
   rewrite triggers the difficulty veto. An unsuccessful one adds automatic uncertainty.
 - Both spoiler and factual error require an explicit answer. A new draft represents
   each answer as `null` until answered. A submitted row contains two booleans in
@@ -58,6 +59,11 @@ retains its boolean and an already selected true is preserved in a pending step.
 A pending legacy edit of a submitted record requires explicit discussion entry and
 a reason to submit. Complete any missing fields or inconsistent N1 answers that the
 form identifies. No manual migration is required.
+
+Browser exports and the Python session reader normalize early v2 rows with a
+`rewrite` judgment to `rewrite_judgment` in memory. Original v1 rows keep their
+`rewrite` text. When carried into v2 it becomes `rewrite_text`; the judgment comes
+from the v1 choice. The source JSONL remains append-only.
 
 The journal envelope remains `q1-note-judgment/1`. New Note rows carry
 `event_schema_version: 2`. The numeric per-Note `event_version` clock starts its

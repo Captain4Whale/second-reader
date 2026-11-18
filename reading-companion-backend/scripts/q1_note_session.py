@@ -23,6 +23,7 @@ from scripts.q1_note_form import (
     require,
     derive,
     validate_assessment,
+    normalize_record,
     validate_n1,
     choices,
     text,
@@ -243,7 +244,8 @@ class Store:
         return all(row.get(k) == v for k, v in expected.items())
 
     def read_judgments(self):
-        journal, latest, first = rows(self.folder / "judgments.jsonl"), {}, {}
+        journal = [normalize_record(r) for r in rows(self.folder / "judgments.jsonl")]
+        latest, first = {}, {}
         for index, r in enumerate(journal, 1):
             require(
                 r["revision"] == index
