@@ -545,11 +545,7 @@ The subsequently authorized C-only recovery uses `.venv/bin/python -m eval.atten
 
 ## Q1 manual error analysis
 
-Q1 rubric v3.4 uses the **same offline annotator, version 3.5**.
-The 3.5 repair is implemented and its core workflow has passed isolated native Edge
-checks at 100%/125%. Native IME candidate confirmation remains untested; Chinese
-text persistence has been verified. See the
-[task receipt](docs/tasks/q1-rubric-v3.4-form-2026-11-15.md#annotator-35-repair).
+Q1 rubric v3.4 uses **offline annotator 3.6** and Note form `q1-v3.4.form.v2`.
 Open the HTML in Chrome / Edge (no local service is needed):
 
 ```sh
@@ -565,12 +561,14 @@ opening a folder alone does not. Keep any in-progress formal page open until its
 browser save has succeeded; testing uses a different QA directory and browser storage.
 The previously supplied `q1_note_review.py serve SESSION` command now validates the
 session and opens this offline HTML; it no longer starts an HTTP service.
-[v3.4 protocol](reading-companion-backend/experiments/rubric-review.md#published-v34-note-review-2026-11-15)
-covers preparation, schema and shortcuts. Formal and QA sessions remain separate.
+[Independent Note judgments](reading-companion-backend/experiments/rubric-review.md#independent-note-judgments)
+covers the new observations, old sessions and first-submission export.
 
 In v3.4 Note mode, **1–7** or **[ / ]** browses already-open steps without clearing
-completion or changing a judgment. From step two onward, edit the original form;
-first impression stays locked. Edits remain browser drafts until the final unified
+completion or changing a judgment. Before submission, revisit steps two through seven.
+Confirming step two locks the first-pass result and its paraphrase. The rewrite can
+still be revised. Spoilers and incorrect information each require a yes/no answer.
+Edits remain browser drafts until the final unified
 review and submission. Unchanged later steps need not be repeated. **Enter** confirms
 the current step, and **Shift+Enter** submits from the final step and moves to the
 next Note after save succeeds. **T** explicitly enters tag shortcuts (**5–9**);
@@ -580,8 +578,9 @@ Controls display their keys; the full v3.4 map is in the protocol linked above.
 
 The status distinguishes browser-only drafts, pending revisions and acknowledged
 file synchronization. Submitted counts come from the journal; viewing a submitted
-item does not reduce them. A changed submitted item is marked as pending revision.
-The original rows remain append-only. Session identity and formal/test purpose are
+item does not reduce them. Use **讨论后改判** (**Shift+D**) to amend a submitted Note.
+Each amendment requires a reason and appends a row. **更多操作 → 导出首次判定 JSONL**
+exports exactly one original submission per submitted Note. Session identity and formal/test purpose are
 shown so a QA directory is not mistaken for the formal batch.
 
 The following criterion-based instructions apply to the older v0/v1 forms, whose

@@ -3,6 +3,7 @@ const { test } = require("node:test"),
   fs = require("node:fs");
 const P = require("./q1-note-protocol.js");
 require("./q1-journal.js");
+require("./q1-note-form-v2.js");
 require("./q1-note-offline.js");
 async function fixture() {
   const formText = fs.readFileSync(
@@ -116,7 +117,7 @@ async function ready(s) {
   await act(s, "open");
   for (const v of [
     { judgment: "pass" },
-    { choice: P.difficulty[0] },
+    { first_pass:"复述不出或说偏", rewrite:"改写不出" },
     {
       n1: {
         following_text_use: "没用到",
@@ -217,7 +218,7 @@ test("service-era progress imports read-only and keeps first lock", async () => 
     restored.state.drafts.r.record.first_impression,
     event.state.record.first_impression,
   );
-  await act(restored, "save", { choice: P.difficulty[2] });
+  await act(restored, "save", { first_pass:"复述不出或说偏", rewrite:"改写不出" });
   assert.equal(x.files["progress.jsonl"], prefix);
 });
 test('invalid transition is validation feedback, persistence failure is not', async () => {
@@ -269,7 +270,7 @@ test("browsing a submitted record preserves its completion and file receipt", as
   assert.deepEqual(boot.completed, ["r"]);
   assert.equal(boot.session_id, "test");
   assert.equal(boot.directory_name, "test");
-  assert.equal(boot.tool_version, "q1-annotator/3.5");
+  assert.equal(boot.tool_version, "q1-annotator/3.6");
 });
 
 test("browser-only UI metadata survives reload without changing the judgment version", async () => {
@@ -312,7 +313,9 @@ test("draft and pending-file receipts stay distinct across edits and a failed re
   const prefix = x.files["judgments.jsonl"];
   const untouched = x.s.state.rows[0].steps.n1.completed_at;
   await act(x.s, "navigate", { step: 1 });
-  await act(x.s, "save", { choice: P.difficulty[1] });
+  await act(x.s, "begin_discussion");
+  await act(x.s, "navigate", { step: 1 });
+  await act(x.s, "save", { rewrite:"能改写得更直白", amendment_reason:"测试理由" });
   assert.deepEqual(x.s.receipt("r"), {
     browser_saved: true, journal_revision: 1, file_revision: 1,
     pending_file: false, submitted_revision: 1, has_unsubmitted_changes: true,
@@ -427,4 +430,21 @@ test("validation and pre-transition persistence failure report that the action w
   x.dbFail = true;
   await assert.rejects(act(x.s, "complete", {judgment:"pass"}), error =>
     !error.actionApplied && error.currentState.version === before && error.receipt.browser_saved === false);
+});
+
+test("offline release is identical to published v2, and original-only export excludes amendments and unit notes", async () => {
+  const form = fs.readFileSync(__dirname + "/../rubric/q1-v3.4.form.v2.json", "utf8");
+  assert.equal(JSON.stringify(Q1NoteFormV2, null, 2) + "\n", form);
+  const x = await fixture();
+  await ready(x.s);
+  await act(x.s, "submit");
+  const first = structuredClone(x.s.state.rows[0]);
+  assert.equal(first.rubric_form_version, "q1-v3.4.form.v2");
+  await act(x.s, "unit_note", {remarks:"合成备注"});
+  await act(x.s, "begin_discussion");
+  await act(x.s, "navigate", {step:6});
+  await act(x.s, "submit", {reason:"合成修改", amendment_reason:"合成讨论"});
+  const reopened = await Q1NoteOffline.Session.load(x.dir, x.host);
+  assert.equal(reopened.state.rows.length, 3);
+  assert.deepEqual(Q1NoteOffline.firstJudgments(reopened.state.rows), [first]);
 });

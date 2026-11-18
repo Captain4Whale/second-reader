@@ -1,480 +1,241 @@
-const { test } = require("node:test"),
-  assert = require("node:assert/strict"),
-  fs = require("node:fs");
-const P = require("./q1-note-protocol.js"),
-  form = JSON.parse(
-    fs.readFileSync(__dirname + "/../rubric/q1-v3.4.form.v1.json"),
-  );
-const pos = { chapter_id: 1, paragraph_index: 1, char_offset: 0 },
-  range = { start: pos, end: { ...pos, char_offset: 1 } };
-const c = {
-  record_id: "r",
-  window_id: "w",
-  unit_key: "w",
-  book_key: "b",
-  body_text: "批注",
-  source_quote: "文",
-  original_source_range: range,
-  context: {
-    observer_cutoff: range.end,
-    original_notes: { status: "unresolved", items: [] },
-    within_unit: [{ range, text: "后文" }],
-    after_unit: [],
-  },
-};
-const m = {
-  record_ids: ["r"],
-  randomization: { seed: 7 },
-  context_sha256: "x",
-};
-function setup() {
-  let s = P.initial(c, m, "h"),
-    rows = [];
-  return {
-    get s() {
-      return s;
-    },
-    rows,
-    act(a, v) {
-      s = P.transition(s, a, v, 1, form, c, rows);
-      if (a === "submit") rows.push(structuredClone(s.record));
-      return s;
-    },
-  };
+const {test} = require('node:test');
+const assert = require('node:assert/strict');
+const fs = require('node:fs');
+const {spawnSync} = require('node:child_process');
+const P = require('./q1-note-protocol.js');
+const form = JSON.parse(fs.readFileSync(__dirname+'/../rubric/q1-v3.4.form.v2.json'));
+const legacyForm = JSON.parse(fs.readFileSync(__dirname+'/../rubric/q1-v3.4.form.v1.json'));
+const pos={chapter_id:1,paragraph_index:1,char_offset:0};
+const range={start:pos,end:{...pos,char_offset:1}};
+const c={record_id:'r',window_id:'w',unit_key:'w',book_key:'b',body_text:'批注',source_quote:'文',original_source_range:range,
+  context:{observer_cutoff:range.end,original_notes:{status:'unresolved',items:[]},within_unit:[{range,text:'后文'}],after_unit:[]}};
+const m={record_ids:['r'],randomization:{seed:7},context_sha256:'x',rubric_form_version:form.form_version,rubric_form_sha256:'v2hash',
+ review_session_id:'synthetic-protocol-test',session_purpose:'test',batch_id:'synthetic',annotator_id:'test',rubric_version:form.rubric_version,
+ rubric_sha256:form.rubric_sha256,annotation_guide_sha256:form.annotation_guide_sha256};
+const plain={following_text_use:'没用到',judgment:'pass',writing_style:'补充'};
+const first={first_pass:P.firstPass[0],paraphrase:'第一次复述',rewrite:null,rewrite_text:''};
+const difficult={first_pass:P.firstPass[1],paraphrase:'第一遍没说对',rewrite:P.rewriteChoices[0],rewrite_text:'更直白'};
+function setup(state,rows=[],options={}){
+ let s=state||P.initial(c,m,'h');
+ options={identity:{rubric_form_version:form.form_version,rubric_form_sha256:'v2hash'},...options};
+ return {get s(){return s;},rows,act(action,values={},ms=1){
+   s=P.transition(s,action,values,ms,form,c,rows,options);
+   if(action==='submit') rows.push(structuredClone(s.record));
+   return s;
+ }};
 }
-function core(
-  h,
-  d = P.difficulty[0],
-  n = { following_text_use: "没用到", judgment: "pass", writing_style: "补充" },
-) {
-  h.act("complete", { judgment: "pass" });
-  h.act("complete", { choice: d });
-  h.act("complete", { n1: n });
-  h.act("complete", { spoiler: false });
-  h.act("complete", { incorrect_information: false, needs_verification: true });
+function core(h,d=first,n1=plain){
+ h.act('complete',{judgment:'pass'});h.act('complete',d);h.act('complete',{n1});
+ h.act('complete',{spoiler:false});h.act('complete',{incorrect_information:false,needs_verification:true});
 }
-function done(h) {
-  h.act("complete");
-  return h.act("submit").record;
+function done(h,values={}){h.act('complete');return h.act('submit',values).record;}
+function legacy(choice=P.difficulty[0],original=choice){
+ const h=setup();core(h);const r=done(h);
+ for(const key of ['event_schema_version','checks','acknowledged_warnings','legacy_inferences'])delete r[key];
+ r.annotator_version='q1-annotator/3.5';r.event_version=100;r.rubric_form_version=legacyForm.form_version;r.rubric_form_sha256='v1hash';
+ r.reading_difficulty={original_choice:original,choice,veto:choice===P.difficulty[1],paraphrase:'历史第一遍',rewrite:'历史改写文本',amendments:original===choice?[]:[{from:original,to:choice,at:r.timestamp,reason:'历史修改',active_ms:1}]};
+ P.derive(r);if(r.judgment==='fail')r.steps.tags={status:'skipped_due_to_fail'};
+ P.validate(r,legacyForm);
+ return r;
 }
-test("required first impression, difficulty and immutable locks", () => {
-  const h = setup();
-  assert.throws(() => h.act("complete"), /第一印象/);
-  h.act("complete", { judgment: "pass" });
-  assert.throws(() => h.act("save", { judgment: "fail" }), /锁定/);
-  assert.throws(() => h.act("following", { scope: "within_unit" }), /只有/);
-  assert.throws(() => h.act("complete"), /读着费劲/);
-});
-test("final difficulty controls outcome; original and all transitions retained", () => {
-  const h = setup();
-  core(h);
-  h.act("amend", { choice: P.difficulty[1] });
-  assert.equal(h.s.record.judgment, "fail");
-  h.act("amend", { choice: P.difficulty[2] });
-  assert.deepEqual(h.s.record.unsure_sources, { 读着费劲: ["automatic"] });
-  h.act("amend", { choice: P.difficulty[0] });
-  const r = done(h);
-  assert.equal(r.judgment, "pass");
-  assert.equal(r.reading_difficulty.amendments.length, 3);
-  assert.deepEqual(r.unsure, []);
-});
-test("manual uncertainty survives automatic trigger removal", () => {
-  const h = setup();
-  h.act("complete", { judgment: "pass" });
-  h.act("complete", { choice: P.difficulty[2], manual_unsure: true });
-  h.act("complete", {
-    n1: {
-      following_text_use: "没用到",
-      judgment: "pass",
-      writing_style: "补充",
-    },
-  });
-  h.act("complete", { spoiler: false });
-  h.act("complete", { incorrect_information: false });
-  h.act("amend", { choice: P.difficulty[0] });
-  assert.deepEqual(h.s.record.unsure_sources, { 读着费劲: ["manual"] });
-});
-test("uncovered forces fail, clears tags/star and requires reason", () => {
-  const h = setup();
-  core(h);
-  h.act("save", { star: true });
-  h.act("save", { rubric_uncovered: true });
-  assert.equal(h.s.record.star, false);
-  assert.ok(!("tags" in h.s.record));
-  assert.throws(() => done(h), /原因/);
-  h.act("save", { uncovered_reason: "缺口" });
-  assert.equal(done(h).judgment, "fail");
-});
-test("N1 failure still requires spoiler and incorrect information", () => {
-  const h = setup();
-  core(h, P.difficulty[0], {
-    following_text_use: "紧接着几段",
-    judgment: "fail",
-    failure_types: ["下文马上讲了"],
-  });
-  const r = done(h);
-  assert.equal(r.judgment, "fail");
-  assert.ok(!("tags" in r));
-  assert.ok(
-    r.steps.spoiler.completed_at && r.steps.incorrect_information.completed_at,
-  );
-});
-test("following exposure per step and early anchor tag survive reopen", () => {
-  const h = setup();
-  h.act("complete", { judgment: "pass" });
-  h.act("complete", { choice: P.difficulty[0] });
-  h.act("following", { scope: "within_unit" });
-  h.act("complete", {
-    n1: {
-      following_text_use: "挂早了",
-      judgment: "pass",
-      writing_style: "解读",
-    },
-  });
-  h.act("following", { scope: "within_unit" });
-  h.act("complete", { spoiler: false });
-  h.act("complete", { incorrect_information: false });
-  const r = done(h);
-  assert.deepEqual(r.tags, ["锚点问题"]);
-  h.act("reopen");
-  assert.equal(h.s.record.steps.n1.following_text_views.length, 1);
-  assert.equal(h.s.record.steps.spoiler.following_text_views.length, 1);
-});
-for (const n of [
-  { following_text_use: "没用到", judgment: "pass", writing_style: "其他写法" },
-  { following_text_use: "没用到", judgment: "fail", failure_types: [] },
-  { following_text_use: "没用到", judgment: "fail", failure_types: ["其他"] },
-  {
-    following_text_use: "没用到",
-    judgment: "pass",
-    writing_style: "补充",
-    failure_types: ["其他"],
-  },
-])
-  test("reject invalid N1 " + JSON.stringify(n), () =>
-    assert.throws(() => P.n1valid(n, form)),
-  );
-test("reader rejects labels on fail and mutated outcome", () => {
-  const h = setup();
-  core(h, P.difficulty[1]);
-  const r = done(h);
-  assert.throws(() => P.validate({ ...r, tags: [] }, form));
-  assert.throws(() => P.validate({ ...r, judgment: "pass" }, form));
-});
-test("fingerprint compact unicode", () =>
-  assert.equal(
-    P.canonical({ z: ["文", true], a: { b: 1 } }),
-    '{"a":{"b":1},"z":["文",true]}',
-  ));
+function fromRow(row){return {version:row.event_version,stage:7,record:structuredClone(row)};}
 
-for (const target of [2, 3, 4]) test(`correct completed step ${target} before submission`, () => {
-  const h = setup(); core(h);
-  const before = structuredClone(h.s.record);
-  h.act("reopen", {step: target});
-  assert.equal(h.s.stage, target);
-  assert.deepEqual(h.s.record.first_impression, before.first_impression);
-  assert.deepEqual(h.s.record.reading_difficulty, before.reading_difficulty);
-  assert.deepEqual(h.s.record.n1, before.n1);
-  for (const k of P.steps.slice(target)) assert.equal(h.s.record.steps[k].completed_at, undefined);
-  assert.throws(() => h.act("submit"), /顺序/);
-  assert.equal(h.rows.length, 0);
+test('new records use explicit observations, null checks and the version-two event range',()=>{
+ const h=setup();assert.equal(h.s.version,P.eventVersionBase);assert.equal(h.s.record.event_schema_version,2);
+ assert.equal(h.s.record.annotator_version,'q1-annotator/3.6');assert.deepEqual(h.s.record.checks,{spoiler:null,incorrect_information:null});
+ assert.equal(h.s.record.reading_difficulty.first_pass,null);assert.equal(h.s.record.reading_difficulty.rewrite,null);
+ assert.equal(h.s.record.judgment,null);assert.deepEqual(h.s.record.legacy_inferences,[]);
 });
-test("N1 correction preserves exposure and appends a new confirmed revision", () => {
-  const h = setup();
-  h.act("complete", {judgment:"pass"}); h.act("complete", {choice:P.difficulty[0]});
-  h.act("following", {scope:"within_unit"});
-  h.act("complete", {n1:{following_text_use:"没用到",judgment:"fail",failure_types:["下文马上讲了"]}});
-  const exposure = structuredClone(h.s.record.steps.n1.following_text_views);
-  h.act("reopen", {step:2});
-  assert.deepEqual(h.s.record.steps.n1.following_text_views, exposure);
-  h.act("complete", {n1:{following_text_use:"没用到",judgment:"pass",writing_style:"补充"}});
-  h.act("complete", {spoiler:false}); h.act("complete", {incorrect_information:false});
-  done(h); const original = JSON.stringify(h.rows[0]);
-  h.act("reopen", {step:3}); h.act("complete", {spoiler:true});
-  h.act("complete", {incorrect_information:false}); done(h);
-  assert.equal(JSON.stringify(h.rows[0]), original);
-  assert.equal(h.rows[1].supersedes_revision, 1);
-  assert.equal(h.rows[1].judgment, "fail");
-  assert.deepEqual(h.rows[1].steps.n1.following_text_views, exposure);
+test('first pass and paraphrase lock on continue; rewrite and its text remain editable',()=>{
+ const h=setup();h.act('complete',{judgment:'pass'});
+ assert.throws(()=>h.act('complete'),/第一遍/);
+ h.act('save',{first_pass:P.firstPass[1],paraphrase:'初次'});
+ assert.throws(()=>h.act('complete'),/改写/);
+ h.act('complete',{rewrite:P.rewriteChoices[0],rewrite_text:'改写'});
+ const locked=h.s.record.reading_difficulty.locked_at;h.act('navigate',{step:1});
+ assert.throws(()=>h.act('save',{first_pass:P.firstPass[0]}),/锁定/);
+ assert.throws(()=>h.act('save',{paraphrase:'重写第一次'}),/锁定/);
+ h.act('save',{rewrite:P.rewriteChoices[1],rewrite_text:'新的改写'});
+ assert.equal(h.s.record.reading_difficulty.locked_at,locked);
+ assert.equal(h.s.record.reading_difficulty.paraphrase,'初次');assert.equal(h.s.record.reading_difficulty.rewrite_text,'新的改写');
+ assert.deepEqual(h.s.record.reading_difficulty.amendments.map(a=>[a.from,a.to]),[[P.rewriteChoices[0],P.rewriteChoices[1]]]);
 });
-test("correction cannot unlock first impression, future or current steps", () => {
-  const h = setup(); core(h);
-  for (const step of [0,5,6,7,-1,2.5,"2",true])
-    assert.throws(() => h.act("reopen", {step}), /只能返回/);
+test('can paraphrase forbids a contradictory rewrite and has no default rewrite choice',()=>{
+ const h=setup();h.act('complete',{judgment:'pass'});
+ assert.throws(()=>h.act('save',{first_pass:P.firstPass[0],rewrite:P.rewriteChoices[0]}),/不需要/);
+ h.act('complete',first);assert.equal(h.s.record.reading_difficulty.rewrite,null);
+ h.act('navigate',{step:1});assert.throws(()=>h.act('save',{rewrite:P.rewriteChoices[0]}),/不需要/);
 });
+test('final rewrite drives veto and automatic uncertainty with a continuous change history',()=>{
+ const h=setup();core(h,difficult);h.act('navigate',{step:1});
+ assert.equal(h.s.record.judgment,'fail');
+ h.act('save',{rewrite:P.rewriteChoices[1],manual_unsure:true});
+ assert.deepEqual(h.s.record.unsure_sources.读着费劲,['automatic','manual']);assert.equal(h.s.record.judgment,'pass');
+ h.act('save',{rewrite:P.rewriteChoices[0]});assert.deepEqual(h.s.record.unsure_sources.读着费劲,['manual']);
+ h.act('save',{rewrite:P.rewriteChoices[1]});h.act('save',{rewrite:P.rewriteChoices[1]});
+ assert.equal(h.s.record.reading_difficulty.amendments.length,3);
+ h.act('navigate',{step:5});const r=done(h);assert.equal(r.judgment,'pass');assert.equal(r.reading_difficulty.veto,false);
+});
+test('first impression remains immutable before and during discussion',()=>{
+ const h=setup();core(h);h.act('navigate',{step:0});assert.throws(()=>h.act('save',{judgment:'fail'}),/锁定/);
+ h.act('navigate',{step:5});done(h);h.act('begin_discussion');h.act('navigate',{step:0});assert.throws(()=>h.act('save',{judgment:'fail'}),/锁定/);
+});
+test('both veto checks require explicit yes or no even when N1 failed',()=>{
+ const h=setup();h.act('complete',{judgment:'pass'});h.act('complete',first);
+ h.act('complete',{n1:{following_text_use:'没用到',judgment:'fail',failure_types:['没新东西']}});
+ assert.throws(()=>h.act('complete'),/剧透/);assert.equal(h.s.record.checks.spoiler,null);
+ h.act('complete',{spoiler:false});assert.throws(()=>h.act('complete'),/错误信息/);
+ h.act('complete',{incorrect_information:false});const r=done(h);
+ assert.equal(r.judgment,'fail');assert.deepEqual(r.checks,{spoiler:false,incorrect_information:false});assert.ok(!('tags'in r));
+});
+test('unanswered checks do not display an automatic pass',()=>{
+ const h=setup();h.act('complete',{judgment:'pass'});h.act('complete',first);h.act('complete',{n1:plain});
+ assert.equal(h.s.record.judgment,null);h.act('complete',{spoiler:false});assert.equal(h.s.record.judgment,null);
+ h.act('complete',{incorrect_information:false});assert.equal(h.s.record.judgment,'pass');
+});
+test('navigation and unchanged saves preserve prior completion times',()=>{
+ const h=setup();core(h);const r=structuredClone(h.s.record);
+ h.act('navigate',{step:1});h.act('save',{rewrite_text:'',first_pass:first.first_pass,paraphrase:first.paraphrase,rewrite:null});
+ h.act('navigate',{step:4});assert.deepEqual(h.s.record,r);assert.equal(h.s.stage,5);
+ assert.throws(()=>h.act('navigate',{step:6}),/已开放/);
+ h.act('navigate',{step:2});h.act('save',{n1:{...plain,writing_style:'联想'}});h.act('navigate',{step:5});done(h);
+ assert.deepEqual(h.s.record.steps.spoiler,r.steps.spoiler);assert.deepEqual(h.s.record.steps.incorrect_information,r.steps.incorrect_information);
+});
+test('submitted rows are wholly read-only and contextual browsing creates no amendment or exposure',()=>{
+ const h=setup();core(h);done(h);const original=structuredClone(h.s.record);
+ h.act('notes');h.act('navigate',{step:2});h.act('following',{scope:'within_unit'});
+ for(const action of ['save','complete','submit','reopen','amend'])assert.throws(()=>h.act(action),/只读/);
+ h.act('navigate',{step:4});h.act('open');assert.deepEqual(h.s.record,original);assert.equal(h.rows.length,1);assert.deepEqual(h.s.dirtySteps,[]);
+});
+test('only explicit discussion with a nonempty reason can append a revision',()=>{
+ const h=setup();assert.throws(()=>h.act('begin_discussion'),/提交后/);core(h);done(h);
+ const original=structuredClone(h.rows[0]);h.act('begin_discussion');assert.equal(h.s.discussion,true);assert.equal(h.s.viewStep,6);
+ assert.throws(()=>h.act('submit'),/原因/);h.act('save',{amendment_reason:'  '});assert.throws(()=>h.act('submit'),/原因/);
+ h.act('navigate',{step:3});h.act('save',{spoiler:true});h.act('navigate',{step:6});
+ const r=h.act('submit',{amendment_reason:'讨论后发现剧透'}).record;
+ assert.equal(r.amendment_kind,'post_discussion');assert.equal(r.supersedes_revision,1);assert.ok(r.event_version>original.event_version);
+ assert.equal(r.judgment,'fail');assert.equal(h.s.discussion,false);assert.deepEqual(h.rows[0],original);
+});
+test('discussion preserves first-pass fields and rewrite amendments across later revisions',()=>{
+ const h=setup();core(h,{...difficult,rewrite:P.rewriteChoices[1]});done(h);const initial=structuredClone(h.s.record.reading_difficulty);
+ h.act('begin_discussion');h.act('navigate',{step:1});
+ assert.throws(()=>h.act('save',{paraphrase:'重新作第一遍'}),/锁定/);
+ h.act('save',{rewrite:P.rewriteChoices[0]});h.act('navigate',{step:6});h.act('submit',{amendment_reason:'讨论'});
+ for(const key of ['first_pass','paraphrase','locked_at'])assert.equal(h.s.record.reading_difficulty[key],initial[key]);
+ assert.equal(h.s.record.reading_difficulty.amendments.length,1);
+});
+for(const following of ['没用到','更远后文，转第四步判剧透'])test('N1 immediate-following failure cannot contradict branch '+following,()=>{
+ assert.throws(()=>P.n1valid({following_text_use:following,judgment:'fail',failure_types:['下文马上讲了']},form),/紧接着几段或挂早了/);
+});
+for(const following of ['紧接着几段','挂早了'])test('N1 immediate-following failure accepts appropriate branch '+following,()=>{
+ P.n1valid({following_text_use:following,judgment:'fail',failure_types:['下文马上讲了']},form);
+});
+test('far following without spoilers requires one acknowledgement and persists it',()=>{
+ const h=setup();core(h,first,{...plain,following_text_use:'更远后文，转第四步判剧透'});h.act('complete');
+ assert.throws(()=>h.act('submit'),e=>e.code==='ACKNOWLEDGEMENT_REQUIRED'&&e.step===6&&e.warning===P.farWarning);
+ assert.equal(h.rows.length,0);const r=h.act('submit',{acknowledge_far_following:true}).record;
+ assert.deepEqual(r.acknowledged_warnings,[P.farWarning]);
+ h.act('begin_discussion');h.act('submit',{amendment_reason:'确认保留'});assert.equal(h.rows.length,2);
+});
+test('acknowledgement expires when its combination changes and must be confirmed again',()=>{
+ const h=setup();core(h,first,{...plain,following_text_use:'更远后文，转第四步判剧透'});done(h,{acknowledge_far_following:true});
+ h.act('begin_discussion');h.act('navigate',{step:3});h.act('save',{spoiler:true});assert.deepEqual(h.s.record.acknowledged_warnings,[]);
+ h.act('save',{spoiler:false});h.act('navigate',{step:6});h.act('save',{amendment_reason:'重新判断'});
+ assert.throws(()=>h.act('submit'),/需要确认/);
+});
+test('conditional N1 explanations and uncovered explanations are validated at final review',()=>{
+ for(const n1 of [{...plain,writing_style:'其他写法'},{following_text_use:'没用到',judgment:'fail',failure_types:['其他']}]){
+  const h=setup();core(h);h.act('navigate',{step:2});h.act('save',{n1});h.act('navigate',{step:5});h.act('complete');
+  assert.throws(()=>h.act('submit'),e=>e.step===2&&/说明/.test(e.message));
+ }
+ const h=setup();core(h);h.act('complete');h.act('save',{rubric_uncovered:true});assert.ok(!('tags'in h.s.record));
+ assert.throws(()=>h.act('submit'),/原因/);h.act('submit',{uncovered_reason:'缺口'});
+ assert.equal(h.s.record.judgment,'fail');assert.equal(h.s.record.star,false);
+});
+test('known automatic anchors clear with their cause while manual anchors survive',()=>{
+ const h=setup();core(h,first,{...plain,following_text_use:'挂早了'});assert.deepEqual(h.s.record.tags,['锚点问题']);
+ h.act('navigate',{step:2});h.act('save',{n1:plain});assert.deepEqual(h.s.record.tags,[]);
+ h.act('navigate',{step:5});h.act('complete');h.act('save',{tags:['锚点问题']});
+ h.act('navigate',{step:2});h.act('save',{n1:{...plain,following_text_use:'挂早了'}});h.act('save',{n1:plain});assert.deepEqual(h.s.record.tags,['锚点问题']);
+});
+test('legacy submitted rows validate and remain byte-identical during read-only browsing',()=>{
+ const row=legacy();const h=setup(fromRow(row),[row]);const before=JSON.stringify(row);
+ h.act('open');h.act('navigate',{step:2});h.act('following',{scope:'within_unit'});h.act('notes');
+ assert.equal(JSON.stringify(h.s.record),before);assert.equal(h.s.record.event_schema_version,undefined);assert.equal(h.s.record.event_version,100);
+ assert.throws(()=>h.act('save',{n1:plain}),/只读/);
+});
+test('legacy unsubmitted drafts infer completed checks, preserve unknown checks, and upgrade identity',()=>{
+ const row=legacy(P.difficulty[1]);delete row.revision;delete row.supersedes_revision;row.review_completed=false;
+ delete row.steps.incorrect_information.completed_at;row.steps.tags={};
+ const state={version:19,stage:4,record:row};const before=structuredClone(state);
+ const d=P.normalizeDraft(state,{identity:{rubric_form_version:form.form_version,rubric_form_sha256:'v2hash'}});
+ assert.deepEqual(state,before);assert.equal(d.version,P.eventVersionBase);assert.equal(d.record.event_schema_version,2);
+ assert.deepEqual(d.record.checks,{spoiler:false,incorrect_information:null});assert.equal(d.record.rubric_form_sha256,'v2hash');
+ assert.deepEqual(d.record.legacy_reading_difficulty,row.reading_difficulty);assert.ok(d.record.legacy_inferences.some(x=>x.includes('未判')));
+ assert.equal(d.record.reading_difficulty.first_pass,P.firstPass[1]);assert.equal(d.record.reading_difficulty.rewrite,P.rewriteChoices[0]);
+});
+test('legacy unfinished positive checks retain the annotators explicit selection',()=>{
+ const row=legacy();delete row.revision;row.review_completed=false;
+ for(const key of ['spoiler','incorrect_information']) {delete row.steps[key].completed_at;row.vetoes[key]=true;}
+ const migrated=P.normalizeDraft({version:18,stage:3,record:row});
+ assert.deepEqual(migrated.record.checks,{spoiler:true,incorrect_information:true});
+ assert.equal(migrated.record.legacy_inferences.filter(x=>x.includes('主动勾选')).length,2);
+});
+test('legacy drafts with a submitted predecessor are protected until explicit discussion',()=>{
+ const row=legacy();const draft=fromRow(row);draft.stage=2;draft.record.review_completed=false;delete draft.record.revision;
+ draft.record.reason='尚未提交的文字';draft.record.first_impression.judgment='fail';draft.record.reading_difficulty.paraphrase='不应替换第一遍';
+ const identity={rubric_form_version:form.form_version,rubric_form_sha256:'v2hash'};
+ const normalized=P.normalizeDraft(draft,{submitted:row,firstSubmitted:row,identity});assert.equal(normalized.discussionRequired,true);
+ assert.equal(normalized.record.event_schema_version,undefined);
+ const h=setup(normalized,[structuredClone(row)],{identity});assert.throws(()=>h.act('submit'),/只读/);
+ h.act('begin_discussion');assert.equal(h.s.record.reason,'尚未提交的文字');assert.equal(h.s.record.first_impression.judgment,'pass');
+ assert.equal(h.s.record.reading_difficulty.paraphrase,'历史第一遍');assert.equal(h.s.record.rubric_form_version,form.form_version);
+ h.act('submit',{amendment_reason:'确认旧草稿中的改动'});assert.equal(h.rows.length,2);assert.deepEqual(h.rows[0],row);
+});
+for(const [original,choice,firstPass,rewrite] of [[P.difficulty[0],P.difficulty[1],P.firstPass[0],null],[P.difficulty[1],P.difficulty[0],P.firstPass[1],null]])test('cross-category legacy changes preserve first observation without inventing a rewrite '+original,()=>{
+ const row=legacy(choice,original);const h=setup(fromRow(row),[structuredClone(row)]);h.act('begin_discussion');
+ assert.equal(h.s.record.reading_difficulty.first_pass,firstPass);assert.equal(h.s.record.reading_difficulty.rewrite,rewrite);
+ assert.deepEqual(h.s.record.legacy_reading_difficulty,row.reading_difficulty);assert.ok(h.s.record.legacy_inferences.some(x=>x.includes('跨越')));
+ if(firstPass===P.firstPass[1])assert.throws(()=>h.act('submit',{amendment_reason:'讨论'}),e=>e.step===1);
+});
+test('first submitted record is the authoritative source for migrated locked fields',()=>{
+ const initial=legacy(P.difficulty[1]);const latest=structuredClone(initial);latest.revision=2;latest.event_version=120;latest.supersedes_revision=1;
+ latest.reading_difficulty.paraphrase='后来改过的复述';latest.steps.reading_difficulty.completed_at=new Date(Date.parse(initial.timestamp)+500).toISOString();
+ const h=setup(fromRow(latest),[initial,latest]);h.act('begin_discussion');
+ assert.equal(h.s.record.reading_difficulty.paraphrase,initial.reading_difficulty.paraphrase);
+ assert.equal(h.s.record.reading_difficulty.locked_at,initial.steps.reading_difficulty.completed_at);
+ h.act('submit',{amendment_reason:'讨论后确认'});assert.equal(h.rows.length,3);
+});
+test('v2 revisions reject forged locked values, missing discussion provenance and invalid event ordering',()=>{
+ const h=setup();core(h);done(h);h.act('begin_discussion');const r=h.act('submit',{amendment_reason:'讨论'}).record;
+ for(const mutate of [x=>x.reading_difficulty.paraphrase='另一次复述',x=>delete x.amendment_reason,x=>x.event_version=h.rows[0].event_version,x=>x.event_version=1]){
+  const wrong=structuredClone(r);mutate(wrong);assert.throws(()=>P.validate(wrong,form,h.rows[0]));
+ }
+ const firstBad=structuredClone(h.rows[0]);firstBad.amendment_kind='post_discussion';firstBad.amendment_reason='伪装';assert.throws(()=>P.validate(firstBad,form));
+});
+test('rewrite changes cannot bypass their amendment history by clearing or forging it',()=>{
+ const h=setup();core(h,{...difficult,rewrite:P.rewriteChoices[1]});done(h);h.act('begin_discussion');h.act('navigate',{step:1});
+ assert.throws(()=>h.act('save',{rewrite:null}),/不能清空/);
+ h.act('save',{rewrite:P.rewriteChoices[0]});h.act('navigate',{step:6});const r=h.act('submit',{amendment_reason:'讨论'}).record;
+ const forged=structuredClone(r);forged.reading_difficulty.amendments=[];
+ assert.throws(()=>P.validate(forged,form,h.rows[0]),/缺少修改历史/);
+ const wrongStart=structuredClone(r);wrongStart.reading_difficulty.amendments[0].from=P.rewriteChoices[0];
+ assert.throws(()=>P.validate(wrongStart,form,h.rows[0]),/历史/);
+});
+test('schema metadata remains outside historical rows and draft UI metadata survives',()=>{
+ const row=legacy();const state={...fromRow(row),ui:{branches:{otherWriting:'草稿'},readerScroll:90}};
+ const h=setup(state,[row]);h.act('begin_discussion');const record=h.act('submit',{amendment_reason:'讨论'}).record;
+ assert.equal(record.schema,'q1-note-judgment/1');assert.equal(record.event_schema_version,2);assert.ok(record.event_version>=P.eventVersionBase);
+ assert.deepEqual(h.s.ui,state.ui);for(const key of ['viewStep','dirtySteps','discussion','ui'])assert.ok(!(key in record));
+ assert.equal(row.event_schema_version,undefined);assert.equal(row.event_version,100);
+});
+test('compact unicode fingerprints retain their historical encoding',()=>assert.equal(P.canonical({z:['文',true],a:{b:1}}),'{"a":{"b":1},"z":["文",true]}'));
 
-test('difficulty can be corrected immediately after leaving step two with audit trail', () => {
-  const h=setup();
-  assert.throws(()=>h.act('amend',{choice:P.difficulty[1]}),/完成读着费劲/);
-  h.act('complete',{judgment:'pass'});
-  h.act('complete',{choice:P.difficulty[0]});
-  h.act('amend',{choice:P.difficulty[1]});
-  assert.equal(h.s.stage,2);
-  assert.equal(h.s.record.reading_difficulty.original_choice,P.difficulty[0]);
-  assert.equal(h.s.record.vetoes.reading_difficulty,true);
-  h.act('amend',{choice:P.difficulty[2]});
-  assert.equal(h.s.record.vetoes.reading_difficulty,false);
-  assert.equal(h.s.record.reading_difficulty.amendments[1].from,P.difficulty[1]);
-  assert.equal(h.s.record.reading_difficulty.amendments[1].to,P.difficulty[2]);
-});
-
-test('original difficulty form records every changed saved value, never replaces the initial judgment', () => {
-  const h=setup();core(h);done(h);
-  const original=JSON.stringify(h.rows[0]);
-  const first=structuredClone(h.s.record.first_impression);
-  h.act('reopen',{step:1});
-  h.act('save',{choice:P.difficulty[1],paraphrase:'重新复述',rewrite:'更直接'});
-  assert.equal(h.s.record.judgment,'fail');
-  h.act('save',{choice:P.difficulty[1]}); // Repeated autosave is not another amendment.
-  h.act('save',{choice:P.difficulty[2],manual_unsure:true});
-  assert.deepEqual([...h.s.record.unsure_sources['读着费劲']].sort(),['automatic','manual']);
-  h.act('complete',{choice:P.difficulty[0],manual_unsure:true});
-  assert.equal(h.s.stage,2);
-  assert.equal(h.s.record.reading_difficulty.original_choice,P.difficulty[0]);
-  assert.equal(h.s.record.reading_difficulty.amendments.length,3);
-  assert.deepEqual(h.s.record.reading_difficulty.amendments.map(a=>[a.from,a.to]),[
-    [P.difficulty[0],P.difficulty[1]],[P.difficulty[1],P.difficulty[2]],[P.difficulty[2],P.difficulty[0]]]);
-  h.act('complete',{});h.act('complete',{});h.act('complete',{});done(h);
-  assert.equal(JSON.stringify(h.rows[0]),original);
-  assert.equal(h.rows[1].supersedes_revision,1);
-  assert.deepEqual(h.s.record.first_impression,first);
-  assert.deepEqual(h.s.record.unsure_sources['读着费劲'],['manual']);
-  assert.equal(h.s.record.judgment,'pass');
-});
-test('revisiting difficulty without changing the choice does not invent an amendment',()=>{
-  const h=setup();core(h);h.act('reopen',{step:1});h.act('complete',{});
-  assert.equal(h.s.record.reading_difficulty.amendments.length,0);
-  assert.equal(h.s.record.reading_difficulty.original_choice,P.difficulty[0]);
-});
-
-test("navigation preserves progress, completed record and first-pass access gates", () => {
-  const h = setup();
-  assert.throws(() => h.act("navigate", {step:1}), /已开放/);
-  assert.throws(() => h.act("submit"), /顺序/);
-  h.act("complete", {judgment:"pass"});
-  h.act("complete", {choice:P.difficulty[0]});
-  const before = structuredClone(h.s.record);
-  h.act("navigate", {step:1});
-  assert.equal(h.s.stage, 2);
-  assert.equal(h.s.viewStep, 1);
-  assert.equal(h.s.maxUnlockedStage, 2);
-  h.act("save", {choice:P.difficulty[0], paraphrase:"", rewrite:"", manual_unsure:false});
-  h.act("navigate", {step:2});
-  assert.deepEqual(h.s.record, before);
-  assert.deepEqual(h.s.dirtySteps, []);
-  assert.throws(() => h.act("navigate", {step:3}), /已开放/);
-  h.act("navigate", {step:0});
-  assert.throws(() => h.act("save", {judgment:"fail"}), /锁定/);
-  assert.throws(() => h.act("save", {manual_unsure:true}), /锁定/);
-});
-
-test("submitted browsing and unchanged saves do not create another revision", () => {
-  const h = setup(); core(h); done(h);
-  const before = structuredClone(h.s.record);
-  assert.equal(h.s.viewStep, 7);
-  assert.throws(() => h.act("submit"), /已提交/);
-  h.act("navigate", {step:1});
-  h.act("save", {choice:P.difficulty[0]});
-  h.act("complete", {choice:P.difficulty[0]});
-  assert.equal(h.s.viewStep, 2);
-  assert.equal(h.s.stage, 7);
-  assert.deepEqual(h.s.record, before);
-  assert.deepEqual(h.s.dirtySteps, []);
-  h.act("navigate", {step:6});
-  assert.throws(() => h.act("submit"), /顺序/);
-  assert.equal(h.rows.length, 1);
-});
-
-test("completed steps can be edited then reviewed once without replaying unchanged later steps", () => {
-  const h = setup(); core(h); done(h);
-  const original = structuredClone(h.rows[0]);
-  h.act("navigate", {step:1});
-  h.act("save", {choice:P.difficulty[1]});
-  assert.equal(h.s.stage, 6);
-  assert.equal(h.s.viewStep, 1);
-  assert.equal(h.s.maxUnlockedStage, 6);
-  assert.deepEqual(h.s.dirtySteps, [1,5,6]);
-  assert.equal(h.s.record.review_completed, false);
-  assert.deepEqual(h.s.record.steps.n1, original.steps.n1);
-  h.act("navigate", {step:4});
-  h.act("save", {needs_verification:false});
-  h.act("navigate", {step:6});
-  const r = h.act("submit").record;
-  assert.equal(r.judgment, "fail");
-  assert.ok(!("tags" in r));
-  assert.equal(r.supersedes_revision, 1);
-  assert.deepEqual(r.first_impression, original.first_impression);
-  assert.deepEqual(r.steps.n1, original.steps.n1);
-  assert.deepEqual(r.steps.spoiler, original.steps.spoiler);
-  assert.equal(r.steps.reading_difficulty.started_at, original.steps.reading_difficulty.started_at);
-  assert.ok(r.steps.reading_difficulty.active_ms > original.steps.reading_difficulty.active_ms);
-  assert.deepEqual(h.rows[0], original);
-  assert.deepEqual(h.s.dirtySteps, []);
-  assert.equal(h.s.viewStep, 7);
-});
-
-test("final review validates unfinished conditional edits and identifies the failing step", () => {
-  const h = setup(); core(h); done(h);
-  h.act("navigate", {step:2});
-  h.act("save", {n1:{following_text_use:"没用到", judgment:"pass", writing_style:"其他写法"}});
-  h.act("complete"); // Already-open steps remain navigable with an incomplete draft.
-  assert.equal(h.s.viewStep, 3);
-  h.act("navigate", {step:6});
-  assert.throws(() => h.act("submit"), error => error.step === 2 && /说明/.test(error.message));
-  assert.equal(h.rows.length, 1);
-  h.act("navigate", {step:2});
-  h.act("save", {n1:{following_text_use:"没用到", judgment:"pass", writing_style:"其他写法", other_writing_explanation:"写法及增量"}});
-  h.act("navigate", {step:6});
-  assert.equal(h.act("submit").record.revision, 2);
-});
-
-test("final review requires uncovered reason after edits and clears pass-only fields", () => {
-  const h = setup(); core(h); h.act("complete");
-  h.act("submit", {tags:["冗余"], star:true});
-  h.act("navigate", {step:3});
-  h.act("save", {rubric_uncovered:true});
-  assert.equal(h.s.record.star, false);
-  assert.ok(!("tags" in h.s.record));
-  h.act("navigate", {step:6});
-  assert.throws(() => h.act("submit"), error => error.step === 6 && /原因/.test(error.message));
-  h.act("save", {uncovered_reason:"未覆盖的情况"});
-  const r = h.act("submit").record;
-  assert.equal(r.judgment, "fail");
-  assert.ok(!("tags" in r));
-  assert.equal(r.star, false);
-});
-
-test("difficulty edits retain the original and continuous transitions with separate uncertainty sources", () => {
-  const h = setup(); core(h); done(h);
-  h.act("navigate", {step:1});
-  h.act("save", {choice:P.difficulty[1]});
-  h.act("save", {choice:P.difficulty[2], manual_unsure:true});
-  assert.deepEqual(h.s.record.unsure_sources.读着费劲, ["automatic","manual"]);
-  h.act("save", {choice:P.difficulty[0]});
-  h.act("navigate", {step:6});
-  const r = h.act("submit").record;
-  assert.equal(r.reading_difficulty.original_choice, P.difficulty[0]);
-  assert.deepEqual(r.reading_difficulty.amendments.map(a => [a.from,a.to]), [
-    [P.difficulty[0],P.difficulty[1]], [P.difficulty[1],P.difficulty[2]], [P.difficulty[2],P.difficulty[0]],
-  ]);
-  assert.equal(r.judgment, "pass");
-  assert.deepEqual(r.unsure_sources.读着费劲, ["manual"]);
-});
-
-test("automatic anchor tag clears with its cause while manual and unknown legacy tags survive", () => {
-  const early = {following_text_use:"挂早了", judgment:"pass", writing_style:"补充"};
-  const plain = {...early, following_text_use:"没用到"};
-  const h = setup(); core(h, P.difficulty[0], early); done(h);
-  assert.deepEqual(h.s.anchorTagSources, ["automatic"]);
-  h.act("navigate", {step:2}); h.act("save", {n1:plain});
-  assert.deepEqual(h.s.record.tags, []);
-  h.act("navigate", {step:6}); h.act("save", {tags:["锚点问题"]});
-  assert.deepEqual(h.s.anchorTagSources, ["manual"]);
-  h.act("navigate", {step:2}); h.act("save", {n1:early});
-  h.act("save", {n1:plain});
-  assert.deepEqual(h.s.record.tags, ["锚点问题"]);
-  h.act("navigate", {step:6}); h.act("submit");
-  const legacy = {version:1, stage:7, record:structuredClone(h.s.record)};
-  let migrated = P.normalizeDraft(legacy);
-  assert.deepEqual(migrated.anchorTagSources, ["legacy"]);
-  migrated = P.transition(migrated, "navigate", {step:2}, 1, form, c);
-  migrated = P.transition(migrated, "save", {n1:early}, 1, form, c);
-  migrated = P.transition(migrated, "save", {n1:plain}, 1, form, c);
-  assert.deepEqual(migrated.record.tags, ["锚点问题"]);
-  assert.ok(!("anchorTagSources" in h.s.record));
-});
-
-test("normalization migrates old drafts without mutating rows or draft-only UI data", () => {
-  const h = setup(); core(h); done(h);
-  const legacy = {version:12, stage:7, record:structuredClone(h.s.record), ui:{branchDrafts:{n1:{note:"draft"}}}};
-  const before = structuredClone(legacy);
-  const migrated = P.normalizeDraft(legacy);
-  assert.equal(migrated.viewStep, 7);
-  assert.equal(migrated.maxUnlockedStage, 6);
-  assert.deepEqual(migrated.dirtySteps, []);
-  assert.deepEqual(migrated.ui, legacy.ui);
-  assert.deepEqual(legacy, before);
-  const opened = P.transition({...migrated, viewStep:1}, "open", {}, 2, form, c);
-  assert.equal(opened.viewStep, 1);
-  assert.deepEqual(opened.record, before.record);
-  assert.deepEqual(opened.ui, legacy.ui);
-  const reopened = structuredClone(legacy);
-  reopened.stage = 1;
-  for (const key of P.steps.slice(1)) delete reopened.record.steps[key].completed_at;
-  assert.equal(P.normalizeDraft(reopened).maxUnlockedStage, 6);
-});
-
-test("new revisions change tool version without changing the journal schema or legacy validity", () => {
-  const h = setup(); core(h); done(h);
-  const old = structuredClone(h.s.record);
-  old.annotator_version = "q1-annotator/3.4";
-  P.validate(old, form);
-  h.act("navigate", {step:5}); h.act("save", {reason:"补充理由"});
-  h.act("navigate", {step:6});
-  const r = h.act("submit").record;
-  assert.equal(r.annotator_version, "q1-annotator/3.5");
-  assert.equal(r.schema, old.schema);
-  for (const key of ["viewStep","maxUnlockedStage","dirtySteps","pendingActiveMs","anchorTagSources","ui"])
-    assert.ok(!(key in r));
-});
-
-test("viewing following text after submission appends exposure in the next confirmed revision", () => {
-  const h = setup(); core(h); done(h);
-  const original = structuredClone(h.rows[0]);
-  h.act("navigate", {step:2}); h.act("following", {scope:"within_unit"});
-  assert.equal(h.s.stage, 6);
-  assert.deepEqual(h.s.dirtySteps, [2]);
-  h.act("navigate", {step:6});
-  const r = h.act("submit").record;
-  assert.equal(r.steps.n1.viewed_following_text, true);
-  assert.equal(r.steps.n1.following_text_views.length, 1);
-  assert.deepEqual(r.steps.spoiler, original.steps.spoiler);
-  assert.deepEqual(h.rows[0], original);
-});
-
-test("legacy reopened drafts can confirm the missing suffix at final review only after all steps were opened", () => {
-  const h = setup(); core(h); done(h);
-  const original = structuredClone(h.rows[0]);
-  h.act("reopen", {step:1});
-  assert.equal(h.s.stage, 1);
-  assert.equal(h.s.maxUnlockedStage, 6);
-  assert.equal(h.s.record.steps.n1.completed_at, undefined);
-  h.act("navigate", {step:6});
-  const r = h.act("submit").record;
-  assert.equal(r.revision, 2);
-  for (const key of P.steps.slice(1)) {
-    assert.ok(r.steps[key].completed_at);
-    assert.equal(r.steps[key].started_at, original.steps[key].started_at);
-  }
-  assert.deepEqual(r.steps.first_impression, original.steps.first_impression);
-  const early = setup(); core(early);
-  early.act("reopen", {step:1});
-  assert.equal(early.s.maxUnlockedStage, 5);
-  assert.throws(() => early.act("navigate", {step:6}), /已开放/);
-  early.act("navigate", {step:5});
-  assert.throws(() => early.act("submit"), /顺序/);
-});
-
-test("first original-note exposure from the submitted summary returns to final confirmation", () => {
-  for (const difficulty of [P.difficulty[0], P.difficulty[1]]) {
-    const h = setup(); core(h, difficulty); done(h);
-    const original = structuredClone(h.rows[0]);
-    assert.equal(h.s.viewStep, 7);
-    h.act("notes");
-    assert.equal(h.s.stage, 6);
-    assert.equal(h.s.viewStep, 6);
-    assert.deepEqual(h.s.dirtySteps, [6]);
-    assert.equal(h.s.record.review_completed, false);
-    assert.equal(h.s.record.context.viewed_original_notes, true);
-    assert.equal(h.rows.length, 1);
-    const r = h.act("submit").record;
-    assert.equal(r.supersedes_revision, 1);
-    assert.equal(r.context.viewed_original_notes, true);
-    assert.deepEqual(h.rows[0], original);
-    const submitted = structuredClone(h.s.record);
-    h.act("notes");
-    assert.equal(h.s.viewStep, 7);
-    assert.deepEqual(h.s.dirtySteps, []);
-    assert.deepEqual(h.s.record, submitted);
-  }
+test('Python accepts JavaScript-produced new revisions and legacy discussion conversions',()=>{
+ const h=setup();core(h,difficult);done(h);h.act('begin_discussion');h.act('navigate',{step:1});h.act('save',{rewrite:P.rewriteChoices[1]});h.act('navigate',{step:6});h.act('submit',{amendment_reason:'synthetic discussion'});
+ const original=legacy(P.difficulty[1]);const upgraded=setup(fromRow(original),[structuredClone(original)]);upgraded.act('begin_discussion');upgraded.act('submit',{amendment_reason:'synthetic migration'});
+ const result=spawnSync(__dirname+'/../.venv/bin/python',['-c',
+  'import json,sys; sys.path.insert(0,"scripts"); from q1_note_form import validate_assessment\nfor rows in json.load(sys.stdin):\n for i,row in enumerate(rows): validate_assessment(row, rows[i-1] if i else None, rows[0])\nprint("validated")'],
+  {cwd:__dirname+'/..',input:JSON.stringify([h.rows,upgraded.rows]),encoding:'utf8'});
+ assert.equal(result.status,0,result.stderr);assert.equal(result.stdout.trim(),'validated');
 });

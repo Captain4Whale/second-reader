@@ -19,6 +19,12 @@ STYLES = ("补充", "联想", "解读", "其他写法")
 FAILURES = ("没新东西", "下文马上讲了", "只提问不回答", "有东西没送到", "其他")
 TAGS = ("有空话", "冗余", "老师口吻", "太简练", "锚点问题")
 SCHEMA = "q1-note-judgment/1"
+FORM_V1 = "q1-v3.4.form.v1"
+FORM_V2 = "q1-v3.4.form.v2"
+FIRST_PASS = ("复述得出", "复述不出或说偏")
+REWRITE = DIFFICULTY[1:]
+WARNINGS = ("far_following_without_spoiler",)
+V2_EVENT_VERSION_MIN = 2 ** 32
 
 
 def require(ok, message):
@@ -93,6 +99,8 @@ def validate_form(form):
         ),
         "步骤说明无效",
     )
+    require(form["form_version"] in (FORM_V1, FORM_V2), "未知 Note 表单版本")
+    v2 = form["form_version"] == FORM_V2
     expected = dict(
         reading_difficulty=list(DIFFICULTY),
         following_text_use=list(FOLLOWING),
@@ -100,6 +108,9 @@ def validate_form(form):
         failure_types=list(FAILURES),
         tags=list(TAGS),
     )
+    if v2:
+        expected.pop("reading_difficulty")
+        expected.update(first_pass=list(FIRST_PASS), rewrite=list(REWRITE))
     require(form["choices"] == expected, "选项与 v3.4 协议不符")
     require(
         form["policy"]
@@ -112,7 +123,9 @@ def validate_form(form):
                 "star_requires_pass",
                 "tags_only_on_pass",
                 "explicit_completion",
-            ),
+            ) + (("first_pass_immutable", "first_pass_paraphrase_immutable",
+                   "post_discussion_amendments_only", "explicit_veto_checks",
+                   "acknowledge_far_following_without_spoiler") if v2 else ()),
             True,
         ),
         "表单策略无效",
@@ -135,12 +148,17 @@ def outcome(row):
 def derive(row):
     """Update dependent values, preserving only currently applicable fields."""
     difficulty = row["reading_difficulty"]
-    row["vetoes"]["reading_difficulty"] = difficulty["choice"] == DIFFICULTY[1]
+    v2 = row.get("event_schema_version") == 2
+    value = difficulty["rewrite"] if v2 else difficulty["choice"]
+    row["vetoes"]["reading_difficulty"] = value == DIFFICULTY[1]
+    if v2:
+        for key in ("spoiler", "incorrect_information"):
+            row["vetoes"][key] = row.get("checks", {}).get(key) is True
     difficulty["veto"] = row["vetoes"]["reading_difficulty"]
     sources = row["unsure_sources"]
     manual = "manual" in sources.get("读着费劲", [])
     sources.pop("读着费劲", None)
-    values = (["automatic"] if difficulty["choice"] == DIFFICULTY[2] else []) + (
+    values = (["automatic"] if value == DIFFICULTY[2] else []) + (
         ["manual"] if manual else []
     )
     if values:
@@ -159,7 +177,7 @@ def derive(row):
             row["tags"].append("锚点问题")
 
 
-def validate_n1(n):
+def validate_n1(n, event_schema_version=1):
     require(n.get("following_text_use") in FOLLOWING, "请选择用到后文的分支")
     require(n.get("judgment") in ("pass", "fail"), "请判断 N1 过或不过")
     if n["judgment"] == "pass":
@@ -192,8 +210,48 @@ def validate_n1(n):
             "缺少下文马上讲了失败类型",
         )
 
+    if event_schema_version == 2:
+        require(
+            "下文马上讲了" not in n.get("failure_types", [])
+            or n["following_text_use"] in ("紧接着几段", "挂早了"),
+            "下文马上讲了只适用于紧接着几段或挂早了",
+        )
 
-def validate_assessment(row, previous=None):
+
+def _validate_v2_difficulty(d):
+    require(
+        isinstance(d, dict) and set(d) == {
+            "first_pass", "locked_at", "paraphrase", "rewrite", "rewrite_text",
+            "veto", "amendments",
+        },
+        "新版费劲字段无效",
+    )
+    require(d["first_pass"] in FIRST_PASS, "缺少第一遍复述判断")
+    timestamp(d["locked_at"])
+    require(all(isinstance(d[k], str) for k in ("paraphrase", "rewrite_text")), "费劲文字无效")
+    require(isinstance(d["amendments"], list) and all(isinstance(a, dict) for a in d["amendments"]), "费劲修改历史无效")
+    require(
+        d["rewrite"] is None if d["first_pass"] == FIRST_PASS[0] else d["rewrite"] in REWRITE,
+        "第一遍复述结果与改写分支不符",
+    )
+    require(type(d["veto"]) is bool and d["veto"] == (d["rewrite"] == REWRITE[0]), "费劲否决值无效")
+    cursor = d["amendments"][0].get("from") if d["amendments"] else d["rewrite"]
+    for a in d["amendments"]:
+        require(
+            isinstance(a, dict) and a.get("from") == cursor
+            and a.get("from") in REWRITE and a.get("to") in REWRITE
+            and a.get("from") != a.get("to"),
+            "费劲修改历史不连续",
+        )
+        timestamp(a.get("at"))
+        require(isinstance(a.get("reason"), str), "修正理由必须是文字")
+        require(type(a.get("active_ms")) is int and a["active_ms"] >= 0, "修正计时无效")
+        cursor = a["to"]
+    require(cursor == d["rewrite"], "费劲最终值与历史不符")
+    require(d["first_pass"] != FIRST_PASS[0] or not d["amendments"], "复述得出不能改写判断")
+
+
+def validate_assessment(row, previous=None, first_submitted=None):
     """Validate one complete record; previous enforces immutable evidence on amendments."""
     require(
         row.get("schema") == SCHEMA
@@ -202,36 +260,76 @@ def validate_assessment(row, previous=None):
         "不是新版 Note 判定",
     )
     require(row.get("review_completed") is True, "未完成的草稿不能写入 judgments")
+    v2 = row.get("event_schema_version") == 2
+    require(not v2 or row.get("rubric_form_version") == FORM_V2, "新版事件必须绑定 v2 表单")
+    require(row.get("rubric_form_version") != FORM_V2 or v2, "v2 表单必须写新版事件")
     required = set(
         "schema annotator_id annotator_version review_session_id session_purpose batch_id session_manifest_sha256 rubric_version rubric_sha256 annotation_guide_sha256 rubric_form_version rubric_form_sha256 record_type record_id marginalia_id window_id unit_key book_key revision supersedes_revision timestamp type source_quote body_text original_source_range randomization context first_impression reading_difficulty n1 vetoes unsure unsure_sources needs_verification rubric_uncovered uncovered_reason judgment star reason steps review_completed event_version".split()
     )
+    optional = {"tags"}
+    if v2:
+        required |= {"event_schema_version", "checks", "legacy_inferences", "acknowledged_warnings"}
+        optional |= {"amendment_kind", "amendment_reason", "legacy_reading_difficulty"}
     require(
-        required <= row.keys() and set(row) <= required | {"tags"},
+        required <= row.keys() and set(row) <= required | optional,
         "判定字段缺失或包含未知字段",
     )
     require(row["first_impression"]["judgment"] in ("pass", "fail"), "缺少第一印象")
     timestamp(row["first_impression"]["locked_at"])
     d = row["reading_difficulty"]
-    require(
-        all(isinstance(d.get(k), str) for k in ("paraphrase", "rewrite"))
-        and isinstance(d.get("amendments"), list),
-        "费劲文字或修改历史无效",
-    )
-    require(
-        d.get("original_choice") in DIFFICULTY and d.get("choice") in DIFFICULTY,
-        "缺少读着费劲判断",
-    )
-    cursor = d["original_choice"]
-    for a in d["amendments"]:
+    if v2:
+        require(type(row["event_schema_version"]) is int, "事件协议版本无效")
+        _validate_v2_difficulty(d)
+        require(type(row["event_version"]) is int and row["event_version"] >= V2_EVENT_VERSION_MIN, "事件序号无效")
+        if previous:
+            require(row["event_version"] > previous["event_version"], "事件序号必须继续增长")
         require(
-            a["from"] == cursor and a["to"] in DIFFICULTY and a["from"] != a["to"],
-            "费劲修改历史不连续",
+            isinstance(row["checks"], dict)
+            and set(row["checks"]) == {"spoiler", "incorrect_information"}
+            and all(type(v) is bool for v in row["checks"].values()),
+            "剧透和错误信息必须明确判断",
         )
-        timestamp(a["at"])
-        require(isinstance(a.get("reason"), str), "修正理由必须是文字")
-        cursor = a["to"]
-    require(cursor == d["choice"], "费劲最终值与历史不符")
-    validate_n1(row["n1"])
+        require(
+            all(row["checks"][k] == row["vetoes"].get(k) for k in row["checks"]),
+            "明确判断与否决值不一致",
+        )
+        require(
+            isinstance(row["legacy_inferences"], list)
+            and all(text(x) for x in row["legacy_inferences"]),
+            "旧记录推断说明无效",
+        )
+        choices(row["acknowledged_warnings"], WARNINGS, "已确认提醒")
+        require(
+            row["n1"].get("following_text_use") != FOLLOWING[3]
+            or row["checks"]["spoiler"]
+            or WARNINGS[0] in row["acknowledged_warnings"],
+            "更远后文但无剧透需要确认提醒",
+        )
+        if previous or row.get("supersedes_revision") is not None:
+            require(row.get("amendment_kind") == "post_discussion" and text(row.get("amendment_reason")), "提交后只能填写原因追加讨论后修订")
+        else:
+            require(not ({"amendment_kind", "amendment_reason"} & row.keys()), "首次提交不是讨论后修订")
+    else:
+        require(
+            all(isinstance(d.get(k), str) for k in ("paraphrase", "rewrite"))
+            and isinstance(d.get("amendments"), list),
+            "费劲文字或修改历史无效",
+        )
+        require(
+            d.get("original_choice") in DIFFICULTY and d.get("choice") in DIFFICULTY,
+            "缺少读着费劲判断",
+        )
+        cursor = d["original_choice"]
+        for a in d["amendments"]:
+            require(
+                a["from"] == cursor and a["to"] in DIFFICULTY and a["from"] != a["to"],
+                "费劲修改历史不连续",
+            )
+            timestamp(a["at"])
+            require(isinstance(a.get("reason"), str), "修正理由必须是文字")
+            cursor = a["to"]
+        require(cursor == d["choice"], "费劲最终值与历史不符")
+    validate_n1(row["n1"], 2 if v2 else 1)
     require(
         set(row["vetoes"]) == {"reading_difficulty", "spoiler", "incorrect_information"}
         and all(type(v) is bool for v in row["vetoes"].values()),
@@ -240,7 +338,7 @@ def validate_assessment(row, previous=None):
     require(
         d["veto"]
         == row["vetoes"]["reading_difficulty"]
-        == (d["choice"] == DIFFICULTY[1]),
+        == ((d["rewrite"] == REWRITE[0]) if v2 else (d["choice"] == DIFFICULTY[1])),
         "费劲结论必须使用最终值",
     )
     require(
@@ -273,7 +371,7 @@ def validate_assessment(row, previous=None):
         )
     require(
         ("automatic" in row["unsure_sources"].get("读着费劲", []))
-        == (d["choice"] == DIFFICULTY[2]),
+        == ((d["rewrite"] == REWRITE[1]) if v2 else (d["choice"] == DIFFICULTY[2])),
         "改写不出必须自动拿不准",
     )
     for name in STEPS:
@@ -307,11 +405,47 @@ def validate_assessment(row, previous=None):
             row["first_impression"] == previous["first_impression"], "第一印象已经锁定"
         )
         old = previous["reading_difficulty"]
-        require(
-            d["original_choice"] == old["original_choice"]
-            and d["amendments"][: len(old["amendments"])] == old["amendments"],
-            "不能覆盖费劲原值或修改历史",
-        )
+        if v2 and previous.get("event_schema_version") == 2:
+            require(
+                all(d[k] == old[k] for k in ("first_pass", "locked_at", "paraphrase"))
+                and d["amendments"][:len(old["amendments"])] == old["amendments"],
+                "不能覆盖第一遍结果、复述或修改历史",
+            )
+            added = d["amendments"][len(old["amendments"]):]
+            require(
+                (added[0]["from"] == old["rewrite"]) if added else d["rewrite"] == old["rewrite"],
+                "费劲修改历史必须接续上次提交",
+            )
+            require(
+                row["legacy_inferences"][:len(previous["legacy_inferences"])] == previous["legacy_inferences"]
+                and row.get("legacy_reading_difficulty") == previous.get("legacy_reading_difficulty"),
+                "不能覆盖旧记录推断与原始证据",
+            )
+        elif v2:
+            source = first_submitted or previous
+            original = source["reading_difficulty"]
+            legacy = row.get("legacy_reading_difficulty")
+            require(
+                isinstance(legacy, dict) and row["legacy_inferences"]
+                and legacy.get("original_choice") == old["original_choice"]
+                and isinstance(legacy.get("amendments"), list)
+                and legacy["amendments"][:len(old["amendments"])] == old["amendments"],
+                "旧费劲证据及推断说明必须保留",
+            )
+            require(
+                d["first_pass"] == (FIRST_PASS[0] if original["original_choice"] == DIFFICULTY[0] else FIRST_PASS[1])
+                and d["paraphrase"] == original["paraphrase"]
+                and (not source["steps"]["reading_difficulty"].get("completed_at")
+                     or d["locked_at"] == source["steps"]["reading_difficulty"]["completed_at"]),
+                "不能覆盖首条判定的第一遍结果或复述",
+            )
+        elif not v2:
+            require(previous.get("event_schema_version") != 2, "新版记录不能退回旧事件")
+            require(
+                d["original_choice"] == old["original_choice"]
+                and d["amendments"][:len(old["amendments"])] == old["amendments"],
+                "不能覆盖费劲原值或修改历史",
+            )
         for name in ("n1", "spoiler"):
             old_views = previous["steps"][name]["following_text_views"]
             require(

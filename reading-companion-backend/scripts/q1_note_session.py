@@ -14,6 +14,8 @@ from scripts.q1_comparison_stats import load_bundle
 from scripts.q1_note_context import BookSource, contexts, fingerprint
 from scripts.q1_note_form import (
     SCHEMA,
+    FORM_V1,
+    FORM_V2,
     STEPS,
     LABELS,
     DIFFICULTY,
@@ -28,7 +30,8 @@ from scripts.q1_note_form import (
 from scripts.q1_rubric_form import load_form
 
 BACKEND = Path(__file__).resolve().parents[1]
-FORM = "q1-v3.4.form.v1"
+FORM = FORM_V1  # Historical server API and fixtures retain their original identity.
+DEFAULT_FORM = FORM_V2
 
 
 def now():
@@ -52,7 +55,8 @@ def append(path, value):
         os.fsync(stream.fileno())
 
 
-def prepare(source, output, book_roots, seed=20261115, purpose="formal", mark_ids=None):
+def prepare(source, output, book_roots, seed=20261115, purpose="formal", mark_ids=None, form_version=DEFAULT_FORM):
+    require(form_version in (FORM_V1, FORM_V2), "不支持的 Note 表单版本")
     output = Path(output).resolve()
     require(
         output.is_relative_to((BACKEND / "state").resolve()),
@@ -100,7 +104,7 @@ def prepare(source, output, book_roots, seed=20261115, purpose="formal", mark_id
             c["record_id"],
         )
     )
-    form, form_hash = load_form(FORM)
+    form, form_hash = load_form(form_version)
     manifest = dict(
         schema="q1-note-session/1",
         review_session_id=str(uuid4()),
@@ -110,7 +114,7 @@ def prepare(source, output, book_roots, seed=20261115, purpose="formal", mark_id
         rubric_version=form["rubric_version"],
         rubric_sha256=form["rubric_sha256"],
         annotation_guide_sha256=form["annotation_guide_sha256"],
-        rubric_form_version=FORM,
+        rubric_form_version=form_version,
         rubric_form_sha256=form_hash,
         randomization=dict(
             seed=seed,
@@ -148,7 +152,7 @@ def prepare(source, output, book_roots, seed=20261115, purpose="formal", mark_id
     for name, data in [
         ("manifest.json", encoded(manifest)),
         ("context.json", encoded(cases)),
-        ("rubric-form.json", (BACKEND / "rubric/q1-v3.4.form.v1.json").read_bytes()),
+        ("rubric-form.json", (BACKEND / "rubric" / f"{form_version}.json").read_bytes()),
         ("judgments.jsonl", b""),
         ("progress.jsonl", b""),
     ]:
@@ -221,12 +225,29 @@ class Store:
             finally:
                 fcntl.flock(stream, fcntl.LOCK_UN)
 
+    def _matches_record_identity(self, row):
+        """A v1 session may append a genuinely published v2 event, never rewrite its manifest."""
+        expected = dict(self.identity)
+        if row.get("record_type") == "unit_note":
+            # Unit notes keep the session identity; only judgments adopt a new form.
+            return all(row.get(k) == v for k, v in expected.items())
+        if row.get("rubric_form_version") == FORM_V2 and row.get("event_schema_version") != 2:
+            return False
+        if row.get("event_schema_version") == 2:
+            if self.form["form_version"] not in (FORM_V1, FORM_V2):
+                return False
+            published, digest = load_form(FORM_V2)
+            expected.update(rubric_form_version=FORM_V2, rubric_form_sha256=digest)
+            if any(expected[k] != published[k] for k in ("rubric_version", "rubric_sha256", "annotation_guide_sha256")):
+                return False
+        return all(row.get(k) == v for k, v in expected.items())
+
     def read_judgments(self):
-        journal, latest = rows(self.folder / "judgments.jsonl"), {}
+        journal, latest, first = rows(self.folder / "judgments.jsonl"), {}, {}
         for index, r in enumerate(journal, 1):
             require(
                 r["revision"] == index
-                and all(r.get(k) == v for k, v in self.identity.items()),
+                and self._matches_record_identity(r),
                 "日志修订或会话身份不符",
             )
             if r["record_type"] == "unit_note":
@@ -277,8 +298,9 @@ class Store:
                 r["supersedes_revision"] == (old["revision"] if old else None),
                 "修订前驱不符",
             )
-            validate_assessment(r, old)
+            validate_assessment(r, old, first.get(r["record_id"]))
             latest[r["record_id"]] = r
+            first.setdefault(r["record_id"], r)
         return journal
 
     def state(self, rid):
@@ -394,8 +416,10 @@ class Store:
             )
 
     def action(self, rid, action, values=None, version=None, active_ms=0):
+        require(self.form["form_version"] == FORM_V1, "新版表单请使用离线 HTML 标注器")
         with self.lock():
             state = self.state(rid) or self.new_state(rid)
+            require(state["record"].get("event_schema_version") != 2, "新版记录请使用离线 HTML 标注器")
             if action != "open":
                 require(
                     version == state["version"],

@@ -502,14 +502,15 @@ def test_partial_jsonl_tail_stops_without_rewriting(store):
     assert path.read_bytes() == original
 
 
+@pytest.mark.parametrize("form_version", [mod.FORM_V1, mod.FORM_V2])
 def test_prepare_filters_notes_without_mutating_source_and_reproduces_order(
-    tmp_path, monkeypatch
+    tmp_path, monkeypatch, form_version
 ):
     real_backend = mod.BACKEND
     monkeypatch.setattr(mod, "BACKEND", tmp_path)
     (tmp_path / "rubric").mkdir()
-    (tmp_path / "rubric/q1-v3.4.form.v1.json").write_bytes(
-        (real_backend / "rubric/q1-v3.4.form.v1.json").read_bytes()
+    (tmp_path / f"rubric/{form_version}.json").write_bytes(
+        (real_backend / f"rubric/{form_version}.json").read_bytes()
     )
     source = tmp_path / "source"
     source.mkdir()
@@ -548,8 +549,15 @@ def test_prepare_filters_notes_without_mutating_source_and_reproduces_order(
     monkeypatch.setattr(mod, "BookSource", Book)
     monkeypatch.setattr(mod, "contexts", lambda *args: {})
     before = deepcopy(mixed)
-    a = mod.prepare(source, tmp_path / "state/a", ["book"], seed=31)
-    b = mod.prepare(source, tmp_path / "state/b", ["book"], seed=31)
+    options = {"form_version": form_version} if form_version == mod.FORM_V1 else {}
+    a = mod.prepare(source, tmp_path / "state/a", ["book"], seed=31, **options)
+    b = mod.prepare(source, tmp_path / "state/b", ["book"], seed=31, **options)
+    assert a["rubric_form_version"] == form_version
+    assert (tmp_path / "state/a/rubric-form.json").read_bytes() == (real_backend / f"rubric/{form_version}.json").read_bytes()
+    if form_version == mod.FORM_V2:
+        with pytest.raises(ValueError, match="离线 HTML"):
+            mod.Store(tmp_path / "state/a").action(a["record_ids"][0], "open")
+        assert (tmp_path / "state/a/progress.jsonl").read_bytes() == b""
     assert a["record_ids"] == b["record_ids"] and a["total_notes"] == 4
     assert "item-0" not in a["record_ids"] and mixed == before
     assert (source / "judgments.jsonl").read_bytes() == b""
@@ -639,3 +647,244 @@ def test_return_to_original_difficulty_form_preserves_history_and_old_submission
     assert result["unsure_sources"]["读着费劲"] == ["manual"]
     assert result["supersedes_revision"] == 1
     assert (store.folder / "judgments.jsonl").read_bytes().startswith(prefix)
+
+
+def v2_record(store, *, previous=False):
+    to_conclusion(store)
+    old = deepcopy(finish(store))
+    row = deepcopy(old)
+    row.update(rubric_form_version=mod.FORM_V2, rubric_form_sha256=load_form(mod.FORM_V2)[1],
+               annotator_version="q1-annotator/3.6", event_schema_version=2, event_version=2 ** 32,
+               checks={"spoiler": False, "incorrect_information": False},
+               legacy_inferences=[], acknowledged_warnings=[])
+    row["reading_difficulty"] = dict(first_pass="复述得出",
+        locked_at=old["steps"]["reading_difficulty"]["completed_at"],
+        paraphrase=old["reading_difficulty"]["paraphrase"], rewrite=None, rewrite_text="",
+        veto=False, amendments=[])
+    if previous:
+        row.update(revision=2, supersedes_revision=1, event_version=2 ** 32,
+                   amendment_kind="post_discussion", amendment_reason="讨论后确认说明",
+                   legacy_reading_difficulty=deepcopy(old["reading_difficulty"]),
+                   legacy_inferences=["第一遍判断来自首条旧记录，不是新观察"])
+    return row, old
+
+
+def test_reader_accepts_real_v2_append_under_unchanged_v1_manifest(store):
+    row, old = v2_record(store, previous=True)
+    journal = store.folder / "judgments.jsonl"
+    before = journal.read_bytes()
+    manifest = (store.folder / "manifest.json").read_bytes()
+    mod.append(journal, row)
+    _, result = mod.read_note_review(store.folder)
+    assert result == [old, row]
+    assert journal.read_bytes().startswith(before)
+    assert (store.folder / "manifest.json").read_bytes() == manifest
+    with pytest.raises(ValueError, match="离线 HTML"):
+        act(store, "open")
+
+
+@pytest.mark.parametrize("field,value", [
+    ("rubric_form_sha256", "0" * 64), ("rubric_form_version", "q1-v3.4.form.v99"),
+    ("session_manifest_sha256", "0" * 64), ("rubric_sha256", "0" * 64),
+    ("annotation_guide_sha256", "0" * 64),
+])
+def test_reader_rejects_v2_identity_shortcuts(store, field, value):
+    row, _ = v2_record(store, previous=True)
+    row[field] = value
+    mod.append(store.folder / "judgments.jsonl", row)
+    with pytest.raises(ValueError, match="身份"):
+        store.read_judgments()
+
+
+@pytest.mark.parametrize("field", ["first_pass", "locked_at", "paraphrase"])
+def test_v2_first_pass_evidence_is_immutable(store, field):
+    row, _ = v2_record(store)
+    previous = deepcopy(row)
+    row.update(amendment_kind="post_discussion", amendment_reason="讨论后修正", supersedes_revision=1,
+               revision=2, event_version=previous["event_version"] + 1)
+    if field == "first_pass":
+        row["reading_difficulty"][field] = "复述不出或说偏"
+        row["reading_difficulty"]["rewrite"] = "改写不出"
+        from scripts.q1_note_form import derive
+        derive(row)
+    elif field == "locked_at":
+        row["reading_difficulty"][field] = "2099-01-01T00:00:00Z"
+    else:
+        row["reading_difficulty"][field] = "事后改写复述"
+    with pytest.raises(ValueError, match="第一遍"):
+        validate_assessment(row, previous)
+
+
+@pytest.mark.parametrize("field", ["spoiler", "incorrect_information"])
+@pytest.mark.parametrize("value", [None, "false", 0])
+def test_v2_requires_explicit_boolean_checks(store, field, value):
+    row, _ = v2_record(store)
+    row["checks"][field] = value
+    with pytest.raises(ValueError, match="明确判断"):
+        validate_assessment(row)
+
+
+def test_v2_rewrite_amendments_and_auto_manual_uncertainty(store):
+    from scripts.q1_note_form import derive
+    row, _ = v2_record(store)
+    d = row["reading_difficulty"]
+    d.update(first_pass="复述不出或说偏", rewrite="能改写得更直白")
+    derive(row)
+    row["steps"]["tags"] = {"status": "skipped_due_to_fail"}
+    assert validate_assessment(row)["judgment"] == "fail"
+    previous = deepcopy(row)
+    row.update(amendment_kind="post_discussion", amendment_reason="讨论后确认表达已清楚",
+               supersedes_revision=1, revision=2, event_version=row["event_version"] + 1)
+    d["rewrite"] = "改写不出"
+    d["amendments"].append({"from": "能改写得更直白", "to": "改写不出", "at": mod.now(), "reason": "讨论后确认", "active_ms": 4})
+    row["unsure_sources"]["读着费劲"] = ["manual"]
+    derive(row)
+    row["steps"]["tags"] = deepcopy(row["steps"]["conclusion"])
+    assert validate_assessment(row, previous)["judgment"] == "pass"
+    assert row["unsure_sources"]["读着费劲"] == ["automatic", "manual"]
+    d["amendments"][0]["from"] = None
+    with pytest.raises(ValueError, match="不连续"):
+        validate_assessment(row, previous)
+
+
+@pytest.mark.parametrize("branch,valid", [("没用到", False), ("紧接着几段", True), ("挂早了", True), ("更远后文，转第四步判剧透", False)])
+def test_v2_immediate_following_failure_is_branch_limited(store, branch, valid):
+    from scripts.q1_note_form import derive
+    row, _ = v2_record(store)
+    row["n1"] = {"following_text_use": branch, "judgment": "fail", "failure_types": ["下文马上讲了"]}
+    row["acknowledged_warnings"] = ["far_following_without_spoiler"]
+    derive(row)
+    row["steps"]["tags"] = {"status": "skipped_due_to_fail"}
+    if valid:
+        validate_assessment(row)
+    else:
+        with pytest.raises(ValueError, match="只适用于"):
+            validate_assessment(row)
+
+
+def test_v2_far_following_without_spoiler_requires_acknowledgement(store):
+    row, _ = v2_record(store)
+    row["n1"]["following_text_use"] = "更远后文，转第四步判剧透"
+    with pytest.raises(ValueError, match="确认提醒"):
+        validate_assessment(row)
+    row["acknowledged_warnings"] = ["far_following_without_spoiler"]
+    validate_assessment(row)
+
+
+@pytest.mark.parametrize("field,value", [("amendment_kind", "correction"), ("amendment_reason", " ")])
+def test_v2_submitted_revision_requires_discussion_marker_and_reason(store, field, value):
+    row, old = v2_record(store, previous=True)
+    row[field] = value
+    with pytest.raises(ValueError, match="讨论后修订"):
+        validate_assessment(row, old)
+
+
+def test_v2_initial_record_does_not_claim_discussion_revision(store):
+    row, _ = v2_record(store)
+    row.update(amendment_kind="post_discussion", amendment_reason="错误地声明修订")
+    with pytest.raises(ValueError, match="首次提交"):
+        validate_assessment(row)
+
+
+@pytest.mark.parametrize("field", ["first_pass", "paraphrase", "locked_at"])
+def test_v2_upgrade_must_keep_first_submitted_reading_observation(store, field):
+    row, first = v2_record(store, previous=True)
+    if field == "first_pass":
+        row["reading_difficulty"].update(first_pass="复述不出或说偏", rewrite="改写不出")
+        from scripts.q1_note_form import derive
+        derive(row)
+    else:
+        row["reading_difficulty"][field] = "2099-01-01T00:00:00Z" if field == "locked_at" else "新复述"
+    with pytest.raises(ValueError, match="第一遍"):
+        validate_assessment(row, first, first)
+
+
+def test_v2_record_event_counter_cannot_reset_on_schema_upgrade(store):
+    row, old = v2_record(store, previous=True)
+    row["event_version"] = 2
+    with pytest.raises(ValueError, match="序号"):
+        validate_assessment(row, old)
+
+
+def test_reader_accepts_native_v2_manifest_without_changing_its_bytes(store):
+    row, _ = v2_record(store)
+    form, digest = load_form(mod.FORM_V2)
+    manifest = deepcopy(store.manifest)
+    manifest.update(rubric_form_version=mod.FORM_V2, rubric_form_sha256=digest)
+    manifest_bytes = mod.encoded(manifest)
+    (store.folder / "manifest.json").write_bytes(manifest_bytes)
+    from pathlib import Path
+    backend = Path(__file__).resolve().parents[1]
+    (store.folder / "rubric-form.json").write_bytes((backend / f"rubric/{mod.FORM_V2}.json").read_bytes())
+    row["session_manifest_sha256"] = fingerprint(manifest)
+    (store.folder / "judgments.jsonl").write_bytes(mod.encoded(row))
+    assert mod.read_note_review(store.folder)[1] == [row]
+    assert (store.folder / "manifest.json").read_bytes() == manifest_bytes
+
+
+@pytest.mark.parametrize("form_version", [None, mod.FORM_V1])
+def test_prepare_cli_defaults_to_v2_but_can_prepare_legacy_form(monkeypatch, form_version):
+    import sys
+    from scripts import q1_note_review
+    calls = []
+    monkeypatch.setattr(q1_note_review, "prepare", lambda *args, **kwargs: calls.append((args, kwargs)))
+    argv = ["q1_note_review", "prepare", "--source", "/unused/source", "--session", "/unused/state/test", "--book-root", "/unused/book"]
+    if form_version:
+        argv += ["--form", form_version]
+    monkeypatch.setattr(sys, "argv", argv)
+    q1_note_review.main()
+    assert calls[0][1]["form_version"] == (form_version or mod.FORM_V2)
+
+
+def test_v2_rewrite_revision_requires_history_from_previous_value(store):
+    from scripts.q1_note_form import derive
+    row, _ = v2_record(store)
+    d = row["reading_difficulty"]
+    d.update(first_pass="复述不出或说偏", rewrite="改写不出")
+    derive(row)
+    previous = deepcopy(row)
+    d["rewrite"] = "能改写得更直白"
+    derive(row)
+    row.update(amendment_kind="post_discussion", amendment_reason="讨论", supersedes_revision=1,
+               revision=2, event_version=row["event_version"] + 1)
+    row["steps"]["tags"] = {"status": "skipped_due_to_fail"}
+    with pytest.raises(ValueError, match="接续"):
+        validate_assessment(row, previous)
+    d["amendments"] = [{"from": "能改写得更直白", "to": "改写不出", "at": mod.now(), "reason": "", "active_ms": 0},
+                       {"from": "改写不出", "to": "能改写得更直白", "at": mod.now(), "reason": "", "active_ms": 0}]
+    with pytest.raises(ValueError, match="接续"):
+        validate_assessment(row, previous)
+
+
+@pytest.mark.parametrize("form_version", [mod.FORM_V1, mod.FORM_V2])
+def test_unit_note_reopens_under_original_manifest_identity_without_event_schema(store, form_version):
+    from pathlib import Path
+    backend = Path(__file__).resolve().parents[1]
+    if form_version == mod.FORM_V2:
+        manifest = deepcopy(store.manifest)
+        manifest.update(rubric_form_version=form_version,
+                        rubric_form_sha256=load_form(form_version)[1])
+        (store.folder / "manifest.json").write_bytes(mod.encoded(manifest))
+        (store.folder / "rubric-form.json").write_bytes((backend / f"rubric/{form_version}.json").read_bytes())
+        store = mod.Store(store.folder)
+    manifest_before = (store.folder / "manifest.json").read_bytes()
+    store.unit_note("window", "测试单元备注")
+    first = store.read_judgments()
+    assert len(first) == 1
+    assert first[0]["rubric_form_version"] == form_version
+    assert "event_schema_version" not in first[0]
+    assert all(first[0][key] == value for key, value in store.identity.items())
+    prefix = (store.folder / "judgments.jsonl").read_bytes()
+    reopened = mod.Store(store.folder)
+    reopened.unit_note("window", "更新测试单元备注")
+    result = mod.read_note_review(store.folder)[1]
+    assert len(result) == 2 and result[1]["supersedes_revision"] == 1
+    assert (store.folder / "judgments.jsonl").read_bytes().startswith(prefix)
+    assert (store.folder / "manifest.json").read_bytes() == manifest_before
+    # Unlike marginalia, unit notes cannot opt into another form within the session.
+    other_form = mod.FORM_V1 if form_version == mod.FORM_V2 else mod.FORM_V2
+    result[1].update(rubric_form_version=other_form,
+                     rubric_form_sha256=load_form(other_form)[1], event_schema_version=2)
+    (store.folder / "judgments.jsonl").write_bytes(b"".join(mod.encoded(row) for row in result))
+    with pytest.raises(ValueError, match="身份"):
+        mod.Store(store.folder)

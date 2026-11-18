@@ -11,7 +11,7 @@ import webbrowser
 
 BACKEND = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(BACKEND))
-from scripts.q1_note_session import Store, prepare, rows  # noqa: E402
+from scripts.q1_note_session import Store, prepare, rows, DEFAULT_FORM, FORM_V1, FORM_V2  # noqa: E402
 from scripts.q1_note_form import require  # noqa: E402
 
 
@@ -171,6 +171,8 @@ def main():
         x.add_argument("--seed", type=int, default=20261115)
         x.add_argument("--purpose", choices=("formal", "test"), default="formal")
         x.add_argument("--test-mark", action="append")
+        x.add_argument("--form", choices=(FORM_V1, FORM_V2), default=DEFAULT_FORM,
+                       help="新会话的冻结表单版本；不迁移已有会话")
         if command == "launch":
             x.add_argument("--port", type=int, default=8767)
             x.add_argument("--no-open", action="store_true")
@@ -188,6 +190,7 @@ def main():
                 args.seed,
                 args.purpose,
                 args.test_mark,
+                form_version=args.form,
             )
         else:
             existing = Store(args.session).manifest

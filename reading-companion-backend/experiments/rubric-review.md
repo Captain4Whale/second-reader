@@ -8,7 +8,65 @@ publication entries and q1-v0 Markdown remain immutable. Add a new form version 
 later changes; criterion/tag IDs, labels, help and supported policies are configuration,
 not annotator code. Form text contains rules only, never identifiable rubric examples.
 
+## Independent Note judgments
+
+Tool `q1-annotator/3.6` writes `q1-v3.4.form.v2`. Open the same offline HTML and
+select the existing session folder in the same browser profile. Keep the sibling
+scripts together. New sessions prepared with `q1_note_review.py prepare` default
+to v2. The published v1 form, existing session manifests and journal rows keep their
+original identities.
+
+- In step two, record the first pass with **Q** (复述得出) or **G** (复述不出或说偏).
+  The latter opens a required rewrite judgment, **W** (能改写得更直白) or **Z** (改写不出).
+  Completing this step locks the first-pass result, optional paraphrase and lock time.
+  The rewrite judgment and optional rewrite text can still be revised. A successful
+  rewrite triggers the difficulty veto. An unsuccessful one adds automatic uncertainty.
+- Both spoiler and factual error require an explicit answer. A new draft represents
+  each answer as `null` until answered. A submitted row contains two booleans in
+  `checks` and their associated booleans in `vetoes`. Verification remains independent.
+- An N1 failure marked 下文马上讲了 requires 紧接着几段 or 挂早了. The former
+  automatically selects both N1 failure and 下文马上讲了. Farther following text
+  paired with no spoiler prompts at submission. Cancel keeps the draft. Acceptance
+  adds `far_following_without_spoiler` to `acknowledged_warnings`. Changing either
+  answer to resolve the combination clears its acknowledgement.
+- Before submission, browse and revise the unlocked steps. After submission, any
+  step can be inspected. **讨论后改判** (Shift+D) starts a separate revision.
+  Enter a reason (Shift+M) and submit to append a row carrying
+  `amendment_kind: "post_discussion"`, `amendment_reason` and `supersedes_revision`.
+  The first impression, first-pass result, paraphrase and their lock times stay
+  locked. Unit notes have their own save action throughout.
+
+**First submissions for statistics and judge references.** In 更多操作 select
+**导出首次判定 JSONL**. In the full journal use
+`record_type == "marginalia" && supersedes_revision == null` (require the field
+to exist). The export preserves the original row and its form version. Join using
+`review_session_id` and `record_id` across sessions. For a reference set that
+requires explicit independent observations, inspect the first row's
+`rubric_form_version` and `legacy_inferences`. Historical first submissions retain
+their original evidence quality. The full export also includes amendments and unit notes.
+
+**Resume and provenance.** Completed v1 submissions can be viewed and exported as
+saved. A v1 session can append v2 judgments or discussion amendments without
+rebuilding its manifest. Unsubmitted v1 drafts resume in the browser. The three
+old difficulty choices map to (复述得出, null), (复述不出或说偏, 能改写得更直白)
+and (复述不出或说偏, 改写不出), respectively. When a choice was changed earlier,
+the original confirmed choice supplies the first pass. The first submission supplies
+the protected values in later revisions. The old object is retained in
+`legacy_reading_difficulty`, and `legacy_inferences` identifies deductions.
+An unconfirmed legacy default false becomes unanswered. A completed legacy step
+retains its boolean and an already selected true is preserved in a pending step.
+A pending legacy edit of a submitted record requires explicit discussion entry and
+a reason to submit. Complete any missing fields or inconsistent N1 answers that the
+form identifies. No manual migration is required.
+
+The journal envelope remains `q1-note-judgment/1`. New Note rows carry
+`event_schema_version: 2`. The numeric per-Note `event_version` clock starts its
+new range at 2³² and increases with events, which lets existing caches order old
+and new drafts. The journal-wide `revision` retains its independent sequence.
+
 ## Published v3.4 Note review (2026-11-15)
+
+The following section documents the earlier v1 Note form and tool 3.5.
 
 The owner-approved `q1-v3.4.form.v1` is a Note-only protocol in the existing offline annotator (tool 3.5).
 The published rubric owns options/thresholds; `q1-annotation-guide.md` owns sequence.

@@ -45,6 +45,22 @@ globalThis.Q1NoteView = async function (host, session) {
     "能改写得更直白": "读一遍说不出或说偏了，但能改写得更直白且不丢内容（否决）",
     "改写不出": "读一遍说不出或说偏了；想法本身复杂，表达已尽量清楚，无法更直白且不丢内容（不否决，标拿不准）",
   }[value] || value || "未判定");
+  function difficultyView(value) {
+    if ("first_pass" in value) return value;
+    return {...value,
+      first_pass:value.original_choice === "一遍能复述" ? "复述得出" : value.original_choice ? "复述不出或说偏" : null,
+      rewrite:["能改写得更直白","改写不出"].includes(value.choice) ? value.choice : null,
+      rewrite_text:value.rewrite || "", legacy:true};
+  }
+  function difficultySummary(value) {
+    const d = difficultyView(value);
+    if (d.legacy) return `旧版最初：${difficultyLabel(value.original_choice)}；最终：${difficultyLabel(value.choice)}（第一遍未独立记录）`;
+    return [d.first_pass || "未判定", d.first_pass === "复述不出或说偏" ? d.rewrite || "改写尚未判定" : ""].filter(Boolean).join("；");
+  }
+  function checkValue(record, key) {
+    if (record.checks) return record.checks[key];
+    return record.review_completed ? record.vetoes[key] : null;
+  }
   function stepHint(spec) {
     if (spec.id === "conclusion")
       return "N1 过，且读着费劲、有剧透、有错误信息均未勾选，结论才是过。rubric 未覆盖会强制不过；待核实不影响结论。";
@@ -74,7 +90,7 @@ globalThis.Q1NoteView = async function (host, session) {
     const missing = [...host.querySelectorAll('textarea')]
       .find(e => e.labels?.[0]?.textContent.includes('必填') && !e.value.trim());
     if (missing) return focusField(missing.id);
-    for (const name of ['first','difficulty','followingUse','n1','style','failure']) {
+    for (const name of ['first','firstPass','rewriteChoice','followingUse','n1','style','failure','spoiler','incorrect']) {
       const group = [...host.querySelectorAll(`#workflow [name="${name}"]`)];
       if (group.length && !group.some(e=>e.checked)) return focusGroup(name);
     }
@@ -149,7 +165,7 @@ globalThis.Q1NoteView = async function (host, session) {
   );
   const api = (path, body) => session.api(path, body);
   function textArea(parent, id, label, value = "") {
-    const shortcut = {paraphrase:"Y",n1Paraphrase:"Y",rewrite:"I",reason:"M",n1Reason:"R",otherWriting:"Shift+W",otherFailure:"Shift+X",uncoveredReason:"Shift+0"}[id];
+    const shortcut = {paraphrase:"Y",n1Paraphrase:"Y",rewrite:"I",reason:"M",n1Reason:"R",otherWriting:"Shift+W",otherFailure:"Shift+X",uncoveredReason:"Shift+0",amendmentReason:"Shift+M"}[id];
     parent.append(node("label", label + (shortcut ? ` · ${shortcut}` : ""), "text"));
     parent.lastChild.htmlFor = id;
     const t = node("textarea");
@@ -171,7 +187,7 @@ globalThis.Q1NoteView = async function (host, session) {
   }
   function radios(parent, name, title, values, value) {
     const f = node("fieldset");
-    const keys = {difficulty:"D",followingUse:"B",style:"W"};
+    const keys = {rewriteChoice:"D",followingUse:"B",style:"W"};
     f.append(node("legend", title + (keys[name] ? ` · ${keys[name]}` : "")));
     for (const v of values) {
       const l = node("label", undefined, "option"),
@@ -182,7 +198,10 @@ globalThis.Q1NoteView = async function (host, session) {
       i.checked = value === v;
       l.append(
         i,
-        node("span", v === "pass" ? "过 · P" : v === "fail" ? "不过 · F" : name === "difficulty" ? `${difficultyLabel(v)} · ${["Q", "G", "Z"][values.indexOf(v)]}` : v),
+        node("span", v === "pass" ? "过 · P" : v === "fail" ? "不过 · F" :
+          name === "firstPass" ? `${v} · ${["Q", "G"][values.indexOf(v)]}` :
+          name === "rewriteChoice" ? `${v === "改写不出" ? "改写不出：想法本身复杂，表达已尽量清楚（不否决，标拿不准）" : "能改写得更直白且不丢内容（否决）"} · ${["W", "Z"][values.indexOf(v)]}` :
+          ["spoiler","incorrect"].includes(name) ? `${v === "true" ? "有 · F" : "没有 · P"}` : v),
       );
       f.append(l);
     }
@@ -220,11 +239,17 @@ globalThis.Q1NoteView = async function (host, session) {
       reason: $("reason")?.value ?? r.reason,
     };
     if (host.querySelector("[name=star]")) v.star = checked("star");
+    if ($("amendmentReason")) v.amendment_reason = $("amendmentReason").value;
     if (s === 0 && get("first")) v.judgment = get("first");
     if (s === 1) {
-      if (get("difficulty")) v.choice = get("difficulty");
-      v.paraphrase = $("paraphrase").value;
-      v.rewrite = $("rewrite").value;
+      if (!r.reading_difficulty.locked_at) {
+        if (get("firstPass")) v.first_pass = get("firstPass");
+        v.paraphrase = $("paraphrase").value;
+      }
+      const firstPass = v.first_pass ?? r.reading_difficulty.first_pass;
+      if (firstPass === "复述不出或说偏" && get("rewriteChoice")) v.rewrite = get("rewriteChoice");
+      else if (firstPass === "复述得出") v.rewrite = null;
+      v.rewrite_text = $("rewrite")?.value ?? r.reading_difficulty.rewrite_text ?? "";
     }
     if (s === 2) {
       const n = {
@@ -247,9 +272,9 @@ globalThis.Q1NoteView = async function (host, session) {
       }
       v.n1 = n;
     }
-    if (s === 3) v.spoiler = checked("spoiler");
+    if (s === 3 && get("spoiler") !== undefined) v.spoiler = get("spoiler") === "true";
     if (s === 4) {
-      v.incorrect_information = checked("incorrect");
+      if (get("incorrect") !== undefined) v.incorrect_information = get("incorrect") === "true";
       v.needs_verification = checked("verification");
     }
     if (s === 6 && r.judgment === "pass")
@@ -259,6 +284,7 @@ globalThis.Q1NoteView = async function (host, session) {
     return v;
   }
   const currentStep = () => data.state.viewStep ?? data.state.stage;
+  const isReadOnly = () => data.state.stage === 7 || !!data.state.discussionRequired;
   const currentId = () => boot.record_ids[index];
   const uiState = () => data.state.ui ??= {};
   function captureUI() {
@@ -414,7 +440,7 @@ globalThis.Q1NoteView = async function (host, session) {
     $("body").textContent = data.case.body_text;
     $("previewBody").textContent = data.case.body_text;
     $("decisionGo").textContent = "定位当前判定 · C";
-    $("sessionIdentity").textContent = `${boot.session_id} · 文件夹 ${boot.directory_name} · 工具 3.5`;
+    $("sessionIdentity").textContent = `${boot.session_id} · 文件夹 ${boot.directory_name} · 工具 3.6`;
     segments($("sourceText"), data.prefix);
     $("chapter").hidden = $("sourceText").firstElementChild?.textContent.trim() === data.case.chapter_title?.trim();
     segments($("recentText"), data.recent);
@@ -504,7 +530,7 @@ globalThis.Q1NoteView = async function (host, session) {
       w.append(
         node(
           "p",
-          `读着费劲：${difficultyLabel(r.reading_difficulty.choice)}；修改 ${r.reading_difficulty.amendments.length} 次。`,
+          `读着费劲：${difficultySummary(r.reading_difficulty)}；修改 ${r.reading_difficulty.amendments.length} 次。`,
           "muted",
         ),
       );
@@ -518,9 +544,8 @@ globalThis.Q1NoteView = async function (host, session) {
             "muted",
           ),
         );
-      const b = node("button", "重新检查 N1 及后续项");
-      b.onclick = () => enqueue(() => inspect(2)).catch(shownError);
-      w.append(b);
+      w.append(node("p", "本条已提交，判定只读。可以切换步骤查看，或在讨论后改判。", "muted"));
+      $("reviewActions").replaceChildren(discussionButton());
       updateStatus();
       return;
     }
@@ -534,7 +559,7 @@ globalThis.Q1NoteView = async function (host, session) {
     const spec = boot.form.steps[s];
     w.append(
       node("div", `第 ${s + 1} / 7 步 · Enter ${s === 6 ? "提交" : "继续"} · 1–7 切换已开放步骤`, "eyebrow"),
-      node("h2", s === 6 && r.judgment === "fail" ? "提交检查" : spec.label),
+      node("h2", s === 6 && r.judgment !== "pass" ? "提交检查" : spec.label),
     );
     if (s === 0) w.append(node("p", spec.help));
     else {
@@ -561,32 +586,37 @@ globalThis.Q1NoteView = async function (host, session) {
         r.first_impression.judgment,
       );
     if (s === 1) {
-      radios(
-        w,
-        "difficulty",
-        "就用刚才那一遍，马上判断",
-        c.reading_difficulty,
-        r.reading_difficulty.choice,
-      );
-      w.append(
-        node(
-          "p",
-          "第三项指想法本身就绕、表达已尽量清楚，不是仅仅自己暂时不会改写；不勾否决，自动勾拿不准。",
-          "muted",
-        ),
-      );
-      textArea(
-        w,
-        "paraphrase",
-        "一遍之后的复述（选填）",
-        r.reading_difficulty.paraphrase,
-      );
-      textArea(
-        w,
-        "rewrite",
-        "更直白的改写（选填）",
-        r.reading_difficulty.rewrite,
-      );
+      const d = difficultyView(r.reading_difficulty);
+      if (d.legacy) {
+        w.append(node("p", difficultySummary(r.reading_difficulty) + "。保留旧版选项和文本，不把后来改判当作第一遍。", "muted"));
+        textArea(w, "paraphrase", "旧版复述文本（非独立第一遍记录）", d.paraphrase);
+        textArea(w, "rewrite", "旧版改写文本", d.rewrite_text);
+      } else {
+        radios(
+          w,
+          "firstPass",
+          "第一遍能准确复述意思吗？（必选）",
+          ["复述得出", "复述不出或说偏"],
+          d.first_pass,
+        );
+        const firstText = textArea(
+          w,
+          "paraphrase",
+          "第一遍复述 / 卡在哪（选填）",
+          d.paraphrase,
+        );
+        if (d.locked_at) {
+          w.querySelectorAll('[name="firstPass"]').forEach(el => { el.disabled=true; });
+          firstText.readOnly = true;
+          w.append(node("p", "第一遍判断和复述已锁定。" + (d.first_pass === "复述不出或说偏" ? "下面的改写判断仍可修改。" : ""), "muted"));
+        }
+        if (d.first_pass === "复述不出或说偏") {
+          radios(w, "rewriteChoice", "能否写得更直白，又不丢内容？（必选）",
+            ["能改写得更直白", "改写不出"], d.rewrite);
+          w.append(node("p", "改写不出：想法本身复杂，表达已尽量清楚，无法更直白且不丢内容；不否决，自动标拿不准。", "muted"));
+        }
+        textArea(w, "rewrite", "更直白的改写（选填）", d.rewrite_text);
+      }
     }
     if (s === 2) {
       const n = r.n1;
@@ -625,6 +655,7 @@ globalThis.Q1NoteView = async function (host, session) {
             n.failure_types?.includes(label),
           );
           i.value = label;
+          if (label === "下文马上讲了" && n.following_text_use === "紧接着几段") i.disabled = true;
         }
         if (n.failure_types?.includes("其他")) {
           textArea(
@@ -645,9 +676,9 @@ globalThis.Q1NoteView = async function (host, session) {
       textArea(w, "n1Paraphrase", "读懂后的复述（选填）", n.paraphrase);
       textArea(w, "n1Reason", "N1 理由（选填）", n.reason);
     }
-    if (s === 3) check(w, "spoiler", "有剧透 · F 勾 / P 不勾", r.vetoes.spoiler);
+    if (s === 3) radios(w, "spoiler", "有剧透吗？（必选）", ["true","false"], checkValue(r,"spoiler") == null ? null : String(checkValue(r,"spoiler")));
     if (s === 4) {
-      check(w, "incorrect", "有错误信息 · F 勾 / P 不勾", r.vetoes.incorrect_information);
+      radios(w, "incorrect", "有错误信息吗？（必选）", ["true","false"], checkValue(r,"incorrect_information") == null ? null : String(checkValue(r,"incorrect_information")));
       check(w, "verification", "待核实（不影响结论）· V", r.needs_verification);
       w.append(
         node(
@@ -661,7 +692,7 @@ globalThis.Q1NoteView = async function (host, session) {
       w.append(
         node(
           "p",
-          r.judgment === "pass" ? "自动结论：过" : "自动结论：不过",
+          `自动结论：${outcomeLabel(r.judgment)}`,
           `result ${r.judgment}`,
         ),
       );
@@ -707,9 +738,17 @@ globalThis.Q1NoteView = async function (host, session) {
     if (s >= 5 && r.judgment === "pass")
       check(flags, "star", "星 · 范例级批注 · S", r.star);
     textArea(flags, "reason", "整条理由（选填）", r.reason);
+    if (data.state.discussion)
+      textArea(flags, "amendmentReason", "讨论后改判的原因（必填）", r.amendment_reason);
     w.append(flags);
     const helpPanel = w.querySelector("details.help");
     if (helpPanel) w.append(helpPanel);
+    if (isReadOnly()) {
+      w.querySelectorAll("input,textarea").forEach(el => { el.disabled=true; });
+      w.append(node("p", "本条判定只读；需要改动时，请先进入讨论后改判。", "muted"));
+      $("reviewActions").replaceChildren(discussionButton());
+      updateStatus(); autoGrow(); return;
+    }
     const complete = node(
       "button",
       s === 6
@@ -825,17 +864,42 @@ globalThis.Q1NoteView = async function (host, session) {
     pendingContinuation = enqueue(() => completeCurrent(advance))
       .catch(shownError).finally(() => { pendingContinuation = null; });
   }
+  function discussionButton() {
+    const button = node("button", "讨论后改判 · Shift+D");
+    button.onclick = () => enqueue(beginDiscussion).catch(shownError);
+    return button;
+  }
+  async function beginDiscussion() {
+    if (!isReadOnly()) return;
+    await flush();
+    $("notes").open = false;
+    host.querySelectorAll(".followingText").forEach(el => { el.hidden = true; });
+    await post("begin_discussion");
+    focusDecision();
+  }
   async function completeCurrent(advance) {
     const step = currentStep();
     if (step === 7 || (advance && step !== 6)) return;
     if (step === 0 && data.state.record.first_impression.locked_at) return inspect(1);
     const epoch = interactionEpoch;
     await flush();
-    if (step === 6 && data.state.stage === 7 && data.state.record.review_completed) {
+    if (isReadOnly()) {
       if (advance) await openCase(index + 1);
+      else if (step < 6) await inspect(step + 1);
       return;
     }
-    await post(step === 6 ? "submit" : "complete", collect());
+    const values = collect();
+    try {
+      await post(step === 6 ? "submit" : "complete", values);
+    } catch (error) {
+      if (step !== 6 || error.warning !== "far_following_without_spoiler") throw error;
+      if (!window.confirm("N1 记了用到更远后文，但剧透判了没有，确认吗？")) {
+        updateStatus();
+        if (epoch === interactionEpoch) focusDecision();
+        return;
+      }
+      await post("submit", {...values, acknowledge_far_following:true});
+    }
     if (advance && epoch === interactionEpoch) await openCase(index + 1);
     else if (epoch === interactionEpoch) focusDecision();
   }
@@ -903,19 +967,21 @@ globalThis.Q1NoteView = async function (host, session) {
     $("error").hidden = true; $("saveError").hidden = true;
   }).catch(shownError);
   $("retryVisible").onclick = () => $("retry").click();
-  $("exportNote").onclick = () => {
+  function downloadRows(rows, suffix = "") {
     const a = document.createElement("a"),
       url = URL.createObjectURL(
         new Blob(
-          session.state.rows.map((r) => JSON.stringify(r) + "\n"),
+          rows.map((r) => JSON.stringify(r) + "\n"),
           { type: "application/x-ndjson" },
         ),
       );
     a.href = url;
-    a.download = "q1-" + session.m.review_session_id + ".jsonl";
+    a.download = "q1-" + session.m.review_session_id + suffix + ".jsonl";
     a.click();
     setTimeout(() => URL.revokeObjectURL(url), 30000);
-  };
+  }
+  $("exportNote").onclick = () => downloadRows(session.state.rows);
+  $("exportFirst").onclick = () => downloadRows(Q1NoteOffline.firstJudgments(session.state.rows), "-first");
   let helpReturn;
   $("shortcutHelp").addEventListener("close", () => {
     if (helpReturn?.isConnected) helpReturn.focus();
@@ -994,6 +1060,8 @@ globalThis.Q1NoteView = async function (host, session) {
     if (e.shiftKey && /^Digit[1-7]$/.test(e.code)) return run(() => toggleDetails(host.querySelector("#workflow details.help")));
     if (e.shiftKey && key === "w") return run(() => focusField("otherWriting"));
     if (e.shiftKey && key === "x") return run(() => focusField("otherFailure"));
+    if (e.shiftKey && key === "m") return run(() => focusField("amendmentReason"));
+    if (e.shiftKey && key === "d") return run(beginDiscussion);
     if (e.shiftKey && key === "e") return run(async () => { $("earlier").open=true; await showEarlier(); });
     if (e.shiftKey && key === "c") return run(() => toggleDetails($("notePreview")));
     if (key === "c") return run(focusDecision);
@@ -1007,12 +1075,22 @@ globalThis.Q1NoteView = async function (host, session) {
     if (key === "y") return run(() => focusField(currentStep() === 2 ? "n1Paraphrase" : "paraphrase"));
     if (key === "i") return run(() => focusField("rewrite"));
     if (["q","g","z"].includes(key))
-      return run(() => { if (currentStep() === 1) host.querySelectorAll('[name="difficulty"]')[["q","g","z"].indexOf(key)]?.click(); });
-    const groups = {d:"difficulty",b:"followingUse",w:"style",x:"failure",t:"tag"};
+      return run(() => {
+        if (currentStep() !== 1 || isReadOnly()) return;
+        const name = ["q","g"].includes(key) ? "firstPass" : "rewriteChoice";
+        const index = ["q","w"].includes(key) ? 0 : 1;
+        host.querySelectorAll(`[name="${name}"]`)[index]?.click();
+      });
+    const groups = {d:"rewriteChoice",b:"followingUse",w:"style",x:"failure",t:"tag"};
     if (groups[key]) {
       const group = groups[key]; pendingGroupFocus = group;
       return run(() => {
         try {
+          if (key === "t" && isReadOnly()) return;
+          if (key === "w" && currentStep() === 1) {
+            if (!isReadOnly()) host.querySelectorAll('[name="rewriteChoice"]')[0]?.click();
+            return;
+          }
           if (key === "t" && host.querySelector('[name="tag"]')) { tagMode=true; updateTagMode(); }
           focusGroup(group);
         } finally { if (pendingGroupFocus === group) pendingGroupFocus=null; }
@@ -1030,8 +1108,7 @@ globalThis.Q1NoteView = async function (host, session) {
       const step = currentStep();
       if ([0,2].includes(step)) host.querySelector(`[name="${step===0 ? "first" : "n1"}"][value="${key==='p' ? 'pass' : 'fail'}"]`)?.click();
       else if ([3,4].includes(step)) {
-        const el = host.querySelector(`[name="${step===3 ? 'spoiler' : 'incorrect'}"]`);
-        if (el && el.checked !== (key === "f")) el.click();
+        host.querySelector(`[name="${step===3 ? 'spoiler' : 'incorrect'}"][value="${key === "f"}"]`)?.click();
       }
     });
   }

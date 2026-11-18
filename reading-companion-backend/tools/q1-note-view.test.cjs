@@ -15,16 +15,17 @@ function keyboardHarness(step=1) {
       click(){calls.push(id);},close(){this.open=false;calls.push('close');}});
     return nodes.get(id);
   };
-  const options={difficulty:[0,1,2],tag:[0,1,2,3,4]};
+  const options={firstPass:[0,1],rewriteChoice:[2,3],tag:[0,1,2,3,4]};
   const host={addEventListener:(name,fn)=>listeners[name]=fn,
     querySelector:selector=>selector==='[name="tag"]'&&options.tag?.length?{name:'tag'}:null,
-    querySelectorAll:selector=> (selector.includes('difficulty')?options.difficulty:selector.includes('tag')?options.tag:[])
+    querySelectorAll:selector=> (selector.includes('firstPass')?options.firstPass:selector.includes('rewriteChoice')?options.rewriteChoice:selector.includes('tag')?options.tag:[])
       .map(i=>({click(){calls.push(i);}}))};
   const c=vm.createContext({composing:false,busy:false,tagMode:false,pendingGroupFocus:null,executing:false,dirty:false,
     boot:{record_ids:['r1','r2']},index:0,commandTail:Promise.resolve(),pendingContinuation:null,
     data:{state:{stage:step,viewStep:step,record:{first_impression:{}}}},
     $:get,host,innerWidth:1200,document:{getElementById:get},
     currentStep:()=>c.data.state.viewStep ?? c.data.state.stage,
+    isReadOnly:()=>c.data.state.stage===7 || !!c.data.state.discussionRequired,
     currentId:()=>c.boot.record_ids[c.index],
     focusGroup:name=>calls.push(name),focusField:id=>calls.push(id),
     focusDecision:()=>calls.push('decision'),shownError:error=>errors.push(error),
@@ -188,36 +189,44 @@ test('keyboard uses native arrows in controls, preserves IME and traps help dial
  await h.drain();assert.deepEqual(h.calls,[]);
  assert.equal(h.key('Escape').prevented,true);assert.deepEqual(h.calls,['close']);
 });
-test('difficulty direct choices and text shortcuts work outside text entry only',async()=>{
+test('independent difficulty answers and text shortcuts work outside text entry only',async()=>{
  const h=keyboardHarness();
- for(const key of ['q','g','z','y','i','m']) h.key(key);
- await h.drain();assert.deepEqual(h.calls,[0,1,2,'paraphrase','rewrite','reason']);
+ for(const key of ['q','g','w','z','y','i','m']) h.key(key);
+ await h.drain();assert.deepEqual(h.calls,[0,1,2,3,'paraphrase','rewrite','reason']);
  h.key('g',{}, {closest:()=>({tagName:'TEXTAREA'})});
- await h.drain();assert.equal(h.calls.length,6);
+ await h.drain();assert.equal(h.calls.length,7);
 });
-test('difficulty labels explain rubric while radio values retain historical identity',()=>{
- const values=['一遍能复述','能改写得更直白','改写不出'];
+test('rewrite labels explain rubric while radio values keep independent answer identities',()=>{
+ const values=['能改写得更直白','改写不出'];
  function node(tag,text){return {tag,text,children:[],append(...xs){this.children.push(...xs);}};}
  const w=node('div'),c=vm.createContext({node,document:{createElement:node},w,values});
  vm.runInContext(extract('  const difficultyLabel','  function stepHint(')+extract('  function radios(', '  function get('),c);
- vm.runInContext('radios(w,"difficulty","费劲",values,"改写不出")',c);
+ vm.runInContext('radios(w,"rewriteChoice","能否改写",values,"改写不出")',c);
  const labels=w.children[0].children.slice(1);
  assert.deepEqual(labels.map(l=>l.children[0].value),values);
- assert.equal(labels[2].children[0].checked,true);
- assert.match(labels[2].children[1].text,/想法本身复杂.*表达已尽量清楚.*不否决.*拿不准.*Z/);
- assert.match(labels[1].children[1].text,/不丢内容.*G/);
+ assert.equal(labels[1].children[0].checked,true);
+ assert.match(labels[1].children[1].text,/想法本身复杂.*表达已尽量清楚.*不否决.*拿不准.*Z/);
+ assert.match(labels[0].children[1].text,/不丢内容.*W/);
 });
 
-test('actual difficulty render call preserves selection across redraw for every stored value',()=>{
- const values=['一遍能复述','能改写得更直白','改写不出'];
- const start=src.indexOf('      radios(',src.indexOf('    if (s === 1) {',src.indexOf('    const spec = boot.form.steps[s];')));
- const call=src.slice(start,src.indexOf('      w.append(',start));
- function node(tag,text){return {tag,text,children:[],append(...xs){this.children.push(...xs);}};}
- for(const choice of [null,...values]) {
-  const w=node('div'),ctx=vm.createContext({node,document:{createElement:node},w,c:{reading_difficulty:values},r:{reading_difficulty:{choice}}});
+test('difficulty form has two independent unanswered groups and locks only first-pass evidence',()=>{
+ const start=src.indexOf('    if (s === 1) {',src.indexOf('    const spec = boot.form.steps[s];'));
+ const call=src.slice(start,src.indexOf('    if (s === 2) {',start));
+ function node(tag,text){return {tag,text,children:[],append(...xs){this.children.push(...xs);},
+  querySelectorAll(selector){return this.children.flatMap(el=>[...(el.name==='firstPass'?[el]:[]),...(el.querySelectorAll?.(selector)||[])]);}};}
+ for(const d of [{first_pass:null,rewrite:null},{first_pass:'复述得出',rewrite:null,rewrite_text:'保留的改写'},{first_pass:'复述不出或说偏',rewrite:null},{first_pass:'复述不出或说偏',rewrite:'改写不出',locked_at:'locked'}]) {
+  const w=node('div'),fields={},ctx=vm.createContext({s:1,node,document:{createElement:node},w,r:{reading_difficulty:d},
+   textArea:(parent,id,label,value)=>{const field={id,label,value};fields[id]=field;parent.append(field);return field;}});
   vm.runInContext(extract('  const difficultyLabel','  function stepHint(')+extract('  function radios(', '  function get(')+call,ctx);
-  const inputs=w.children[0].children.slice(1).map(l=>l.children[0]);
-  assert.deepEqual(inputs.filter(i=>i.checked).map(i=>i.value),choice?[choice]:[]);
+  const groups=w.children.filter(el=>el.tag==='fieldset');
+  const inputs=group=>group.children.slice(1).map(l=>l.children[0]);
+  assert.deepEqual(inputs(groups[0]).filter(i=>i.checked).map(i=>i.value),d.first_pass?[d.first_pass]:[]);
+  if(d.first_pass==='复述不出或说偏')assert.deepEqual(inputs(groups[1]).filter(i=>i.checked).map(i=>i.value),d.rewrite?[d.rewrite]:[]);
+  else assert.equal(groups.length,1);
+  assert.equal(!!fields.paraphrase.readOnly,!!d.locked_at);
+  assert.ok(fields.rewrite);assert.equal(fields.rewrite.value,d.rewrite_text);
+  assert.equal(inputs(groups[0]).every(i=>i.disabled===true),!!d.locked_at);
+  if(groups[1])assert.ok(inputs(groups[1]).every(i=>!i.disabled));
  }
 });
 
@@ -333,12 +342,12 @@ test('queued repeated continuation runs once and stale case choices cannot edit 
   h.key('ArrowDown');h.key('g');await h.drain();
   assert.deepEqual(h.calls,[['case',1]]);
 });
-test('step navigation followed immediately by difficulty choice judges the destination step',async()=>{
+test('step navigation followed by difficulty choice judges editable destinations but preserves submitted records',async()=>{
  for(const step of [2,7,0]) {
   const h=keyboardHarness(step);
   if(step===0)h.c.data.state.record.first_impression.locked_at='already locked';
   h.key('2');h.key('g');await h.drain();
-  assert.deepEqual(h.calls,[['navigate',1],1]);
+  assert.deepEqual(h.calls,step===7?[['navigate',1]]:[['navigate',1],1]);
  }
 });
 test('blocked navigation then choice and repeated Enter judges and continues the destination once',async()=>{
@@ -440,4 +449,152 @@ test('switching cases clears stale pending group focus before the next item hand
  vm.runInContext(extract('  async function openCase(', '  function render('),h.c);
  await h.run('openCase(1)');
  assert.equal(h.c.pendingGroupFocus,null);assert.equal(h.c.tagMode,false);assert.equal(h.c.index,1);
+});
+test('first-pass evidence is omitted after locking while rewrite answer and text remain separate',()=>{
+ const fields={paraphrase:{value:'不应回写的第一遍复述'},rewrite:{value:'这是一句改写'}};
+ const c=vm.createContext({currentStep:()=>1,uiState:()=>({}),$:id=>fields[id],checked:()=>false,
+  get:name=>({firstPass:'复述得出',rewriteChoice:'能改写得更直白'}[name]),
+  data:{state:{record:{reading_difficulty:{first_pass:'复述不出或说偏',locked_at:'locked'},reason:'',uncovered_reason:''}}},
+  host:{querySelector:()=>null}});
+ vm.runInContext(extract('  function collect(', '  const currentStep'),c);
+ const values=vm.runInContext('collect()',c);
+ assert.equal('first_pass' in values,false);assert.equal('paraphrase' in values,false);
+ assert.equal(values.rewrite,'能改写得更直白');assert.equal(values.rewrite_text,'这是一句改写');
+});
+test('unanswered veto checks stay unanswered instead of becoming false on save',()=>{
+ for(const step of [3,4])for(const selected of [undefined,'false','true']) {
+  const c=vm.createContext({currentStep:()=>step,$:()=>undefined,checked:()=>false,get:()=>selected,
+   data:{state:{record:{reason:'',uncovered_reason:''}}},host:{querySelector:()=>null}});
+  vm.runInContext(extract('  function collect(', '  const currentStep'),c);
+  const values=vm.runInContext('collect()',c),key=step===3?'spoiler':'incorrect_information';
+  assert.equal(key in values,selected!==undefined);
+  if(selected!==undefined)assert.equal(values[key],selected==='true');
+ }
+});
+test('P and F select explicit no and yes radio answers for each veto check',async()=>{
+ for(const step of [3,4]) {
+  const h=keyboardHarness(step);h.host.querySelector=selector=>({click:()=>h.calls.push(selector)});
+  h.key('p');h.key('f');await h.drain();
+  const name=step===3?'spoiler':'incorrect';
+  assert.deepEqual(h.calls,[`[name="${name}"][value="false"]`,`[name="${name}"][value="true"]`]);
+ }
+});
+test('submitted and legacy pending revisions require explicit discussion entry before edits',async()=>{
+ for(const state of [{stage:7},{stage:6,discussionRequired:true}]) {
+  const calls=[],notes={open:true},following=[{hidden:false},{hidden:false}],c=vm.createContext({data:{state},flush:async()=>calls.push('flush'),
+   $:id=>id==='notes'?notes:null,host:{querySelectorAll:()=>following},
+   post:async action=>calls.push(action),focusDecision:()=>calls.push('focus')});
+  vm.runInContext(extract('  const isReadOnly', '  const currentId')+
+   extract('  async function beginDiscussion(', '  async function completeCurrent('),c);
+  assert.equal(vm.runInContext('isReadOnly()',c),true);
+  await vm.runInContext('beginDiscussion()',c);
+  assert.deepEqual(calls,['flush','begin_discussion','focus']);
+  assert.equal(notes.open,false);assert.ok(following.every(el=>el.hidden));
+ }
+});
+test('far-following confirmation follows successful protocol validation and only retries with acknowledgement',async()=>{
+ const flag='far_following_without_spoiler';
+ for(const [confirmed,acknowledged] of [[false,false],[true,false],[false,true]]) {
+  const calls=[],c=vm.createContext({data:{state:{stage:6,record:{n1:{following_text_use:'更远后文，转第四步判剧透'},checks:{spoiler:false},acknowledged_warnings:acknowledged?[flag]:[]}}},
+   currentStep:()=>6,isReadOnly:()=>false,interactionEpoch:0,index:0,collect:()=>({}),
+   flush:async()=>{},post:async(action,values)=>{
+    calls.push({action,...values});
+    if(!acknowledged&&!values.acknowledge_far_following)throw Object.assign(new Error('确认组合'),{code:'FORM_VALIDATION',warning:flag});
+   },focusDecision:()=>{},updateStatus:()=>{},
+   window:{confirm:message=>{calls.push(message);return confirmed;}}});
+  vm.runInContext(extract('  async function completeCurrent(', '  async function init('),c);
+  await vm.runInContext('completeCurrent(false)',c);
+  if(acknowledged)assert.deepEqual(calls,[{action:'submit'}]);
+  else {
+   assert.deepEqual(calls[0],{action:'submit'});
+   assert.equal(calls[1],'N1 记了用到更远后文，但剧透判了没有，确认吗？');
+   assert.equal(calls.length,confirmed?3:2);
+   if(confirmed)assert.deepEqual(calls[2],{action:'submit',acknowledge_far_following:true});
+  }
+ }
+});
+test('missing discussion or conditional reasons fail before any far-following confirmation',async()=>{
+ for(const message of ['讨论后改判必须写原因','其他写法必须说明写法及增量']) {
+  const error=Object.assign(new Error(message),{code:'FORM_VALIDATION',step:6}),calls=[];
+  const c=vm.createContext({data:{state:{record:{}}},currentStep:()=>6,isReadOnly:()=>false,interactionEpoch:0,index:0,
+   collect:()=>({}),flush:async()=>{},post:async()=>{calls.push('submit');throw error;},
+   window:{confirm:()=>{calls.push('unexpected confirm');return true;}},focusDecision:()=>calls.push('unexpected focus')});
+  vm.runInContext(extract('  async function completeCurrent(', '  async function init('),c);
+  await assert.rejects(vm.runInContext('completeCurrent(false)',c),e=>e===error);
+  assert.deepEqual(calls,['submit']);
+ }
+});
+test('cancelled warning keeps the draft available for retry and disk failure never advances',async()=>{
+ const calls=[],warning=Object.assign(new Error('confirm'),{warning:'far_following_without_spoiler',code:'FORM_VALIDATION'}),diskError=new Error('disk failure');
+ let accept=false;
+ const c=vm.createContext({data:{state:{record:{}}},currentStep:()=>6,isReadOnly:()=>false,interactionEpoch:0,index:0,
+  collect:()=>({amendment_reason:'说明'}),flush:async()=>{},updateStatus:()=>calls.push('status'),focusDecision:()=>calls.push('focus'),
+  openCase:async()=>calls.push('unexpected navigation'),window:{confirm:()=>{calls.push('confirm');return accept;}},
+  post:async(action,values)=>{calls.push(values.acknowledge_far_following?'retry':'submit');throw values.acknowledge_far_following?diskError:warning;}});
+ vm.runInContext(extract('  async function completeCurrent(', '  async function init('),c);
+ await vm.runInContext('completeCurrent(true)',c);
+ assert.deepEqual(calls,['submit','confirm','status','focus']);
+ calls.length=0;accept=true;
+ await assert.rejects(vm.runInContext('completeCurrent(true)',c),e=>e===diskError);
+ assert.deepEqual(calls,['submit','confirm','retry']);
+});
+test('warning rejection retains elapsed time for the single acknowledged submission',async()=>{
+ const h=postHarness(),durations=[];
+ Object.assign(h.c,{active:50,isReadOnly:()=>false,interactionEpoch:0,index:0,
+  flush:async()=>{},focusDecision:()=>{},window:{confirm:()=>true}});
+ h.c.data.state.viewStep=h.c.data.state.stage=6;
+ h.c.elapsed=()=>{const duration=h.c.active;h.c.active=0;return duration;};
+ h.c.api=async(path,body)=>{
+  durations.push(body.active_ms);
+  if(!body.values.acknowledge_far_following)throw Object.assign(new Error('确认组合'),{code:'FORM_VALIDATION',warning:'far_following_without_spoiler',actionApplied:false});
+  return {...h.c.data,state:{...h.c.data.state,viewStep:7,stage:7,version:2}};
+ };
+ vm.runInContext(extract('  async function completeCurrent(', '  async function init('),h.c);
+ await h.run('completeCurrent(false)');
+ assert.deepEqual(durations,[50,50]);assert.equal(h.c.active,0);
+});
+test('Enter browsing a submitted step navigates without completing or revising it',async()=>{
+ const calls=[],c=vm.createContext({data:{state:{stage:7,record:{}}},currentStep:()=>2,isReadOnly:()=>true,
+  interactionEpoch:0,index:0,flush:async()=>{},inspect:async step=>calls.push(['navigate',step]),
+  post:async()=>calls.push('unexpected write')});
+ vm.runInContext(extract('  async function completeCurrent(', '  async function init('),c);
+ await vm.runInContext('completeCurrent(false)',c);assert.deepEqual(calls,[['navigate',3]]);
+});
+test('legacy difficulty display distinguishes initial evidence from later cross-category changes',()=>{
+ const h=harness();
+ for(const [initial,final,firstPass] of [['一遍能复述','能改写得更直白','复述得出'],['改写不出','一遍能复述','复述不出或说偏']]) {
+  const legacy={original_choice:initial,choice:final,paraphrase:'旧文本',rewrite:'旧改写'};
+  h.c.legacy=legacy;
+  const result=h.run('difficultyView(legacy)'),text=h.run('difficultySummary(legacy)');
+  assert.equal(result.first_pass,firstPass);assert.equal(result.rewrite_text,'旧改写');
+  assert.match(text,/旧版最初：.*最终：.*第一遍未独立记录/);
+  assert.equal(result.rewrite,final==='一遍能复述'?null:final);
+  assert.deepEqual(legacy,{original_choice:initial,choice:final,paraphrase:'旧文本',rewrite:'旧改写'});
+ }
+ h.c.legacy={choice:'能改写得更直白'};
+ assert.equal(h.run('difficultyView(legacy).first_pass'),null);
+});
+test('readonly tags do not enter a mode that intercepts numeric step navigation',async()=>{
+ const h=keyboardHarness(7);h.c.data.state.viewStep=6;
+ h.key('t');h.key('5');await h.drain();
+ assert.equal(h.c.tagMode,false);assert.deepEqual(h.calls,[['navigate',4]]);
+});
+test('changing the unlocked first answer to understood explicitly clears a stale rewrite answer',()=>{
+ const fields={paraphrase:{value:'复述'},rewrite:{value:'旧改写'}};
+ const c=vm.createContext({currentStep:()=>1,$:id=>fields[id],checked:()=>false,
+  get:name=>({firstPass:'复述得出',rewriteChoice:'能改写得更直白'}[name]),
+  data:{state:{record:{reading_difficulty:{first_pass:'复述不出或说偏'},reason:'',uncovered_reason:''}}},host:{querySelector:()=>null}});
+ vm.runInContext(extract('  function collect(', '  const currentStep'),c);
+ const values=vm.runInContext('collect()',c);
+ assert.equal(values.first_pass,'复述得出');assert.equal(values.rewrite,null);
+});
+test('legacy readonly difficulty renders old answers and text without inventing two independent observations',()=>{
+ const start=src.indexOf('    if (s === 1) {',src.indexOf('    const spec = boot.form.steps[s];'));
+ const call=src.slice(start,src.indexOf('    if (s === 2) {',start)),calls=[];
+ const c=vm.createContext({s:1,r:{reading_difficulty:{original_choice:'改写不出',choice:'一遍能复述',paraphrase:'旧复述',rewrite:'旧改写'}},
+  w:{append:value=>calls.push(value)},node:(tag,text)=>({tag,text}),
+  textArea:(w,id,label,value)=>calls.push({id,label,value}),radios:()=>{throw Error('legacy must not render v2 observations');}});
+ vm.runInContext(extract('  const difficultyLabel','  function stepHint(')+call,c);
+ assert.match(calls[0].text,/旧版最初.*最终.*第一遍未独立记录/);
+ assert.deepEqual(calls.slice(1).map(x=>x.value),['旧复述','旧改写']);
 });

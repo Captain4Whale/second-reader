@@ -1,6 +1,16 @@
 /* v3.4 adapter inside the existing offline annotator; no HTTP or new database. */
 (function (root) {
   const P = Q1NoteProtocol;
+  const releasedHashes = {
+    "q1-v3.4.form.v1": "4943a37bf0065d05248535e572e3842e2c5c69f996d7d3c6d8ce2cbbb4d07b84",
+    "q1-v3.4.form.v2": "8f17a03a162e13e41f2648724b02917f30acf28b31d39c4448389867a170f7c2",
+  };
+
+  // Keep full journal order, including historical v1 rows, in the ordinary export.
+  function firstJudgments(rows) {
+    return rows.filter(r => r.record_type === "marginalia" && r.supersedes_revision === null);
+  }
+
   class Session {
     static async load(directory, host) {
       const read = async (name) => {
@@ -50,13 +60,18 @@
             m.randomization.order_sha256,
         "表单版本或顺序不符",
       );
+      const currentForm = root.Q1NoteFormV2;
+      P.need(releasedHashes[form.form_version] === m.rubric_form_sha256 &&
+        currentForm && await P.hash(JSON.stringify(currentForm, null, 2) + "\n") === releasedHashes[currentForm.form_version],
+        "会话表单或内置表单与发布版本不一致");
+      const identity = {rubric_form_version:currentForm.form_version, rubric_form_sha256:releasedHashes[currentForm.form_version]};
       const s = new Session();
       Object.assign(s, {
         host,
         directory,
         m,
         cases,
-        form,
+        form:currentForm, sessionForm:form, identity,
         manifestHash: await P.hash(P.canonical(m)),
         handle: await directory.getFileHandle("judgments.jsonl"),
       });
@@ -106,7 +121,7 @@
             record: P.copy(r),
           };
       for (const [id, draft] of Object.entries(s.state.drafts))
-        s.state.drafts[id] = P.normalizeDraft(draft);
+        s.state.drafts[id] = P.normalizeDraft(draft, s.draftOptions(id));
       s.state.manifestHash = s.manifestHash;
       await s.persist();
       await host.put("directory:" + s.key, directory);
@@ -114,10 +129,17 @@
       await s.sync();
       return s;
     }
+    draftOptions(id) {
+      const matches = row => row.record_type === "marginalia" && row.record_id === id;
+      return {identity:this.identity, submitted:this.state.rows.findLast(matches), firstSubmitted:this.state.rows.find(matches)};
+    }
+    newDraft(c) {
+      return P.initial(c, {...this.m, ...this.identity}, this.manifestHash);
+    }
     parse(raw) {
       P.need(!raw || raw.endsWith("\n"), "日志末尾不完整，已停止同步");
       const rows = raw.split("\n").filter(Boolean).map(JSON.parse),
-        latest = {};
+        latest = new Map(), first = new Map();
       rows.forEach((r, i) => {
         P.need(
           r.revision === i + 1 &&
@@ -130,12 +152,18 @@
           "annotator_id",
           "rubric_version",
           "rubric_sha256",
-          "rubric_form_version",
-          "rubric_form_sha256",
           "annotation_guide_sha256",
           "session_purpose",
         ])
           P.need(r[k] === this.m[k], "日志身份不符");
+        const historical = r.event_schema_version === undefined && r.rubric_form_version === "q1-v3.4.form.v1";
+        if (r.record_type !== "unit_note") {
+          P.need(historical || r.event_schema_version === 2, "未知的判定事件版本");
+          P.need(!historical || latest.get(r.record_id)?.event_schema_version !== 2, "新版判定不能追加旧格式修订");
+        }
+        const rowForm = historical || r.record_type === "unit_note" ? this.sessionForm : this.form;
+        P.need(r.rubric_form_version === rowForm.form_version &&
+          r.rubric_form_sha256 === releasedHashes[rowForm.form_version], "日志表单身份不符");
         if (r.record_type === "unit_note") {
           P.need(
             this.cases.some((c) => c.unit_key === r.unit_key) &&
@@ -174,11 +202,12 @@
             "上下文身份不符",
           );
         P.need(
-          r.supersedes_revision === (latest[r.record_id]?.revision ?? null),
+          r.supersedes_revision === (latest.get(r.record_id)?.revision ?? null),
           "修订前驱不符",
         );
-        P.validate(r, this.form, latest[r.record_id]);
-        latest[r.record_id] = r;
+        P.validate(r, rowForm, latest.get(r.record_id), first.get(r.record_id));
+        if (!first.has(r.record_id)) first.set(r.record_id, r);
+        latest.set(r.record_id, r);
       });
       return rows;
     }
@@ -241,7 +270,7 @@
           session_id: this.m.review_session_id,
           batch_id: this.m.batch_id,
           directory_name: this.directory.name,
-          tool_version: "q1-annotator/3.5",
+          tool_version: "q1-annotator/3.6",
           receipt: this.receipt(this.m.record_ids[this.state.index]),
           record_ids: this.m.record_ids,
           last_id: this.m.record_ids[this.state.index],
@@ -256,8 +285,8 @@
       const c = this.cases.find((c) => c.record_id === b.id);
       P.need(c, "未知条目");
       if (b.action === "ui_meta") {
-        const current = this.state.drafts[b.id] || P.initial(c, this.m, this.manifestHash);
-        const next = P.normalizeDraft(current);
+        const current = this.state.drafts[b.id] || this.newDraft(c);
+        const next = P.normalizeDraft(current, this.draftOptions(b.id));
         P.need(b.values?.ui && typeof b.values.ui === "object" && !Array.isArray(b.values.ui), "界面草稿无效");
         next.ui = { ...(next.ui || {}), ...P.copy(b.values.ui) };
         this.state.drafts[b.id] = next;
@@ -304,7 +333,7 @@
       }
       await this.sync(); // Retry an unacknowledged completion before another transition.
       const state =
-        this.state.drafts[b.id] || P.initial(c, this.m, this.manifestHash);
+        this.state.drafts[b.id] || this.newDraft(c);
       if (b.action !== "open")
         P.need(b.version === state.version, "状态已改变，请重试恢复后继续");
       let next;
@@ -317,6 +346,7 @@
           this.form,
           c,
           this.state.rows,
+          this.draftOptions(b.id),
         );
       } catch (error) {
         error.code = "FORM_VALIDATION";
@@ -355,7 +385,7 @@
       };
     }
   }
-  root.Q1NoteOffline = { Session };
+  root.Q1NoteOffline = { Session, firstJudgments };
 })(globalThis);
 
 Q1NoteOffline.mount = async function (session) {
@@ -420,15 +450,15 @@ Q1NoteOffline.mount = async function (session) {
   const folderButton = document.getElementById("openFolder");
   const oldFolderLabel = folderButton.dataset.baseLabel ??= folderButton.textContent;
   folderButton.textContent = "打开批次文件夹 · Shift+O";
-  versionLabel.textContent = "3.5";
+  versionLabel.textContent = "3.6";
   const wrap = document.createElement("div");
   wrap.innerHTML = `
- <div id="noteBar"><div class="row"><strong>q1-v3.4 · Note</strong><span id="purpose"></span><span id="position"></span><span id="batchCounts"></span><button id="noteHelp">? 快捷键</button><span id="status" role="status"></span><details id="noteMore"><summary>更多操作</summary><button id="exportNote">导出 JSONL · Shift+S</button><button id="retry">重试保存 / 恢复授权 · Shift+V</button></details></div><div id="sessionIdentity"></div><div id="saveError" hidden><span id="error" role="alert" hidden></span><button id="retryVisible">重试保存 / 恢复授权 · Shift+V</button></div><div id="unitGrid" aria-label="随机顺序条目进度"></div></div>
+ <div id="noteBar"><div class="row"><strong>q1-v3.4 · Note</strong><span id="purpose"></span><span id="position"></span><span id="batchCounts"></span><button id="noteHelp">? 快捷键</button><span id="status" role="status"></span><details id="noteMore"><summary>更多操作</summary><button id="exportNote">导出 JSONL · Shift+S</button><button id="exportFirst">导出首次判定 JSONL</button><button id="retry">重试保存 / 恢复授权 · Shift+V</button></details></div><div id="sessionIdentity"></div><div id="saveError" hidden><span id="error" role="alert" hidden></span><button id="retryVisible">重试保存 / 恢复授权 · Shift+V</button></div><div id="unitGrid" aria-label="随机顺序条目进度"></div></div>
  <div class="layout rubric-layout">
  <article><h2 id="book"></h2><p id="chapter"></p><div class="row"><span>原文 · 到锚点为止</span><button id="anchorGo">定位锚点 · A</button></div><p id="anchorStatus" class="muted" hidden></p><div id="readerScroll" tabindex="0"><details id="earlier"><summary>查看前文 · E</summary><button id="moreEarlier">展开更早前文 · Shift+E</button><div id="olderText"></div><div id="recentText"></div></details><div id="sourceText"></div><div id="following"></div><details id="notes"><summary>原书注释 · O <span id="noteStatus"></span></summary><div id="notesText"></div></details></div></article>
  <div class="annotationColumn"><aside id="casePanel" class="panel"><h2 id="caseTitle" tabindex="-1">当前批注</h2><div id="caseScroll"><p id="body" class="note"></p></div><details id="unitDetails"><summary>单元备注 · U</summary><p class="hint">上游问题以“上游：”开头，之后统计排除整个单元。</p><textarea id="unitNote" rows="2"></textarea><button id="saveUnit">保存单元备注 · Ctrl+Enter</button></details></aside>
  <div class="judgments"><aside class="panel review-panel"><nav id="rubricSteps"></nav><details id="notePreview"><summary>查看当前批注 · Shift+C</summary><p id="previewBody" class="note"></p></details><div id="decisionScroll"><section id="workflow"></section></div><div id="reviewActions"></div><div class="row"><button id="prev">上一条 ↑</button><button id="decisionGo">定位当前判定 · C</button><button id="next">下一条 ↓</button><span id="saveHint"></span></div></aside></div></div></div>
- <dialog id="shortcutHelp"><h2>快捷键 · 工具 3.5 / rubric v3.4</h2><p>P / F：当前二选一判定；Enter：继续当前步骤，末步提交；Shift+Enter：末步提交后下一条。</p><p>1–7 或 [ / ]：返回已开放步骤；Shift+数字：提示展开 / 收起。第二步起直接使用原来的选项、输入框和继续按钮，原内容和后续进度保留，可直接到最后统一复核提交。第一印象保持锁定；第二步的初值与修改历史自动保留。</p><p>↑ / ↓、← / →：按随机顺序上一条 / 下一条。J / K：原文滚动；Shift+J / K：页面滚动。</p><p>R：本项理由；M：整条理由；U：单元备注；V：待核实；S：星；0：未覆盖；?：帮助；Esc：退出输入。</p><p>费劲三选一：Q 一遍能准确复述 / G 一遍说不出或说偏，但能更直白且不丢内容 / Z 一遍说不出或说偏，想法本身复杂、表达已尽量清楚，无法更直白且不丢内容。Y：复述；I：更直白的改写；M：整条理由。输入框内先按 Esc 再用快捷键。</p><p>D / B / W / X / T：定位费劲 / 后文分支 / 写法 / 失败类型 / 标签；单选用方向键，多选用 Tab 与空格。N：拿不准；C：当前判定；A：锚点；E：前文；O：原书注释；H：说明；L / Shift+L：单元内 / 外后文。</p><p>普通状态数字 1–7 始终切换步骤；按 T 后，5–9 才切换标签，Esc 或离开标签组退出。多选及写法可用方向键、Tab、空格操作。输入法和文本框内不触发判定快捷键。</p><p>Shift+W / Shift+X：其他写法 / 其他失败说明；Shift+0：未覆盖原因。Shift+E：更早前文；Shift+C：批注预览。Ctrl+Enter：保存单元备注。Shift+O：打开文件夹；Shift+S：导出已提交记录；Shift+V：重试保存。</p><button id="closeNoteHelp">关闭 Esc</button></dialog>`;
+ <dialog id="shortcutHelp"><h2>快捷键 · 工具 3.6 / rubric v3.4</h2><p>P / F：当前二选一判定；Enter：继续当前步骤，末步提交；Shift+Enter：末步提交后下一条。</p><p>1–7 或 [ / ]：返回已开放步骤；Shift+数字：提示展开 / 收起。提交前可返回已开放步骤。提交后只读，Shift+D 进入讨论后改判，Shift+M 填写改判原因。第一印象、第一遍复述结果和文字在首次确认后锁定。</p><p>↑ / ↓、← / →：按随机顺序上一条 / 下一条。J / K：原文滚动；Shift+J / K：页面滚动。</p><p>R：本项理由；M：整条理由；U：单元备注；V：待核实；S：星；0：未覆盖；?：帮助；Esc：退出输入。</p><p>第一遍：Q 复述得出，G 复述不出或说偏。改写：W 能改写得更直白，Z 改写不出。Y：复述；I：更直白的改写；M：整条理由。输入框内先按 Esc 再用快捷键。</p><p>D / B / W / X / T：定位改写 / 后文分支 / 写法 / 失败类型 / 标签；单选用方向键，多选用 Tab 与空格。N：拿不准；C：当前判定；A：锚点；E：前文；O：原书注释；H：说明；L / Shift+L：单元内 / 外后文。</p><p>普通状态数字 1–7 始终切换步骤；按 T 后，5–9 才切换标签，Esc 或离开标签组退出。多选及写法可用方向键、Tab、空格操作。输入法和文本框内不触发判定快捷键。</p><p>Shift+W / Shift+X：其他写法 / 其他失败说明；Shift+0：未覆盖原因。Shift+E：更早前文；Shift+C：批注预览。Ctrl+Enter：保存单元备注。Shift+O：打开文件夹；Shift+S：导出已提交记录；Shift+V：重试保存。</p><button id="closeNoteHelp">关闭 Esc</button></dialog>`;
   host.append(wrap);
   try {
     const view = await Q1NoteView(host, session);
